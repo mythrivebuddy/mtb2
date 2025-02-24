@@ -20,7 +20,7 @@ export default function Hero() {
       </div>
       
       <p className="text-[18px] text-[#636363] leading-relaxed max-w-xl">
-        Join the world's only platform / ecosystem that aims to provide growth, joy, sense of belonging.
+        Join the world&apos;s only platform / ecosystem that aims to provide growth, joy, sense of belonging.
       </p>
 
       <div className="pt-4">

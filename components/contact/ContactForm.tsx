@@ -25,10 +25,10 @@ export default function ContactForm() {
     resolver: zodResolver(schema)
   })
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (formData: FormData) => {
     setIsLoading(true)
     try {
-      // Here you would typically send the data to your API
+      console.log('Submitting form data:', formData)
       await new Promise(resolve => setTimeout(resolve, 1000)) // Simulated API call
       setSuccess(true)
       reset()
@@ -43,7 +43,7 @@ export default function ContactForm() {
     <div className="space-y-6">
       {success && (
         <div className="bg-green-50 text-green-600 p-4 rounded-lg text-sm mb-6">
-          Thank you for your message! We'll get back to you soon.
+          Thank you for your message! We&apos;ll get back to you soon.
         </div>
       )}
       

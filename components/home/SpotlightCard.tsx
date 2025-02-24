@@ -41,15 +41,22 @@ export default function SpotlightCard() {
 
         <div className="bg-white rounded-2xl p-6">
           <p className="text-[#636363] text-[16px] leading-relaxed mb-6">
-            This creates a sense of recognition and highlights the individual in focus, while maintaining the overall theme of growth and inspiration. Let me know if you'd like any changes!
+            This creates a sense of recognition and highlights the individual in focus, while maintaining the overall theme of growth and inspiration. Let&apos;s know if you&apos;d like any changes!
           </p>
 
           <button 
             className="w-full bg-[#1E2875] text-white py-3 rounded-lg font-medium hover:bg-[#1E2875]/90 transition-colors"
           >
-            Let's Connect
+            Let&apos;s Connect
           </button>
         </div>
+
+        <p className="text-gray-600 mb-4">
+          Here&apos;s what others are saying...
+        </p>
+        <p className="italic">
+          &quot;I couldn&apos;t be happier with my experience...&quot;
+        </p>
       </div>
     </motion.div>
   )
