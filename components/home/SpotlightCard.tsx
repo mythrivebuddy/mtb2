@@ -10,7 +10,7 @@ export default function SpotlightCard() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0A0B1C] rounded-[32px] p-8 text-white relative overflow-hidden h-full"
+      className="bg-[#0A0B1C] rounded-[32px] md:p-8 p-4 text-white relative overflow-hidden h-full"
     >
       <div className="space-y-6">
         <h2 className="text-[32px] font-bold leading-tight">
@@ -51,12 +51,12 @@ export default function SpotlightCard() {
           </button>
         </div>
 
-        <p className="text-gray-600 mb-4">
+        {/* <p className="text-gray-600 mb-4">
           Here&apos;s what others are saying...
         </p>
         <p className="italic">
           &quot;I couldn&apos;t be happier with my experience...&quot;
-        </p>
+        </p> */}
       </div>
     </motion.div>
   )
