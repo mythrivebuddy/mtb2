@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive CAPTCHA</title>
+    <style>
+        .captcha-container {
+            width: 300px;
+            height: 150px;
+            border: 2px solid #ccc;
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .start-point, .end-point {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .start-point {
+            background-color: #4CAF50;
+            left: 20px;
+            top: 65px;
+        }
+
+        .end-point {
+            background-color: #f44336;
+            right: 20px;
+            top: 65px;
+        }
+
+        .path {
+            position: absolute;
+            left: 40px;
+            right: 40px;
+            top: 70px;
+            height: 10px;
+            background-color: #f0f0f0;
+        }
+
+        .cursor-trail {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background-color: #2196F3;
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .contact-form input, 
+        .contact-form textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+        }
+
+        .submit-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            disabled: true;
+        }
+
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Contact Us</h2>
+        <form class="contact-form" id="contactForm">
+            <input type="text" placeholder="Name" required>
+            <input type="email" placeholder="Email" required>
+            <textarea placeholder="Message" required></textarea>
+            
+            <div class="captcha-container" id="captcha">
+                <div class="path"></div>
+                <div class="start-point"></div>
+                <div class="end-point"></div>
+                <div class="cursor-trail"></div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn" disabled>Submit</button>
+        </form>
+    </div>
+
+    <script>
+        const captcha = document.getElementById('captcha');
+        const submitBtn = document.getElementById('submitBtn');
+        const cursorTrail = document.querySelector('.cursor-trail');
+        
+        let isInProgress = false;
+        let failed = false;
+        let verified = false;
+        let startTime;
+
+        function resetCaptcha() {
+            isInProgress = false;
+            failed = false;
+            verified = false;
+            submitBtn.disabled = true;
+            cursorTrail.style.display = 'none';
+        }
+
+        function isWithinPath(y) {
+            const pathTop = 60;
+            const pathBottom = 90;
+            return y >= pathTop && y <= pathBottom;
+        }
+
+        captcha.addEventListener('mouseenter', (e) => {
+            if (verified) return;
+            
+            const rect = captcha.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            
+            if (x < 40) { // If entering from the start point area
+                isInProgress = true;
+                failed = false;
+                startTime = Date.now();
+                cursorTrail.style.display = 'block';
+            }
+        });
+
+        captcha.addEventListener('mousemove', (e) => {
+            if (!isInProgress || verified) return;
+
+            const rect = captcha.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            cursorTrail.style.left = `${x}px`;
+            cursorTrail.style.top = `${y}px`;
+
+            if (!isWithinPath(y)) {
+                failed = true;
+            }
+        });
+
+        captcha.addEventListener('mouseleave', (e) => {
+            if (!isInProgress || verified) return;
+
+            const rect = captcha.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+
+            if (x >= rect.width - 40 && !failed) { // If exiting from the end point area
+                const completionTime = Date.now() - startTime;
+                
+                // Verify that the completion time is reasonable (not too fast or too slow)
+                if (completionTime > 500 && completionTime < 5000) {
+                    verified = true;
+                    submitBtn.disabled = false;
+                    cursorTrail.style.backgroundColor = '#4CAF50';
+                } else {
+                    resetCaptcha();
+                }
+            } else {
+                resetCaptcha();
+            }
+        });
+
+        // Reset CAPTCHA on form submission
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Handle form submission here
+            alert('Form submitted successfully!');
+            resetCaptcha();
+            e.target.reset();
+        });
+    </script>
+</body>
+</html> 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import logoImg from '../../public/logo.png'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -13,7 +14,7 @@ export default function Navbar() {
         {/* Logo Section */}
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="/images/mythrivebuddy-logo.png"
+            src={logoImg}
             alt="MyThriveBuddy"
             width={40}
             height={40}
