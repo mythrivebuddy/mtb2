@@ -5,8 +5,8 @@
   "/api/auth/signup/route": "app/api/auth/signup/route.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/contact/page": "app/contact/page.js",
+  "/blog/page": "app/blog/page.js",
   "/page": "app/page.js",
   "/signin/page": "app/signin/page.js",
-  "/blog/page": "app/blog/page.js",
   "/signup/page": "app/signup/page.js"
 }
