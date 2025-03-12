@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { Category } from '../types';
+import { useState } from "react";
+import type { Category } from "../types/types";
 
 interface CategoryTagsProps {
   categories: Category[];
@@ -7,7 +7,7 @@ interface CategoryTagsProps {
 }
 
 const CategoryTags = ({ categories, onCategorySelect }: CategoryTagsProps) => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -23,9 +23,10 @@ const CategoryTags = ({ categories, onCategorySelect }: CategoryTagsProps) => {
               key={category.id}
               onClick={() => handleCategoryClick(category.id)}
               className={`text-xs md:text-sm px-3 py-1 rounded-full transition-colors
-                ${selectedCategory === category.id 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 hover:bg-gray-200'
+                ${
+                  selectedCategory === category.id
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 hover:bg-gray-200"
                 }`}
             >
               {category.name}
@@ -37,4 +38,4 @@ const CategoryTags = ({ categories, onCategorySelect }: CategoryTagsProps) => {
   );
 };
 
-export default CategoryTags; 
+export default CategoryTags;

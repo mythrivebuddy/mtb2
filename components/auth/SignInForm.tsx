@@ -1,68 +1,74 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-
-const schema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
-
-type FormData = z.infer<typeof schema>
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { getAxiosErrorMessage } from "@/utils/functions";
+import { SigninFormType, signinSchema } from "@/schema/zodSchema";
+import { signIn } from "next-auth/react";
 
 export default function SignInForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  const router = useRouter()
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema)
-  })
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SigninFormType>({
+    resolver: zodResolver(signinSchema),
+  });
 
-  const onSubmit = async (data: FormData) => {
-    setIsLoading(true)
-    setError('')
+  const onSubmit = async (data: SigninFormType) => {
+    setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Login failed')
+      // const res = await axios.post("/api/auth/signin", data);
+      const res = await signIn("credentials", {
+        callbackUrl: "/dashboard",
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+      console.log(res); //?dev
+      if (res?.ok) {
+        router.push("/dashboard");
+        toast.success("Signed in successfully");
+        return
+      }
+      if (res?.error) {
+        toast.error(
+          getAxiosErrorMessage(res, "Sign in failed. Please try again later.")
+        );
+        // return;
       }
 
-      router.push('/dashboard')
-      router.refresh()
+      // if (res.status >= 200 && res.status < 300) {
+      // router.refresh();
+      // return;
+      // }
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'An error occurred')
+      console.error("Signin error:", error);
+      toast.error(
+        getAxiosErrorMessage(error, "Sign in failed. Please try again later.")
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-lg text-sm">
-          {error}
-        </div>
-      )}
-      
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Input
             type="email"
             placeholder="Email"
-            {...register('email')}
-            className={`h-12 ${errors.email ? 'border-red-500' : ''}`}
+            {...register("email")}
+            className={`h-12 ${errors.email ? "border-red-500" : ""}`}
           />
           {errors.email && (
             <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
@@ -73,11 +79,13 @@ export default function SignInForm() {
           <Input
             type="password"
             placeholder="Password"
-            {...register('password')}
-            className={`h-12 ${errors.password ? 'border-red-500' : ''}`}
+            {...register("password")}
+            className={`h-12 ${errors.password ? "border-red-500" : ""}`}
           />
           {errors.password && (
-            <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
@@ -86,17 +94,20 @@ export default function SignInForm() {
             <input type="checkbox" className="rounded border-gray-300" />
             <span>Remember me</span>
           </label>
-          <Link href="/forgot-password" className="text-[#1E2875] hover:underline">
+          <Link
+            href="/forgot-password"
+            className="text-[#1E2875] hover:underline"
+          >
             Forgot password?
           </Link>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full h-12 text-[16px]" 
+        <Button
+          type="submit"
+          className="w-full h-12 text-[16px]"
           disabled={isLoading}
         >
-          {isLoading ? 'Signing in...' : 'Sign In'}
+          {isLoading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
 
@@ -109,10 +120,12 @@ export default function SignInForm() {
         </div>
       </div>
 
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         className="w-full h-12 text-[16px] flex items-center justify-center space-x-2"
-        onClick={() => {/* Implement Google sign in */}}
+        onClick={() => {
+          /* Implement Google sign in */
+        }}
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path
@@ -136,11 +149,14 @@ export default function SignInForm() {
       </Button>
 
       <p className="text-center text-sm text-gray-600">
-        Don&apos;t have an account?{' '}
-        <Link href="/signup" className="text-[#1E2875] hover:underline font-medium">
+        Don&apos;t have an account?{" "}
+        <Link
+          href="/signup"
+          className="text-[#1E2875] hover:underline font-medium"
+        >
           Sign up
         </Link>
       </p>
     </div>
-  )
-} 
+  );
+}

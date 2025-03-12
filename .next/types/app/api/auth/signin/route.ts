@@ -1,4 +1,4 @@
-// File: /home/hp/mtb-v2/mtb/mtb/app/api/auth/signin/route.ts
+// File: E:\Deepak aashrmiyas work place\DeepakMERNIntern\mtb\app\api\auth\signin\route.ts
 import * as entry from '../../../../../../app/api/auth/signin/route.js'
 import type { NextRequest } from 'next/server.js'
 
