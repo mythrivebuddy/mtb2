@@ -1,39 +1,3 @@
-// // import type { Config } from 'next-auth'
-// import Google from 'next-auth/providers/google'
-// import Credentials from 'next-auth/providers/credentials'
-// import { z } from 'zod'
-
-// export const authConfig = {
-//   providers: [
-//     Google({
-//       clientId: process.env.GOOGLE_CLIENT_ID!,
-//       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-//     }),
-//     Credentials({
-//       credentials: {
-//         email: { label: "Email", type: "email" },
-//         password: { label: "Password", type: "password" }
-//       },
-//       async authorize(credentials) {
-//         const parsedCredentials = z
-//           .object({ email: z.string().email(), password: z.string().min(6) })
-//           .safeParse(credentials)
-
-//         if (!parsedCredentials.success) return null
-
-//         // Add your credential validation logic here
-//         return null
-//       },
-//     }),
-//   ],
-//   pages: {
-//     signIn: '/signin',
-//   },
-// } 
-
-
-
-
 import { PrismaClient } from "@prisma/client";
 import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
@@ -41,6 +5,9 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
+
+const DEFAULT_MAX_AGE =  60* 60;
+const REMEMBER_ME_MAX_AGE = 7 * 12 * 60 * 60;
 
 export const authConfig: AuthOptions = {
   providers: [
@@ -53,6 +20,7 @@ export const authConfig: AuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        rememberMe: { label: "Remember Me", type: "checkbox" }, // <-- Added Remember Me
       },
       async authorize(credentials) {
         try {
@@ -78,12 +46,13 @@ export const authConfig: AuthOptions = {
             throw new Error("Password is incorrect");
           }
 
-          console.log("login done");
+          // console.log("login done");
           return {
             id: user.id,
             name: user.name,
             email: user.email,
             role: "USER",
+            rememberMe: credentials.rememberMe === "true", // Convert checkbox value to boolean
           };
         } catch (error) {
           console.log("error", error);
@@ -113,6 +82,7 @@ export const authConfig: AuthOptions = {
           const role = user.email === process.env.ADMIN_MAIL ? "ADMIN" : "USER";
           console.log(role);
 
+          // ! Role should only be passes if user isVerified else not atlest for the ADMIN
           const createdUser = await prisma.user.create({
             data: {
               role: role,
@@ -142,7 +112,14 @@ export const authConfig: AuthOptions = {
       if (user) {
         token.role = user.role; // Now user.role exists because we added it in `signIn`
         token.id = user.id;
+        token.rememberMe = user.rememberMe ?? false;
+        console.log("remeberme tokencheck", token.rememberMe); //?dev
+
+        token.maxAge =
+          Math.floor(Date.now() / 1000) +
+          (user.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE);
       }
+      console.log("token", token); //?dev
       return token;
     },
 
@@ -151,12 +128,21 @@ export const authConfig: AuthOptions = {
         console.log("token.role", token.role);
         session.user.role = token.role; // Attach role to session
         session.user.id = token.id;
+        session.user.rememberMe = token.rememberMe;
+        // session.maxAge =
+        //   Math.floor(Date.now() / 1000) +
+        //   (token.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE);
       }
+      console.log("sessiondata", session); //?dev
       return session;
     },
   },
+  session: {
+    strategy: "jwt",
+    maxAge: DEFAULT_MAX_AGE, // Default 45 minutes
+  },
   pages: {
-    signIn: "/signin", // Custom sigin page 
+    signIn: "/login", // Custom login page (optional)
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

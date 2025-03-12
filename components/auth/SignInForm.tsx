@@ -24,6 +24,7 @@ export default function SignInForm() {
   });
 
   const onSubmit = async (data: SigninFormType) => {
+    console.log("siginin form data", data);
     setIsLoading(true);
     try {
       // const res = await axios.post("/api/auth/signin", data);
@@ -35,9 +36,9 @@ export default function SignInForm() {
       });
       console.log(res); //?dev
       if (res?.ok) {
-        router.push("/dashboard");
+        router.push("/");
         toast.success("Signed in successfully");
-        return
+        return;
       }
       if (res?.error) {
         toast.error(
@@ -90,8 +91,12 @@ export default function SignInForm() {
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center space-x-2">
-            <input type="checkbox" className="rounded border-gray-300" />
+          <label className="flex items-center space-x-2" >
+            <input
+              type="checkbox"
+              className="rounded border-gray-300"
+              {...register("rememberMe")}
+            />
             <span>Remember me</span>
           </label>
           <Link

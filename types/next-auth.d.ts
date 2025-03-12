@@ -9,11 +9,13 @@ declare module "next-auth" {
       /** The user's postal address. */
       role: string;
       id: string;
+      rememberMe: boolean;
     } & DefaultSession["user"];
   }
   interface User {
     id: string;
     role: string;
+    rememberMe: boolean;
   }
 }
 
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
     /** OpenID ID Token */
     id: string;
     role: string;
+    rememberMe: boolean;
   }
 }
