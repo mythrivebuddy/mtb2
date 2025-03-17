@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         role: process.env.ADMIN_MAIL ? "ADMIN" : "USER",
+        
       },
       omit:{
         password: true // removing passwrod before sending
