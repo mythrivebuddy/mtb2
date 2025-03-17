@@ -147,6 +147,7 @@ export const authConfig: AuthOptions = {
         //   Date.now() +
         //     (token.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE) * 1000
         // ).toISOString();
+        // session.maxAge =  token.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE
       }
       console.log("sessiondata", session); //?dev
       return session;
