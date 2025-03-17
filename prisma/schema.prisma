@@ -12,13 +12,52 @@ enum Role {
   USER
 }
 
+enum AuthMethod {
+  GOOGLE
+  CREDENTIALS
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String?
-  name      String
-  role      Role
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String        @id @default(cuid())
+  email       String        @unique
+  password    String?
+  name        String
+  role        Role
+  image       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  transaction Transaction[]
+  jpEarned    Int           @default(0)
+  jpSpent     Int           @default(0)
+  authMethod  AuthMethod    @default(CREDENTIALS) // Default to credentials
+}
+
+model Transaction {
+  id         String          @id @default(uuid())
+  type       TransactionType
+  userId     String
+  user       User            @relation(fields: [userId], references: [id])
+  activity   Activity        @relation(fields: [activityId], references: [id])
+  activityId String
+  createdAt  DateTime        @default(now())
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+model Activity {
+  id          String        @id @default(uuid())
+  activity    ActivityType  @unique
+  jpAmount    Int
+  Transaction Transaction[]
+}
+
+enum ActivityType {
+  SIGNUP
+  DAILY_LOGIN
+  QUIZ_CORRECT
+  ADD_LOG
+  SPOTLIGHT
 }

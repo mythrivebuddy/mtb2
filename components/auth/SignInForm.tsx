@@ -29,28 +29,22 @@ export default function SignInForm() {
     try {
       // const res = await axios.post("/api/auth/signin", data);
       const res = await signIn("credentials", {
-        callbackUrl: "/dashboard",
+        // callbackUrl: "/dashboard",
         redirect: false,
         email: data.email,
         password: data.password,
+        rememberMe: data.rememberMe,
       });
-      console.log(res); //?dev
+      console.log("res", res); //?dev
       if (res?.ok) {
-        router.push("/");
+        router.push("/dashboard");
         toast.success("Signed in successfully");
         return;
       }
       if (res?.error) {
-        toast.error(
-          getAxiosErrorMessage(res, "Sign in failed. Please try again later.")
-        );
-        // return;
+        console.log("error", res.error);
+        toast.error(res.error ?? "Sign in failed. Please try again later.");
       }
-
-      // if (res.status >= 200 && res.status < 300) {
-      // router.refresh();
-      // return;
-      // }
     } catch (error) {
       console.error("Signin error:", error);
       toast.error(
@@ -58,6 +52,28 @@ export default function SignInForm() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signIn("google", {
+        callbackUrl: "/dashboard",
+        redirect: false,
+      });
+      console.log(result);
+      if (result?.error) {
+        console.log("error", result.error);
+        toast.error("Google Sign failed. Please try again later.");
+      }
+    } catch (error) {
+      console.error("Error signing in", error); //?dev
+      toast.error(
+        getAxiosErrorMessage(
+          error,
+          "Google Sign failed. Please try again later."
+        )
+      );
     }
   };
 
@@ -91,7 +107,7 @@ export default function SignInForm() {
         </div>
 
         <div className="flex items-center justify-between text-sm">
-          <label className="flex items-center space-x-2" >
+          <label className="flex items-center space-x-2">
             <input
               type="checkbox"
               className="rounded border-gray-300"
@@ -128,9 +144,7 @@ export default function SignInForm() {
       <Button
         variant="outline"
         className="w-full h-12 text-[16px] flex items-center justify-center space-x-2"
-        onClick={() => {
-          /* Implement Google sign in */
-        }}
+        onClick={handleGoogleLogin}
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path
