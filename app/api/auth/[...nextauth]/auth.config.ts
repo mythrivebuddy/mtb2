@@ -1,15 +1,16 @@
-import { AuthMethod, PrismaClient } from "@prisma/client";
+import { ActivityType, AuthMethod, PrismaClient } from "@prisma/client";
 import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
+import { assignJp } from "@/lib/dbUtils";
 
 const prisma = new PrismaClient();
 
-// const DEFAULT_MAX_AGE = 45 * 60;
-// const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
-const DEFAULT_MAX_AGE = 1 * 60;
-const REMEMBER_ME_MAX_AGE = 2 * 60;
+const DEFAULT_MAX_AGE = 45 * 60;
+const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
+// const DEFAULT_MAX_AGE = 1 * 60;
+// const REMEMBER_ME_MAX_AGE = 2 * 60;
 
 export const authConfig: AuthOptions = {
   providers: [
@@ -33,6 +34,9 @@ export const authConfig: AuthOptions = {
               email: credentials?.email,
               authMethod: AuthMethod.CREDENTIALS, // Ensures authentication method matches - prevents Google OAuth users from using password login
             },
+            include: {
+              plan: true, // will need it to assign correct JP
+            },
           });
           if (!user) {
             throw new Error("No user found");
@@ -48,6 +52,9 @@ export const authConfig: AuthOptions = {
           if (!isValid) {
             throw new Error("Password is incorrect");
           }
+
+          //** assign JP as signin reward
+          assignJp(user, ActivityType.DAILY_LOGIN);
 
           // console.log("login done");
           return {
@@ -97,7 +104,15 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
               authMethod: AuthMethod.GOOGLE,
             },
+            include: {
+              plan: true, //its include for jp assignment only
+            },
           });
+
+          // TODO add logic to assign JP as signup reward
+          //** assign JP as signin reward
+          assignJp(createdUser, ActivityType.SIGNUP);
+
           console.log("user created info", createdUser);
           user.role = createdUser.role;
           user.id = createdUser.id;
@@ -109,7 +124,14 @@ export const authConfig: AuthOptions = {
               name: user.name!,
               image: user.image ? user.image : "",
             },
+            include: {
+              plan: true, //its include for jp assignment only
+            },
           });
+
+          //** assign JP as signin reward
+          assignJp(updatedUser, ActivityType.DAILY_LOGIN);
+
           console.log("user updated info", updatedUser);
           // Use dbUser data for existing users
           user.role = dbUser.role;
