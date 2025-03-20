@@ -17,6 +17,26 @@ enum AuthMethod {
   CREDENTIALS
 }
 
+enum ActivityType {
+  SIGNUP
+  DAILY_LOGIN
+  QUIZ_CORRECT
+  ADD_LOG
+  SPOTLIGHT
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum SpotlightStatus {
+  APPLIED // User applied for spotlight
+  IN_REVIEW // Admin reviewing the request
+  APPROVED // Approved but not yet active
+  DISAPPROVED // Admin rejected the application
+}
+
 model User {
   id          String        @id @default(uuid())
   email       String        @unique
@@ -34,6 +54,7 @@ model User {
   plan        Plan?         @relation(fields: [planId], references: [id])
   planStart   DateTime? // When the user subscribed
   planEnd     DateTime? // When the plan expires
+  spotlight   Spotlight?
 }
 
 model Transaction {
@@ -45,25 +66,12 @@ model Transaction {
   createdAt  DateTime @default(now())
 }
 
-enum TransactionType {
-  DEBIT
-  CREDIT
-}
-
 model Activity {
   id              String          @id @default(uuid())
   activity        ActivityType    @unique
   jpAmount        Int
   transactionType TransactionType @default(CREDIT)
   Transaction     Transaction[]
-}
-
-enum ActivityType {
-  SIGNUP
-  DAILY_LOGIN
-  QUIZ_CORRECT
-  ADD_LOG
-  SPOTLIGHT
 }
 
 model Plan {
@@ -74,4 +82,18 @@ model Plan {
   durationDays    Int? // NULL for lifetime plans, else number of days
   users           User[]
   price           String
+}
+
+model Spotlight {
+  id                  String          @id @default(uuid())
+  userId              String          @unique
+  user                User            @relation(fields: [userId], references: [id])
+  expiresAt           DateTime?
+  jpUsed              Int
+  appliedAt           DateTime        @default(now())
+  status              SpotlightStatus @default(APPLIED)
+  isActive            Boolean         @default(false)
+  defaultDurationDays Int             @default(1) // Default duration in days, can be changed by admin
+
+  @@index([expiresAt])
 }
