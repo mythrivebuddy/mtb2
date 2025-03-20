@@ -117,6 +117,11 @@ export const authConfig: AuthOptions = {
           user.role = createdUser.role;
           user.id = createdUser.id;
         } else {
+             if (dbUser.authMethod === AuthMethod.CREDENTIALS) {
+               throw new Error(
+                 "This email is already registered with password login. Please use your password."
+               );
+             }
           // Update user data if it has changed
           const updatedUser = await prisma.user.update({
             where: { email: user.email! },
