@@ -8,7 +8,7 @@ import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getAxiosErrorMessage } from "@/utils/functions";
+import { getAxiosErrorMessage } from "@/utils/ax";
 import { SignupFormType, signupSchema } from "@/schema/zodSchema";
 
 // const schema = z
@@ -43,7 +43,7 @@ export default function SignUpForm() {
       if (res.status >= 200 && res.status < 300) {
         toast.success("User signup successfully");
         router.push("/signin");
-        return
+        return;
       }
       toast.error(getAxiosErrorMessage(res));
     } catch (error) {

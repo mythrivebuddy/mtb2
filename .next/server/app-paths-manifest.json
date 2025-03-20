@@ -1,5 +1,18 @@
 {
+<<<<<<< HEAD
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
   "/profile/page": "app/profile/page.js",
   "/page": "app/page.js"
+=======
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/auth/signup/route": "app/api/auth/signup/route.js",
+  "/api/user/leaderboard/route": "app/api/user/leaderboard/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/contact/page": "app/contact/page.js",
+  "/blog/page": "app/blog/page.js",
+  "/page": "app/page.js",
+  "/signin/page": "app/signin/page.js",
+  "/signup/page": "app/signup/page.js"
+>>>>>>> 82ca0769e8e0fb111433d2ba1354564b2b4fabda
 }
