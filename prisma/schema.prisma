@@ -12,13 +12,66 @@ enum Role {
   USER
 }
 
+enum AuthMethod {
+  GOOGLE
+  CREDENTIALS
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String?
-  name      String
-  role      Role
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String        @id @default(uuid())
+  email       String        @unique
+  password    String?
+  name        String
+  role        Role
+  image       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  transaction Transaction[]
+  jpEarned    Int           @default(0)
+  jpSpent     Int           @default(0)
+  authMethod  AuthMethod    @default(CREDENTIALS) // Default to credentials
+  planId      String?
+  plan        Plan?         @relation(fields: [planId], references: [id])
+  planStart   DateTime? // When the user subscribed
+  planEnd     DateTime? // When the plan expires
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId String
+  createdAt  DateTime @default(now())
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+model Activity {
+  id              String          @id @default(uuid())
+  activity        ActivityType    @unique
+  jpAmount        Int
+  transactionType TransactionType @default(CREDIT)
+  Transaction     Transaction[]
+}
+
+enum ActivityType {
+  SIGNUP
+  DAILY_LOGIN
+  QUIZ_CORRECT
+  ADD_LOG
+  SPOTLIGHT
+}
+
+model Plan {
+  id              String @id @default(uuid())
+  name            String @unique
+  jpMultiplier    Float  @default(1.0) // Earn more JP per action
+  discountPercent Float  @default(0.0) // Discount on JP spending
+  durationDays    Int? // NULL for lifetime plans, else number of days
+  users           User[]
+  price           String
 }

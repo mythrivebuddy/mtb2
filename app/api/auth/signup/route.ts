@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signupSchema } from "@/schema/zodSchema";
+import { ActivityType } from "@prisma/client";
+import { assignJp } from "@/lib/dbUtils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,14 +42,16 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         role: process.env.ADMIN_MAIL ? "ADMIN" : "USER",
       },
-      omit:{
-        password: true // removing passwrod before sending
-      }
+      omit: {
+        password: true, // removing passwrod before sending
+      },
+      include: {
+        plan: true, //its include for jp assignment only
+      },
     });
 
-    // Remove password from response
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // const { password: _, ...userWithoutPassword } = user;
+    //  * assign JP as signup reward
+    assignJp(user, ActivityType.SIGNUP);
 
     return NextResponse.json(
       {
