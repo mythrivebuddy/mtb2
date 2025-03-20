@@ -6,10 +6,10 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
-// const DEFAULT_MAX_AGE = 45 * 60;
-// const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
-const DEFAULT_MAX_AGE = 1 * 60;
-const REMEMBER_ME_MAX_AGE = 2 * 60;
+const DEFAULT_MAX_AGE = 45 * 60;
+const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
+// const DEFAULT_MAX_AGE = 1 * 60;
+// const REMEMBER_ME_MAX_AGE = 2 * 60;
 
 export const authConfig: AuthOptions = {
   providers: [

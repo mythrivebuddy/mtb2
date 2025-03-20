@@ -18,18 +18,19 @@ enum AuthMethod {
 }
 
 model User {
-  id          String        @id @default(cuid())
-  email       String        @unique
-  password    String?
-  name        String
-  role        Role
-  image       String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  transaction Transaction[]
-  jpEarned    Int           @default(0)
-  jpSpent     Int           @default(0)
-  authMethod  AuthMethod    @default(CREDENTIALS) // Default to credentials
+  id                  String                @id @default(cuid())
+  email               String                @unique
+  password            String?
+  name                String
+  role                Role
+  image               String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  transaction         Transaction[]
+  jpEarned            Int                   @default(0)
+  jpSpent             Int                   @default(0)
+  authMethod          AuthMethod            @default(CREDENTIALS) // Default to credentials
+  userBusinessProfile UserBusinessProfile[]
 }
 
 model Transaction {
@@ -60,4 +61,44 @@ enum ActivityType {
   QUIZ_CORRECT
   ADD_LOG
   SPOTLIGHT
+}
+
+model Blog {
+  id        String   @id @default(cuid())
+  title     String
+  image     String?
+  excerpt   String
+  category  String
+  content   String
+  readTime  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserBusinessProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  name             String
+  businessInfo     String? // General business information
+  missionStatement String? // Mission statement of the business
+  goals            String? // Goals of the user/business
+
+  // Achievements & Offerings
+  keyOfferings String? // What the business provides
+  achievements String? // Notable achievements
+
+  // Contact Details
+  email         String? @unique // Business email
+  phone         String? // Contact number
+  website       String? // Business or personal website
+  socialHandles Json? // Store social media links (Instagram, LinkedIn, GitHub, Twitter, etc.)
+
+  // Spotlight Information
+  isSpotlight     Boolean   @default(false) // Whether the user is in the spotlight
+  spotlightExpiry DateTime? // When the spotlight expires
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
