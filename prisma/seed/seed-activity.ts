@@ -35,8 +35,8 @@ async function main() {
     await prisma.activity.upsert({
       where: { activity: activity.activity },
       update: {
-        jpAmount: activity.jpAmount,
-        transactionType: activity.transactionType,
+        // jpAmount: activity.jpAmount,
+        // transactionType: activity.transactionType,
       },
       create: activity,
     });

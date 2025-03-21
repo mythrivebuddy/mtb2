@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signupSchema } from "@/schema/zodSchema";
 import { ActivityType } from "@prisma/client";
-import { assignJp } from "@/lib/dbUtils";
+import { assignJp } from "@/lib/utils/jp";
 
 export async function POST(request: NextRequest) {
   try {

@@ -3,7 +3,7 @@ import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
-import { assignJp } from "@/lib/dbUtils";
+import { assignJp } from "@/lib/utils/jp";
 
 const prisma = new PrismaClient();
 

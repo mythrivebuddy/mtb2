@@ -89,7 +89,7 @@ model Spotlight {
   userId              String          @unique
   user                User            @relation(fields: [userId], references: [id])
   expiresAt           DateTime?
-  jpUsed              Int
+  // jpUsed              Int
   appliedAt           DateTime        @default(now())
   status              SpotlightStatus @default(APPLIED)
   isActive            Boolean         @default(false)

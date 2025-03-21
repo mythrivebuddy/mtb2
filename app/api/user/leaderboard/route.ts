@@ -1,4 +1,4 @@
-export const revalidate = 10 * 60; // 10 minutes
+export const revalidate = 600; // 10 minutes
 
 import { PrismaClient } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 /**
  * * considerations
  * - cache  --- //* DONE
- * - rate limit
+ * - rate limit 
  *
  */
 export async function GET(request: NextRequest) {

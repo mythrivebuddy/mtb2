@@ -31,8 +31,8 @@ async function main() {
     await prisma.plan.upsert({
       where: { name: plan.name },
       update: {
-        name: plan.name,
-        price: plan.price,
+        // name: plan.name,
+        // price: plan.price,
       },
       create: plan,
     });
