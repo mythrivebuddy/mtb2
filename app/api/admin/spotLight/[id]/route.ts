@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function POST(
+// route to update spotlight status by admin APPLIED | IN_REVIEW | APPROVED | DISAPPROVED
+export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -35,6 +36,14 @@ export async function POST(
       );
     }
 
+    // Check if current status matches requested status
+    if (spotlight.status === status) {
+      return NextResponse.json(
+        { error: `Spotlight application is already ${status.toLowerCase()}` },
+        { status: 400 }
+      );
+    }
+
     // Update spotlight status
     await prisma.spotlight.update({
       where: { id },
@@ -42,7 +51,7 @@ export async function POST(
     });
 
     return NextResponse.json(
-      { message: "Spotlight status updated successfully" },
+      { message: `Spotlight status changed to ${status} successfully` },
       { status: 200 }
     );
   } catch (error) {

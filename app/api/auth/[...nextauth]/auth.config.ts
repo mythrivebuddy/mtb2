@@ -91,6 +91,11 @@ export const authConfig: AuthOptions = {
         });
         console.log("user exists info", dbUser);
 
+        if (dbUser && dbUser.authMethod === AuthMethod.CREDENTIALS) {
+            // Instead of throwing an error, return false with a customized error
+            return "/signin?error=account-exists-with-credentials"; // or another URL where you'll handle this
+        }
+
         if (!dbUser) {
           // if user does not exist, create a new user and let signin
           const role = user.email === process.env.ADMIN_MAIL ? "ADMIN" : "USER";

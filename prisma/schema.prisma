@@ -31,10 +31,10 @@ enum TransactionType {
 }
 
 enum SpotlightStatus {
-  APPLIED // User applied for spotlight
-  IN_REVIEW // Admin reviewing the request
-  APPROVED // Approved but not yet active
-  DISAPPROVED // Admin rejected the application
+  APPLIED 
+  IN_REVIEW 
+  APPROVED 
+  DISAPPROVED 
 }
 
 model User {

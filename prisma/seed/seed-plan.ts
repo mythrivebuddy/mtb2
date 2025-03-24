@@ -2,6 +2,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+
+// * this seed script is meant for production as well
 async function main() {
   const plans = [
     {
