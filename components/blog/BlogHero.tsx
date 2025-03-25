@@ -4,6 +4,7 @@ import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import BlogCard from "./BlogCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Skeleton from "../Skeleton";
 
 interface BlogPost {
   id: number;
@@ -121,11 +122,6 @@ const BlogHero = () => {
       setCurrentPage((prev) => prev + 1);
     }
   };
-
-  // Custom skeleton component for loading states
-  const Skeleton = ({ className }: { className: string }) => (
-    <div className={`animate-pulse bg-gray-200 rounded ${className}`}></div>
-  );
 
   // Render skeletons while loading
   const renderSkeletons = () => {

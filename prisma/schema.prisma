@@ -90,29 +90,36 @@ model Blog {
 }
 
 model UserBusinessProfile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
-
-  name             String
-  businessInfo     String? // General business information
-  missionStatement String? // Mission statement of the business
-  goals            String? // Goals of the user/business
-
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Business Information
+  name              String?  // Business name
+  businessInfo      String?  // General business information
+  
+  // Mission & Goals
+  missionStatement  String?  // Mission statement of the business
+  goals             String?  // Goals of the user/business
+  
   // Achievements & Offerings
-  keyOfferings String? // What the business provides
-  achievements String? // Notable achievements
-
-  // Contact Details
-  email         String? @unique // Business email
-  phone         String? // Contact number
-  website       String? // Business or personal website
-  socialHandles Json? // Store social media links (Instagram, LinkedIn, GitHub, Twitter, etc.)
-
+  keyOfferings      String?  // What the business provides
+  achievements      String?  // Notable achievements
+  
+  // Industry & Contact
+  email             String?  @unique // Business email
+  phone             String?  // Contact number
+  website           String?  // Business or personal website
+  socialHandles     Json?    // Store social media links (LinkedIn, Instagram, X, GitHub, etc.)
+  
   // Spotlight Information
-  isSpotlight     Boolean   @default(false) // Whether the user is in the spotlight
-  spotlightExpiry DateTime? // When the spotlight expires
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isSpotlightActive         Boolean    @default(false)  // Whether the user is in the spotlight
+  featuredWorkTitle   String?    // Title of featured work for spotlight
+  featuredWorkDesc    String?    // Description of featured work
+  featuredWorkImage   String?    // Image URL for featured work
+  priorityContactLink String?    // Primary contact method when in spotlight
+  profileJpRewarded   Boolean          @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

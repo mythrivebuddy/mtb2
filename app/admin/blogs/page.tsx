@@ -27,7 +27,7 @@ export default function CreateBlogPost() {
     formData.append("category", category);
     if (imageFile) formData.append("imageFile", imageFile);
 
-    const response = await fetch("/api/blogs/createBlogs", {
+    const response = await fetch("/api/admin/blogs/createBlogs", {
       method: "POST",
       body: formData,
     });

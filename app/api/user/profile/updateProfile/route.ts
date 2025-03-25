@@ -1,83 +1,183 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "next-auth/react";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
-type Data = { message: string; profile?: any } | { error: string };
+export async function PUT(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const userId = searchParams.get("userId");
 
-export default async function PUT(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
-) {
-  const { userId } = req.query;
-
-  // Validate userId type from query (should be string)
-  if (Array.isArray(userId)) {
-    return res.status(400).json({ error: "Invalid user ID format" });
-  }
-
-  // Authenticate the request using NextAuth session
-  const session = await getSession({ req });
-  if (!session || session.user.id !== userId) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (!userId || Array.isArray(userId)) {
+    return NextResponse.json(
+      { error: "Invalid or missing userId" },
+      { status: 400 }
+    );
   }
 
   try {
-    const updateData = req.body;
+    // Parse the form data
+    const formData = await req.formData();
+    const entries = Object.fromEntries(formData.entries());
 
-    // Check if the user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    // Process file upload
+    let fileUrl: string | undefined;
+    const file = formData.get("featuredWorkImage");
+    console.log("File received:", file);
+
+    if (file instanceof File && file.size > 0) {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `spotlight-image/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("spotlight-image")
+        .upload(filePath, file);
+
+      if (error) throw new Error(`Supabase Upload Error: ${error.message}`);
+      console.log("Upload data:", data);
+
+      const { data: publicUrl } = supabase.storage
+        .from("spotlight-image")
+        .getPublicUrl(filePath);
+      fileUrl = publicUrl.publicUrl;
     }
 
-    // Try to find the existing profile
-    let profile = await prisma.userBusinessProfile.findUnique({
-      where: { userId },
-    });
-    let firstTimeUpdating = false;
-
-    if (!profile) {
-      // Create profile if it doesn't exist yet
-      profile = await prisma.userBusinessProfile.create({
-        data: { userId, ...updateData },
-      });
-      firstTimeUpdating = true;
-    } else {
-      // Save a copy of the old profile for comparison
-      const oldProfile = { ...profile };
-
-      // Update the profile with new data
-      profile = await prisma.userBusinessProfile.update({
-        where: { userId },
-        data: updateData,
-      });
-
-      // Check if any previously blank field is now filled
-      for (const key in updateData) {
-        // @ts-ignore: dynamic key access
-        if ((oldProfile as any)[key] == null && updateData[key] != null) {
-          firstTimeUpdating = true;
-          break;
-        }
+    // Helper to parse JSON safely
+    function tryParseJson(jsonString: unknown) {
+      if (typeof jsonString !== "string") return {};
+      try {
+        return JSON.parse(jsonString);
+      } catch (e) {
+        console.error("JSON parse error:", e);
+        return {};
       }
     }
 
-    // Reward JoyPearls for first time profile completion or updating previously blank fields
-    if (firstTimeUpdating) {
+    // Build update data using all fields
+    const updateData = {
+      name: entries.name?.toString(),
+      businessInfo: entries.businessInfo?.toString(),
+      missionStatement: entries.missionStatement?.toString(),
+      goals: entries.goals?.toString(),
+      keyOfferings: entries.keyOfferings?.toString(),
+      achievements: entries.achievements?.toString(),
+      email: entries.email?.toString(),
+      phone: entries.phone?.toString(),
+      website: entries.website?.toString(),
+      socialHandles: tryParseJson(entries.socialHandles) || {},
+      isSpotlightActive: entries.isSpotlightActive === "true",
+      spotlightExpiry: entries.spotlightExpiry?.toString(),
+      featuredWorkTitle: entries.featuredWorkTitle?.toString(),
+      featuredWorkDesc: entries.featuredWorkDesc?.toString(),
+      // Use new file URL if available; otherwise, keep existing value.
+      featuredWorkImage: fileUrl || entries.featuredWorkImage?.toString(),
+      priorityContactLink: entries.priorityContactLink?.toString(),
+    };
+
+    if (!updateData.name) {
+      return NextResponse.json(
+        { error: "Business name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify user exists
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Get existing profile to compare completion and reward status before updating
+    const oldProfile = await prisma.userBusinessProfile.findUnique({
+      where: { userId },
+    });
+
+    // Helper: Calculate profile completion percentage using all fields
+    const calculateCompletion = (profileData: any): number => {
+      const fieldsToCheck = [
+        "name",
+        "businessInfo",
+        "missionStatement",
+        "goals",
+        "keyOfferings",
+        "achievements",
+        "email",
+        "phone",
+        "website",
+        "featuredWorkTitle",
+        "featuredWorkDesc",
+        "featuredWorkImage",
+        "priorityContactLink",
+      ];
+      const totalFields = fieldsToCheck.length + 1; // +1 for socialHandles
+      let filledFields = 0;
+
+      fieldsToCheck.forEach((field) => {
+        if (profileData[field] && profileData[field] !== "") {
+          filledFields++;
+        }
+      });
+
+      let socialFilled = false;
+      if (profileData.socialHandles) {
+        socialFilled = Object.values(profileData.socialHandles).some(
+          (value) => value && value !== ""
+        );
+      }
+      if (socialFilled) filledFields++;
+
+      return Math.round((filledFields / totalFields) * 100);
+    };
+
+    // Upsert the profile.
+    // When creating a new profile, set profileJpRewarded to false.
+    const profile = await prisma.userBusinessProfile.upsert({
+      where: { userId },
+      create: { userId, ...updateData, profileJpRewarded: false },
+      update: updateData,
+    });
+
+    const newCompletion = calculateCompletion(profile);
+    console.log("New Profile Completion:", newCompletion);
+
+    let oldCompletion = 0;
+    if (oldProfile) {
+      oldCompletion = calculateCompletion(oldProfile);
+      console.log("Old Profile Completion:", oldCompletion);
+    }
+
+    // Only award JP if:
+    // - New completion is at least 70%
+    // - Old completion was below 70%
+    // - And the profile hasn't been rewarded yet (profileJpRewarded is false)
+    if (
+      newCompletion >= 70 &&
+      oldCompletion < 70 &&
+      !(oldProfile && oldProfile.profileJpRewarded)
+    ) {
       await prisma.user.update({
         where: { id: userId },
-        data: { jpEarned: { increment: 50 } },
+        data: { jpEarned: { increment: 70 } }, // Adjust JP increment as needed
+      });
+
+      // Mark the profile as rewarded
+      await prisma.userBusinessProfile.update({
+        where: { userId },
+        data: { profileJpRewarded: true },
       });
     }
 
-    return res.status(200).json({
-      message: "Profile updated successfully",
-      profile,
-    });
+    return NextResponse.json(
+      { message: "Profile updated successfully", profile },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("Error updating profile:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error(
+      "Update error:",
+      error instanceof Error ? error.message : error
+    );
+    return NextResponse.json(
+      { error: "Failed to update profile" },
+      { status: 500 }
+    );
   }
 }

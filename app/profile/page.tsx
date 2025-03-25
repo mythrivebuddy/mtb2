@@ -4,6 +4,18 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import axios from "axios";
+import Layout from "@/components/layout/Layout";
+import { Loader2 } from "lucide-react";
+import CompletionBar from "@/components/userBusinessProfile/CompletionBar";
+import ProfileDisplay from "@/components/userBusinessProfile/ProfileDisplay";
+import ProfileEdit from "@/components/userBusinessProfile/ProfileEdit";
+
+interface SocialHandles {
+  linkedin?: string;
+  instagram?: string;
+  twitter?: string;
+  github?: string;
+}
 
 interface BusinessProfile {
   name: string;
@@ -15,266 +27,197 @@ interface BusinessProfile {
   email?: string;
   phone?: string;
   website?: string;
-  socialHandles?: string; // Expecting JSON string format
-  isSpotlight?: boolean;
-  spotlightExpiry?: string;
+  socialHandles?: SocialHandles;
+  featuredWorkTitle?: string;
+  featuredWorkDesc?: string;
+  featuredWorkImage?: string;
+  priorityContactLink?: string;
+  completionPercentage?: number;
 }
 
-const ProfilePage = () => {
+const page = () => {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState<BusinessProfile | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<BusinessProfile>();
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  } = useForm<BusinessProfile>({
+    defaultValues: {
+      name: "",
+      businessInfo: "",
+      missionStatement: "",
+      goals: "",
+      keyOfferings: "",
+      achievements: "",
+      email: "",
+      phone: "",
+      website: "",
+      socialHandles: { linkedin: "", instagram: "", twitter: "", github: "" },
+      featuredWorkTitle: "",
+      featuredWorkDesc: "",
+      featuredWorkImage: "",
+      priorityContactLink: "",
+    },
+  });
 
-  // Fetch profile data once the user is available
+  const commonClassName =
+    "w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80";
+
   useEffect(() => {
     if (userId) {
       setLoading(true);
       axios
-        .get(`/api/profile//${userId}`)
+        .get(`/api/user/profile/getProfile?userId=${userId}`)
         .then((response) => {
-          // Populate form with fetched data if available
-          reset(response.data.profile);
+          if (response.data.profile) {
+            const profile = response.data.profile;
+            setProfileData(profile);
+            setImagePreview(profile.featuredWorkImage);
+            reset({
+              ...profile,
+              socialHandles: profile.socialHandles || {
+                linkedin: "",
+                instagram: "",
+                twitter: "",
+                github: "",
+              },
+            });
+          }
           setLoading(false);
         })
         .catch((error) => {
           console.error("Error fetching profile:", error);
+          setMessage("Failed to load profile. Please try again.");
           setLoading(false);
         });
     }
   }, [userId, reset]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const onSubmit: SubmitHandler<BusinessProfile> = async (data) => {
     try {
       setLoading(true);
-      await axios.put(`/api/user-business-profile/${userId}`, data);
+      const formData = new FormData();
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === "socialHandles") {
+          formData.append(key, JSON.stringify(value || {}));
+        } else if (key === "featuredWorkImage") {
+          // Skip file field; handled separately
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      if (selectedFile) {
+        formData.append("featuredWorkImage", selectedFile, selectedFile.name);
+      }
+
+      await axios.put(
+        `/api/user/profile/updateProfile?userId=${userId}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      const fetchResponse = await axios.get(
+        `/api/user/profile/getProfile?userId=${userId}`
+      );
+      if (fetchResponse.data.profile) {
+        setProfileData(fetchResponse.data.profile);
+        reset({
+          ...fetchResponse.data.profile,
+          socialHandles: fetchResponse.data.profile.socialHandles || {
+            linkedin: "",
+            instagram: "",
+            twitter: "",
+            github: "",
+          },
+        });
+      }
       setMessage("Profile updated successfully!");
-      setLoading(false);
+      setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      setMessage("Error updating profile");
+      setMessage("Error updating profile. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
 
   if (status === "loading") {
-    return <div className="p-6">Loading session...</div>;
+    return (
+      <div className="p-6 flex justify-center items-center">
+        <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
+      </div>
+    );
   }
 
   if (!session) {
-    return <div className="p-6">Please log in to view your profile.</div>;
+    return (
+      <div className="p-6 text-center">
+        <Layout>Please log in to view your profile.</Layout>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Business Profile</h1>
-      {loading && <p className="mb-4 text-blue-600">Loading...</p>}
-      {message && <p className="mb-4 text-green-600">{message}</p>}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Basic Information */}
-        <section className="p-6 border rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Basic Information</h2>
-          <div className="mb-4">
-            <label className="block font-medium mb-1" htmlFor="name">
-              Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              {...register("name", { required: "Name is required" })}
-              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-            {errors.name && (
-              <p className="text-red-500 mt-1">{errors.name.message}</p>
-            )}
+    <Layout>
+      <div className="flex-1 p-8">
+        <h1 className="text Har font-bold mb-6 text-gray-800">
+          Business Profile
+        </h1>
+        <CompletionBar percentage={profileData?.completionPercentage ?? 0} />
+        {loading && (
+          <div className="mb-4 flex justify-center items-center">
+            <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
           </div>
-        </section>
-
-        {/* Business Information */}
-        <section className="p-6 border rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Business Information</h2>
-          <div className="mb-4">
-            <label className="block font-medium mb-1" htmlFor="businessInfo">
-              Business Information
-            </label>
-            <textarea
-              id="businessInfo"
-              {...register("businessInfo")}
-              placeholder="Describe your business..."
-              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              rows={3}
-            />
-          </div>
-        </section>
-
-        {/* Mission & Goals */}
-        <section className="p-6 border rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Mission & Goals</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                className="block font-medium mb-1"
-                htmlFor="missionStatement"
-              >
-                Mission Statement
-              </label>
-              <textarea
-                id="missionStatement"
-                {...register("missionStatement")}
-                placeholder="Your mission statement..."
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1" htmlFor="goals">
-                Goals
-              </label>
-              <textarea
-                id="goals"
-                {...register("goals")}
-                placeholder="Your goals..."
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={3}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Achievements & Offerings */}
-        <section className="p-6 border rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">
-            Achievements & Offerings
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-medium mb-1" htmlFor="keyOfferings">
-                Key Offerings
-              </label>
-              <textarea
-                id="keyOfferings"
-                {...register("keyOfferings")}
-                placeholder="What do you offer?"
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1" htmlFor="achievements">
-                Achievements
-              </label>
-              <textarea
-                id="achievements"
-                {...register("achievements")}
-                placeholder="Your achievements..."
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={3}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Details */}
-        <section className="p-6 border rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Contact Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block font-medium mb-1" htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                {...register("email")}
-                placeholder="your@example.com"
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1" htmlFor="phone">
-                Phone
-              </label>
-              <input
-                id="phone"
-                type="text"
-                {...register("phone")}
-                placeholder="+1234567890"
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1" htmlFor="website">
-                Website
-              </label>
-              <input
-                id="website"
-                type="url"
-                {...register("website")}
-                placeholder="https://yourwebsite.com"
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-          </div>
-          <div className="mt-4">
-            <label className="block font-medium mb-1" htmlFor="socialHandles">
-              Social Handles (JSON format)
-            </label>
-            <textarea
-              id="socialHandles"
-              {...register("socialHandles")}
-              placeholder='e.g., {"instagram": "yourhandle", "linkedin": "yourhandle"}'
-              className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              rows={2}
-            />
-          </div>
-        </section>
-
-        {/* Spotlight Information */}
-        <section className="p-6 border rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">Spotlight Information</h2>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register("isSpotlight")}
-                className="form-checkbox h-5 w-5 text-blue-600"
-              />
-              <span className="font-medium">Feature in Spotlight</span>
-            </label>
-            <div className="w-full md:w-auto">
-              <label
-                className="block font-medium mb-1"
-                htmlFor="spotlightExpiry"
-              >
-                Spotlight Expiry
-              </label>
-              <input
-                id="spotlightExpiry"
-                type="datetime-local"
-                {...register("spotlightExpiry")}
-                className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-          </div>
-        </section>
-
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="px-8 py-3 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        )}
+        {message && (
+          <p
+            className={`mb-4 ${
+              message.startsWith("Error") ? "text-red-600" : "text-green-600"
+            }`}
           >
-            Save Profile
-          </button>
-        </div>
-      </form>
-    </div>
+            {message}
+          </p>
+        )}
+        {!isEditing ? (
+          <ProfileDisplay
+            profileData={profileData}
+            onEditClick={() => setIsEditing(true)}
+          />
+        ) : (
+          <ProfileEdit
+            onCancel={() => setIsEditing(false)}
+            onSubmit={handleSubmit(onSubmit)}
+            register={register}
+            errors={errors}
+            commonClassName={commonClassName}
+            handleFileChange={handleFileChange}
+            imagePreview={imagePreview}
+          />
+        )}
+      </div>
+    </Layout>
   );
 };
 
-export default ProfilePage;
+export default page;
