@@ -119,6 +119,7 @@ model UserBusinessProfile {
   featuredWorkImage   String?    // Image URL for featured work
   priorityContactLink String?    // Primary contact method when in spotlight
   profileJpRewarded   Boolean          @default(false)
+  isProfileComplete   Boolean          @default(false)
   
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt

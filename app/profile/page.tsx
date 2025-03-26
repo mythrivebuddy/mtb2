@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import CompletionBar from "@/components/userBusinessProfile/CompletionBar";
 import ProfileDisplay from "@/components/userBusinessProfile/ProfileDisplay";
 import ProfileEdit from "@/components/userBusinessProfile/ProfileEdit";
+import { toast } from "sonner";
 
 interface SocialHandles {
   linkedin?: string;
@@ -41,7 +42,6 @@ const page = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -96,7 +96,8 @@ const page = () => {
         })
         .catch((error) => {
           console.error("Error fetching profile:", error);
-          setMessage("Failed to load profile. Please try again.");
+          // setMessage("Failed to load profile. Please try again.");
+          toast.error("Failed to load profile. Please try again.");
           setLoading(false);
         });
     }
@@ -152,11 +153,13 @@ const page = () => {
           },
         });
       }
-      setMessage("Profile updated successfully!");
+      // setMessage("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      setMessage("Error updating profile. Please try again.");
+      // setMessage("Error updating profile. Please try again.");
+      toast.error("Error updating profile. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -189,15 +192,6 @@ const page = () => {
           <div className="mb-4 flex justify-center items-center">
             <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
           </div>
-        )}
-        {message && (
-          <p
-            className={`mb-4 ${
-              message.startsWith("Error") ? "text-red-600" : "text-green-600"
-            }`}
-          >
-            {message}
-          </p>
         )}
         {!isEditing ? (
           <ProfileDisplay

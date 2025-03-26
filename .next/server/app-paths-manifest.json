@@ -1,11 +1,9 @@
 {
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/api/admin/dashboard/getRecentSignups/route": "app/api/admin/dashboard/getRecentSignups/route.js",
-  "/api/admin/dashboard/getUsers/route": "app/api/admin/dashboard/getUsers/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/admin/dashboard/page": "app/admin/dashboard/page.js",
+  "/api/user/profile/updateProfile/route": "app/api/user/profile/updateProfile/route.js",
+  "/api/user/profile/getProfile/route": "app/api/user/profile/getProfile/route.js",
+  "/contact/page": "app/contact/page.js",
+  "/profile/page": "app/profile/page.js",
   "/signin/page": "app/signin/page.js",
-  "/page": "app/page.js",
-  "/blog/page": "app/blog/page.js"
+  "/dashboard/page": "app/dashboard/page.js"
 }
