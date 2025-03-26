@@ -1,5 +1,5 @@
 "use client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -7,10 +7,25 @@ import { Button } from "@/components/ui/button";
 import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
+
+// TODO remoce default useQuery retry to none of below 3 or 2
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+
+  const { data: spotlight, isLoading } = useQuery({
+    queryKey: ["spotlight", session?.user?.id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/user/spotlight`);
+      return response.data;
+    },
+    retry: false,
+    enabled: !!session?.user?.id,
+  });
+
+  console.log(spotlight);
+
   const createSpotlight = async () => {
-    const response = await axios.post("/api/user/spotLight", {
+    const response = await axios.post("/api/user/spotlight", {
       userId: session?.user?.id,
     });
     return response.data;
@@ -23,7 +38,6 @@ export default function DashboardPage() {
       toast.success("Spotlight application submitted successfully");
     },
     onError: (error) => {
-      console.log(error);
       toast.error(getAxiosErrorMessage(error));
     },
   });
@@ -43,6 +57,23 @@ export default function DashboardPage() {
           Apply for Spotlight
         </Button>
       </ConfirmAction>
+
+      {isLoading ? (
+        <p className="mt-4">Loading spotlight status...</p>
+      ) : (
+        <>
+          <div className="mt-4 p-4  rounded-lg border-black border">
+            <h2 className="text-xl font-semibold">Spotlight Status</h2>
+            <p className="mt-2">
+              Status:{" "}
+              {spotlight?.isActive ? "ACTIVE" : spotlight?.status ?? "N/A"}
+            </p>
+            <p className="mt-1">
+              Applied on: {new Date(spotlight?.appliedAt).toLocaleDateString()}
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }

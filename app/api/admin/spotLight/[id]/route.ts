@@ -39,7 +39,7 @@ export async function PUT(
     // Check if current status matches requested status
     if (spotlight.status === status) {
       return NextResponse.json(
-        { error: `Spotlight application is already ${status.toLowerCase()}` },
+        { error: `Spotlight application status is already ${status.toLowerCase()}` },
         { status: 400 }
       );
     }

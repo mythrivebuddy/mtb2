@@ -46,6 +46,7 @@ export default withAuth(
   function middleware(req) {
     console.log("middleware", req.nextauth.token);
     const token = req.nextauth.token;
+    console.log("token", token);
     const isAdmin = token?.role === "ADMIN";
     const path = req.nextUrl.pathname;
 
@@ -67,5 +68,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard", "/leaderboard", "/blog", "/admin:path*"], // Protect specific pages
+  matcher: ["/dashboard", "/leaderboard", "/blog", "/admin/:path*"], // Protect specific pages
 };

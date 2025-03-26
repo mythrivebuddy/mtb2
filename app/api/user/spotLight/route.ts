@@ -5,12 +5,16 @@ import { NextRequest, NextResponse } from "next/server";
 const prisma = new PrismaClient();
 
 //! add check for profile completion
+
+// * route to apply for spotlight
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await request.json();
-
-    // Check user role
-    await checkRole("USER", "You are not authorized for this action");
+    // Check user role and get session
+    const session = await checkRole(
+      "USER",
+      "You are not authorized for this action"
+    );
+    const userId = session.user.id;
 
     // Get spotlight activity data
     const spotlightActivity = await prisma.activity.findUnique({
@@ -94,6 +98,52 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.log(error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+}
+
+// * route to get user spotlight application status
+export async function GET(request: NextRequest) {
+  try {
+    // Check user role and get session
+    const session = await checkRole(
+      "USER",
+      "You are not authorized for this action"
+    );
+    const userId = session.user.id;
+    console.log(userId) //?dev
+
+    const spotlightApplication = await prisma.spotlight.findFirst({
+      where: { userId: userId },
+      select: {
+        id: true,
+        status: true,
+        isActive: true,
+        appliedAt: true,
+        expiresAt: true,
+        user: {
+          omit: {
+            password: true
+          }
+        },
+      },
+    });
+
+    console.log(spotlightApplication);
+
+    if (!spotlightApplication) {
+      return NextResponse.json(
+        { message: "No spotlight application found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(spotlightApplication, { status: 200 });
+  } catch (error) {
+    console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }

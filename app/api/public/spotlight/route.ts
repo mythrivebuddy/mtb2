@@ -18,17 +18,9 @@ export async function GET() {
         id: true,
         expiresAt: true,
         user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            // bio: true,
-            // socialLinks: true,
-            // skills: true,
-            email: true,
-            jpEarned: true,
-            jpSpent: true,
-          },
+         omit:{
+          password: true
+         }
         },
       },
     });
