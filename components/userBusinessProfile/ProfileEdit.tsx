@@ -1,36 +1,13 @@
 import React from "react";
 import Image from "next/image";
-import { FormEvent } from "react";
-
-interface SocialHandles {
-  linkedin?: string;
-  instagram?: string;
-  twitter?: string;
-  github?: string;
-}
-
-interface BusinessProfile {
-  name: string;
-  businessInfo?: string;
-  missionStatement?: string;
-  goals?: string;
-  keyOfferings?: string;
-  achievements?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  socialHandles?: SocialHandles;
-  featuredWorkTitle?: string;
-  featuredWorkDesc?: string;
-  featuredWorkImage?: string;
-  priorityContactLink?: string;
-}
+import type { FieldErrors, UseFormRegister } from "react-hook-form";
+import { BusinessProfile } from "@/app/profile/page";
 
 interface ProfileEditProps {
   onCancel: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  register: any;
-  errors: any;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  register: UseFormRegister<BusinessProfile>;
+  errors: FieldErrors<BusinessProfile>;
   commonClassName: string;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   imagePreview: string | null;
@@ -95,6 +72,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
           />
         </div>
       </div>
+      {/* Rest of the component remains the same... */}
       <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">Mission & Goals</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

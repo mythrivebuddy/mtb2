@@ -7,7 +7,6 @@ interface BlogPost {
   title: string;
   excerpt: string;
   image: string;
-  content: string;
   date: string;
   readTime: string;
 }
@@ -16,7 +15,6 @@ export default function BlogCard({
   title,
   excerpt,
   image,
-  content,
   date,
   readTime,
 }: BlogPost) {

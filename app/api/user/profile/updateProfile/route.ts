@@ -3,17 +3,25 @@ import { prisma } from "@/lib/prisma";
 import { supabase } from "@/lib/supabase";
 import calculateProfileCompletion from "@/utils/calculateProfileCompletion";
 
-function checkSpotlightFieldsComplete(profile: any): boolean {
-  const spotlightFields = [
+interface UserSpotlightProfile {
+  featuredWorkTitle?: string | null;
+  featuredWorkDesc?: string | null;
+  featuredWorkImage?: string | null;
+  priorityContactLink?: string | null;
+}
+
+function checkSpotlightFieldsComplete(profile: UserSpotlightProfile): boolean {
+  const spotlightFields: (keyof UserSpotlightProfile)[] = [
     "featuredWorkTitle",
     "featuredWorkDesc",
     "featuredWorkImage",
     "priorityContactLink",
   ];
 
-  return spotlightFields.every(
-    (field) => profile[field] && profile[field] !== ""
-  );
+  return spotlightFields.every((field) => {
+    const value = profile[field];
+    return typeof value === "string" && value.trim() !== "";
+  });
 }
 
 function tryParseJson(jsonString: unknown) {

@@ -18,7 +18,7 @@ interface SocialHandles {
   github?: string;
 }
 
-interface BusinessProfile {
+export interface BusinessProfile {
   name: string;
   businessInfo?: string;
   missionStatement?: string;
@@ -36,7 +36,7 @@ interface BusinessProfile {
   completionPercentage?: number;
 }
 
-const page = () => {
+const Page = () => {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
   const [isEditing, setIsEditing] = useState(false);
@@ -61,7 +61,12 @@ const page = () => {
       email: "",
       phone: "",
       website: "",
-      socialHandles: { linkedin: "", instagram: "", twitter: "", github: "" },
+      socialHandles: {
+        linkedin: "",
+        instagram: "",
+        twitter: "",
+        github: "",
+      },
       featuredWorkTitle: "",
       featuredWorkDesc: "",
       featuredWorkImage: "",
@@ -96,7 +101,6 @@ const page = () => {
         })
         .catch((error) => {
           console.error("Error fetching profile:", error);
-          // setMessage("Failed to load profile. Please try again.");
           toast.error("Failed to load profile. Please try again.");
           setLoading(false);
         });
@@ -153,12 +157,10 @@ const page = () => {
           },
         });
       }
-      // setMessage("Profile updated successfully!");
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
-      // setMessage("Error updating profile. Please try again.");
       toast.error("Error updating profile. Please try again.");
     } finally {
       setLoading(false);
@@ -184,7 +186,7 @@ const page = () => {
   return (
     <Layout>
       <div className="flex-1 p-8">
-        <h1 className="text Har font-bold mb-6 text-gray-800">
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">
           Business Profile
         </h1>
         <CompletionBar percentage={profileData?.completionPercentage ?? 0} />
@@ -214,4 +216,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;
