@@ -1,4 +1,4 @@
-// File: E:\Deepak aashrmiyas work place\DeepakMERNIntern\mtb\app\layout.tsx
+// File: C:\Users\Sony\Desktop\VKAPS INTERN\Nextjs\MYTHRIVEBUDDY\mtb\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
