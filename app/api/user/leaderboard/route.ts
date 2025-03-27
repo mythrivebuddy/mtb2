@@ -24,21 +24,24 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    // Get total user count
+    const totalUsers = await prisma.user.count();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalUsers / limit);
+
     const users = await prisma.user.findMany({
       orderBy: {
         jpEarned: "desc",
       },
-      // include: {
-      // },
       omit: {
         password: true,
       },
       take: limit,
       skip: skip,
-      
     });
     console.log(users); //?dev
-    if (!users) {
+    if (!users || users.length === 0) {
       return NextResponse.json({ message: "No users found" }, { status: 404 });
     }
     const updatedUsers = users.map((user) => {
@@ -50,7 +53,14 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { users: updatedUsers, message: "success", page, limit }, // Fixed typo from "sucess"
+      {
+        users: updatedUsers,
+        message: "success",
+        page,
+        limit,
+        totalUsers,
+        totalPages,
+      },
       { status: 200 }
     );
   } catch (error) {
