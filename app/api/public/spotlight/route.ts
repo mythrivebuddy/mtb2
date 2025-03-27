@@ -7,8 +7,8 @@ export async function GET() {
   try {
     const activeSpotlight = await prisma.spotlight.findFirst({
       where: {
-        isActive: true,
-        status: SpotlightStatus.APPROVED,
+        // isActive: true,
+        status: SpotlightStatus.ACTIVE,
         // ? cron jobs will take care of this
         // expiresAt: {
         //   gt: new Date(), // Not expired

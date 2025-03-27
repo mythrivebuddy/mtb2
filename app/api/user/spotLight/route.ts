@@ -1,5 +1,5 @@
 import { checkRole } from "@/lib/utils/auth";
-import { ActivityType, PrismaClient } from "@prisma/client";
+import { ActivityType, PrismaClient, SpotlightStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user has an active spotlight, in review, or already applied
     if (user.spotlight) {
-      if (user.spotlight.isActive) {
+      if (user.spotlight.status === SpotlightStatus.ACTIVE) {
         return NextResponse.json(
           { error: "You already have an active spotlight" },
           { status: 400 }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: userId,
           status: "APPLIED",
-          isActive: false,
+          // isActive: false,
         },
       }),
     ]);
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         status: true,
-        isActive: true,
+        // isActive: true,
         appliedAt: true,
         expiresAt: true,
         user: {

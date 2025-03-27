@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
-
+import { SpotlightStatus } from "@prisma/client";
 
 // TODO remoce default useQuery retry to none of below 3 or 2
 export default function DashboardPage() {
@@ -59,20 +59,24 @@ export default function DashboardPage() {
       </ConfirmAction>
 
       {isLoading ? (
+        // TODO: add shimmer/skeleton
         <p className="mt-4">Loading spotlight status...</p>
       ) : (
-        <>
-          <div className="mt-4 p-4  rounded-lg border-black border">
-            <h2 className="text-xl font-semibold">Spotlight Status</h2>
-            <p className="mt-2">
-              Status:{" "}
-              {spotlight?.isActive ? "ACTIVE" : spotlight?.status ?? "N/A"}
-            </p>
-            <p className="mt-1">
-              Applied on: {new Date(spotlight?.appliedAt).toLocaleDateString()}
-            </p>
-          </div>
-        </>
+        spotlight && (
+          <>
+            <div className="mt-4 p-4  rounded-lg border-black border">
+              <h2 className="text-xl font-semibold">Spotlight Status</h2>
+              <p className="mt-2">
+                Status:{" "}
+                {spotlight?.status === SpotlightStatus.ACTIVE ? "ACTIVE" : spotlight?.status ?? "N/A"} //TODO: simplify
+              </p>
+              <p className="mt-1">
+                Applied on:{" "}
+                {new Date(spotlight?.appliedAt).toLocaleDateString()}
+              </p>
+            </div>
+          </>
+        )
       )}
     </div>
   );

@@ -4,27 +4,34 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-// route to update spotlight status by admin APPLIED | IN_REVIEW | APPROVED | DISAPPROVED
+// Define valid status transitions
+const VALID_STATUS_TRANSITIONS: Record<SpotlightStatus, SpotlightStatus[]> = {
+  APPLIED: ["IN_REVIEW"],
+  IN_REVIEW: ["APPROVED", "DISAPPROVED"],
+  APPROVED: ["ACTIVE"],
+  DISAPPROVED: [], // Terminal state
+  ACTIVE: [], // Can only be changed to EXPIRED by cron
+  EXPIRED: [], // Terminal state
+};
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check user role
     await checkRole("ADMIN", "You are not authorized for this action");
 
-    const { status } = await request.json();
+    const { status: newStatus } = await request.json();
     const { id } = await params;
 
-    // Validate status
-    if (!Object.values(SpotlightStatus).includes(status)) {
+    // Validate status exists
+    if (!Object.values(SpotlightStatus).includes(newStatus)) {
       return NextResponse.json(
         { error: "Invalid spotlight status" },
         { status: 400 }
       );
     }
 
-    // Fetch spotlight application
     const spotlight = await prisma.spotlight.findUnique({
       where: { id },
     });
@@ -37,9 +44,22 @@ export async function PUT(
     }
 
     // Check if current status matches requested status
-    if (spotlight.status === status) {
+    if (spotlight.status === newStatus) {
       return NextResponse.json(
-        { error: `Spotlight application status is already ${status.toLowerCase()}` },
+        {
+          error: `Spotlight application is already ${newStatus.toLowerCase()}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate status transition
+    const allowedTransitions = VALID_STATUS_TRANSITIONS[spotlight.status];
+    if (!allowedTransitions.includes(newStatus)) {
+      return NextResponse.json(
+        {
+          error: `Cannot change status from ${spotlight.status} to ${newStatus}`,
+        },
         { status: 400 }
       );
     }
@@ -47,15 +67,15 @@ export async function PUT(
     // Update spotlight status
     await prisma.spotlight.update({
       where: { id },
-      data: { status },
+      data: { status: newStatus },
     });
 
     return NextResponse.json(
-      { message: `Spotlight status changed to ${status} successfully` },
+      { message: `Spotlight status changed to ${newStatus} successfully` },
       { status: 200 }
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }

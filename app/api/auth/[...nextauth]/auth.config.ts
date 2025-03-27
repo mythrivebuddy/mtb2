@@ -61,7 +61,7 @@ export const authConfig: AuthOptions = {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: "USER",
+            role: user.role,
             rememberMe: credentials.rememberMe === "true", // Convert checkbox value to boolean
           };
         } catch (error) {

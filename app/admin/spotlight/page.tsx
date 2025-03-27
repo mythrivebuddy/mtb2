@@ -41,6 +41,25 @@ const updateSpotlightStatus = async (id: string) => {
   return response.data;
 };
 
+const getStatusBadgeVariant = (
+  status: SpotlightStatus
+): "default" | "destructive" | "secondary" | "outline"  => {
+  switch (status) {
+    case "APPROVED":
+      return "secondary";
+    case "DISAPPROVED":
+      return "destructive";
+    case "IN_REVIEW":
+      return "outline";
+    case "ACTIVE":
+      return "default";
+    case "EXPIRED": // here it means spotlight is remove after being showed on the home
+      return "default";
+    default:
+      return "outline";
+  }
+};
+
 const DashboardPage = () => {
   const router = useRouter();
   const { data: applications, isLoading } = useQuery({
@@ -63,20 +82,6 @@ const DashboardPage = () => {
   useEffect(() => {
     console.log(applications);
   });
-  const getStatusBadgeVariant = (
-    status: SpotlightStatus
-  ): "default" | "destructive" | "secondary" | "outline" => {
-    switch (status) {
-      case "APPROVED":
-        return "default";
-      case "DISAPPROVED":
-        return "destructive";
-      case "IN_REVIEW":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
 
   const handleReview = (
     spotlightId: string,
@@ -143,10 +148,7 @@ const DashboardPage = () => {
                       mutation.isPending && mutation.variables === app.id
                     }
                   >
-                    {/* {mutation.isPending && mutation.variables === app.id */}
-                      {/* ? "Updating..." */}
-                      {/* : "view"} */}
-                      view
+                    view
                   </Button>
                 </TableCell>
               </TableRow>

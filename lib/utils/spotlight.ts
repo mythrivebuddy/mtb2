@@ -1,6 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, SpotlightStatus } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ log: ["error", "warn"] });
 
 // const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
 const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
@@ -15,7 +15,7 @@ const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
 
 export async function activateNextSpotlight() {
   const nextSpotlight = await prisma.spotlight.findFirst({
-    where: { status: "APPROVED", isActive: false },
+    where: { status: SpotlightStatus.APPROVED },
     orderBy: { appliedAt: "asc" }, // Get the oldest approved request
   });
 
@@ -24,7 +24,8 @@ export async function activateNextSpotlight() {
     await prisma.spotlight.update({
       where: { id: nextSpotlight.id },
       data: {
-        isActive: true,
+        // isActive: true,
+        status: SpotlightStatus.ACTIVE,
         expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS), // 1 day validity
       },
     });
@@ -33,26 +34,28 @@ export async function activateNextSpotlight() {
 
 export async function checkAndRotateSpotlight() {
   const activeSpotlight = await prisma.spotlight.findFirst({
-    where: { isActive: true },
+    where: { status: SpotlightStatus.ACTIVE },
   });
-  console.log("expired spolight", activeSpotlight); //?dev
+  console.log("active spolight", activeSpotlight); //?dev
 
   if (!activeSpotlight) {
     // If no active spotlight, activate one
     await activateNextSpotlight();
     return;
   }
+  console.log("is expired", activeSpotlight.expiresAt! < new Date());
 
   // Check if the active spotlight is expired
   if (activeSpotlight.expiresAt! < new Date()) {
-    await prisma.$transaction([
-      prisma.spotlight.update({
-        where: { id: activeSpotlight.id },
-        data: { isActive: false },
-      }),
-    ]);
+    console.log("condition is indeed true");
+    // await prisma.$transaction([
+    await prisma.spotlight.update({
+      where: { id: activeSpotlight.id },
+      data: { status: SpotlightStatus.EXPIRED },
+    });
+    // ]);
 
     // Activate next in queue
-    await activateNextSpotlight();
+    activateNextSpotlight();
   }
 }

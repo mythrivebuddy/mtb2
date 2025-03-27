@@ -35,6 +35,8 @@ enum SpotlightStatus {
   IN_REVIEW 
   APPROVED 
   DISAPPROVED 
+  EXPIRED
+  ACTIVE
 }
 
 model User {
@@ -92,7 +94,7 @@ model Spotlight {
   // jpUsed              Int
   appliedAt           DateTime        @default(now())
   status              SpotlightStatus @default(APPLIED)
-  isActive            Boolean         @default(false)
+  // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
   defaultDurationDays Int             @default(1) // Default duration in days, can be changed by admin
 
   @@index([expiresAt])
