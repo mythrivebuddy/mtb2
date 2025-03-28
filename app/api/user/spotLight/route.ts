@@ -74,7 +74,11 @@ export async function POST(request: NextRequest) {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
-        data: { jpSpent: { increment: jpRequired } },
+        data: {
+          jpSpent: { increment: jpRequired },
+          jpBalance: { decrement: jpRequired },
+          jpTransaction: { increment: jpRequired },
+        },
       }),
       prisma.transaction.create({
         data: {
@@ -114,7 +118,7 @@ export async function GET(request: NextRequest) {
       "You are not authorized for this action"
     );
     const userId = session.user.id;
-    console.log(userId) //?dev
+    console.log(userId); //?dev
 
     const spotlightApplication = await prisma.spotlight.findFirst({
       where: { userId: userId },
@@ -126,8 +130,8 @@ export async function GET(request: NextRequest) {
         expiresAt: true,
         user: {
           omit: {
-            password: true
-          }
+            password: true,
+          },
         },
       },
     });

@@ -98,7 +98,7 @@ export const authConfig: AuthOptions = {
 
         if (!dbUser) {
           // if user does not exist, create a new user and let signin
-          const role = user.email === process.env.ADMIN_MAIL ? "ADMIN" : "USER";
+          const role = user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
           console.log(role);
 
           const createdUser = await prisma.user.create({

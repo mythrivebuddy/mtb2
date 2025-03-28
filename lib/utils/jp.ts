@@ -32,6 +32,8 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
       where: { id: user.id },
       data: {
         jpEarned: { increment: jpToAdd },
+        jpBalance: { increment: jpToAdd },
+        jpTransaction: { increment: jpToAdd },
         transaction: {
           create: {
             //!may need user ID here -- may be

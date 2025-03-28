@@ -14,21 +14,25 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { columns, LeaderboardUser } from "@/components/leaderboard/columnDef";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DEFAULT_LEADERBOARD_PAGE,
   DEFAULT_LEADERBOARD_PAGE_LIMIT,
 } from "@/lib/constant";
 
-type jpType = "jpEarned" | "jpSpent" | "jpBalance" | "jpTransaction";
+type SortKey = "jpEarned" | "jpSpent" | "jpBalance" | "jpTransaction";
 
 const LeaderboardPage = () => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page")) || DEFAULT_LEADERBOARD_PAGE;
   const limit =
-    Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;  const fetchLeaderboardData = async () => {
+    Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;
+  const orderBy = searchParams.get("orderBy")as SortKey || "jpEarned";
+  const router = useRouter();
+
+  const fetchLeaderboardData = async () => {
     const { data } = await axios.get(
-      `/api/user/leaderboard?limit=${limit}&page=${page}`
+      `/api/user/leaderboard?limit=${limit}&page=${page}&orderBy=${orderBy}`
     );
     return data;
   };
@@ -40,15 +44,15 @@ const LeaderboardPage = () => {
   const { users } = data || [];
   const totalPages = data?.totalPages || 1;
 
-  const [sortBy, setSortBy] = useState<jpType>("jpEarned");
+  // const [sortBy, setSortBy] = useState<SortKey>("jpEarned");
 
   // Memoize sortedUsers to ensure proper re-renders
   const sortedUsers = useMemo(() => {
     if (!users) return [];
     return [...users].sort(
-      (a: LeaderboardUser, b: LeaderboardUser) => b[sortBy] - a[sortBy]
+      (a: LeaderboardUser, b: LeaderboardUser) => b[orderBy] - a[orderBy]
     );
-  }, [sortBy, users]);
+  }, [users, orderBy]);
   console.log("sortedUsers", sortedUsers);
   console.log("sortedUsers[0]", sortedUsers?.[0]);
 
@@ -73,9 +77,15 @@ const LeaderboardPage = () => {
     <Card className="p-4">
       <CardHeader className="flex justify-between items-center">
         <CardTitle>Leaderboard</CardTitle>
-        <Select onValueChange={(value) => setSortBy(value as jpType)}>
+        <Select
+          onValueChange={(value) =>
+            router.push(
+              `/leaderboard?orderBy=${value}&page=${page}&limit=${limit}`
+            )
+          }
+        >
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Sort by JP Type" defaultValue={sortBy} />
+            <SelectValue placeholder="Sort by JP Type" defaultValue={orderBy} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="jpEarned">JP Earned</SelectItem>

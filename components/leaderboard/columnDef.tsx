@@ -8,6 +8,7 @@ export interface LeaderboardUser {
   jpSpent: number;
   jpTransaction: number;
   jpBalance: number;
+  
 }
 
 export const columns: ColumnDef<LeaderboardUser>[] = [

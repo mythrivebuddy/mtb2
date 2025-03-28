@@ -10,8 +10,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "postinstall": "prisma generate",
+    "migrate": "npx prisma migrate deploy",
     "seed": "ts-node prisma/seed/seed-plan.ts && ts-node prisma/seed/seed-activity.ts",
-    "postbuild": "npm run seed"
+    "postbuild": "npm run migrate && npm run seed"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.1.0",
