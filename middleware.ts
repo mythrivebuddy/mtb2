@@ -20,7 +20,7 @@
 //   }
 
 //   // Redirect authenticated users from auth pages
-//   if (request.nextUrl.pathname.startsWith('/signin') || 
+//   if (request.nextUrl.pathname.startsWith('/signin') ||
 //       request.nextUrl.pathname.startsWith('/signup')) {
 //     if (token) {
 //       try {
@@ -37,7 +37,7 @@
 
 // export const config = {
 //   matcher: ['/dashboard/:path*', '/signin', '/signup']
-// } 
+// }
 
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
@@ -68,5 +68,5 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard", "/leaderboard", "/blog", "/admin/:path*"], // Protect specific pages
+  matcher: ["/dashboard", "/leaderboard", "/admin:path*"], // Protect specific pages
 };

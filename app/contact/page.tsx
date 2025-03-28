@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import Navbar from "@/components/common/Navbar";
 import ContactForm from "@/components/contact/ContactForm";
 import Layout from "@/components/layout/Layout";
 

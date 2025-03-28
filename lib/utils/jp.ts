@@ -24,9 +24,13 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
     const activityData = await prisma.activity.findUnique({
       where: { activity: activity },
     });
+     if (!activityData) {
+       throw new Error(`Activity ${activity} not found`);
+     }
+
     const isActive = isPlanActive(user);
     const multiplier = isActive ? user?.plan?.jpMultiplier || 1 : 1;
-    const jpToAdd = activityData?.jpAmount! * multiplier;
+    const jpToAdd = activityData.jpAmount! * multiplier;
 
     await prisma.user.update({
       where: { id: user.id },
@@ -37,7 +41,7 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
         transaction: {
           create: {
             //!may need user ID here -- may be
-            activityId: activityData?.id!,
+            activityId: activityData.id!,
           },
         },
       },
