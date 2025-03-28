@@ -1,4 +1,4 @@
-export const revalidate = 600; // 10 minutes
+// export const revalidate = 600; // 10 minutes
 
 import { PrismaClient } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";

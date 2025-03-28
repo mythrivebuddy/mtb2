@@ -1,8 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { DataTable } from "@/components/leaderboard/data-table";
 import {
   Select,
@@ -22,12 +23,12 @@ import {
 
 type SortKey = "jpEarned" | "jpSpent" | "jpBalance" | "jpTransaction";
 
-const LeaderboardPage = () => {
+const LeaderboardContent = () => {
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page")) || DEFAULT_LEADERBOARD_PAGE;
   const limit =
     Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;
-  const orderBy = searchParams.get("orderBy")as SortKey || "jpEarned";
+  const orderBy = (searchParams.get("orderBy") as SortKey) || "jpEarned";
   const router = useRouter();
 
   const fetchLeaderboardData = async () => {
@@ -103,6 +104,29 @@ const LeaderboardPage = () => {
         />
       </CardContent>
     </Card>
+  );
+};
+
+const LeaderboardPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <Card className="p-4">
+          <CardHeader>
+            <CardTitle>Leaderboard</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="w-full h-16" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      }
+    >
+      <LeaderboardContent />
+    </Suspense>
   );
 };
 

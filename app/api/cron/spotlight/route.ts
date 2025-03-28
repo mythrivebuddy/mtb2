@@ -1,7 +1,7 @@
 import { checkAndRotateSpotlight } from "@/lib/utils/spotlight";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Verify cron secret to ensure only authorized calls are made
     // * vercel automcatically add this to Auth header when it invokes the cron job

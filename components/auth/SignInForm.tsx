@@ -41,7 +41,7 @@ export default function SignInForm() {
         toast.error(error);
       }, 100);
     }
-  }, [error]);
+  }, [error,router]);
 
   const onSubmit = async (data: SigninFormType) => {
     console.log("siginin form data", data);

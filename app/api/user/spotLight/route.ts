@@ -1,13 +1,13 @@
 import { checkRole } from "@/lib/utils/auth";
 import { ActivityType, PrismaClient, SpotlightStatus } from "@prisma/client";
-import { NextRequest, NextResponse } from "next/server";
+import {  NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
 //! add check for profile completion
 
 // * route to apply for spotlight
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Check user role and get session
     const session = await checkRole(
@@ -33,11 +33,22 @@ export async function POST(request: NextRequest) {
     // Fetch user details
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { spotlight: true },
+      include: { spotlight: true, userBusinessProfile: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if user's business profile is complete
+    const businessProfile = user.userBusinessProfile[0];
+    if (!businessProfile || !businessProfile.isProfileComplete) {
+      return NextResponse.json(
+        {
+          error: "Complete your business profile before applying for spotlight",
+        },
+        { status: 400 }
+      );
     }
 
     // Check if user has an active spotlight, in review, or already applied
@@ -66,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has enough JP
-    if (user.jpEarned < jpRequired) {
+    if (user.jpBalance < jpRequired) {
       return NextResponse.json({ error: "Insufficient JP" }, { status: 400 });
     }
 
@@ -110,7 +121,7 @@ export async function POST(request: NextRequest) {
 }
 
 // * route to get user spotlight application status
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check user role and get session
     const session = await checkRole(

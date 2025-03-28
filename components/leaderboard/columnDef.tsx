@@ -15,7 +15,7 @@ export const columns: ColumnDef<LeaderboardUser>[] = [
   {
     accessorKey: "rank",
     header: "Rank",
-    cell: ({ row }: any) => row.index + 1,
+    cell: ({ row }) => row.index + 1,
   },
   {
     accessorKey: "name",

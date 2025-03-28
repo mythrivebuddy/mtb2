@@ -27,7 +27,7 @@ const SpotlightDetailsPage = () => {
       toast.success("Status updated successfully");
       router.push("/admin/spotlight");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.log(error);
       toast.error(getAxiosErrorMessage(error, "Failed to update status"));
     },
