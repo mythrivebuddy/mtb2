@@ -1,346 +1,80 @@
-// "use client";
-
-// import axios from "axios";
-// import React, { useEffect, useRef, useState } from "react";
-// import BlogCard from "./BlogCard";
-// import { ChevronLeft, ChevronRight } from "lucide-react";
-// import Skeleton from "../Skeleton";
-
-// interface BlogPost {
-//   id: number;
-//   title: string;
-//   excerpt: string;
-//   image: string;
-//   content: string;
-//   date: string;
-//   readTime: string;
-// }
-
-// const BlogHero = () => {
-//   // State for blogs, loading, pagination, category filter, and fetched categories
-//   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-//   const [loading, setLoading] = useState<boolean>(true);
-//   const [currentPage, setCurrentPage] = useState<number>(1);
-//   const [postsPerPage] = useState<number>(6);
-//   const [totalPages, setTotalPages] = useState<number>(1);
-//   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-//   const [fetchedCategories, setFetchedCategories] = useState<string[]>([]);
-
-//   // Reference for the carousel scroll container
-//   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-//   // Fetch categories from the backend
-//   useEffect(() => {
-//     async function fetchCategories() {
-//       try {
-//         const response = await axios.get("/api/blogs/getCategories");
-//         // Expecting response.data.categories to be an array of strings.
-//         setFetchedCategories(response.data.categories);
-//       } catch (error) {
-//         console.error("Error fetching categories:", error);
-//       }
-//     }
-//     fetchCategories();
-//   }, []);
-
-//   // Combine "All" with fetched categories
-//   const categories = ["All", ...fetchedCategories];
-
-//   // Function to fetch blogs with optional category filtering
-//   const fetchBlogs = async (page: number, category?: string) => {
-//     setLoading(true);
-//     try {
-//       const categoryQuery = category
-//         ? `&category=${encodeURIComponent(category)}`
-//         : "";
-//       const response = await axios.get(
-//         `/api/blogs/getBlogs?page=${page}&limit=${postsPerPage}${categoryQuery}`
-//       );
-//       if (page === 1) {
-//         setBlogPosts(response.data.blogs);
-//       } else {
-//         setBlogPosts((prev) => [...prev, ...response.data.blogs]);
-//       }
-//       const totalCount = response.data.totalCount || response.data.blogs.length;
-//       setTotalPages(Math.ceil(totalCount / postsPerPage));
-//     } catch (error) {
-//       console.error("Error fetching blogs:", error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // Fetch blogs when currentPage or selectedCategory changes
-//   useEffect(() => {
-//     // When category changes, reset currentPage to 1 and clear the blogPosts list.
-//     fetchBlogs(
-//       currentPage,
-//       selectedCategory === "All" ? undefined : selectedCategory
-//     );
-//   }, [currentPage, selectedCategory]);
-
-//   // Handle category change from the filter buttons
-//   const handleCategoryChange = (category: string) => {
-//     setSelectedCategory(category);
-//     setCurrentPage(1);
-//     setBlogPosts([]);
-//   };
-
-//   // Scroll container left/right by a set amount (for carousel arrows)
-//   const handleScrollLeft = () => {
-//     if (scrollContainerRef.current) {
-//       scrollContainerRef.current.scrollLeft -= 300;
-//     }
-//   };
-
-//   const handleScrollRight = () => {
-//     if (scrollContainerRef.current) {
-//       scrollContainerRef.current.scrollLeft += 300;
-//     }
-//   };
-
-//   // Infinite scroll auto-loading: auto-load next page when near the bottom
-//   useEffect(() => {
-//     const handleScroll = () => {
-//       if (loading) return;
-//       if (
-//         window.innerHeight + window.scrollY >=
-//         document.body.offsetHeight - 500
-//       ) {
-//         if (currentPage < totalPages && currentPage < 2) {
-//           setCurrentPage((prev) => prev + 1);
-//         }
-//       }
-//     };
-//     window.addEventListener("scroll", handleScroll);
-//     return () => window.removeEventListener("scroll", handleScroll);
-//   }, [currentPage, loading, totalPages]);
-
-//   // Handler for the "Load More" button
-//   const handleLoadMore = () => {
-//     if (currentPage < totalPages) {
-//       setCurrentPage((prev) => prev + 1);
-//     }
-//   };
-
-//   // Render skeletons while loading
-//   const renderSkeletons = () => {
-//     return Array(postsPerPage)
-//       .fill(0)
-//       .map((_, index) => (
-//         <div
-//           key={`skeleton-${index}`}
-//           className="bg-white rounded-2xl shadow-sm overflow-hidden"
-//         >
-//           <div className="relative h-48">
-//             <Skeleton className="h-full w-full" />
-//           </div>
-//           <div className="p-6">
-//             <Skeleton className="h-7 w-3/4 mb-3" />
-//             <Skeleton className="h-4 w-full mb-2" />
-//             <Skeleton className="h-4 w-5/6 mb-4" />
-//             <div className="flex items-center justify-between">
-//               <Skeleton className="h-4 w-24" />
-//               <div className="flex items-center space-x-4">
-//                 <Skeleton className="h-4 w-16" />
-//                 <Skeleton className="h-4 w-16" />
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       ));
-//   };
-
-//   return (
-//     <div>
-//       {/* Category Filter Carousel */}
-//       <div className="relative w-full mb-4">
-//         {/* Left Arrow */}
-//         <button
-//           onClick={handleScrollLeft}
-//           className="absolute left-0 top-1/2 -translate-y-1/2 bg-white rounded-full shadow p-2 z-10 hidden sm:block hover:bg-gray-200"
-//           aria-label="Scroll left"
-//         >
-//           <ChevronLeft />
-//         </button>
-
-//         {/* Scrollable Container */}
-//         <div
-//           ref={scrollContainerRef}
-//           className="no-scrollbar flex overflow-x-auto whitespace-nowrap space-x-3 py-2 px-2 rounded-md mx-8"
-//         >
-//           {categories.map((category) => (
-//             <button
-//               key={category}
-//               onClick={() => handleCategoryChange(category)}
-//               className={`px-4 py-2 rounded-full text-sm transition-colors whitespace-nowrap ${
-//                 selectedCategory === category
-//                   ? "bg-blue-600 text-white"
-//                   : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-200"
-//               }`}
-//             >
-//               {category}
-//             </button>
-//           ))}
-//         </div>
-
-//         {/* Right Arrow */}
-//         <button
-//           onClick={handleScrollRight}
-//           className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full shadow p-2 z-10 hidden sm:block hover:bg-gray-200"
-//           aria-label="Scroll right"
-//         >
-//           <ChevronRight />
-//         </button>
-//       </div>
-
-//       {/* Blog Cards Grid */}
-//       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-//         {loading && currentPage === 1
-//           ? renderSkeletons()
-//           : blogPosts.map((post: BlogPost) => (
-//               <BlogCard key={post.id} {...post} />
-//             ))}
-//       </div>
-
-//       {/* "Load More" Button for manual loading */}
-//       {!loading && currentPage >= 2 && currentPage < totalPages && (
-//         <div className="flex justify-center mt-12">
-//           <button
-//             onClick={handleLoadMore}
-//             className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
-//           >
-//             Load More
-//           </button>
-//         </div>
-//       )}
-
-//       {/* Loading indicator for subsequent page loads */}
-//       {loading && currentPage > 1 && (
-//         <div className="flex justify-center mt-12">
-//           <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
-//         </div>
-//       )}
-
-//       {/* Global CSS for hiding scrollbar */}
-//       <style jsx global>{`
-//         .no-scrollbar {
-//           -ms-overflow-style: none;
-//           scrollbar-width: none;
-//         }
-//         .no-scrollbar::-webkit-scrollbar {
-//           display: none;
-//         }
-//         @keyframes pulse {
-//           0%,
-//           100% {
-//             opacity: 1;
-//           }
-//           50% {
-//             opacity: 0.5;
-//           }
-//         }
-//         .animate-pulse {
-//           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-//         }
-//       `}</style>
-//     </div>
-//   );
-// };
-
-// export default BlogHero;
 "use client";
 
 import axios from "axios";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import BlogCard from "./BlogCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Skeleton from "../Skeleton";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 
+// Define interfaces based on backend response
 interface BlogPost {
-  id: number;
+  id: string;
   title: string;
   excerpt: string;
   image: string;
   content: string;
-  date: string;
   readTime: string;
+  date: string;
+}
+
+interface BlogResponse {
+  message: string;
+  blogs: BlogPost[];
+  totalCount: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 const BlogHero = () => {
-  // State for blogs, loading, pagination, category filter, and fetched categories
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [postsPerPage] = useState<number>(6);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [fetchedCategories, setFetchedCategories] = useState<string[]>([]);
+  const postsPerPage = 6; // Matches backend default
 
-  // Reference for the carousel scroll container
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Memoized fetch blogs function to prevent unnecessary re-renders
-  const fetchBlogs = useCallback(
-    async (page: number, category?: string) => {
-      setLoading(true);
-      try {
-        const categoryQuery = category
-          ? `&category=${encodeURIComponent(category)}`
-          : "";
-        const response = await axios.get(
-          `/api/blogs/getBlogs?page=${page}&limit=${postsPerPage}${categoryQuery}`
-        );
-        if (page === 1) {
-          setBlogPosts(response.data.blogs);
-        } else {
-          setBlogPosts((prev) => [...prev, ...response.data.blogs]);
-        }
-        const totalCount =
-          response.data.totalCount || response.data.blogs.length;
-        setTotalPages(Math.ceil(totalCount / postsPerPage));
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [postsPerPage]
+  // Fetch categories
+  const { data: categories = ["All"], isLoading: categoriesLoading } = useQuery(
+    {
+      queryKey: ["categories"],
+      queryFn: async () => {
+        const response = await axios.get("/api/blogs/getCategories");
+        return ["All", ...response.data.categories] as string[];
+      },
+    }
   );
 
-  // Fetch categories from the backend
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const response = await axios.get("/api/blogs/getCategories");
-        // Expecting response.data.categories to be an array of strings.
-        setFetchedCategories(response.data.categories);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    }
-    fetchCategories();
-  }, []);
+  // Fetch blogs with infinite query
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useInfiniteQuery<BlogResponse>({
+    queryKey: ["blogs", selectedCategory],
+    queryFn: async ({ pageParam = 1 }) => {
+      const categoryQuery =
+        selectedCategory !== "All"
+          ? `&category=${encodeURIComponent(selectedCategory)}`
+          : "";
+      const response = await axios.get(
+        `/api/blogs/getBlogs?page=${pageParam}&limit=${postsPerPage}${categoryQuery}`
+      );
+      return response.data as BlogResponse;
+    },
+    getNextPageParam: (lastPage) => {
+      const nextPage = lastPage.page + 1;
+      return nextPage <= lastPage.totalPages ? nextPage : undefined;
+    },
+    initialPageParam: 1,
+  });
 
-  // Combine "All" with fetched categories
-  const categories = ["All", ...fetchedCategories];
+  // Flatten blog posts from all fetched pages
+  const blogPosts = data?.pages.flatMap((page) => page.blogs) || [];
 
-  // Fetch blogs when currentPage or selectedCategory changes
-  useEffect(() => {
-    // When category changes, reset currentPage to 1 and clear the blogPosts list.
-    fetchBlogs(
-      currentPage,
-      selectedCategory === "All" ? undefined : selectedCategory
-    );
-  }, [currentPage, selectedCategory, fetchBlogs]);
-
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-    setBlogPosts([]);
-  };
-
-  // Scroll container left/right by a set amount (for carousel arrows)
+  // Scroll handlers for category carousel
   const handleScrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollLeft -= 300;
@@ -353,31 +87,27 @@ const BlogHero = () => {
     }
   };
 
-  // Infinite scroll auto-loading: auto-load next page when near the bottom
+  // Infinite scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      if (loading) return;
+      if (isFetchingNextPage || !hasNextPage) return;
       if (
         window.innerHeight + window.scrollY >=
         document.body.offsetHeight - 500
       ) {
-        if (currentPage < totalPages && currentPage < 2) {
-          setCurrentPage((prev) => prev + 1);
-        }
+        fetchNextPage();
       }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [currentPage, loading, totalPages]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  // Handler for the "Load More" button
-  const handleLoadMore = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-    }
+  // Category change handler
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
   };
 
-  // Render skeletons while loading
+  // Render skeleton placeholders during loading
   const renderSkeletons = () => {
     return Array(postsPerPage)
       .fill(0)
@@ -407,6 +137,7 @@ const BlogHero = () => {
 
   return (
     <div>
+      {/* Category Filter Carousel */}
       <div className="relative w-full mb-4">
         <button
           onClick={handleScrollLeft}
@@ -415,26 +146,28 @@ const BlogHero = () => {
         >
           <ChevronLeft />
         </button>
-        {/* Scrollable Container */}
         <div
           ref={scrollContainerRef}
           className="no-scrollbar flex overflow-x-auto whitespace-nowrap space-x-3 py-2 px-2 rounded-md mx-8"
         >
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => handleCategoryChange(category)}
-              className={`px-4 py-2 rounded-full text-sm transition-colors whitespace-nowrap ${
-                selectedCategory === category
-                  ? "bg-blue-600 text-white"
-                  : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-200"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+          {categoriesLoading ? (
+            <Skeleton className="h-8 w-24" />
+          ) : (
+            categories.map((category) => (
+              <button
+                key={category}
+                onClick={() => handleCategoryChange(category)}
+                className={`px-4 py-2 rounded-full text-sm transition-colors whitespace-nowrap ${
+                  selectedCategory === category
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-200"
+                }`}
+              >
+                {category}
+              </button>
+            ))
+          )}
         </div>
-        {/* Right Arrow */}
         <button
           onClick={handleScrollRight}
           className="absolute right-0 top-1/2 -translate-y-1/2 bg-white rounded-full shadow p-2 z-10 hidden sm:block hover:bg-gray-200"
@@ -443,32 +176,29 @@ const BlogHero = () => {
           <ChevronRight />
         </button>
       </div>
-      {/* Blog Cards Grid */}
+
+      {/* Blog Posts Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {loading && currentPage === 1
+        {isLoading
           ? renderSkeletons()
-          : blogPosts.map((post: BlogPost) => (
-              <BlogCard key={post.id} {...post} />
-            ))}
+          : blogPosts.map((post) => <BlogCard key={post.id} {...post} />)}
       </div>
-      {/* "Load More" Button for manual loading */}
-      {!loading && currentPage >= 2 && currentPage < totalPages && (
-        <div className="flex justify-center mt-12">
-          <button
-            onClick={handleLoadMore}
-            className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Load More
-          </button>
-        </div>
-      )}
-      {/* Loading indicator for subsequent page loads */}
-      {loading && currentPage > 1 && (
+
+      {/* Loading Indicator for Next Pages */}
+      {isFetchingNextPage && (
         <div className="flex justify-center mt-12">
           <div className="animate-pulse bg-gray-200 h-8 w-32 rounded"></div>
         </div>
       )}
-      {/* Global CSS for hiding scrollbar */}
+
+      {/* Error Message */}
+      {isError && (
+        <div className="flex justify-center mt-12 text-red-500">
+          Error fetching blogs. Please try again later.
+        </div>
+      )}
+
+      {/* Global Styles */}
       <style jsx global>{`
         .no-scrollbar {
           -ms-overflow-style: none;

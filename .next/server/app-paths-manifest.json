@@ -1,7 +1,11 @@
 {
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/api/blogs/getBlogs/route": "app/api/blogs/getBlogs/route.js",
   "/api/blogs/getCategories/route": "app/api/blogs/getCategories/route.js",
-  "/page": "app/page.js",
-  "/blog/page": "app/blog/page.js"
+  "/api/blogs/getBlogs/route": "app/api/blogs/getBlogs/route.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/user/profile/getProfile/route": "app/api/user/profile/getProfile/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/blog/page": "app/blog/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/contact/page": "app/contact/page.js",
+  "/admin/blogs/page": "app/admin/blogs/page.js"
 }

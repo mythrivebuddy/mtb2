@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     });
 
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return NextResponse.json({ error: "Profile not found" }, { status: 200 });
     }
 
     // Calculate completion percentage
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       ...profile,
       completionPercentage,
     };
-
+    console.log("Profile", profileWithCompletion);
     return NextResponse.json(
       {
         message: "Profile fetched successfully",

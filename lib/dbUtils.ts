@@ -24,9 +24,9 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
     const activityData = await prisma.activity.findUnique({
       where: { activity: activity },
     });
-     if (!activityData) {
-       throw new Error(`Activity ${activity} not found`);
-     }
+    if (!activityData) {
+      throw new Error(`Activity ${activity} not found`);
+    }
 
     const isActive = isPlanActive(user);
     const multiplier = isActive ? user?.plan?.jpMultiplier || 1 : 1;
