@@ -30,12 +30,12 @@ interface SpotlightApplication {
 }
 
 const fetchSpotlightApplications = async () => {
-  const { data } = await axios.get("/api/admin/spotLight/application");
+  const { data } = await axios.get("/api/admin/spotlight/application");
   return data;
 };
 
 const updateSpotlightStatus = async (id: string) => {
-  const response = await axios.put(`/api/admin/spotLight/${id}`, {
+  const response = await axios.put(`/api/admin/spotlight/${id}`, {
     status: "IN_REVIEW",
   });
   return response.data;

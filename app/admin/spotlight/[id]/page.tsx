@@ -17,7 +17,7 @@ const SpotlightDetailsPage = () => {
   }: {
     status: "APPROVED" | "DISAPPROVED";
   }) => {
-    const response = await axios.put(`/api/admin/spotLight/${id}`, { status });
+    const response = await axios.put(`/api/admin/spotlight/${id}`, { status });
     return response.data;
   };
 
