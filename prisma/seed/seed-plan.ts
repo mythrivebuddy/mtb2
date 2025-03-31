@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
+// * this seed script is meant for production as well
 async function main() {
   const plans = [
     {
@@ -31,8 +32,8 @@ async function main() {
     await prisma.plan.upsert({
       where: { name: plan.name },
       update: {
-        name: plan.name,
-        price: plan.price,
+        // name: plan.name,
+        // price: plan.price,
       },
       create: plan,
     });
