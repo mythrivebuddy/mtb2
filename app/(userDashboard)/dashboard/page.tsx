@@ -8,7 +8,6 @@ import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { SpotlightStatus } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import Layout from "@/components/layout/Layout";
 
 // TODO remoce default useQuery retry to none of below 3 or 2
 export default function DashboardPage() {
@@ -46,7 +45,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <Layout>
+    // <AppLayout>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="mt-4">Welcome to your dashboard!</p>
@@ -101,6 +100,6 @@ export default function DashboardPage() {
           )
         )}
       </div>
-    </Layout>
+    // </AppLayout>
   );
 }

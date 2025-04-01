@@ -3,9 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import logoImg from "../../public/logo.png";
+import logoImg from "../../../public/logo.png";
 import NavLink from "./NavLink";
-import { Button } from "../ui/button";
+import { Button } from "../../ui/button";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
