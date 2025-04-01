@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import axios from "axios";
-import Layout from "@/components/layout/Layout";
+import AppLayout from "@/components/layout/AppLayout";
 import { Loader2 } from "lucide-react";
 import CompletionBar from "@/components/userBusinessProfile/CompletionBar";
 import ProfileDisplay from "@/components/userBusinessProfile/ProfileDisplay";
@@ -178,13 +178,13 @@ const Page = () => {
   if (!session) {
     return (
       <div className="p-6 text-center">
-        <Layout>Please log in to view your profile.</Layout>
+        <AppLayout>Please log in to view your profile.</AppLayout>
       </div>
     );
   }
 
   return (
-    <Layout>
+    <AppLayout>
       <div className="flex-1 p-8">
         <h1 className="text-3xl font-bold mb-6 text-gray-800">
           Business Profile
@@ -212,7 +212,7 @@ const Page = () => {
           />
         )}
       </div>
-    </Layout>
+    </AppLayout>
   );
 };
 

@@ -1,7 +1,9 @@
 import React from "react";
-import Navbar from "../common/Navbar";
+import Navbar from "../navbars/navbar/Navbar";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+// ? probaly should be named public layout
+
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] py-4 sm:py-6 md:py-8 px-4">
       <div className="max-w-[1280px] mx-auto">
@@ -14,4 +16,4 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default Layout;
+export default AppLayout;
