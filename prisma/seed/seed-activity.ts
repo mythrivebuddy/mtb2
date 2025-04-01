@@ -1,7 +1,8 @@
-import { PrismaClient, ActivityType, TransactionType } from "@prisma/client";
+import {  ActivityType, PrismaClient, TransactionType } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
+// * this seed script is meant for production as well
 async function main() {
   const activities = [
     {
@@ -35,8 +36,8 @@ async function main() {
     await prisma.activity.upsert({
       where: { activity: activity.activity },
       update: {
-        jpAmount: activity.jpAmount,
-        transactionType: activity.transactionType,
+        // jpAmount: activity.jpAmount,
+        // transactionType: activity.transactionType,
       },
       create: activity,
     });

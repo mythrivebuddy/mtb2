@@ -7,25 +7,23 @@ interface BlogPost {
   title: string;
   excerpt: string;
   image: string;
+  content: string;
   date: string;
   readTime: string;
 }
 
 export default function BlogCard({
+  id,
   title,
   excerpt,
   image,
+  content,
   date,
   readTime,
 }: BlogPost) {
   const slug = createSlug(title);
   return (
-    <Link
-      href={{
-        pathname: `/blog/${slug}`,
-      }}
-      className="block"
-    >
+    <Link href={`/blog/${slug}`} className="block">
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <div className="relative h-48">
           <Image

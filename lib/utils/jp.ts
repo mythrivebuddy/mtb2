@@ -1,8 +1,9 @@
 // function to add jp according to the plan and activity
 
-import { ActivityType, Prisma, PrismaClient } from "@prisma/client";
+import { ActivityType, Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+
 
 type UserWithPlan = Prisma.UserGetPayload<{
   include: {
@@ -36,6 +37,8 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
       where: { id: user.id },
       data: {
         jpEarned: { increment: jpToAdd },
+        jpBalance: { increment: jpToAdd },
+        jpTransaction: { increment: jpToAdd },
         transaction: {
           create: {
             //!may need user ID here -- may be

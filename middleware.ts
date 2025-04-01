@@ -44,13 +44,16 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
   function middleware(req) {
-    console.log("middleware", req.nextauth.token);
+    // console.log("middleware", req.nextauth.token);
     const token = req.nextauth.token;
+    // console.log("token", token);
     const isAdmin = token?.role === "ADMIN";
+    console.log("isaAdmin :", isAdmin);
     const path = req.nextUrl.pathname;
 
     if (path.startsWith("/admin") && !isAdmin) {
-      return NextResponse.redirect(new URL("/", req.url));
+      // console.log("working");
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     // Allow authenticated users to access protected routes
