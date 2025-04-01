@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import Navbar from "@/components/common/Navbar";
+import Navbar from "@/components/navbars/navbar/Navbar";
 import BlogHero from "@/components/blog/BlogHero";
 
 export const metadata: Metadata = {

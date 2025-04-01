@@ -1,13 +1,13 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Layout from "@/components/layout/Layout";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import BlogContent from "@/components/blog/BlogContent";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import AppLayout from "@/components/layout/AppLayout";
 
 interface BlogPost {
   id: string;
@@ -41,25 +41,25 @@ export default function Page() {
   // Loading state
   if (isLoading)
     return (
-      <Layout>
+      <AppLayout>
         <div className="flex items-center justify-center h-screen">
           <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
         </div>
-      </Layout>
+      </AppLayout>
     );
 
   // Error state
   if (error)
     return (
-      <Layout>
+      <AppLayout>
         <div className="text-center text-2xl text-red-500 p-10">
           Error loading blog
         </div>
-      </Layout>
+      </AppLayout>
     );
 
   return (
-    <Layout>
+    <AppLayout>
       <div className="p-8 m-2">
         <h1 className="text-4xl font-bold text-gray-900 mb-5">{blog?.title}</h1>
         <Image
@@ -87,6 +87,6 @@ export default function Page() {
           joyful way of life.
         </p>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

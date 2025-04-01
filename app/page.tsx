@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Hero from "@/components/home/Hero";
 import SpotlightCard from "@/components/home/SpotlightCard";
-import Layout from "@/components/layout/Layout";
+import AppLayout from "@/components/layout/AppLayout";
 
 export const metadata: Metadata = {
   title: "MyThriveBuddy - Solopreneurship Made Amazing",
@@ -15,11 +15,10 @@ export const metadata: Metadata = {
   },
 };
 
-
 // TODO: add current active spotlight get it with api
 export default function Home() {
   return (
-    <Layout>
+    <AppLayout>
       {/* 
     <main className="min-h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] py-4 sm:py-6 md:py-8 px-4">
       <div className="max-w-[1280px] mx-auto">
@@ -37,6 +36,6 @@ export default function Home() {
         <CategoryTags />
       </div>
     </main> */}
-    </Layout>
+    </AppLayout>
   );
 }

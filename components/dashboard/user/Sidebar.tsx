@@ -1,0 +1,148 @@
+// components/Sidebar.tsx
+import React from "react";
+import Link from "next/link";
+import {
+  Home,
+  BarChart2,
+  CreditCard,
+  LayoutList,
+  MessageCircle,
+  User,
+  HelpCircle,
+  Phone,
+  LogOut,
+} from "lucide-react";
+import { cn } from "@/lib/utils/tw";
+
+// Reusable navigation item component
+type NavItemProps = {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  badge?: string | number;
+  active?: boolean;
+};
+
+const NavItem = ({
+  href,
+  icon,
+  label,
+  badge,
+  active = false,
+}: NavItemProps) => (
+  <li>
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center",
+        active ? "text-rose-500" : "text-[#6C7894]"
+      )}
+    >
+      <div className="w-8">{icon}</div>
+      <span className="font-normal text-xl">{label}</span>
+      {badge && <span className="ml-1 text-rose-500">({badge})</span>}
+    </Link>
+  </li>
+);
+
+// Main navigation section component
+type NavSectionProps = {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+};
+
+const NavSection = ({ title, children, className }: NavSectionProps) => (
+  <div className={cn("space-y-9", className)}>
+    <h4 className="text-[#405D9F] font-normal text-xl">{title}</h4>
+    <nav>
+      <ul className="space-y-6">{children}</ul>
+    </nav>
+  </div>
+);
+
+// Main sidebar component
+const Sidebar = () => {
+  return (
+    <aside className="w-64  bg-white shadow-sm rounded-3xl overflow-hidden ">
+      {/* User Profile Section */}
+      <div className="flex flex-col my-14 pl-5">
+        <div className=" flex items-center gap-3">
+          <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden">
+            <img
+              src="/avatar.png"
+              alt="Profile"
+              className="h-full w-full object-cover"
+            />
+          </div>
+          <div>
+            <div className="flex items-center gap-1">
+              <p className="text-base">Hello</p>
+              <span className="text-amber-400">👋</span>
+            </div>
+            <h3 className="font-bold text-xl">Martin M</h3>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-10 mt-14">
+          {/* Menu Section */}
+          <NavSection title="Menu" >
+            <NavItem
+              href="/"
+              icon={<Home size={20} />}
+              label="Home"
+              active={true}
+            />
+            <NavItem
+              href="/insights"
+              icon={<BarChart2 size={20} />}
+              label="Insights"
+            />
+            <NavItem
+              href="/subscription"
+              icon={<CreditCard size={20} />}
+              label="Subscription"
+            />
+            <NavItem
+              href="/leader-board"
+              icon={<LayoutList size={20} />}
+              label="Leader Board"
+            />
+            <NavItem
+              href="/messages"
+              icon={<MessageCircle size={20} />}
+              label="Messages"
+              badge={2}
+            />
+          </NavSection>
+
+          {/* Settings Section */}
+          <NavSection title="Settings">
+            <NavItem
+              href="/profile"
+              icon={<User size={20} />}
+              label="Profile"
+            />
+            <NavItem
+              href="/faqs"
+              icon={<HelpCircle size={20} />}
+              label="FAQ's"
+            />
+            <NavItem
+              href="/contact"
+              icon={<Phone size={20} />}
+              label="Contact us"
+            />
+            <NavItem
+              href="/logout"
+              icon={<LogOut size={20} />}
+              label="Logout"
+            />
+          </NavSection>
+        </div>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
