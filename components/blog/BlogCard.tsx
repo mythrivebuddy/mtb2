@@ -13,11 +13,9 @@ interface BlogPost {
 }
 
 export default function BlogCard({
-  id,
   title,
   excerpt,
   image,
-  content,
   date,
   readTime,
 }: BlogPost) {
