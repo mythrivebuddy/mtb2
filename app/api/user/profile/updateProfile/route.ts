@@ -84,7 +84,7 @@ export async function PUT(req: Request) {
       goals: entries.goals?.toString(),
       keyOfferings: entries.keyOfferings?.toString(),
       achievements: entries.achievements?.toString(),
-      email: entries.email?.toString(),
+      email: entries.email === "" ? null : entries.email?.toString(),
       phone: entries.phone?.toString(),
       website: entries.website?.toString(),
       socialHandles: tryParseJson(entries.socialHandles) || {},

@@ -17,7 +17,7 @@ export default function DashboardPage() {
   const { data: spotlight, isLoading } = useQuery({
     queryKey: ["spotlight", session?.user?.id],
     queryFn: async () => {
-      const response = await axios.get(`/api/user/spotlight`);
+      const response = await axios.get(`/api/user/spotLight`);
       return response.data;
     },
     retry: false,
@@ -27,7 +27,7 @@ export default function DashboardPage() {
   console.log(spotlight);
 
   const createSpotlight = async () => {
-    const response = await axios.post("/api/user/spotlight", {
+    const response = await axios.post("/api/user/spotLight", {
       userId: session?.user?.id,
     });
     return response.data;

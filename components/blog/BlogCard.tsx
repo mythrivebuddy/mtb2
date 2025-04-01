@@ -3,10 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface BlogPost {
-  id: number;
+  id: string;
   title: string;
   excerpt: string;
   image: string;
+  content: string;
   date: string;
   readTime: string;
 }
@@ -20,15 +21,16 @@ export default function BlogCard({
 }: BlogPost) {
   const slug = createSlug(title);
   return (
-    <Link
-      href={{
-        pathname: `/blog/${slug}`,
-      }}
-      className="block"
-    >
+    <Link href={`/blog/${slug}`} className="block">
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <div className="relative h-48">
-          <Image src={image} alt={title} fill className="object-cover" />
+          <Image
+            src={image}
+            alt={title}
+            fill
+            sizes="(max-width: 300px)"
+            className="object-cover"
+          />
         </div>
         <div className="p-6">
           <h2 className="text-xl font-bold text-[#1E2875] mb-3">{title}</h2>
