@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import avtarImg from "@/public/avtar.png";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
+import { Prisma } from "@prisma/client";
 
 // TODO: get types from prism for spotlight
 interface SpotlightResponse {
@@ -15,6 +15,9 @@ interface SpotlightResponse {
     name: string;
     email: string;
     image?: string;
+    userBusinessProfile: Prisma.UserGetPayload<{
+      include: { userBusinessProfile: true };
+    }>["userBusinessProfile"];
     // other user fields except password
   };
 }
@@ -27,6 +30,7 @@ export default function SpotlightCard() {
       return data;
     },
   });
+  // const { featuredWorkTitle,} = spotlight?.user?.userBusinessProfile[0];
 
   return (
     <motion.div
@@ -49,7 +53,10 @@ export default function SpotlightCard() {
         <div className="flex items-center space-x-5 mb-6">
           <div className="relative w-[80px] h-[80px]">
             <Image
-              src={avtarImg}
+              src={
+                spotlight?.user?.userBusinessProfile[0]?.featuredWorkImage ||
+                avtarImg
+              }
               alt="Profile"
               fill
               className="rounded-full object-cover"
@@ -62,20 +69,29 @@ export default function SpotlightCard() {
                 ? "Loading..."
                 : spotlight?.user?.name || "No Spotlight Available"}
             </h3>
-            <p className="text-[#B4B4B4] text-[16px]">Marketing Coordinator</p>
+            <p className="text-[#B4B4B4] text-[16px]">
+              {spotlight?.user?.userBusinessProfile[0]?.featuredWorkTitle ??
+                "Marketing Coordinator"}
+            </p>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl p-6  md:mt-[160px]">
           <p className="text-[#636363] text-[16px] leading-relaxed mb-6">
-            This creates a sense of recognition and highlights the individual in
+            {spotlight?.user?.userBusinessProfile[0]?.featuredWorkDesc ||
+              `This creates a sense of recognition and highlights the individual in
             focus, while maintaining the overall theme of growth and
-            inspiration. Let&apos;s know if you&apos;d like any changes!
+            inspiration. Let&apos;s know if you&apos;d like any changes!`}
           </p>
-
-          <button className="w-full bg-[#1E2875] text-white py-3 rounded-lg font-medium hover:bg-[#1E2875]/90 transition-colors">
-            Let&apos;s Connect
-          </button>
+          <a
+            href={
+              spotlight?.user?.userBusinessProfile[0]?.priorityContactLink || ""
+            }
+          >
+            <button className="w-full bg-[#1E2875] text-white py-3 rounded-lg font-medium hover:bg-[#1E2875]/90 transition-colors">
+              Let&apos;s Connect
+            </button>
+          </a>
         </div>
       </div>
     </motion.div>
