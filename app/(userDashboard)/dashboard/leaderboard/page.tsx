@@ -65,7 +65,7 @@ const LeaderboardContent = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3,4].map((i) => (
               <Skeleton key={i} className="w-full h-16" />
             ))}
           </div>
@@ -81,7 +81,7 @@ const LeaderboardContent = () => {
         <Select
           onValueChange={(value) =>
             router.push(
-              `/leaderboard?orderBy=${value}&page=${page}&limit=${limit}`
+              `/dashboard/leaderboard?orderBy=${value}&page=${page}&limit=${limit}`
             )
           }
         >
