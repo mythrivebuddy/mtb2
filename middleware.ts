@@ -44,31 +44,36 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
   function middleware(req) {
-    // console.log("middleware", req.nextauth.token);
     const token = req.nextauth.token;
-    // console.log("token", token);
-    const isAdmin = token?.role === "ADMIN";
-    console.log("isaAdmin :", isAdmin);
     const path = req.nextUrl.pathname;
+    const isAdmin = token?.role === "ADMIN";
 
-    if (path.startsWith("/admin") && !isAdmin) {
-      // console.log("working");
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+    // Admin users: force navigation to admin routes only
+    if (isAdmin) {
+      if (!path.startsWith("/admin")) {
+        return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+      }
+    } else {
+      // Non-admin users: block access to admin routes
+      if (path.startsWith("/admin")) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
     }
 
-    // Allow authenticated users to access protected routes
+    // Allow authenticated users to continue to the requested route
     return NextResponse.next();
   },
   {
     pages: {
-      signIn: "/signin",
+      signIn: "/signin", // Redirect unauthenticated users to sign-in page
     },
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token }) => Boolean(token),
     },
   }
 );
 
+// Specify the routes that should be protected by this middleware
 export const config = {
-  matcher: ["/dashboard", "/leaderboard", "/admin:path*"], // Protect specific pages
+  matcher: ["/admin/:path*", "/dashboard", "/leaderboard"],
 };

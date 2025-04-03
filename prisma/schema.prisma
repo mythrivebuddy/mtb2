@@ -23,6 +23,7 @@ enum ActivityType {
   QUIZ_CORRECT
   ADD_LOG
   SPOTLIGHT
+  BUSINESSPROFILE_COMPLETE
 }
 
 enum TransactionType {
@@ -58,8 +59,10 @@ model User {
   plan                Plan?                 @relation(fields: [planId], references: [id])
   planStart           DateTime? // When the user subscribed
   planEnd             DateTime? // When the plan expires
+  isBlocked           Boolean?              @default(false)
   spotlight           Spotlight?
   userBusinessProfile UserBusinessProfile[]
+  blockedUsers        BlockedUsers[]
 }
 
 model Transaction {
@@ -149,4 +152,13 @@ model UserBusinessProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BlockedUsers{
+  id    String  @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+  reason String
+  blockedAt  DateTime @default(now())
+  blockedBy  String? 
 }

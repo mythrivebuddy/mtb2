@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { supabase } from "@/lib/supabase";
 import calculateProfileCompletion from "@/utils/calculateProfileCompletion";
+import { assignJp } from "@/lib/utils/jp";
+import { ActivityType } from "@prisma/client";
 
 interface UserSpotlightProfile {
   featuredWorkTitle?: string | null;
@@ -100,7 +102,10 @@ export async function PUT(req: Request) {
     };
 
     // Verify user exists
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { plan: true },
+    });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -133,14 +138,11 @@ export async function PUT(req: Request) {
 
     // JP Reward Logic
     if (
-      newCompletion >= 70 &&
-      oldCompletion < 70 &&
+      newCompletion >= 100 &&
+      oldCompletion < 100 &&
       !(existingProfile && existingProfile.profileJpRewarded)
     ) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { jpEarned: { increment: 70 } },
-      });
+      assignJp(user, ActivityType.BUSINESSPROFILE_COMPLETE);
 
       await prisma.userBusinessProfile.update({
         where: { userId },
