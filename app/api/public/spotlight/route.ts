@@ -1,7 +1,6 @@
-import {  SpotlightStatus } from "@prisma/client";
+import { SpotlightStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
 
 export async function GET() {
   try {
@@ -18,14 +17,17 @@ export async function GET() {
         id: true,
         expiresAt: true,
         user: {
-         omit:{
-          password: true
-         }
+          omit: {
+            password: true,
+          },
+          include: {
+            userBusinessProfile: true,
+          }
         },
       },
     });
 
-    console.log(activeSpotlight); //?dev
+    console.log("activeSpotlight", activeSpotlight); //?dev
 
     // If no active spotlight found, return null
     if (!activeSpotlight) {

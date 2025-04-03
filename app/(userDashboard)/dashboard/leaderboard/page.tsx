@@ -61,11 +61,11 @@ const LeaderboardContent = () => {
     return (
       <Card className="p-4">
         <CardHeader>
-          <CardTitle>Leaderboard</CardTitle>
+          {/* <CardTitle>Leaderboard</CardTitle> */}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3,4].map((i) => (
               <Skeleton key={i} className="w-full h-16" />
             ))}
           </div>
@@ -81,7 +81,7 @@ const LeaderboardContent = () => {
         <Select
           onValueChange={(value) =>
             router.push(
-              `/leaderboard?orderBy=${value}&page=${page}&limit=${limit}`
+              `/dashboard/leaderboard?orderBy=${value}&page=${page}&limit=${limit}`
             )
           }
         >
@@ -109,24 +109,26 @@ const LeaderboardContent = () => {
 
 const LeaderboardPage = () => {
   return (
-    <Suspense
-      fallback={
-        <Card className="p-4">
-          <CardHeader>
-            <CardTitle>Leaderboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="w-full h-16" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      }
-    >
-      <LeaderboardContent />
-    </Suspense>
+    // <UserDashboardLayout>
+      <Suspense
+        fallback={
+          <Card className="p-4">
+            <CardHeader>
+              {/* <CardTitle>Leaderboard</CardTitle> */}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="w-full h-16" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <LeaderboardContent />
+      </Suspense>
+    // </UserDashboardLayout>
   );
 };
 
