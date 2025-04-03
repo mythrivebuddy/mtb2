@@ -20,6 +20,9 @@ export async function GET() {
           omit: {
             password: true,
           },
+          include: {
+            userBusinessProfile: true,
+          }
         },
       },
     });

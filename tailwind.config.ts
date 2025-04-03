@@ -17,6 +17,8 @@ module.exports = {
     },
     extend: {
       colors: {
+        "dashboard": "#E8F3FC",
+        "jp-orange": "#FF7070",
         myred: "#f00",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

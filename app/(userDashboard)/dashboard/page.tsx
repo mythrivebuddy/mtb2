@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button";
 import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Prisma, SpotlightStatus } from "@prisma/client";
-import { useRouter } from "next/navigation";
+import JPCard from "@/components/dashboard/JPCard";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: spotlights, isLoading } = useQuery<
@@ -24,6 +23,15 @@ export default function DashboardPage() {
     },
     retry: false,
     enabled: !!session?.user?.id,
+  });
+
+  const { data: userData } = useQuery({
+    queryKey: ["user"],
+    queryFn: async () => {
+      const response = await axios.get("/api/user");
+      return response.data.user;
+    },
+    retry: false,
   });
 
   console.log(spotlights);
@@ -49,9 +57,13 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="grid grid-cols-3 gap-4 w-3/4">
+        <JPCard value={userData?.jpEarned || 0} label="Total JP Earned" />
+        <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
+        <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
+      </div>
       <p className="mt-4">Welcome to your dashboard!</p>
-      <div className="flex gap-4">
+      {/* <div className="flex gap-4">
         <Button
           onClick={() => router.push("/profile")}
           className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
@@ -65,7 +77,7 @@ export default function DashboardPage() {
         >
           Go to Leaderboard
         </Button>
-      </div>
+      </div> */}
 
       <ConfirmAction
         action={() => mutation.mutate()}

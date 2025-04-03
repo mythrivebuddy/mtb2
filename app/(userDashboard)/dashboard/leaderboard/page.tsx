@@ -61,7 +61,7 @@ const LeaderboardContent = () => {
     return (
       <Card className="p-4">
         <CardHeader>
-          <CardTitle>Leaderboard</CardTitle>
+          {/* <CardTitle>Leaderboard</CardTitle> */}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -109,24 +109,26 @@ const LeaderboardContent = () => {
 
 const LeaderboardPage = () => {
   return (
-    <Suspense
-      fallback={
-        <Card className="p-4">
-          <CardHeader>
-            <CardTitle>Leaderboard</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} className="w-full h-16" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      }
-    >
-      <LeaderboardContent />
-    </Suspense>
+    // <UserDashboardLayout>
+      <Suspense
+        fallback={
+          <Card className="p-4">
+            <CardHeader>
+              {/* <CardTitle>Leaderboard</CardTitle> */}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="w-full h-16" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        }
+      >
+        <LeaderboardContent />
+      </Suspense>
+    // </UserDashboardLayout>
   );
 };
 

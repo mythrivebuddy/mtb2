@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 export interface Project {
   id: string;
   title: string;
@@ -16,3 +18,5 @@ export interface Category {
   name: string;
   isActive?: boolean;
 } 
+
+export type User = Prisma.UserGetPayload<{ include: { userBusinessProfile: true, spotlight: true, transaction: true }, omit: {password:true} }>

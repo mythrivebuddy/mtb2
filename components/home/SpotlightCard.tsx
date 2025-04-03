@@ -31,7 +31,7 @@ export default function SpotlightCard() {
     },
   });
   // const { featuredWorkTitle,} = spotlight?.user?.userBusinessProfile[0];
-
+console.log(spotlight);
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -54,7 +54,7 @@ export default function SpotlightCard() {
           <div className="relative w-[80px] h-[80px]">
             <Image
               src={
-                spotlight?.user?.userBusinessProfile[0]?.featuredWorkImage ||
+                spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkImage ||
                 avtarImg
               }
               alt="Profile"
@@ -70,7 +70,7 @@ export default function SpotlightCard() {
                 : spotlight?.user?.name || "No Spotlight Available"}
             </h3>
             <p className="text-[#B4B4B4] text-[16px]">
-              {spotlight?.user?.userBusinessProfile[0]?.featuredWorkTitle ??
+              {spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkTitle ??
                 "Marketing Coordinator"}
             </p>
           </div>
@@ -78,15 +78,16 @@ export default function SpotlightCard() {
 
         <div className="bg-white rounded-2xl p-6  md:mt-[160px]">
           <p className="text-[#636363] text-[16px] leading-relaxed mb-6">
-            {spotlight?.user?.userBusinessProfile[0]?.featuredWorkDesc ||
+            {spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkDesc ||
               `This creates a sense of recognition and highlights the individual in
             focus, while maintaining the overall theme of growth and
             inspiration. Let&apos;s know if you&apos;d like any changes!`}
           </p>
           <a
             href={
-              spotlight?.user?.userBusinessProfile[0]?.priorityContactLink || ""
+              spotlight?.user?.userBusinessProfile?.[0]?.priorityContactLink || ""
             }
+            target="_blank"
           >
             <button className="w-full bg-[#1E2875] text-white py-3 rounded-lg font-medium hover:bg-[#1E2875]/90 transition-colors">
               Let&apos;s Connect

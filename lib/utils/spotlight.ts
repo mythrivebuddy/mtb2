@@ -2,8 +2,8 @@ import { SpotlightStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 
-// const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
-const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
+const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
+// const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
 // TODO: get expiry from days and it will be in days see defaultDurationDays in spotlight model
 
 // export async function approveSpotlight(spotlightId: string) {
