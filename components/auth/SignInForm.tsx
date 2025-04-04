@@ -10,13 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { SigninFormType, signinSchema } from "@/schema/zodSchema";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession(); // Use session to get role info
   const {
     register,
     handleSubmit,

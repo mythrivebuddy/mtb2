@@ -1,5 +1,5 @@
-'use client'
-import React from 'react'
+"use client";
+import React from "react";
 import SignInForm from "@/components/auth/SignInForm";
 import AppLayout from "@/components/layout/AppLayout";
 import { useEffect } from "react";
@@ -7,17 +7,17 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 const SignInPageContent = () => {
-     const { data: session } = useSession();
-     const router = useRouter();
+  const { data: session } = useSession();
+  const router = useRouter();
 
-     useEffect(() => {
-       if (!session) return;
-       if (session?.user?.role === "ADMIN") {
-         router.push("/admin/dashboard");
-       } else {
-         router.push("/dashboard");
-       }
-     }, [session]);
+  useEffect(() => {
+    if (!session) return;
+    if (session?.user?.role === "ADMIN") {
+      router.push("/admin/dashboard");
+    } else {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
   return (
     <AppLayout>
@@ -39,6 +39,6 @@ const SignInPageContent = () => {
     </main> */}
     </AppLayout>
   );
-}
+};
 
-export default SignInPageContent
+export default SignInPageContent;

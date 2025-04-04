@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   Home,
@@ -17,8 +17,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { Button } from "@/components/ui/button";
-import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // Reusable navigation item component

@@ -23,7 +23,7 @@ const FormWrapper = ({
       {...props}
     >
       <div>
-        <h1 className="text-3xl font-bold text-thrive-blue ">Create Account</h1>
+        <h1 className="text-3xl font-bold text-thrive-blue ">{title}</h1>
         {description && <p className="text-gray-600">{description}</p>}
       </div>
       <div>{children}</div>
