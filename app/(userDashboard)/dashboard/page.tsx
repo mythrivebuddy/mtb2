@@ -8,12 +8,13 @@ import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Prisma, SpotlightStatus } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
+import PageLoader from "@/components/PageLoader";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
 
-  const { data: spotlights, isLoading } = useQuery<
+  const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[] // Spotlight is now an array
   >({
     queryKey: ["spotlight", session?.user?.id],
@@ -25,8 +26,8 @@ export default function DashboardPage() {
     enabled: !!session?.user?.id,
   });
 
-  const { data: userData } = useQuery({
-    queryKey: ["user"],
+  const { data: userData, isLoading: userLoading } = useQuery({
+    queryKey: ["userInfo"],
     queryFn: async () => {
       const response = await axios.get("/api/user");
       return response.data.user;
@@ -48,15 +49,20 @@ export default function DashboardPage() {
     onSuccess: (data) => {
       console.log(data);
       toast.success("Spotlight application submitted successfully");
-      queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch profile data
+      queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
+      queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
     },
     onError: (error) => {
       toast.error(getAxiosErrorMessage(error));
     },
   });
 
+  if (spotlightLoading || status === "loading" || userLoading) {
+    return <PageLoader />;
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-0 py-8">
       <div className="grid grid-cols-3 gap-4 w-3/4">
         <JPCard value={userData?.jpEarned || 0} label="Total JP Earned" />
         <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
@@ -93,7 +99,7 @@ export default function DashboardPage() {
       >
         <Button
           disabled={
-            status === "loading" ||
+            // status === "loading" ||
             mutation.isPending ||
             (spotlights &&
               spotlights.some((spotlight) =>
@@ -108,7 +114,7 @@ export default function DashboardPage() {
         </Button>
       </ConfirmAction>
 
-      {isLoading ? (
+      {spotlightLoading ? (
         <p className="mt-4">Loading spotlight status...</p>
       ) : (
         spotlights &&

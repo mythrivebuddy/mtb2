@@ -1,10 +1,12 @@
-'use client'
+"use client";
 import React from "react";
 import TopBar from "../dashboard/user/Topbar";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
+import { Loader2 } from "lucide-react";
+import PageLoader from "../PageLoader";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
@@ -12,20 +14,16 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     isLoading,
     error,
   } = useQuery<User>({
-    queryKey: ["user"],
+    queryKey: ["userInfo"],
     queryFn: async () => {
-      const response = await axios.get("/api/user", 
-      //   {
-      //   params: { userId: "currentUserId" }, // Replace with actual user ID logic
-      // }
-    );
+      const response = await axios.get("/api/user");
       return response.data.user;
     },
     retry: false,
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <PageLoader />;
   }
 
   if (error) {

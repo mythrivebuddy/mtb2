@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Home,
@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
+import { Button } from "@/components/ui/button";
+import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -73,11 +76,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
         <div className=" flex items-center gap-3">
           <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
             {user?.name ? (
-              <h2 className="text-2xl text-white">{user.name.slice(0, 2)}</h2>
+              <h2 className="text-2xl text-white">
+                {user.name.slice(0, 2).toUpperCase()}
+              </h2>
             ) : (
               <UserRound />
             )}
-            
           </div>
           <div>
             <div className="flex items-center gap-1">
@@ -94,11 +98,13 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* Menu Section */}
           <NavSection title="Menu">
             <NavItem href="/dashboard" icon={<Home size={20} />} label="Home" />
-            <NavItem
-              href="/insights"
-              icon={<BarChart2 size={20} />}
-              label="Insights"
-            />
+            <ComingSoonWrapper>
+              <NavItem
+                href=""
+                icon={<BarChart2 size={20} />}
+                label="Insights"
+              />
+            </ComingSoonWrapper>
             <NavItem
               href="/subscription"
               icon={<CreditCard size={20} />}
@@ -109,12 +115,14 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<LayoutList size={20} />}
               label="Leader Board"
             />
-            <NavItem
-              href="/messages"
-              icon={<MessageCircle size={20} />}
-              label="Messages"
-              badge={2}
-            />
+            <ComingSoonWrapper>
+              <NavItem
+                href=""
+                icon={<MessageCircle size={20} />}
+                label="Messages"
+                badge={2}
+              />
+            </ComingSoonWrapper>
           </NavSection>
 
           {/* Settings Section */}
@@ -124,11 +132,9 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<User size={20} />}
               label="Profile"
             />
-            <NavItem
-              href="/faqs"
-              icon={<HelpCircle size={20} />}
-              label="FAQ's"
-            />
+            <ComingSoonWrapper>
+              <NavItem href="" icon={<HelpCircle size={20} />} label="FAQ's" />
+            </ComingSoonWrapper>
             <NavItem
               href="/contact"
               icon={<Phone size={20} />}

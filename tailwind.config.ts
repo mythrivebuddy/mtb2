@@ -17,7 +17,8 @@ module.exports = {
     },
     extend: {
       colors: {
-        "dashboard": "#E8F3FC",
+        "thrive-blue": "#1E2875",
+        dashboard: "#E8F3FC",
         "jp-orange": "#FF7070",
         myred: "#f00",
         border: "hsl(var(--border))",

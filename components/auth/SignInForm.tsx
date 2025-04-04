@@ -45,14 +45,7 @@ function SignInFormContent() {
     }
   }, [error, router]);
 
-  useEffect(() => {
-    if (!session) return;
-    if (session?.user?.role === "ADMIN") {
-      router.push("/admin/dashboard");
-    } else {
-      router.push("/dashboard");
-    }
-  }, [session]);
+ 
 
   // const redirectBasedOnRole = () => {
   //   console.log("session", session); //?dev
