@@ -7,25 +7,25 @@ export default withAuth(
     const isAdmin = token?.role === "ADMIN";
     const path = req.nextUrl.pathname;
 
-    
     // Redirect non-admin users from /admin
     if (path.startsWith("/admin") && !isAdmin) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
-    // Allow authenticated users to access protected routes
+    // Allow authenticated users to continue to the requested route
     return NextResponse.next();
   },
   {
     pages: {
-      signIn: "/signin",
+      signIn: "/signin", // Redirect unauthenticated users to sign-in page
     },
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token }) => Boolean(token),
     },
   }
 );
 
+// Specify the routes that should be protected by this middleware
 export const config = {
   matcher: ["/dashboard", "/leaderboard", "/admin/:path*"], // Protect specific pages
 };

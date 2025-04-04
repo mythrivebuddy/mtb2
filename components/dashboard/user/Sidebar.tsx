@@ -73,11 +73,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
         <div className=" flex items-center gap-3">
           <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
             {user?.name ? (
-              <h2 className="text-2xl text-white">{user.name.slice(0, 2)}</h2>
+              <h2 className="text-2xl text-white">
+                {user.name.slice(0, 2).toUpperCase()}
+              </h2>
             ) : (
               <UserRound />
             )}
-            
           </div>
           <div>
             <div className="flex items-center gap-1">

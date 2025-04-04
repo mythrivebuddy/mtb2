@@ -45,14 +45,14 @@ function SignInFormContent() {
     }
   }, [error, router]);
 
-  const redirectBasedOnRole = () => {
-    console.log("session", session); //?dev
+  useEffect(() => {
+    if (!session) return;
     if (session?.user?.role === "ADMIN") {
       router.push("/admin/dashboard");
     } else {
       router.push("/dashboard");
     }
-  };
+  }, [session, router]);
 
   const onSubmit = async (data: SigninFormType) => {
     console.log("siginin form data", data);
@@ -69,7 +69,6 @@ function SignInFormContent() {
       console.log("res", res); //?dev
       if (res?.ok) {
         toast.success("Signed in successfully");
-        redirectBasedOnRole();
         return;
       }
       if (res?.error) {
@@ -94,7 +93,6 @@ function SignInFormContent() {
       console.log(result);
       if (result?.ok) {
         toast.success("Signed in successfully");
-        redirectBasedOnRole();
         return;
       }
       if (result?.error) {

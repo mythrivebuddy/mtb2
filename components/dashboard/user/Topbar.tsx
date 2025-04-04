@@ -36,18 +36,20 @@ export default function TopBar({ user }: { user?: UserType }) {
     <header className="h-16 bg-transparent flex items-center justify-between">
       {/* Page Title */}
       <div className="flex justify-between gap-8 w-full items-center">
-        <h1 className="text-xl font-semibold text-slate-800">{pageTitle}</h1>
+        <div className="flex justify-between w-2/3">
+          <h1 className="text-xl font-semibold text-slate-800">{pageTitle}</h1>
 
-        {/* Search Bar */}
-        <div className="relative max-w-md w-80">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
+          {/* Search Bar */}
+          <div className="relative max-w-md w-80">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
+            </div>
+            <input
+              type="search"
+              className="bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
+              placeholder="Search Anything Here..."
+            />
           </div>
-          <input
-            type="search"
-            className="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
-            placeholder="Search Anything Here..."
-          />
         </div>
 
         <div className="flex gap-6">
@@ -55,7 +57,9 @@ export default function TopBar({ user }: { user?: UserType }) {
           <TopBarBadge>
             <span className="mr-1">🏆</span>
             <span className="font-medium">JP</span>
-            <span className="font-bold text-blue-500 ml-1">{user?.jpBalance || 0}</span>
+            <span className="font-bold text-blue-500 ml-1">
+              {user?.jpBalance || 0}
+            </span>
           </TopBarBadge>
 
           {/* Notifications */}
@@ -67,7 +71,7 @@ export default function TopBar({ user }: { user?: UserType }) {
           {/* User Avatar */}
           <div className="h-10 w-10 aspect-square cursor-pointer">
             {/* <AvatarImage src="./avtar.png" alt="User" /> */}
-            <div className=" rounded-md bg-white border border-[#4B65A2] flex items-center justify-center w-full h-full">
+            <div className=" rounded-md bg-white border border-[#4B65A2] flex items-center justify-center w-full h-full uppercase">
               {user?.name ? (
                 <h2 className="text-2xl ">{user.name.slice(0, 2)}</h2>
               ) : (

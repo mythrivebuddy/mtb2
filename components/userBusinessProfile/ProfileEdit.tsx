@@ -244,9 +244,16 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
             <input
               id="featuredWorkTitle"
               type="text"
-              {...register("featuredWorkTitle")}
+              {...register("featuredWorkTitle", {
+                required: "Work title is required",
+              })}
               className={commonClassName}
             />
+            {errors.featuredWorkTitle && (
+              <p className="text-red-500 mt-1">
+                {errors.featuredWorkTitle.message}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -257,10 +264,17 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
             </label>
             <textarea
               id="featuredWorkDesc"
-              {...register("featuredWorkDesc")}
+              {...register("featuredWorkDesc", {
+                required: "Work description is required",
+              })}
               className={commonClassName}
               rows={3}
             />
+            {errors.featuredWorkDesc && (
+              <p className="text-red-500 mt-1">
+                {errors.featuredWorkDesc.message}
+              </p>
+            )}
           </div>
           <div>
             <label
@@ -298,9 +312,16 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
             <input
               id="priorityContactLink"
               type="url"
-              {...register("priorityContactLink")}
+              {...register("priorityContactLink", {
+                required: "Work contact link is required",
+              })}
               className={commonClassName}
             />
+            {errors.priorityContactLink && (
+              <p className="text-red-500 mt-1">
+                {errors.priorityContactLink.message}
+              </p>
+            )}
           </div>
         </div>
       </div>
