@@ -32,7 +32,7 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
   });
 
   // Mutation for creating a blog post using axios with form data
-  const mutation = useMutation<any, Error, FormData>({
+  const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const response = await axios.post(
         "/api/admin/blogs/createBlogs",
@@ -51,7 +51,6 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
       toast.error("Error creating blog post");
     },
   });
-
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setImageFile(file);

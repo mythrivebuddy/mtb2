@@ -3,6 +3,8 @@
 import { useState, ChangeEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import { toast } from "sonner";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 // Define TypeScript interfaces for Plan and User data
 interface IPlan {
@@ -83,9 +85,8 @@ export default function UserInfoContent() {
       });
       setShowModal(false);
     },
-    onError: (err: any) => {
-      console.error("Block error:", err);
-      alert(err.response?.data?.error || err.message);
+    onError: (err) => {
+      toast.error(getAxiosErrorMessage(err));
     },
   });
 

@@ -52,7 +52,7 @@ function SignInFormContent() {
     } else {
       router.push("/dashboard");
     }
-  }, [session]);
+  }, [session, router]);
 
   const onSubmit = async (data: SigninFormType) => {
     console.log("siginin form data", data);
