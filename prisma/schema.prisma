@@ -60,7 +60,7 @@ model User {
   planStart           DateTime? // When the user subscribed
   planEnd             DateTime? // When the plan expires
   isBlocked           Boolean?              @default(false)
-  spotlight           Spotlight?
+  spotlight           Spotlight[]
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
 }
@@ -94,7 +94,7 @@ model Plan {
 
 model Spotlight {
   id                  String          @id @default(uuid())
-  userId              String          @unique
+  userId              String        
   user                User            @relation(fields: [userId], references: [id])
   expiresAt           DateTime?
   // jpUsed              Int
@@ -142,12 +142,12 @@ model UserBusinessProfile {
   socialHandles Json? // Store social media links (LinkedIn, Instagram, X, GitHub, etc.)
 
   // Spotlight Information
-  isSpotlightActive   Boolean @default(false) // Whether the user is in the spotlight
+  isSpotlightActive   Boolean @default(false) //!not needed
   featuredWorkTitle   String? // Title of featured work for spotlight
   featuredWorkDesc    String? // Description of featured work
   featuredWorkImage   String? // Image URL for featured work
   priorityContactLink String? // Primary contact method when in spotlight
-  profileJpRewarded   Boolean @default(false)
+  profileJpRewarded   Boolean @default(false) //!not needed
   isProfileComplete   Boolean @default(false)
 
   createdAt DateTime @default(now())

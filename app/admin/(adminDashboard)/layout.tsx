@@ -11,15 +11,15 @@ export default function AdminLayout({
 }) {
   const session = useSession();
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen p-7 overflow-auto w-full bg-dashboard">
       {/* Sidebar */}
       <AdminSideBar />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto ml-64">
+      <div className="flex-1 flex flex-col overflow-hidden pl-7">
         {/* Header */}
-        <header className="bg-white shadow-sm fixed w-full z-10">
-          <div className="px-6 py-4 flex items-center justify-between">
+        <header className="h-16 bg-white px-10 rounded-lg flex items-center justify-between">
+          <div className="flex justify-between gap-8 w-full items-center">
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-full hover:bg-gray-100">
                 <BellIcon />
@@ -31,12 +31,16 @@ export default function AdminLayout({
                 <span className="font-medium">{session?.data?.user.name}</span>
               </div>
             </div>
-            <div>ADMIN DASHBOARD</div>
+            <div>
+              <h1>ADMIN DASHBOARD</h1>
+            </div>
           </div>
         </header>
 
         {/* Main Content Area */}
-        <div className="mt-16 p-6">{children}</div>
+        <div className="flex-1 mt-8 overflow-auto bg-transparent">
+          {children}
+        </div>
       </div>
     </div>
   );
