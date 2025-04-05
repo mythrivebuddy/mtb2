@@ -31,8 +31,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         title: true,
         excerpt: true,
         image: true,
+        category: true,
         content: true,
         readTime: true,
+        createdAt: true,
       },
     });
 

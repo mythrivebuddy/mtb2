@@ -37,6 +37,30 @@ export interface BusinessProfile {
   completionPercentage?: number;
 }
 
+// Fallback profile object to use when API returns no profile
+const defaultProfile: BusinessProfile = {
+  name: "",
+  businessInfo: "",
+  missionStatement: "",
+  goals: "",
+  keyOfferings: "",
+  achievements: "",
+  email: "",
+  phone: "",
+  website: "",
+  socialHandles: {
+    linkedin: "",
+    instagram: "",
+    twitter: "",
+    github: "",
+  },
+  featuredWorkTitle: "",
+  featuredWorkDesc: "",
+  featuredWorkImage: "",
+  priorityContactLink: "",
+  completionPercentage: 0,
+};
+
 const Page = () => {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
@@ -47,14 +71,26 @@ const Page = () => {
   const queryClient = useQueryClient();
 
   // Fetch profile data with useQuery
-  const { data: profile, isLoading: queryLoading } = useQuery({
+  const { data: profile, isLoading: queryLoading } = useQuery<BusinessProfile>({
     queryKey: ["profile", userId],
-    queryFn: () =>
-      axios
-        .get(`/api/user/profile/getProfile?userId=${userId}`)
-        .then((res) => res.data.profile),
+    queryFn: async () => {
+      const res = await axios.get(
+        `/api/user/profile/getProfile?userId=${userId}`
+      );
+      // If API returns no profile, fallback to defaultProfile
+      return res.data.profile ?? defaultProfile;
+    },
     enabled: !!userId, // Only fetch when userId is available
+    initialData: defaultProfile,
   });
+
+  // Automatically switch to edit mode if profile.name is empty
+  useEffect(() => {
+    if (profile && !profile.name) {
+      console.log(profile.name);
+      setIsEditing(true);
+    }
+  }, [profile]);
 
   // Update profile data with useMutation
   const mutation = useMutation({
@@ -79,27 +115,7 @@ const Page = () => {
     reset,
     formState: { errors },
   } = useForm<BusinessProfile>({
-    defaultValues: {
-      name: "",
-      businessInfo: "",
-      missionStatement: "",
-      goals: "",
-      keyOfferings: "",
-      achievements: "",
-      email: "",
-      phone: "",
-      website: "",
-      socialHandles: {
-        linkedin: "",
-        instagram: "",
-        twitter: "",
-        github: "",
-      },
-      featuredWorkTitle: "",
-      featuredWorkDesc: "",
-      featuredWorkImage: "",
-      priorityContactLink: "",
-    },
+    defaultValues: defaultProfile,
   });
 
   const commonClassName =
@@ -148,6 +164,7 @@ const Page = () => {
     mutation.mutate(formData);
   };
 
+  // Use mutation.isPending for React Query v5
   const loading = queryLoading || mutation.isPending;
 
   if (status === "loading") {
