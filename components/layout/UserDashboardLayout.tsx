@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
-import { Loader2 } from "lucide-react";
 import PageLoader from "../PageLoader";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
