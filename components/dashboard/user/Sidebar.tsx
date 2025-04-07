@@ -121,7 +121,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* Settings Section */}
           <NavSection title="Settings">
             <NavItem
-              href="/profile"
+              href="/dashboard/profile"
               icon={<User size={20} />}
               label="Profile"
             />

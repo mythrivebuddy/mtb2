@@ -86,11 +86,14 @@ const Page = () => {
 
   // Automatically switch to edit mode if profile.name is empty
   useEffect(() => {
-    if (profile && !profile.name) {
-      console.log(profile.name);
-      setIsEditing(true);
+    if (!queryLoading) {
+      if (profile?.name) {
+        setIsEditing(false);
+      } else {
+        setIsEditing(true);
+      }
     }
-  }, [profile]);
+  }, [profile, queryLoading]);
 
   // Update profile data with useMutation
   const mutation = useMutation({
@@ -184,35 +187,33 @@ const Page = () => {
   }
 
   return (
-    <AppLayout>
-      <div className="flex-1 p-8">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">
-          Business Profile
-        </h1>
-        <CompletionBar percentage={profile?.completionPercentage ?? 0} />
-        {loading && (
-          <div className="mb-4 flex justify-center items-center">
-            <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
-          </div>
-        )}
-        {!isEditing ? (
-          <ProfileDisplay
-            profileData={profile}
-            onEditClick={() => setIsEditing(true)}
-          />
-        ) : (
-          <ProfileEdit
-            onCancel={() => setIsEditing(false)}
-            onSubmit={handleSubmit(onSubmit)}
-            register={register}
-            errors={errors}
-            commonClassName={commonClassName}
-            handleFileChange={handleFileChange}
-            imagePreview={imagePreview}
-          />
-        )}
-      </div>
-    </AppLayout>
+    <div className="flex-1 p-8">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">
+        Business Profile
+      </h1>
+      <CompletionBar percentage={profile?.completionPercentage ?? 0} />
+      {loading && (
+        <div className="mb-4 flex justify-center items-center">
+          <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
+        </div>
+      )}
+      {!isEditing ? (
+        <ProfileDisplay
+          profileData={profile}
+          onEditClick={() => setIsEditing(true)}
+        />
+      ) : (
+        <ProfileEdit
+          onCancel={() => setIsEditing(false)}
+          onSubmit={handleSubmit(onSubmit)}
+          register={register}
+          errors={errors}
+          commonClassName={commonClassName}
+          handleFileChange={handleFileChange}
+          imagePreview={imagePreview}
+        />
+      )}
+    </div>
   );
 };
 
