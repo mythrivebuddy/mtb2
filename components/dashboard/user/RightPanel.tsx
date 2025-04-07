@@ -1,5 +1,9 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 type Buddy = {
@@ -10,10 +14,22 @@ type Buddy = {
 };
 
 type HistoryItem = {
-  id: number;
+  id: string;
   description: string;
   date: string;
   amount: number;
+  activity: {
+    activity: string;
+    jpAmount: number;
+    transactionType: string;
+  };
+  createdAt: string;
+};
+
+const fetchUserTransactionHistory = async () => {
+  const res = await axios.get("/api/user/history");
+  console.log(res.data);
+  return res.data;
 };
 
 const RightPanel = ({ className }: { className?: string }) => {
@@ -23,32 +39,29 @@ const RightPanel = ({ className }: { className?: string }) => {
     { id: 3, name: "Charlie", access: "Full Access" },
   ];
 
-  const historyItems: HistoryItem[] = [
-    {
-      id: 1,
-      description: "Spend on Spotlight",
-      date: "February 1, 2025",
-      amount: 750,
-    },
-    {
-      id: 2,
-      description: "Spend on Prosperity",
-      date: "February 1, 2025",
-      amount: 750,
-    },
-    {
-      id: 3,
-      description: "Updated profile",
-      date: "February 1, 2025",
-      amount: 750,
-    },
-    {
-      id: 4,
-      description: "Earned Jp for Login",
-      date: "Jan 31, 2025",
-      amount: 50,
-    },
-  ];
+  const { data: transactionHistory, isLoading } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: () => fetchUserTransactionHistory(),
+  });
+
+  // Map the fetched transactions to HistoryItem objects
+  let historyItems: HistoryItem[] = [];
+  if (transactionHistory?.transactions) {
+    historyItems = transactionHistory.transactions.map((tx: HistoryItem) => {
+      // Determine if transaction is a debit or credit.
+      const isDebit = tx.activity.transactionType === "DEBIT";
+      const description = isDebit
+        ? `Spent on ${tx.activity.activity.toLowerCase()}`
+        : `Earned for ${tx.activity.activity.toLowerCase()}`;
+
+      return {
+        id: tx.id,
+        description,
+        date: new Date(tx.createdAt).toLocaleString(),
+        amount: tx.activity.jpAmount,
+      };
+    });
+  }
 
   return (
     <div className={`bg-transparent overflow-y-auto ${className}`}>
@@ -64,11 +77,11 @@ const RightPanel = ({ className }: { className?: string }) => {
           </a>
         </div>
         <div className="space-y-3 bg-white rounded-3xl p-5">
-          {buddies?.map((buddy) => (
+          {buddies.map((buddy) => (
             <div key={buddy.id} className="flex items-center">
               {buddy.avatar ? (
-                <img
-                  src={buddy.avatar} // Add a default avatar
+                <Image
+                  src={buddy.avatar}
                   alt={buddy.name}
                   className="w-10 h-10 rounded-full mr-3"
                 />
@@ -84,7 +97,7 @@ const RightPanel = ({ className }: { className?: string }) => {
             </div>
           ))}
           <div className="pt-3 pb-5">
-            <button className=" bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 w-full">
+            <button className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 w-full">
               Add Member
             </button>
           </div>
@@ -95,29 +108,33 @@ const RightPanel = ({ className }: { className?: string }) => {
       <section>
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-lg font-bold text-gray-800">History</h2>
-          <a
-            href="#"
+          <Link
+            href="/dashboard/transactions-history"
             className="text-sm text-blue-500 hover:text-gray-700 hover:underline"
           >
             View all
-          </a>
+          </Link>
         </div>
-        <div className="space-y-3">
-          {historyItems?.map((item) => (
-            <div key={item.id} className="flex items-start">
-              <span className="text-xl text-blue-700 mr-2">•</span>
-              <div className="flex-1">
-                <p className="text-gray-800 text-nowrap truncate">
-                  {item.description}
+        {isLoading ? (
+          <p>Loading history...</p>
+        ) : (
+          <div className="space-y-3">
+            {historyItems.map((item) => (
+              <div key={item.id} className="flex items-start">
+                <span className="text-xl text-blue-700 mr-2">•</span>
+                <div className="flex-1">
+                  <p className="text-gray-800 text-nowrap truncate">
+                    {item.description}
+                  </p>
+                  <p className="text-sm text-gray-500">{item.date}</p>
+                </div>
+                <p className="text-red-500 font-medium ml-2 text-nowrap">
+                  {item.amount} JP
                 </p>
-                <p className="text-sm text-gray-500">{item.date}</p>
               </div>
-              <p className="text-red-500 font-medium ml-2 text-nowrap">
-                {item.amount} JP
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

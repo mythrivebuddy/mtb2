@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { BusinessProfile } from "@/app/profile/page";
+import { BusinessProfile } from "@/app/(userDashboard)/dashboard/profile/page";
 
 interface ProfileEditProps {
   onCancel: () => void;
