@@ -64,6 +64,7 @@ function SignInFormContent() {
       });
       console.log("res", res); //?dev
       if (res?.ok) {
+        router.push("/signin");
         toast.success("Signed in successfully");
         return;
       }
@@ -88,6 +89,7 @@ function SignInFormContent() {
       });
       console.log(result);
       if (result?.ok) {
+        router.push("/signin");
         toast.success("Signed in successfully");
         return;
       }
@@ -96,7 +98,7 @@ function SignInFormContent() {
         toast.error("Google Sign failed. Please try again later.");
       }
     } catch (error) {
-      console.error("Error signing in", error); //?dev
+      console.error("Error signing in", error);
       toast.error(
         getAxiosErrorMessage(
           error,
