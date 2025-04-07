@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+import { signOut } from "next-auth/react";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -138,11 +139,9 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<Phone size={20} />}
               label="Contact us"
             />
-            <NavItem
-              href="/logout"
-              icon={<LogOut size={20} />}
-              label="Logout"
-            />
+            <button onClick={() => signOut()}>
+              <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
+            </button>
           </NavSection>
         </div>
       </div>
