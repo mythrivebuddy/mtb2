@@ -1,5 +1,7 @@
 "use client";
 
+import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Image from "next/image";
@@ -97,9 +99,11 @@ const RightPanel = ({ className }: { className?: string }) => {
             </div>
           ))}
           <div className="pt-3 pb-5">
-            <button className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 w-full">
-              Add Member
-            </button>
+            <ComingSoonWrapper>
+              <button className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 w-full">
+                Add Member
+              </button>
+            </ComingSoonWrapper>
           </div>
         </div>
       </section>
