@@ -3,7 +3,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-
 /**
  * * considerations
  * - cache  --- //* DONE
@@ -58,6 +57,9 @@ export async function GET(request: NextRequest) {
     const skip = (currentPage - 1) * limit;
 
     const users = await prisma.user.findMany({
+      where: {
+        role: "USER",
+      },
       orderBy: {
         [orderBy]: "desc",
       },
@@ -79,9 +81,18 @@ export async function GET(request: NextRequest) {
     //   };
     // });
 
+    // Calculate the starting rank for the current page
+    const startingRank = (currentPage - 1) * limit + 1;
+
+    // Add rank to each user
+    const usersWithRank = users.map((user, index) => ({
+      ...user,
+      rank: startingRank + index,
+    }));
+
     return NextResponse.json(
       {
-        users: users,
+        users: usersWithRank,
         message: "success",
         page: currentPage,
         limit,

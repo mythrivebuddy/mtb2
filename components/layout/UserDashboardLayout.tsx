@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
+import PageLoader from "../PageLoader";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
@@ -12,21 +13,16 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     isLoading,
     error,
   } = useQuery<User>({
-    queryKey: ["user"],
+    queryKey: ["userInfo"],
     queryFn: async () => {
-      const response = await axios.get(
-        "/api/user"
-        //   {
-        //   params: { userId: "currentUserId" }, // Replace with actual user ID logic
-        // }
-      );
+      const response = await axios.get("/api/user");
       return response.data.user;
     },
     retry: false,
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <PageLoader />;
   }
 
   if (error) {
@@ -35,8 +31,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="flex h-full p-7 overflow-auto w-full bg-dashboard">
-      {/* Sidebar */}
+    <div className="flex  p-7 overflow-auto w-full bg-dashboard">
       <Sidebar user={user} />
       {/* Main Content Area with TopBar */}
       <div className="flex-1 flex overflow-hidden pl-7">

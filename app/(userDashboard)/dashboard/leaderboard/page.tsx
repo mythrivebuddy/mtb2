@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader,  CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { columns, LeaderboardUser } from "@/components/leaderboard/columnDef";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -60,12 +60,10 @@ const LeaderboardContent = () => {
   if (isLoading) {
     return (
       <Card className="p-4">
-        <CardHeader>
-          {/* <CardTitle>Leaderboard</CardTitle> */}
-        </CardHeader>
+        <CardHeader>{/* <CardTitle>Leaderboard</CardTitle> */}</CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[1, 2, 3,4].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="w-full h-16" />
             ))}
           </div>
@@ -75,9 +73,9 @@ const LeaderboardContent = () => {
   }
 
   return (
-    <Card className="p-4">
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Leaderboard</CardTitle>
+    <Card className="">
+      <CardHeader className="px-0 py-0 p-0 space-y-0 items-start mt-8 mb-6 mx-8">
+        {/* <CardTitle>Leaderboard</CardTitle> */}
         <Select
           onValueChange={(value) =>
             router.push(
@@ -85,7 +83,7 @@ const LeaderboardContent = () => {
             )
           }
         >
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-48 font-medium border-2 border-gray-500 text-gray-700">
             <SelectValue placeholder="Sort by JP Type" defaultValue={orderBy} />
           </SelectTrigger>
           <SelectContent>
@@ -96,7 +94,7 @@ const LeaderboardContent = () => {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <DataTable
           columns={columns}
           data={sortedUsers}
@@ -110,24 +108,22 @@ const LeaderboardContent = () => {
 const LeaderboardPage = () => {
   return (
     // <UserDashboardLayout>
-      <Suspense
-        fallback={
-          <Card className="p-4">
-            <CardHeader>
-              {/* <CardTitle>Leaderboard</CardTitle> */}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="w-full h-16" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        }
-      >
-        <LeaderboardContent />
-      </Suspense>
+    <Suspense
+      fallback={
+        <Card className="p-4">
+          <CardHeader>{/* <CardTitle>Leaderboard</CardTitle> */}</CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="w-full h-16" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      }
+    >
+      <LeaderboardContent />
+    </Suspense>
     // </UserDashboardLayout>
   );
 };

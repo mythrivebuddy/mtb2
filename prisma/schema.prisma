@@ -68,7 +68,7 @@ model User {
 model Transaction {
   id         String   @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
   createdAt  DateTime @default(now())
@@ -94,8 +94,8 @@ model Plan {
 
 model Spotlight {
   id                  String          @id @default(uuid())
-  userId              String        
-  user                User            @relation(fields: [userId], references: [id])
+  userId              String
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt           DateTime?
   // jpUsed              Int
   appliedAt           DateTime        @default(now())
@@ -121,7 +121,7 @@ model Blog {
 model UserBusinessProfile {
   id     String @id @default(cuid())
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Business Information
   name         String? // Business name

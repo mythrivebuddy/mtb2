@@ -8,14 +8,16 @@ import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Prisma, SpotlightStatus } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
+import PageLoader from "@/components/PageLoader";
 import RightPanel from "@/components/dashboard/user/RightPanel";
+import { ApplicationStepper } from "@/components/ApplicationStepper";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
 
-  const { data: spotlights, isLoading } = useQuery<
-    Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
+  const { data: spotlights, isLoading: spotlightLoading } = useQuery<
+    Prisma.SpotlightGetPayload<{ include: { user: true } }>[] // Spotlight is now an array
   >({
     queryKey: ["spotlight", session?.user?.id],
     queryFn: async () => {
@@ -26,8 +28,8 @@ export default function DashboardPage() {
     enabled: !!session?.user?.id,
   });
 
-  const { data: userData } = useQuery({
-    queryKey: ["user"],
+  const { data: userData, isLoading: userLoading } = useQuery({
+    queryKey: ["userInfo"],
     queryFn: async () => {
       const response = await axios.get("/api/user");
       return response.data.user;
@@ -49,25 +51,47 @@ export default function DashboardPage() {
     onSuccess: (data) => {
       console.log(data);
       toast.success("Spotlight application submitted successfully");
-      queryClient.invalidateQueries({ queryKey: ["spotlight"] });
+      queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
+      queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
     },
     onError: (error) => {
       toast.error(getAxiosErrorMessage(error));
     },
   });
 
+  if (spotlightLoading || status === "loading" || userLoading) {
+    return <PageLoader />;
+  }
+  const SpotlightStepperMap: Record<SpotlightStatus, number> = {
+    [SpotlightStatus.APPLIED]: 0,
+    [SpotlightStatus.IN_REVIEW]: 1,
+    [SpotlightStatus.APPROVED]: 2,
+    [SpotlightStatus.ACTIVE]: 3,
+    [SpotlightStatus.DISAPPROVED]: -1, // to fix TS error, not used in the app
+    [SpotlightStatus.EXPIRED]: -1, // to fix TS error, not used in the app
+  };
+
+  // * will get a single spotlight only until we use EXPIRED, DSISAPPROVED, status in array
+  const currentSpotlight:
+    | Prisma.SpotlightGetPayload<{
+        include: { user: true };
+      }>
+    | undefined = spotlights?.find((spotlight) => {
+    return ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
+      spotlight.status
+    );
+  });
+
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-0">
       <div className="flex gap-8">
         {/* Main Dashboard Content */}
         <div className="flex-[3]">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 my-3">
             <JPCard value={userData?.jpEarned || 0} label="Total JP Earned" />
             <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
             <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
           </div>
-          <p className="mt-4">Welcome to your dashboard!</p>
-
           <ConfirmAction
             action={() => mutation.mutate()}
             isDisabled={
@@ -82,7 +106,7 @@ export default function DashboardPage() {
           >
             <Button
               disabled={
-                status === "loading" ||
+                // status === "loading" ||
                 mutation.isPending ||
                 (spotlights &&
                   spotlights.some((spotlight) =>
@@ -96,40 +120,17 @@ export default function DashboardPage() {
               Apply for Spotlight
             </Button>
           </ConfirmAction>
-
-          {isLoading ? (
-            <p className="mt-4">Loading spotlight status...</p>
+          <h2 className="text-2xl mt-4 mb-4 text-slate-800">Spotlight</h2>
+          {/* Spotlight multi step progess bar */}
+          {currentSpotlight ? (
+            <ApplicationStepper
+              currentStep={SpotlightStepperMap[currentSpotlight?.status]}
+              // currentStep={0}
+            />
           ) : (
-            spotlights &&
-            spotlights.length > 0 && (
-              <div className="mt-4 space-y-4">
-                {spotlights.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="p-4 rounded-lg border-black border"
-                  >
-                    <h2 className="text-xl font-semibold">Spotlight Entry</h2>
-                    <p className="mt-2">
-                      Status:{" "}
-                      {entry.status === SpotlightStatus.ACTIVE
-                        ? "ACTIVE"
-                        : entry.status ?? "N/A"}
-                    </p>
-                    <p className="mt-1">
-                      Applied on:{" "}
-                      {new Date(entry.appliedAt).toLocaleDateString()}
-                    </p>
-                    {entry.status === SpotlightStatus.EXPIRED &&
-                      entry.expiresAt && (
-                        <p className="mt-1">
-                          Expired on:{" "}
-                          {new Date(entry?.expiresAt).toLocaleDateString()}
-                        </p>
-                      )}
-                  </div>
-                ))}
-              </div>
-            )
+            <div className="flex flex-col items-center justify-center ">
+            <p className="mt-4">No spotlight application found.</p>
+            </div>
           )}
         </div>
 
