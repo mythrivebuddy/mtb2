@@ -1,6 +1,5 @@
 "use client";
 
-import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";

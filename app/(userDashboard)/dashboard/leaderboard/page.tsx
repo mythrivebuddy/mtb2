@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader,  CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { columns, LeaderboardUser } from "@/components/leaderboard/columnDef";
 import { useRouter, useSearchParams } from "next/navigation";
