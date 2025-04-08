@@ -4,7 +4,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // previewFeatures = ["fullTextSearchPostgres"]
 }
 
 enum Role {
@@ -63,6 +64,9 @@ model User {
   spotlight           Spotlight[]
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
+
+  @@index([name])
+
 }
 
 model Transaction {
@@ -152,13 +156,15 @@ model UserBusinessProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([name, businessInfo, missionStatement, goals, achievements, keyOfferings])
 }
 
-model BlockedUsers{
-  id    String  @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
-  reason String
-  blockedAt  DateTime @default(now())
-  blockedBy  String? 
+model BlockedUsers {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  reason    String
+  blockedAt DateTime @default(now())
+  blockedBy String?
 }
