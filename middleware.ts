@@ -27,5 +27,5 @@ export default withAuth(
 
 // Specify the routes that should be protected by this middleware
 export const config = {
-  matcher: ["/dashboard", "/leaderboard", "/admin/:path*"], // Protect specific pages
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*"], // Protect specific pages
 };

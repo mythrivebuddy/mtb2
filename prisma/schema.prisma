@@ -162,3 +162,13 @@ model BlockedUsers{
   blockedAt  DateTime @default(now())
   blockedBy  String? 
 }
+
+
+
+
+model Faq{
+  id   String @id  @default(cuid())
+  question    String
+  answer    String
+
+}
