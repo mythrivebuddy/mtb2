@@ -14,6 +14,7 @@ import {
   Phone,
   LogOut,
   UserRound,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -113,6 +114,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               href="/dashboard/leaderboard"
               icon={<LayoutList size={20} />}
               label="Leader Board"
+            />
+            <NavItem
+              href="/dashboard/miracle-log"
+              icon={<Sparkles size={20} />}
+              label="Miracle Log"
             />
             <ComingSoonWrapper>
               <NavItem

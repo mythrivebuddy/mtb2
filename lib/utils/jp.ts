@@ -1,30 +1,46 @@
 // function to add jp according to the plan and activity
 
-import { ActivityType, Prisma } from "@prisma/client";
+import { ActivityType, Prisma, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 type UserWithPlan = Prisma.UserGetPayload<{
-  include: {
-    plan: true;
-  };
-  omit: {
-    password: true;
-  };
+  include: { plan: true };
 }>;
 
-export function isPlanActive(user: UserWithPlan) {
-  if (!user.planId) return false; // Free user → Not active
-  if (!user.planEnd) return true; // Lifetime plan → Always active
-  return new Date() < user.planEnd; // Valid time-based plan
+function isPlanActive(user: UserWithPlan) {
+  if (!user.planStart || !user.planEnd) return false;
+  const now = new Date();
+  return now >= user.planStart && now <= user.planEnd;
 }
 
 export async function assignJp(user: UserWithPlan, activity: ActivityType) {
   try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const activityData = await prisma.activity.findUnique({
       where: { activity: activity },
     });
     if (!activityData) {
       throw new Error(`Activity ${activity} not found`);
+    }
+
+    // Check daily JP limit
+    const transactionsToday = await prisma.transaction.count({
+      where: {
+        userId: user.id,
+        activityId: activityData.id,
+        createdAt: {
+          gte: today
+        }
+      }
+    });
+
+    const totalJpToday = transactionsToday * activityData.jpAmount;
+    
+    // If we've hit the daily limit, don't award any more JP
+    if (totalJpToday >= 150) {
+      throw new Error("Daily JP limit reached");
     }
 
     const isActive = isPlanActive(user);
@@ -39,7 +55,6 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
         jpTransaction: { increment: jpToAdd },
         transaction: {
           create: {
-            //!may need user ID here -- may be
             activityId: activityData.id!,
           },
         },
