@@ -19,7 +19,7 @@ export function InputWithLabel({
 }: FormInputProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={props.id}>{label}</Label>
+      {label && <Label htmlFor={props.id}>{label}</Label>}
       <Input
         {...props}
         className={`h-12 ${props.className || ""} ${

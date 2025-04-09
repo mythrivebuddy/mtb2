@@ -4,7 +4,7 @@ datasource db {
 }
 
 generator client {
-  provider        = "prisma-client-js"
+  provider = "prisma-client-js"
   // previewFeatures = ["fullTextSearchPostgres"]
 }
 
@@ -24,6 +24,7 @@ enum ActivityType {
   QUIZ_CORRECT
   ADD_LOG
   SPOTLIGHT
+  PROSPERITY_DROP
   BUSINESSPROFILE_COMPLETE
 }
 
@@ -39,6 +40,13 @@ enum SpotlightStatus {
   DISAPPROVED
   EXPIRED
   ACTIVE
+}
+
+enum ProsperityDropStatus {
+  APPLIED
+  IN_REVIEW
+  APPROVED
+  DISAPPROVED
 }
 
 model User {
@@ -62,11 +70,11 @@ model User {
   planEnd             DateTime? // When the plan expires
   isBlocked           Boolean?              @default(false)
   spotlight           Spotlight[]
+  prosperityDrops     ProsperityDrop[]
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
 
   @@index([name])
-
 }
 
 model Transaction {
@@ -167,4 +175,20 @@ model BlockedUsers {
   reason    String
   blockedAt DateTime @default(now())
   blockedBy String?
+}
+
+model ProsperityDrop {
+  id          String               @id @default(uuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  // goalAmount  Int
+  appliedAt   DateTime             @default(now())
+  status      ProsperityDropStatus @default(APPLIED)
+  // reviewedAt  DateTime?
+  // reviewedBy  String?
+  // jpCost      Int                  @default(5000) // Application cost
+
+  @@index([status])
 }
