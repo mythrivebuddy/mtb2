@@ -3,7 +3,6 @@
 import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useMemo } from "react";
 import { DataTable } from "@/components/leaderboard/data-table";
 import {
   Select,
@@ -12,9 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { columns, LeaderboardUser } from "@/components/leaderboard/columnDef";
+import { columns } from "@/components/leaderboard/columnDef";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DEFAULT_LEADERBOARD_PAGE,

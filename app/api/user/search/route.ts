@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { type NextRequest } from "next/server";
+import { checkRole } from "@/lib/utils/auth";
 
 export async function GET(request: NextRequest) {
   try {
+       await checkRole(
+          "USER",
+          "You are not authorized for this action"
+        );
     const searchTerm = request.nextUrl.searchParams.get("q")?.trim();
 
     if (!searchTerm) {
