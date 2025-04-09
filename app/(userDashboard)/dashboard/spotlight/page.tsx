@@ -1,23 +1,70 @@
-
-
 'use client';
 
 import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
+import { useSession } from "next-auth/react";
+import { getAxiosErrorMessage } from "@/utils/ax";
+
+import { Prisma, SpotlightStatus } from "@prisma/client";
+
+import axios from "axios";
+
+import ConfirmAction from "@/components/ConfirmAction";
+
 import { toast } from 'sonner';
 
 export default function SpotlightPage() {
-  const [isChecked, setIsChecked] = useState(false);
 
-  const handleApply = () => {
-    if (!isChecked) {
-      toast.error('Please accept the terms and conditions');
-      return;
-    }
-    alert('Spotlight application submitted!');
-  };
+    const [isChecked, setIsChecked] = useState(false);
+
+
+    const { data: session, status } = useSession();
+    const queryClient = useQueryClient();
+
+
+
+  const { data: spotlights, isLoading: spotlightLoading } = useQuery<
+  Prisma.SpotlightGetPayload<{ include: { user: true } }>[] // Spotlight is now an array
+>({
+  queryKey: ["spotlight", session?.user?.id],
+  queryFn: async () => {
+    const response = await axios.get(`/api/user/spotlight`);
+    return response.data;
+  },
+  retry: false,
+  enabled: !!session?.user?.id,
+});
+
+
+console.log(spotlights);
+
+const createSpotlight = async () => {
+  const response = await axios.post("/api/user/spotlight", {
+    userId: session?.user?.id,
+  });
+  return response.data;
+};
+
+
+
+const mutation = useMutation({
+  mutationFn: createSpotlight,
+  onSuccess: (data) => {
+    console.log(data);
+    toast.success("Spotlight application submitted successfully");
+    queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
+    queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
+  },
+  onError: (error) => {
+    toast.error(getAxiosErrorMessage(error));
+  },
+});
+
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -76,13 +123,39 @@ export default function SpotlightPage() {
             </label>
           </div>
 
-          <Button 
-            onClick={handleApply}
-            className="w-full"
-            disabled={!isChecked}
+          <ConfirmAction
+            action={() => mutation.mutate()}
+            isDisabled={
+              !isChecked ||
+              mutation.isPending ||
+              (spotlights &&
+                spotlights.some((spotlight) =>
+                  ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
+                    spotlight.status
+                  )
+                ))
+            }
           >
-            Apply for Spotlight
-          </Button>
+            <Button
+              disabled={
+                !isChecked ||
+                mutation.isPending ||
+                (spotlights &&
+                  spotlights.some((spotlight) =>
+                    ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
+                      spotlight.status
+                    )
+                  ))
+              }
+              className={`mt-4 px-4 py-2 rounded ${
+                !isChecked || mutation.isPending
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-black hover:bg-black-600"
+              } text-white transition-colors duration-200`}
+            >
+              Apply for Spotlight
+            </Button>
+          </ConfirmAction>
         </div>
       </Card>
     </div>
