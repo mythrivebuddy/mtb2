@@ -5,6 +5,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  // previewFeatures = ["fullTextSearchPostgres"]
 }
 
 enum Role {
@@ -23,6 +24,7 @@ enum ActivityType {
   QUIZ_CORRECT
   ADD_LOG
   SPOTLIGHT
+  PROSPERITY_DROP
   BUSINESSPROFILE_COMPLETE
 }
 
@@ -40,37 +42,47 @@ enum SpotlightStatus {
   ACTIVE
 }
 
+enum ProsperityDropStatus {
+  APPLIED
+  IN_REVIEW
+  APPROVED
+  DISAPPROVED
+}
+
 enum SpotlightActivityType {
   VIEW
   CONNECT
 }
 
 model User {
-  id                  String                @id @default(uuid())
-  email               String                @unique
-  password            String?
-  name                String
-  role                Role
-  image               String?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  transaction         Transaction[]
-  jpEarned            Int                   @default(0)
-  jpSpent             Int                   @default(0)
-  jpBalance           Int                   @default(0)
-  jpTransaction       Int                   @default(0)
-  authMethod          AuthMethod            @default(CREDENTIALS) // Default to credentials
-  planId              String?
-  plan                Plan?                 @relation(fields: [planId], references: [id])
-  planStart           DateTime? // When the user subscribed
-  planEnd             DateTime? // When the plan expires
-  isBlocked           Boolean?              @default(false)
-  isEmailVerified     Boolean               @default(false)
-  emailVerificationToken String?
+  id                            String                @id @default(uuid())
+  email                         String                @unique
+  password                      String?
+  name                          String
+  role                          Role
+  image                         String?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+  transaction                   Transaction[]
+  jpEarned                      Int                   @default(0)
+  jpSpent                       Int                   @default(0)
+  jpBalance                     Int                   @default(0)
+  jpTransaction                 Int                   @default(0)
+  authMethod                    AuthMethod            @default(CREDENTIALS) // Default to credentials
+  planId                        String?
+  plan                          Plan?                 @relation(fields: [planId], references: [id])
+  planStart                     DateTime? // When the user subscribed
+  planEnd                       DateTime? // When the plan expires
+  isBlocked                     Boolean?              @default(false)
+  isEmailVerified               Boolean               @default(false)
+  emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
-  spotlight           Spotlight[]
-  userBusinessProfile UserBusinessProfile[]
-  blockedUsers        BlockedUsers[]
+  spotlight                     Spotlight[]
+  prosperityDrops               ProsperityDrop[]
+  userBusinessProfile           UserBusinessProfile[]
+  blockedUsers                  BlockedUsers[]
+
+  @@index([name])
 }
 
 model Transaction {
@@ -102,16 +114,16 @@ model Plan {
 }
 
 model Spotlight {
-  id                  String          @id @default(uuid())
+  id                  String              @id @default(uuid())
   userId              String
-  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt           DateTime?
   // jpUsed              Int
-  appliedAt           DateTime        @default(now())
-  status              SpotlightStatus @default(APPLIED)
+  appliedAt           DateTime            @default(now())
+  status              SpotlightStatus     @default(APPLIED)
   // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
-  defaultDurationDays Int             @default(1) // Default duration in days, can be changed by admin
-  activities SpotlightActivity[]
+  defaultDurationDays Int                 @default(1) // Default duration in days, can be changed by admin
+  activities          SpotlightActivity[]
 
   @@index([expiresAt])
 }
@@ -162,32 +174,47 @@ model UserBusinessProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([name, businessInfo, missionStatement, goals, achievements, keyOfferings])
 }
 
-model BlockedUsers{
-  id    String  @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
-  reason String
-  blockedAt  DateTime @default(now())
-  blockedBy  String? 
+model BlockedUsers {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  reason    String
+  blockedAt DateTime @default(now())
+  blockedBy String?
 }
 
+model ProsperityDrop {
+  id          String               @id @default(uuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  // goalAmount  Int
+  appliedAt   DateTime             @default(now())
+  status      ProsperityDropStatus @default(APPLIED)
+  // reviewedAt  DateTime?
+  // reviewedBy  String?
+  // jpCost      Int                  @default(5000) // Application cost
 
-
-
-model Faq{
-  id   String @id  @default(cuid())
-  question    String
-  answer    String
-
+  @@index([status])
 }
+
+model Faq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+}
+
 model SpotlightActivity {
-  id          String               @id @default(cuid())
+  id          String                @id @default(cuid())
   type        SpotlightActivityType
-  spotlight   Spotlight            @relation(fields: [spotlightId], references: [id], onDelete: Cascade)
+  spotlight   Spotlight             @relation(fields: [spotlightId], references: [id], onDelete: Cascade)
   spotlightId String
-  createdAt   DateTime             @default(now())
+  createdAt   DateTime              @default(now())
 
   @@index([spotlightId])
   @@index([createdAt])
