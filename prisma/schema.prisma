@@ -173,6 +173,15 @@ model BlockedUsers{
   blockedBy  String? 
 }
 
+
+
+
+model Faq{
+  id   String @id  @default(cuid())
+  question    String
+  answer    String
+
+}
 model SpotlightActivity {
   id          String               @id @default(cuid())
   type        SpotlightActivityType
