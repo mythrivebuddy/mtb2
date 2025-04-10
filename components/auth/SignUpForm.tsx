@@ -39,9 +39,8 @@ export default function SignUpForm() {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/signup", data);
-      console.log(res);
       if (res.status >= 200 && res.status < 300) {
-        toast.success("User signup successfully");
+        toast.success(res.data.message);
         router.push("/signin");
         return;
       }
