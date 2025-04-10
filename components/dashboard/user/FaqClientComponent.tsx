@@ -53,13 +53,13 @@ const FaqClientComponent = () => {
         </Alert>
       )}
 
-      {faqs && faqs.length === 0 && (
+      {faqs && faqs?.length === 0 && (
         <p className="text-center text-muted-foreground">No FAQs available.</p>
       )}
 
-      {faqs && faqs.length > 0 && (
+      {faqs && faqs?.length > 0 && (
         <div className="space-y-4">
-          {faqs.map((faq) => {
+          {faqs?.map((faq) => {
             const isOpen = activeFaq === faq.id;
             return (
               <Card
@@ -98,83 +98,3 @@ const FaqClientComponent = () => {
 export default FaqClientComponent;
 
 
-
-// 'use client';
-
-// import React, { useEffect, useState } from 'react';
-// import axios from 'axios';
-// import { ChevronDown, ChevronUp } from 'lucide-react';
-
-// interface Faq {
-//   id: string;
-//   question: string;
-//   answer: string;
-// }
-
-// const FaqClientComponent = () => {
-//   const [faqs, setFaqs] = useState<Faq[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [activeFaq, setActiveFaq] = useState<string | null>(null);
-
-//   useEffect(() => {
-//     const fetchFaqs = async () => {
-//       try {
-//         const res = await axios.get('/api/admin/faq');
-//         setFaqs(res.data);
-//       } catch (error) {
-//         console.error('Failed to fetch FAQs:', error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchFaqs();
-//   }, []);
-
-//   const toggleFaq = (id: string) => {
-//     setActiveFaq((prev) => (prev === id ? null : id));
-//   };
-
-//   return (
-//     <div className="max-w-3xl mx-auto px-4 py-10">
-//       <h1 className="text-4xl font-bold text-center mb-10 text-gray-800">Frequently Asked Questions</h1>
-
-//       {loading ? (
-//         <p className="text-center text-gray-500">Loading FAQs...</p>
-//       ) : faqs.length === 0 ? (
-//         <p className="text-center text-gray-500">No FAQs available.</p>
-//       ) : (
-//         <div className="space-y-4">
-//           {faqs.map((faq) => {
-//             const isOpen = activeFaq === faq.id;
-//             return (
-//               <div
-//                 key={faq.id}
-//                 className="border border-gray-300 rounded-lg shadow-sm bg-white transition hover:shadow-md"
-//               >
-//                 <button
-//                   onClick={() => toggleFaq(faq.id)}
-//                   className="w-full flex justify-between items-center p-4 text-left focus:outline-none"
-//                 >
-//                   <span className="text-lg font-medium text-gray-800">{faq.question}</span>
-//                   <span className="text-gray-500">
-//                     {isOpen ? <ChevronUp /> : <ChevronDown />}
-//                   </span>
-//                 </button>
-//                 <div
-//                   className={`px-4 pb-4 text-gray-700 transition-all duration-300 ease-in-out ${
-//                     isOpen ? 'max-h-screen opacity-100' : 'max-h-0 overflow-hidden opacity-0'
-//                   }`}
-//                 >
-//                   {faq.answer}
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default FaqClientComponent;

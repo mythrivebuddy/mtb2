@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { useSession } from "next-auth/react";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
-import { Prisma, SpotlightStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import axios from "axios";
 
@@ -22,12 +22,12 @@ export default function SpotlightPage() {
     const [isChecked, setIsChecked] = useState(false);
 
 
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const queryClient = useQueryClient();
 
 
 
-  const { data: spotlights, isLoading: spotlightLoading } = useQuery<
+  const { data: spotlights } = useQuery<
   Prisma.SpotlightGetPayload<{ include: { user: true } }>[] // Spotlight is now an array
 >({
   queryKey: ["spotlight", session?.user?.id],
@@ -75,7 +75,7 @@ const mutation = useMutation({
 
         <p className="text-gray-600 mb-6">
           Spotlight is a premium feature that puts your business profile in front of thousands of potential customers. 
-          When you're in the spotlight, your profile appears at the top of search results and gets featured in our 
+          When you are in the spotlight, your profile appears at the top of search results and gets featured in our 
           weekly newsletter to our entire user base.
         </p>
         

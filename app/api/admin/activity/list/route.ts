@@ -1,18 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-// import { authOptions } from '@/lib/auth';
+import { checkRole } from "@/lib/utils/auth";
+
 import {prisma} from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Check if user is authenticated and is an admin
-    // const session = await getServerSession(authOptions);
-    // if (!session?.user || session.user.role !== 'ADMIN') {
-    //   return NextResponse.json(
-    //     { error: 'Unauthorized' },
-    //     { status: 401 }
-    //   );
-    // }
+
+    await checkRole("ADMIN", "You are not authorized for this action");
 
     // Fetch all activities
     const activities = await prisma.activity.findMany({

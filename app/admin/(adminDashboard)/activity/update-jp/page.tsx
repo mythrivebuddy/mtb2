@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Activity } from '@prisma/client';
 
 export default function UpdateActivityJpPage() {
-  const router = useRouter();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedActivityId, setSelectedActivityId] = useState('');
   const [jpAmount, setJpAmount] = useState('');
@@ -25,6 +23,7 @@ export default function UpdateActivityJpPage() {
       setActivities(data);
     } catch (err) {
       setError('Failed to load activities');
+      console.log(err);
     }
   };
 
@@ -62,6 +61,7 @@ export default function UpdateActivityJpPage() {
     }
   };
 
+  console.log(activities);
   return (
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Update Activity JP Amount</h1>
@@ -79,11 +79,22 @@ export default function UpdateActivityJpPage() {
             required
           >
             <option value="">Select an activity</option>
-            {activities.map((activity) => (
-              <option key={activity.id} value={activity.id}>
-                {activity.activity} (Current JP: {activity.jpAmount})
-              </option>
-            ))}
+
+            {Array.isArray(activities) && activities?.length > 0 ? (
+  activities?.filter(
+      (activity) =>
+        typeof activity.id === 'string' &&
+        activity.id.trim() !== ''
+    )?.map((activity) => (
+      <option key={activity.id} value={activity.id}>
+        {activity.activity ?? 'Unnamed Activity'} (Current JP: {activity.jpAmount ?? 0})
+      </option>
+    ))
+) : (
+  <option disabled>No activities found</option>
+)}
+
+
           </select>
         </div>
 

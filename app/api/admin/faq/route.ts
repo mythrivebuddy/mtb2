@@ -28,26 +28,30 @@ export async function POST(req: Request) {
 }
 
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  const faqId = params.id;
-
+export async function DELETE(req:Request) {
   try {
+    const body = await req.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ message: 'ID is required' }, { status: 400 });
+    }
+
     await prisma.faq.delete({
-      where: { id: faqId },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'FAQ deleted successfully' }, { status: 200 });
   } catch (error) {
-    return NextResponse.json({ message: 'FAQ not found or already deleted' }, { status: 404 });
+    console.error('FAQ Delete Error:', error);
+    return NextResponse.json({ message: 'Error deleting FAQ' }, { status: 500 });
   }
+
 }
 
 
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
       const faqs = await prisma.faq.findMany();
       return NextResponse.json(faqs, { status: 200 });
