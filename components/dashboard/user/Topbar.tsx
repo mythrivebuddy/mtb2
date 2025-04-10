@@ -3,7 +3,7 @@
 // components/TopBar.tsx
 import { Search } from "lucide-react";
 import { Badge, BadgeProps } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
+// import { Bell } from "lucide-react";
 import React, { useState } from "react";
 import { UserRound } from "lucide-react";
 import { User as UserType } from "@/types/types";
