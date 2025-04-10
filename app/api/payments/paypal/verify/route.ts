@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRole } from "@/lib/utils/auth";
 import axios from "axios";
 
 // Constants for PayPal API
@@ -11,10 +10,10 @@ const PAYPAL_API_BASE = process.env.NODE_ENV === "production"
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await checkRole(
-      "USER",
-      "You are not authorized for this action"
-    );
+    // const session = await checkRole(
+    //   "USER",
+    //   "You are not authorized for this action"
+    // );
 
     // Parse request body
     const body = await req.json();

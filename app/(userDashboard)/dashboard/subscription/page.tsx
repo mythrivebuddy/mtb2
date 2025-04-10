@@ -75,13 +75,8 @@ interface PaymentModalProps {
 }
 
 // Define PayPal response types for better type safety
-type PayPalOrderStatus = 'CREATED' | 'SAVED' | 'APPROVED' | 'VOIDED' | 'COMPLETED' | 'PAYER_ACTION_REQUIRED';
+// type PayPalOrderStatus = 'CREATED' | 'SAVED' | 'APPROVED' | 'VOIDED' | 'COMPLETED' | 'PAYER_ACTION_REQUIRED';
 
-interface PayPalOrderResponseBody {
-  id: string;
-  status: PayPalOrderStatus;
-  [key: string]: any;
-}
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
@@ -123,12 +118,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
         
         <div className="mb-6">
           <p className="text-gray-600">
-            You're subscribing to the <span className="font-medium">{plan.name}</span>
+            You&apos;re subscribing to the <span className="font-medium">{plan.name}</span>
           </p>
           <div className="text-lg font-bold mt-2 flex items-center">
             {parseFloat(price) < parseFloat(plan.price) && (
               <>
-                <span className="line-through text-gray-500 mr-2">${plan.price}</span>
+                <span className="line-through text-gray-500 mr-2">'$'{plan.price}</span>
                 <span>Total: ${price}</span>
               </>
             )}
