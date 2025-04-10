@@ -37,6 +37,7 @@ export default function MiracleLogPage() {
   const [content, setContent] = useState('');
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);
   const [viewLog, setViewLog] = useState<MiracleLog | null>(null);
+  const [deleteLog, setDeleteLog] = useState<MiracleLog | null>(null); // New state for delete confirmation
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -106,9 +107,11 @@ export default function MiracleLogPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miracleLogs'] });
       toast.success('Log deleted successfully');
+      setDeleteLog(null); // Close the dialog on success
     },
     onError: () => {
       toast.error('Failed to delete log');
+      setDeleteLog(null); // Close the dialog on error
     },
   });
 
@@ -123,6 +126,12 @@ export default function MiracleLogPage() {
       updateMutation.mutate({ id: editingLog.id, content });
     } else {
       createMutation.mutate(content);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteLog) {
+      deleteMutation.mutate(deleteLog.id);
     }
   };
 
@@ -250,7 +259,7 @@ export default function MiracleLogPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteMutation.mutate(log.id)}
+                            onClick={() => setDeleteLog(log)} // Changed to open confirmation dialog
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -266,6 +275,7 @@ export default function MiracleLogPage() {
         </Card>
       )}
 
+      {/* View Dialog */}
       <Dialog open={!!viewLog} onOpenChange={() => setViewLog(null)}>
         <DialogContent>
           <DialogHeader>
@@ -293,6 +303,42 @@ export default function MiracleLogPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewLog(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete this miracle log?</p>
+            {deleteLog && (
+              <p className="mt-2 text-sm text-gray-500 italic">
+                "{deleteLog.content.length > 100 
+                  ? `${deleteLog.content.slice(0, 100)}...` 
+                  : deleteLog.content}"
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteLog(null)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
