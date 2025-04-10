@@ -14,6 +14,8 @@ import {
   Phone,
   LogOut,
   UserRound,
+  Gift,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -114,6 +116,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<LayoutList size={20} />}
               label="Leader Board"
             />
+            <NavItem
+              href="/dashboard/prosperity"
+              icon={<Gift size={20} />}
+              label="Prosperity"
+            />
             <ComingSoonWrapper>
               <NavItem
                 href=""
@@ -122,6 +129,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 badge={2}
               />
             </ComingSoonWrapper>
+
+            <NavItem
+              href="/dashboard/spotlight"
+              icon={<Sparkles size={20} />}
+              label="Spotlight"
+            />
           </NavSection>
 
           {/* Settings Section */}
@@ -131,9 +144,14 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<User size={20} />}
               label="Profile"
             />
-            <ComingSoonWrapper>
+            {/* <ComingSoonWrapper>
               <NavItem href="" icon={<HelpCircle size={20} />} label="FAQ's" />
-            </ComingSoonWrapper>
+            </ComingSoonWrapper> */}
+            <NavItem
+              href="/dashboard/faq"
+              icon={<HelpCircle size={20} />}
+              label="FAQ's"
+            />
             <NavItem
               href="/dashboard/contact"
               icon={<Phone size={20} />}

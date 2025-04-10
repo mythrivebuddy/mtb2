@@ -1,9 +1,7 @@
 import { checkRole } from "@/lib/utils/auth";
-import { ActivityType,  SpotlightStatus } from "@prisma/client";
-import {  NextResponse } from "next/server";
+import { ActivityType, SpotlightStatus } from "@prisma/client";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-
 
 //! add check for profile completion
 
@@ -36,9 +34,14 @@ export async function POST() {
     // Fetch user details
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { spotlight: {
-        where: { status: { in: ["ACTIVE", "IN_REVIEW", "APPLIED", "APPROVED"] } },
-      }, userBusinessProfile: true },
+      include: {
+        spotlight: {
+          where: {
+            status: { in: ["ACTIVE", "IN_REVIEW", "APPLIED", "APPROVED"] },
+          },
+        },
+        userBusinessProfile: true,
+      },
     });
 
     if (!user) {
