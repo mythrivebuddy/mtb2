@@ -117,7 +117,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <div className="text-lg font-bold mt-2 flex items-center">
             {parseFloat(price) < parseFloat(plan.price) && (
               <>
-                <span className="line-through text-gray-500 mr-2">'$'{plan.price}</span>
+                <span className="line-through text-gray-500 mr-2">{`$${plan.price}`}</span>
                 <span>Total: ${price}</span>
               </>
             )}
