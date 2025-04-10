@@ -6,7 +6,6 @@ import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
 
-
 const DEFAULT_MAX_AGE = 45 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
 // const DEFAULT_MAX_AGE = 1 * 60;
@@ -27,21 +26,51 @@ export const authConfig: AuthOptions = {
       },
       async authorize(credentials) {
         try {
-          // Find user in DB
-          console.log("credentials", credentials);
+          // Find user in DB and include related blockedUsers for info.
           const user = await prisma.user.findUnique({
             where: {
               email: credentials?.email,
-              authMethod: AuthMethod.CREDENTIALS, // Ensures authentication method matches - prevents Google OAuth users from using password login
             },
             include: {
-              plan: true, // will need it to assign correct JP
+              plan: true, // For JP assignment later
+              blockedUsers: true, // To retrieve block details if needed
             },
           });
+
           if (!user) {
             throw new Error("No user found");
           }
-          // Check password
+
+          // Ensure the authentication method is correct.
+          if (user.authMethod !== "CREDENTIALS") {
+            throw new Error(
+              "This account is registered using an external provider"
+            );
+          }
+
+          // Check if the user is blocked.
+          if (user.isBlocked) {
+            // Optional: If user.blockedUsers contains additional info, use it.
+            let blockedMessage = "Your account is blocked.";
+            if (user.blockedUsers && user.blockedUsers.length > 0) {
+              const blockedInfo = user.blockedUsers[0];
+              blockedMessage += ` Reason: ${
+                blockedInfo.reason
+              }. Blocked on: ${new Date(
+                blockedInfo.blockedAt
+              ).toLocaleString()}.`;
+            }
+            throw new Error(blockedMessage);
+          }
+
+          // Check if the user's email is verified.
+          if (!user.isEmailVerified) {
+            throw new Error(
+              "Your email is not verified. Please verify your email before signing in."
+            );
+          }
+
+          // Validate the password.
           if (!credentials?.password) {
             throw new Error("Password is required");
           }
@@ -53,10 +82,10 @@ export const authConfig: AuthOptions = {
             throw new Error("Password is incorrect");
           }
 
-          //** assign JP as signin reward
+          // Assign JP as signin reward (your custom logic)
           assignJp(user, ActivityType.DAILY_LOGIN);
 
-          // console.log("login done");
+          // Return the necessary user info.
           return {
             id: user.id,
             name: user.name,
@@ -92,13 +121,14 @@ export const authConfig: AuthOptions = {
         console.log("user exists info", dbUser);
 
         if (dbUser && dbUser.authMethod === AuthMethod.CREDENTIALS) {
-            // Instead of throwing an error, return false with a customized error
-            return "/signin?error=account-exists-with-credentials"; // or another URL where you'll handle this
+          // Instead of throwing an error, return false with a customized error
+          return "/signin?error=account-exists-with-credentials"; // or another URL where you'll handle this
         }
 
         if (!dbUser) {
           // if user does not exist, create a new user and let signin
-          const role = user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
+          const role =
+            user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
           console.log(role);
 
           const createdUser = await prisma.user.create({
@@ -122,11 +152,11 @@ export const authConfig: AuthOptions = {
           user.role = createdUser.role;
           user.id = createdUser.id;
         } else {
-             if (dbUser.authMethod === AuthMethod.CREDENTIALS) {
-               throw new Error(
-                 "This email is already registered with password login. Please use your password."
-               );
-             }
+          if (dbUser.authMethod === AuthMethod.CREDENTIALS) {
+            throw new Error(
+              "This email is already registered with password login. Please use your password."
+            );
+          }
           // Update user data if it has changed
           const updatedUser = await prisma.user.update({
             where: { email: user.email! },

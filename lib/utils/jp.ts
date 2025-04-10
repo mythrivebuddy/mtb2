@@ -41,6 +41,7 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
           create: {
             //!may need user ID here -- may be
             activityId: activityData.id!,
+            jpAmount: jpToAdd,
           },
         },
       },
@@ -78,6 +79,7 @@ export async function deductJp(user: UserWithPlan, activity: ActivityType) {
           create: {
             //!may need user ID here -- may be
             activityId: activityData.id!,
+            jpAmount: jpToDeduct,
           },
         },
       },

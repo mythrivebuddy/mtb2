@@ -11,6 +11,7 @@ import ProfileDisplay from "@/components/userBusinessProfile/ProfileDisplay";
 import ProfileEdit from "@/components/userBusinessProfile/ProfileEdit";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import PageLoader from "@/components/PageLoader";
 
 interface SocialHandles {
   linkedin?: string;
@@ -171,11 +172,7 @@ const Page = () => {
   const loading = queryLoading || mutation.isPending;
 
   if (status === "loading") {
-    return (
-      <div className="p-6 flex justify-center items-center">
-        <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!session) {

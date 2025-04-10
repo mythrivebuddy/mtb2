@@ -12,6 +12,7 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
+import { Loader2 } from "lucide-react";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,12 +25,12 @@ function SignInFormContent() {
     resolver: zodResolver(signinSchema),
   });
   const searchParams = useSearchParams();
-  const error = searchParams.get("error");
+  const errorFromUrl = searchParams.get("error");
 
-  // Show a toast or error message when the page loads if there's a specific error
+  // If error comes from query parameters, show it via toast.
   useEffect(() => {
-    console.log(error); //?dev
-    if (error === "account-exists-with-credentials") {
+    console.log(errorFromUrl); //?dev
+    if (errorFromUrl === "account-exists-with-credentials") {
       console.log("here");
       setTimeout(() => {
         toast.error(
@@ -37,40 +38,47 @@ function SignInFormContent() {
         );
         router.push("/signin");
       }, 100);
-    } else if (error) {
+    } else if (errorFromUrl) {
       setTimeout(() => {
-        toast.error(error);
+        toast.error(errorFromUrl);
       }, 100);
     }
-  }, [error, router]);
-
- 
-
-  // const redirectBasedOnRole = () => {
-  //   console.log("session", session); //?dev
-  // };
+  }, [errorFromUrl, router]);
 
   const onSubmit = async (data: SigninFormType) => {
-    console.log("siginin form data", data);
-    setIsLoading(true);
     try {
-      // const res = await axios.post("/api/auth/signin", data);
-      const res = await signIn("credentials", {
-        // callbackUrl: "/dashboard",
+      setIsLoading(true);
+      const response = await signIn("credentials", {
         redirect: false,
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
       });
-      console.log("res", res); //?dev
-      if (res?.ok) {
-        router.push("/signin");
-        toast.success("Signed in successfully");
+
+      // When response is successful, redirect and toast success.
+      if (response?.ok) {
+        router.push("/dashboard");
+        toast.success("Login successful");
         return;
       }
-      if (res?.error) {
-        console.log("error", res.error);
-        toast.error(res.error ?? "Sign in failed. Please try again later.");
+
+      const errorMessage = response?.error;
+
+      if (errorMessage) {
+        if (errorMessage.toLowerCase().includes("blocked")) {
+          toast.error(
+            <div>
+              <p>{errorMessage}</p>
+            </div>
+          );
+        } else if (errorMessage.toLowerCase().includes("not verified")) {
+          // If email is not verified.
+          toast.error(errorMessage);
+        } else {
+          toast.error(errorMessage);
+        }
+      } else {
+        toast.error("Failed to login");
       }
     } catch (error) {
       console.error("Signin error:", error);
@@ -87,22 +95,20 @@ function SignInFormContent() {
       const result = await signIn("google", {
         redirect: false,
       });
-      console.log(result);
       if (result?.ok) {
-        router.push("/signin");
+        router.push("/dashboard");
         toast.success("Signed in successfully");
         return;
       }
       if (result?.error) {
-        console.log("error", result.error);
-        toast.error("Google Sign failed. Please try again later.");
+        toast.error("Google Sign in failed. Please try again later.");
       }
     } catch (error) {
       console.error("Error signing in", error);
       toast.error(
         getAxiosErrorMessage(
           error,
-          "Google Sign failed. Please try again later."
+          "Google Sign in failed. Please try again later."
         )
       );
     }
@@ -159,7 +165,7 @@ function SignInFormContent() {
           className="w-full h-12 text-[16px]"
           disabled={isLoading}
         >
-          {isLoading ? "Signing in..." : "Sign In"}
+          {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
         </Button>
       </form>
 

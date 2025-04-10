@@ -8,6 +8,9 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // Redirect non-admin users from /admin
+    if (path.startsWith("/dashboard") && isAdmin) {
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    }
     if (path.startsWith("/admin") && !isAdmin) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
@@ -27,5 +30,5 @@ export default withAuth(
 
 // Specify the routes that should be protected by this middleware
 export const config = {
-  matcher: ["/dashboard", "/leaderboard", "/admin/:path*"], // Protect specific pages
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*"], // Protect specific pages
 };
