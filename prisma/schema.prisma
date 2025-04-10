@@ -40,6 +40,11 @@ enum SpotlightStatus {
   ACTIVE
 }
 
+enum SpotlightActivityType {
+  VIEW
+  CONNECT
+}
+
 model User {
   id                  String                @id @default(uuid())
   email               String                @unique
@@ -60,6 +65,9 @@ model User {
   planStart           DateTime? // When the user subscribed
   planEnd             DateTime? // When the plan expires
   isBlocked           Boolean?              @default(false)
+  isEmailVerified     Boolean               @default(false)
+  emailVerificationToken String?
+  emailVerificationTokenExpires DateTime?
   spotlight           Spotlight[]
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
@@ -71,6 +79,7 @@ model Transaction {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
+  jpAmount   Int?
   createdAt  DateTime @default(now())
 }
 
@@ -102,6 +111,7 @@ model Spotlight {
   status              SpotlightStatus @default(APPLIED)
   // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
   defaultDurationDays Int             @default(1) // Default duration in days, can be changed by admin
+  activities SpotlightActivity[]
 
   @@index([expiresAt])
 }
@@ -161,4 +171,15 @@ model BlockedUsers{
   reason String
   blockedAt  DateTime @default(now())
   blockedBy  String? 
+}
+
+model SpotlightActivity {
+  id          String               @id @default(cuid())
+  type        SpotlightActivityType
+  spotlight   Spotlight            @relation(fields: [spotlightId], references: [id], onDelete: Cascade)
+  spotlightId String
+  createdAt   DateTime             @default(now())
+
+  @@index([spotlightId])
+  @@index([createdAt])
 }

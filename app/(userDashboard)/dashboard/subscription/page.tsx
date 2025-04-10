@@ -7,6 +7,7 @@ import { format, differenceInDays } from "date-fns";
 import { Check, Loader2, Info, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import PageLoader from "@/components/PageLoader";
 
 // Types
 interface Plan {
@@ -263,11 +264,7 @@ const SubscriptionPage = () => {
   }, [data?.currentPlan, data?.planStart, lifetimePlan]);
 
   if (isLoading) {
-    return (
-      <div className="w-full h-64 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   // Check if user is on lifetime plan

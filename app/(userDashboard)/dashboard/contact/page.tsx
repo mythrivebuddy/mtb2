@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import ContactForm from "@/components/contact/ContactForm";
-import AppLayout from "@/components/layout/AppLayout";
 
 export const metadata: Metadata = {
   title: "Contact Us - MyThriveBuddy",

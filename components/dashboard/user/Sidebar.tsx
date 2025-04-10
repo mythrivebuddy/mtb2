@@ -69,7 +69,7 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
   return (
-    <aside className="w-64  bg-white shadow-lg rounded-3xl overflow-hidden">
+    <aside className="w-64 bg-white shadow-lg rounded-3xl  overflow-hidden">
       {/* User Profile Section */}
       <div className="flex flex-col my-8 pl-5">
         <div className=" flex items-center gap-3">
@@ -97,13 +97,13 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* Menu Section */}
           <NavSection title="Menu">
             <NavItem href="/dashboard" icon={<Home size={20} />} label="Home" />
-            <ComingSoonWrapper>
-              <NavItem
-                href=""
-                icon={<BarChart2 size={20} />}
-                label="Insights"
-              />
-            </ComingSoonWrapper>
+
+            <NavItem
+              href="/dashboard/insights"
+              icon={<BarChart2 size={20} />}
+              label="Insights"
+            />
+
             <NavItem
               href="/dashboard/subscription"
               icon={<CreditCard size={20} />}

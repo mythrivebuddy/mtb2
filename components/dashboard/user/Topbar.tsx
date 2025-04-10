@@ -3,13 +3,13 @@
 // components/TopBar.tsx
 import { Search } from "lucide-react";
 import { Badge, BadgeProps } from "@/components/ui/badge";
-import { Bell } from "lucide-react";
 import React from "react";
 import { UserRound } from "lucide-react";
 import { User as UserType } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
 import Image from "next/image";
+import { NotificationIcon } from "@/lib/icons/Icons";
 
 const TopBarBadge = ({
   children,
@@ -71,7 +71,7 @@ export default function TopBar({ user }: { user?: UserType }) {
 
           {/* Notifications */}
           <TopBarBadge>
-            <Bell className="h-5 w-5" />
+            <NotificationIcon />
             {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> */}
           </TopBarBadge>
 

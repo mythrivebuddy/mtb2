@@ -1,5 +1,6 @@
 "use client";
 
+import PageLoader from "@/components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React from "react";
@@ -7,9 +8,9 @@ import React from "react";
 type Transaction = {
   id: string;
   createdAt: string;
+  jpAmount: number;
   activity: {
     activity: string;
-    jpAmount: number;
     transactionType: string;
   };
 };
@@ -27,7 +28,7 @@ const TransactionsHistoryPage = () => {
     queryFn: fetchTransactions,
   });
 
-  if (isLoading) return <p className="p-4">Loading transactions...</p>;
+  if (isLoading) return <PageLoader />;
   if (isError)
     return <p className="p-4">Error fetching transactions: {error?.message}</p>;
 
@@ -67,7 +68,7 @@ const TransactionsHistoryPage = () => {
                   {tx.activity.transactionType}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {tx.activity.jpAmount} JP
+                  {tx.jpAmount} JP
                 </td>
               </tr>
             ))}
