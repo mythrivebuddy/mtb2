@@ -131,7 +131,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { planId } = result.data;
-
+    
+    // Note: Payment verification is now handled by the PayPal verify endpoint
+    // When this endpoint is called, we assume the payment has been verified
+    // in the client-side via the PayPal verify endpoint
+    
     // Get the user with their current plan
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
