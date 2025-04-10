@@ -56,6 +56,8 @@ export async function GET() {
       const faqs = await prisma.faq.findMany();
       return NextResponse.json(faqs, { status: 200 });
     } catch (error) {
+
+      console.log(error)
       return NextResponse.json(
         { message: 'Failed to fetch FAQs', error },
         { status: 500 }

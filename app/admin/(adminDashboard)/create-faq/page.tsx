@@ -23,6 +23,7 @@ export default function FaqManager() {
       setLoading(true);
       const res = await axios.get('/api/admin/faq');
       setFaqs(res.data);
+      console.log(res.data);
     } catch (err) {
       console.error('Failed to fetch FAQs:', err);
       setError('Failed to load FAQs');
