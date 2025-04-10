@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import {prisma} from "@/lib/prisma";
-import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
+import { checkRole } from "@/lib/utils/auth";
 
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authConfig);
-    
+    const session = await checkRole("USER");
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
@@ -48,7 +47,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await checkRole("USER");
     
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

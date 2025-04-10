@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import {prisma} from "@/lib/prisma";
 import { assignJp } from "@/lib/utils/jp";
 import { authConfig } from "../../auth/[...nextauth]/auth.config";
+import { ActivityType } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
 
     if (user) {
       try {
-        await assignJp(user, "MIRACLE_LOG");
+        await assignJp(user, ActivityType.MIRACLE_LOG);
       } catch (error) {
         // If the error is about daily JP limit, we still want to return the log
         if (error instanceof Error && error.message.includes("Daily JP limit")) {

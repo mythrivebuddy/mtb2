@@ -25,6 +25,9 @@ interface MiracleLog {
   id: string;
   content: string;
   createdAt: string;
+  formattedDate?: string;
+  formattedTime?: string;
+  formattedDay?: string;
 }
 
 export default function MiracleLogPage() {
@@ -164,45 +167,68 @@ export default function MiracleLogPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Log</TableHead>
+              <TableHead>Date & Time</TableHead>
               <TableHead className="w-[200px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {logs.map((log: MiracleLog) => (
-              <TableRow key={log.id}>
-                <TableCell className="font-medium">
-                  {log.content.length > 100
-                    ? `${log.content.slice(0, 100)}...`
-                    : log.content}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setViewLog(log)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditingLog(log);
-                      setContent(log.content);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate(log.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {logs.map((log: MiracleLog) => {
+              // Format date information
+              const date = new Date(log.createdAt);
+              const formattedDate = date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              });
+              const formattedTime = date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              });
+              const formattedDay = date.toLocaleDateString('en-US', { weekday: 'long' });
+              
+              return (
+                <TableRow key={log.id}>
+                  <TableCell className="font-medium">
+                    {log.content.length > 100
+                      ? `${log.content.slice(0, 100)}...`
+                      : log.content}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">{formattedDay}</span>
+                      <span className="text-xs text-gray-500">{formattedDate}</span>
+                      <span className="text-xs text-gray-500">{formattedTime}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setViewLog(log)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingLog(log);
+                        setContent(log.content);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteMutation.mutate(log.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}
@@ -213,7 +239,24 @@ export default function MiracleLogPage() {
             <DialogTitle>Miracle Log</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <p>{viewLog?.content}</p>
+            {viewLog && (
+              <>
+                <div className="mb-4 text-sm text-gray-500">
+                  {new Date(viewLog.createdAt).toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                  {' at '}
+                  {new Date(viewLog.createdAt).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </div>
+                <p>{viewLog.content}</p>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
