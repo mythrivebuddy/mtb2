@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { Prisma, SpotlightStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
 import PageLoader from "@/components/PageLoader";
 import RightPanel from "@/components/dashboard/user/RightPanel";

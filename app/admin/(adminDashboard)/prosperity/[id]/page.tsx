@@ -15,13 +15,13 @@ import { format } from "date-fns";
 import { Prisma, ProsperityDropStatus } from "@prisma/client";
 import { toast } from "sonner";
 import PageLoader from "@/components/PageLoader";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ConfirmAction from "@/components/ConfirmAction";
 import { useEffect } from "react";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 export default function ProsperityReviewPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const params = useParams<{ id: string }>();
 
@@ -54,8 +54,8 @@ export default function ProsperityReviewPage() {
       queryClient.invalidateQueries({ queryKey: ["prosperityApplications"] }); // Add this to refresh the listing page
       //   router.push("/admin/prosperity");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || "Something went wrong");
+    onError: (error) => {
+      toast.error(getAxiosErrorMessage(error, "Failed to update status"));
     },
   });
 
@@ -67,7 +67,7 @@ export default function ProsperityReviewPage() {
         status: "IN_REVIEW",
       });
     }
-  }, [application]);
+  }, [application, updateStatus]);
 
   if (isLoading || !application) return <PageLoader />;
 

@@ -15,7 +15,6 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import ConfirmAction from "@/components/ConfirmAction";
 import { ProsperityFormType, prosperitySchema } from "@/schema/zodSchema";
 
 const ProsperityPage = () => {
@@ -24,7 +23,7 @@ const ProsperityPage = () => {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<ProsperityFormType>({
     resolver: zodResolver(prosperitySchema),
   });
