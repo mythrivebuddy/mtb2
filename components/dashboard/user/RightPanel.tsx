@@ -19,9 +19,9 @@ type HistoryItem = {
   description: string;
   date: string;
   amount: number;
+  jpAmount: number;
   activity: {
     activity: string;
-    jpAmount: number;
     transactionType: string;
   };
   createdAt: string;
@@ -59,7 +59,7 @@ const RightPanel = ({ className }: { className?: string }) => {
         id: tx.id,
         description,
         date: new Date(tx.createdAt).toLocaleString(),
-        amount: tx.activity.jpAmount,
+        amount: tx.jpAmount,
       };
     });
   }

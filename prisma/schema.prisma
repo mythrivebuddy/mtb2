@@ -49,30 +49,38 @@ enum ProsperityDropStatus {
   DISAPPROVED
 }
 
+enum SpotlightActivityType {
+  VIEW
+  CONNECT
+}
+
 model User {
-  id                  String                @id @default(uuid())
-  email               String                @unique
-  password            String?
-  name                String
-  role                Role
-  image               String?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  transaction         Transaction[]
-  jpEarned            Int                   @default(0)
-  jpSpent             Int                   @default(0)
-  jpBalance           Int                   @default(0)
-  jpTransaction       Int                   @default(0)
-  authMethod          AuthMethod            @default(CREDENTIALS) // Default to credentials
-  planId              String?
-  plan                Plan?                 @relation(fields: [planId], references: [id])
-  planStart           DateTime? // When the user subscribed
-  planEnd             DateTime? // When the plan expires
-  isBlocked           Boolean?              @default(false)
-  spotlight           Spotlight[]
-  prosperityDrops     ProsperityDrop[]
-  userBusinessProfile UserBusinessProfile[]
-  blockedUsers        BlockedUsers[]
+  id                            String                @id @default(uuid())
+  email                         String                @unique
+  password                      String?
+  name                          String
+  role                          Role
+  image                         String?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+  transaction                   Transaction[]
+  jpEarned                      Int                   @default(0)
+  jpSpent                       Int                   @default(0)
+  jpBalance                     Int                   @default(0)
+  jpTransaction                 Int                   @default(0)
+  authMethod                    AuthMethod            @default(CREDENTIALS) // Default to credentials
+  planId                        String?
+  plan                          Plan?                 @relation(fields: [planId], references: [id])
+  planStart                     DateTime? // When the user subscribed
+  planEnd                       DateTime? // When the plan expires
+  isBlocked                     Boolean?              @default(false)
+  isEmailVerified               Boolean               @default(false)
+  emailVerificationToken        String?
+  emailVerificationTokenExpires DateTime?
+  spotlight                     Spotlight[]
+  prosperityDrops               ProsperityDrop[]
+  userBusinessProfile           UserBusinessProfile[]
+  blockedUsers                  BlockedUsers[]
 
   @@index([name])
 }
@@ -83,6 +91,7 @@ model Transaction {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
+  jpAmount   Int?
   createdAt  DateTime @default(now())
 }
 
@@ -105,15 +114,16 @@ model Plan {
 }
 
 model Spotlight {
-  id                  String          @id @default(uuid())
+  id                  String              @id @default(uuid())
   userId              String
-  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt           DateTime?
   // jpUsed              Int
-  appliedAt           DateTime        @default(now())
-  status              SpotlightStatus @default(APPLIED)
+  appliedAt           DateTime            @default(now())
+  status              SpotlightStatus     @default(APPLIED)
   // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
-  defaultDurationDays Int             @default(1) // Default duration in days, can be changed by admin
+  defaultDurationDays Int                 @default(1) // Default duration in days, can be changed by admin
+  activities          SpotlightActivity[]
 
   @@index([expiresAt])
 }
@@ -191,4 +201,21 @@ model ProsperityDrop {
   // jpCost      Int                  @default(5000) // Application cost
 
   @@index([status])
+}
+
+model Faq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+}
+
+model SpotlightActivity {
+  id          String                @id @default(cuid())
+  type        SpotlightActivityType
+  spotlight   Spotlight             @relation(fields: [spotlightId], references: [id], onDelete: Cascade)
+  spotlightId String
+  createdAt   DateTime              @default(now())
+
+  @@index([spotlightId])
+  @@index([createdAt])
 }

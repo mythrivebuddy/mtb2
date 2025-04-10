@@ -13,6 +13,8 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
+import Image from "next/image";
+import { NotificationIcon } from "@/lib/icons/Icons";
 
 const TopBarBadge = ({
   children,
@@ -116,7 +118,13 @@ export default function TopBar({ user }: { user?: UserType }) {
         <div className="flex gap-6">
           {/* JP Points Badge */}
           <TopBarBadge>
-            <span className="mr-1">🏆</span>
+            <Image
+              src="/Pearls.png"
+              alt="Icon"
+              width={20}
+              height={15}
+              className="rounded-xl mr-1"
+            />
             <span className="font-medium">JP</span>
             <span className="font-bold text-blue-500 ml-1">
               {user?.jpBalance || 0}
@@ -125,7 +133,8 @@ export default function TopBar({ user }: { user?: UserType }) {
 
           {/* Notifications */}
           <TopBarBadge>
-            <Bell className="h-5 w-5" />
+            <NotificationIcon />
+            {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> */}
           </TopBarBadge>
 
           {/* User Avatar */}
