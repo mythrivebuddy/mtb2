@@ -40,6 +40,11 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.PROGRESS_VAULT,
+      jpAmount: 50,
+      transactionType: TransactionType.CREDIT,
+    },
   ];
 
   for (const activity of activities) {

@@ -25,6 +25,7 @@ enum ActivityType {
   SPOTLIGHT
   BUSINESSPROFILE_COMPLETE
   MIRACLE_LOG
+  PROGRESS_VAULT
 }
 
 enum TransactionType {
@@ -65,19 +66,30 @@ model User {
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
   miracleLog          MiracleLog[]
+  progressVault       ProgressVault[]
 }
 
 model MiracleLog {
-  id        String   @id @default(uuid())
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([createdAt])
-} 
+  id               String   @id @default(uuid())
+  content          String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime? // Soft delete field
+  userId           String
+  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
+  user             User     @relation(fields: [userId], references: [id])
+}
+ 
+model ProgressVault {
+  id               String   @id @default(uuid())
+  content          String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime? // Soft delete field
+  userId           String
+  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
+  user             User     @relation(fields: [userId], references: [id])
+}
 
 model Transaction {
   id         String   @id @default(uuid())

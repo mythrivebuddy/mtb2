@@ -15,6 +15,7 @@ import {
   LogOut,
   UserRound,
   Sparkles,
+  Vault,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -119,6 +120,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               href="/dashboard/miracle-log"
               icon={<Sparkles size={20} />}
               label="Miracle Log"
+            />
+             <NavItem
+              href="/dashboard/progress-vault"
+              icon={<Vault size={20} />}
+              label="1 % Progress-Vault"
             />
             <ComingSoonWrapper>
               <NavItem

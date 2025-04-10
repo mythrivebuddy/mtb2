@@ -18,7 +18,7 @@ export async function PUT(
       return NextResponse.json({ message: "Content is required" }, { status: 400 });
     }
 
-    const log = await prisma.miracleLog.findUnique({
+    const log = await prisma.progressVault.findUnique({
       where: { id: params.id }
     });
 
@@ -26,7 +26,7 @@ export async function PUT(
       return NextResponse.json({ message: "Not found" }, { status: 404 });
     }
 
-    const updatedLog = await prisma.miracleLog.update({
+    const updatedLog = await prisma.progressVault.update({
       where: { id: params.id },
       data: { content }
     });
@@ -40,41 +40,34 @@ export async function PUT(
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await checkRole("USER");
-
+    
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const logId = params.id; // Get logId from URL parameters
-
-    if (!logId) {
-      return NextResponse.json({ message: "Log ID is required" }, { status: 400 });
-    }
-
-    // Find the log by ID
-    const log = await prisma.miracleLog.findUnique({
-      where: { id: logId },
+    const log = await prisma.progressVault.findUnique({
+      where: { id: params.id }
     });
 
     if (!log || log.userId !== session.user.id) {
-      return NextResponse.json({ message: "Log not found or not authorized to delete" }, { status: 404 });
+      return NextResponse.json({ message: "Not found" }, { status: 404 });
     }
 
-    // Soft delete the log by setting the deletedAt field
-    await prisma.miracleLog.update({
-      where: { id: log.id },
-      data: { deletedAt: new Date() }, // Mark it as deleted without removing it
+    await prisma.progressVault.delete({
+      where: { id: params.id }
     });
 
     return NextResponse.json({ message: "Log deleted successfully" });
   } catch (error) {
-    console.error(error);
     return NextResponse.json(
       { error: "Failed to delete log" },
       { status: 500 }
     );
   }
-}
+} 
