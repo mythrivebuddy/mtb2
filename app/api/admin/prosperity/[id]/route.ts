@@ -84,3 +84,46 @@ export async function PUT(
     );
   }
 }
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await checkRole("ADMIN", "You are not authorized for this action");
+
+    const { id } = await params;
+
+    const prosperityApplication = await prisma.prosperityDrop.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            jpBalance: true,
+            userBusinessProfile: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    if (!prosperityApplication) {
+      return NextResponse.json(
+        { error: "Prosperity application not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(prosperityApplication);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+}

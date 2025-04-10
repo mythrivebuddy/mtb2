@@ -9,16 +9,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {  useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
 import { Prisma, ProsperityDropStatus } from "@prisma/client";
-import { toast } from "sonner";
 import PageLoader from "@/components/PageLoader";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 export default function ProsperityPage() {
-  const queryClient = useQueryClient();
+  const router = useRouter();
+  // const queryClient = useQueryClient();
 
   // Fetch all prosperity applications
   const { data: applications, isLoading } = useQuery<
@@ -32,27 +33,27 @@ export default function ProsperityPage() {
   });
 
   // Mutation for updating application status
-  const updateStatus = useMutation({
-    mutationFn: async ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: ProsperityDropStatus;
-    }) => {
-      const response = await axios.put(`/api/admin/prosperity/${id}`, {
-        status,
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prosperityApplications"] });
-      toast.success("Status updated successfully");
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || "Something went wrong");
-    },
-  });
+  // const updateStatus = useMutation({
+  //   mutationFn: async ({
+  //     id,
+  //     status,
+  //   }: {
+  //     id: string;
+  //     status: ProsperityDropStatus;
+  //   }) => {
+  //     const response = await axios.put(`/api/admin/prosperity/${id}`, {
+  //       status,
+  //     });
+  //     return response.data;
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ["prosperityApplications"] });
+  //     toast.success("Status updated successfully");
+  //   },
+  //   onError: (error: any) => {
+  //     toast.error(error.response?.data?.error || "Something went wrong");
+  //   },
+  // });
 
   if (isLoading) return <PageLoader />;
 
@@ -96,50 +97,13 @@ export default function ProsperityPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {app.status === "APPLIED" && (
-                    <Button
-                      size="sm"
-                      onClick={() =>
-                        updateStatus.mutate({
-                          id: app.id,
-                          status: "IN_REVIEW",
-                        })
-                      }
-                      disabled={updateStatus.isPending}
-                    >
-                      Review
-                    </Button>
-                  )}
-                  {app.status === "IN_REVIEW" && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() =>
-                          updateStatus.mutate({
-                            id: app.id,
-                            status: "APPROVED",
-                          })
-                        }
-                        disabled={updateStatus.isPending}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() =>
-                          updateStatus.mutate({
-                            id: app.id,
-                            status: "DISAPPROVED",
-                          })
-                        }
-                        disabled={updateStatus.isPending}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push(`/admin/prosperity/${app.id}`)}
+                  >
+                    Review Details
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
