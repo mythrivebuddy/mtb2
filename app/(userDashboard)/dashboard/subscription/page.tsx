@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { format, differenceInDays } from "date-fns";
 import { Check, Loader2, Info, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import {
   PayPalScriptProvider, 
   PayPalButtons 
 } from "@paypal/react-paypal-js";
+import PageLoader from "@/components/PageLoader";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 // Types
 interface Plan {
@@ -30,14 +32,6 @@ interface SubscriptionData {
   lifetimePlanUsers?: number;
   limitedOfferAvailable?: boolean;
 }
-
-// Utility Functions
-const getAxiosErrorMessage = (error: unknown): string => {
-  if (error instanceof AxiosError) {
-    return error.response?.data?.message || error.message;
-  }
-  return "An unexpected error occurred";
-};
 
 const calculateProratedPrice = (
   currentPlan: Plan,
@@ -429,11 +423,7 @@ const SubscriptionPage: React.FC = () => {
   }, [data?.currentPlan, data?.planStart, lifetimePlan]);
 
   if (isLoading) {
-    return (
-      <div className="w-full h-64 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const hasLifetimePlan = data?.currentPlan?.name === "Lifetime Plan";

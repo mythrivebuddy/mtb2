@@ -8,6 +8,9 @@ export default withAuth(
     const path = req.nextUrl.pathname;
 
     // Redirect non-admin users from /admin
+    if (path.startsWith("/dashboard") && isAdmin) {
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    }
     if (path.startsWith("/admin") && !isAdmin) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }

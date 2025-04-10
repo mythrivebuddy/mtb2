@@ -13,8 +13,8 @@ const subscriptionSchema = z.object({
  * Calculate prorated upgrade price based on current plan and usage
  */
 const calculateProratedPrice = (
-  currentPlan: any,
-  newPlan: any,
+  currentPlan: { price: string; durationDays: number | null },
+  newPlan: { price: string; durationDays: number | null },
   currentPlanStart: Date
 ): number => {
   const currentPrice = parseFloat(currentPlan.price);
