@@ -6,8 +6,8 @@
 -- the enum.
 
 
-ALTER TYPE "ActivityType" ADD VALUE 'MIRACLE_LOG';
-ALTER TYPE "ActivityType" ADD VALUE 'PROGRESS_VAULT';
+-- ALTER TYPE "ActivityType" ADD VALUE 'MIRACLE_LOG';
+-- ALTER TYPE "ActivityType" ADD VALUE 'PROGRESS_VAULT';
 
 -- CreateTable
 CREATE TABLE "MiracleLog" (
