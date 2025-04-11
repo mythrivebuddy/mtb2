@@ -31,6 +31,11 @@ async function main() {
       transactionType: TransactionType.DEBIT,
     },
     {
+      activity: ActivityType.PROSPERITY_DROP,
+      jpAmount: 5000,
+      transactionType: TransactionType.DEBIT,
+    },
+    {
       activity: ActivityType.BUSINESSPROFILE_COMPLETE,
       jpAmount: 100,
       transactionType: TransactionType.CREDIT,

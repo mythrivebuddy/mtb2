@@ -19,9 +19,9 @@ type HistoryItem = {
   description: string;
   date: string;
   amount: number;
+  jpAmount: number;
   activity: {
     activity: string;
-    jpAmount: number;
     transactionType: string;
   };
   createdAt: string;
@@ -59,7 +59,7 @@ const RightPanel = ({ className }: { className?: string }) => {
         id: tx.id,
         description,
         date: new Date(tx.createdAt).toLocaleString(),
-        amount: tx.activity.jpAmount,
+        amount: tx.jpAmount,
       };
     });
   }
@@ -74,7 +74,7 @@ const RightPanel = ({ className }: { className?: string }) => {
             href="#"
             className="text-sm text-blue-500 hover:text-gray-700 hover:underline"
           >
-            View all
+            <ComingSoonWrapper>View all</ComingSoonWrapper>
           </a>
         </div>
         <div className="space-y-3 bg-white rounded-3xl p-5">

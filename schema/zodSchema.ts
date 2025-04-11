@@ -25,6 +25,13 @@ export const miracleLogSchema = z.object({
 });
 
 // Types
+export const prosperitySchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  description: z.string().min(20, "Description must be at least 20 characters"),
+});
+
+export type ProsperityFormType = z.infer<typeof prosperitySchema>;
+
 export type SignupFormType = z.infer<typeof signupSchema>;
 export type SigninFormType = z.infer<typeof signinSchema>;
 export type MiracleLogFormType = z.infer<typeof miracleLogSchema>;

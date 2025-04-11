@@ -2,6 +2,7 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkRole } from "@/lib/utils/auth";
 
 /**
  * * considerations
@@ -12,10 +13,10 @@ import { prisma } from "@/lib/prisma";
 export async function GET(request: NextRequest) {
   try {
     //! commented this just authorization code for testing
-    // const session = await getServerSession(authConfig);
-    // console.log(session);
-    // if (!session)
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    await checkRole(
+      "USER",
+      "You are not authorized for this action"
+    );
 
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
