@@ -4,7 +4,7 @@ import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
 
-export async function GET(req: Request) {
+export async function GET( ) {
   try {
     const session = await checkRole("USER");
 

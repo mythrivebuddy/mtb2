@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import {prisma} from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
+
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const session = await checkRole("USER");
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -19,7 +22,7 @@ export async function PUT(
     }
 
     const log = await prisma.progressVault.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     });
 
     if (!log || log.userId !== session.user.id) {
@@ -27,12 +30,13 @@ export async function PUT(
     }
 
     const updatedLog = await prisma.progressVault.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { content }
     });
 
     return NextResponse.json(updatedLog);
   } catch (error) {
+    console.log("error",error)
     return NextResponse.json(
       { error: "Failed to update log" },
       { status: 500 }
@@ -42,9 +46,10 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await checkRole("USER");
     
     if (!session?.user?.id) {
@@ -52,7 +57,7 @@ export async function DELETE(
     }
 
     const log = await prisma.progressVault.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     });
 
     if (!log || log.userId !== session.user.id) {
@@ -60,11 +65,12 @@ export async function DELETE(
     }
 
     await prisma.progressVault.delete({
-      where: { id: params.id }
+      where: { id: id }
     });
 
     return NextResponse.json({ message: "Log deleted successfully" });
   } catch (error) {
+    console.log("error",error)
     return NextResponse.json(
       { error: "Failed to delete log" },
       { status: 500 }

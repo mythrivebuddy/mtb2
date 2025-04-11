@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import {prisma} from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { toast } from "sonner";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const session = await checkRole("USER");
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -19,7 +23,7 @@ export async function PUT(
     }
 
     const log = await prisma.miracleLog.findUnique({
-      where: { id: params.id }
+      where: { id: id }
     });
 
     if (!log || log.userId !== session.user.id) {
@@ -27,28 +31,28 @@ export async function PUT(
     }
 
     const updatedLog = await prisma.miracleLog.update({
-      where: { id: params.id },
+      where: { id: id },
       data: { content }
     });
 
     return NextResponse.json(updatedLog);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update log" },
-      { status: 500 }
-    );
+    toast.error(getAxiosErrorMessage(error,"An error occurred"))
+    return NextResponse.json({ message: "Failed to update log" },{ status: 500 });
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, 
+   { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id :logId} = await params;
     const session = await checkRole("USER");
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const logId = params.id; // Get logId from URL parameters
+    // const logId = params.id; // Get logId from URL parameters
 
     if (!logId) {
       return NextResponse.json({ message: "Log ID is required" }, { status: 400 });
