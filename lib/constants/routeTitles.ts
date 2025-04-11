@@ -4,6 +4,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   leaderboard: "Leader Board",
   insights: "Insights",
   subscription: "Subscription",
+  miracleLog: "Miracle Log",  
   messages: "Messages",
   profile: "Profile",
   faqs: "FAQ's",
