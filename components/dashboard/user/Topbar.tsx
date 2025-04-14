@@ -14,7 +14,8 @@ import axios from "axios";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
-import { NotificationIcon } from "@/lib/icons/Icons";
+import { NotificationIcon } from "@/components/icons/NotificationIcons";
+import Link from "next/link";
 
 const TopBarBadge = ({
   children,
@@ -92,13 +93,10 @@ export default function TopBar({ user }: { user?: UserType }) {
                   </div>
                 ) : (
                   users?.map((user: SearchUser) => (
-                    <div
+                    <Link
                       key={user.id}
+                      href={`/dashboard/profile/${user.id}`}
                       className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
-                      onClick={() => {
-                        setSearchTerm(user.name);
-                        setShowDropdown(false);
-                      }}
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.image || undefined} />
@@ -107,7 +105,7 @@ export default function TopBar({ user }: { user?: UserType }) {
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{user.name}</span>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>

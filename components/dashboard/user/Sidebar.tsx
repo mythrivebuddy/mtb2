@@ -14,6 +14,7 @@ import {
   Phone,
   LogOut,
   UserRound,
+  Vault,
   Gift,
   Sparkles,
   HomeIcon,
@@ -116,12 +117,22 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <NavItem
               href="/dashboard/leaderboard"
               icon={<LayoutList size={20} />}
-              label="Leader Board"
+              label="Leaderboard"
             />
+            <NavItem
+              href="/dashboard/miracle-log"
+              icon={<Sparkles size={20} />}
+              label="Miracle Log"
+            />
+            <NavItem
+              href="/dashboard/progress-vault"
+              icon={<Vault size={20} />}
+              label="1 % Progress-Vault" />
+
             <NavItem
               href="/dashboard/prosperity"
               icon={<Gift size={20} />}
-              label="Prosperity"
+              label="Prosperity Drops"
             />
             <ComingSoonWrapper>
               <NavItem

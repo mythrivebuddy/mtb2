@@ -5,7 +5,6 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
-  // previewFeatures = ["fullTextSearchPostgres"]
 }
 
 enum Role {
@@ -24,7 +23,6 @@ enum ActivityType {
   QUIZ_CORRECT
   ADD_LOG
   SPOTLIGHT
-  PROSPERITY_DROP
   BUSINESSPROFILE_COMPLETE
 }
 
@@ -40,18 +38,6 @@ enum SpotlightStatus {
   DISAPPROVED
   EXPIRED
   ACTIVE
-}
-
-enum ProsperityDropStatus {
-  APPLIED
-  IN_REVIEW
-  APPROVED
-  DISAPPROVED
-}
-
-enum SpotlightActivityType {
-  VIEW
-  CONNECT
 }
 
 model User {
@@ -81,9 +67,6 @@ model User {
   prosperityDrops               ProsperityDrop[]
   userBusinessProfile           UserBusinessProfile[]
   blockedUsers                  BlockedUsers[]
-  purchases                     Purchase[]
-  wishlists                     Wishlist[]
-  cart                          Cart[]
 
   @@index([name])
 }
@@ -94,7 +77,6 @@ model Transaction {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
-  jpAmount   Int?
   createdAt  DateTime @default(now())
 }
 
@@ -117,16 +99,15 @@ model Plan {
 }
 
 model Spotlight {
-  id                  String              @id @default(uuid())
+  id                  String          @id @default(uuid())
   userId              String
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt           DateTime?
   // jpUsed              Int
-  appliedAt           DateTime            @default(now())
-  status              SpotlightStatus     @default(APPLIED)
+  appliedAt           DateTime        @default(now())
+  status              SpotlightStatus @default(APPLIED)
   // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
-  defaultDurationDays Int                 @default(1) // Default duration in days, can be changed by admin
-  activities          SpotlightActivity[]
+  defaultDurationDays Int             @default(1) // Default duration in days, can be changed by admin
 
   @@index([expiresAt])
 }
@@ -177,50 +158,15 @@ model UserBusinessProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([name, businessInfo, missionStatement, goals, achievements, keyOfferings])
 }
 
-model BlockedUsers {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  reason    String
-  blockedAt DateTime @default(now())
-  blockedBy String?
-}
-
-model ProsperityDrop {
-  id          String               @id @default(uuid())
-  userId      String
-  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title       String
-  description String
-  // goalAmount  Int
-  appliedAt   DateTime             @default(now())
-  status      ProsperityDropStatus @default(APPLIED)
-  // reviewedAt  DateTime?
-  // reviewedBy  String?
-  // jpCost      Int                  @default(5000) // Application cost
-
-  @@index([status])
-}
-
-model Faq {
-  id       String @id @default(cuid())
-  question String
-  answer   String
-}
-
-model SpotlightActivity {
-  id          String                @id @default(cuid())
-  type        SpotlightActivityType
-  spotlight   Spotlight             @relation(fields: [spotlightId], references: [id], onDelete: Cascade)
-  spotlightId String
-  createdAt   DateTime              @default(now())
-
-  @@index([spotlightId])
-  @@index([createdAt])
+model BlockedUsers{
+  id    String  @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+  reason String
+  blockedAt  DateTime @default(now())
+  blockedBy  String? 
 }
 
 model Item {
