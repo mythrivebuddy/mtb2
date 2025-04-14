@@ -61,7 +61,8 @@ export async function POST(req: Request) {
     };
 
     // Send the email
-    await axios.post(brevoApiUrl, resetEmailPayload, { headers });
+    const res = await axios.post(brevoApiUrl, resetEmailPayload, { headers });
+    console.log("Email sent successfully:", res.data); //?dev
 
     return NextResponse.json(
       { message: "Password reset link sent to your email" },
