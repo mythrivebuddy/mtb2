@@ -115,7 +115,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <NavItem
               href="/dashboard/leaderboard"
               icon={<LayoutList size={20} />}
-              label="Leader Board"
+              label="Leaderboard"
             />
             <NavItem
               href="/dashboard/miracle-log"
@@ -130,7 +130,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <NavItem
               href="/dashboard/prosperity"
               icon={<Gift size={20} />}
-              label="Prosperity"
+              label="Prosperity Drops"
             />
             <ComingSoonWrapper>
               <NavItem
