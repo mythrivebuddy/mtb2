@@ -129,6 +129,7 @@ const Sidebar = () => {
             <NavItem href="/admin/prosperity" label="prosperity" />
             <NavItem href="/admin/create-faq" label="Create Faqs" />
             <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
+            <NavItem href="/admin/manage-store-product" label="Manage Store Products" />
 
 
           </NavSection>

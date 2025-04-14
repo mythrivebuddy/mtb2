@@ -15,7 +15,9 @@ import {
   LogOut,
   UserRound,
   Gift,
-  Sparkles
+  Sparkles,
+  HomeIcon,
+  ShoppingCartIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -134,6 +136,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               href="/dashboard/spotlight"
               icon={<Sparkles size={20} />}
               label="Spotlight"
+            />
+             <NavItem
+              href="/dashboard/store"
+              icon={<ShoppingCartIcon  size={20} />}
+              label="Store"
             />
           </NavSection>
 
