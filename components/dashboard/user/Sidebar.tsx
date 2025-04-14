@@ -14,6 +14,8 @@ import {
   Phone,
   LogOut,
   UserRound,
+  Vault,
+  Gift,
   Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
@@ -59,10 +61,10 @@ type NavSectionProps = {
 };
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
-  <div className={cn("space-y-9", className)}>
+  <div className={cn("space-y-6", className)}>
     <h4 className="text-[#405D9F] font-normal text-xl">{title}</h4>
     <nav>
-      <ul className="space-y-6">{children}</ul>
+      <ul className="space-y-4">{children}</ul>
     </nav>
   </div>
 );
@@ -70,9 +72,9 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
   return (
-    <aside className="w-64  bg-white shadow-sm rounded-3xl overflow-hidden">
+    <aside className="w-64 bg-white shadow-lg rounded-3xl  overflow-hidden">
       {/* User Profile Section */}
-      <div className="flex flex-col my-14 pl-5">
+      <div className="flex flex-col my-8 pl-5">
         <div className=" flex items-center gap-3">
           <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
             {user?.name ? (
@@ -94,19 +96,19 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-10 mt-14">
+        <div className="flex flex-col gap-5 mt-7">
           {/* Menu Section */}
           <NavSection title="Menu">
             <NavItem href="/dashboard" icon={<Home size={20} />} label="Home" />
-            <ComingSoonWrapper>
-              <NavItem
-                href=""
-                icon={<BarChart2 size={20} />}
-                label="Insights"
-              />
-            </ComingSoonWrapper>
+
             <NavItem
-              href="/subscription"
+              href="/dashboard/insights"
+              icon={<BarChart2 size={20} />}
+              label="Insights"
+            />
+
+            <NavItem
+              href="/dashboard/subscription"
               icon={<CreditCard size={20} />}
               label="Subscription"
             />
@@ -114,6 +116,21 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               href="/dashboard/leaderboard"
               icon={<LayoutList size={20} />}
               label="Leader Board"
+            />
+            <NavItem
+              href="/dashboard/miracle-log"
+              icon={<Sparkles size={20} />}
+              label="Miracle Log"
+            />
+            <NavItem
+              href="/dashboard/progress-vault"
+              icon={<Vault size={20} />}
+              label="1 % Progress-Vault" />
+
+            <NavItem
+              href="/dashboard/prosperity"
+              icon={<Gift size={20} />}
+              label="Prosperity"
             />
             <ComingSoonWrapper>
               <NavItem
@@ -147,7 +164,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               label="FAQ's"
             />
             <NavItem
-              href="/contact"
+              href="/dashboard/contact"
               icon={<Phone size={20} />}
               label="Contact us"
             />

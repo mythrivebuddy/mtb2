@@ -6,18 +6,24 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import ConfirmAction from "@/components/ConfirmAction";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { Prisma, SpotlightStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
 import PageLoader from "@/components/PageLoader";
 import RightPanel from "@/components/dashboard/user/RightPanel";
 import { ApplicationStepper } from "@/components/ApplicationStepper";
+import {
+  spotlightSteps,
+  SpotlightStepperMap,
+  prosperitySteps,
+  ProsperityStepperMap,
+} from "@/lib/constants/applicationSteps";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const queryClient = useQueryClient();
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
-    Prisma.SpotlightGetPayload<{ include: { user: true } }>[] // Spotlight is now an array
+    Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
   >({
     queryKey: ["spotlight", session?.user?.id],
     queryFn: async () => {
@@ -36,6 +42,17 @@ export default function DashboardPage() {
     },
     retry: false,
   });
+
+  const { data: prosperityApplications, isLoading: prosperityLoading } =
+    useQuery<Prisma.ProsperityDropGetPayload<{ include: { user: true } }>[]>({
+      queryKey: ["prosperityDrops", session?.user?.id],
+      queryFn: async () => {
+        const response = await axios.get("/api/user/prosperity");
+        return response.data;
+      },
+      retry: false,
+      enabled: !!session?.user?.id,
+    });
 
   console.log(spotlights);
 
@@ -59,19 +76,15 @@ export default function DashboardPage() {
     },
   });
 
-  if (spotlightLoading || status === "loading" || userLoading) {
+  if (
+    spotlightLoading ||
+    status === "loading" ||
+    userLoading ||
+    prosperityLoading
+  ) {
     return <PageLoader />;
   }
-  const SpotlightStepperMap: Record<SpotlightStatus, number> = {
-    [SpotlightStatus.APPLIED]: 0,
-    [SpotlightStatus.IN_REVIEW]: 1,
-    [SpotlightStatus.APPROVED]: 2,
-    [SpotlightStatus.ACTIVE]: 3,
-    [SpotlightStatus.DISAPPROVED]: -1, // to fix TS error, not used in the app
-    [SpotlightStatus.EXPIRED]: -1, // to fix TS error, not used in the app
-  };
 
-  // * will get a single spotlight only until we use EXPIRED, DSISAPPROVED, status in array
   const currentSpotlight:
     | Prisma.SpotlightGetPayload<{
         include: { user: true };
@@ -80,6 +93,10 @@ export default function DashboardPage() {
     return ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
       spotlight.status
     );
+  });
+
+  const currentProsperity = prosperityApplications?.find((prosperity) => {
+    return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
 
   return (
@@ -106,7 +123,6 @@ export default function DashboardPage() {
           >
             <Button
               disabled={
-                // status === "loading" ||
                 mutation.isPending ||
                 (spotlights &&
                   spotlights.some((spotlight) =>
@@ -121,15 +137,26 @@ export default function DashboardPage() {
             </Button>
           </ConfirmAction>
           <h2 className="text-2xl mt-4 mb-4 text-slate-800">Spotlight</h2>
-          {/* Spotlight multi step progess bar */}
           {currentSpotlight ? (
             <ApplicationStepper
+              steps={spotlightSteps}
               currentStep={SpotlightStepperMap[currentSpotlight?.status]}
-              // currentStep={0}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center ">
-            <p className="mt-4">No spotlight application found.</p>
+            <div className="flex flex-col items-center justify-center">
+              <p className="mt-4">No spotlight application found.</p>
+            </div>
+          )}
+
+          <h2 className="text-2xl mt-8 mb-4 text-slate-800">Prosperity Drop</h2>
+          {currentProsperity ? (
+            <ApplicationStepper
+              steps={prosperitySteps}
+              currentStep={ProsperityStepperMap[currentProsperity?.status]}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center">
+              <p className="mt-4">No prosperity drop application found.</p>
             </div>
           )}
         </div>

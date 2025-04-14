@@ -26,6 +26,7 @@ export async function GET(
         readTime: true,
       },
     });
+    console.log(blog);
 
     if (!blog) {
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });

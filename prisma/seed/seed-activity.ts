@@ -31,8 +31,23 @@ async function main() {
       transactionType: TransactionType.DEBIT,
     },
     {
+      activity: ActivityType.PROSPERITY_DROP,
+      jpAmount: 5000,
+      transactionType: TransactionType.DEBIT,
+    },
+    {
       activity: ActivityType.BUSINESSPROFILE_COMPLETE,
       jpAmount: 100,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.MIRACLE_LOG,
+      jpAmount: 50,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.PROGRESS_VAULT,
+      jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
   ];
