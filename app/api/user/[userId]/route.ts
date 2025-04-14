@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { userId: string } }
+  req: Request,
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const { userId } = params;
+    const { userId } = await params;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -16,23 +16,29 @@ export async function GET(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Format the response
+    const profile = user.userBusinessProfile?.[0];
+
     const response = {
       name: user.name,
       email: user.email,
       image: user.image,
-      keyOfferings: user.userBusinessProfile?.[0]?.keyOfferings || null,
-      achievements: user.userBusinessProfile?.[0]?.achievements || null,
-      socialHandles: user.userBusinessProfile?.[0]?.socialHandles || null,
+      keyOfferings: profile?.keyOfferings || null,
+      achievements: profile?.achievements || null,
+      socialHandles: profile?.socialHandles || {
+        github: '',
+        twitter: '',
+        linkedin: '',
+        instagram: '',
+      },
+      goals: profile?.goals || null,
+      website: profile?.website || null,
       jpEarned: user.jpEarned,
       jpSpent: user.jpSpent,
       jpBalance: user.jpBalance,
+      jpTransaction: user.jpTransaction,
     };
 
     return NextResponse.json(response);
@@ -43,4 +49,5 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}
+
