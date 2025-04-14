@@ -126,6 +126,7 @@ const Sidebar = () => {
             <NavItem href="/admin/user-info" label="User Info" />
             <NavItem href="/admin/spotlight" label="Spotlight Applications" />
             <NavItem href="/admin/create-blog" label="Create Blog" />
+            <NavItem href="/admin/email-templates" label="Email Templates" />
           </NavSection>
 
           {/* Settings Section */}

@@ -124,6 +124,7 @@ interface SpotlightResponse {
 
 export default function SpotlightCard() {
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const hasTrackedView = useRef(false);
 
   // Fetch spotlight data
   const { data: spotlight, isLoading } = useQuery<SpotlightResponse>({
@@ -156,22 +157,23 @@ export default function SpotlightCard() {
 
   // View tracking using IntersectionObserver
   useEffect(() => {
-    if (!spotlight?.id || !cardRef.current) return;
+    if (!spotlight?.id || !cardRef.current || hasTrackedView.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           trackViewMutation.mutate(spotlight.id);
-          observer.disconnect(); // Only track once
+          hasTrackedView.current = true;
+          observer.disconnect();
         }
       },
-      { threshold: 0.5 } // 50% of the card should be visible
+      { threshold: 0.5 }
     );
 
     observer.observe(cardRef.current);
 
     return () => observer.disconnect();
-  }, [spotlight?.id, trackViewMutation]);
+  }, [spotlight?.id]);
 
   const handleConnectClick = () => {
     if (spotlight?.id) {

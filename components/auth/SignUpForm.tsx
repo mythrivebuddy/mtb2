@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { SignupFormType, signupSchema } from "@/schema/zodSchema";
+import GoogleIcon from "../icons/GoogleIcon";
+import { signIn } from "next-auth/react";
 
 // const schema = z
 //   .object({
@@ -55,45 +57,91 @@ export default function SignUpForm() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signIn("google", {
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
+      if (result?.ok) {
+        router.push("/dashboard");
+        toast.success("Signed in successfully");
+        return;
+      }
+      if (result?.error) {
+        toast.error("Google Sign in failed. Please try again later.");
+      }
+    } catch (error) {
+      console.error("Error signing in", error);
+      toast.error(
+        getAxiosErrorMessage(
+          error,
+          "Google Sign in failed. Please try again later."
+        )
+      );
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <Input
-          // type="password"
-          placeholder="Enter Your Name"
-          {...register("name")}
-          className={errors.name ? "border-red-500" : ""}
-        />
-        {errors.name && (
-          <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-        )}
-      </div>
-      <div>
-        <Input
-          type="email"
-          placeholder="Email"
-          {...register("email")}
-          className={errors.email ? "border-red-500" : ""}
-        />
-        {errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-        )}
-      </div>
-      <div>
-        <Input
-          type="password"
-          placeholder="Password"
-          {...register("password")}
-          className={errors.password ? "border-red-500" : ""}
-        />
-        {errors.password && (
-          <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-        )}
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <Input
+            // type="password"
+            placeholder="Enter Your Name"
+            {...register("name")}
+            className={errors.name ? "border-red-500" : ""}
+          />
+          {errors.name && (
+            <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+          )}
+        </div>
+        <div>
+          <Input
+            type="email"
+            placeholder="Email"
+            {...register("email")}
+            className={errors.email ? "border-red-500" : ""}
+          />
+          {errors.email && (
+            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+          )}
+        </div>
+        <div>
+          <Input
+            type="password"
+            placeholder="Password"
+            {...register("password")}
+            className={errors.password ? "border-red-500" : ""}
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Creating account..." : "Sign Up"}
+        </Button>
+      </form>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">or</span>
+        </div>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Creating account..." : "Sign Up"}
+      <Button
+        variant="outline"
+        className="w-full h-12 text-[16px] flex items-center justify-center space-x-2"
+        onClick={handleGoogleLogin}
+      >
+        <GoogleIcon />
+        <span>Sign in with Google</span>
       </Button>
-    </form>
+    </div>
   );
 }
