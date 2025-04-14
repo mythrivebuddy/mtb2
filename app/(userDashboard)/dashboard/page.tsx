@@ -1,11 +1,7 @@
 "use client";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import ConfirmAction from "@/components/ConfirmAction";
-import { getAxiosErrorMessage } from "@/utils/ax";
 import { Prisma } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
 import PageLoader from "@/components/PageLoader";
@@ -20,7 +16,7 @@ import {
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
@@ -56,25 +52,25 @@ export default function DashboardPage() {
 
   console.log(spotlights);
 
-  const createSpotlight = async () => {
-    const response = await axios.post("/api/user/spotlight", {
-      userId: session?.user?.id,
-    });
-    return response.data;
-  };
+  // const createSpotlight = async () => {
+  //   const response = await axios.post("/api/user/spotlight", {
+  //     userId: session?.user?.id,
+  //   });
+  //   return response.data;
+  // };
 
-  const mutation = useMutation({
-    mutationFn: createSpotlight,
-    onSuccess: (data) => {
-      console.log(data);
-      toast.success("Spotlight application submitted successfully");
-      queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
-      queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
-    },
-    onError: (error) => {
-      toast.error(getAxiosErrorMessage(error));
-    },
-  });
+  // const mutation = useMutation({
+  //   mutationFn: createSpotlight,
+  //   onSuccess: (data) => {
+  //     console.log(data);
+  //     toast.success("Spotlight application submitted successfully");
+  //     queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
+  //     queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
+  //   },
+  //   onError: (error) => {
+  //     toast.error(getAxiosErrorMessage(error));
+  //   },
+  // });
 
   if (
     spotlightLoading ||
@@ -94,10 +90,12 @@ export default function DashboardPage() {
       spotlight.status
     );
   });
+  console.log("currentSpotlight", currentSpotlight);
 
   const currentProsperity = prosperityApplications?.find((prosperity) => {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
+  console.log("currentProsperity", currentProsperity);
 
   return (
     <div className="container mx-auto p-0">
@@ -109,7 +107,7 @@ export default function DashboardPage() {
             <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
             <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
           </div>
-          <ConfirmAction
+          {/* <ConfirmAction
             action={() => mutation.mutate()}
             isDisabled={
               mutation.isPending ||
@@ -135,30 +133,26 @@ export default function DashboardPage() {
             >
               Apply for Spotlight
             </Button>
-          </ConfirmAction>
+          </ConfirmAction> */}
           <h2 className="text-2xl mt-4 mb-4 text-slate-800">Spotlight</h2>
-          {currentSpotlight ? (
-            <ApplicationStepper
-              steps={spotlightSteps}
-              currentStep={SpotlightStepperMap[currentSpotlight?.status]}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center">
-              <p className="mt-4">No spotlight application found.</p>
-            </div>
-          )}
+          <ApplicationStepper
+            steps={spotlightSteps}
+            currentStep={
+              currentSpotlight
+                ? SpotlightStepperMap[currentSpotlight?.status]
+                : 0
+            }
+          />
 
           <h2 className="text-2xl mt-8 mb-4 text-slate-800">Prosperity Drop</h2>
-          {currentProsperity ? (
-            <ApplicationStepper
-              steps={prosperitySteps}
-              currentStep={ProsperityStepperMap[currentProsperity?.status]}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center">
-              <p className="mt-4">No prosperity drop application found.</p>
-            </div>
-          )}
+          <ApplicationStepper
+            steps={prosperitySteps}
+            currentStep={
+              currentProsperity
+                ? ProsperityStepperMap[currentProsperity?.status]
+                : 0
+            }
+          />
         </div>
 
         {/* Divider Between Main and Right Panel */}

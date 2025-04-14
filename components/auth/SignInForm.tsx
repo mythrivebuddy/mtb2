@@ -94,6 +94,7 @@ function SignInFormContent() {
     try {
       const result = await signIn("google", {
         redirect: false,
+        callbackUrl: "/dashboard",
       });
       if (result?.ok) {
         router.push("/dashboard");

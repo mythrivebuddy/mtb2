@@ -1,5 +1,6 @@
 import { getInitials } from "@/utils/getInitials";
 import { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
 
 export interface LeaderboardUser {
   id: string;
@@ -32,7 +33,10 @@ export const columns: ColumnDef<LeaderboardUser>[] = [
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
-      <div className="flex items-center gap-3">
+      <Link
+        href={`/dashboard/profile/${row.original.id}`}
+        className="flex items-center gap-3 hover:underline hover:"
+      >
         {row.original.image ? (
           <img
             src={row.original.image}
@@ -46,7 +50,7 @@ export const columns: ColumnDef<LeaderboardUser>[] = [
           </div>
         )}
         {row.original.name}
-      </div>
+      </Link>
     ),
   },
   // {
