@@ -29,6 +29,9 @@ enum ActivityType {
   MIRACLE_LOG
   PROGRESS_VAULT
   MAGIC_BOX
+  GENERAL_FEEDBACK
+  FEATURE_REQUEST
+  BUG_REPORT
 }
 
 enum TransactionType {
