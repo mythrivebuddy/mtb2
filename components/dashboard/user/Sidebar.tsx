@@ -127,7 +127,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <NavItem
               href="/dashboard/progress-vault"
               icon={<Vault size={20} />}
-              label="1 % Progress-Vault" />
+              label="1%Progress Vault" />
 
             <NavItem
               href="/dashboard/prosperity"
@@ -171,7 +171,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               label="FAQ's"
             />
             <NavItem
-              href="/dashboard/contact"
+              href="/contact"
               icon={<Phone size={20} />}
               label="Contact us"
             />
