@@ -30,6 +30,10 @@ enum ActivityType {
   PROGRESS_VAULT
   REFER_BY
   REFER_TO
+  MAGIC_BOX
+  GENERAL_FEEDBACK
+  FEATURE_REQUEST
+  BUG_REPORT
 }
 
 enum TransactionType {
@@ -104,6 +108,8 @@ model User {
   goals         String?
   website       String?
   socialHandles Json?
+
+  magicBoxes                    MagicBox[]
 
   @@index([name])
 }
@@ -245,23 +251,22 @@ model SpotlightActivity {
   @@index([createdAt])
 }
 
-
 model MiracleLog {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   content          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
 }
- 
+
 model ProgressVault {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   content          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
   jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
@@ -277,4 +282,35 @@ model Referral {
   referred      User     @relation("Referred", fields: [referredId], references: [id])
 
   @@unique([referrerId, referredId])
+}
+
+model MagicBox {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isOpened  Boolean   @default(false)
+  jpAmount  Int? // Total JP amount in the box (set when box is opened)
+  openedAt  DateTime? // When the box was opened
+  createdAt DateTime  @default(now())
+  nextBoxAt DateTime // When the next box will be available
+
+  // Store the random users as a JSON array of user IDs
+  randomUserIds String[] // ["userId1", "userId2", "userId3", "userId4"]
+
+  // The selected user for sharing
+  selectedUserId String?
+
+  // Has the JP been redeemed by the box owner?
+  isRedeemed Boolean   @default(false)
+  redeemedAt DateTime?
+
+  @@index([userId])
+  @@index([nextBoxAt])
+}
+
+model MagicBoxSettings {
+  id          String   @id @default(uuid())
+  minJpAmount Int      @default(100) // Minimum JP amount for a magic box
+  maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
+  updatedAt   DateTime @updatedAt
 }
