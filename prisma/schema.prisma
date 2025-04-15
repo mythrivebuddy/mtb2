@@ -259,8 +259,6 @@ model ProgressVault {
   userId           String
   jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
   user             User     @relation(fields: [userId], references: [id])
-  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
-  user             User      @relation(fields: [userId], references: [id])
 }
 
 model MagicBox {
