@@ -12,51 +12,19 @@ export interface Step {
 }
 
 interface ApplicationStepperProps {
-  // steps: Step[];
+  steps: Step[];
   className?: string;
   currentStep?: number; // 0-indexed step number
 }
 
-const steps: Step[] = [
-  {
-    id: "applied",
-    title: "Applied",
-    description: "You've taken the first step!",
-    status: "completed",
-  },
-  {
-    id: "in-review",
-    title: "In Review",
-    description: "Under assessment stay tuned!",
-    status: "current",
-  },
-  {
-    id: "approved",
-    title: "Approved",
-    description: "You're in! Get ready to shine",
-    status: "upcoming",
-  },
-  {
-    id: "active",
-    title: "Active",
-    description: "Your Spotlight is live now",
-    status: "upcoming",
-  },
-];
 export function ApplicationStepper({
   className,
   currentStep = 0,
+  steps,
 }: ApplicationStepperProps) {
   const ref = useRef<(HTMLDivElement | null)[]>([]);
-
   const [margins, setMargins] = useState({ left: 0, right: 0 });
-  console.log(
-    "currentStep",
-    currentStep,
-    Number(currentStep) + 1,
-    steps.length - 1,
-    100 * ((Number(currentStep) + 1) / (steps.length - 1))
-  );
+
   useEffect(() => {
     const firstElement = ref.current[0];
     const lastElement = ref.current[ref.current.length - 1];
@@ -71,6 +39,7 @@ export function ApplicationStepper({
       });
     }
   }, []);
+
   return (
     <div
       className={cn(
@@ -79,10 +48,10 @@ export function ApplicationStepper({
       )}
     >
       <div className="px-12 py-7 w-full">
-        <div className="flex w-full justify-between  gap-6 relative">
+        <div className="flex w-full justify-between gap-6 relative">
           {/* Connecting line */}
           <div
-            className={`bg-gray-200 h-[2px] absolute top-[18%] left-0 right-0 `}
+            className="bg-gray-200 h-[2px] absolute top-[18%] left-0 right-0"
             style={{
               width: `calc(100% - ${margins.left}px - ${margins.right}px)`,
               marginLeft: `${margins.left}px`,
@@ -90,10 +59,10 @@ export function ApplicationStepper({
             }}
           >
             <div
-              className="h-[2px]  bg-jp-orange"
+              className="h-[2px] bg-jp-orange"
               style={{
                 width: `${Math.min(
-                  100 * ((Number(currentStep) + 1) / (steps.length - 1)),
+                  100 * (Number(currentStep) / (steps.length - 1)),
                   100
                 )}%`,
               }}
@@ -101,7 +70,6 @@ export function ApplicationStepper({
           </div>
           {steps.map((step, index) => (
             <React.Fragment key={step.id}>
-              {/* Step with icon and text */}
               <div
                 className="flex flex-col items-center text-center h-full relative"
                 ref={(el) => {
@@ -111,20 +79,25 @@ export function ApplicationStepper({
                 <div
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-md",
-                    currentStep >= index
-                      ? "bg-jp-orange"
-                      : currentStep + 1 === index
+
+                    currentStep - 1 === index
+                      ? "bg-[#3BA33BE5]"
+                      : currentStep >= index
                       ? "bg-jp-orange"
                       : "bg-gray-200"
                   )}
                   aria-hidden="true"
                 >
-                  {currentStep >= index ? (
+                  {currentStep - 1 >= index ? (
                     <div className="h-5 w-5 rounded bg-white">
-                      <CheckIcon className="h-5 w-5 text-jp-orange my-auto" />
+                      <CheckIcon
+                        className={`h-5 w-5 my-auto ${
+                          currentStep - 1 === index
+                            ? "text-[#3BA33BE5]"
+                            : "text-jp-orange"
+                        }`}
+                      />
                     </div>
-                  ) : currentStep + 1 <= index ? (
-                    <div className="h-5 w-5 rounded bg-white" />
                   ) : (
                     <div className="h-5 w-5 rounded bg-white" />
                   )}
@@ -133,7 +106,9 @@ export function ApplicationStepper({
                   <span
                     className={cn(
                       "text-base font-medium md:text-lg",
-                      currentStep >= index ? "text-[#334CAD]" : "text-gray-500"
+                      currentStep - 1 >= index
+                        ? "text-[#334CAD]"
+                        : "text-gray-500"
                     )}
                   >
                     {step.title}

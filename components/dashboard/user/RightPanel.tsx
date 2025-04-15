@@ -74,7 +74,7 @@ const RightPanel = ({ className }: { className?: string }) => {
             href="#"
             className="text-sm text-blue-500 hover:text-gray-700 hover:underline"
           >
-            View all
+            <ComingSoonWrapper>View all</ComingSoonWrapper>
           </a>
         </div>
         <div className="space-y-3 bg-white rounded-3xl p-5">
@@ -125,8 +125,8 @@ const RightPanel = ({ className }: { className?: string }) => {
             {historyItems.map((item) => (
               <div key={item.id} className="flex items-start">
                 <span className="text-xl text-blue-700 mr-2">•</span>
-                <div className="flex-1">
-                  <p className="text-gray-800 text-nowrap truncate">
+                <div className="shrink-0 grow">
+                  <p className="text-gray-800 text-nowrap truncate w-full">
                     {item.description}
                   </p>
                   <p className="text-sm text-gray-500">{item.date}</p>

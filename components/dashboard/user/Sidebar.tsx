@@ -14,6 +14,9 @@ import {
   Phone,
   LogOut,
   UserRound,
+  Vault,
+  Gift,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -112,7 +115,22 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <NavItem
               href="/dashboard/leaderboard"
               icon={<LayoutList size={20} />}
-              label="Leader Board"
+              label="Leaderboard"
+            />
+            <NavItem
+              href="/dashboard/miracle-log"
+              icon={<Sparkles size={20} />}
+              label="Miracle Log"
+            />
+            <NavItem
+              href="/dashboard/progress-vault"
+              icon={<Vault size={20} />}
+              label="1 % Progress-Vault" />
+
+            <NavItem
+              href="/dashboard/prosperity"
+              icon={<Gift size={20} />}
+              label="Prosperity Drops"
             />
             <ComingSoonWrapper>
               <NavItem
@@ -122,6 +140,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 badge={2}
               />
             </ComingSoonWrapper>
+
+            <NavItem
+              href="/dashboard/spotlight"
+              icon={<Sparkles size={20} />}
+              label="Spotlight"
+            />
           </NavSection>
 
           {/* Settings Section */}
@@ -131,9 +155,14 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<User size={20} />}
               label="Profile"
             />
-            <ComingSoonWrapper>
+            {/* <ComingSoonWrapper>
               <NavItem href="" icon={<HelpCircle size={20} />} label="FAQ's" />
-            </ComingSoonWrapper>
+            </ComingSoonWrapper> */}
+            <NavItem
+              href="/dashboard/faq"
+              icon={<HelpCircle size={20} />}
+              label="FAQ's"
+            />
             <NavItem
               href="/dashboard/contact"
               icon={<Phone size={20} />}
