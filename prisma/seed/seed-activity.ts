@@ -50,6 +50,24 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.GENERAL_FEEDBACK,
+      jpAmount: 50,
+      transactionType: TransactionType.CREDIT,
+    },
+    
+    {
+      activity: ActivityType.FEATURE_REQUEST,
+      jpAmount: 100,
+      transactionType: TransactionType.CREDIT,
+    },
+    
+    {
+      activity: ActivityType.BUG_REPORT,
+      jpAmount: 150,
+      transactionType: TransactionType.CREDIT,
+    }
+    
   ];
 
   for (const activity of activities) {

@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import ContactForm from "@/components/contact/ContactForm";
+import AppLayout from "@/components/layout/AppLayout";
 
 export const metadata: Metadata = {
   title: "Contact Us - MyThriveBuddy",
@@ -14,6 +15,8 @@ export default function ContactPage() {
       <div className="max-w-[1280px] mx-auto">
         <div className="bg-white/90 backdrop-blur-sm rounded-[32px] p-4 sm:p-6 md:p-8">
           <Navbar /> */}
+          <AppLayout>
+
       <div className="mt-8 max-w-2xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-[#1E2875] mb-4">Contact Us</h1>
@@ -24,6 +27,7 @@ export default function ContactPage() {
         </div>
         <ContactForm />
       </div>
+          </AppLayout>
       {/* </div>
       </div>
     </main> */}
