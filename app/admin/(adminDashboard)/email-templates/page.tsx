@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useQuery } from "@tanstack/react-query";
 
 interface EmailTemplate {
   id: string;
@@ -20,28 +20,25 @@ interface EmailTemplate {
   updatedAt: string;
 }
 
+// API function to fetch templates
+const fetchTemplates = async (): Promise<EmailTemplate[]> => {
+  const response = await fetch("/api/admin/email-templates");
+  if (!response.ok) {
+    throw new Error("Failed to fetch templates");
+  }
+  return response.json();
+};
+
 export default function EmailTemplatesPage() {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
+  // Fetch templates using React Query
+  const { data: templates = [], isLoading } = useQuery<EmailTemplate[], Error>({
+    queryKey: ["emailTemplates"],
+    queryFn: fetchTemplates,
+  });
 
-  const fetchTemplates = async () => {
-    try {
-      const response = await fetch("/api/admin/email-templates");
-      const data = await response.json();
-      setTemplates(data);
-    } catch (error) {
-      console.error("Error fetching templates:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 

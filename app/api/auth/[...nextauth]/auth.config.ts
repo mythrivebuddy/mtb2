@@ -5,7 +5,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
-import { sendVerificationEmail } from "@/utils/emailVerification";
 
 const DEFAULT_MAX_AGE = 45 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
