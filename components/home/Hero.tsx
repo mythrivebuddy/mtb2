@@ -50,7 +50,7 @@ function CategoryTag({ children }: { children: React.ReactNode }) {
   return (
     <motion.button
       whileHover={{ scale: 1.02 }}
-      className="px-6 py-2.5 rounded-full bg-white text-[#1E2875] md:text-[15px] text-[20px] font-medium shadow-sm hover:shadow-md transition-all"
+      className="px-6 py-2.5 rounded-full bg-white text-[#1E2875] md:text-[15px] text-[20px] font-medium shadow-sm hover:shadow-md transition-all cursor-default"
     >
       {children}
     </motion.button>

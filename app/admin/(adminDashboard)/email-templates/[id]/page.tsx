@@ -1,11 +1,10 @@
 "use client";
 
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import EmailTemplateEditor from "@/components/EmailTemplateEditor";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-// Define the EmailTemplate interface to match EmailTemplateEditor's expectations
 interface EmailTemplate {
   id?: string;
   templateId: string;
@@ -14,7 +13,6 @@ interface EmailTemplate {
   description?: string;
 }
 
-// Define the form data type for submission
 interface TemplateFormData {
   templateId: string;
   subject: string;
@@ -22,7 +20,6 @@ interface TemplateFormData {
   description?: string;
 }
 
-// API function to fetch a template
 const fetchTemplate = async (id: string): Promise<EmailTemplate> => {
   const response = await fetch(`/api/admin/email-templates/${id}`);
   if (!response.ok) {
@@ -31,7 +28,6 @@ const fetchTemplate = async (id: string): Promise<EmailTemplate> => {
   return response.json();
 };
 
-// API function to save a template
 const saveTemplate = async ({
   id,
   data,
@@ -62,18 +58,20 @@ const saveTemplate = async ({
 export default function EditEmailTemplatePage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
   const queryClient = useQueryClient();
   const isNew = id === "new";
 
-  // Fetch template data using React Query
+  const editorType = searchParams.get("editor") as "simple" | "html" | null;
+  const initialEditorMode = isNew ? editorType || "simple" : "simple";
+
   const { data: template, isLoading } = useQuery<EmailTemplate, Error>({
     queryKey: ["emailTemplate", id],
     queryFn: () => fetchTemplate(id),
     enabled: !isNew,
   });
 
-  // Mutation for saving the template
   const mutation = useMutation({
     mutationFn: saveTemplate,
     onSuccess: () => {
@@ -87,7 +85,6 @@ export default function EditEmailTemplatePage() {
     },
   });
 
-  // Handle form submission
   const handleSubmit = async (data: TemplateFormData): Promise<void> => {
     return new Promise((resolve) => {
       mutation.mutate({ id, data, isNew }, { onSuccess: () => resolve() });
@@ -103,7 +100,11 @@ export default function EditEmailTemplatePage() {
       <h1 className="text-2xl font-bold mb-6">
         {isNew ? "Create New Template" : "Edit Template"}
       </h1>
-      <EmailTemplateEditor initialData={template} onSubmit={handleSubmit} />
+      <EmailTemplateEditor
+        initialData={template}
+        initialEditorMode={initialEditorMode}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 }

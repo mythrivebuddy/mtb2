@@ -50,17 +50,17 @@ export const prosperitySteps: Step[] = [
 ];
 
 export const SpotlightStepperMap: Record<SpotlightStatus, number> = {
-  [SpotlightStatus.APPLIED]: 0,
-  [SpotlightStatus.IN_REVIEW]: 1,
-  [SpotlightStatus.APPROVED]: 2,
-  [SpotlightStatus.ACTIVE]: 3,
+  [SpotlightStatus.APPLIED]: 1,
+  [SpotlightStatus.IN_REVIEW]: 2,
+  [SpotlightStatus.APPROVED]: 3,
+  [SpotlightStatus.ACTIVE]: 4,
   [SpotlightStatus.DISAPPROVED]: -1,
   [SpotlightStatus.EXPIRED]: -1,
 };
 
 export const ProsperityStepperMap: Record<ProsperityDropStatus, number> = {
-  [ProsperityDropStatus.APPLIED]: 0,
-  [ProsperityDropStatus.IN_REVIEW]: 1,
-  [ProsperityDropStatus.APPROVED]: 2,
+  [ProsperityDropStatus.APPLIED]: 1,
+  [ProsperityDropStatus.IN_REVIEW]: 2,
+  [ProsperityDropStatus.APPROVED]: 3,
   [ProsperityDropStatus.DISAPPROVED]: -1,
 };

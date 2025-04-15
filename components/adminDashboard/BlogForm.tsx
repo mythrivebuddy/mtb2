@@ -1,15 +1,23 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
+import { Editor } from "@tinymce/tinymce-react";
 
-interface CreateBlogPostProps {
+interface BlogFormProps {
+  blogId?: string;
   onSuccess: () => void;
+  blogString?: string;
 }
 
-export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
+export default function BlogForm({
+  blogId,
+  onSuccess,
+  blogString,
+}: BlogFormProps) {
+  const isEdit = !!blogId;
   const [title, setTitle] = useState<string>("");
   const [excerpt, setExcerpt] = useState<string>("");
   const [content, setContent] = useState<string>("");
@@ -17,6 +25,7 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [category, setCategory] = useState<string>("");
   const [newCategory, setNewCategory] = useState<string>("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Fetch categories for the select dropdown
   const {
@@ -31,31 +40,74 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
     },
   });
 
-  // Mutation for creating a blog post using axios with form data
-  const mutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const response = await axios.post(
-        "/api/admin/blogs/createBlogs",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
+  // Fetch blog data if editing
+  const { data: blogData } = useQuery({
+    queryKey: ["blog", blogString],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/blogs/getParticularBlog/${blogString}`
       );
       return response.data;
     },
+    enabled: isEdit,
+  });
+
+  // Populate form with existing blog data when editing
+  useEffect(() => {
+    if (blogData) {
+      setTitle(blogData.title);
+      setExcerpt(blogData.excerpt);
+      setContent(blogData.content);
+      setReadTime(blogData.readTime);
+      setCategory(blogData.category);
+      setPreviewImage(blogData.image);
+    }
+  }, [blogData]);
+
+  // Mutation for creating or updating a blog post
+  const mutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const url = isEdit ? `/api/admin/blogs?id=${blogId}` : "/api/admin/blogs";
+      const method = isEdit ? "PUT" : "POST";
+      const response = await axios({
+        method,
+        url,
+        data: formData,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
     onSuccess: () => {
-      toast.success("Blog post created successfully!");
+      toast.success(
+        isEdit
+          ? "Blog post updated successfully!"
+          : "Blog post created successfully!"
+      );
       onSuccess();
     },
     onError: () => {
-      toast.error("Error creating blog post");
+      toast.error(
+        isEdit ? "Error updating blog post" : "Error creating blog post"
+      );
     },
   });
+
+  // Handle image file selection and preview
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setImageFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewImage(null);
+    }
   };
 
+  // Handle form submission
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData();
@@ -63,7 +115,7 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
     formData.append("excerpt", excerpt);
     formData.append("content", content);
     formData.append("readTime", readTime);
-    formData.append("category", newCategory.trim() ? newCategory : category); // Send new category if provided
+    formData.append("category", newCategory.trim() ? newCategory : category);
     if (imageFile) {
       formData.append("imageFile", imageFile);
     }
@@ -99,8 +151,8 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
             onChange={(e: ChangeEvent<HTMLSelectElement>) =>
               setCategory(e.target.value)
             }
-            disabled={!!newCategory.trim()} // Disable if a new category is being entered
-            required
+            disabled={!!newCategory.trim()}
+            required={!newCategory.trim()}
           >
             <option value="">Select Category</option>
             {categories?.map((cat) => (
@@ -131,15 +183,22 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
         required
         className="border p-2 rounded"
       />
-      <textarea
-        placeholder="Content"
+      <Editor
         value={content}
-        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-          setContent(e.target.value)
-        }
-        required
-        className="border p-2 rounded"
+        onEditorChange={(content) => setContent(content)}
+        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+        tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
+        init={{
+          height: 500,
+          menubar: false,
+          plugins: "link image media table code fullscreen",
+          toolbar:
+            "code | fontsize | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | outdent indent | link image media | table | fullscreen | undo redo",
+          content_style:
+            "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+        }}
       />
+
       <input
         type="text"
         placeholder="Read Time (e.g., 5 min read)"
@@ -156,8 +215,13 @@ export default function CreateBlogPost({ onSuccess }: CreateBlogPostProps) {
         onChange={handleFileChange}
         className="border p-2 rounded"
       />
+      {previewImage && isEdit && (
+        <div className="mt-4">
+          <img src={previewImage} alt="Preview" className="w-40 h-auto" />
+        </div>
+      )}
       <button type="submit" className="bg-blue-600 text-white rounded p-2">
-        Create Blog Post
+        {isEdit ? "Update Blog Post" : "Create Blog Post"}
       </button>
     </form>
   );

@@ -14,16 +14,24 @@ import axios from "axios";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
-import { NotificationIcon } from "@/lib/icons/Icons";
+import { NotificationIcon } from "@/components/icons/NotificationIcons";
+import Link from "next/link";
+import { Gift } from "lucide-react"; // Add this import at the top with other imports
+import MagicBoxModal from "@/components/modals/MagicBoxModal";
+import { cn } from "@/lib/utils/tw";
 
 const TopBarBadge = ({
   children,
+  className,
   ...props
 }: { children: React.ReactNode } & BadgeProps) => {
   return (
     <Badge
       variant="outline"
-      className="bg-white rounded-md h-10 flex items-center justify-center px-3 border border-[#4B65A2]"
+      className={cn(
+        "bg-white rounded-md h-10 flex items-center justify-center px-3 border border-[#4B65A2]",
+        className
+      )}
       {...props}
     >
       {children}
@@ -47,6 +55,7 @@ export default function TopBar({ user }: { user?: UserType }) {
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
@@ -92,13 +101,10 @@ export default function TopBar({ user }: { user?: UserType }) {
                   </div>
                 ) : (
                   users?.map((user: SearchUser) => (
-                    <div
+                    <Link
                       key={user.id}
+                      href={`/dashboard/profile/${user.id}`}
                       className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
-                      onClick={() => {
-                        setSearchTerm(user.name);
-                        setShowDropdown(false);
-                      }}
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.image || undefined} />
@@ -107,7 +113,7 @@ export default function TopBar({ user }: { user?: UserType }) {
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{user.name}</span>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>
@@ -134,7 +140,14 @@ export default function TopBar({ user }: { user?: UserType }) {
           {/* Notifications */}
           <TopBarBadge>
             <NotificationIcon />
-            {/* <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span> */}
+          </TopBarBadge>
+
+          {/* Gift Badge */}
+          <TopBarBadge
+            className="cursor-pointer"
+            onClick={() => setIsMagicBoxOpen(true)}
+          >
+            <Gift />
           </TopBarBadge>
 
           {/* User Avatar */}
@@ -149,6 +162,13 @@ export default function TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
       </div>
+
+      {/* Magic Box Modal */}
+      <MagicBoxModal
+        isOpen={isMagicBoxOpen}
+        onClose={() => setIsMagicBoxOpen(false)}
+        userId={user?.id}
+      />
     </header>
   );
 }

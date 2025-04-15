@@ -23,6 +23,7 @@ export async function GET(
         excerpt: true,
         image: true,
         content: true,
+        category: true,
         readTime: true,
       },
     });

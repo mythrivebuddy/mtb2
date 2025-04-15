@@ -62,7 +62,7 @@ export function ApplicationStepper({
               className="h-[2px] bg-jp-orange"
               style={{
                 width: `${Math.min(
-                  100 * ((Number(currentStep) + 1) / (steps.length - 1)),
+                  100 * (Number(currentStep) / (steps.length - 1)),
                   100
                 )}%`,
               }}
@@ -79,17 +79,24 @@ export function ApplicationStepper({
                 <div
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-md",
-                    currentStep >= index
-                      ? "bg-jp-orange"
-                      : currentStep + 1 === index
+
+                    currentStep - 1 === index
+                      ? "bg-[#3BA33BE5]"
+                      : currentStep >= index
                       ? "bg-jp-orange"
                       : "bg-gray-200"
                   )}
                   aria-hidden="true"
                 >
-                  {currentStep >= index ? (
+                  {currentStep - 1 >= index ? (
                     <div className="h-5 w-5 rounded bg-white">
-                      <CheckIcon className="h-5 w-5 text-jp-orange my-auto" />
+                      <CheckIcon
+                        className={`h-5 w-5 my-auto ${
+                          currentStep - 1 === index
+                            ? "text-[#3BA33BE5]"
+                            : "text-jp-orange"
+                        }`}
+                      />
                     </div>
                   ) : (
                     <div className="h-5 w-5 rounded bg-white" />
@@ -99,7 +106,9 @@ export function ApplicationStepper({
                   <span
                     className={cn(
                       "text-base font-medium md:text-lg",
-                      currentStep >= index ? "text-[#334CAD]" : "text-gray-500"
+                      currentStep - 1 >= index
+                        ? "text-[#334CAD]"
+                        : "text-gray-500"
                     )}
                   >
                     {step.title}

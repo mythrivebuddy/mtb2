@@ -1,11 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
+import MonacoEditor from "@monaco-editor/react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+
+// Import TinyMCE types with fallback for missing definitions
+import type { Editor as TinyMCEEditor } from "tinymce";
+
+// Define a custom type for the fetch callback since MenuItemMapCallback is not exported
+type MenuItemFetchCallback = (
+  items: Array<{ type: string; text: string; onAction: () => void }>
+) => void;
+
+const Editor = dynamic(
+  () => import("@tinymce/tinymce-react").then((mod) => mod.Editor),
+  {
+    ssr: false,
+  }
+);
+
+interface TinyMCEEditorWithUI extends TinyMCEEditor {
+  ui: {
+    registry: {
+      addMenuButton: (
+        name: string,
+        config: {
+          text: string;
+          fetch: (callback: MenuItemFetchCallback) => void;
+        }
+      ) => void;
+    };
+  };
+}
 
 interface EmailTemplateEditorProps {
   initialData?: {
@@ -15,12 +45,14 @@ interface EmailTemplateEditorProps {
     htmlContent: string;
     description?: string;
   };
+  initialEditorMode?: "simple" | "html";
   onSubmit: (data: {
     templateId: string;
     subject: string;
     htmlContent: string;
     description?: string;
   }) => Promise<void>;
+  defaultFrom?: string;
 }
 
 const defaultPreviewData = {
@@ -32,24 +64,27 @@ const defaultPreviewData = {
 
 export default function EmailTemplateEditor({
   initialData,
+  initialEditorMode = "simple",
   onSubmit,
+  defaultFrom = "user@mail.com",
 }: EmailTemplateEditorProps) {
   const [templateId, setTemplateId] = useState(initialData?.templateId || "");
   const [subject, setSubject] = useState(initialData?.subject || "");
   const [htmlContent, setHtmlContent] = useState(
-    initialData?.htmlContent || ""
+    initialData?.htmlContent ||
+      (initialEditorMode === "html" ? "<!-- Paste your HTML code here -->" : "")
   );
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
   const [previewHtml, setPreviewHtml] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editorMode, setEditorMode] = useState<"simple" | "html">(
+    initialEditorMode
+  );
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
-    updatePreview();
-  }, [htmlContent]);
-
-  const updatePreview = () => {
     let preview = htmlContent;
     Object.entries(defaultPreviewData).forEach(([key, value]) => {
       preview = preview.replace(
@@ -58,7 +93,7 @@ export default function EmailTemplateEditor({
       );
     });
     setPreviewHtml(preview);
-  };
+  }, [htmlContent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +129,6 @@ export default function EmailTemplateEditor({
                 required
               />
             </div>
-
             <div>
               <Label htmlFor="subject">Subject</Label>
               <Input
@@ -105,7 +139,6 @@ export default function EmailTemplateEditor({
                 required
               />
             </div>
-
             <div className="md:col-span-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -118,17 +151,86 @@ export default function EmailTemplateEditor({
           </div>
         </div>
 
-        {/* Editor & Preview */}
+        {/* Editor Mode Toggle */}
+        <div className="flex space-x-2 mb-4">
+          <Button
+            type="button"
+            variant={editorMode === "simple" ? "default" : "outline"}
+            onClick={() => setEditorMode("simple")}
+          >
+            Simple Editor
+          </Button>
+          <Button
+            type="button"
+            variant={editorMode === "html" ? "default" : "outline"}
+            onClick={() => setEditorMode("html")}
+          >
+            HTML Editor
+          </Button>
+        </div>
+
+        {/* Editor */}
         <div className="space-y-6">
           <h2 className="text-xl font-semibold border-b pb-2">
             ✏️ Email Editor
           </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Editor */}
-            <div className="flex flex-col space-y-2">
-              <Label>HTML Content</Label>
+          <div className="flex flex-col space-y-2">
+            <Label>
+              {editorMode === "simple" ? "Content" : "HTML Content"}
+            </Label>
+            {editorMode === "simple" ? (
+              <Editor
+                apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
+                value={htmlContent}
+                onEditorChange={setHtmlContent}
+                init={{
+                  height: 500,
+                  menubar: false,
+                  plugins: "link image media table code fullscreen",
+                  toolbar:
+                    "code | addVariables | fontsize | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | outdent indent | link image media | table | fullscreen | undo redo",
+                  content_style:
+                    "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                  setup: (editor: TinyMCEEditorWithUI) => {
+                    editor.ui.registry.addMenuButton("addVariables", {
+                      text: "Add Variable",
+                      fetch: (callback: MenuItemFetchCallback) => {
+                        const items = [
+                          {
+                            type: "menuitem",
+                            text: "First Name",
+                            onAction: () =>
+                              editor.insertContent("{{first_name}}"),
+                          },
+                          {
+                            type: "menuitem",
+                            text: "Last Name",
+                            onAction: () =>
+                              editor.insertContent("{{last_name}}"),
+                          },
+                          {
+                            type: "menuitem",
+                            text: "Insert Link",
+                            onAction: () =>
+                              editor.insertContent("{{insert_link}}"),
+                          },
+                          {
+                            type: "menuitem",
+                            text: "Custom Note",
+                            onAction: () =>
+                              editor.insertContent("{{custom_note}}"),
+                          },
+                        ];
+                        callback(items);
+                      },
+                    });
+                  },
+                }}
+              />
+            ) : (
               <div className="rounded-lg overflow-hidden border bg-[#1e1e1e]">
-                <Editor
+                <MonacoEditor
                   height="300px"
                   defaultLanguage="html"
                   value={htmlContent}
@@ -143,23 +245,19 @@ export default function EmailTemplateEditor({
                   }}
                 />
               </div>
-            </div>
-
-            {/* Preview */}
-            <div className="flex flex-col space-y-2">
-              <Label>Live Preview</Label>
-              <div className="border rounded-lg h-[300px] p-4 overflow-auto bg-white shadow-inner">
-                <div
-                  dangerouslySetInnerHTML={{ __html: previewHtml }}
-                  className="prose max-w-full"
-                />
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Submit */}
-        <div className="flex justify-end">
+        {/* Buttons */}
+        <div className="flex justify-end space-x-4">
+          <Button
+            type="button"
+            onClick={() => setIsPreviewOpen(true)}
+            className="px-6 py-2"
+          >
+            Preview
+          </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -169,6 +267,35 @@ export default function EmailTemplateEditor({
           </Button>
         </div>
       </form>
+
+      {/* Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Email Preview</h2>
+              <Button variant="ghost" onClick={() => setIsPreviewOpen(false)}>
+                Close
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <strong>From:</strong> {defaultFrom}
+              </div>
+              <div>
+                <strong>Subject:</strong> {subject}
+              </div>
+              <div className="border-t pt-4">
+                <strong>Content:</strong>
+                <div
+                  dangerouslySetInnerHTML={{ __html: previewHtml }}
+                  className="prose max-w-full mt-2"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -173,7 +173,7 @@ export default function SpotlightCard() {
     observer.observe(cardRef.current);
 
     return () => observer.disconnect();
-  }, [spotlight?.id]);
+  }, [spotlight?.id, trackViewMutation]);
 
   const handleConnectClick = () => {
     if (spotlight?.id) {
