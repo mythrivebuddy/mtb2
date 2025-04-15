@@ -153,12 +153,13 @@ function SignInFormContent() {
             />
             <span>Remember me</span>
           </label>
-          <Link
+          <a
             href="/forgot-password"
             className="text-[#1E2875] hover:underline"
+            target="_blank"
           >
             Forgot password?
-          </Link>
+          </a>
         </div>
 
         <Button

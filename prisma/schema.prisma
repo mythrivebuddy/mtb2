@@ -28,6 +28,7 @@ enum ActivityType {
   BUSINESSPROFILE_COMPLETE
   MIRACLE_LOG
   PROGRESS_VAULT
+  MAGIC_BOX
 }
 
 enum TransactionType {
@@ -57,34 +58,35 @@ enum SpotlightActivityType {
 }
 
 model User {
-  id                  String                @id @default(uuid())
-  email               String                @unique
-  password            String?
-  name                String
-  role                Role
-  image               String?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  transaction         Transaction[]
-  jpEarned            Int                   @default(0)
-  jpSpent             Int                   @default(0)
-  jpBalance           Int                   @default(0)
-  jpTransaction       Int                   @default(0)
-  authMethod          AuthMethod            @default(CREDENTIALS) // Default to credentials
-  planId              String?
-  plan                Plan?                 @relation(fields: [planId], references: [id])
-  planStart           DateTime? // When the user subscribed
-  planEnd             DateTime? // When the plan expires
-  isBlocked           Boolean?              @default(false)
-  spotlight           Spotlight[]
-  userBusinessProfile UserBusinessProfile[]
-  blockedUsers        BlockedUsers[]
-  miracleLog          MiracleLog[]
-  progressVault       ProgressVault[]
+  id                            String                @id @default(uuid())
+  email                         String                @unique
+  password                      String?
+  name                          String
+  role                          Role
+  image                         String?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+  transaction                   Transaction[]
+  jpEarned                      Int                   @default(0)
+  jpSpent                       Int                   @default(0)
+  jpBalance                     Int                   @default(0)
+  jpTransaction                 Int                   @default(0)
+  authMethod                    AuthMethod            @default(CREDENTIALS) // Default to credentials
+  planId                        String?
+  plan                          Plan?                 @relation(fields: [planId], references: [id])
+  planStart                     DateTime? // When the user subscribed
+  planEnd                       DateTime? // When the plan expires
+  isBlocked                     Boolean?              @default(false)
+  spotlight                     Spotlight[]
+  userBusinessProfile           UserBusinessProfile[]
+  blockedUsers                  BlockedUsers[]
+  miracleLog                    MiracleLog[]
+  progressVault                 ProgressVault[]
   isEmailVerified               Boolean               @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
+  magicBoxes                    MagicBox[]
 
   @@index([name])
 }
@@ -224,25 +226,55 @@ model SpotlightActivity {
   @@index([createdAt])
 }
 
-
 model MiracleLog {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   content          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
 }
- 
+
 model ProgressVault {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   content          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model MagicBox {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isOpened  Boolean   @default(false)
+  jpAmount  Int? // Total JP amount in the box (set when box is opened)
+  openedAt  DateTime? // When the box was opened
+  createdAt DateTime  @default(now())
+  nextBoxAt DateTime // When the next box will be available
+
+  // Store the random users as a JSON array of user IDs
+  randomUserIds String[] // ["userId1", "userId2", "userId3", "userId4"]
+
+  // The selected user for sharing
+  selectedUserId String?
+
+  // Has the JP been redeemed by the box owner?
+  isRedeemed Boolean   @default(false)
+  redeemedAt DateTime?
+
+  @@index([userId])
+  @@index([nextBoxAt])
+}
+
+model MagicBoxSettings {
+  id          String   @id @default(uuid())
+  minJpAmount Int      @default(100) // Minimum JP amount for a magic box
+  maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
+  updatedAt   DateTime @updatedAt
 }

@@ -50,6 +50,12 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      // ! there will be two activity type one fror sender and one for receiver
+      activity: ActivityType.MAGIC_BOX,
+      jpAmount: 0, // will be handles by trnasection only  //! since here jp is not considered then many be turn it to non-required field
+      transactionType: TransactionType.CREDIT,
+    },
   ];
 
   for (const activity of activities) {
