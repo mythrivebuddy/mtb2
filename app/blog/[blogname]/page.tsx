@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import BlogContent from "@/components/blog/BlogContent";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -72,7 +71,10 @@ export default function Page() {
         <div className="flex justify-between text-gray-500 text-base my-5">
           <span className="italic">Read time: {blog?.readTime}</span>
         </div>
-        <BlogContent content={blog?.content ?? ""} />
+        <div
+          className="prose prose-lg max-w-none"
+          dangerouslySetInnerHTML={{ __html: blog?.content ?? "" }}
+        />
       </div>
       <div>
         <p>Ready to transform your solopreneurship journey?</p>

@@ -229,6 +229,16 @@ model SpotlightActivity {
   @@index([createdAt])
 }
 
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  templateId  String   @unique // e.g., "verification-email", "password-reset"
+  subject     String
+  htmlContent String   @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model MiracleLog {
   id               String    @id @default(uuid())
   content          String
@@ -247,8 +257,8 @@ model ProgressVault {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
-  user             User      @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
+  user             User     @relation(fields: [userId], references: [id])
 }
 
 model MagicBox {

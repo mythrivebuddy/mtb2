@@ -1,6 +1,7 @@
 "use client";
 
 import PageLoader from "@/components/PageLoader";
+import formatDateWithSuffix from "@/utils/formatDateAndTime";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React from "react";
@@ -59,7 +60,7 @@ const TransactionsHistoryPage = () => {
             {transactions.map((tx) => (
               <tr key={tx.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(tx.createdAt).toLocaleString()}
+                  {formatDateWithSuffix(tx.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {tx.activity.activity}

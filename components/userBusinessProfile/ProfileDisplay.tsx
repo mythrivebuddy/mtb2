@@ -1,12 +1,21 @@
 import React from "react";
-import { Github, Instagram, Linkedin, XIcon } from "lucide-react";
+import {
+  Facebook,
+  Instagram,
+  Linkedin,
+  Music,
+  XIcon,
+  Youtube,
+} from "lucide-react";
 import Image from "next/image";
 
 interface SocialHandles {
   linkedin?: string;
   instagram?: string;
   twitter?: string;
-  github?: string;
+  youtube?: string;
+  facebook?: string;
+  tiktok?: string;
 }
 
 interface BusinessProfile {
@@ -118,13 +127,31 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
             <XIcon className="w-6 h-6 text-black" />
           </a>
         )}
-        {profileData?.socialHandles?.github && (
+        {profileData?.socialHandles?.youtube && (
           <a
-            href={profileData.socialHandles.github}
+            href={profileData.socialHandles.youtube}
             target="_blank"
             rel="noreferrer"
           >
-            <Github className="w-6 h-6 text-gray-800" />
+            <Youtube className="w-6 h-6 text-gray-800" />
+          </a>
+        )}
+        {profileData?.socialHandles?.facebook && (
+          <a
+            href={profileData.socialHandles.facebook}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Facebook className="w-6 h-6 text-blue-600" />
+          </a>
+        )}
+        {profileData?.socialHandles?.tiktok && (
+          <a
+            href={profileData.socialHandles.tiktok}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Music className="w-6 h-6 text-blue-600" />
           </a>
         )}
       </div>
@@ -132,16 +159,16 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
     <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
       <h2 className="text-2xl font-semibold mb-4">Spotlight Information</h2>
       <p>
-        <strong>Featured Work Title:</strong>{" "}
+        <strong>Title (You want to be displayed on Spotlight):</strong>{" "}
         {profileData?.featuredWorkTitle || "Not provided"}
       </p>
       <p>
-        <strong>Featured Work Description:</strong>{" "}
+        <strong>Description:</strong>{" "}
         {profileData?.featuredWorkDesc || "Not provided"}
       </p>
       {profileData?.featuredWorkImage && (
         <div>
-          <strong>Featured Image:</strong>
+          <strong>Image to be displayed in Spotlight:</strong>
           <Image
             src={profileData.featuredWorkImage}
             alt="Featured Work"
@@ -152,7 +179,7 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
         </div>
       )}
       <p>
-        <strong>Priority Contact Link:</strong>{" "}
+        <strong>Contact Link (Where you like users to visit):</strong>{" "}
         {profileData?.priorityContactLink || "Not provided"}
       </p>
     </div>
