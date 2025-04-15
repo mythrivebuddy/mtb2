@@ -1,2 +1,2 @@
 -- AlterEnum
-ALTER TYPE "ActivityType" ADD VALUE 'PROGRESS_VAULT';
+-- ALTER TYPE "ActivityType" ADD VALUE 'PROGRESS_VAULT';
