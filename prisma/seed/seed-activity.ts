@@ -50,6 +50,16 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.REFER_BY,
+      jpAmount: 500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.REFER_TO,
+      jpAmount: 500,
+      transactionType: TransactionType.CREDIT,
+    },
   ];
 
   for (const activity of activities) {

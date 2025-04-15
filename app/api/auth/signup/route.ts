@@ -81,6 +81,11 @@ export async function POST(request: NextRequest) {
     // Send the email
     await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
+
+    // In your signup route (after user is created)
+
+
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -95,12 +100,16 @@ export async function POST(request: NextRequest) {
       include: { plan: true },
     });
 
+
+
     //  * assign JP as signup reward
     assignJp(user, ActivityType.SIGNUP);
 
     return NextResponse.json({
       message:
         "User created successfully. Please check your email to verify your account.",
+        userId: user.id // 👈 return this to the frontend
+
     });
   } catch (error) {
     console.error("Signup error:", error);
