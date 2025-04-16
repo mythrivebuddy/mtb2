@@ -49,12 +49,22 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const validatedData = settingsSchema.parse(body);
 
-    const settings = await prisma.magicBoxSettings.create({
-      data: {
-        minJpAmount: validatedData.minJpAmount,
-        maxJpAmount: validatedData.maxJpAmount,
-      },
-    });
+    const existingSettings = await prisma.magicBoxSettings.findFirst();
+
+    const settings = existingSettings
+      ? await prisma.magicBoxSettings.update({
+          where: { id: existingSettings.id },
+          data: {
+            minJpAmount: validatedData.minJpAmount,
+            maxJpAmount: validatedData.maxJpAmount,
+          },
+        })
+      : await prisma.magicBoxSettings.create({
+          data: {
+            minJpAmount: validatedData.minJpAmount,
+            maxJpAmount: validatedData.maxJpAmount,
+          },
+        });
 
     return NextResponse.json(
       {
