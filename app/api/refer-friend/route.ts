@@ -48,6 +48,7 @@ const senderEmail = process.env.CONTACT_SENDER_EMAIL;
 // GET: Fetch referral stats
 export async function GET() {
   try {
+    console.log('fetching referral stats itz working');
     const session = await getServerSession(authConfig);
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });

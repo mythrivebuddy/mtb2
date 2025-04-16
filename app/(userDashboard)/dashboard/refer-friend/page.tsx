@@ -38,6 +38,8 @@ interface ReferralStats {
 async function fetchReferralStats(): Promise<ReferralStats> {
   try {
     const response = await axios.get('/api/refer-friend');
+    console.log('response',response);
+
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -143,6 +145,7 @@ export default function ReferFriendPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-3xl font-bold">Refer a Friend</h1>
         

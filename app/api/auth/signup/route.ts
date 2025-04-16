@@ -63,37 +63,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!template) {
-      throw new Error("Email template not found");
-    }
-
-    const emailContent = renderEmailTemplate(template.htmlContent, {
+    const emailContent = renderEmailTemplate(template?.htmlContent, {
       username: name,
       verificationUrl,
     });
 
     const emailVerificationPayload = {
-      sender: { 
-        name: "MyThriveBuddy",
-        email: senderEmail 
-      },
-      to: [{ 
-        email: email,
-        name: name 
-      }],
-      subject: template.subject || "Verify your email address",
+      sender: { email: senderEmail },
+      to: [{ email, name }],
+      subject: template?.subject,
       htmlContent: emailContent,
     };
 
-    try {
-      // Send the email
-      await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
-    } catch (emailError) {
-      console.error("Email sending error:", emailError);
-      // Continue with user creation even if email fails
-    }
+    // Send the email
+    await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -109,13 +93,14 @@ export async function POST(request: NextRequest) {
       include: { plan: true },
     });
 
-    // Assign JP as signup reward
-    await assignJp(user, ActivityType.SIGNUP);
+    //  * assign JP as signup reward
+    assignJp(user, ActivityType.SIGNUP);
 
     return NextResponse.json({
-      message: "User created successfully. Please check your email to verify your account.",
-      userId: user.id,
+      message:
+        "User created successfully. Please check your email to verify your account.",
       user: user,
+      userId: user.id,
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -125,4 +110,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
