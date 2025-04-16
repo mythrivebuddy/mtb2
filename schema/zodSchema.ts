@@ -9,6 +9,7 @@ export const signupSchema = z.object({
     .string()
     .min(PASS_LENGTH, `Password must be at least ${PASS_LENGTH} characters`),
   name: z.string().min(2, "Name must be at least 2 characters"),
+  referralCode: z.string().optional(),
 });
 
 // Signin Schema

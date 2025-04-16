@@ -28,6 +28,8 @@ enum ActivityType {
   BUSINESSPROFILE_COMPLETE
   MIRACLE_LOG
   PROGRESS_VAULT
+  REFER_BY
+  REFER_TO
   MAGIC_BOX
   GENERAL_FEEDBACK
   FEATURE_REQUEST
@@ -60,39 +62,59 @@ enum SpotlightActivityType {
   CONNECT
 }
 
+
+
 model User {
-  id                            String                @id @default(uuid())
-  email                         String                @unique
-  password                      String?
-  name                          String
-  role                          Role
-  image                         String?
-  createdAt                     DateTime              @default(now())
-  updatedAt                     DateTime              @updatedAt
-  transaction                   Transaction[]
-  jpEarned                      Int                   @default(0)
-  jpSpent                       Int                   @default(0)
-  jpBalance                     Int                   @default(0)
-  jpTransaction                 Int                   @default(0)
-  authMethod                    AuthMethod            @default(CREDENTIALS) // Default to credentials
-  planId                        String?
-  plan                          Plan?                 @relation(fields: [planId], references: [id])
-  planStart                     DateTime? // When the user subscribed
-  planEnd                       DateTime? // When the plan expires
-  isBlocked                     Boolean?              @default(false)
-  spotlight                     Spotlight[]
-  userBusinessProfile           UserBusinessProfile[]
-  blockedUsers                  BlockedUsers[]
-  miracleLog                    MiracleLog[]
-  progressVault                 ProgressVault[]
-  isEmailVerified               Boolean               @default(false)
+  id                  String   @id @default(uuid())
+  email               String   @unique
+  password            String?
+  name                String
+  role                Role
+  image               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  transaction         Transaction[]
+  jpEarned            Int      @default(0)
+  jpSpent             Int      @default(0)
+  jpBalance           Int      @default(0)
+  jpTransaction       Int      @default(0)
+  authMethod          AuthMethod @default(CREDENTIALS)
+  planId              String?
+  plan                Plan?    @relation(fields: [planId], references: [id])
+  planStart           DateTime?
+  planEnd             DateTime?
+  isBlocked           Boolean? @default(false)
+  spotlight           Spotlight[]
+  userBusinessProfile UserBusinessProfile[]
+  blockedUsers        BlockedUsers[]
+  miracleLog          MiracleLog[]
+  progressVault       ProgressVault[]
+  isEmailVerified     Boolean  @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
+  
+  referralCode  String?   @unique
+  referredById  String?
+  referredBy    User?     @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals     User[]    @relation("UserReferrer")
+
+  // ✅ These 2 are required to fix your error:
+  referralsMade  Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
+
+  keyOfferings  String?
+  achievements  String?
+  goals         String?
+  website       String?
+  socialHandles Json?
+
   magicBoxes                    MagicBox[]
 
   @@index([name])
 }
+
+
 
 model Transaction {
   id         String   @id @default(uuid())
@@ -259,6 +281,17 @@ model ProgressVault {
   userId           String
   jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
   user             User     @relation(fields: [userId], references: [id])
+}
+
+model Referral {
+  id            String   @id @default(cuid())
+  referrerId    String
+  referredId    String
+  createdAt     DateTime @default(now())
+  referrer      User     @relation("Referrer", fields: [referrerId], references: [id])
+  referred      User     @relation("Referred", fields: [referredId], references: [id])
+
+  @@unique([referrerId, referredId])
 }
 
 model MagicBox {

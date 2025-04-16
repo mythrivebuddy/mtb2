@@ -16,7 +16,8 @@ import {
   UserRound,
   Vault,
   Gift,
-  Sparkles
+  Sparkles,
+  UserPlus 
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -168,6 +169,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               icon={<Phone size={20} />}
               label="Contact us"
             />
+                  <NavItem
+              href="/dashboard/refer-friend"
+              icon={<UserPlus  size={20} />}
+              label="Refer a friend"
+            />
+
             <button onClick={() => signOut()}>
               <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
             </button>

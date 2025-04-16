@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       message:
         "User created successfully. Please check your email to verify your account.",
       user: user,
+      userId: user.id,
     });
   } catch (error) {
     console.error("Signup error:", error);
