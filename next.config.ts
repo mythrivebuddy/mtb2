@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {},
   },
+  transpilePackages: ["@tinymce/tinymce-react"],
 };
 
 export default nextConfig;

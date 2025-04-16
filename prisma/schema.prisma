@@ -251,6 +251,16 @@ model SpotlightActivity {
   @@index([createdAt])
 }
 
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  templateId  String   @unique // e.g., "verification-email", "password-reset"
+  subject     String
+  htmlContent String   @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model MiracleLog {
   id               String    @id @default(uuid())
   content          String
