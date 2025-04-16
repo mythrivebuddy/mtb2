@@ -138,6 +138,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ? this conditoin will only run when some one intentiaolly tries to run this api when box is already opened else this condition will never run as box will not be open when this api will be called from frontend
     // If box is already opened
     if (magicBox.isOpened) {
       // If opened but not redeemed, return random users

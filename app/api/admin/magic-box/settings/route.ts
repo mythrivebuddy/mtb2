@@ -1,37 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { z } from "zod";
 
-// GET: Get current Magic Box settings
+const settingsSchema = z.object({
+  minJpAmount: z.number().min(1).max(1000),
+  maxJpAmount: z.number().min(1).max(1000),
+});
+
+// GET: Get current magic box settings
 export async function GET() {
   try {
-   await checkRole("ADMIN");
+    await checkRole("ADMIN");
 
-    // Get the most recent settings
     const settings = await prisma.magicBoxSettings.findFirst({
       orderBy: {
         updatedAt: "desc",
       },
     });
 
-    if (!settings) {
-      // Return default settings if none exist
-      return NextResponse.json(
-        {
-          message: "No settings found, using defaults",
-          settings: {
-            minJpAmount: 100,
-            maxJpAmount: 500,
-          },
-        },
-        { status: 200 }
-      );
-    }
-
     return NextResponse.json(
       {
         message: "Magic box settings retrieved successfully",
-        settings,
+        settings: settings || {
+          minJpAmount: 100,
+          maxJpAmount: 500,
+        },
       },
       { status: 200 }
     );
@@ -47,49 +41,25 @@ export async function GET() {
   }
 }
 
-// POST: Update Magic Box settings
-export async function POST(request: NextRequest) {
+// PUT: Update magic box settings
+export async function PUT(request: NextRequest) {
   try {
-   await checkRole("ADMIN");
-    // const adminId = session.user.id;
+    await checkRole("ADMIN");
 
-    const data = await request.json();
-    const { minJpAmount, maxJpAmount } = data;
+    const body = await request.json();
+    const validatedData = settingsSchema.parse(body);
 
-    // Validate input
-    if (minJpAmount === undefined || maxJpAmount === undefined) {
-      return NextResponse.json(
-        { error: "minJpAmount and maxJpAmount are required" },
-        { status: 400 }
-      );
-    }
-
-    if (minJpAmount < 0 || maxJpAmount < 0) {
-      return NextResponse.json(
-        { error: "JP amounts must be positive" },
-        { status: 400 }
-      );
-    }
-
-    if (minJpAmount >= maxJpAmount) {
-      return NextResponse.json(
-        { error: "minJpAmount must be less than maxJpAmount" },
-        { status: 400 }
-      );
-    }
-
-    // Create new settings
-    const newSettings = await prisma.magicBoxSettings.create({
+    const settings = await prisma.magicBoxSettings.create({
       data: {
-        minJpAmount,
-        maxJpAmount,
+        minJpAmount: validatedData.minJpAmount,
+        maxJpAmount: validatedData.maxJpAmount,
       },
     });
 
     return NextResponse.json(
       {
         message: "Magic box settings updated successfully",
-        settings: newSettings,
+        settings,
       },
       { status: 200 }
     );
