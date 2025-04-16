@@ -21,9 +21,9 @@ export default function BlogCard({
 }: BlogPost) {
   const slug = createSlug(title);
   return (
-    <Link href={`/blog/${slug}`} className="block">
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-        <div className="relative h-48">
+    <Link href={`/blog/${slug}`} className="block h-full">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
+        <div className="relative h-48 w-full">
           <Image
             src={image}
             alt={title}
@@ -32,10 +32,12 @@ export default function BlogCard({
             className="object-cover"
           />
         </div>
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-[#1E2875] mb-3">{title}</h2>
-          <p className="text-gray-600 mb-4">{excerpt}</p>
-          <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="p-6 flex flex-col flex-grow">
+          <h2 className="text-xl font-bold text-[#1E2875] mb-3 line-clamp-2">
+            {title}
+          </h2>
+          <p className="text-gray-600 mb-4 line-clamp-3">{excerpt}</p>
+          <div className="flex items-center justify-between text-sm text-gray-500 mt-auto">
             <div className="flex items-center space-x-4">
               <span>{date}</span>
               <span>{readTime}</span>

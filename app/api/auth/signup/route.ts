@@ -6,6 +6,7 @@ import { ActivityType } from "@prisma/client";
 import { assignJp } from "@/lib/utils/jp";
 import { sign } from "jsonwebtoken";
 import axios from "axios";
+import { renderEmailTemplate } from "@/utils/email-template";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +37,6 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Generate verification token
     const verificationToken = sign({ email }, process.env.JWT_SECRET!, {
       expiresIn: "24h",
     });
@@ -57,25 +57,22 @@ export async function POST(request: NextRequest) {
       "api-key": brevoApiKey,
     };
 
+    const template = await prisma.emailTemplate.findUnique({
+      where: {
+        templateId: "verification-mail",
+      },
+    });
+
+    const emailContent = renderEmailTemplate(template?.htmlContent, {
+      username: name,
+      verificationUrl,
+    });
+
     const emailVerificationPayload = {
       sender: { email: senderEmail },
       to: [{ email, name }],
-      subject: "Verify Your Email",
-      htmlContent: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #151E46;">Welcome to MyThriveBuddy!</h2>
-          <p>Thank you for signing up. Please verify your email address by clicking the button below:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" style="background-color: #151E46; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
-              Verify Email
-            </a>
-          </div>
-          <p>If you didn't create an account, you can safely ignore this email.</p>
-          <p style="color: #666; font-size: 12px; margin-top: 30px;">
-            This link will expire in 24 hours.
-          </p>
-        </div>
-      `,
+      subject: template?.subject,
+      htmlContent: emailContent,
     };
 
     // Send the email
@@ -86,12 +83,13 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         name,
-        role: "USER",
+        role: process.env.ADMIN_EMAIL === email ? "ADMIN" : "USER",
         emailVerificationToken: verificationToken,
         emailVerificationTokenExpires: new Date(
           Date.now() + 24 * 60 * 60 * 1000
         ),
       },
+      omit: { password: true },
       include: { plan: true },
     });
 
@@ -101,6 +99,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message:
         "User created successfully. Please check your email to verify your account.",
+      user: user,
+      userId: user.id,
     });
   } catch (error) {
     console.error("Signup error:", error);

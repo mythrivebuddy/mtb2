@@ -138,6 +138,7 @@ export const authConfig: AuthOptions = {
               name: user.name!,
               image: user.image ? user.image : "",
               authMethod: AuthMethod.GOOGLE,
+              isEmailVerified: true,
             },
             include: {
               plan: true, //its include for jp assignment only

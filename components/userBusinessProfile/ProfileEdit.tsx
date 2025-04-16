@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import { BusinessProfile } from "@/app/(userDashboard)/dashboard/profile/page";
+import SocialHandlesCard from "./SocialHandlesCard";
 
 interface ProfileEditProps {
   onCancel: () => void;
@@ -173,62 +174,42 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
       <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">Social Handles</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="socialHandles.linkedin"
-              className="block font-medium mb-1"
-            >
-              LinkedIn
-            </label>
-            <input
-              id="socialHandles.linkedin"
-              type="text"
-              {...register("socialHandles.linkedin")}
-              className={commonClassName}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="socialHandles.instagram"
-              className="block font-medium mb-1"
-            >
-              Instagram
-            </label>
-            <input
-              id="socialHandles.instagram"
-              type="text"
-              {...register("socialHandles.instagram")}
-              className={commonClassName}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="socialHandles.twitter"
-              className="block font-medium mb-1"
-            >
-              Twitter
-            </label>
-            <input
-              id="socialHandles.twitter"
-              type="text"
-              {...register("socialHandles.twitter")}
-              className={commonClassName}
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="socialHandles.github"
-              className="block font-medium mb-1"
-            >
-              GitHub
-            </label>
-            <input
-              id="socialHandles.github"
-              type="text"
-              {...register("socialHandles.github")}
-              className={commonClassName}
-            />
-          </div>
+          <SocialHandlesCard
+            label="LinkedIn"
+            name="socialHandles.linkedin"
+            register={register}
+            commonClassName={commonClassName}
+          />
+          <SocialHandlesCard
+            label="Instagram"
+            name="socialHandles.instagram"
+            register={register}
+            commonClassName={commonClassName}
+          />
+          <SocialHandlesCard
+            label="Twitter"
+            name="socialHandles.twitter"
+            register={register}
+            commonClassName={commonClassName}
+          />
+          <SocialHandlesCard
+            label="YouTube"
+            name="socialHandles.youtube"
+            register={register}
+            commonClassName={commonClassName}
+          />
+          <SocialHandlesCard
+            label="Facebook"
+            name="socialHandles.facebook"
+            register={register}
+            commonClassName={commonClassName}
+          />
+          <SocialHandlesCard
+            label="TikTok"
+            name="socialHandles.tiktok"
+            register={register}
+            commonClassName={commonClassName}
+          />
         </div>
       </div>
       <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
@@ -239,7 +220,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="featuredWorkTitle"
               className="block font-medium mb-1"
             >
-              Featured Work Title
+              <span className="text-red-500">* </span>Title (You want to be
+              displayed on Spotlight)
             </label>
             <input
               id="featuredWorkTitle"
@@ -260,7 +242,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="featuredWorkDesc"
               className="block font-medium mb-1"
             >
-              Featured Work Description
+              <span className="text-red-500">* </span> Description
             </label>
             <textarea
               id="featuredWorkDesc"
@@ -281,7 +263,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="featuredWorkImage"
               className="block font-medium mb-1"
             >
-              Featured Work Image
+              <span className="text-red-500">* </span> Image to be displayed in
+              Spotlight
             </label>
             <input
               id="featuredWorkImage"
@@ -307,16 +290,22 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="priorityContactLink"
               className="block font-medium mb-1"
             >
-              Priority Contact Link
+              <span className="text-red-500">* </span> Contact Link (Where you
+              like users to visit)
             </label>
-            <input
-              id="priorityContactLink"
-              type="url"
-              {...register("priorityContactLink", {
-                required: "Work contact link is required",
-              })}
-              className={commonClassName}
-            />
+            <div className="flex items-center">
+              <span className="inline-flex items-center p-2 rounded-l-lg border border-r-0 border-gray-300 bg-gray-100 text-gray-500 text-md">
+                https://
+              </span>
+              <input
+                id="priorityContactLink"
+                type="text"
+                {...register("priorityContactLink", {
+                  required: "Work contact link is required",
+                })}
+                className={`${commonClassName} rounded-l-none`}
+              />
+            </div>
             {errors.priorityContactLink && (
               <p className="text-red-500 mt-1">
                 {errors.priorityContactLink.message}

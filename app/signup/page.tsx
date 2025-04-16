@@ -1,3 +1,5 @@
+
+
 import { Metadata } from "next";
 import SignUpForm from "@/components/auth/SignUpForm";
 import AppLayout from "@/components/layout/AppLayout";
