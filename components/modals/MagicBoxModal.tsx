@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   Dialog,
   DialogContent,
@@ -15,8 +16,11 @@ import { Gift, Clock, Sparkles, ExternalLink } from "lucide-react";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, set } from "date-fns";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
+
+const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
 interface MagicBoxProps {
   isOpen: boolean;
@@ -30,18 +34,6 @@ interface RandomUser {
   image: string | null;
 }
 
-// interface MagicBox {
-//   id: string;
-//   isOpened: boolean;
-//   isRedeemed: boolean;
-//   jpAmount: number | null;
-//   nextBoxAt: string;
-//   randomUserIds: string[];
-//   selectedUserId: string | null;
-//   openedAt: string | null;
-//   redeemedAt: string | null;
-// }
-
 const MagicBoxModal: React.FC<MagicBoxProps> = ({
   isOpen,
   onClose,
@@ -49,6 +41,8 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [prevStatus, setPrevStatus] = useState<string | null>(null);
 
   // Get magic box
   const {
@@ -110,12 +104,28 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
     },
   });
 
-  // Reset selected user when modal closes
+  // Reset selected user and track previous status when modal closes
   useEffect(() => {
     if (!isOpen) {
       setSelectedUser(null);
+      setPrevStatus(null);
+      setShowConfetti(false);
     }
   }, [isOpen]);
+
+  // Trigger confetti on status transition
+  useEffect(() => {
+    if (boxData?.status && prevStatus) {
+      if (prevStatus === "UNOPENED" && boxData.status === "OPENED") {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 6000);
+      }
+    }
+    if (boxData?.status) {
+      setPrevStatus(boxData.status);
+    }
+    // return () => setShowConfetti(false);
+  }, [boxData?.status]);
 
   const handleOpenBox = () => {
     if (boxData?.magicBox?.id) {
@@ -230,6 +240,12 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
     if (status === "OPENED" && randomUsers) {
       return (
         <div className="flex flex-col items-center p-6">
+          {/* {showConfetti && ( */}
+          {/* {true && (
+            <div className="absolute top-0 left-0 right-0 inset-0 pointer-events-none z-50 transition-all">
+              <Confetti width={window.innerWidth} height={window.innerHeight} />
+            </div>
+          )} */}
           <Sparkles className="h-12 w-12 text-yellow-500 mb-2" />
           <p className="text-xl font-semibold mb-1">
             You found {magicBox.jpAmount} JP!
@@ -269,7 +285,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
                   target="_blank"
                 >
                   <ExternalLink className="h-3 w-3 mr-1" />
-                  profile 
+                  profile
                 </a>
               </div>
             ))}
@@ -298,14 +314,36 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md md:max-w-xl">
-        <DialogHeader>
-          <DialogTitle className="text-center">Magic Box</DialogTitle>
-        </DialogHeader>
-        {renderContent()}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-md md:max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-center">Magic Box</DialogTitle>
+          </DialogHeader>
+          {renderContent()}
+        </DialogContent>
+      </Dialog>
+      <AnimatePresence>
+        {showConfetti && (
+          <motion.div
+            className="fixed inset-0 pointer-events-none z-[9999]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Confetti
+              width={window.innerWidth}
+              height={window.innerHeight}
+              gravity={0.5}
+              numberOfPieces={200}
+              recycle={false}
+              // opacity={confettiOpacity}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

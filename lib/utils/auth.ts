@@ -16,16 +16,17 @@ import { getServerSession, Session } from "next-auth";
 // };
 
 export async function checkRole(
-  role: Role,
+  role: Role | Role[],
   msg: string = "You are not authorized for this action"
 ): Promise<Session> {
-  const session = await getServerSession(authConfig)
+  const session = await getServerSession(authConfig);
 
   if (!session) {
     throw new Error("Unauthorized");
   }
 
-  if (session.user.role !== role) {
+  const allowedRoles = Array.isArray(role) ? role : [role];
+  if (!allowedRoles.includes(session.user.role as Role)) {
     throw new Error(msg);
   }
 

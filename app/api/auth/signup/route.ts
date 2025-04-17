@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
       htmlContent: emailContent,
     };
 
+    console.log("emailVerificationPayload", emailVerificationPayload);  
     // Send the email
     await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
