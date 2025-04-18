@@ -66,7 +66,7 @@ const RightPanel = ({ className }: { className?: string }) => {
   }
 
   return (
-    <div className={`bg-transparent overflow-y-auto ${className}`}>
+    <div className={`bg-transparent  ${className}`}>
       {/* Buddies Section */}
       <section className="mb-6">
         <div className="flex justify-between items-center mb-3">

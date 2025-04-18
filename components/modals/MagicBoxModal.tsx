@@ -57,7 +57,9 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
     },
     enabled: isOpen && !!userId,
     refetchOnWindowFocus: false,
+    // staleTime: 1000 * 60 * 2, // 2 minutes
   });
+  console.log("boxData", boxData); //?dev
 
   // Open box mutation
   const openBoxMutation = useMutation({
@@ -66,7 +68,8 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["magicBox"] });
+      // queryClient.invalidateQueries({ queryKey: ["magicBox"] });
+      queryClient.invalidateQueries({ queryKey: ["magicBoxStatus"] });
       refetchBox();
     },
     onError: (error) => {
@@ -92,6 +95,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["magicBox"] });
+      queryClient.invalidateQueries({ queryKey: ["magicBoxStatus"] });
       queryClient.invalidateQueries({ queryKey: ["userInfo"] });
       toast.success(
         `You received ${data.jpEarned} JP and shared ${data.shared.jpAmount} JP!`
