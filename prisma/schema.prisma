@@ -28,6 +28,9 @@ enum ActivityType {
   BUSINESSPROFILE_COMPLETE
   MIRACLE_LOG
   PROGRESS_VAULT
+  REFER_BY
+  REFER_TO
+  MAGIC_BOX
   GENERAL_FEEDBACK
   FEATURE_REQUEST
   BUG_REPORT
@@ -59,26 +62,28 @@ enum SpotlightActivityType {
   CONNECT
 }
 
+
+
 model User {
-  id                  String                @id @default(uuid())
-  email               String                @unique
+  id                  String   @id @default(uuid())
+  email               String   @unique
   password            String?
   name                String
   role                Role
   image               String?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
   transaction         Transaction[]
-  jpEarned            Int                   @default(0)
-  jpSpent             Int                   @default(0)
-  jpBalance           Int                   @default(0)
-  jpTransaction       Int                   @default(0)
-  authMethod          AuthMethod            @default(CREDENTIALS)
+  jpEarned            Int      @default(0)
+  jpSpent             Int      @default(0)
+  jpBalance           Int      @default(0)
+  jpTransaction       Int      @default(0)
+  authMethod          AuthMethod @default(CREDENTIALS)
   planId              String?
-  plan                Plan?                 @relation(fields: [planId], references: [id])
+  plan                Plan?    @relation(fields: [planId], references: [id])
   planStart           DateTime?
   planEnd             DateTime?
-  isBlocked           Boolean?              @default(false)
+  isBlocked           Boolean? @default(false)
   spotlight           Spotlight[]
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
@@ -92,9 +97,28 @@ model User {
   orders              Order[]
   wishlists           Wishlist[]
   membership          String                @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+  
+  referralCode  String?   @unique
+  referredById  String?
+  referredBy    User?     @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals     User[]    @relation("UserReferrer")
+
+  // ✅ These 2 are required to fix your error:
+  referralsMade  Referral[] @relation("Referrer")
+  referralsReceived Referral[] @relation("Referred")
+
+  keyOfferings  String?
+  achievements  String?
+  goals         String?
+  website       String?
+  socialHandles Json?
+
+  magicBoxes                    MagicBox[]
 
   @@index([name])
 }
+
+
 
 model Transaction {
   id         String   @id @default(uuid())
@@ -231,16 +255,25 @@ model SpotlightActivity {
   @@index([createdAt])
 }
 
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  templateId  String   @unique // e.g., "verification-email", "password-reset"
+  subject     String
+  htmlContent String   @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 
 model MiracleLog {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   content          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
 }
  
 model ProgressVault {
@@ -335,3 +368,45 @@ model Cart {
   @@unique([userId, itemId])
 }
 
+
+model Referral {
+  id            String   @id @default(cuid())
+  referrerId    String
+  referredId    String
+  createdAt     DateTime @default(now())
+  referrer      User     @relation("Referrer", fields: [referrerId], references: [id])
+  referred      User     @relation("Referred", fields: [referredId], references: [id])
+
+  @@unique([referrerId, referredId])
+}
+
+model MagicBox {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isOpened  Boolean   @default(false)
+  jpAmount  Int? // Total JP amount in the box (set when box is opened)
+  openedAt  DateTime? // When the box was opened
+  createdAt DateTime  @default(now())
+  nextBoxAt DateTime // When the next box will be available
+
+  // Store the random users as a JSON array of user IDs
+  randomUserIds String[] // ["userId1", "userId2", "userId3", "userId4"]
+
+  // The selected user for sharing
+  selectedUserId String?
+
+  // Has the JP been redeemed by the box owner?
+  isRedeemed Boolean   @default(false)
+  redeemedAt DateTime?
+
+  @@index([userId])
+  @@index([nextBoxAt])
+}
+
+model MagicBoxSettings {
+  id          String   @id @default(uuid())
+  minJpAmount Int      @default(100) // Minimum JP amount for a magic box
+  maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
+  updatedAt   DateTime @updatedAt
+}

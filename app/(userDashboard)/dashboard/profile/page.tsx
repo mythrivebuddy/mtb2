@@ -17,7 +17,9 @@ interface SocialHandles {
   linkedin?: string;
   instagram?: string;
   twitter?: string;
-  github?: string;
+  youtube?: string;
+  facebook?: string;
+  tiktok?: string;
 }
 
 export interface BusinessProfile {
@@ -53,7 +55,9 @@ const defaultProfile: BusinessProfile = {
     linkedin: "",
     instagram: "",
     twitter: "",
-    github: "",
+    youtube: "",
+    facebook: "",
+    tiktok: " ",
   },
   featuredWorkTitle: "",
   featuredWorkDesc: "",
@@ -123,19 +127,19 @@ const Page = () => {
   });
 
   const commonClassName =
-    "w-full border px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80";
+    "w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80";
 
   // Reset form with fetched profile data
   useEffect(() => {
     if (profile) {
       reset({
         ...profile,
-        socialHandles: profile.socialHandles || {
-          linkedin: "",
-          instagram: "",
-          twitter: "",
-          github: "",
-        },
+        socialHandles: Object.fromEntries(
+          Object.entries(profile.socialHandles || {}).map(([platform, url]) => [
+            platform,
+            typeof url === "string" ? url.replace(/^https?:\/\//, "") : "",
+          ])
+        ),
       });
       setImagePreview(profile.featuredWorkImage || null);
     }
@@ -153,7 +157,16 @@ const Page = () => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (key === "socialHandles") {
-        formData.append(key, JSON.stringify(value || {}));
+        const normalizedHandles: Record<string, string> = {};
+        Object.entries(value || {}).forEach(([platform, url]) => {
+          if (typeof url === "string" && url.trim()) {
+            normalizedHandles[platform] =
+              url.startsWith("http://") || url.startsWith("https://")
+                ? url
+                : `https://${url}`;
+          }
+        });
+        formData.append(key, JSON.stringify(normalizedHandles));
       } else if (
         key !== "featuredWorkImage" &&
         value !== undefined &&
