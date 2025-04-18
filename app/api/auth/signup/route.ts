@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       htmlContent: emailContent,
     };
 
-    console.log("emailVerificationPayload", emailVerificationPayload);  
+    console.log("emailVerificationPayload", emailVerificationPayload);
     // Send the email
     await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
@@ -105,6 +105,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Signup error:", error);
+    if (error instanceof axios.AxiosError) {
+      console.error("Signup error:", error?.response); //! only meant for debuggin in prodction
+    }
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 }
