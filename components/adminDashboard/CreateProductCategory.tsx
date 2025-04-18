@@ -12,7 +12,7 @@ export default function CreateProductCategory({ onSuccess }: CreateProductCatego
     const [category, setCategory] = useState("");   
     const [isLoading, setIsLoading] = useState(false);
 
-    const { mutate: createCategory, isPending } = useMutation({
+    const {  isPending } = useMutation({
         mutationFn: async () => {
             setIsLoading(true);
             const response = await axios.post("/api/admin/store/create-category", { category });

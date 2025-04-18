@@ -3,19 +3,34 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { Loader2, ShoppingCart, Heart, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart, Heart, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation"; // Add useRouter for redirection
+import { useRouter } from "next/navigation";
+import PageLoader from "@/components/PageLoader";
+import { getAxiosErrorMessage } from "@/utils/ax";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 interface Category {
-  category: string;
+  id: string;
+  name: string;
 }
 
 interface Item {
   id: string;
   name: string;
-  category: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+  };
   imageUrl: string;
   basePrice: number;
   monthlyPrice: number;
@@ -29,51 +44,69 @@ interface WishlistItem {
 }
 
 const fetchCategories = async (): Promise<Category[]> => {
-  const res = await axios.get("/api/store/items/getCategories");
+  const res = await axios.get("/api/user/store/items/get-categories");
   return res.data.categories;
 };
 
 const fetchUserMembership = async (): Promise<string> => {
-  const res = await axios.get("/api/store/user/profile");
+  const res = await axios.get("/api/user/store/profile");
   return res.data.user?.membership || "FREE";
 };
 
 const fetchAllItems = async (): Promise<Item[]> => {
-  const res = await axios.get("/api/store/items/get-all-items");
+  const res = await axios.get("/api/user/store/items/get-all-items");
   return res.data.items || [];
 };
 
-const fetchItemsByCategory = async (category: string): Promise<Item[]> => {
-  const res = await axios.get(`/api/store/items/getItemsByCategory?category=${category}`);
+const fetchItemsByCategory = async (categoryId: string): Promise<Item[]> => {
+  const res = await axios.get(
+    `/api/user/store/items/get-items-by-category?category=${categoryId}`
+  );
   return res.data.items || [];
 };
 
 const fetchWishlist = async (): Promise<WishlistItem[]> => {
-  const res = await axios.get("/api/store/user/wishlist");
+  const res = await axios.get("/api/user/store/items/wishlist");
   return res.data.wishlist || [];
 };
 
 const StorePage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: fetchCategories });
-  const { data: membership = "FREE" } = useQuery({ queryKey: ["membership"], queryFn: fetchUserMembership });
-  const { data: wishlist = [] } = useQuery({ queryKey: ["wishlist"], queryFn: fetchWishlist });
-  const { data: items = [], isLoading } = useQuery({
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
+  });
+  const { data: membership = "FREE", isLoading: membershipLoading } = useQuery({
+    queryKey: ["membership"],
+    queryFn: fetchUserMembership,
+  });
+  const { data: wishlist = [], isLoading: wishlistLoading } = useQuery({
+    queryKey: ["wishlist"],
+    queryFn: fetchWishlist,
+  });
+  const { data: items = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["items", selectedCategory],
-    queryFn: () => (selectedCategory ? fetchItemsByCategory(selectedCategory) : fetchAllItems()),
+    queryFn: () =>
+      selectedCategory
+        ? fetchItemsByCategory(selectedCategory)
+        : fetchAllItems(),
     placeholderData: (prev) => prev,
   });
 
   const toggleWishlistMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      if (wishlist.some((item) => item.itemId === itemId || item.id === itemId)) {
-        await axios.delete("/api/store/user/wishlist", { data: { itemId } });
+      if (
+        wishlist.some((item) => item.itemId === itemId || item.id === itemId)
+      ) {
+        await axios.delete("/api/user/store/items/wishlist", {
+          data: { itemId },
+        });
         toast.info("Removed from wishlist");
       } else {
-        await axios.post("/api/store/user/wishlist", { itemId });
+        await axios.post("/api/user/store/items/wishlist", { itemId });
         toast.success("Added to wishlist");
       }
     },
@@ -82,16 +115,21 @@ const StorePage: React.FC = () => {
 
   const addToCartMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      try {
-        const response = await axios.post("/api/store/user/cart/addCartItems", { itemId });
-        if (response.data.success) {
-          toast.success("Added to cart!");
-        } else {
-          toast.info(response.data.message || "Item already in cart!");
-        }
-      } catch (error) {
-        toast.error("Something went wrong! Please try again.");
-      }
+      const response = await axios.post(
+        "/api/user/store/items/cart/add-cart-items",
+        { itemId }
+      );
+      console.log("response", response);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Item added to cart");
+    },
+    onError: (error) => {
+      console.log("error", error);
+      toast.error(
+        getAxiosErrorMessage(error, "Something went wrong! Please try again.")
+      );
     },
   });
 
@@ -109,85 +147,159 @@ const StorePage: React.FC = () => {
   };
 
   const handleBuyNow = (itemId: string) => {
-    router.push(`/store/checkout?itemId=${itemId}`);
+    router.push(`/dashboard/store/checkout?cartItem=${itemId}:1`);
   };
 
+  if (
+    categoriesLoading ||
+    membershipLoading ||
+    wishlistLoading ||
+    itemsLoading
+  ) {
+    return <PageLoader />;
+  }
+
+  const bannerImages = [
+    "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/544c2e1eca31c88c.jpg?q=20",
+    "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/bb6f2a5b16b4c4f9.jpg?q=20",
+    "https://rukminim2.flixcart.com/fk-p-flap/1620/270/image/1558a721300c7f6d.jpg?q=20",
+  ];
+
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
-      <div className="flex justify-between items-center mb-8">
-        <Link href="/store/profile" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-semibold">
-          My Profile
-        </Link>
-      </div>
-      <h1 className="text-4xl font-extrabold text-center mb-6 text-indigo-700">🛍 Welcome to the Store</h1>
-      {/* <img
-        src="https://djffehyaumoktssytmtq.supabase.co/storage/v1/object/sign/store/store.jpg.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJzdG9yZS9zdG9yZS5qcGcucG5nIiwiaWF0IjoxNzQzMjIyODEzLCJleHAiOjE3NzQ3NTg4MTN9.fdzCxWRb63E5htWGZeygcyq0Ij-nuXIBq-Mhw3O0Uto"
-        alt="Welcome to Our Store"
-        className="w-100 rounded-lg shadow-lg ml-105"
-      /> */}
+    <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col">
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-slate-800">🛍 Store</h1>
+            <Link
+              href="/dashboard/store/profile"
+              className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600"
+            >
+              My Cart & Orders
+            </Link>
+          </div>
 
-      <div className="flex flex-wrap gap-4 justify-center mb-8">
-        <button
-          onClick={() => setSelectedCategory(null)}
-          className={`px-4 py-2 rounded-lg text-white ${selectedCategory === null ? "bg-indigo-700" : "bg-indigo-500"} hover:bg-indigo-600 transition-all cursor-pointer`}
-        >
-          All Products
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat.category}
-            onClick={() => setSelectedCategory(cat.category)}
-            className={`px-4 py-2 rounded-lg text-white ${selectedCategory === cat.category ? "bg-indigo-700" : "bg-indigo-500"} hover:bg-indigo-600 transition-all cursor-pointer`}
-          >
-            {cat.category}
-          </button>
-        ))}
-      </div>
+            <Carousel
+              className="w-full mx-auto mb-6"
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              autoplay={true} 
+            >
+              <CarouselContent>
+                {bannerImages.map((url, index) => (
+                  <CarouselItem key={index} className="basis-full">
+                    <img
+                      src={url}
+                      alt={`Banner ${index + 1}`}
+                      className="w-full h-[200px] object-cover rounded-lg shadow-lg"
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
 
-      <h2 className="text-2xl font-bold text-center mb-4 text-gray-700">
-        {selectedCategory ? `${selectedCategory} Items` : "All Products"}
-      </h2>
-      {isLoading ? (
-        <div className="flex justify-center items-center h-32">
-          <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
-        </div>
-      ) : (
-        <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-wrap gap-2 justify-center mb-6">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${
+                selectedCategory === null ? "opacity-90" : ""
+              }`}
+            >
+              All Products
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${
+                  selectedCategory === cat.id ? "opacity-90" : ""
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+
+          <h2 className="text-2xl font-semibold text-slate-800 mb-4 text-center">
+            {selectedCategory
+              ? `${
+                  categories.find((c) => c.id === selectedCategory)?.name ||
+                  "Selected"
+                } Items`
+              : "All Products"}
+          </h2>
+
           {items.length === 0 ? (
             <p className="text-center text-gray-600">No items available.</p>
           ) : (
-            items.map((item) => (
-              <div key={item.id} className="bg-white shadow-xl rounded-2xl p-6 hover:scale-105 transition-transform relative">
-                <button onClick={() => toggleWishlistMutation.mutate(item.id)} className="absolute bottom-40 right-4 cursor-pointer">
-                  <Heart className={wishlist.some((w) => w.itemId === item.id) ? "text-red-500 w-6 h-6 fill-red-500" : "text-gray-500 w-6 h-6"} />
-                </button>
-                <img src={item.imageUrl} alt={item.name} className="w-full aspect-square object-cover rounded-xl mb-4" />
-                <h2 className="text-2xl font-semibold text-gray-800 mb-2">{item.name}</h2>
-                <p className="text-sm text-indigo-500 font-medium mb-2">{item.category}</p>
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white shadow-lg rounded-xl p-4 hover:shadow-2xl transition-shadow relative"
+                >
+                  <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
 
-                <div className="flex flex-col items-start mb-4">
-                  {membership !== "FREE" && (
-                    <span className="text-lg text-gray-500 line-through">${item.basePrice}</span>
-                  )}
-                  <span className="text-xl font-bold text-green-600">${getPriceForMembership(item)}</span>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-lg font-semibold text-slate-800">
+                      {item.name}
+                    </h3>
+                    <button
+                      onClick={() => toggleWishlistMutation.mutate(item.id)}
+                      className="cursor-pointer"
+                    >
+                      <Heart
+                        className={
+                          wishlist.some((w) => w.itemId === item.id)
+                            ? "text-red-500 w-6 h-6 fill-red-500"
+                            : "text-gray-500 w-6 h-6"
+                        }
+                      />
+                    </button>
+                  </div>
+                  <p className="text-sm text-blue-500 font-medium mb-2">
+                    {item.category.name}
+                  </p>
+                  <div className="flex flex-col items-start mb-4">
+                    {membership !== "FREE" && (
+                      <span className="text-sm text-gray-500 line-through">
+                        ${item.basePrice}
+                      </span>
+                    )}
+                    <span className="text-lg font-bold text-green-600">
+                      ${getPriceForMembership(item)}
+                    </span>
+                  </div>
+                  <div className="flex gap-6">
+                    <Button
+                      className="flex-1 text-white font-bold text-sm rounded-full px-1 py-6 w-full"
+                      onClick={() => addToCartMutation.mutate(item.id)}
+                    >
+                      <PlusCircle className="w-4 h-4 mr-1 inline" /> Add to Cart
+                    </Button>
+                    <button
+                      className="flex-1 bg-jp-orange text-white font-bold text-sm rounded-full px-1 py-3 hover:bg-red-600 w-full"
+                      onClick={() => handleBuyNow(item.id)}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-1 inline" /> Buy Now
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex gap-4 mt-4">
-                  <button className="bg-gray-500 text-white py-2 px-4 rounded-xl cursor-pointer" onClick={() => addToCartMutation.mutate(item.id)}>
-                    <PlusCircle className="w-5 h-5 mr-2 inline" /> Add to Cart
-                  </button>
-                  <button
-                    className="bg-indigo-600 text-white py-2 px-4 ml-11 rounded-xl cursor-pointer"
-                    onClick={() => handleBuyNow(item.id)} 
-                  >
-                    <ShoppingCart className="w-5 h-5 mr-2 inline" /> Buy Now
-                  </button>
-                </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

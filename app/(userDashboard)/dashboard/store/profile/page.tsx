@@ -1,114 +1,104 @@
 "use client";
-
 import React, { useState } from "react";
-import axios, { AxiosError } from "axios";
+import axios, { AxiosResponse } from "axios";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import {  toast } from "sonner";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation"; 
-import ProfileHeader from "@/components/storeProfile/ProfileHeader";
+import { useRouter } from "next/navigation";
 import OrderSection from "@/components/storeProfile/OrderSection";
 import CartSection from "@/components/storeProfile/CartSection";
 import WishlistSection from "@/components/storeProfile/WishlistSection";
-
-interface Address {
-  id: string;
-  type: string;
-  street: string;
-  city: string;
-  state: string;
-  pin: string;
-  mobile: string;
-  country: string;
-  createdAt: string;
-}
+import { Item, Order, CartItem, WishlistItem } from "@/types/store";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 interface User {
   id: string;
   name: string;
-  username: string;
   email: string;
   membership: "FREE" | "MONTHLY" | "YEARLY" | "LIFETIME";
-  membershipEndDate?: string;
-  addresses?: Address[];
-}
-
-interface Item {
-  id: string;
-  name: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
-}
-
-interface CartItem {
-  id: string;
-  item: Item;
-  quantity: number;
-}
-
-interface OrderItem extends Omit<Item, 'id'> {
-  imageUrl: string;
-}
-
-interface Order {
-  id: string;
-  item: OrderItem | undefined;
-  status: string;
-  purchasedAt: string;
-}
-
-interface WishlistItem {
-  id: string;
-  item: Item;
 }
 
 function ProfilePage() {
-  const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
+  const [purchasingItemId] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const router = useRouter(); 
+  const router = useRouter();
 
   const fetchProfileData = async () => {
-    const [profileRes, ordersRes, wishlistRes, cartRes] = await Promise.all([
-      axios.get("/api/store/user/profile"),
-      axios.get("/api/store/user/orders"),
-      axios.get("/api/store/user/wishlist"),
-      axios.get("/api/store/user/cart/getCartItems"),
+    const [profileRes, ordersRes, wishlistRes, cartRes] = await Promise.allSettled([
+      axios.get("/api/user/store/profile"),
+      axios.get("/api/user/store/items/orders"),
+      axios.get("/api/user/store/items/wishlist"),
+      axios.get("/api/user/store/items/cart/get-cart-items"),
     ]);
-    return {
-      user: profileRes.data.user as User,
-      orders: ordersRes.data.orders as Order[],
-      wishlist: wishlistRes.data.wishlist as WishlistItem[],
-      cart: Array.isArray(cartRes.data.cart) ? (cartRes.data.cart as CartItem[]) : [],
+
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const getDataFromSettledPromise = (result: PromiseSettledResult<AxiosResponse<any,any>>, defaultValue: any, endpoint: string) => {
+      if (result.status === "fulfilled") {
+        return result.value.data;
+      }
+      console.error(`Failed to fetch from ${endpoint}:`, result);
+      return defaultValue;
     };
+
+    const data = {
+      user: getDataFromSettledPromise(profileRes, { user: {} }, "/api/user/store/profile"),
+      orders: getDataFromSettledPromise(ordersRes, { orders: [] }, "/api/user/store/items/orders"),
+      wishlist: getDataFromSettledPromise(wishlistRes, { wishlist: [] }, "/api/user/store/items/wishlist"),
+      cart: getDataFromSettledPromise(cartRes, { cart: [] }, "/api/user/store/items/cart/get-cart-items"),
+    };
+
+    console.log("Fetched profile data:", data);
+    return data;
   };
 
   const { data, isLoading } = useQuery({ queryKey: ["profileData"], queryFn: fetchProfileData });
-  const user = data?.user;
-  const orders = data?.orders || [];
-  const wishlist = data?.wishlist || [];
-  const cart = data?.cart || [];
+  const user = data?.user.user as User;
+  const orders = data?.orders?.orders as Order[] || [];
+  const wishlist = (Array.isArray(data?.wishlist.wishlist) ? data.wishlist.wishlist : []) as WishlistItem[];
+  const cart = data?.cart.cart as CartItem[] || [];
+
+  const getPriceForMembership = (item: Item): number | null => {
+    if (!item) return null;
+    const price = (() => {
+      switch (user?.membership) {
+        case "MONTHLY":
+          return item.monthlyPrice ?? item.basePrice;
+        case "YEARLY":
+          return item.yearlyPrice ?? item.basePrice;
+        case "LIFETIME":
+          return item.lifetimePrice ?? item.basePrice;
+        default:
+          return item.basePrice;
+      }
+    })();
+    return price;
+  };
+
+  const calculateTotal = () => {
+    return cart.reduce((total: number, cartItem: CartItem) => {
+      const price = getPriceForMembership(cartItem.item);
+      return total + (price ?? cartItem.item.basePrice) * cartItem.quantity;
+    }, 0);
+  };
 
   const addToCartMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      await axios.post("/api/store/user/cart/addCartItems", { itemId });
-      await axios.delete("/api/store/user/wishlist", { data: { itemId } });
+      await axios.post("/api/user/store/items/cart/add-cart-items", { itemId });
+      await axios.delete("/api/user/store/items/wishlist", { data: { itemId } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profileData"] });
       toast.success("Item added to cart!");
     },
-    onError: (err: AxiosError<{ message: string }>) => {
-      toast.error(err.response?.data?.message || "Error adding item to cart.");
+    onError: (err) => {
+      toast.error(getAxiosErrorMessage(err, "Error adding item to cart."));
     },
   });
 
   const removeFromCartMutation = useMutation({
     mutationFn: async (cartItemId: string) => {
-      await axios.delete("/api/store/user/cart/deleteCartItems", { data: { cartItemId } });
+      await axios.delete("/api/user/store/items/cart/delete-cart-items", { data: { cartItemId } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profileData"] });
@@ -124,30 +114,8 @@ function ProfilePage() {
       toast.warning("Your cart is empty!");
       return;
     }
-    // Redirect to checkout page with cart items
-    const cartItemsQuery = cart.map((cartItem) => `cartItem=${cartItem.item.id}:${cartItem.quantity}`).join("&");
-    router.push(`/store/checkout?${cartItemsQuery}`);
-  };
-
-  const getPriceForMembership = (item: (Item | (Omit<Item, "id"> & { imageUrl: string })) | undefined): number => {
-    if (!item) return 0;
-    const price = (() => {
-      switch (user?.membership) {
-        case "MONTHLY":
-          return item.monthlyPrice ?? item.basePrice;
-        case "YEARLY":
-          return item.yearlyPrice ?? item.basePrice;
-        case "LIFETIME":
-          return item.lifetimePrice ?? item.basePrice;
-        default:
-          return item.basePrice;
-      }
-    })();
-    return price ?? 0;
-  };
-
-  const calculateTotal = () => {
-    return cart.reduce((total, cartItem) => total + getPriceForMembership(cartItem.item) * cartItem.quantity, 0);
+    const cartItemsQuery = cart.map((cartItem: CartItem) => `cartItem=${cartItem.item.id}:${cartItem.quantity}`).join("&");
+    router.push(`/dashboard/store/checkout?${cartItemsQuery}`);
   };
 
   if (isLoading) {
@@ -161,23 +129,22 @@ function ProfilePage() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
       <div className="mb-4">
-        <Link href="/store" className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl font-semibold transition">
+        <Link href="/dashboard/store" className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600">
           Back to Store
         </Link>
       </div>
-      <ProfileHeader user={user || null} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <OrderSection orders={orders} getPriceForMembership={getPriceForMembership} />
-        <WishlistSection wishlist={wishlist} getPriceForMembership={getPriceForMembership} handleAddToCart={addToCartMutation.mutate} />
-        <CartSection
-          cart={cart}
-          getPriceForMembership={getPriceForMembership}
-          handleRemoveFromCart={removeFromCartMutation.mutate}
-          calculateTotal={calculateTotal}
-          handleBuyAll={handleBuyAll}
-          purchasingItemId={purchasingItemId}
-        />
-      </div>
+  <WishlistSection wishlist={wishlist} getPriceForMembership={getPriceForMembership} handleAddToCart={addToCartMutation.mutate} />
+  <CartSection
+    cart={cart}
+    getPriceForMembership={getPriceForMembership}
+    handleRemoveFromCart={removeFromCartMutation.mutate}
+    calculateTotal={calculateTotal}
+    handleBuyAll={handleBuyAll}
+    purchasingItemId={purchasingItemId}
+  />
+  <OrderSection orders={orders} getPriceForMembership={getPriceForMembership} />
+</div>
     </div>
   );
 }

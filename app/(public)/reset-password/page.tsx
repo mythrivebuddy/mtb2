@@ -80,7 +80,7 @@ const ResetPasswordForm = () => {
             {...register("confirmPassword")}
             error={errors.confirmPassword}
           />
-          <Button type="submit" disabled={isSubmitting} size={"cover"}>
+          <Button type="submit" disabled={isSubmitting} size={"lg"}>
             Submit
           </Button>
         </form>

@@ -10,14 +10,8 @@ const PAYPAL_API_BASE = process.env.NODE_ENV === "production"
 
 export async function POST(req: NextRequest) {
   try {
-    // const session = await checkRole(
-    //   "USER",
-    //   "You are not authorized for this action"
-    // );
-
-    // Parse request body
     const body = await req.json();
-    const { orderId } = body;
+    const { orderId, paymentId } = body;
     
     if (!orderId) {
       return NextResponse.json(
@@ -34,19 +28,35 @@ export async function POST(req: NextRequest) {
       const orderDetails = await verifyPayPalOrder(orderId, accessToken);
       
       // Check if the payment is completed
-      const isValid = orderDetails.status === 'COMPLETED' || orderDetails.status === 'APPROVED';
+      const isValid = orderDetails.status === 'COMPLETED';
       
       if (isValid) {
-        return NextResponse.json({
-          success: true,
-          message: "Payment verified successfully",
-          orderId,
-          details: orderDetails
-        });
+        // Verify payment details
+        const paymentDetails = await verifyPayPalPayment(paymentId, accessToken);
+        
+        if (paymentDetails.status === 'COMPLETED') {
+          return NextResponse.json({
+            success: true,
+            message: "Payment verified successfully",
+            orderId,
+            paymentId,
+            details: {
+              order: orderDetails,
+              payment: paymentDetails
+            }
+          });
+        } else {
+          return NextResponse.json({
+            success: false,
+            message: `Payment verification failed. Payment Status: ${paymentDetails.status}`,
+            orderId,
+            paymentId
+          }, { status: 400 });
+        }
       } else {
         return NextResponse.json({
           success: false,
-          message: `Payment verification failed. Status: ${orderDetails.status}`,
+          message: `Payment verification failed. Order Status: ${orderDetails.status}`,
           orderId
         }, { status: 400 });
       }
@@ -69,8 +79,12 @@ export async function POST(req: NextRequest) {
 
 // Get PayPal OAuth access token
 async function getPayPalAccessToken() {
-  const clientId = process.env.PAYPAL_CLIENT_ID || "YOUR_SANDBOX_CLIENT_ID";
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET || "YOUR_SANDBOX_SECRET";
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error("PayPal credentials are not configured");
+  }
   
   const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
   try {
@@ -109,5 +123,25 @@ async function verifyPayPalOrder(orderId: string, accessToken: string) {
   } catch (error) {
     console.error("Error verifying PayPal order:", error);
     throw new Error("Failed to verify PayPal order");
+  }
+}
+
+// Verify PayPal payment status
+async function verifyPayPalPayment(paymentId: string, accessToken: string) {
+  try {
+    const response = await axios.get(
+      `${PAYPAL_API_BASE}/v2/payments/captures/${paymentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error verifying PayPal payment:", error);
+    throw new Error("Failed to verify PayPal payment");
   }
 }

@@ -73,24 +73,25 @@ model User {
   jpSpent             Int                   @default(0)
   jpBalance           Int                   @default(0)
   jpTransaction       Int                   @default(0)
-  authMethod          AuthMethod            @default(CREDENTIALS) // Default to credentials
+  authMethod          AuthMethod            @default(CREDENTIALS)
   planId              String?
   plan                Plan?                 @relation(fields: [planId], references: [id])
-  planStart           DateTime? // When the user subscribed
-  planEnd             DateTime? // When the plan expires
+  planStart           DateTime?
+  planEnd             DateTime?
   isBlocked           Boolean?              @default(false)
   spotlight           Spotlight[]
   userBusinessProfile UserBusinessProfile[]
   blockedUsers        BlockedUsers[]
   miracleLog          MiracleLog[]
   progressVault       ProgressVault[]
-  isEmailVerified               Boolean               @default(false)
-  emailVerificationToken        String?
+  isEmailVerified     Boolean               @default(false)
+  emailVerificationToken String?
   emailVerificationTokenExpires DateTime?
-  prosperityDrops               ProsperityDrop[]
-  cart                          Cart[]
-  purchases                     Purchase[]
-  wishlists                     Wishlist[]
+  prosperityDrops     ProsperityDrop[]
+  cart                Cart[]
+  orders              Order[]
+  wishlists           Wishlist[]
+  membership          String                @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
 
   @@index([name])
 }
@@ -254,30 +255,59 @@ model ProgressVault {
 }
 
 model Item {
-  id            String     @id @default(cuid())
+  id            String      @id @default(cuid())
   name          String
-  category      String
-  basePrice     Int
-  monthlyPrice  Int       @default(0)
-  yearlyPrice   Int       @default(0)
-  lifetimePrice Int       @default(0)
   imageUrl      String
-  createdAt     DateTime   @default(now())
-  downloadUrl   String?
+  basePrice     Float
+  monthlyPrice  Float?
+  yearlyPrice   Float?
+  lifetimePrice Float?
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
   cart          Cart[]
-  purchases     Purchase[]
   wishlists     Wishlist[]
+  createdAt     DateTime    @default(now())
+  downloadUrl   String?
+  updatedAt     DateTime    @default(now()) @updatedAt
+
+  @@index([categoryId])
 }
 
-model Purchase {
-  id          String   @id @default(cuid())
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id          String      @id @default(cuid())
   userId      String
-  itemId      String
-  pricePaid   Int
-  purchasedAt DateTime @default(now())
-  status      String   @default("Processing")
-  item        Item     @relation(fields: [itemId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  totalAmount Float
+  status      String      @default("processing")  //delivered, shipped, processing , cancelled
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id])
+  itemId          String
+  item            Item     @relation(fields: [itemId], references: [id])
+  quantity        Int
+  priceAtPurchase Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([itemId])
 }
 
 model Wishlist {
@@ -292,13 +322,15 @@ model Wishlist {
 }
 
 model Cart {
-  id        String   @id @default(cuid())
-  userId    String
-  itemId    String
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String
+  itemId        String
+  quantity      Int      @default(1)
+  wasInWishlist Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
+  item          Item     @relation(fields: [itemId], references: [id])
 
   @@unique([userId, itemId])
 }

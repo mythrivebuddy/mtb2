@@ -1,14 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function GET(): Promise<NextResponse> {
   try {
-        const categories = await prisma.item.findMany({
+    const categories = await prisma.category.findMany({
       select: {
-        category: true,
+        id: true,
+        name: true,
       },
-      distinct: ["category"], // Get unique categories
     });
 
     return NextResponse.json({ categories });

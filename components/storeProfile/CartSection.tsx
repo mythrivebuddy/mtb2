@@ -3,25 +3,11 @@ import { ShoppingCart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
-
-interface Item {
-  id: string;
-  name: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
-}
-
-interface CartItem {
-  id: string;
-  item: Item;
-  quantity: number;
-}
+import { Item, CartItem } from "@/types/store";
 
 interface CartSectionProps {
   cart: CartItem[];
-  getPriceForMembership: (item: Item) => number;
+  getPriceForMembership: (item: Item) => number | null;
   handleRemoveFromCart: (id: string) => void;
   calculateTotal: () => number;
   handleBuyAll: () => Promise<void>;
@@ -41,7 +27,7 @@ const CartSection: React.FC<CartSectionProps> = ({
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
       const response = await axios.put(
-        "/api/store/user/cart/update-quantity",
+        "/api/user/store/items/cart/update-item-quantity",
         { cartItemId, quantity },
         { withCredentials: true }
       );
@@ -57,6 +43,21 @@ const CartSection: React.FC<CartSectionProps> = ({
     },
   });
 
+  // const removeFromCartMutation = useMutation({
+  //   mutationFn: async (cartItemId: string) => {
+  //     await axios.delete("/api/user/store/items/cart/delete-cart-items", { 
+  //       data: { cartItemId }
+  //     });
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ["profileData"] });
+  //     toast.success("Item removed from cart!");
+  //   },
+  //   onError: () => {
+  //     toast.error("Error removing item from cart.");
+  //   },
+  // });
+
   const handleQuantityChange = (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       if (window.confirm("Quantity will be 0. Remove item from cart?")) {
@@ -66,6 +67,13 @@ const CartSection: React.FC<CartSectionProps> = ({
     }
     updateQuantityMutation.mutate({ cartItemId, quantity: newQuantity });
   };
+
+  // Debug log to verify cart data
+  console.log("Cart items:", cart);
+
+  if (!cart || !Array.isArray(cart) || cart.some((item) => !item.item)) {
+    return <p className="text-gray-500">Cart data is unavailable.</p>;
+  }
 
   return (
     <div className="bg-white shadow rounded-xl p-6 col-span-2">
@@ -79,55 +87,83 @@ const CartSection: React.FC<CartSectionProps> = ({
       ) : (
         <>
           <ul className="space-y-4">
-            {cart.map((cartItem) => (
-              <li
-                key={cartItem.id}
-                className="flex justify-between items-center border-b pb-2"
-              >
-                <span>{cartItem.item.name}</span>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
+            {cart.map((cartItem) => {
+              const price = getPriceForMembership(cartItem.item);
+              return (
+                <li
+                  key={cartItem.id}
+                  className="flex justify-between items-center border-b pb-4"
+                >
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={cartItem.item.imageUrl}
+                      alt={cartItem.item.name}
+                      className="w-16 h-16 object-cover rounded-md"
+                    />
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-800">{cartItem.item.name}</h4>
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-600 font-semibold">
+                          ₹{(price ?? cartItem.item.basePrice).toFixed(2)}
+                        </span>
+                        {price !== cartItem.item.basePrice && (
+                          <span className="text-gray-500 line-through text-sm">
+                            ₹{cartItem.item.basePrice.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {cartItem.item.category?.name || "Unknown Category"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
+                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity - 1)}
+                        disabled={updateQuantityMutation.isPending}
+                      >
+                        -
+                      </button>
+                      <span className="text-gray-800 font-semibold">{cartItem.quantity}</span>
+                      <button
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
+                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity + 1)}
+                        disabled={updateQuantityMutation.isPending}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="text-green-600 font-semibold">
+                      ₹{((price ?? cartItem.item.basePrice) * cartItem.quantity).toFixed(2)}
+                    </span>
                     <button
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
-                      onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity - 1)}
-                      disabled={updateQuantityMutation.isPending}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer"
+                      onClick={() => handleRemoveFromCart(cartItem.id)}
                     >
-                      -
-                    </button>
-                    <span className="text-gray-800 font-semibold">{cartItem.quantity}</span>
-                    <button
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
-                      onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity + 1)}
-                      disabled={updateQuantityMutation.isPending}
-                    >
-                      +
+                      Remove
                     </button>
                   </div>
-                  <span className="text-green-600 font-semibold">
-                    ${getPriceForMembership(cartItem.item) * cartItem.quantity}
-                  </span>
-                  <button
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer"
-                    onClick={() => handleRemoveFromCart(cartItem.id)}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="mt-4 text-xl font-bold text-right">
-            Total Amount: ${calculateTotal()}
+            Total Amount: ₹{calculateTotal().toFixed(2)}
           </div>
 
-          <button
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold mt-4 w-full cursor-pointer"
-            onClick={handleBuyAll} // Use handleBuyAll for redirection
-            disabled={purchasingItemId !== null}
-          >
-            {purchasingItemId ? "Processing..." : "Buy All"}
-          </button>
+          <div className="flex justify-end">
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold mt-4 cursor-pointer disabled:bg-gray-400"
+              onClick={handleBuyAll}
+              disabled={purchasingItemId !== null}
+            >
+              {purchasingItemId ? "Processing..." : "Buy All"}
+            </button>
+          </div>
         </>
       )}
     </div>
