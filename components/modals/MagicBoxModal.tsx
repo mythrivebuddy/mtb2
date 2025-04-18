@@ -16,7 +16,7 @@ import { Gift, Clock, Sparkles, ExternalLink } from "lucide-react";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
-import { formatDistanceToNow, set } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -129,6 +129,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       setPrevStatus(boxData.status);
     }
     // return () => setShowConfetti(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boxData?.status]);
 
   const handleOpenBox = () => {
