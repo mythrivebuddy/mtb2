@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
         templateId: "verification-mail",
       },
     });
+    console.log("template", template);
 
     const emailContent = renderEmailTemplate(template?.htmlContent, {
       username: name,
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       subject: template?.subject,
       htmlContent: emailContent,
     };
-
+    console.log("emailVerificationPayload", emailVerificationPayload);
     // Send the email
     await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
     });
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Signup error:", error.response);
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 }

@@ -273,14 +273,15 @@ model MiracleLog {
 }
 
 model ProgressVault {
-  id               String    @id @default(uuid())
+ id               String    @id @default(uuid())
   content          String
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
+
 }
 
 model Referral {

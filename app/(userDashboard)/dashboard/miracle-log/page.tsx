@@ -38,6 +38,7 @@ export default function MiracleLogPage() {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);
   const [viewLog, setViewLog] = useState<MiracleLog | null>(null);
   const [deleteLog, setDeleteLog] = useState<MiracleLog | null>(null);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -53,16 +54,9 @@ export default function MiracleLogPage() {
     },
   });
 
-  // const {
-  //   handleSubmit,
-  //   register,
-  //   setValue,
-  //   reset,
-  //   formState: { errors, isSubmitting },
-  // } = form;
-  useEffect(()=>{
-    console.log("error",errors)
-  })
+  useEffect(() => {
+    console.log("error", errors);
+  }, [errors]);
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['miracleLogs'],
@@ -84,14 +78,7 @@ export default function MiracleLogPage() {
       toast.success('Log created successfully');
     },
     onError: (error) => {
-      // if (error.response?.data?.message.includes("Daily JP limit")) {
-      //   toast.error("You've reached the maximum JP (150) for today!");
-      // } else if (error.response?.data?.message.includes("Daily limit of 3 logs")) {
-      //   toast.error("You've reached the maximum number of logs for today. Please delete one to add more.");
-      // } else {
-      //   toast.error(error.response?.data?.message || 'An error occurred');
-      // }
-      toast.error(getAxiosErrorMessage(error,"An error occurred"));
+      toast.error(getAxiosErrorMessage(error, "An error occurred"));
     },
   });
 
@@ -103,6 +90,7 @@ export default function MiracleLogPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miracleLogs'] });
       setEditingLog(null);
+      setUpdateDialogOpen(false);
       reset();
       toast.success('Log updated successfully');
     },
@@ -141,6 +129,14 @@ export default function MiracleLogPage() {
     }
   };
 
+  const handleUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingLog) {
+      const content = (e.currentTarget as any).content.value;
+      updateMutation.mutate({ id: editingLog.id, content });
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <Card className="mb-8">
@@ -156,9 +152,8 @@ export default function MiracleLogPage() {
               <Input
                 {...register("content")}
                 placeholder="Share a small miracle today (max 120 characters)"
-                disabled={isSubmitting}
+                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
                 className="mb-2"
-                // maxLength={120}
               />
               {errors.content && (
                 <p className="text-red-500 text-sm mt-1 absolute -bottom-6 left-0">
@@ -167,8 +162,10 @@ export default function MiracleLogPage() {
               )}
             </div>
             <div className="flex gap-2 mt-8">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
+                {(createMutation.isPending || updateMutation.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {editingLog ? 'Update' : 'Save'}
               </Button>
               {editingLog && (
@@ -177,9 +174,10 @@ export default function MiracleLogPage() {
                   variant="ghost"
                   onClick={() => {
                     setEditingLog(null);
+                    setUpdateDialogOpen(false);
                     reset();
                   }}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || updateMutation.isPending}
                 >
                   Cancel
                 </Button>
@@ -253,6 +251,7 @@ export default function MiracleLogPage() {
                             size="icon"
                             onClick={() => {
                               setEditingLog(log);
+                              setUpdateDialogOpen(true);
                               setValue("content", log.content);
                             }}
                             title="Edit"
@@ -328,6 +327,51 @@ export default function MiracleLogPage() {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Dialog */}
+      <Dialog
+        open={updateDialogOpen}
+        onOpenChange={() => {
+          setUpdateDialogOpen(false);
+          setEditingLog(null);
+          reset();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Your Miracle Log</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdate}>
+            <Input
+              name="content"
+              defaultValue={editingLog?.content}
+              className="mt-4"
+              maxLength={120}
+              disabled={updateMutation.isPending}
+            />
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setUpdateDialogOpen(false);
+                  setEditingLog(null);
+                  reset();
+                }}
+                disabled={updateMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Update
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
