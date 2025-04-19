@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -54,7 +54,6 @@ export default function ProgressVaultPage() {
   const {
     handleSubmit,
     register,
-    setValue,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<progressVaultFormType>({

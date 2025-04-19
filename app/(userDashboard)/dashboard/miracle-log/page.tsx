@@ -132,7 +132,7 @@ export default function MiracleLogPage() {
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingLog) {
-      const content = (e.currentTarget as any).content.value;
+      const content = (e.currentTarget as HTMLInputElement).value;
       updateMutation.mutate({ id: editingLog.id, content });
     }
   };
@@ -343,14 +343,19 @@ export default function MiracleLogPage() {
           <DialogHeader>
             <DialogTitle>Update Your Miracle Log</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <Input
-              name="content"
+              {...register("content")}
               defaultValue={editingLog?.content}
               className="mt-4"
               maxLength={120}
               disabled={updateMutation.isPending}
             />
+            {errors.content && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.content.message}
+              </p>
+            )}
             <DialogFooter className="mt-6">
               <Button
                 type="button"
