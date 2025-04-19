@@ -55,6 +55,7 @@ export default function ProgressVaultPage() {
     handleSubmit,
     register,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<progressVaultFormType>({
     resolver: zodResolver(progressvaultSchema),
@@ -122,20 +123,16 @@ export default function ProgressVaultPage() {
   });
 
   const onSubmit = (data: progressVaultFormType) => {
-    createMutation.mutate(data.content);
+    if (editingLog) {
+      updateMutation.mutate({ id: editingLog.id, content: data.content });
+    } else {
+      createMutation.mutate(data.content);
+    }
   };
 
   const handleDeleteConfirm = () => {
     if (deleteLog) {
       deleteMutation.mutate(deleteLog.id);
-    }
-  };
-
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingLog) {
-      const content = (e.currentTarget as any).content.value;
-      updateMutation.mutate({ id: editingLog.id, content });
     }
   };
 
@@ -237,6 +234,7 @@ export default function ProgressVaultPage() {
                             size="icon"
                             onClick={() => {
                               setEditingLog(log);
+                              setValue("content", log.content);
                               setUpdateDialogOpen(true);
                             }}
                           >
@@ -331,19 +329,26 @@ export default function ProgressVaultPage() {
         onOpenChange={() => {
           setUpdateDialogOpen(false);
           setEditingLog(null);
+          reset();
         }}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Your Progress Vault</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <Input
-              name="content"
+              {...register("content")}
               defaultValue={editingLog?.content}
               className="mt-4"
               maxLength={120}
+              disabled={updateMutation.isPending}
             />
+            {errors.content && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.content.message}
+              </p>
+            )}
             <DialogFooter className="mt-6">
               <Button
                 type="button"
@@ -351,7 +356,9 @@ export default function ProgressVaultPage() {
                 onClick={() => {
                   setUpdateDialogOpen(false);
                   setEditingLog(null);
+                  reset();
                 }}
+                disabled={updateMutation.isPending}
               >
                 Cancel
               </Button>

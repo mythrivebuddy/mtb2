@@ -129,14 +129,6 @@ export default function MiracleLogPage() {
     }
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingLog) {
-      const content = (e.currentTarget as HTMLInputElement).value;
-      updateMutation.mutate({ id: editingLog.id, content });
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <Card className="mb-8">

@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
     });
   } catch (error) {
-    console.error("Signup error:", error.response);
+    console.error("Signup error:", error);
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 }
