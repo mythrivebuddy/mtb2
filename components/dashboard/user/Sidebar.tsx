@@ -18,7 +18,7 @@ import {
   Gift,
   Sparkles,
   ShoppingCartIcon,
-  UserPlus 
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -74,120 +74,124 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
   return (
-    <aside className="w-64 bg-white shadow-lg rounded-3xl  overflow-hidden">
-      {/* User Profile Section */}
-      <div className="flex flex-col my-8 pl-5">
-        <div className=" flex items-center gap-3">
-          <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
-            {user?.name ? (
-              <h2 className="text-2xl text-white">
-                {user.name.slice(0, 2).toUpperCase()}
-              </h2>
-            ) : (
-              <UserRound />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-1">
-              <p className="text-base">Hello</p>
-              <span className="text-amber-400">👋</span>
+    <div className="h-full self-stretch">
+      <aside className="w-64 bg-white shadow-lg rounded-3xl  overflow-hidden h-fit">
+        {/* User Profile Section */}
+        <div className="flex flex-col my-8 pl-5">
+          <div className=" flex items-center gap-3">
+            <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
+              {user?.name ? (
+                <h2 className="text-2xl text-white">
+                  {user.name.slice(0, 2).toUpperCase()}
+                </h2>
+              ) : (
+                <UserRound />
+              )}
             </div>
-            <h3 className="font-bold text-xl">
-              {user?.name ? user.name : "Your Name"}
-            </h3>
+            <div>
+              <div className="flex items-center gap-1">
+                <p className="text-base">Hello</p>
+                <span className="text-amber-400">👋</span>
+              </div>
+              <h3 className="font-bold text-xl">
+                {user?.name ? user.name : "Your Name"}
+              </h3>
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-5 mt-7">
-          {/* Menu Section */}
-          <NavSection title="Menu">
-            <NavItem href="/dashboard" icon={<Home size={20} />} label="Home" />
-
-            <NavItem
-              href="/dashboard/insights"
-              icon={<BarChart2 size={20} />}
-              label="Insights"
-            />
-
-            <NavItem
-              href="/dashboard/subscription"
-              icon={<CreditCard size={20} />}
-              label="Subscription"
-            />
-            <NavItem
-              href="/dashboard/leaderboard"
-              icon={<LayoutList size={20} />}
-              label="Leaderboard"
-            />
-            <NavItem
-              href="/dashboard/miracle-log"
-              icon={<Sparkles size={20} />}
-              label="Miracle Log"
-            />
-            <NavItem
-              href="/dashboard/progress-vault"
-              icon={<Vault size={20} />}
-              label="1%Progress Vault" />
-
-            <NavItem
-              href="/dashboard/prosperity"
-              icon={<Gift size={20} />}
-              label="Prosperity Drops"
-            />
-            <ComingSoonWrapper>
+          <div className="flex flex-col gap-5 mt-7">
+            {/* Menu Section */}
+            <NavSection title="Menu">
               <NavItem
-                href=""
-                icon={<MessageCircle size={20} />}
-                label="Messages"
-                badge={2}
+                href="/dashboard"
+                icon={<Home size={20} />}
+                label="Home"
               />
-            </ComingSoonWrapper>
+              <NavItem
+                href="/dashboard/insights"
+                icon={<BarChart2 size={20} />}
+                label="Insights"
+              />
+              <NavItem
+                href="/dashboard/subscription"
+                icon={<CreditCard size={20} />}
+                label="Subscription"
+              />
+              <NavItem
+                href="/dashboard/leaderboard"
+                icon={<LayoutList size={20} />}
+                label="Leaderboard"
+              />
+              <NavItem
+                href="/dashboard/miracle-log"
+                icon={<Sparkles size={20} />}
+                label="Miracle Log"
+              />
+              <NavItem
+                href="/dashboard/progress-vault"
+                icon={<Vault size={20} />}
+                label="1%Progress Vault"
+              />
 
-            <NavItem
-              href="/dashboard/spotlight"
-              icon={<Sparkles size={20} />}
-              label="Spotlight"
-            />
-             <NavItem
-              href="/dashboard/store"
-              icon={<ShoppingCartIcon  size={20} />}
-              label="Store"
-            />
-          </NavSection>
+              <NavItem
+                href="/dashboard/prosperity"
+                icon={<Gift size={20} />}
+                label="Prosperity Drops"
+              />
+              <ComingSoonWrapper>
+                <NavItem
+                  href=""
+                  icon={<MessageCircle size={20} />}
+                  label="Messages"
+                  badge={2}
+                />
+              </ComingSoonWrapper>
+              <NavItem
+                href="/dashboard/spotlight"
+                icon={<Sparkles size={20} />}
+                label="Spotlight"
+              />
+              <NavItem
+                href="/dashboard/store"
+                icon={<ShoppingCartIcon size={20} />}
+                label="Store"
+              />
+            </NavSection>
 
-          {/* Settings Section */}
-          <NavSection title="Settings">
-            <NavItem
-              href="/dashboard/profile"
-              icon={<User size={20} />}
-              label="Profile"
-            />
-            {/* <ComingSoonWrapper>
+            {/* Settings Section */}
+            <NavSection title="Settings">
+              <NavItem
+                href="/dashboard/profile"
+                icon={<User size={20} />}
+                label="Profile"
+              />
+              {/* <ComingSoonWrapper>
               <NavItem href="" icon={<HelpCircle size={20} />} label="FAQ's" />
             </ComingSoonWrapper> */}
-            <NavItem
-              href="/dashboard/faq"
-              icon={<HelpCircle size={20} />}
-              label="FAQ's"
-            />
-            <NavItem
-              href="/contact"
-              icon={<Phone size={20} />}
-              label="Contact us"
-            />
-                  <NavItem
-              href="/dashboard/refer-friend"
-              icon={<UserPlus  size={20} />}
-              label="Refer a friend"
-            />
+              <NavItem
+                href="/dashboard/faq"
+                icon={<HelpCircle size={20} />}
+                label="FAQ's"
+              />
+              <NavItem
+                href="/contact"
+                icon={<Phone size={20} />}
+                label="Contact us"
+              />
+              <NavItem
+                href="/dashboard/refer-friend"
+                icon={<UserPlus size={20} />}
+                label="Refer a friend"
+              />
 
-            <button onClick={() => signOut()}>
-              <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
-            </button>
-          </NavSection>
+              <button onClick={() => signOut()}>
+                <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
+              </button>
+            </NavSection>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </div>
   );
 };
 

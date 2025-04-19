@@ -63,6 +63,19 @@ export default function TopBar({ user }: { user?: UserType }) {
     enabled: searchTerm.length > 0,
   });
 
+  // Add query to check for unopened/unredeemed magic boxes
+  const { data: hasUnopenedBox } = useQuery({
+    queryKey: ["magicBoxStatus"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/user/magic-box");
+      return (
+        data.magicBox && (!data.magicBox.isOpened || !data.magicBox.isRedeemed)
+      );
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 2, // 5 minutes
+  });
+
   // Get the last segment of the pathname and remove query params
   const currentRoute = pathname.split("/").pop()?.split("?")[0] || "dashboard";
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
@@ -142,12 +155,17 @@ export default function TopBar({ user }: { user?: UserType }) {
             <NotificationIcon />
           </TopBarBadge>
 
-          {/* Gift Badge */}
+          {/* Gift Badge with red dot indicator */}
           <TopBarBadge
             className="cursor-pointer"
             onClick={() => setIsMagicBoxOpen(true)}
           >
-            <Gift />
+            <div className="relative">
+              <Gift />
+              {hasUnopenedBox && (
+                <div className="absolute top-[-2px] right-[-2px] w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </div>
           </TopBarBadge>
 
           {/* User Avatar */}

@@ -30,7 +30,8 @@ enum ActivityType {
   PROGRESS_VAULT
   REFER_BY
   REFER_TO
-  MAGIC_BOX
+  MAGIC_BOX_REWARD
+  MAGIC_BOX_SHARED_REWARD
   GENERAL_FEEDBACK
   FEATURE_REQUEST
   BUG_REPORT
@@ -62,49 +63,47 @@ enum SpotlightActivityType {
   CONNECT
 }
 
-
-
 model User {
-  id                  String   @id @default(uuid())
-  email               String   @unique
-  password            String?
-  name                String
-  role                Role
-  image               String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  transaction         Transaction[]
-  jpEarned            Int      @default(0)
-  jpSpent             Int      @default(0)
-  jpBalance           Int      @default(0)
-  jpTransaction       Int      @default(0)
-  authMethod          AuthMethod @default(CREDENTIALS)
-  planId              String?
-  plan                Plan?    @relation(fields: [planId], references: [id])
-  planStart           DateTime?
-  planEnd             DateTime?
-  isBlocked           Boolean? @default(false)
-  spotlight           Spotlight[]
-  userBusinessProfile UserBusinessProfile[]
-  blockedUsers        BlockedUsers[]
-  miracleLog          MiracleLog[]
-  progressVault       ProgressVault[]
-  isEmailVerified     Boolean               @default(false)
-  emailVerificationToken String?
+  id                            String                @id @default(uuid())
+  email                         String                @unique
+  password                      String?
+  name                          String
+  role                          Role
+  image                         String?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+  transaction                   Transaction[]
+  jpEarned                      Int                   @default(0)
+  jpSpent                       Int                   @default(0)
+  jpBalance                     Int                   @default(0)
+  jpTransaction                 Int                   @default(0)
+  authMethod                    AuthMethod            @default(CREDENTIALS)
+  planId                        String?
+  plan                          Plan?                 @relation(fields: [planId], references: [id])
+  planStart                     DateTime?
+  planEnd                       DateTime?
+  isBlocked                     Boolean?              @default(false)
+  spotlight                     Spotlight[]
+  userBusinessProfile           UserBusinessProfile[]
+  blockedUsers                  BlockedUsers[]
+  miracleLog                    MiracleLog[]
+  progressVault                 ProgressVault[]
+  isEmailVerified               Boolean               @default(false)
+  emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
-  prosperityDrops     ProsperityDrop[]
-  cart                Cart[]
-  orders              Order[]
-  wishlists           Wishlist[]
-  membership          String                @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
-  
-  referralCode  String?   @unique
-  referredById  String?
-  referredBy    User?     @relation("UserReferrer", fields: [referredById], references: [id])
-  referrals     User[]    @relation("UserReferrer")
+  prosperityDrops               ProsperityDrop[]
 
-  // ✅ These 2 are required to fix your error:
-  referralsMade  Referral[] @relation("Referrer")
+  cart       Cart[]
+  orders     Order[]
+  wishlists  Wishlist[]
+  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+
+  referralCode String? @unique
+  referredById String?
+  referredBy   User?   @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals    User[]  @relation("UserReferrer")
+
+  referralsMade     Referral[] @relation("Referrer")
   referralsReceived Referral[] @relation("Referred")
 
   keyOfferings  String?
@@ -113,12 +112,10 @@ model User {
   website       String?
   socialHandles Json?
 
-  magicBoxes                    MagicBox[]
+  magicBoxes MagicBox[]
 
   @@index([name])
 }
-
-
 
 model Transaction {
   id         String   @id @default(uuid())
@@ -275,16 +272,16 @@ model MiracleLog {
   jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
   user             User      @relation(fields: [userId], references: [id])
 }
- 
+
 model ProgressVault {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   content          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
 }
 
 model Item {
@@ -321,7 +318,7 @@ model Order {
   user        User        @relation(fields: [userId], references: [id])
   items       OrderItem[]
   totalAmount Float
-  status      String      @default("processing")  //delivered, shipped, processing , cancelled
+  status      String      @default("processing") //delivered, shipped, processing , cancelled
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -368,14 +365,13 @@ model Cart {
   @@unique([userId, itemId])
 }
 
-
 model Referral {
-  id            String   @id @default(cuid())
-  referrerId    String
-  referredId    String
-  createdAt     DateTime @default(now())
-  referrer      User     @relation("Referrer", fields: [referrerId], references: [id])
-  referred      User     @relation("Referred", fields: [referredId], references: [id])
+  id         String   @id @default(cuid())
+  referrerId String
+  referredId String
+  createdAt  DateTime @default(now())
+  referrer   User     @relation("Referrer", fields: [referrerId], references: [id])
+  referred   User     @relation("Referred", fields: [referredId], references: [id])
 
   @@unique([referrerId, referredId])
 }
