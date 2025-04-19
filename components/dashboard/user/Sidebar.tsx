@@ -17,6 +17,7 @@ import {
   Vault,
   Gift,
   Sparkles,
+  ShoppingCartIcon,
   UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
@@ -106,13 +107,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 icon={<Home size={20} />}
                 label="Home"
               />
-
               <NavItem
                 href="/dashboard/insights"
                 icon={<BarChart2 size={20} />}
                 label="Insights"
               />
-
               <NavItem
                 href="/dashboard/subscription"
                 icon={<CreditCard size={20} />}
@@ -147,11 +146,15 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   badge={2}
                 />
               </ComingSoonWrapper>
-
               <NavItem
                 href="/dashboard/spotlight"
                 icon={<Sparkles size={20} />}
                 label="Spotlight"
+              />
+              <NavItem
+                href="/dashboard/store"
+                icon={<ShoppingCartIcon size={20} />}
+                label="Store"
               />
             </NavSection>
 
