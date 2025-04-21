@@ -48,7 +48,7 @@ export default function EmailTemplatesPage() {
   }
 
   return (
-    <div className="container bg-white rounded-lg mx-auto py-8">
+    <div className="px-8 bg-white rounded-lg mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Email Templates</h1>
         <Button onClick={() => setIsModalOpen(true)}>

@@ -96,7 +96,7 @@ export default function EditEmailTemplatePage() {
   }
 
   return (
-    <div className="container bg-white rounded-lg mx-auto py-8">
+    <div className=" bg-white rounded-lg mx-auto py-8 px-8 md:p-2">
       <h1 className="text-2xl font-bold mb-6">
         {isNew ? "Create New Template" : "Edit Template"}
       </h1>

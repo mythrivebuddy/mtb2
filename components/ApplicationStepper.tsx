@@ -47,7 +47,7 @@ export function ApplicationStepper({
         className
       )}
     >
-      <div className="px-12 py-7 w-full">
+      <div className="md:px-12 px-5 py-7 w-full">
         <div className="flex w-full justify-between gap-6 relative">
           {/* Connecting line */}
           <div
