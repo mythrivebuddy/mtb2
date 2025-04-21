@@ -65,7 +65,7 @@ const RightPanel = ({ className }: { className?: string }) => {
 
   return (
     <div
-      className={`w-full max-w-[250px] overflow-x-hidden overflow-y-auto bg-transparent ${className}`}
+      className={`w-full overflow-x-hidden overflow-y-auto bg-transparent ${className}`}
     >
       {/* Buddies Section */}
       <section className="mb-6">

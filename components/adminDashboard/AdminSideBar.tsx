@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils/tw";
+import { Menu } from "lucide-react";
+import React, { useState } from "react";
 
 type NavItemProps = {
   href: string;
@@ -19,11 +21,11 @@ const NavItem = ({ href, label, badge }: NavItemProps) => {
       <Link
         href={href}
         className={cn(
-          "flex items-center hover:text-jp-orange",
+          "flex items-center py-2 hover:text-jp-orange",
           isActive ? "text-jp-orange" : "text-[#6C7894]"
         )}
       >
-        <span className="font-normal text-xl">{label}</span>
+        <span className="font-normal text-lg">{label}</span>
         {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
       </Link>
     </li>
@@ -37,105 +39,83 @@ type NavSectionProps = {
 };
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
-  <div className={cn("space-y-9", className)}>
-    <h4 className="text-blue font-normal text-xl">{title}</h4>
+  <div className={cn("space-y-6", className)}>
+    <h4 className="text-blue font-normal text-lg">{title}</h4>
     <nav>
-      <ul className="space-y-6">{children}</ul>
+      <ul className="space-y-4">{children}</ul>
     </nav>
   </div>
 );
 
-// export default function AdminSideBar() {
-//   const router = useRouter();
-//   const pathname = usePathname(); // Get current route
-
-//   const sidebarItems = [
-//     { label: "Dashboard", route: "/admin/dashboard" },
-//     { label: "User Info", route: "/admin/user-info" },
-//     { label: "Spotlight Application", route: "/admin/spotlight" },
-//     { label: "Post Blog", route: "/admin/create-blog" },
-//   ];
-
-//   return (
-//     <div className="w-64 bg-black text-white h-screen fixed">
-//       <div className="p-4 border-b border-gray-700">
-//         <div className="flex items-center space-x-2">
-//           <div className="relative w-10 h-10">
-//             <Image
-//               src="/logo.png"
-//               alt="MyThriveBuddy"
-//               fill
-//               className="object-contain"
-//               priority
-//             />
-//           </div>
-//           <span className="text-xl font-semibold">MyThriveBuddy</span>
-//           <span className="text-xs bg-black px-2 py-0.5 rounded">BETA</span>
-//         </div>
-//       </div>
-
-//       <nav className="mt-4">
-//         {sidebarItems.map((item) => (
-//           <SidebarItem
-//             key={item.route}
-//             label={item.label}
-//             active={pathname === item.route}
-//             onClick={() => router.push(item.route)}
-//           />
-//         ))}
-
-//         <div className="px-4 mt-8">
-//           <hr className="border-gray-700" />
-//         </div>
-
-//         <SidebarItem label="Logout" onClick={() => signOut()} />
-//       </nav>
-//     </div>
-//   );
-// }
-
-// interface SidebarItemProps {
-//   label: string;
-//   active?: boolean;
-//   onClick: () => void;
-// }
-
-// function SidebarItem({ label, active = false, onClick }: SidebarItemProps) {
-//   return (
-//     <button
-//       onClick={onClick}
-//       className={`w-full flex items-center px-4 py-3 text-left ${
-//         active ? "bg-blue-600" : "hover:bg-gray-700"
-//       }`}
-//     >
-//       <span>{label}</span>
-//     </button>
-//   );
-// }
-
 const Sidebar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleSidebar = () => setIsOpen(!isOpen);
+
   return (
-    <aside className="w-64  bg-white shadow-sm rounded-3xl">
-      {/* User Profile Section */}
-      <div className="flex flex-col pl-5">
-        <div className="flex flex-col gap-5 mt-7">
-          {/* Menu Section */}
-          <NavSection title="Menu">
-            <NavItem href="/admin/dashboard" label="Dashboard" />
-            <NavItem href="/admin/user-info" label="User Info" />
-            <NavItem href="/admin/spotlight" label="Spotlight" />
-            <NavItem href="/admin/blog" label="Blogs" />
-            <NavItem href="/admin/email-templates" label="Email Templates" />
-            <NavItem href="/admin/prosperity" label="Prosperity" />
-            <NavItem href="/admin/faq" label="Faqs" />
-            <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
-            <NavItem href="/admin/manage-store-product" label="Store" />
+    <>
+      {/* Hamburger Menu Button for Mobile */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-md shadow-md"
+        onClick={toggleSidebar}
+      >
+        {isOpen ? (
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <Menu size={24} />
+        )}
+      </button>
 
+      {/* Overlay for Mobile */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={toggleSidebar}
+        ></div>
+      )}
 
-          </NavSection>
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed lg:static top-0 left-0 h-full bg-white shadow-sm rounded-3xl overflow-y-auto transition-transform duration-300 z-50",
+          "w-64 lg:w-64",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Menu Section */}
+        <div className="flex flex-col pl-5 py-6">
+          <div className="flex flex-col gap-8 mt-10">
+            <NavSection title="Menu">
+              <NavItem href="/admin/dashboard" label="Dashboard" />
+              <NavItem href="/admin/user-info" label="User Info" />
+              <NavItem href="/admin/spotlight" label="Spotlight" />
+              <NavItem href="/admin/blog" label="Create Blog" />
+              <NavItem href="/admin/email-templates" label="Email Templates" />
+              <NavItem href="/admin/prosperity" label="Prosperity" />
+              <NavItem href="/admin/faq" label="Faqs" />
+              <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
+              <NavItem
+                href="/admin/manage-store-product"
+                label="Manage Store Products"
+              />
+            </NavSection>
+
+         
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 
