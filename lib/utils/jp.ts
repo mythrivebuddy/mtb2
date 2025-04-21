@@ -1,6 +1,6 @@
 // function to add jp according to the plan and activity
 
-import { ActivityType, Prisma } from "@prisma/client";
+import { Activity, ActivityType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 type UserWithPlan = Prisma.UserGetPayload<{
@@ -88,4 +88,11 @@ export async function deductJp(user: UserWithPlan, activity: ActivityType) {
     console.error(error);
     throw error;
   }
+}
+
+// Helper to calculate JP to deduct
+export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
+  const isActive = isPlanActive(user);
+  const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
+  return Math.ceil(activityData.jpAmount * (1 - discount / 100));
 }

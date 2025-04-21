@@ -123,7 +123,7 @@ model Transaction {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
-  jpAmount   Int?
+  jpAmount   Int
   createdAt  DateTime @default(now())
 }
 
