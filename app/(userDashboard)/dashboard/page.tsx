@@ -101,7 +101,7 @@ export default function DashboardPage() {
     <div className="container mx-auto p-0">
       <div className="flex gap-8">
         {/* Main Dashboard Content */}
-        <div className="flex-[3]">
+        <div className="flex-[3] min-w-0">
           <div className="grid grid-cols-3 gap-4 my-3">
             <JPCard value={userData?.jpEarned || 0} label="Total JP Earned" />
             <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
@@ -159,7 +159,7 @@ export default function DashboardPage() {
         <div className="h-screen w-0.5 bg-gray-300 dark:bg-brown-500 self-stretch"></div>
 
         {/* Right Panel */}
-        <div className="flex-[1.1]">
+        <div className="w-full md:w-[250px] overflow-x-hidden overflow-y-auto">
           <RightPanel />
         </div>
       </div>

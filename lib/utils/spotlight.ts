@@ -1,6 +1,7 @@
 import { SpotlightStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { format } from "date-fns";
 
 const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
 // const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
@@ -26,7 +27,20 @@ export async function activateNextSpotlight() {
       data: {
         // isActive: true,
         status: SpotlightStatus.ACTIVE,
+        activatedAt: new Date(),
         expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS), // 1 day validity
+      },
+    });
+    const user = await prisma.user.findUnique({
+      where: { id: nextSpotlight.userId },
+    });
+    await sendEmailUsingTemplate({
+      toEmail: user?.email!,
+      toName: user?.name!,
+      templateId: "spotlight-active",
+      templateData: {
+        username: user?.name!,
+        insert_date: format(nextSpotlight.activatedAt!, "MMM d, yyyy"),
       },
     });
   }

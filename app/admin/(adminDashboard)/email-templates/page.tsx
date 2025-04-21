@@ -1,42 +1,43 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { format } from "date-fns";
 import {
   Table,
-  TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  TableCell,
+  TableBody,
 } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
 
-interface EmailTemplate {
-  id: string;
-  templateId: string;
-  subject: string;
-  description?: string;
-  updatedAt: string;
-}
+const ITEMS_PER_PAGE = 6;
 
-const fetchTemplates = async (): Promise<EmailTemplate[]> => {
-  const response = await fetch("/api/admin/email-templates");
-  if (!response.ok) {
-    throw new Error("Failed to fetch templates");
-  }
-  return response.json();
+const fetchTemplates = async (page: number) => {
+  const response = await axios.get(
+    `/api/admin/email-templates?page=${page}&limit=${ITEMS_PER_PAGE}`
+  );
+  return response.data;
 };
 
 export default function EmailTemplatesPage() {
   const router = useRouter();
+  const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: templates = [], isLoading } = useQuery<EmailTemplate[], Error>({
-    queryKey: ["emailTemplates"],
-    queryFn: fetchTemplates,
+  const { data, isLoading } = useQuery({
+    queryKey: ["email-templates", currentPage],
+    queryFn: () => fetchTemplates(currentPage),
   });
+
+  const templates = data?.templates || [];
+  const totalPages = Math.ceil((data?.total || 0) / ITEMS_PER_PAGE);
 
   const handleCreateTemplate = (editorType: "simple" | "html") => {
     router.push(`/admin/email-templates/new?editor=${editorType}`);
@@ -76,39 +77,65 @@ export default function EmailTemplatesPage() {
         </div>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Template ID</TableHead>
-            <TableHead>Subject</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Last Updated</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {templates.map((template) => (
-            <TableRow key={template.id}>
-              <TableCell>{template.templateId}</TableCell>
-              <TableCell>{template.subject}</TableCell>
-              <TableCell>{template.description || "-"}</TableCell>
-              <TableCell>
-                {new Date(template.updatedAt).toLocaleDateString()}
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    router.push(`/admin/email-templates/${template.id}`)
-                  }
-                >
-                  Edit
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table className="min-w-full divide-y divide-gray-200">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Template ID</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {templates.map((template: any) => (
+                  <TableRow key={template.id}>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {template.templateId}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {template.subject}
+                    </TableCell>
+                    {template.description ? (
+                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {template.description}
+                      </TableCell>
+                    ) : (
+                      <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        NA
+                      </TableCell>
+                    )}
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {format(
+                        new Date(template.updatedAt),
+                        "MMM d, yyyy hh:mm a"
+                      )}
+                    </TableCell>
+                    <TableCell className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          router.push(`/admin/email-templates/${template.id}`)
+                        }
+                      >
+                        Edit
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </div>
   );
 }

@@ -116,27 +116,20 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 
 const Sidebar = () => {
   return (
-    <aside className="w-64  bg-white shadow-sm rounded-3xl overflow-hidden">
+    <aside className="w-64  bg-white shadow-sm rounded-3xl">
       {/* User Profile Section */}
       <div className="flex flex-col pl-5">
-        <div className="flex flex-col gap-10 mt-14">
+        <div className="flex flex-col gap-5 mt-7">
           {/* Menu Section */}
           <NavSection title="Menu">
             <NavItem href="/admin/dashboard" label="Dashboard" />
             <NavItem href="/admin/user-info" label="User Info" />
-            <NavItem href="/admin/spotlight" label="Spotlight Applications" />
-            <NavItem href="/admin/create-blog" label="Create Blog" />
+            <NavItem href="/admin/spotlight" label="Spotlight" />
+            <NavItem href="/admin/blog" label="Blogs" />
             <NavItem href="/admin/email-templates" label="Email Templates" />
-            <NavItem href="/admin/prosperity" label="prosperity" />
-            <NavItem href="/admin/create-faq" label="Create Faqs" />
+            <NavItem href="/admin/prosperity" label="Prosperity" />
+            <NavItem href="/admin/faq" label="Faqs" />
             <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
-
-
-          </NavSection>
-
-          {/* Settings Section */}
-          <NavSection title="Settings">
-            <button onClick={() => signOut()}>Logout</button>
           </NavSection>
         </div>
       </div>

@@ -31,6 +31,7 @@ interface InsightsData {
     }[];
     history: {
       applicationDate: string;
+      activatedDate: string;
       views: number;
       clicks: number;
     }[];

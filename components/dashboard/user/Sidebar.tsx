@@ -16,7 +16,8 @@ import {
   UserRound,
   Vault,
   Gift,
-  Sparkles
+  Sparkles,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -125,7 +126,8 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <NavItem
               href="/dashboard/progress-vault"
               icon={<Vault size={20} />}
-              label="1%Progress Vault" />
+              label="1%Progress Vault"
+            />
 
             <NavItem
               href="/dashboard/prosperity"
@@ -145,6 +147,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               href="/dashboard/spotlight"
               icon={<Sparkles size={20} />}
               label="Spotlight"
+            />
+            <NavItem
+              href="/dashboard/transactions-history"
+              icon={<History size={20} />}
+              label="Transactions"
             />
           </NavSection>
 

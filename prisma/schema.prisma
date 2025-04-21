@@ -129,6 +129,7 @@ model Spotlight {
   expiresAt           DateTime?
   // jpUsed              Int
   appliedAt           DateTime            @default(now())
+  activatedAt         DateTime?
   status              SpotlightStatus     @default(APPLIED)
   // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
   defaultDurationDays Int                 @default(1) // Default duration in days, can be changed by admin
