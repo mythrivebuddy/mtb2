@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Gift } from "lucide-react";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
+import type { Notification as PrismaNotification } from "@prisma/client";
 
 const TopBarBadge = ({
   children,
@@ -73,6 +74,20 @@ export default function TopBar({ user }: { user?: UserType }) {
     staleTime: 1000 * 60 * 2,
   });
 
+  // Add this query after the other queries
+  const { data: unreadNotificationsCount } = useQuery<number>({
+    queryKey: ["unreadNotificationsCount"],
+    queryFn: async () => {
+      const { data } = await axios.get<PrismaNotification[]>(
+        "/api/user/notifications"
+      );
+      return data.filter((n) => !n.isRead).length;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  // Get the last segment of the pathname and remove query params
   const currentRoute = pathname.split("/").pop()?.split("?")[0] || "dashboard";
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
@@ -145,9 +160,19 @@ export default function TopBar({ user }: { user?: UserType }) {
             </span>
           </TopBarBadge>
 
-          <TopBarBadge>
-            <NotificationIcon />
-          </TopBarBadge>
+          {/* Notifications */}
+          <Link href="/dashboard/notifications">
+            <TopBarBadge className="cursor-pointer">
+              <div className="relative">
+                <NotificationIcon />
+                {(unreadNotificationsCount ?? 0) > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                    {unreadNotificationsCount}
+                  </div>
+                )}
+              </div>
+            </TopBarBadge>
+          </Link>
 
           <TopBarBadge
             className="cursor-pointer"

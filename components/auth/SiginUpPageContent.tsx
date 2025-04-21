@@ -1,19 +1,22 @@
-import { Metadata } from "next";
-import { Suspense } from 'react'
+"use client";
+import { useSession } from "next-auth/react";
+import AppLayout from "../layout/AppLayout";
+import { useRouter } from "next/router";
+import React, { useEffect } from "react";
+import SignUpForm from "./SignUpForm";
 
-import SignUpForm from "@/components/auth/SignUpForm";
-import AppLayout from "@/components/layout/AppLayout";
-import PageLoader from "@/components/PageLoader";
+const SiginUpPageContent = () => {
+  const { data: session } = useSession();
+  const router = useRouter();
 
-export const metadata: Metadata = {
-  title: "Sign Up - MyThriveBuddy",
-  description: "Create your MyThriveBuddy account",
-};
-
-
-
-export default function SignUpPage() {
-   
+  useEffect(() => {
+    if (!session) return;
+    if (session?.user?.role === "ADMIN") {
+      router.push("/admin/dashboard");
+    } else {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
   return (
     <AppLayout>
@@ -28,15 +31,13 @@ export default function SignUpPage() {
           </h1>
           <p className="text-gray-600">Join MyThriveBuddy today</p>
         </div>
-        {/* <SignUpForm /> */}
-
-        <Suspense fallback={<PageLoader />}>
-          <SignUpForm />
-        </Suspense>
+        <SignUpForm />
       </div>
       {/* //     </div>
     //   </div>
     // </main> */}
     </AppLayout>
   );
-}
+};
+
+export default SiginUpPageContent;
