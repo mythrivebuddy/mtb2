@@ -17,6 +17,7 @@ import {
   Vault,
   Gift,
   Sparkles,
+  History,
   ShoppingCartIcon,
   UserPlus,
   Menu,
@@ -192,6 +193,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   href="/dashboard/spotlight"
                   icon={<Sparkles size={20} />}
                   label="Spotlight"
+                />
+
+                <NavItem
+                  href="/dashboard/transactions-history"
+                  icon={<History size={20} />}
+                  label="Transactions"
                 />
                 <NavItem
                   href="/dashboard/store"

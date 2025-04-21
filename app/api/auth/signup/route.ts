@@ -5,8 +5,8 @@ import { signupSchema } from "@/schema/zodSchema";
 import { ActivityType } from "@prisma/client";
 import { assignJp } from "@/lib/utils/jp";
 import { sign } from "jsonwebtoken";
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import axios from "axios";
-import { renderEmailTemplate } from "@/utils/email-template";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,42 +42,18 @@ export async function POST(request: NextRequest) {
     });
 
     // Send verification email
+
     const verificationUrl = `${process.env.NEXT_URL}/verify-email?token=${verificationToken}`;
 
-    const senderEmail = process.env.CONTACT_SENDER_EMAIL;
-    const brevoApiKey = process.env.BREVO_API_KEY;
-
-    if (!senderEmail || !brevoApiKey) {
-      throw new Error("Missing necessary environment variables");
-    }
-
-    const brevoApiUrl = "https://api.brevo.com/v3/smtp/email";
-    const headers = {
-      "Content-Type": "application/json",
-      "api-key": brevoApiKey,
-    };
-
-    const template = await prisma.emailTemplate.findUnique({
-      where: {
-        templateId: "verification-mail",
+    await sendEmailUsingTemplate({
+      toEmail: email,
+      toName: name,
+      templateId: "verification-mail",
+      templateData: {
+        username: name,
+        verificationUrl,
       },
     });
-
-    const emailContent = renderEmailTemplate(template?.htmlContent, {
-      username: name,
-      verificationUrl,
-    });
-
-    const emailVerificationPayload = {
-      sender: { email: senderEmail },
-      to: [{ email, name }],
-      subject: template?.subject,
-      htmlContent: emailContent,
-    };
-
-    console.log("emailVerificationPayload", emailVerificationPayload);
-    // Send the email
-    await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
     const user = await prisma.user.create({
       data: {

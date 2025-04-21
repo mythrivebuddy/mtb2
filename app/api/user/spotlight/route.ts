@@ -2,6 +2,8 @@ import { checkRole } from "@/lib/utils/auth";
 import { ActivityType, SpotlightStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { format } from "date-fns";
 
 //! add check for profile completion
 
@@ -89,6 +91,28 @@ export async function POST() {
       return NextResponse.json({ error: "Insufficient JP" }, { status: 400 });
     }
 
+    // estimated activation date for spotlight
+    const latestSpotlight = await prisma.spotlight.findFirst({
+      where: {
+        activatedAt: {
+          gte: new Date(), // future activations
+        },
+      },
+      orderBy: {
+        activatedAt: "desc",
+      },
+    });
+
+    let estimatedActivationDate: Date;
+
+    if (latestSpotlight && latestSpotlight.activatedAt) {
+      estimatedActivationDate = new Date(
+        latestSpotlight.activatedAt.getTime() + 24 * 60 * 60 * 1000
+      );
+    } else {
+      estimatedActivationDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    }
+
     // Deduct JP and create transaction
     await prisma.$transaction([
       prisma.user.update({
@@ -115,8 +139,23 @@ export async function POST() {
       }),
     ]);
 
+    // send email to user
+    await sendEmailUsingTemplate({
+      toEmail: user.email,
+      toName: user.name,
+      templateId: "spotlight-applied",
+      templateData: {
+        username: user.name,
+        insert_date: format(estimatedActivationDate, "MMM d, yyyy"),
+      },
+    });
+
     return NextResponse.json(
-      { message: "Spotlight application created successfully" },
+      {
+        message:
+          "Spotlight application created successfully, checkout your mailbox for more information.",
+        estimatedActivationDate,
+      },
       { status: 201 }
     );
   } catch (error) {

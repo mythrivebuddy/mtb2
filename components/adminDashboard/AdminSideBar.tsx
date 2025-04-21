@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/tw";
 import { Menu } from "lucide-react";
@@ -100,11 +99,11 @@ const Sidebar = () => {
             <NavSection title="Menu">
               <NavItem href="/admin/dashboard" label="Dashboard" />
               <NavItem href="/admin/user-info" label="User Info" />
-              <NavItem href="/admin/spotlight" label="Spotlight Applications" />
-              <NavItem href="/admin/create-blog" label="Create Blog" />
+              <NavItem href="/admin/spotlight" label="Spotlight" />
+              <NavItem href="/admin/blog" label="Create Blog" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
               <NavItem href="/admin/prosperity" label="Prosperity" />
-              <NavItem href="/admin/create-faq" label="Create Faqs" />
+              <NavItem href="/admin/faq" label="Faqs" />
               <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
               <NavItem
                 href="/admin/manage-store-product"
@@ -112,12 +111,7 @@ const Sidebar = () => {
               />
             </NavSection>
 
-            {/* Settings Section */}
-            <NavSection title="Settings">
-              <button onClick={() => signOut()}>
-                <NavItem href="" label="Logout" />
-              </button>
-            </NavSection>
+         
           </div>
         </div>
       </aside>

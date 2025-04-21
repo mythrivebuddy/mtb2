@@ -1,13 +1,18 @@
 
 
 import { Metadata } from "next";
+import { Suspense } from 'react'
+
 import SignUpForm from "@/components/auth/SignUpForm";
 import AppLayout from "@/components/layout/AppLayout";
+import PageLoader from "@/components/PageLoader";
 
 export const metadata: Metadata = {
   title: "Sign Up - MyThriveBuddy",
   description: "Create your MyThriveBuddy account",
 };
+
+
 
 export default function SignUpPage() {
   return (
@@ -23,7 +28,11 @@ export default function SignUpPage() {
           </h1>
           <p className="text-gray-600">Join MyThriveBuddy today</p>
         </div>
-        <SignUpForm />
+        {/* <SignUpForm /> */}
+
+        <Suspense fallback={<PageLoader />}>
+          <SignUpForm />
+        </Suspense>
       </div>
       {/* //     </div>
     //   </div>

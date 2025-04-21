@@ -1,8 +1,8 @@
 "use client";
 
 import AdminSideBar from "@/components/adminDashboard/AdminSideBar";
-import { BellIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { BellIcon, LogOut } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 export default function AdminLayout({
   children,
@@ -35,7 +35,9 @@ export default function AdminLayout({
               </div>
             </div>
             <div className="hidden lg:block">
-              <h1 className="text-xl font-semibold">ADMIN DASHBOARD</h1>
+              <button onClick={() => signOut()}>
+                <LogOut>Logout</LogOut>
+              </button>
             </div>
           </div>
         </header>
