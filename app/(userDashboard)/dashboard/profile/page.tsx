@@ -16,7 +16,7 @@ import PageLoader from "@/components/PageLoader";
 interface SocialHandles {
   linkedin?: string;
   instagram?: string;
-  twitter?: string;
+  x?: string;
   youtube?: string;
   facebook?: string;
   tiktok?: string;
@@ -54,7 +54,7 @@ const defaultProfile: BusinessProfile = {
   socialHandles: {
     linkedin: "",
     instagram: "",
-    twitter: "",
+    x: "",
     youtube: "",
     facebook: "",
     tiktok: " ",
@@ -141,6 +141,9 @@ const Page = () => {
             typeof url === "string" ? url.replace(/^https?:\/\//, "") : "",
           ])
         ),
+        priorityContactLink: profile.priorityContactLink
+          ? profile.priorityContactLink.replace(/^https?:\/\//, "")
+          : "",
       });
       setImagePreview(profile.featuredWorkImage || null);
     }
@@ -168,6 +171,16 @@ const Page = () => {
           }
         });
         formData.append(key, JSON.stringify(normalizedHandles));
+      } else if (
+        key === "priorityContactLink" &&
+        typeof value === "string" &&
+        value.trim()
+      ) {
+        const normalizedLink =
+          value.startsWith("http://") || value.startsWith("https://")
+            ? value
+            : `https://${value}`;
+        formData.append(key, normalizedLink);
       } else if (
         key !== "featuredWorkImage" &&
         value !== undefined &&

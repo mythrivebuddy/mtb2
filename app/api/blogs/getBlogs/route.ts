@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
+
+type whereProps = Prisma.BlogWhereInput;
+
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -9,23 +13,30 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "6");
     const category = searchParams.get("category");
+    const search = searchParams.get("search");
 
     const validPage = page > 0 ? page : 1;
     const validLimit = limit > 0 && limit <= 100 ? limit : 6;
     const skip = (validPage - 1) * validLimit;
 
     // Build a where clause if a category filter is provided
-    const whereClause = category ? { category } : {};
+    const where: whereProps = {};
+    if (search) {
+      where.title = { contains: search, mode: "insensitive" };
+    }
+    if (category) {
+      where.category = category;
+    }
 
     // Get total count for the filtered query
-    const totalCount = await prisma.blog.count({ where: whereClause });
+    const totalCount = await prisma.blog.count({ where });
 
     // Fetch blogs with filtering and pagination
     const blogs = await prisma.blog.findMany({
       skip,
       take: validLimit,
       orderBy: { createdAt: "desc" },
-      where: whereClause,
+      where,
       select: {
         id: true,
         title: true,
