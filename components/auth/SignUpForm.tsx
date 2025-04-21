@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useState } from "react";
@@ -12,19 +14,6 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { SignupFormType, signupSchema } from "@/schema/zodSchema";
 import GoogleIcon from "../icons/GoogleIcon";
 import { signIn } from "next-auth/react";
-
-// const schema = z
-//   .object({
-//     email: z.string().email("Invalid email address"),
-//     password: z.string().min(6, "Password must be at least 6 characters"),
-//     confirmPassword: z.string(),
-//   })
-//   .refine((data) => data.password === data.confirmPassword, {
-//     message: "Passwords don't match",
-//     path: ["confirmPassword"],
-//   });
-
-// type FormData = z.infer<typeof schema>;
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -41,8 +30,32 @@ export default function SignUpForm() {
     setIsLoading(true);
     try {
       const res = await axios.post("/api/auth/signup", data);
+
       if (res.status >= 200 && res.status < 300) {
+        const { userId } = res.data;
         toast.success(res.data.message);
+
+        // Process referral if code exists
+        if (data.referralCode) {
+          try {
+            const referralRes = await axios.post("/api/refer-friend/process", {
+              referralCode: data.referralCode,
+              userId,
+            });
+
+            if (referralRes.status >= 200 && referralRes.status < 300) {
+              toast.success("Referral processed successfully!");
+            } else {
+              toast.error(getAxiosErrorMessage(referralRes));
+            }
+          } catch (referralError) {
+            console.error("Referral processing error:", referralError);
+            toast.error(
+              getAxiosErrorMessage(referralError, "Failed to process referral")
+            );
+          }
+        }
+
         router.push("/signin");
         return;
       }
@@ -87,7 +100,6 @@ export default function SignUpForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <Input
-            // type="password"
             placeholder="Enter Your Name"
             {...register("name")}
             className={errors.name ? "border-red-500" : ""}
@@ -115,9 +127,18 @@ export default function SignUpForm() {
             className={errors.password ? "border-red-500" : ""}
           />
           {errors.password && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.password.message}
-            </p>
+            <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Input
+            placeholder="Referral Code (Optional)"
+            {...register("referralCode")}
+            className={errors.referralCode ? "border-red-500" : ""}
+          />
+          {errors.referralCode && (
+            <p className="text-red-500 text-sm mt-1">{errors.referralCode.message}</p>
           )}
         </div>
 
@@ -125,6 +146,7 @@ export default function SignUpForm() {
           {isLoading ? "Creating account..." : "Sign Up"}
         </Button>
       </form>
+
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-200"></div>
@@ -144,4 +166,5 @@ export default function SignUpForm() {
       </Button>
     </div>
   );
+  
 }

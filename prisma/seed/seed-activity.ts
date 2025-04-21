@@ -51,9 +51,24 @@ async function main() {
       transactionType: TransactionType.CREDIT,
     },
     {
+      activity: ActivityType.REFER_BY,
+      jpAmount: 500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.REFER_TO,
+      jpAmount: 500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
       // ! there will be two activity type one fror sender and one for receiver
-      activity: ActivityType.MAGIC_BOX,
+      activity: ActivityType.MAGIC_BOX_SHARED_REWARD,
       jpAmount: 0, // will be handles by trnasection only  //! since here jp is not considered then many be turn it to non-required field
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.MAGIC_BOX_REWARD,
+      jpAmount: 0, // JP is dynamic, handled in code
       transactionType: TransactionType.CREDIT,
     },
     {
@@ -61,19 +76,18 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
-    
+
     {
       activity: ActivityType.FEATURE_REQUEST,
       jpAmount: 100,
       transactionType: TransactionType.CREDIT,
     },
-    
+
     {
       activity: ActivityType.BUG_REPORT,
       jpAmount: 150,
       transactionType: TransactionType.CREDIT,
-    }
-    
+    },
   ];
 
   for (const activity of activities) {

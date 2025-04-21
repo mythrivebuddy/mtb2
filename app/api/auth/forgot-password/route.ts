@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 

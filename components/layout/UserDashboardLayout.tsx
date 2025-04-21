@@ -31,7 +31,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="flex  p-7 overflow-auto w-full bg-dashboard">
+    <div
+      className="flex  p-7 overflow-auto w-full bg-dashboard"
+    >
       <Sidebar user={user} />
       {/* Main Content Area with TopBar */}
       <div className="flex-1 flex overflow-hidden pl-7">

@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { cn } from "@/lib/utils/tw";
 
@@ -130,6 +129,9 @@ const Sidebar = () => {
             <NavItem href="/admin/prosperity" label="Prosperity" />
             <NavItem href="/admin/faq" label="Faqs" />
             <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
+            <NavItem href="/admin/manage-store-product" label="Store" />
+
+
           </NavSection>
         </div>
       </div>

@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
+
+type whereProps = Prisma.BlogWhereInput;
+
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
@@ -16,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const skip = (validPage - 1) * validLimit;
 
     // Build a where clause if a category filter is provided
-    const where: any = {};
+    const where: whereProps = {};
     if (search) {
       where.title = { contains: search, mode: "insensitive" };
     }

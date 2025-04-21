@@ -13,7 +13,6 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  TableCaption,
 } from "@/components/ui/table";
 
 type Transaction = {

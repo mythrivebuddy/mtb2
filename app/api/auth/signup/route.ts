@@ -6,6 +6,7 @@ import { ActivityType } from "@prisma/client";
 import { assignJp } from "@/lib/utils/jp";
 import { sign } from "jsonwebtoken";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import axios from "axios";
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,9 +76,13 @@ export async function POST(request: NextRequest) {
       message:
         "User created successfully. Please check your email to verify your account.",
       user: user,
+      userId: user.id,
     });
   } catch (error) {
     console.error("Signup error:", error);
+    if (error instanceof axios.AxiosError) {
+      console.error("Signup error:", error?.response); //! only meant for debuggin in prodction
+    }
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 }

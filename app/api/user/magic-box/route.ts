@@ -11,7 +11,7 @@ export async function GET() {
 
     // Check if user already has a magic box for today
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
+    today.setHours(0, 0, 0); // Start of today
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
@@ -138,6 +138,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ? this conditoin will only run when some one intentiaolly tries to run this api when box is already opened else this condition will never run as box will not be open when this api will be called from frontend
     // If box is already opened
     if (magicBox.isOpened) {
       // If opened but not redeemed, return random users
@@ -205,9 +206,8 @@ export async function POST(request: NextRequest) {
     // Generate random JP amount
     let jpAmount = Math.floor(Math.random() * (maxJp - minJp + 1) + minJp);
     // let jpAmount =
-      // Math.floor(Math.random() * ((maxJp - minJp + 1) / 2)) * 2 + minJp;
+    // Math.floor(Math.random() * ((maxJp - minJp + 1) / 2)) * 2 + minJp;
     if (jpAmount % 2 !== 0) jpAmount += 1;
-
 
     // Update the box as opened with JP amount and random users
     const updatedBox = await prisma.magicBox.update({
@@ -303,12 +303,19 @@ export async function PUT(request: NextRequest) {
     const userJpAmount = Math.floor(jpAmount / 2); // Half goes to user
     const sharedJpAmount = Math.floor(jpAmount / 2); // Half is shared
 
-    const activity = await prisma.activity.findUnique({
+    const magicBoxActivity = await prisma.activity.findUnique({
       where: {
-        activity: ActivityType.MAGIC_BOX,
+        activity: ActivityType.MAGIC_BOX_REWARD,
       },
     });
-
+    console.log("magicBoxActivity", magicBoxActivity);
+    const magicBoxRewardActivity = await prisma.activity.findUnique({
+      where: {
+        activity: ActivityType.MAGIC_BOX_SHARED_REWARD,
+      },
+    });
+    console.log("magicBoxRewardActivity", magicBoxRewardActivity);
+    
     const [updatedBox] = await prisma.$transaction([
       // Update magic box as redeemed
       prisma.magicBox.update({
@@ -340,12 +347,12 @@ export async function PUT(request: NextRequest) {
         data: [
           {
             userId,
-            activityId: activity!.id,
+            activityId: magicBoxActivity!.id,
             jpAmount: userJpAmount,
           },
           {
             userId: selectedUserId,
-            activityId: activity!.id,
+            activityId: magicBoxRewardActivity!.id,
             jpAmount: sharedJpAmount,
           },
         ],

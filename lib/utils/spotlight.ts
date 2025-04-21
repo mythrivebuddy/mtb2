@@ -22,28 +22,34 @@ export async function activateNextSpotlight() {
 
   console.log("nextSpotlight", nextSpotlight); //?dev
   if (nextSpotlight) {
-    await prisma.spotlight.update({
+    const updatedSpotlight = await prisma.spotlight.update({
       where: { id: nextSpotlight.id },
       data: {
-        // isActive: true,
         status: SpotlightStatus.ACTIVE,
         activatedAt: new Date(),
-        expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS), // 1 day validity
+        expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
       },
     });
+  
     const user = await prisma.user.findUnique({
       where: { id: nextSpotlight.userId },
     });
-    await sendEmailUsingTemplate({
-      toEmail: user?.email!,
-      toName: user?.name!,
-      templateId: "spotlight-active",
-      templateData: {
-        username: user?.name!,
-        insert_date: format(nextSpotlight.activatedAt!, "MMM d, yyyy"),
-      },
-    });
+  
+    if (user?.email && user.name && updatedSpotlight.activatedAt) {
+      await sendEmailUsingTemplate({
+        toEmail: user.email,
+        toName: user.name,
+        templateId: "spotlight-active",
+        templateData: {
+          username: user.name,
+          insert_date: format(updatedSpotlight.activatedAt, "MMM d, yyyy"),
+        },
+      });
+    } else {
+      console.warn("Missing user info or activatedAt date for spotlight email.");
+    }
   }
+  
 }
 
 export async function checkAndRotateSpotlight() {
