@@ -43,7 +43,9 @@ interface ProfileDisplayProps {
 const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
   profileData,
   onEditClick,
-}) => (
+}) =>{
+  console.log('profileData',profileData)
+  return (
   <div className="space-y-6">
     <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
       <div className="w-full flex justify-between">
@@ -170,7 +172,7 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
         <div>
           <strong>Image to be displayed in Spotlight:</strong>
           <Image
-            src={profileData.featuredWorkImage}
+            src={profileData?.featuredWorkImage || ''}
             alt="Featured Work"
             width={200}
             height={200}
@@ -184,6 +186,6 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
       </p>
     </div>
   </div>
-);
+)}
 
 export default ProfileDisplay;

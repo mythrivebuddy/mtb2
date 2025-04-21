@@ -91,6 +91,7 @@ const Page = () => {
 
   // Automatically switch to edit mode if profile.name is empty
   useEffect(() => {
+    console.log('profile',profile)
     if (!queryLoading) {
       if (profile?.name) {
         setIsEditing(false);
@@ -227,4 +228,5 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default Page
+
