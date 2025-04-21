@@ -30,7 +30,7 @@ export default function BlogEditor() {
     toast.success(
       isNew ? "Blog created successfully" : "Blog updated successfully"
     );
-    router.push("/admin/create-blog"); // Redirect to blog list page
+    router.push("/admin/blog"); // Redirect to blog list page
   };
 
   if (isBlogLoading && !isNew) {

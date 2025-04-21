@@ -64,6 +64,7 @@ export async function deductJp(user: UserWithPlan, activity: ActivityType) {
     const isActive = isPlanActive(user);
     const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
     const jpToDeduct = Math.ceil(activityData.jpAmount! * (1 - discount / 100));
+    console.log("jpToDeduct", jpToDeduct);
 
     if (user.jpBalance < jpToDeduct) {
       throw new Error("Insufficient JP balance");

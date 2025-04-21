@@ -44,7 +44,9 @@ export default function SpotlightPage() {
     mutationFn: createSpotlight,
     onSuccess: (data) => {
       console.log(data);
-      toast.success("Spotlight application submitted successfully");
+      toast.success(
+        "Spotlight application submitted successfully, check your email for more information."
+      );
       queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
       queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
     },

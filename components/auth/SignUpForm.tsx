@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
@@ -16,13 +16,23 @@ import { signIn } from "next-auth/react";
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get('ref');
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
   } = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
   });
+
+  useEffect(() => {
+    if (referralCode) {
+      setValue('referralCode', referralCode);
+    }
+  }, [referralCode, setValue]);
 
   const onSubmit: SubmitHandler<SignupFormType> = async (data) => {
     setIsLoading(true);
@@ -134,9 +144,13 @@ export default function SignUpForm() {
             placeholder="Referral Code (Optional)"
             {...register("referralCode")}
             className={errors.referralCode ? "border-red-500" : ""}
+            readOnly={!!referralCode}
           />
           {errors.referralCode && (
             <p className="text-red-500 text-sm mt-1">{errors.referralCode.message}</p>
+          )}
+          {referralCode && (
+            <p className="text-sm text-gray-500 mt-1">Referral code auto-filled from link</p>
           )}
         </div>
 

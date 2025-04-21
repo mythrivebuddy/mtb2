@@ -12,7 +12,7 @@ export function renderEmailTemplate(
 export const defaultPreviewData = {
   username: "John Doe",
   verificationUrl: "https://preview-link.com/verify",
-  resetPasswordUrl: "https://preview-link.com/reset-password",
+  resetUrl: "https://preview-link.com/reset-password",
   email: "john.doe@example.com",
   // Add more default preview data as needed
 };

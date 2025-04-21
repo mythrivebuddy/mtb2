@@ -1,12 +1,12 @@
 "use client";
 
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
-import formatDateWithSuffix from "@/utils/formatDateAndTime";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { format } from "date-fns";
 
 type Buddy = {
   id: number;
@@ -24,13 +24,13 @@ type HistoryItem = {
   activity: {
     activity: string;
     transactionType: string;
+    displayName: string;
   };
   createdAt: string;
 };
 
 const fetchUserTransactionHistory = async () => {
   const res = await axios.get("/api/user/history");
-  console.log(res.data);
   return res.data;
 };
 
@@ -43,30 +43,30 @@ const RightPanel = ({ className }: { className?: string }) => {
 
   const { data: transactionHistory, isLoading } = useQuery({
     queryKey: ["transactions"],
-    queryFn: () => fetchUserTransactionHistory(),
+    queryFn: fetchUserTransactionHistory,
   });
 
-  // Map the fetched transactions to HistoryItem objects
   let historyItems: HistoryItem[] = [];
   if (transactionHistory?.transactions) {
     historyItems = transactionHistory.transactions.map((tx: HistoryItem) => {
-      // Determine if transaction is a debit or credit.
       const isDebit = tx.activity.transactionType === "DEBIT";
       const description = isDebit
-        ? `Spent on ${tx.activity.activity.toLowerCase()}`
-        : `Earned for ${tx.activity.activity.toLowerCase()}`;
+        ? `Spent on ${tx.activity.displayName}`
+        : `Earned for ${tx.activity.displayName}`;
 
       return {
         id: tx.id,
         description,
-        date: formatDateWithSuffix(tx.createdAt),
+        date: format(new Date(tx.createdAt), "MMM d, yyyy hh:mm a"),
         amount: tx.jpAmount,
       };
     });
   }
 
   return (
-    <div className={`bg-transparent  ${className}`}>
+    <div
+      className={`w-full max-w-[250px] overflow-x-hidden overflow-y-auto bg-transparent ${className}`}
+    >
       {/* Buddies Section */}
       <section className="mb-6">
         <div className="flex justify-between items-center mb-3">
@@ -80,21 +80,27 @@ const RightPanel = ({ className }: { className?: string }) => {
         </div>
         <div className="space-y-3 bg-white rounded-3xl p-5">
           {buddies.map((buddy) => (
-            <div key={buddy.id} className="flex items-center">
+            <div key={buddy.id} className="flex items-center w-full">
               {buddy.avatar ? (
                 <Image
                   src={buddy.avatar}
                   alt={buddy.name}
                   className="w-10 h-10 rounded-full mr-3"
+                  width={40}
+                  height={40}
                 />
               ) : (
-                <p className="w-10 h-10 rounded-full mr-3 bg-dashboard text-black flex items-center justify-center text-sm font-semibold uppercase">
+                <p className="w-10 h-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center text-sm font-semibold uppercase">
                   {buddy.name.slice(0, 2)}
                 </p>
               )}
-              <div>
-                <p className="font-medium text-gray-800">{buddy.name}</p>
-                <p className="text-sm text-gray-500">{buddy.access}</p>
+              <div className="w-full">
+                <p className="font-medium text-gray-800 break-words">
+                  {buddy.name}
+                </p>
+                <p className="text-sm text-gray-500 break-words">
+                  {buddy.access}
+                </p>
               </div>
             </div>
           ))}
@@ -120,19 +126,21 @@ const RightPanel = ({ className }: { className?: string }) => {
           </Link>
         </div>
         {isLoading ? (
-          <p>Loading history...</p>
+          <p className="break-words">Loading history...</p>
         ) : (
           <div className="space-y-3">
             {historyItems.map((item) => (
-              <div key={item.id} className="flex items-start">
+              <div key={item.id} className="flex items-start w-full">
                 <span className="text-xl text-blue-700 mr-2">•</span>
-                <div className="shrink-0 grow">
-                  <p className="text-gray-800 text-nowrap truncate w-full">
+                <div className="flex-1">
+                  <p className="text-gray-800 break-words">
                     {item.description}
                   </p>
-                  <p className="text-sm text-gray-500">{item.date}</p>
+                  <p className="text-sm text-gray-500 break-words">
+                    {item.date}
+                  </p>
                 </div>
-                <p className="text-red-500 font-medium ml-2 text-nowrap">
+                <p className="text-red-500 font-medium ml-2 break-words">
                   {item.amount} JP
                 </p>
               </div>

@@ -199,15 +199,26 @@ export default function EmailTemplateEditor({
                         const items = [
                           {
                             type: "menuitem",
-                            text: "First Name",
+                            text: "Username",
                             onAction: () =>
-                              editor.insertContent("{{first_name}}"),
+                              editor.insertContent("{{username}}"),
                           },
                           {
                             type: "menuitem",
-                            text: "Last Name",
+                            text: "Verification URL",
                             onAction: () =>
-                              editor.insertContent("{{last_name}}"),
+                              editor.insertContent("{{verificationUrl}}"),
+                          },
+                          {
+                            type: "menuitem",
+                            text: "Reset URL",
+                            onAction: () =>
+                              editor.insertContent("{{resetUrl}}"),
+                          },
+                          {
+                            type: "menuitem",
+                            text: "Email",
+                            onAction: () => editor.insertContent("{{email}}"),
                           },
                           {
                             type: "menuitem",
@@ -217,9 +228,9 @@ export default function EmailTemplateEditor({
                           },
                           {
                             type: "menuitem",
-                            text: "Custom Note",
+                            text: "Insert Date",
                             onAction: () =>
-                              editor.insertContent("{{custom_note}}"),
+                              editor.insertContent("{{insert_date}}"),
                           },
                         ];
                         callback(items);
