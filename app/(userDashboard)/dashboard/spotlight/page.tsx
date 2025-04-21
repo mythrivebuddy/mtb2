@@ -79,8 +79,8 @@ export default function SpotlightPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1>
+    <div className="container mx-auto px-0 py-8">
+      {/* <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1> */}
 
       <Card className="p-6 mb-8">
         <h2 className="text-2xl font-semibold mb-6">What is Spotlight?</h2>

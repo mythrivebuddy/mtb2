@@ -63,6 +63,14 @@ enum SpotlightActivityType {
   CONNECT
 }
 
+enum NotificationType {
+  JP_EARNED
+  PROSPERITY_APPLIED
+  SPOTLIGHT_APPROVED
+  SPOTLIGHT_ACTIVE
+  MAGIC_BOX_SHARED
+}
+
 model User {
   id                            String                @id @default(uuid())
   email                         String                @unique
@@ -112,7 +120,8 @@ model User {
   website       String?
   socialHandles Json?
 
-  magicBoxes MagicBox[]
+  magicBoxes   MagicBox[]
+  Notification Notification[]
 
   @@index([name])
 }
@@ -123,7 +132,7 @@ model Transaction {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
-  jpAmount   Int?
+  jpAmount   Int
   createdAt  DateTime @default(now())
 }
 
@@ -406,4 +415,19 @@ model MagicBoxSettings {
   minJpAmount Int      @default(100) // Minimum JP amount for a magic box
   maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
   updatedAt   DateTime @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  metadata  Json? // Store additional data like JP amount, shared user info, etc.
+
+  @@index([userId])
+  @@index([createdAt])
 }

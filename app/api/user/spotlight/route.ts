@@ -2,6 +2,7 @@ import { checkRole } from "@/lib/utils/auth";
 import { ActivityType, SpotlightStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getJpToDeduct } from "@/lib/utils/jp";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
 
@@ -31,8 +32,6 @@ export async function POST() {
       );
     }
 
-    const jpRequired = spotlightActivity.jpAmount;
-
     // Fetch user details
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -43,12 +42,15 @@ export async function POST() {
           },
         },
         userBusinessProfile: true,
+        plan: true, // Include plan details for JP calculation
       },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    const jpRequired = getJpToDeduct(user, spotlightActivity);
 
     // Check if user's business profile is complete
     const businessProfile = user.userBusinessProfile[0];
@@ -128,6 +130,7 @@ export async function POST() {
           userId: userId,
           activityId: spotlightActivity.id,
           createdAt: new Date(),
+          jpAmount: jpRequired,
         },
       }),
       prisma.spotlight.create({
