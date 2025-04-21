@@ -2,8 +2,6 @@ import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-
-
 // * get all spotlight applications
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +25,12 @@ export async function GET(request: NextRequest) {
       skip: skip,
     });
 
-    return NextResponse.json(spotlightApplications, { status: 200 });
+    const totalApplications = await prisma.spotlight.count();
+
+    return NextResponse.json(
+      { spotlightApplications, totalApplications },
+      { status: 200 }
+    );
   } catch (error) {
     console.log(error);
     return NextResponse.json(
