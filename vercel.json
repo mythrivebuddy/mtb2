@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/aligned-action-reminder",
-      "schedule": "* * * * *"
+      "path": "/api/cron/spotlight",
+      "schedule": "0 0 * * *"
     }
   ]
 }
