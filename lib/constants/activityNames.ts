@@ -8,8 +8,12 @@ export const activityDisplayMap: Record<string, string> = {
   BUSINESSPROFILE_COMPLETE: "Business Profile Complete",
   MIRACLE_LOG: "Miracle Log",
   PROGRESS_VAULT: "Progress Vault",
-  MAGIC_BOX: "Magic Box",
+  // MAGIC_BOX: "Magic Box",
   GENERAL_FEEDBACK: "General Feedback",
   FEATURE_REQUEST: "Feature Request",
   BUG_REPORT: "Bug Report",
+  REFER_BY: "Referred By",
+  REFER_TO: "Referred To",
+  MAGIC_BOX_REWARD: "Magic Box Reward",
+  MAGIC_BOX_SHARED_REWARD: "Magic Box Shared Reward",
 };
