@@ -49,6 +49,7 @@ export default function SpotlightPage() {
       );
       queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
       queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
+      queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     },
     onError: (error) => {
       toast.error(getAxiosErrorMessage(error));

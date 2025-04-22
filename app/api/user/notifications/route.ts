@@ -17,10 +17,7 @@ export async function GET() {
       }),
       // Then mark all unread notifications as read
       prisma.notification.updateMany({
-        where: {
-          userId,
-          isRead: false,
-        },
+        where: { userId, isRead: false },
         data: { isRead: true },
       }),
     ]);

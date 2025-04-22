@@ -1,5 +1,6 @@
 import { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { activityDisplayMap } from "../constants/activityNames";
 
 // Helper function to create a notification
 export async function createNotification(
@@ -11,14 +12,101 @@ export async function createNotification(
   metadata?: any
 ) {
   return prisma.notification.create({
-    data: {
-      userId,
-      type,
-      title,
-      message,
-      metadata,
-    },
+    data: { userId, type, title, message, metadata },
   });
+}
+
+// Returns notification data for JP earned
+export function getJPEarnedNotificationData(
+  userId: string,
+  amount: number,
+  activity: string
+) {
+  return {
+    userId,
+    type: NotificationType.JP_EARNED,
+    title: "JP Earned",
+    message: `You earned ${amount} JP for ${activityDisplayMap[activity]}`,
+    metadata: { amount, activity },
+  };
+}
+
+// Returns notification data for prosperity applied
+export function getProsperityAppliedNotificationData(userId: string) {
+  return {
+    userId,
+    type: NotificationType.PROSPERITY_APPLIED,
+    title: "Prosperity Drop Applied",
+    message:
+      "Your prosperity drop application has been submitted and is under review",
+    metadata: {},
+  };
+}
+
+// Returns notification data for spotlight approved
+export function getSpotlightApprovedNotificationData(userId: string) {
+  return {
+    userId,
+    type: NotificationType.SPOTLIGHT_APPROVED,
+    title: "Spotlight Approved",
+    message: "Your spotlight application has been approved",
+    metadata: {},
+  };
+}
+
+// Returns notification data for spotlight active
+export function getSpotlightActiveNotificationData(userId: string) {
+  return {
+    userId,
+    type: NotificationType.SPOTLIGHT_ACTIVE,
+    title: "Spotlight Active",
+    message: "Your spotlight is now active and visible to other users",
+    metadata: {},
+  };
+}
+
+// Returns notification data for magic box shared
+export function getMagicBoxSharedNotificationData(
+  sharedByUserId: string,
+  sharedByUserName: string,
+  receiverUserId: string,
+  amount: number
+) {
+  return {
+    userId: receiverUserId,
+    type: NotificationType.MAGIC_BOX_SHARED,
+    title: "Magic Box Received",
+    message: `${sharedByUserName} shared ${amount} JP with you through a Magic Box!`,
+    metadata: { sharedByUserId, sharedByUserName, amount },
+  };
+}
+
+// Returns notification data for spotlight transaction (spending JP to activate)
+export function getSpotlightTransactionNotificationData(
+  userId: string,
+  jpAmount: number
+) {
+  return {
+    userId,
+    type: NotificationType.SPOTLIGHT_ACTIVE,
+    title: "Spotlight Activated",
+    message: `You spent ${jpAmount} JP to activate your Spotlight.`,
+    metadata: { jpAmount },
+  };
+}
+
+// Returns notification data for spotlight application (spending JP to apply)
+export function getSpotlightAppliedTransactionNotificationData(
+  userId: string,
+  jpAmount: number
+) {
+  return {
+    userId,
+    type: NotificationType.SPOTLIGHT_APPROVED,
+    title: "Spotlight Application Submitted",
+    message: `You spent ${jpAmount} JP to apply for Spotlight.`,
+    metadata: { jpAmount },
+  };
 }
 
 export async function createJPEarnedNotification(
@@ -30,7 +118,7 @@ export async function createJPEarnedNotification(
     userId,
     NotificationType.JP_EARNED,
     "JP Earned",
-    `You earned ${amount} JP for ${activity}`,
+    `You earned ${amount} JP for ${activityDisplayMap[activity]}`,
     { amount, activity }
   );
 }
