@@ -7,7 +7,7 @@ import { UserRound } from "lucide-react";
 import { User as UserType } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
@@ -55,13 +55,6 @@ export default function TopBar({ user }: { user?: UserType }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  // Use the cached user data directly from React Query to get the most up-to-date JP balance
-  const cachedUserData = queryClient.getQueryData<UserType>(["userInfo"]);
-  
-  // Use the most up-to-date JP balance
-  const currentJpBalance = cachedUserData?.jpBalance ?? user?.jpBalance ?? 0;
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
