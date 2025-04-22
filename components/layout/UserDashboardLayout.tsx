@@ -8,7 +8,6 @@ import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
 import PageLoader from "../PageLoader";
 
-
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
     data: user,
@@ -42,8 +41,6 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           {children}
         </main>
       </div>
-      
-
     </div>
   );
 };
