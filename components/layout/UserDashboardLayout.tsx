@@ -6,7 +6,7 @@ import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
 import PageLoader from "../PageLoader";
-import ActionChecker from "../dashboard/user/aligned-action/ActionChecker";
+
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
@@ -43,7 +43,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
       
-      <ActionChecker />
+
     </div>
   );
 };

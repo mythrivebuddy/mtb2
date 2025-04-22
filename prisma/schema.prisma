@@ -90,7 +90,6 @@ model User {
   blockedUsers        BlockedUsers[]
   miracleLog          MiracleLog[]
   progressVault       ProgressVault[]
-  alignedActions      AlignedAction[]
   isEmailVerified     Boolean  @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
@@ -328,22 +327,4 @@ model MagicBoxSettings {
   updatedAt   DateTime @updatedAt
 }
 
-model AlignedAction {
-  id            String    @id @default(uuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mood          String
-  notes         String[]
-  summaryType   String
-  taskTypes     String[]
-  scheduledTime DateTime
-  secondaryTime DateTime?
-  selectedOption String?
-  reminderTime  DateTime
-  completed     Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
 
-  @@index([userId])
-  @@index([scheduledTime])
-}
