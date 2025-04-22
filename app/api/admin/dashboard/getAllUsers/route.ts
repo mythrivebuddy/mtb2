@@ -8,6 +8,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const filter = searchParams.get("filter") || "all";
   const search = searchParams.get("search") || "";
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "6", 10);
+  const skip = (page - 1) * pageSize;
+  const take = pageSize;
 
   // Verify admin access
   const session = await getServerSession(authConfig);
@@ -44,6 +48,8 @@ export async function GET(request: Request) {
   try {
     const users = await prisma.user.findMany({
       where: whereClause,
+      skip,
+      take,
       select: {
         id: true,
         name: true,
@@ -56,7 +62,11 @@ export async function GET(request: Request) {
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(users);
+
+    const totalUsers = await prisma.user.count({ where: whereClause });
+    const total = Math.ceil(totalUsers / pageSize);
+
+    return NextResponse.json({ users, total });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(

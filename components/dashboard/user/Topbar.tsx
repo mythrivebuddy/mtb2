@@ -1,9 +1,7 @@
 "use client";
 
-// components/TopBar.tsx
 import { Search } from "lucide-react";
 import { Badge, BadgeProps } from "@/components/ui/badge";
-// import { Bell } from "lucide-react";
 import React, { useState } from "react";
 import { UserRound } from "lucide-react";
 import { User as UserType } from "@/types/types";
@@ -16,9 +14,10 @@ import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import { NotificationIcon } from "@/components/icons/NotificationIcons";
 import Link from "next/link";
-import { Gift } from "lucide-react"; // Add this import at the top with other imports
+import { Gift } from "lucide-react";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
+import type { Notification as PrismaNotification } from "@prisma/client";
 
 const TopBarBadge = ({
   children,
@@ -29,7 +28,7 @@ const TopBarBadge = ({
     <Badge
       variant="outline"
       className={cn(
-        "bg-white rounded-md h-10 flex items-center justify-center px-3 border border-[#4B65A2]",
+        "bg-white rounded-md h-8 sm:h-10 flex items-center justify-center px-2 sm:px-3 border border-[#4B65A2]",
         className
       )}
       {...props}
@@ -70,19 +69,44 @@ export default function TopBar({ user }: { user?: UserType }) {
     enabled: searchTerm.length > 0,
   });
 
+  const { data: hasUnopenedBox } = useQuery({
+    queryKey: ["magicBoxStatus"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/user/magic-box");
+      return (
+        data.magicBox && (!data.magicBox.isOpened || !data.magicBox.isRedeemed)
+      );
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  // Add this query after the other queries
+  const { data: unreadNotificationsCount } = useQuery<number>({
+    queryKey: ["unreadNotificationsCount"],
+    queryFn: async () => {
+      const { data } = await axios.get<PrismaNotification[]>(
+        "/api/user/notifications"
+      );
+      return data.filter((n) => !n.isRead).length;
+    },
+    enabled: !!user?.id,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
   // Get the last segment of the pathname and remove query params
   const currentRoute = pathname.split("/").pop()?.split("?")[0] || "dashboard";
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
   return (
-    <header className="h-16 bg-transparent flex items-center justify-between">
-      {/* Page Title */}
-      <div className="flex justify-between gap-8 w-full items-center">
-        <div className="flex justify-between w-2/3">
-          <h1 className="text-2xl font-normal text-slate-800">{pageTitle}</h1>
+    <header className=" bg-transparent flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-8 w-full items-start sm:items-center mb-5">
+        <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center">
+          <h1 className="text-xl sm:text-2xl font-normal text-slate-800 md:block hidden">
+            {pageTitle}
+          </h1>
 
-          {/* Search Bar */}
-          <div className="relative max-w-md w-96">
+          <div className="relative w-full sm:w-80 md:w-96">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
             </div>
@@ -128,49 +152,59 @@ export default function TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
 
-        <div className="flex gap-6">
-          {/* JP Points Badge */}
+        <div className="flex gap-3 sm:gap-6 flex-wrap">
           <TopBarBadge>
             <Image
               src="/Pearls.png"
               alt="Icon"
-              width={20}
-              height={15}
+              width={16}
+              height={12}
               className="rounded-xl mr-1"
             />
-            <span className="font-medium">JP</span>
-            <span className="font-bold text-blue-500 ml-1">
-              {currentJpBalance}
+            <span className="font-medium text-sm sm:text-base">JP</span>
+            <span className="font-bold text-blue-500 ml-1 text-sm sm:text-base">
+              {user?.jpBalance || 0}
             </span>
           </TopBarBadge>
 
           {/* Notifications */}
-          <TopBarBadge>
-            <NotificationIcon />
-          </TopBarBadge>
+          <Link href="/dashboard/notifications">
+            <TopBarBadge className="cursor-pointer">
+              <div className="relative">
+                <NotificationIcon />
+                {(unreadNotificationsCount ?? 0) > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                    {unreadNotificationsCount}
+                  </div>
+                )}
+              </div>
+            </TopBarBadge>
+          </Link>
 
-          {/* Gift Badge */}
           <TopBarBadge
             className="cursor-pointer"
             onClick={() => setIsMagicBoxOpen(true)}
           >
-            <Gift />
+            <div className="relative">
+              <Gift size={20} />
+              {hasUnopenedBox && (
+                <div className="absolute top-[-2px] right-[-2px] w-2 h-2 bg-red-500 rounded-full" />
+              )}
+            </div>
           </TopBarBadge>
 
-          {/* User Avatar */}
-          <div className="h-10 w-10 aspect-square cursor-pointer">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 aspect-square cursor-pointer">
             <div className="rounded-md bg-white border border-[#4B65A2] flex items-center justify-center w-full h-full uppercase">
               {user?.name ? (
-                <h2 className="text-2xl">{getInitials(user.name)}</h2>
+                <h2 className="text-lg sm:text-2xl">{getInitials(user.name)}</h2>
               ) : (
-                <UserRound />
+                <UserRound size={20} />
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Magic Box Modal */}
       <MagicBoxModal
         isOpen={isMagicBoxOpen}
         onClose={() => setIsMagicBoxOpen(false)}
