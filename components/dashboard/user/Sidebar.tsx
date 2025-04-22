@@ -17,7 +17,9 @@ import {
   Vault,
   Gift,
   Sparkles,
-  UserPlus 
+  UserPlus,
+  AArrowUp, 
+
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -127,6 +129,10 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               href="/dashboard/progress-vault"
               icon={<Vault size={20} />}
               label="1%Progress Vault" />
+              <NavItem
+              href="/dashboard/aligned-action"
+              icon={<AArrowUp size={20} />}
+              label="Aligned Actions" />
 
             <NavItem
               href="/dashboard/prosperity"

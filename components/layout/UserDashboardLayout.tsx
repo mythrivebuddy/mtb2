@@ -6,6 +6,7 @@ import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
 import PageLoader from "../PageLoader";
+import ActionChecker from "../dashboard/user/aligned-action/ActionChecker";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
@@ -31,9 +32,8 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="flex  p-7 overflow-auto w-full bg-dashboard">
+    <div className="flex p-7 overflow-auto w-full bg-dashboard">
       <Sidebar user={user} />
-      {/* Main Content Area with TopBar */}
       <div className="flex-1 flex overflow-hidden pl-7">
         <div className="flex-1 flex flex-col overflow-hidden">
           <TopBar user={user} />
@@ -42,6 +42,8 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </main>
         </div>
       </div>
+      
+      <ActionChecker />
     </div>
   );
 };

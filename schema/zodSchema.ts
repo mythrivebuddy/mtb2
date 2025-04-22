@@ -1,11 +1,7 @@
 import { z } from "zod";
 
 const PASS_LENGTH = 8;
-const MIN_ACTIONS = 1;
-const ACTION_ERROR = 'Action cannot be empty';
-const MOOD_ERROR = 'Selecting a mood is required';
-const ACTIONS_REQUIRED = `At least ${MIN_ACTIONS} actions are required`;
-const MAX_ACTION_LENGTH = 120;
+
 // Signup Schema
 export const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -42,27 +38,34 @@ export const prosperitySchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters"),
 });
 
-export const Step1FormType = z.object({
-  step: z.number().min(1, "Step is required"),
-  mood: z.string().min(1, MOOD_ERROR),
-  actions: z
-    .array(z.string().min(1, ACTION_ERROR).max(MAX_ACTION_LENGTH, `Action ${MAX_ACTION_LENGTH} characters se choti honi chahiye`))
-    .min(MIN_ACTIONS, ACTIONS_REQUIRED),
+export const step1Schema = z.object({
+  mood: z.string().min(1, 'Please select a mood'),
+  tasks: z
+    .array(
+      z
+        .string()
+        .min(1, 'Please enter a task')
+        .max(120, 'Each task must be less than or equal to 120 characters')
+    )
+    .length(3, 'Exactly three tasks are required'),
 });
 
-export const Step2FormType = z.object({
-  step: z.number().min(1, "Step is required"),
-  category: z.string().min(1, "Category is required"),
+
+export const step2Schema = z.object({
+  selectedTask: z.string().min(1, 'Please select a task'),
+  categories: z.array(z.enum(['Creative', 'Revenue Generating', 'Nurturing', 'Admin'])).optional(),
+  emoji: z.string().min(1, 'Please select an emoji'),
+  emojiCategory: z.string().min(1, 'Please select an emoji category'),
 });
 
-export const Step3FormType = z.object({
-  step: z.number().min(1, "Step is required"),
-  content: z.string().min(1, "Content is required"),
+export const step3Schema = z.object({
+  fromTime: z.string().min(1, 'Please select a time'),
+  toTime: z.string().min(1, 'Please select a time'),
 });
 
-export const Step4FormType = z.object({
-  step: z.number().min(1, "Step is required"),
-  content: z.string().min(1, "Content is required"),
+export const step4Schema = z.object({
+  content: z.string().min(1, 'Please select a time'),
+
 });
 
 
@@ -70,6 +73,9 @@ export type ProsperityFormType = z.infer<typeof prosperitySchema>;
 export type SignupFormType = z.infer<typeof signupSchema>;
 export type SigninFormType = z.infer<typeof signinSchema>;
 export type MiracleLogFormType = z.infer<typeof miracleLogSchema>;
-export type Step1FormType = z.infer<typeof Step1FormType>;
-export type Step2FormType = z.infer<typeof Step2FormType>;
 export type progressVaultFormType = z.infer<typeof progressvaultSchema>;
+export type Step1FormType = z.infer<typeof step1Schema>;
+export type Step2FormType = z.infer<typeof step2Schema>;
+export type Step3FormType = z.infer<typeof step3Schema>;
+export type Step4FormType = z.infer<typeof step4Schema>;
+

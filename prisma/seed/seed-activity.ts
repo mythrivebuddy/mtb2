@@ -81,6 +81,11 @@ async function main() {
       activity: ActivityType.BUG_REPORT,
       jpAmount: 150,
       transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.ALIGNED_ACTION,
+      jpAmount: 50,
+      transactionType: TransactionType.CREDIT,
     }
 
   ];
