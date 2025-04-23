@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
         hostname: process.env.SUPABASE_HOST_URL ?? "", // Ensure a string
       },
     ],
+    
   },
   experimental: {
     serverActions: {},

@@ -36,7 +36,7 @@ interface ReferralStats {
 async function fetchReferralStats(): Promise<ReferralStats> {
   try {
     const response = await axios.get('/api/refer-friend');
-    console.log('response',response);
+    console.log('response=',response);
 
     return response.data;
   } catch (error) {

@@ -5,7 +5,7 @@ interface CompletionBarProps {
 }
 
 const CompletionBar: React.FC<CompletionBarProps> = ({ percentage }) => (
-  <div className="relative w-3/4 mx-auto my-6">
+  <div className="relative w-full mx-auto my-6">
     <div className="bg-gray-200 h-6 rounded">
       <div
         className="bg-blue-600 h-6 rounded transition-all"

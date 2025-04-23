@@ -4,15 +4,15 @@ import {
   Instagram,
   Linkedin,
   Music,
-  XIcon,
   Youtube,
 } from "lucide-react";
 import Image from "next/image";
+import XIcon from "@/components/icons/XIcon";
 
 interface SocialHandles {
   linkedin?: string;
   instagram?: string;
-  twitter?: string;
+  x?: string;
   youtube?: string;
   facebook?: string;
   tiktok?: string;
@@ -43,7 +43,9 @@ interface ProfileDisplayProps {
 const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
   profileData,
   onEditClick,
-}) => (
+}) =>{
+  console.log('profileData',profileData)
+  return (
   <div className="space-y-6">
     <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
       <div className="w-full flex justify-between">
@@ -99,7 +101,9 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
     </div>
     <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
       <h2 className="text-2xl font-semibold mb-4">Social Handles</h2>
-      <div className="flex space-x-4">
+      <div className="flex space-x-4 p-4">
+          {profileData?.socialHandles ? (
+        <>
         {profileData?.socialHandles?.linkedin && (
           <a
             href={profileData.socialHandles.linkedin}
@@ -118,13 +122,13 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
             <Instagram className="w-6 h-6 text-pink-500" />
           </a>
         )}
-        {profileData?.socialHandles?.twitter && (
+        {profileData?.socialHandles?.x && (
           <a
-            href={profileData.socialHandles.twitter}
+            href={profileData.socialHandles.x}
             target="_blank"
             rel="noreferrer"
           >
-            <XIcon className="w-6 h-6 text-black" />
+            <XIcon className="w-6 h-6 text-black"/>
           </a>
         )}
         {profileData?.socialHandles?.youtube && (
@@ -153,8 +157,11 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
           >
             <Music className="w-6 h-6 text-blue-600" />
           </a>
-        )}
-      </div>
+          )}
+        </>
+      ) : (
+        <p>No social handles provided</p>
+      )}
     </div>
     <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
       <h2 className="text-2xl font-semibold mb-4">Spotlight Information</h2>
@@ -170,7 +177,7 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
         <div>
           <strong>Image to be displayed in Spotlight:</strong>
           <Image
-            src={profileData.featuredWorkImage}
+            src={profileData?.featuredWorkImage || ''}
             alt="Featured Work"
             width={200}
             height={200}
@@ -184,6 +191,8 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
       </p>
     </div>
   </div>
+  </div>
 );
+}
 
 export default ProfileDisplay;

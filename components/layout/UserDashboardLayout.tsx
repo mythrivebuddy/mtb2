@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import TopBar from "../dashboard/user/Topbar";
 import { useQuery } from "@tanstack/react-query";
@@ -31,16 +32,14 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="flex  p-7 overflow-auto w-full bg-dashboard">
+    <div className="flex min-h-screen w-full bg-dashboard">
       <Sidebar user={user} />
       {/* Main Content Area with TopBar */}
-      <div className="flex-1 flex overflow-hidden pl-7">
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <TopBar user={user} />
-          <main className="flex-1 overflow-auto bg-transparent">
-            {children}
-          </main>
-        </div>
+      <div className="flex-1 flex flex-col overflow-hidden lg:pl-7 pt-16 lg:pt-7 px-4 sm:px-6 lg:px-7">
+        <TopBar user={user} />
+        <main className="flex-1 overflow-auto bg-transparent">
+          {children}
+        </main>
       </div>
     </div>
   );

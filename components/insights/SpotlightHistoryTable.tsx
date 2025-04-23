@@ -4,6 +4,7 @@ import { format } from "date-fns";
 
 interface HistoryRecord {
   applicationDate: string;
+  activatedDate: string;
   views: number;
   clicks: number;
 }
@@ -25,6 +26,9 @@ const SpotlightHistoryTable = ({
               Application Date
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Activated Date
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
               Views
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -37,6 +41,9 @@ const SpotlightHistoryTable = ({
             <tr key={index}>
               <td className="px-6 py-4 whitespace-nowrap">
                 {format(new Date(record.applicationDate), "MMM dd, yyyy")}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                {format(new Date(record.activatedDate), "MMM dd, yyyy")}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">{record.views}</td>
               <td className="px-6 py-4 whitespace-nowrap">{record.clicks}</td>

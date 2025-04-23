@@ -2,6 +2,8 @@ import { checkRole } from "@/lib/utils/auth";
 import { ActivityType, ProsperityDropStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getJpToDeduct } from "@/lib/utils/jp";
+import { getProsperityAppliedNotificationData } from "@/lib/utils/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -34,23 +36,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const jpRequired = prosperityActivity.jpAmount;
-
     // Fetch user details
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
         prosperityDrops: {
-          where: {
-            status: { in: ["APPLIED", "IN_REVIEW", "APPROVED"] },
-          },
+          where: { status: { in: ["APPLIED", "IN_REVIEW", "APPROVED"] } },
         },
+        plan: true, // Include plan details for JP calculation
       },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    const jpRequired = getJpToDeduct(user, prosperityActivity);
 
     // Check if user has a pending application
     if (user.prosperityDrops.length > 0) {
@@ -64,6 +65,8 @@ export async function POST(request: Request) {
     if (user.jpBalance < jpRequired) {
       return NextResponse.json({ error: "Insufficient JP" }, { status: 400 });
     }
+
+    const notificationData = getProsperityAppliedNotificationData(userId);
 
     // Deduct JP and create transaction
     await prisma.$transaction([
@@ -79,6 +82,7 @@ export async function POST(request: Request) {
         data: {
           userId: userId,
           activityId: prosperityActivity.id,
+          jpAmount: jpRequired,
         },
       }),
       prisma.prosperityDrop.create({
@@ -89,6 +93,7 @@ export async function POST(request: Request) {
           status: ProsperityDropStatus.APPLIED,
         },
       }),
+      prisma.notification.create({ data: notificationData }),
     ]);
 
     return NextResponse.json(
@@ -120,14 +125,7 @@ export async function GET() {
         title: true,
         description: true,
         appliedAt: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
+        user: { select: { id: true, name: true, email: true, image: true } },
       },
     });
 

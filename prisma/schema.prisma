@@ -30,7 +30,8 @@ enum ActivityType {
   PROGRESS_VAULT
   REFER_BY
   REFER_TO
-  MAGIC_BOX
+  MAGIC_BOX_REWARD
+  MAGIC_BOX_SHARED_REWARD
   GENERAL_FEEDBACK
   FEATURE_REQUEST
   BUG_REPORT
@@ -62,46 +63,56 @@ enum SpotlightActivityType {
   CONNECT
 }
 
-
+enum NotificationType {
+  JP_EARNED
+  PROSPERITY_APPLIED
+  SPOTLIGHT_APPROVED
+  SPOTLIGHT_ACTIVE
+  MAGIC_BOX_SHARED
+}
 
 model User {
-  id                  String   @id @default(uuid())
-  email               String   @unique
-  password            String?
-  name                String
-  role                Role
-  image               String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  transaction         Transaction[]
-  jpEarned            Int      @default(0)
-  jpSpent             Int      @default(0)
-  jpBalance           Int      @default(0)
-  jpTransaction       Int      @default(0)
-  authMethod          AuthMethod @default(CREDENTIALS)
-  planId              String?
-  plan                Plan?    @relation(fields: [planId], references: [id])
-  planStart           DateTime?
-  planEnd             DateTime?
-  isBlocked           Boolean? @default(false)
-  spotlight           Spotlight[]
-  userBusinessProfile UserBusinessProfile[]
-  blockedUsers        BlockedUsers[]
-  miracleLog          MiracleLog[]
-  progressVault       ProgressVault[]
-  isEmailVerified     Boolean  @default(false)
+  id                            String                @id @default(uuid())
+  email                         String                @unique
+  password                      String?
+  name                          String
+  role                          Role
+  image                         String?
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
+  transaction                   Transaction[]
+  jpEarned                      Int                   @default(0)
+  jpSpent                       Int                   @default(0)
+  jpBalance                     Int                   @default(0)
+  jpTransaction                 Int                   @default(0)
+  authMethod                    AuthMethod            @default(CREDENTIALS)
+  planId                        String?
+  plan                          Plan?                 @relation(fields: [planId], references: [id])
+  planStart                     DateTime?
+  planEnd                       DateTime?
+  isBlocked                     Boolean?              @default(false)
+  spotlight                     Spotlight[]
+  userBusinessProfile           UserBusinessProfile[]
+  blockedUsers                  BlockedUsers[]
+  miracleLog                    MiracleLog[]
+  progressVault                 ProgressVault[]
+  isEmailVerified               Boolean               @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
   profileViews                  ProfileView[]
-  
-  referralCode  String?   @unique
-  referredById  String?
-  referredBy    User?     @relation("UserReferrer", fields: [referredById], references: [id])
-  referrals     User[]    @relation("UserReferrer")
 
-  // ✅ These 2 are required to fix your error:
-  referralsMade  Referral[] @relation("Referrer")
+  referralCode String? @unique
+  referredById String?
+  referredBy   User?   @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals    User[]  @relation("UserReferrer")
+
+  cart       Cart[]
+  orders     Order[]
+  wishlists  Wishlist[]
+  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+
+  referralsMade     Referral[] @relation("Referrer")
   referralsReceived Referral[] @relation("Referred")
 
   keyOfferings  String?
@@ -110,12 +121,11 @@ model User {
   website       String?
   socialHandles Json?
 
-  magicBoxes                    MagicBox[]
+  magicBoxes   MagicBox[]
+  Notification Notification[]
 
   @@index([name])
 }
-
-
 
 model Transaction {
   id         String   @id @default(uuid())
@@ -123,7 +133,7 @@ model Transaction {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity   Activity @relation(fields: [activityId], references: [id])
   activityId String
-  jpAmount   Int?
+  jpAmount   Int
   createdAt  DateTime @default(now())
 }
 
@@ -152,6 +162,7 @@ model Spotlight {
   expiresAt           DateTime?
   // jpUsed              Int
   appliedAt           DateTime            @default(now())
+  activatedAt         DateTime?
   status              SpotlightStatus     @default(APPLIED)
   // isActive            Boolean         @default(false) //TODO: instead of seprate isActive add it to status only -- DONE
   defaultDurationDays Int                 @default(1) // Default duration in days, can be changed by admin
@@ -280,17 +291,98 @@ model ProgressVault {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model Item {
+  id            String      @id @default(cuid())
+  name          String
+  imageUrl      String
+  basePrice     Float
+  monthlyPrice  Float?
+  yearlyPrice   Float?
+  lifetimePrice Float?
+  categoryId    String
+  category      Category    @relation(fields: [categoryId], references: [id])
+  orderItems    OrderItem[]
+  cart          Cart[]
+  wishlists     Wishlist[]
+  createdAt     DateTime    @default(now())
+  downloadUrl   String?
+  updatedAt     DateTime    @default(now()) @updatedAt
+
+  @@index([categoryId])
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  items     Item[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  items       OrderItem[]
+  totalAmount Float
+  status      String      @default("processing") //delivered, shipped, processing , cancelled
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  order           Order    @relation(fields: [orderId], references: [id])
+  itemId          String
+  item            Item     @relation(fields: [itemId], references: [id])
+  quantity        Int
+  priceAtPurchase Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([itemId])
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  createdAt DateTime @default(now())
+  item      Item     @relation(fields: [itemId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, itemId])
+}
+
+model Cart {
+  id            String   @id @default(cuid())
+  userId        String
+  itemId        String
+  quantity      Int      @default(1)
+  wasInWishlist Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id])
+  item          Item     @relation(fields: [itemId], references: [id])
+
+  @@unique([userId, itemId])
 }
 
 model Referral {
-  id            String   @id @default(cuid())
-  referrerId    String
-  referredId    String
-  createdAt     DateTime @default(now())
-  referrer      User     @relation("Referrer", fields: [referrerId], references: [id])
-  referred      User     @relation("Referred", fields: [referredId], references: [id])
+  id         String   @id @default(cuid())
+  referrerId String
+  referredId String
+  createdAt  DateTime @default(now())
+  referrer   User     @relation("Referrer", fields: [referrerId], references: [id])
+  referred   User     @relation("Referred", fields: [referredId], references: [id])
 
   @@unique([referrerId, referredId])
 }
@@ -327,12 +419,27 @@ model MagicBoxSettings {
 }
 
 model ProfileView {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  viewedAt  DateTime @default(now())
-  viewerId  String?  // Optional - track who viewed the profile
+  id       String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now())
+  viewerId String? // Optional - track who viewed the profile
 
   @@index([userId])
   @@index([viewedAt])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  metadata  Json? // Store additional data like JP amount, shared user info, etc.
+
+  @@index([userId])
+  @@index([createdAt])
 }

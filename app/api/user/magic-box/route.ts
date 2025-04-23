@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { ActivityType } from "@prisma/client";
+import {
+  getMagicBoxSharedNotificationData} from "@/lib/utils/notifications";
 
 // GET: Retrieve or create user's magic box for today
 export async function GET() {
@@ -11,20 +13,14 @@ export async function GET() {
 
     // Check if user already has a magic box for today
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
+    today.setHours(0, 0, 0); // Start of today
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
 
     // Find magic box created today
     const existingBox = await prisma.magicBox.findFirst({
-      where: {
-        userId,
-        createdAt: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
+      where: { userId, createdAt: { gte: today, lt: tomorrow } },
     });
 
     // If box exists, return it with appropriate details
@@ -36,16 +32,8 @@ export async function GET() {
         existingBox.randomUserIds.length > 0
       ) {
         const randomUsers = await prisma.user.findMany({
-          where: {
-            id: {
-              in: existingBox.randomUserIds as string[],
-            },
-          },
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+          where: { id: { in: existingBox.randomUserIds as string[] } },
+          select: { id: true, name: true, image: true },
         });
 
         return NextResponse.json(
@@ -88,11 +76,7 @@ export async function GET() {
 
     // Create a new magic box
     const newMagicBox = await prisma.magicBox.create({
-      data: {
-        userId,
-        nextBoxAt,
-        randomUserIds: [],
-      },
+      data: { userId, nextBoxAt, randomUserIds: [] },
     });
 
     return NextResponse.json(
@@ -125,10 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Find the magic box
     const magicBox = await prisma.magicBox.findUnique({
-      where: {
-        id: boxId,
-        userId,
-      },
+      where: { id: boxId, userId },
     });
 
     if (!magicBox) {
@@ -138,21 +119,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ? this conditoin will only run when some one intentiaolly tries to run this api when box is already opened else this condition will never run as box will not be open when this api will be called from frontend
     // If box is already opened
     if (magicBox.isOpened) {
       // If opened but not redeemed, return random users
       if (!magicBox.isRedeemed && magicBox.randomUserIds.length > 0) {
         const randomUsers = await prisma.user.findMany({
-          where: {
-            id: {
-              in: magicBox.randomUserIds as string[],
-            },
-          },
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+          where: { id: { in: magicBox.randomUserIds as string[] } },
+          select: { id: true, name: true, image: true },
         });
 
         return NextResponse.json(
@@ -168,20 +142,14 @@ export async function POST(request: NextRequest) {
 
       // If redeemed, just return with next box time
       return NextResponse.json(
-        {
-          message: "Magic box already redeemed",
-          magicBox,
-          status: "REDEEMED",
-        },
+        { message: "Magic box already redeemed", magicBox, status: "REDEEMED" },
         { status: 200 }
       );
     }
 
     // Get magic box settings
     const settings = await prisma.magicBoxSettings.findFirst({
-      orderBy: {
-        updatedAt: "desc",
-      },
+      orderBy: { updatedAt: "desc" },
     });
 
     // If no settings, use defaults
@@ -205,15 +173,12 @@ export async function POST(request: NextRequest) {
     // Generate random JP amount
     let jpAmount = Math.floor(Math.random() * (maxJp - minJp + 1) + minJp);
     // let jpAmount =
-      // Math.floor(Math.random() * ((maxJp - minJp + 1) / 2)) * 2 + minJp;
+    // Math.floor(Math.random() * ((maxJp - minJp + 1) / 2)) * 2 + minJp;
     if (jpAmount % 2 !== 0) jpAmount += 1;
-
 
     // Update the box as opened with JP amount and random users
     const updatedBox = await prisma.magicBox.update({
-      where: {
-        id: boxId,
-      },
+      where: { id: boxId },
       data: {
         isOpened: true,
         openedAt: new Date(),
@@ -253,10 +218,7 @@ export async function PUT(request: NextRequest) {
 
     // Find the magic box
     const magicBox = await prisma.magicBox.findUnique({
-      where: {
-        id: boxId,
-        userId,
-      },
+      where: { id: boxId, userId },
     });
 
     if (!magicBox) {
@@ -303,21 +265,28 @@ export async function PUT(request: NextRequest) {
     const userJpAmount = Math.floor(jpAmount / 2); // Half goes to user
     const sharedJpAmount = Math.floor(jpAmount / 2); // Half is shared
 
-    const activity = await prisma.activity.findUnique({
-      where: {
-        activity: ActivityType.MAGIC_BOX,
-      },
+    const magicBoxActivity = await prisma.activity.findUnique({
+      where: { activity: ActivityType.MAGIC_BOX_REWARD },
     });
+    console.log("magicBoxActivity", magicBoxActivity);
+    const magicBoxRewardActivity = await prisma.activity.findUnique({
+      where: { activity: ActivityType.MAGIC_BOX_SHARED_REWARD },
+    });
+    console.log("magicBoxRewardActivity", magicBoxRewardActivity);
+
+    // get data to give notificaiton to user who has recieve the th other half
+    const notificationData = getMagicBoxSharedNotificationData(
+      userId,
+      session?.user?.name || '',
+      selectedUserId,
+      sharedJpAmount
+    );
 
     const [updatedBox] = await prisma.$transaction([
       // Update magic box as redeemed
       prisma.magicBox.update({
         where: { id: boxId },
-        data: {
-          isRedeemed: true,
-          redeemedAt: new Date(),
-          selectedUserId,
-        },
+        data: { isRedeemed: true, redeemedAt: new Date(), selectedUserId },
       }),
       // Add JP to user's balance
       prisma.user.update({
@@ -338,18 +307,15 @@ export async function PUT(request: NextRequest) {
       // Create transaction records for both users
       prisma.transaction.createMany({
         data: [
-          {
-            userId,
-            activityId: activity!.id,
-            jpAmount: userJpAmount,
-          },
+          { userId, activityId: magicBoxActivity!.id, jpAmount: userJpAmount },
           {
             userId: selectedUserId,
-            activityId: activity!.id,
+            activityId: magicBoxRewardActivity!.id,
             jpAmount: sharedJpAmount,
           },
         ],
       }),
+      prisma.notification.create({ data: notificationData }),
     ]);
 
     return NextResponse.json(
@@ -357,10 +323,7 @@ export async function PUT(request: NextRequest) {
         message: "Magic box redeemed successfully",
         magicBox: updatedBox,
         jpEarned: userJpAmount,
-        shared: {
-          userId: selectedUserId,
-          jpAmount: sharedJpAmount,
-        },
+        shared: { userId: selectedUserId, jpAmount: sharedJpAmount },
         status: "REDEEMED",
       },
       { status: 200 }

@@ -112,7 +112,8 @@ export async function GET() {
     });
 
     const previousSpotlightHistory = previousSpotlights.map((s) => ({
-      applicationDate: s.appliedAt, // Format on the client if needed.
+      applicationDate: s.appliedAt,
+      activatedDate: s.activatedAt,
       views: s.activities.filter((a) => a.type === "VIEW").length,
       clicks: s.activities.filter((a) => a.type === "CONNECT").length,
     }));
