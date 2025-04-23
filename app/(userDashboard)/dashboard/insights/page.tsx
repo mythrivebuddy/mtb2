@@ -35,9 +35,11 @@ interface InsightsData {
       clicks: number;
     }[];
   };
+  profileViews: number;
 }
 
 // Summary Card Component (remains unchanged)
+
 
 const InsightsPage = () => {
   const { data, isLoading, error } = useQuery<InsightsData>({
@@ -85,6 +87,12 @@ const InsightsPage = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <SummaryCard title="Total Logins" value={totalLogins} icon={Users} />
+        <SummaryCard 
+          title="Total Profile Views" 
+          value={data.profileViews} 
+          icon={Eye}
+          tooltip="This represents the total number of times your profile has been viewed, including repeated views from the same users."
+        />
         {hasActiveSpotlight && (
           <>
             <SummaryCard
