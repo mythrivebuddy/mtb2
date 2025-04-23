@@ -1,9 +1,8 @@
 import { checkRole } from "@/lib/utils/auth";
-import {  SpotlightStatus } from "@prisma/client";
+import { SpotlightStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-
+import { createSpotlightApprovedNotification } from "@/lib/utils/notifications"; // <-- import notification util
 
 // Define valid status transitions
 const VALID_STATUS_TRANSITIONS: Record<SpotlightStatus, SpotlightStatus[]> = {
@@ -70,6 +69,13 @@ export async function PUT(
       where: { id },
       data: { status: newStatus },
     });
+
+    // Send notification if status changed to APPROVED
+    if (newStatus === SpotlightStatus.APPROVED) {
+      await createSpotlightApprovedNotification(spotlight.userId);
+    }
+
+    // send push notification to user
 
     return NextResponse.json(
       { message: `Spotlight status changed to ${newStatus} successfully` },
