@@ -27,6 +27,33 @@ export async function POST(req: Request) {
   }
 }
 
+// update faqs
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, question, answer } = body;
+
+    if (!id || !question || !answer) {
+      return NextResponse.json(
+        { message: 'ID, Question and Answer are required.' },
+        { status: 400 }
+      );
+    }
+
+    const updatedFaq = await prisma.faq.update({
+      where: { id },
+      data: { question, answer },
+    });
+
+    return NextResponse.json(updatedFaq, { status: 200 });
+  } catch (error) {
+    console.error('FAQ Update Error:', error);
+    return NextResponse.json({ message: 'Error updating FAQ' }, { status: 500 });
+  }
+}
+
+
+
 
 export async function DELETE(req:Request) {
   try {
@@ -64,5 +91,4 @@ export async function GET() {
       );
     }
 }
-
 
