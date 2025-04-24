@@ -33,9 +33,10 @@ export const columns: ColumnDef<LeaderboardUser>[] = [
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
-      <Link
-        href={`/dashboard/profile/${row.original.id}`}
+      <a
+        href={`/profile/${row.original.id}`}
         className="flex items-center gap-3 hover:underline hover:"
+        target="_blank"
       >
         {row.original.image ? (
           <img
@@ -50,7 +51,7 @@ export const columns: ColumnDef<LeaderboardUser>[] = [
           </div>
         )}
         {row.original.name}
-      </Link>
+      </a>
     ),
   },
   // {
