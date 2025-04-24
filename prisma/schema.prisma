@@ -124,6 +124,8 @@ model User {
   magicBoxes   MagicBox[]
   Notification Notification[]
 
+  alignedActions AlignedAction[]
+
   @@index([name])
 }
 
@@ -431,4 +433,23 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model AlignedAction {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood         String   // enum: sleep, goodToGo, motivated, highlyMotivated
+  tasks        String[] // Array of 3 task strings
+  selectedTask String   // The selected task from the tasks array
+  category     String   // enum: creative, nurturing, revenueGenerating, admin
+  timeFrom     DateTime
+  timeTo       DateTime
+  completed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  reminderSent Boolean  @default(false)
+
+  @@index([userId, createdAt])
+  @@index([timeFrom]) // Index for finding upcoming actions
 }

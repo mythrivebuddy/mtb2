@@ -3,6 +3,12 @@
     {
       "path": "/api/cron/spotlight",
       "schedule": "0 0 * * *"
+
+    },
+    {
+      "path": "/api/cron/aligned-action-reminder",
+      "schedule": "* * * * *"
     }
+
   ]
 }

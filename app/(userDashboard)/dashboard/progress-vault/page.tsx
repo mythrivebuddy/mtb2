@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Eye, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Eye, Loader2, Info } from "lucide-react";
 import {
   progressvaultSchema,
   type progressVaultFormType,
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/card";
 import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { startOfDay, endOfDay } from "date-fns";
 
 interface ProgressVault {
   id: string;
@@ -48,6 +49,7 @@ export default function ProgressVaultPage() {
   const [viewLog, setViewLog] = useState<ProgressVault | null>(null);
   const [deleteLog, setDeleteLog] = useState<ProgressVault | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [todayEntriesCount, setTodayEntriesCount] = useState(0);
 
   const queryClient = useQueryClient();
 
@@ -72,6 +74,22 @@ export default function ProgressVaultPage() {
     },
   });
 
+  // Count today's entries
+  useEffect(() => {
+    if (logs.length > 0) {
+      const today = new Date();
+      const startOfToday = startOfDay(today);
+      const endOfToday = endOfDay(today);
+      
+      const todayLogs = logs.filter((log: ProgressVault) => {
+        const logDate = new Date(log.createdAt);
+        return logDate >= startOfToday && logDate <= endOfToday;
+      });
+      
+      setTodayEntriesCount(todayLogs.length);
+    }
+  }, [logs]);
+
   const createMutation = useMutation({
     mutationFn: async (content: string) => {
       const res = await axios.post("/api/user/progress-vault", { content });
@@ -84,7 +102,12 @@ export default function ProgressVaultPage() {
       toast.success("Log created successfully");
     },
     onError: (error) => {
-      toast.error(getAxiosErrorMessage(error, "An error occurred"));
+      const errorMessage = getAxiosErrorMessage(error, "An error occurred");
+      if (errorMessage.includes("Daily limit of 3 entries reached")) {
+        toast.error("You've reached the daily limit of 3 entries. Please try again tomorrow.");
+      } else {
+        toast.error(errorMessage);
+      }
     },
   });
 
@@ -145,12 +168,27 @@ export default function ProgressVaultPage() {
           <CardDescription>Record your daily progress</CardDescription>
         </CardHeader>
         <CardContent>
+          {todayEntriesCount >= 3 ? (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 flex items-center">
+                <Info className="w-4 h-4 mr-2" />
+                You have reached the daily limit of 3 entries. You can add more entries tomorrow.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                You can add up to 3 entries per day ({todayEntriesCount}/3 used today)
+              </p>
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="relative">
               <Input
                 {...register("content")}
                 placeholder="Share your progress vault today (max 120 characters)"
-                disabled={isSubmitting || createMutation.isPending}
+                disabled={isSubmitting || createMutation.isPending || todayEntriesCount >= 3}
               />
               {errors.content && (
                 <p className="text-red-500 text-sm mt-1 absolute -bottom-6 left-0">
@@ -159,7 +197,10 @@ export default function ProgressVaultPage() {
               )}
             </div>
             <div className="flex gap-2 mt-8">
-              <Button type="submit" disabled={isSubmitting || createMutation.isPending}>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || createMutation.isPending || todayEntriesCount >= 3}
+              >
                 {createMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

@@ -88,6 +88,11 @@ async function main() {
       jpAmount: 150,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.ALIGNED_ACTION,
+      jpAmount: 50,
+      transactionType: TransactionType.CREDIT,
+    },
   ];
 
   for (const activity of activities) {

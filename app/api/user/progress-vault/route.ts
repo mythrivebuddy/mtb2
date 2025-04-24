@@ -56,7 +56,8 @@ export async function POST(req: Request) {
       where: {
         userId: session.user.id,
         createdAt: {
-          gte: today
+          gte: today,
+          lte: endOfDay
         },
         deletedAt: null // Only count non-deleted logs
       }
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
 
     if (activeLogsToday >= 3) {
       return NextResponse.json(
-        { message: "Daily limit of 3 active logs reached" },
+        { error: "Daily limit of 3 entries reached. You cannot add more entries today." },
         { status: 400 }
       );
     }
@@ -89,7 +90,8 @@ export async function POST(req: Request) {
           where: {
             userId: session.user.id,
             createdAt: {
-              gte: today
+              gte: today,
+              lte: endOfDay
             },
             jpPointsAssigned: true,
           },
@@ -116,7 +118,7 @@ export async function POST(req: Request) {
           console.log("Daily JP limit reached, but log was created");
           return NextResponse.json({
             log,
-            warning: "Progress Vaultcreated, but you've reached the daily JP limit of 150",
+            warning: "Progress Vault created, but you've reached the daily JP limit of 150",
           });
         } else {
           // For other errors, rethrow
