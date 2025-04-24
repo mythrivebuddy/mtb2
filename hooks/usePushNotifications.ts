@@ -25,7 +25,9 @@ export default function usePushNotifications() {
     }
 
     // Check if service workers and push messaging are supported
+    console.log("navigator", navigator); //?dev
     if ("serviceWorker" in navigator && "PushManager" in window) {
+
       setIsPushSupported(true);
 
       // Register service worker
@@ -90,9 +92,7 @@ export default function usePushNotifications() {
       });
 
       setIsSubscribed(true);
-      toast.success("Notifications enabled", {
-        description: "You will now receive push notifications",
-      });
+      toast.success("Push Notifications enabled");
     } catch (err: any) {
       console.error("Failed to subscribe to push notifications:", err);
       toast.error("Failed to enable notifications", {

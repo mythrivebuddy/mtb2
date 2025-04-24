@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get subscription data from request body
-    const { subscription, userAgent } = await request.json();
+    const { subscription } = await request.json();
 
     // Validate subscription data
     if (!subscription || !subscription.endpoint || !subscription.keys) {

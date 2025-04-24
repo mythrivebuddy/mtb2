@@ -6,6 +6,7 @@ self.addEventListener("push", function (event) {
 
   // Extract notification details
   const { title, ...options } = data.notification;
+  console.log("here in the worker setup");
 
   // Show the notification to the user
   const promiseChain = self.registration.showNotification(title, options);

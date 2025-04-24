@@ -70,6 +70,7 @@ enum NotificationType {
   SPOTLIGHT_APPLIED
   SPOTLIGHT_ACTIVE
   MAGIC_BOX_SHARED
+  PROSPERITY_APPROVED
 }
 
 model User {

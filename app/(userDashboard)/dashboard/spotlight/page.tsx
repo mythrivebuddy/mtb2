@@ -12,8 +12,6 @@ import { Prisma } from "@prisma/client";
 import axios from "axios";
 import ConfirmAction from "@/components/ConfirmAction";
 import { toast } from "sonner";
-import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
-import { BellIcon } from "lucide-react";
 
 export default function SpotlightPage() {
   const [isChecked, setIsChecked] = useState(false);
@@ -81,31 +79,12 @@ export default function SpotlightPage() {
     return null;
   };
 
-  // Check if user's spotlight is approved or active
-  const isApprovedOrActive = spotlights?.some(
-    (spotlight) =>
-      spotlight.status === "APPROVED" || spotlight.status === "ACTIVE"
-  );
-
   return (
     <div className="container mx-auto px-0 py-8">
       {/* <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1> */}
 
       <Card className="p-6 mb-8">
-        <div className="flex justify-between items-start">
-          <h2 className="text-2xl font-semibold mb-6">What is Spotlight?</h2>
-
-          {/* Show push notification toggle when status is APPROVED or ACTIVE */}
-          {isApprovedOrActive && (
-            <div className="flex items-center bg-blue-50 p-2 rounded">
-              <BellIcon className="h-4 w-4 mr-2 text-blue-500" />
-              <PushNotificationToggle
-                label="Get spotlight updates"
-                variant="default"
-              />
-            </div>
-          )}
-        </div>
+        <h2 className="text-2xl font-semibold mb-6">What is Spotlight?</h2>
 
         <p className="text-gray-600 mb-6">
           Spotlight is a premium feature that puts your business profile in
