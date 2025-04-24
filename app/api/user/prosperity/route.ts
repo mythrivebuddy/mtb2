@@ -3,6 +3,7 @@ import { ActivityType, ProsperityDropStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getJpToDeduct } from "@/lib/utils/jp";
+import { getProsperityAppliedNotificationData } from "@/lib/utils/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -40,9 +41,7 @@ export async function POST(request: Request) {
       where: { id: userId },
       include: {
         prosperityDrops: {
-          where: {
-            status: { in: ["APPLIED", "IN_REVIEW", "APPROVED"] },
-          },
+          where: { status: { in: ["APPLIED", "IN_REVIEW", "APPROVED"] } },
         },
         plan: true, // Include plan details for JP calculation
       },
@@ -66,6 +65,8 @@ export async function POST(request: Request) {
     if (user.jpBalance < jpRequired) {
       return NextResponse.json({ error: "Insufficient JP" }, { status: 400 });
     }
+
+    const notificationData = getProsperityAppliedNotificationData(userId);
 
     // Deduct JP and create transaction
     await prisma.$transaction([
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
           status: ProsperityDropStatus.APPLIED,
         },
       }),
+      prisma.notification.create({ data: notificationData }),
     ]);
 
     return NextResponse.json(
@@ -123,14 +125,7 @@ export async function GET() {
         title: true,
         description: true,
         appliedAt: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
+        user: { select: { id: true, name: true, email: true, image: true } },
       },
     });
 

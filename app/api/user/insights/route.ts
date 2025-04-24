@@ -16,6 +16,12 @@ export async function GET() {
       "You are not authorized for this action"
     );
 
+    const profileViews = await prisma.profileView.count({
+      where: {
+        userId: session.user.id,
+      },
+    });
+
     // LOGIN ACTIVITY (Past 30 Days)
     const thirtyDaysAgo = subDays(new Date(), 30);
     const loginActivity = await prisma.transaction.findMany({
@@ -119,6 +125,7 @@ export async function GET() {
         hourlyMetrics: hourlyMetrics,
         history: previousSpotlightHistory,
       },
+      profileViews,
     });
   } catch (error) {
     console.error("Error fetching insights:", error);

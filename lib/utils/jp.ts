@@ -2,14 +2,11 @@
 
 import { Activity, ActivityType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { createJPEarnedNotification } from "./notifications";
 
 type UserWithPlan = Prisma.UserGetPayload<{
-  include: {
-    plan: true;
-  };
-  omit: {
-    password: true;
-  };
+  include: { plan: true };
+  omit: { password: true };
 }>;
 
 export function isPlanActive(user: UserWithPlan) {
@@ -46,6 +43,7 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
         },
       },
     });
+     createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
   } catch (error) {
     console.error(error);
     throw error;

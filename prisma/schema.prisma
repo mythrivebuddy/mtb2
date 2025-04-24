@@ -101,16 +101,17 @@ model User {
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
-
-  cart       Cart[]
-  orders     Order[]
-  wishlists  Wishlist[]
-  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+  profileViews                  ProfileView[]
 
   referralCode String? @unique
   referredById String?
   referredBy   User?   @relation("UserReferrer", fields: [referredById], references: [id])
   referrals    User[]  @relation("UserReferrer")
+
+  cart       Cart[]
+  orders     Order[]
+  wishlists  Wishlist[]
+  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
 
   referralsMade     Referral[] @relation("Referrer")
   referralsReceived Referral[] @relation("Referred")
@@ -418,6 +419,17 @@ model MagicBoxSettings {
   minJpAmount Int      @default(100) // Minimum JP amount for a magic box
   maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
   updatedAt   DateTime @updatedAt
+}
+
+model ProfileView {
+  id       String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now())
+  viewerId String? // Optional - track who viewed the profile
+
+  @@index([userId])
+  @@index([viewedAt])
 }
 
 model Notification {

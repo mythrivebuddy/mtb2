@@ -17,7 +17,15 @@ import Link from "next/link";
 import { Gift } from "lucide-react";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
-import type { Notification as PrismaNotification } from "@prisma/client";
+// import type { Notification as PrismaNotification } from "@prisma/client";
+import { formatJP } from "@/lib/utils/formatJP";
+
+// Add this function at the top or import from a utils file
+// function formatJP(value: number): string {
+//   if (value >= 1_000_000) return Math.floor(value / 1_000_000) + "M";
+//   if (value >= 1_000) return Math.floor(value / 1_000) + "K";
+//   return value.toString();
+// }
 
 const TopBarBadge = ({
   children,
@@ -74,14 +82,14 @@ export default function TopBar({ user }: { user?: UserType }) {
     staleTime: 1000 * 60 * 2,
   });
 
-  // Add this query after the other queries
+  // Replace the unread notifications count query to use the unread API
   const { data: unreadNotificationsCount } = useQuery<number>({
     queryKey: ["unreadNotificationsCount"],
     queryFn: async () => {
-      const { data } = await axios.get<PrismaNotification[]>(
-        "/api/user/notifications"
+      const { data } = await axios.get<{ unreadCount: number }>(
+        "/api/user/notifications/unread"
       );
-      return data.filter((n) => !n.isRead).length;
+      return data.unreadCount;
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60, // 1 minute
@@ -145,7 +153,7 @@ export default function TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
 
-        <div className="flex gap-3 sm:gap-6 flex-wrap">
+        <div className="flex gap-3 sm:gap-6">
           <TopBarBadge>
             <Image
               src="/Pearls.png"
@@ -156,7 +164,7 @@ export default function TopBar({ user }: { user?: UserType }) {
             />
             <span className="font-medium text-sm sm:text-base">JP</span>
             <span className="font-bold text-blue-500 ml-1 text-sm sm:text-base">
-              {user?.jpBalance || 0}
+              {formatJP(user?.jpBalance || 0)}
             </span>
           </TopBarBadge>
 
@@ -189,7 +197,9 @@ export default function TopBar({ user }: { user?: UserType }) {
           <div className="h-8 w-8 sm:h-10 sm:w-10 aspect-square cursor-pointer">
             <div className="rounded-md bg-white border border-[#4B65A2] flex items-center justify-center w-full h-full uppercase">
               {user?.name ? (
-                <h2 className="text-lg sm:text-2xl">{getInitials(user.name)}</h2>
+                <h2 className="text-lg sm:text-2xl">
+                  {getInitials(user.name)}
+                </h2>
               ) : (
                 <UserRound size={20} />
               )}
