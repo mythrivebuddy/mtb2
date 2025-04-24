@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
 import { createSpotlightActiveNotification } from "./notifications";
+import { sendPushNotificationToUser } from "./pushNotifications"; // Add this import
 
 const SPOTLIGHT_EXPIREY_MS = 24 * 60 * 60 * 1000;
 // const SPOTLIGHT_EXPIREY_MS = 60 * 1000; //for dev seted to 1 min
@@ -32,8 +33,18 @@ export async function activateNextSpotlight() {
       },
     });
 
-    // create notification for user that spotlight is active
-    await createSpotlightActiveNotification(nextSpotlight.userId);
+    // Send both in-app and push notifications
+    await Promise.all([
+      // In-app notification
+      createSpotlightActiveNotification(nextSpotlight.userId),
+      // Push notification
+      sendPushNotificationToUser(
+        nextSpotlight.userId,
+        "Spotlight Active",
+        "Your spotlight is now active and visible to other users!",
+        { url: "/dashboard" }
+      ),
+    ]);
 
     const user = await prisma.user.findUnique({
       where: { id: nextSpotlight.userId },

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getJpToDeduct } from "@/lib/utils/jp";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
-import { getSpotlightApprovedNotificationData } from "@/lib/utils/notifications";
+import { getSpotlightAppliedNotificationData } from "@/lib/utils/notifications";
 
 //! add check for profile completion
 
@@ -115,7 +115,7 @@ export async function POST() {
     } else {
       estimatedActivationDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
     }
-  const notificationData =  getSpotlightApprovedNotificationData( userId);
+    const notificationData = getSpotlightAppliedNotificationData(userId);
 
     // Deduct JP and create transaction
     await prisma.$transaction([
