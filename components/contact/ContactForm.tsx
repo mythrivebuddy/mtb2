@@ -107,6 +107,7 @@ export default function ContactForm() {
             id="name"
             placeholder="Your Name"
             {...register("name")}
+            value={session?.user?.name || ""}
             className={`h-12 ${errors.name ? "border-red-500" : ""}`}
           />
           {errors.name && (
@@ -126,6 +127,7 @@ export default function ContactForm() {
             type="email"
             placeholder="Email Address"
             {...register("email")}
+            value={session?.user?.email || ""}
             className={`h-12 ${errors.email ? "border-red-500" : ""}`}
           />
           {errors.email && (

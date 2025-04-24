@@ -14,13 +14,15 @@ import {
   Phone,
   LogOut,
   UserRound,
-  Vault,
   Gift,
   Sparkles,
   History,
   ShoppingCartIcon,
   UserPlus,
   Menu,
+  WandSparklesIcon,
+  LucideSignalHigh,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -168,13 +170,18 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 />
                 <NavItem
                   href="/dashboard/miracle-log"
-                  icon={<Sparkles size={20} />}
+                  icon={<WandSparklesIcon size={20} />}
                   label="Miracle Log"
                 />
                 <NavItem
                   href="/dashboard/progress-vault"
-                  icon={<Vault size={20} />}
-                  label="1%Progress Vault"
+                  icon={<LucideSignalHigh size={20} />}
+                  label="1% Progress Vault"
+                />
+                <NavItem
+                  href="/dashboard/aligned-actions"
+                  icon={<TrendingUp size={20} />}
+                  label="1% Start"
                 />
                 <NavItem
                   href="/dashboard/prosperity"
