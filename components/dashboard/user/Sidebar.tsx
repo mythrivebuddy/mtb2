@@ -28,36 +28,52 @@ import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { signOut } from "next-auth/react";
+import ConfirmAction from "@/components/ConfirmAction";
+import { getInitials } from "@/utils/getInitials";
 
 // Reusable navigation item component
 type NavItemProps = {
-  href: string;
+  href?: string;
   icon: React.ReactNode;
   label: string;
   badge?: string | number;
 };
-
 const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
+  const content = (
+    <>
+      <div className="w-8">{icon}</div>
+      <span className="font-normal text-lg">{label}</span>
+      {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
+    </>
+  );
+
   return (
     <li>
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center py-2",
-          isActive ? "text-jp-orange" : "text-[#6C7894]"
-        )}
-      >
-        <div className="w-8">{icon}</div>
-        <span className="font-normal text-lg">{label}</span>
-        {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
-      </Link>
+      {href ? (
+        <Link
+          href={href}
+          className={cn(
+            "flex items-center py-2",
+            isActive ? "text-jp-orange" : "text-[#6C7894]"
+          )}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div
+          className={cn(
+            "flex items-center py-2 cursor-pointer hover:text-jp-orange text-[#6C7894]"
+          )}
+        >
+          {content}
+        </div>
+      )}
     </li>
   );
 };
-
 // Main navigation section component
 type NavSectionProps = {
   title: string;
@@ -128,7 +144,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               <div className="h-12 w-12 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
                 {user?.name ? (
                   <h2 className="text-xl text-white">
-                    {user.name.slice(0, 2).toUpperCase()}
+                    {getInitials(user.name)}
                   </h2>
                 ) : (
                   <UserRound size={24} />
@@ -148,10 +164,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
+                <NavItem href="/" icon={<Home size={20} />} label="Home" />
                 <NavItem
                   href="/dashboard"
-                  icon={<Home size={20} />}
-                  label="Home"
+                  icon={<LayoutList size={20} />}
+                  label="Dashboard"
                 />
                 <NavItem
                   href="/dashboard/insights"
@@ -212,6 +229,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<ShoppingCartIcon size={20} />}
                   label="Store"
                 />
+                {/* <NavItem
+                  href="/dashboard/magic-box"
+                  icon={<Wand2 size={20} />}
+                  label="Magic Box"
+                /> */}
               </NavSection>
 
               {/* Settings Section */}
@@ -236,9 +258,16 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<UserPlus size={20} />}
                   label="Refer a friend"
                 />
-                <button onClick={() => signOut()}>
-                  <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
-                </button>
+                <ConfirmAction
+                  action={() => signOut()}
+                  title="Confirm Logout"
+                  description="Are you sure you want to logout? You will need to sign in again to access your account."
+                  confirmText="Logout"
+                >
+                  <button>
+                    <NavItem icon={<LogOut size={20} />} label="Logout" />
+                  </button>
+                </ConfirmAction>
               </NavSection>
             </div>
           </div>
