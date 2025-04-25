@@ -23,13 +23,13 @@ import {
   WandSparklesIcon,
   LucideSignalHigh,
   TrendingUp,
-  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { signOut } from "next-auth/react";
 import ConfirmAction from "@/components/ConfirmAction";
+import { getInitials } from "@/utils/getInitials";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -144,7 +144,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               <div className="h-12 w-12 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
                 {user?.name ? (
                   <h2 className="text-xl text-white">
-                    {user.name.slice(0, 2).toUpperCase()}
+                    {getInitials(user.name)}
                   </h2>
                 ) : (
                   <UserRound size={24} />
