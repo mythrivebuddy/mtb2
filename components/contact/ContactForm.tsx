@@ -7,13 +7,21 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  GoogleReCaptchaProvider,
-  useGoogleReCaptcha,
-} from "react-google-recaptcha-v3";
 import { toast } from "sonner";
 import axios from "axios";
 import { useSession } from "next-auth/react";
+
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (cb: () => void) => Promise<void>;
+      execute: (
+        siteKey: string,
+        options: { action: string }
+      ) => Promise<string>;
+    };
+  }
+}
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -26,7 +34,6 @@ type FormData = z.infer<typeof schema>;
 
 function ContactFormContent() {
   const [isLoading, setIsLoading] = useState(false);
-  const { executeRecaptcha } = useGoogleReCaptcha();
   const { data: session } = useSession();
 
   const {
@@ -49,19 +56,41 @@ function ContactFormContent() {
     }
   }, [session, setValue]);
 
-  const onSubmit: SubmitHandler<FormData> = async (formData) => {
-    if (!executeRecaptcha) {
-      toast.error("ReCAPTCHA not initialized");
-      return;
-    }
+  useEffect(() => {
+    const loadRecaptcha = async () => {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+      document.head.appendChild(script);
+    };
+    loadRecaptcha();
+  }, []);
 
+  const executeRecaptcha = async () => {
+    try {
+      await window.grecaptcha.ready(() => {});
+      return await window.grecaptcha.execute(
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string,
+        { action: "contact_submit" }
+      );
+    } catch (error) {
+      console.error("reCAPTCHA error:", error);
+      return null;
+    }
+  };
+
+  const onSubmit: SubmitHandler<FormData> = async (formData) => {
     setIsLoading(true);
     try {
-      const captchaToken = await executeRecaptcha("contact_form");
+      const token = await executeRecaptcha();
+      console.log("reCAPTCHA token:", token); //?dev
+      if (!token) {
+        toast.error("Failed to verify reCAPTCHA");
+        return;
+      }
 
       const response = await axios.post("/api/contactus", {
         formData,
-        captchaToken,
+        captchaToken: token,
       });
 
       toast.success(response.data.message);
@@ -227,16 +256,5 @@ function ContactFormContent() {
 }
 
 export default function ContactForm() {
-  return (
-    <GoogleReCaptchaProvider
-      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
-      scriptProps={{
-        async: false,
-        defer: false,
-        appendTo: "head",
-      }}
-    >
-      <ContactFormContent />
-    </GoogleReCaptchaProvider>
-  );
+  return <ContactFormContent />;
 }
