@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import ReCAPTCHA from "react-google-recaptcha";
+import {
+  GoogleReCaptchaProvider,
+  useGoogleReCaptcha,
+} from "react-google-recaptcha-v3";
 import { toast } from "sonner";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -21,32 +24,41 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function ContactForm() {
+function ContactFormContent() {
   const [isLoading, setIsLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
   const { data: session } = useSession();
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      subject: "general",
+    },
   });
 
-  const handleCaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
-  };
+  useEffect(() => {
+    if (session?.user) {
+      setValue("name", session.user.name || "");
+      setValue("email", session.user.email || "");
+    }
+  }, [session, setValue]);
 
   const onSubmit: SubmitHandler<FormData> = async (formData) => {
-    if (!captchaToken) {
-      toast.error("Please complete the captcha verification");
+    if (!executeRecaptcha) {
+      toast.error("ReCAPTCHA not initialized");
       return;
     }
 
     setIsLoading(true);
     try {
+      const captchaToken = await executeRecaptcha("contact_form");
+
       const response = await axios.post("/api/contactus", {
         formData,
         captchaToken,
@@ -54,7 +66,6 @@ export default function ContactForm() {
 
       toast.success(response.data.message);
       reset();
-      setCaptchaToken(null);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(
@@ -107,7 +118,6 @@ export default function ContactForm() {
             id="name"
             placeholder="Your Name"
             {...register("name")}
-            value={session?.user?.name || ""}
             className={`h-12 ${errors.name ? "border-red-500" : ""}`}
           />
           {errors.name && (
@@ -127,7 +137,6 @@ export default function ContactForm() {
             type="email"
             placeholder="Email Address"
             {...register("email")}
-            value={session?.user?.email || ""}
             className={`h-12 ${errors.email ? "border-red-500" : ""}`}
           />
           {errors.email && (
@@ -205,21 +214,29 @@ export default function ContactForm() {
           )}
         </div>
 
-        <div className="flex justify-start">
-          <ReCAPTCHA
-            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
-            onChange={handleCaptchaChange}
-          />
-        </div>
-
         <Button
           type="submit"
-          className="w-full h-12 text-[16px] "
-          disabled={isLoading || !captchaToken}
+          className="w-full h-12 text-[16px]"
+          disabled={isLoading}
         >
           {isLoading ? "Sending..." : "Send Message"}
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function ContactForm() {
+  return (
+    <GoogleReCaptchaProvider
+      reCaptchaKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
+      scriptProps={{
+        async: false,
+        defer: false,
+        appendTo: "head",
+      }}
+    >
+      <ContactFormContent />
+    </GoogleReCaptchaProvider>
   );
 }
