@@ -60,9 +60,24 @@ function ContactFormContent() {
     const loadRecaptcha = async () => {
       const script = document.createElement("script");
       script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+      script.id = "recaptcha-script";
       document.head.appendChild(script);
     };
     loadRecaptcha();
+
+    return () => {
+      // Remove script tag
+      const script = document.getElementById("recaptcha-script");
+      if (script) {
+        document.head.removeChild(script);
+      }
+
+      // Remove badge
+      const badges = document.getElementsByClassName("grecaptcha-badge");
+      while (badges.length > 0) {
+        badges[0].remove();
+      }
+    };
   }, []);
 
   const executeRecaptcha = async () => {

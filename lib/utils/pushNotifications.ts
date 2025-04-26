@@ -90,6 +90,7 @@ export async function sendPushNotificationToUser(
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { userId },
     });
+    console.log("Subscriptions found:", subscriptions);
 
     // If user has no subscriptions, return early
     if (subscriptions.length === 0) {
@@ -123,7 +124,11 @@ export async function sendPushNotificationToUser(
           );
         } catch (error) {
           // If subscription is invalid/expired, remove it from database
-          if (error instanceof Error && error.message === "Subscription expired") {
+          console.log("error from catch", error);
+          if (
+            error instanceof Error &&
+            error.message === "Subscription expired"
+          ) {
             await prisma.pushSubscription.delete({
               where: { endpoint: subscription.endpoint },
             });
