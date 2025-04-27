@@ -32,6 +32,8 @@ enum ActivityType {
   GENERAL_FEEDBACK
   FEATURE_REQUEST
   BUG_REPORT
+  BUDDY_LENS_REQUEST
+  BUDDY_LENS_REVIEW
 }
 
 enum TransactionType {
@@ -60,6 +62,20 @@ enum SpotlightActivityType {
   CONNECT
 }
 
+enum BuddyLensRequestStatus {
+  OPEN
+  CLAIMED
+  COMPLETED
+  CANCELLED
+  PENDING
+}
+
+enum BuddyLensReviewStatus {
+  DRAFT
+  SUBMITTED
+  REPORTED
+}
+
 model User {
   id                            String                @id @default(uuid())
   email                         String                @unique
@@ -74,11 +90,11 @@ model User {
   jpSpent                       Int                   @default(0)
   jpBalance                     Int                   @default(0)
   jpTransaction                 Int                   @default(0)
-  authMethod                    AuthMethod            @default(CREDENTIALS) // Default to credentials
+  authMethod                    AuthMethod            @default(CREDENTIALS)
   planId                        String?
   plan                          Plan?                 @relation(fields: [planId], references: [id])
-  planStart                     DateTime? // When the user subscribed
-  planEnd                       DateTime? // When the plan expires
+  planStart                     DateTime?
+  planEnd                       DateTime?
   isBlocked                     Boolean?              @default(false)
   spotlight                     Spotlight[]
   userBusinessProfile           UserBusinessProfile[]
@@ -90,18 +106,25 @@ model User {
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
   magicBoxes                    MagicBox[]
+  buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
+  buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
+  BuddyLensReview               BuddyLensReview[]
+  userNotifications             UserNotification[]    @relation("UserNotifications")
+  pendingReviews                BuddyLensRequest[]    @relation("PendingReviewer")
 
   @@index([name])
 }
 
 model Transaction {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity   Activity @relation(fields: [activityId], references: [id])
-  activityId String
-  jpAmount   Int?
-  createdAt  DateTime @default(now())
+  id                 String            @id @default(uuid())
+  userId             String
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity           Activity          @relation(fields: [activityId], references: [id])
+  activityId         String
+  jpAmount           Int?
+  createdAt          DateTime          @default(now())
+  buddyLensRequest   BuddyLensRequest? @relation(fields: [buddyLensRequestId], references: [id])
+  buddyLensRequestId String?           @unique
 }
 
 model Activity {
@@ -257,8 +280,8 @@ model ProgressVault {
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime? // Soft delete field
   userId           String
-  jpPointsAssigned Boolean  @default(false) // Track if JP points were assigned
-  user             User     @relation(fields: [userId], references: [id])
+  jpPointsAssigned Boolean   @default(false) // Track if JP points were assigned
+  user             User      @relation(fields: [userId], references: [id])
 }
 
 model MagicBox {
@@ -290,4 +313,58 @@ model MagicBoxSettings {
   minJpAmount Int      @default(100) // Minimum JP amount for a magic box
   maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
   updatedAt   DateTime @updatedAt
+}
+
+model BuddyLensRequest {
+  id                String                 @id @default(uuid())
+  requesterId       String
+  requester         User                   @relation("BuddyLensRequests", fields: [requesterId], references: [id])
+  reviewerId        String?
+  pendingReviewerId String?
+  reviewer          User?                  @relation("BuddyLensReviews", fields: [reviewerId], references: [id])
+  socialMediaUrl    String
+  tier              String                 @default("5min")
+  questions         String[]
+  jpCost            Int
+  domain            String
+  status            BuddyLensRequestStatus @default(OPEN)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  expiresAt         DateTime               @default(now())
+  completedAt       DateTime?
+  review            BuddyLensReview?
+  transaction       Transaction?
+  isDeleted         Boolean                @default(false)
+  pendingReviewer   User?                  @relation("PendingReviewer", fields: [pendingReviewerId], references: [id])
+
+  @@index([requesterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model BuddyLensReview {
+  id          String                @id @default(uuid())
+  reviewerId  String
+  requestId   String                @unique
+  request     BuddyLensRequest      @relation(fields: [requestId], references: [id])
+  reviewer    User                  @relation(fields: [reviewerId], references: [id])
+  answers     String[]
+  reviewText  String
+  status      BuddyLensReviewStatus @default(DRAFT)
+  rating      Int?
+  feedback    String?
+  submittedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+model UserNotification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  link      String?
+  user      User     @relation(name: "UserNotifications", fields: [userId], references: [id])
 }

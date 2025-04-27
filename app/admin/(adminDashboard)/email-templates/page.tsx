@@ -22,7 +22,7 @@ interface EmailTemplate {
 }
 
 const fetchTemplates = async (): Promise<EmailTemplate[]> => {
-  const response = await fetch("/api/admin/email-templates");
+  const response = await fetch(`/api/admin/email-templates`);
   if (!response.ok) {
     throw new Error("Failed to fetch templates");
   }

@@ -7,6 +7,7 @@ import { assignJp } from "@/lib/utils/jp";
 import { sign } from "jsonwebtoken";
 import axios from "axios";
 import { renderEmailTemplate } from "@/utils/email-template";
+// import { CloudCog } from "lucide-react";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,18 +57,25 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
       "api-key": brevoApiKey,
     };
-
+    
     const template = await prisma.emailTemplate.findUnique({
       where: {
         templateId: "verification-mail",
       },
     });
-
-    const emailContent = renderEmailTemplate(template?.htmlContent, {
+    
+    if (!template || !template.subject || !template.htmlContent) {
+      return NextResponse.json(
+        { error: "Missing email template content" },
+        { status: 400 }
+      );
+    }
+    
+    const emailContent = renderEmailTemplate(template.htmlContent, {
       username: name,
       verificationUrl,
     });
-
+    
     const emailVerificationPayload = {
       sender: { email: senderEmail },
       to: [{ email, name }],
@@ -76,6 +84,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Send the email
+    console.log("emailVerificationPayload", emailVerificationPayload);
     await axios.post(brevoApiUrl, emailVerificationPayload, { headers });
 
     const user = await prisma.user.create({

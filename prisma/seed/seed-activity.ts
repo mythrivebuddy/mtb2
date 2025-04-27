@@ -72,7 +72,12 @@ async function main() {
       activity: ActivityType.BUG_REPORT,
       jpAmount: 150,
       transactionType: TransactionType.CREDIT,
-    }
+    },
+    {
+      activity: ActivityType.BUDDY_LENS_REQUEST,
+      jpAmount: 500,
+      transactionType: TransactionType.DEBIT,
+    },
     
   ];
 

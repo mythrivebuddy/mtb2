@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Home,
@@ -16,7 +16,11 @@ import {
   UserRound,
   Vault,
   Gift,
-  Sparkles
+  Sparkles,
+  Eye,
+  ChevronDown,
+  ScanEye,
+  FileUser
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -29,7 +33,6 @@ type NavItemProps = {
   icon: React.ReactNode;
   label: string;
   badge?: string | number;
-  // active?: boolean;
 };
 
 const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
@@ -71,11 +74,13 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
+  const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
+
   return (
-    <aside className="w-64 bg-white shadow-lg rounded-3xl  overflow-hidden">
+    <aside className="w-64 bg-white shadow-lg rounded-3xl overflow-hidden">
       {/* User Profile Section */}
       <div className="flex flex-col my-8 pl-5">
-        <div className=" flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <div className="h-14 w-14 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
             {user?.name ? (
               <h2 className="text-2xl text-white">
@@ -100,74 +105,49 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* Menu Section */}
           <NavSection title="Menu">
             <NavItem href="/dashboard" icon={<Home size={20} />} label="Home" />
+            <NavItem href="/dashboard/insights" icon={<BarChart2 size={20} />} label="Insights" />
+            <NavItem href="/dashboard/subscription" icon={<CreditCard size={20} />} label="Subscription" />
+            <NavItem href="/dashboard/leaderboard" icon={<LayoutList size={20} />} label="Leaderboard" />
+            <NavItem href="/dashboard/miracle-log" icon={<Sparkles size={20} />} label="Miracle Log" />
+            <NavItem href="/dashboard/progress-vault" icon={<Vault size={20} />} label="1%Progress Vault" />
 
-            <NavItem
-              href="/dashboard/insights"
-              icon={<BarChart2 size={20} />}
-              label="Insights"
-            />
+            {/* BuddyLens dropdown */}
+            <div className="space-y-1">
+              <button
+                onClick={() => setIsBuddyLensOpen(!isBuddyLensOpen)}
+                className="flex items-center justify-between w-full py-2 text-sm font-medium rounded-md hover:bg-muted"
+              >
+                <span className="flex items-center gap-1 text-[#6C7894]">
+                  <Eye size={20} />
+                  <span className="text-xl"><Link href={"/dashboard/buddy-lens"}>Buddy Lens</Link></span>
+                </span>
+                <ChevronDown
+                  size={21}
+                  className={`transition-transform ${isBuddyLensOpen ? "rotate-180" : ""}`}
+                />
+              </button>
 
-            <NavItem
-              href="/dashboard/subscription"
-              icon={<CreditCard size={20} />}
-              label="Subscription"
-            />
-            <NavItem
-              href="/dashboard/leaderboard"
-              icon={<LayoutList size={20} />}
-              label="Leaderboard"
-            />
-            <NavItem
-              href="/dashboard/miracle-log"
-              icon={<Sparkles size={20} />}
-              label="Miracle Log"
-            />
-            <NavItem
-              href="/dashboard/progress-vault"
-              icon={<Vault size={20} />}
-              label="1%Progress Vault" />
+              {isBuddyLensOpen && (
+                <div className="pl-8 mt-1 space-y-1">
+                  <NavItem href="/dashboard/buddy-lens/requester" icon={<UserRound size={16} />} label="Request" />
+                  <NavItem href="/dashboard/buddy-lens/reviewer" icon={<ScanEye  size={16} />} label="Review" />
+                  <NavItem href="/dashboard/buddy-lens/approve" icon={<FileUser   size={16} />} label="Approve" />
+                </div>
+              )}
+            </div>
 
-            <NavItem
-              href="/dashboard/prosperity"
-              icon={<Gift size={20} />}
-              label="Prosperity Drops"
-            />
+            <NavItem href="/dashboard/prosperity" icon={<Gift size={20} />} label="Prosperity Drops" />
             <ComingSoonWrapper>
-              <NavItem
-                href=""
-                icon={<MessageCircle size={20} />}
-                label="Messages"
-                badge={2}
-              />
+              <NavItem href="" icon={<MessageCircle size={20} />} label="Messages" badge={2} />
             </ComingSoonWrapper>
-
-            <NavItem
-              href="/dashboard/spotlight"
-              icon={<Sparkles size={20} />}
-              label="Spotlight"
-            />
+            <NavItem href="/dashboard/spotlight" icon={<Sparkles size={20} />} label="Spotlight" />
           </NavSection>
 
           {/* Settings Section */}
           <NavSection title="Settings">
-            <NavItem
-              href="/dashboard/profile"
-              icon={<User size={20} />}
-              label="Profile"
-            />
-            {/* <ComingSoonWrapper>
-              <NavItem href="" icon={<HelpCircle size={20} />} label="FAQ's" />
-            </ComingSoonWrapper> */}
-            <NavItem
-              href="/dashboard/faq"
-              icon={<HelpCircle size={20} />}
-              label="FAQ's"
-            />
-            <NavItem
-              href="/contact"
-              icon={<Phone size={20} />}
-              label="Contact us"
-            />
+            <NavItem href="/dashboard/profile" icon={<User size={20} />} label="Profile" />
+            <NavItem href="/dashboard/faq" icon={<HelpCircle size={20} />} label="FAQ's" />
+            <NavItem href="/contact" icon={<Phone size={20} />} label="Contact us" />
             <button onClick={() => signOut()}>
               <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
             </button>

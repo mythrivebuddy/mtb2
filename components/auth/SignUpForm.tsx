@@ -40,7 +40,7 @@ export default function SignUpForm() {
   const onSubmit: SubmitHandler<SignupFormType> = async (data) => {
     setIsLoading(true);
     try {
-      const res = await axios.post("/api/auth/signup", data);
+      const res = await axios.post(`/api/auth/signup`, data);
       if (res.status >= 200 && res.status < 300) {
         toast.success(res.data.message);
         router.push("/signin");
