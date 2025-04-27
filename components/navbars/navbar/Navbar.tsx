@@ -36,6 +36,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
           <NavLink href="/blog">Blog</NavLink>
           <NavLink href="/contact">Contact Us</NavLink>
+          <NavLink href="/about-us">About Us</NavLink>
           <div className="flex items-center space-x-3">
             {session ? (
               <Button
@@ -97,6 +98,7 @@ export default function Navbar() {
           <div className="flex flex-col space-y-4">
             <NavLink href="/blog">Blog</NavLink>
             <NavLink href="/contact">Contact Us</NavLink>
+            <NavLink href="/about-us">About Us</NavLink>
             {session ? (
               <Button
                 onClick={() => signOut()}

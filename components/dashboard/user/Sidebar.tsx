@@ -5,29 +5,23 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Home,
-  BarChart2,
-  CreditCard,
   LayoutList,
-  MessageCircle,
   User,
   HelpCircle,
   Phone,
-  LogOut,
-  UserRound,
   Gift,
   Sparkles,
-  History,
   ShoppingCartIcon,
-  UserPlus,
   Menu,
   WandSparklesIcon,
   LucideSignalHigh,
   TrendingUp,
+  BookOpen,
+  GlobeLock,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
-import { signOut } from "next-auth/react";
+
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -125,15 +119,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* User Profile Section */}
           <div className="flex flex-col my-6 px-5">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
-                {user?.name ? (
-                  <h2 className="text-xl text-white">
-                    {user.name.slice(0, 2).toUpperCase()}
-                  </h2>
-                ) : (
-                  <UserRound size={24} />
-                )}
-              </div>
+              
               <div>
                 <div className="flex items-center gap-1">
                   <p className="text-sm">Hello</p>
@@ -153,73 +139,54 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<Home size={20} />}
                   label="Home"
                 />
-                <NavItem
-                  href="/dashboard/insights"
-                  icon={<BarChart2 size={20} />}
-                  label="Insights"
-                />
-                <NavItem
-                  href="/dashboard/subscription"
-                  icon={<CreditCard size={20} />}
-                  label="Subscription"
-                />
+
                 <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                 />
-                <NavItem
-                  href="/dashboard/miracle-log"
-                  icon={<WandSparklesIcon size={20} />}
-                  label="Miracle Log"
-                />
-                <NavItem
-                  href="/dashboard/progress-vault"
-                  icon={<LucideSignalHigh size={20} />}
-                  label="1% Progress Vault"
-                />
-                <NavItem
-                  href="/dashboard/aligned-actions"
-                  icon={<TrendingUp size={20} />}
-                  label="1% Start"
-                />
-                <NavItem
-                  href="/dashboard/prosperity"
-                  icon={<Gift size={20} />}
-                  label="Prosperity Drops"
-                />
-                <ComingSoonWrapper>
+                <NavSection title="Features">
                   <NavItem
-                    href=""
-                    icon={<MessageCircle size={20} />}
-                    label="Messages"
-                    badge={2}
+                    href="/dashboard/miracle-log"
+                    icon={<WandSparklesIcon size={20} />}
+                    label="Miracle Log"
                   />
-                </ComingSoonWrapper>
-                <NavItem
-                  href="/dashboard/spotlight"
-                  icon={<Sparkles size={20} />}
-                  label="Spotlight"
-                />
+                  <NavItem
+                    href="/dashboard/progress-vault"
+                    icon={<LucideSignalHigh size={20} />}
+                    label="1% Progress Vault"
+                  />
+                  <NavItem
+                    href="/dashboard/aligned-actions"
+                    icon={<TrendingUp size={20} />}
+                    label="1% Start"
+                  />
+                  <NavItem
+                    href="/dashboard/prosperity"
+                    icon={<Gift size={20} />}
+                    label="Prosperity Drops"
+                  />
 
-                <NavItem
-                  href="/dashboard/transactions-history"
-                  icon={<History size={20} />}
-                  label="Transactions"
-                />
-                <NavItem
-                  href="/dashboard/store"
-                  icon={<ShoppingCartIcon size={20} />}
-                  label="Store"
-                />
+                  <NavItem
+                    href="/dashboard/spotlight"
+                    icon={<Sparkles size={20} />}
+                    label="Spotlight"
+                  />
+
+                  <NavItem
+                    href="/dashboard/store"
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Store"
+                  />
+                </NavSection>
               </NavSection>
 
               {/* Settings Section */}
               <NavSection title="Settings">
                 <NavItem
-                  href="/dashboard/profile"
+                  href="/dashboard/business-profile"
                   icon={<User size={20} />}
-                  label="Profile"
+                  label="Business Profile"
                 />
                 <NavItem
                   href="/dashboard/faq"
@@ -231,14 +198,16 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<Phone size={20} />}
                   label="Contact us"
                 />
-                <NavItem
-                  href="/dashboard/refer-friend"
-                  icon={<UserPlus size={20} />}
-                  label="Refer a friend"
+                  <NavItem
+                  href="/blog"
+                  icon={<BookOpen size={20} />}
+                  label="Blog"
                 />
-                <button onClick={() => signOut()}>
-                  <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
-                </button>
+                  <NavItem
+                  href="/about-us"
+                  icon={<GlobeLock size={20} />}
+                  label="About us"
+                />
               </NavSection>
             </div>
           </div>
