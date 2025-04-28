@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { NotificationService } from '@/lib/notification-service';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '@/app/api/auth/[...nextauth]/auth.config';
 import axios from 'axios';
+import {prisma} from '@/lib/prisma';
 
-const prisma = new PrismaClient();
+
+interface ApiError extends Error {
+  response?: {
+    status: number;
+    data: string
+  };
+}
+
 
 const errorResponse = (message: string, status: number = 400) =>
   NextResponse.json({ error: message }, { status });
@@ -48,10 +55,10 @@ async function sendEmail(toEmail: string, toName: string, subject: string, htmlC
     return { success: true, messageId: response.data.messageId };
   } 
   
-  catch (error: unknown) {
+  catch (error) {
     if (error instanceof Error) {
       console.error('Email sending failed:', error.message);
-      const apiError = error as any; // if you want, you can still type this better later
+      const apiError = error as ApiError // if you want, you can still type this better later
       if (apiError.response) {
         console.error('Brevo API Error:', {
           status: apiError.response.status,
@@ -260,8 +267,8 @@ export async function PATCH(req: NextRequest) {
           } else {
             console.log(`${approve ? 'Approval' : 'Rejection'} email sent successfully within transaction`);
           }
-        } catch (emailError: any) {
-          console.error('Transaction email sending failed:', emailError.message);
+        } catch (error) {
+          console.error('Transaction email sending failed:', error);
           // Continue with the transaction even if email fails
         }
       } else {
@@ -321,8 +328,8 @@ export async function PATCH(req: NextRequest) {
         } else {
           console.error(`Failed to send ${approve ? 'approval' : 'rejection'} email on retry: ${emailResult.error}`);
         }
-      } catch (retryError: any) {
-        console.error('Retry email sending failed:', retryError.message);
+      } catch (error) {
+        console.error('Retry email sending failed:', error);
       }
     }
 
@@ -338,20 +345,20 @@ export async function PATCH(req: NextRequest) {
       { status: 200 }
     );
   } 
-  catch (error: unknown) {
+  catch (error) {
     if (error instanceof Error) {
       console.error('Email sending failed:', error.message);
-      const apiError = error as any; // if you want, you can still type this better later
+      const apiError = error as ApiError; // if you want, you can still type this better later
       if (apiError.response) {
         console.error('Brevo API Error:', {
           status: apiError.response.status,
           data: apiError.response.data,
         });
       }
-      return { success: false, error: error.message, status: apiError.response?.status };
+      return NextResponse.json({ success: false, error: error.message, status: apiError.response?.status });
     } else {
       console.error('Unknown email sending error:', error);
-      return { success: false, error: 'Unknown error', status: 500 };
+      return NextResponse.json({ success: false, error: 'Unknown error', status: 500 });
     }
   }
   

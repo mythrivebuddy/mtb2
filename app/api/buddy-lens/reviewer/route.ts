@@ -1,13 +1,14 @@
 // app/api/buddy-lens/reviewer/route.ts
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import {  Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authConfig } from '../../auth/[...nextauth]/auth.config';
 import { NotificationService } from '@/lib/notification-service';
 import axios from 'axios';
+import {prisma} from '@/lib/prisma';
+
 // import sendEmail from '@/lib/email/sendEmail';
 
-const prisma = new PrismaClient();
 
 const errorResponse = (message: string, status: number = 400) =>
   NextResponse.json({ error: message }, { status });
@@ -23,12 +24,28 @@ const errorResponse = (message: string, status: number = 400) =>
 interface ApiError extends Error {
   response?: {
     status: number;
-    data: any;
+    data: string
+    error:string
   };
 }
 
+
+// Define the response type for the email sending process
+interface EmailResponse {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+  status?: number;
+}
+
 // Helper function to send emails
-async function sendEmail(toEmail: string, toName: string, subject: string, htmlContent: string, fromName?: string) {
+async function sendEmail(
+  toEmail: string,
+  toName: string,
+  subject: string,
+  htmlContent: string,
+  fromName?: string
+): Promise<EmailResponse> {  // Updated return type to EmailResponse
   console.log('Preparing to send email:', { toEmail, subject, fromName });
 
   try {
@@ -60,26 +77,32 @@ async function sendEmail(toEmail: string, toName: string, subject: string, htmlC
     console.log('Sending email to Brevo API...');
     const response = await axios.post(brevoApiUrl, emailPayload, { headers });
     console.log('Email sent successfully:', { status: response.status, messageId: response.data.messageId });
+    
+    // Return the custom response (not wrapped in NextResponse.json)
     return { success: true, messageId: response.data.messageId };
-  } 
-  catch (error: unknown) {
+  } catch (error) {
     if (error instanceof Error) {
       console.error('Email sending failed:', error.message);
       const apiError = error as ApiError;
+      
+      // Log detailed API error information if available
       if (apiError.response) {
         console.error('Brevo API Error:', {
           status: apiError.response.status,
           data: apiError.response.data,
         });
       }
+      
+      // Return custom error response (not wrapped in NextResponse.json)
       return { success: false, error: error.message, status: apiError.response?.status };
     } else {
       console.error('Unknown email sending error:', error);
       return { success: false, error: 'Unknown error', status: 500 };
     }
   }
-  
 }
+
+
 
 interface CreateReviewBody {
   requestId: string;
@@ -491,20 +514,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Review submitted', data: newReview }, { status: 201 });
   } 
   
-  catch (error: unknown) {
+  catch (error) {
     if (error instanceof Error) {
       console.error('Email sending failed:', error.message);
-      const apiError = error as any; // if you want, you can still type this better later
+      const apiError = error as ApiError; // if you want, you can still type this better later
       if (apiError.response) {
         console.error('Brevo API Error:', {
           status: apiError.response.status,
           data: apiError.response.data,
         });
       }
-      return { success: false, error: error.message, status: apiError.response?.status };
+      return NextResponse.json({ success: false, error: error.message, status: apiError.response?.status });
     } else {
       console.error('Unknown email sending error:', error);
-      return { success: false, error: 'Unknown error', status: 500 };
+      return NextResponse.json({ success: false, error: 'Unknown error', status: 500 });
     }
   }
   
@@ -559,10 +582,10 @@ export async function GET(req: NextRequest) {
           data: apiError.response.data,
         });
       }
-      return { success: false, error: error.message, status: apiError.response?.status };
+      return NextResponse.json({ success: false, error: error.message, status: apiError.response?.status });
     } else {
       console.error('Unknown email sending error:', error);
-      return { success: false, error: 'Unknown error', status: 500 };
+      return NextResponse.json({ success: false, error: 'Unknown error', status: 500 });
     }
   }
   
@@ -678,8 +701,8 @@ export async function PUT(req: NextRequest) {
     });
 
     return NextResponse.json({ message: 'Review updated', data: updatedReview });
-  } catch (error: any) {
-    console.error('PUT Error:', error.message);
+  } catch (error) {
+    console.error('PUT Error:', error);
     if (error instanceof Prisma.PrismaClientValidationError) {
       return errorResponse('Invalid request data', 400);
     }
@@ -760,9 +783,14 @@ export async function PATCH(req: NextRequest) {
     `;
 
     // Initialize with default values that match the return type of sendEmail
-    let emailResult: { success: boolean; messageId?: any; error?: any; status?: any } = { 
-      success: false, 
-      error: 'Email not sent yet' 
+    let emailResult: {
+      success: boolean;
+      messageId?: string;
+      error?: string | Error;
+      status?: number | string;
+    } = {
+      success: false,
+      error: 'Email not sent yet',
     };
     
     const updatedRequest = await prisma.$transaction(async (prisma) => {
@@ -794,8 +822,8 @@ export async function PATCH(req: NextRequest) {
           } else {
             console.log('Claim notification email sent successfully within transaction');
           }
-        } catch (emailError: any) {
-          console.error('Transaction email sending failed:', emailError.message);
+        } catch (error) {
+          console.error('Transaction email sending failed:', error);
           // We continue with the transaction even if email fails
         }
       } else {
@@ -823,20 +851,20 @@ export async function PATCH(req: NextRequest) {
           console.error(`Failed to send claim notification email on retry: ${emailResult.error}`);
         }
       }
-      catch (error: unknown) {
+      catch (error) {
         if (error instanceof Error) {
           console.error('Email sending failed:', error.message);
-          const apiError = error as any; // if you want, you can still type this better later
+          const apiError = error as ApiError; // if you want, you can still type this better later
           if (apiError.response) {
             console.error('Brevo API Error:', {
               status: apiError.response.status,
               data: apiError.response.data,
             });
           }
-          return { success: false, error: error.message, status: apiError.response?.status };
+          return NextResponse.json({ success: false, error: error.message, status: apiError.response?.status });
         } else {
           console.error('Unknown email sending error:', error);
-          return { success: false, error: 'Unknown error', status: 500 };
+          return NextResponse.json({ success: false, error: 'Unknown error', status: 500 });
         }
       }      
     }
@@ -847,7 +875,7 @@ export async function PATCH(req: NextRequest) {
       emailSent: emailResult.success
     });
   } 
-catch (error: unknown) {
+catch (error) {
   if (error instanceof Error) {
     console.error('Email sending failed:', error.message);
     const apiError = error as ApiError; // if you want, you can still type this better later
@@ -857,10 +885,10 @@ catch (error: unknown) {
         data: apiError.response.data,
       });
     }
-    return { success: false, error: error.message, status: apiError.response?.status };
+    return NextResponse.json({ success: false, error: error.message, status: apiError.response?.status });
   } else {
     console.error('Unknown email sending error:', error);
-    return { success: false, error: 'Unknown error', status: 500 };
+    return NextResponse.json({ success: false, error: 'Unknown error', status: 500 });
   }
 }
 

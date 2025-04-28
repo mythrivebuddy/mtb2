@@ -1,11 +1,12 @@
 
 import { NextResponse } from 'next/server';
-import { PrismaClient, Prisma } from '@prisma/client';
+import {  Prisma } from '@prisma/client';
 import { getServerSession } from "next-auth"; // or however you get the logged-in user
 import { authConfig } from '../../auth/[...nextauth]/auth.config';
+import {prisma} from '@/lib/prisma';
 
 
-const prisma = new PrismaClient();
+
 
 // Helper to return error response
 const errorResponse = (message: string, status: number = 400) =>
@@ -338,7 +339,7 @@ export async function PUT(req: Request) {
       status,
     } = body;
 
-    const updateData: any = {
+    const updateData  = {
       ...(socialMediaUrl && { socialMediaUrl }),
       ...(tier && { tier }),
       ...(platform && { platform }),
