@@ -103,17 +103,25 @@ model User {
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
+
+   // PayPal subscription tracking:
+  subscriptionId     String?   @unique
+  subscriptionStatus String?
+  subscriptionStart  DateTime?
+  subscriptionEnd    DateTime?
+  
+  //address   Json
+  //phone      String?
+  cart       Cart[]
+  orders     Order[]
+  wishlists  Wishlist[]
+  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
   profileViews                  ProfileView[]
 
   referralCode String? @unique
   referredById String?
   referredBy   User?   @relation("UserReferrer", fields: [referredById], references: [id])
   referrals    User[]  @relation("UserReferrer")
-
-  cart       Cart[]
-  orders     Order[]
-  wishlists  Wishlist[]
-  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
 
   referralsMade     Referral[] @relation("Referrer")
   referralsReceived Referral[] @relation("Referred")
@@ -124,7 +132,8 @@ model User {
   website       String?
   socialHandles Json?
 
-  magicBoxes        MagicBox[]
+  magicBoxes MagicBox[]
+  invoice    Invoice[]
   Notification      Notification[]
   pushSubscriptions PushSubscription[]
 
@@ -159,6 +168,12 @@ model Plan {
   durationDays    Int? // NULL for lifetime plans, else number of days
   users           User[]
   price           String
+  paypalPlanId    String? @unique // PayPal plan ID
+  paypalProductId String? // PayPal product ID
+  interval        String?
+  isActive        Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
 }
 
 model Spotlight {
@@ -422,6 +437,15 @@ model MagicBoxSettings {
   minJpAmount Int      @default(100) // Minimum JP amount for a magic box
   maxJpAmount Int      @default(500) // Maximum JP amount for a magic box
   updatedAt   DateTime @updatedAt
+}
+
+model Invoice {
+  id                   String   @id @default(uuid())
+  user                 User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
+  userSubscriptionId   String
+  amount               Float
+  saleId               String   @unique         // PayPal sale ID (resource.id)
+  createdAt            DateTime @default(now())
 }
 
 model ProfileView {
