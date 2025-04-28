@@ -284,7 +284,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
                 </div>
 
                 <a
-                  href={`/dashboard/profile/${user.id}`}
+                  href={`/profile/${user.id}`}
                   className="text-sm flex items-center  text-blue-600 hover:text-blue-800"
                   onClick={(e) => e.stopPropagation()}
                   target="_blank"

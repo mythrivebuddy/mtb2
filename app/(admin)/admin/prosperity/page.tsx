@@ -9,17 +9,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {  useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
 import { Prisma, ProsperityDropStatus } from "@prisma/client";
 import PageLoader from "@/components/PageLoader";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 export default function ProsperityPage() {
   const router = useRouter();
-  // const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   // Fetch all prosperity applications
   const { data: applications, isLoading } = useQuery<
@@ -33,27 +36,26 @@ export default function ProsperityPage() {
   });
 
   // Mutation for updating application status
-  // const updateStatus = useMutation({
-  //   mutationFn: async ({
-  //     id,
-  //     status,
-  //   }: {
-  //     id: string;
-  //     status: ProsperityDropStatus;
-  //   }) => {
-  //     const response = await axios.put(`/api/admin/prosperity/${id}`, {
-  //       status,
-  //     });
-  //     return response.data;
-  //   },
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ["prosperityApplications"] });
-  //     toast.success("Status updated successfully");
-  //   },
-  //   onError: (error: any) => {
-  //     toast.error(error.response?.data?.error || "Something went wrong");
-  //   },
-  // });
+  const updateStatus = useMutation({
+    mutationFn: async ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: ProsperityDropStatus;
+    }) => {
+      const response = await axios.put(`/api/admin/prosperity/${id}`, {
+        status,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prosperityApplications"] });
+    },
+    onError: (error) => {
+      toast.error(getAxiosErrorMessage(error, "Failed to update status"));
+    },
+  });
 
   if (isLoading) return <PageLoader />;
 
@@ -68,7 +70,7 @@ export default function ProsperityPage() {
   };
 
   return (
-    <div className="container mx-auto py-10 px-0 ">
+    <div className="mx-auto py-10 px-0 ">
       <h1 className="text-2xl font-bold mb-6">Prosperity Drop Applications</h1>
       <div className="rounded-md border bg-white">
         <Table>
@@ -100,8 +102,29 @@ export default function ProsperityPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => router.push(`/admin/prosperity/${app.id}`)}
+                    onClick={() => {
+                      if (app.status === "APPLIED") {
+                        updateStatus.mutate(
+                          {
+                            id: app.id,
+                            status: "IN_REVIEW",
+                          },
+                          {
+                            onSuccess: () => {
+                              router.push(`/admin/prosperity/${app.id}`);
+                            },
+                          }
+                        );
+                      } else {
+                        router.push(`/admin/prosperity/${app.id}`);
+                      }
+                    }}
+                    disabled={isLoading || updateStatus.isPending}
+                    className="flex gap-1 item-center"
                   >
+                    {(isLoading || updateStatus.isPending) && (
+                      <Loader2 className="mr-2 animate-spin" />
+                    )}
                     Review Details
                   </Button>
                 </TableCell>

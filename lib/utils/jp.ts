@@ -1,15 +1,12 @@
 // function to add jp according to the plan and activity
 
-import { ActivityType, Prisma } from "@prisma/client";
+import { Activity, ActivityType, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { createJPEarnedNotification } from "./notifications";
 
 type UserWithPlan = Prisma.UserGetPayload<{
-  include: {
-    plan: true;
-  };
-  omit: {
-    password: true;
-  };
+  include: { plan: true };
+  omit: { password: true };
 }>;
 
 export function isPlanActive(user: UserWithPlan) {
@@ -46,6 +43,7 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
         },
       },
     });
+    await createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
   } catch (error) {
     console.error(error);
     throw error;
@@ -89,4 +87,11 @@ export async function deductJp(user: UserWithPlan, activity: ActivityType) {
     console.error(error);
     throw error;
   }
+}
+
+// Helper to calculate JP to deduct
+export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
+  const isActive = isPlanActive(user);
+  const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
+  return Math.ceil(activityData.jpAmount * (1 - discount / 100));
 }

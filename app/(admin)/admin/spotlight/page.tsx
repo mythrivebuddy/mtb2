@@ -109,7 +109,7 @@ export default function SpotlightApplication() {
     if (currentStatus === "APPLIED") {
       mutation.mutate(spotlightId);
     } else {
-      router.push(`/admin/spotlightapplication/${spotlightId}`);
+      router.push(`/admin/spotlight/${spotlightId}`);
     }
   };
 

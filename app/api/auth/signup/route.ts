@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Send verification email
+
     const verificationUrl = `${process.env.NEXT_URL}/verify-email?token=${verificationToken}`;
 
     await sendEmailUsingTemplate({
