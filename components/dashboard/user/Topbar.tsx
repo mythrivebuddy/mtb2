@@ -93,9 +93,13 @@ export default function TopBar({ user }: { user?: UserType }) {
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
   // Add local state for profile picture for immediate updates
-  const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(null);
-  const [localUserName, setLocalUserName] = useState<string | undefined>(undefined);
-  
+  const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
+    null
+  );
+  const [localUserName, setLocalUserName] = useState<string | undefined>(
+    undefined
+  );
+
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
     queryFn: () => fetchUsers(searchTerm),
@@ -103,32 +107,35 @@ export default function TopBar({ user }: { user?: UserType }) {
   });
 
   // Fetch user's profile data including profile picture
-  const { data: userProfileData, refetch: refetchUserProfile } = useQuery<ProfileResponse>({
-    queryKey: ["userProfile"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get<ProfileResponse>('/api/user/my-profile');
-        return response.data;
-      } catch (getAxiosErrorMessage) {
-        console.error("Error fetching user profile:", getAxiosErrorMessage);
-        return {
-          profile: {
-            fullName: "",
-            bio: "",
-            skills: "",
-            instagram: "",
-            linkedin: "",
-            website: "",
-            profilePicture: null,
-          },
-        };
-      }
-    },
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 5, // Reduced to 5 minutes to be more reactive
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Always refetch when component mounts
-  });
+  const { data: userProfileData, refetch: refetchUserProfile } =
+    useQuery<ProfileResponse>({
+      queryKey: ["userProfile"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get<ProfileResponse>(
+            "/api/user/my-profile"
+          );
+          return response.data;
+        } catch (getAxiosErrorMessage) {
+          console.error("Error fetching user profile:", getAxiosErrorMessage);
+          return {
+            profile: {
+              fullName: "",
+              bio: "",
+              skills: "",
+              instagram: "",
+              linkedin: "",
+              website: "",
+              profilePicture: null,
+            },
+          };
+        }
+      },
+      enabled: !!user?.id,
+      staleTime: 1000 * 60 * 5, // Reduced to 5 minutes to be more reactive
+      refetchOnWindowFocus: true, // Refetch when window regains focus
+      refetchOnMount: true, // Always refetch when component mounts
+    });
 
   // Update local state when profile data is loaded
   useEffect(() => {
@@ -149,18 +156,24 @@ export default function TopBar({ user }: { user?: UserType }) {
         if (event.detail.fullName) {
           setLocalUserName(event.detail.fullName);
         }
-        
+
         // Also refetch the latest data
         refetchUserProfile();
       }
     };
 
     // Add event listener
-    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    window.addEventListener(
+      "profileUpdated",
+      handleProfileUpdate as EventListener
+    );
 
     // Clean up
     return () => {
-      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+      window.removeEventListener(
+        "profileUpdated",
+        handleProfileUpdate as EventListener
+      );
     };
   }, [refetchUserProfile]);
 
@@ -194,8 +207,10 @@ export default function TopBar({ user }: { user?: UserType }) {
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
   // Get user profile picture with priority to local state for immediate updates
-  const profilePicture = localProfilePicture || userProfileData?.profile?.profilePicture;
-  const userName = localUserName || userProfileData?.profile?.fullName || user?.name;
+  const profilePicture =
+    localProfilePicture || userProfileData?.profile?.profilePicture;
+  const userName =
+    localUserName || userProfileData?.profile?.fullName || user?.name;
 
   return (
     <header className=" bg-transparent flex items-center justify-between">
@@ -298,7 +313,11 @@ export default function TopBar({ user }: { user?: UserType }) {
               <div className="h-8 w-8 sm:h-10 sm:w-10 aspect-square cursor-pointer">
                 <Avatar className="rounded-md border border-[#4B65A2] w-full h-full">
                   {profilePicture ? (
-                    <AvatarImage src={profilePicture} alt="Profile" className="object-cover" />
+                    <AvatarImage
+                      src={profilePicture}
+                      alt="Profile"
+                      className="object-cover"
+                    />
                   ) : null}
                   <AvatarFallback className="rounded-md bg-white w-full h-full flex items-center justify-center uppercase">
                     {userName ? (
@@ -312,7 +331,7 @@ export default function TopBar({ user }: { user?: UserType }) {
                 </Avatar>
               </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 mt-2 space-y-1">
+            <DropdownMenuContent className="w-48 mt-2 space-y-1" align="end">
               <Link href="/dashboard/my-profile">
                 <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
                   <UserRound size={18} />
@@ -344,22 +363,27 @@ export default function TopBar({ user }: { user?: UserType }) {
                 </DropdownMenuItem>
               </Link>
               <Link href="">
-                
-                  <DropdownMenuItem onClick={() => setIsComingSoonModalOpen(true)} className="cursor-pointer flex items-center space-x-2">
-                    <MessageSquare size={20} />
-                    <span>Messages</span>
-                  </DropdownMenuItem>
-               
-              </Link>
-              <button onClick={() => signOut()}>
-                <DropdownMenuItem className="cursor-pointer flex items-center space-x-2 text-red-500">
-                  <LogOut size={18} />
-                  <span>Logout</span>
+                <DropdownMenuItem
+                  onClick={() => setIsComingSoonModalOpen(true)}
+                  className="cursor-pointer flex items-center space-x-2"
+                >
+                  <MessageSquare size={20} />
+                  <span>Messages</span>
                 </DropdownMenuItem>
-              </button>
+              </Link>
+              <DropdownMenuItem
+                className="cursor-pointer flex items-center space-x-2 text-red-500"
+                onClick={() => signOut()}
+              >
+                <LogOut size={18} />
+                <span>Logout</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <ComingSoonModal open={isComingSoonModalOpen} onOpenChange={setIsComingSoonModalOpen} />
+          <ComingSoonModal
+            open={isComingSoonModalOpen}
+            onOpenChange={setIsComingSoonModalOpen}
+          />
         </div>
       </div>
 
