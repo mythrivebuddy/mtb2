@@ -13,10 +13,7 @@ import { checkRole } from "@/lib/utils/auth";
 export async function GET(request: NextRequest) {
   try {
     //! commented this just authorization code for testing
-    await checkRole(
-      "USER",
-      "You are not authorized for this action"
-    );
+    await checkRole("USER", "You are not authorized for this action");
 
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
@@ -47,40 +44,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get total user count
-    const totalUsers = await prisma.user.count();
+    const skip = (page - 1) * limit;
 
-    // Calculate total pages
+    // Parallelize database queries
+    const [totalUsers, users] = await Promise.all([
+      prisma.user.count(),
+      prisma.user.findMany({
+        where: {
+          role: "USER",
+        },
+        orderBy: {
+          [orderBy]: "desc",
+        },
+        omit: {
+          password: true,
+        },
+        take: limit,
+        skip: skip,
+      }),
+    ]);
+
     const totalPages = Math.ceil(totalUsers / limit);
-
-    // If page exceeds total pages, set it to the last page
     const currentPage = page > totalPages ? totalPages : page;
-    const skip = (currentPage - 1) * limit;
 
-    const users = await prisma.user.findMany({
-      where: {
-        role: "USER",
-      },
-      orderBy: {
-        [orderBy]: "desc",
-      },
-      omit: {
-        password: true,
-      },
-      take: limit,
-      skip: skip,
-    });
-    console.log(users); //?dev
     if (!users || users.length === 0) {
       return NextResponse.json({ message: "No users found" }, { status: 404 });
     }
-    // const updatedUsers = users.map((user) => {
-    //   return {
-    //     ...user,
-    //     jpTransaction: user.jpEarned + user.jpSpent,
-    //     jpBalance: user.jpEarned - user.jpSpent,
-    //   };
-    // });
 
     // Calculate the starting rank for the current page
     const startingRank = (currentPage - 1) * limit + 1;

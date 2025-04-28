@@ -13,4 +13,5 @@ export const ROUTE_TITLES: Record<string, string> = {
   spotlight: "Spotlight",
   store: "Store",
   'progress-vault': "1% Progress Vault",
+  'transactions-history': "Transactions",
 };
