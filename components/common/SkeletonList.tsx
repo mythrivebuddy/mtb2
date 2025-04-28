@@ -38,7 +38,7 @@ export const SkeletonListTable = <TData,>({
   rowCount = 5,
   //   className,
   //   containerClassName,
-  cellClassName,
+  // cellClassName,
   columns,
 }: SkeletonListTableProps<TData>) => {
   return (

@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pagination } from "@/components/ui/pagination";
 import { SkeletonListTable } from "../common/SkeletonList";
 
 interface DataTableProps<TData> {
@@ -30,9 +29,6 @@ interface DataTableProps<TData> {
 export function TransactionDataTable<TData>({
   columns,
   data,
-  currentPage,
-  totalPages,
-  onPageChange,
   isLoading = false, // Add this prop
   rowCount = 5,
 }: DataTableProps<TData>) {
