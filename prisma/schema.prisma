@@ -114,7 +114,7 @@ model User {
   cart       Cart[]
   orders     Order[]
   wishlists  Wishlist[]
-  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+  membership String     @default("FREE") // F:REE, MONTHLY, YEARLY, LIFETIME
 
   referralsMade     Referral[] @relation("Referrer")
   referralsReceived Referral[] @relation("Referred")

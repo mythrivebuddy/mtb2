@@ -18,14 +18,12 @@ import {
   TrendingUp,
   BookOpen,
   GlobeLock,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
-import { signOut } from "next-auth/react";
-import ConfirmAction from "@/components/ConfirmAction";
-import { getInitials } from "@/utils/getInitials";
+
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -79,7 +77,7 @@ type NavSectionProps = {
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
   <div className={cn("space-y-2", className)}>
-    <h4 className="text-[#405D9F] font-normal text-lg">{title}</h4>
+    <h4 className="text-[#405D9F] font-normal text-sm">{title}</h4>
     <nav>
       <ul className="">{children}</ul>
     </nav>
@@ -155,7 +153,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem href="/" icon={<Home size={20} />} label="Home" />
                 <NavItem
                   href="/dashboard"
-                  icon={<LayoutList size={20} />}
+                  icon={<LayoutDashboard size={20} />}
                   label="Dashboard"
                 />
 
@@ -164,7 +162,9 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                 />
-                <NavSection title="Features">
+               
+              </NavSection>
+              <NavSection  title="Features">
                   <NavItem
                     href="/dashboard/miracle-log"
                     icon={<WandSparklesIcon size={20} />}
@@ -198,8 +198,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     label="Store"
                   />
                 </NavSection>
-              </NavSection>
-
               {/* Settings Section */}
               <NavSection title="Settings">
                 <NavItem

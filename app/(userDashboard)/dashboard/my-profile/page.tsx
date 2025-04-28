@@ -229,7 +229,7 @@ export default function MyProfile() {
                     onChange={handleImageChange}
                     accept="image/*"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Click on the avatar to change your profile picture</p>
+                  <p className="text-xs text-muted-foreground mt-1">Click on the Profile Picture to change your profile picture</p>
                 </div>
               </div>
 
