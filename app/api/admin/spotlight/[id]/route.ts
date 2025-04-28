@@ -84,6 +84,7 @@ export async function PUT(
         "Your spotlight application has been approved. Congratulations!",
         { url: "/dashboard" }
       );
+      console.log("Push notification sent to user:", spotlight.userId);
     }
 
     return NextResponse.json(

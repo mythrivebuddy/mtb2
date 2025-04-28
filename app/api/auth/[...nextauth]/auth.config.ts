@@ -118,7 +118,7 @@ export const authConfig: AuthOptions = {
             email: user.email!,
           },
         });
-        console.log("user exists info", dbUser);
+        // console.log("user exists info", dbUser);
 
         if (dbUser && dbUser.authMethod === AuthMethod.CREDENTIALS) {
           // Instead of throwing an error, return false with a customized error
@@ -129,7 +129,7 @@ export const authConfig: AuthOptions = {
           // if user does not exist, create a new user and let signin
           const role =
             user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
-          console.log(role);
+          // console.log(role);
 
           const createdUser = await prisma.user.create({
             data: {
@@ -149,7 +149,7 @@ export const authConfig: AuthOptions = {
           //** assign JP as signin reward
           assignJp(createdUser, ActivityType.SIGNUP);
 
-          console.log("user created info", createdUser);
+          // console.log("user created info", createdUser);
           user.role = createdUser.role;
           user.id = createdUser.id;
         } else {
@@ -173,7 +173,7 @@ export const authConfig: AuthOptions = {
           //** assign JP as signin reward
           assignJp(updatedUser, ActivityType.DAILY_LOGIN);
 
-          console.log("user updated info", updatedUser);
+          // console.log("user updated info", updatedUser);
           // Use dbUser data for existing users
           user.role = dbUser.role;
           user.id = dbUser.id;
@@ -186,23 +186,23 @@ export const authConfig: AuthOptions = {
       }
     },
     async jwt({ token, user }) {
-      console.log("check user", user);
+      // console.log("check user", user);
       if (user) {
         token.role = user.role; // Now user.role exists because we added it in `signIn`
         token.id = user.id;
         token.rememberMe = user.rememberMe ?? false;
-        console.log("remeberme tokencheck", token.rememberMe); //?dev
+        // console.log("remeberme tokencheck", token.rememberMe); //?dev
 
         token.maxAge = user.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE;
         // Math.floor(Date.now() / 1000) +
       }
-      console.log("token", token); //?dev
+      // console.log("token", token); //?dev
       return token;
     },
 
     async session({ session, token }) {
       if (session.user) {
-        console.log("token.role", token.role);
+        // console.log("token.role", token.role);
         session.user.role = token.role; // Attach role to session
         session.user.id = token.id;
         session.user.rememberMe = token.rememberMe;
@@ -212,7 +212,7 @@ export const authConfig: AuthOptions = {
         // ).toISOString();
         // session.maxAge =  token.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE
       }
-      console.log("sessiondata", session); //?dev
+      // console.log("sessiondata", session); //?dev
       return session;
     },
   },
