@@ -1,91 +1,152 @@
 "use client";
 
-import PageLoader from "@/components/PageLoader";
+import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import React, { useState } from "react";
-import { format } from "date-fns";
-import { Pagination } from "@/components/ui/pagination";
+import { Card, CardContent } from "@/components/ui/card";
+import { SkeletonList } from "@/components/common/SkeletonList";
+import { columns } from "@/components/transaction-history/columnDef";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TransactionDataTable } from "@/components/transaction-history/data-table";
+import { Pagination } from "@/components/ui/pagination";
 
-type Transaction = {
-  id: string;
-  createdAt: string;
-  jpAmount: number;
-  activity: {
-    activity: string;
-    transactionType: string;
-    displayName: string;
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 5;
+
+const LimitSelect = ({
+  value,
+  onValueChange,
+}: {
+  value: number;
+  onValueChange: (value: string) => void;
+}) => (
+  <div className="px-0 py-0 p-0 space-y-0 items-start mb-6 mx-0 flex justify-end">
+    <Select value={value.toString()} onValueChange={onValueChange}>
+      <SelectTrigger className="w-48 font-medium text-gray-700 focus:outline-none outline-none focus:ring-0">
+        <SelectValue placeholder="Items per page" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="5">5 per page</SelectItem>
+        <SelectItem value="10">10 per page</SelectItem>
+        <SelectItem value="20">20 per page</SelectItem>
+        <SelectItem value="50">50 per page</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+);
+
+const TransactionHistoryContent = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const page = Number(searchParams.get("page")) || DEFAULT_PAGE;
+  const limit = Number(searchParams.get("limit")) || DEFAULT_LIMIT;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["transactions-history", page, limit],
+    queryFn: async () => {
+      const { data } = await axios.get(
+        `/api/user/history?page=${page}&limit=${limit}`
+      );
+      return data;
+    },
+    placeholderData: (previousData) => previousData, // This replaces keepPreviousData
+    // keepPreviousData:true,
+  });
+
+  const handlePageChange = (newPage: number) => {
+    router.push(
+      `/dashboard/transactions-history?page=${newPage}&limit=${limit}`
+    );
   };
-};
 
-const ITEMS_PER_PAGE = 6;
+  const handleLimitChange = (value: string) => {
+    router.push(`/dashboard/transactions-history?page=1&limit=${value}`);
+  };
 
-const fetchTransactions = async (
-  page: number
-): Promise<{
-  transactions: Transaction[];
-  total: number;
-}> => {
-  const res = await axios.get(
-    `/api/user/history?page=${page}&limit=${ITEMS_PER_PAGE}`
+  const {
+    transactions = [],
+    totalPages,
+    // page: currentPage = page,
+  } = data || {};
+
+  console.log('totatalPages',totalPages)
+
+  if (isLoading) {
+    return (
+      <>
+        <LimitSelect value={limit} onValueChange={handleLimitChange} />
+        <Card>
+          <CardContent className="p-0">
+            <TransactionDataTable
+              columns={columns}
+              data={[]}
+              currentPage={page}
+              totalPages={totalPages} 
+              onPageChange={() => {}}
+              isLoading={true}
+              rowCount={limit}
+            />
+            <div className="p-4">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <LimitSelect value={limit} onValueChange={handleLimitChange} />
+      <Card>
+        <CardContent className="p-0">
+          <TransactionDataTable
+            columns={columns}
+            data={transactions}
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            isLoading={false}
+          />
+          <div className="p-4">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
-  return res.data;
 };
 
 const TransactionsHistoryPage = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["transactions-history", currentPage],
-    queryFn: () => fetchTransactions(currentPage),
-  });
-
-  if (isLoading) return <PageLoader />;
-  if (isError)
-    return <p className="p-4">Error fetching transactions: {error?.message}</p>;
-
-  const transactions: Transaction[] = data?.transactions || [];
-  const totalPages = Math.ceil((data?.total || 0) / ITEMS_PER_PAGE);
-
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Transaction History</h1>
-      <div className="overflow-x-auto bg-white shadow rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date & Time</TableHead>
-              <TableHead>Activity</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>JP Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((tx) => (
-              <TableRow key={tx.id}>
-                <TableCell>
-                  {format(new Date(tx.createdAt), "MMM d, yyyy hh:mm a")}
-                </TableCell>
-                <TableCell>{tx.activity.displayName}</TableCell>
-                <TableCell>{tx.activity.transactionType}</TableCell>
-                <TableCell className="font-medium">{tx.jpAmount} JP</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+      <Suspense
+        fallback={
+          <Card className="p-4">
+            <LimitSelect value={DEFAULT_LIMIT} onValueChange={() => {}} />
+            <CardContent>
+              <SkeletonList count={4} />
+            </CardContent>
+          </Card>
+        }
+      >
+        <TransactionHistoryContent />
+      </Suspense>
     </div>
   );
 };

@@ -1,43 +1,3 @@
-// import { NextResponse } from "next/server";
-// import { prisma } from "@/lib/prisma";
-// import { checkRole } from "@/lib/utils/auth";
-// import { activityDisplayMap } from "@/lib/constants/activityNames";
-
-// export async function GET(request: Request) {
-//   const { searchParams } = new URL(request.url);
-//   const viewAll = searchParams.get("viewAll");
-//   const session = await checkRole("USER");
-//   const userId = session.user.id;
-
-//   const take = viewAll === "true" ? undefined : 4;
-
-//   try {
-//     const transactions = await prisma.transaction.findMany({
-//       where: { userId },
-//       include: { activity: true },
-//       orderBy: { createdAt: "desc" },
-//       take,
-//     });
-
-//     const formattedTransactions = transactions.map((tx) => ({
-//       ...tx,
-//       activity: {
-//         ...tx.activity,
-//         displayName:
-//           activityDisplayMap[tx.activity.activity] || tx.activity.activity,
-//       },
-//     }));
-//     console.log("formattedTransactions", formattedTransactions);
-//     return NextResponse.json({ transactions: formattedTransactions });
-//   } catch (error) {
-//     console.error("Error fetching user history:", error);
-//     return NextResponse.json(
-//       { error: "Internal Server Error" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
@@ -65,6 +25,9 @@ export async function GET(request: Request) {
       }),
     ]);
 
+    const totalPages = Math.ceil(total / limit);
+    const currentPage = page > totalPages ? totalPages : page;
+
     const formattedTransactions = transactions.map((tx) => ({
       ...tx,
       activity: {
@@ -73,11 +36,13 @@ export async function GET(request: Request) {
           activityDisplayMap[tx.activity.activity] || tx.activity.activity,
       },
     }));
-    console.log("formattedTransactions", formattedTransactions);
 
     return NextResponse.json({
       transactions: formattedTransactions,
       total,
+      page: currentPage,
+      limit,
+      totalPages,
     });
   } catch (error) {
     console.error("Error fetching user history:", error);
