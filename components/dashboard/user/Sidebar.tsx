@@ -22,8 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-
-
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -135,7 +134,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* User Profile Section */}
           <div className="flex flex-col my-6 px-5">
             <div className="flex items-center gap-3">
-              
               <div>
                 <div className="flex items-center gap-1">
                   <p className="text-sm">Hello</p>
@@ -162,42 +160,41 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                 />
-               
               </NavSection>
-              <NavSection  title="Features">
-                  <NavItem
-                    href="/dashboard/miracle-log"
-                    icon={<WandSparklesIcon size={20} />}
-                    label="Miracle Log"
-                  />
-                  <NavItem
-                    href="/dashboard/progress-vault"
-                    icon={<LucideSignalHigh size={20} />}
-                    label="1% Progress Vault"
-                  />
-                  <NavItem
-                    href="/dashboard/aligned-actions"
-                    icon={<TrendingUp size={20} />}
-                    label="1% Start"
-                  />
-                  <NavItem
-                    href="/dashboard/prosperity"
-                    icon={<Gift size={20} />}
-                    label="Prosperity Drops"
-                  />
+              <NavSection title="Features">
+                <NavItem
+                  href="/dashboard/miracle-log"
+                  icon={<WandSparklesIcon size={20} />}
+                  label="Miracle Log"
+                />
+                <NavItem
+                  href="/dashboard/progress-vault"
+                  icon={<LucideSignalHigh size={20} />}
+                  label="1% Progress Vault"
+                />
+                <NavItem
+                  href="/dashboard/aligned-actions"
+                  icon={<TrendingUp size={20} />}
+                  label="1% Start"
+                />
+                <NavItem
+                  href="/dashboard/prosperity"
+                  icon={<Gift size={20} />}
+                  label="Prosperity Drops"
+                />
 
+                <NavItem
+                  href="/dashboard/spotlight"
+                  icon={<Sparkles size={20} />}
+                  label="Spotlight"
+                />
+                <ComingSoonWrapper>
                   <NavItem
-                    href="/dashboard/spotlight"
-                    icon={<Sparkles size={20} />}
-                    label="Spotlight"
-                  />
-
-                  <NavItem
-                    href="/dashboard/store"
                     icon={<ShoppingCartIcon size={20} />}
                     label="Store"
                   />
-                </NavSection>
+                </ComingSoonWrapper>
+              </NavSection>
               {/* Settings Section */}
               <NavSection title="Settings">
                 <NavItem
@@ -215,12 +212,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<Phone size={20} />}
                   label="Contact us"
                 />
-                  <NavItem
+                <NavItem
                   href="/blog"
                   icon={<BookOpen size={20} />}
                   label="Blog"
                 />
-                  <NavItem
+                <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}
                   label="About us"
