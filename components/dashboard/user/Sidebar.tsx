@@ -22,36 +22,54 @@ import {
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+import { signOut } from "next-auth/react";
+import ConfirmAction from "@/components/ConfirmAction";
+import { getInitials } from "@/utils/getInitials";
 
 // Reusable navigation item component
 type NavItemProps = {
-  href: string;
+  href?: string;
   icon: React.ReactNode;
   label: string;
   badge?: string | number;
 };
-
 const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
+  const content = (
+    <>
+      <div className="w-8">{icon}</div>
+      <span className="font-normal text-lg">{label}</span>
+      {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
+    </>
+  );
+
   return (
     <li>
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center py-2",
-          isActive ? "text-jp-orange" : "text-[#6C7894]"
-        )}
-      >
-        <div className="w-8">{icon}</div>
-        <span className="font-normal text-lg">{label}</span>
-        {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
-      </Link>
+      {href ? (
+        <Link
+          href={href}
+          className={cn(
+            "flex items-center py-2",
+            isActive ? "text-jp-orange" : "text-[#6C7894]"
+          )}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div
+          className={cn(
+            "flex items-center py-2 cursor-pointer hover:text-jp-orange text-[#6C7894]"
+          )}
+        >
+          {content}
+        </div>
+      )}
     </li>
   );
 };
-
 // Main navigation section component
 type NavSectionProps = {
   title: string;
@@ -134,10 +152,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
+                <NavItem href="/" icon={<Home size={20} />} label="Home" />
                 <NavItem
                   href="/dashboard"
-                  icon={<Home size={20} />}
-                  label="Home"
+                  icon={<LayoutList size={20} />}
+                  label="Dashboard"
                 />
 
                 <NavItem

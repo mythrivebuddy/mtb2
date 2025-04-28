@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { ActivityType } from "@prisma/client";
-import {
-  getMagicBoxSharedNotificationData} from "@/lib/utils/notifications";
+import { getMagicBoxSharedNotificationData } from "@/lib/utils/notifications";
 
 // GET: Retrieve or create user's magic box for today
 export async function GET() {
@@ -277,7 +276,7 @@ export async function PUT(request: NextRequest) {
     // get data to give notificaiton to user who has recieve the th other half
     const notificationData = getMagicBoxSharedNotificationData(
       userId,
-      session?.user?.name || '',
+      session?.user?.name || "",
       selectedUserId,
       sharedJpAmount
     );
@@ -294,6 +293,7 @@ export async function PUT(request: NextRequest) {
         data: {
           jpBalance: { increment: userJpAmount },
           jpEarned: { increment: userJpAmount },
+          jpTransaction: { increment: userJpAmount },
         },
       }),
       // Add JP to selected user's balance
@@ -302,6 +302,7 @@ export async function PUT(request: NextRequest) {
         data: {
           jpBalance: { increment: sharedJpAmount },
           jpEarned: { increment: sharedJpAmount },
+          jpTransaction: { increment: sharedJpAmount },
         },
       }),
       // Create transaction records for both users

@@ -233,8 +233,9 @@ export default function TopBar({ user }: { user?: UserType }) {
                   users?.map((user: SearchUser) => (
                     <Link
                       key={user.id}
-                      href={`/dashboard/profile/${user.id}`}
+                      href={`/profile/${user.id}`}
                       className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
+                      target="_blank"
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.image || undefined} />

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { Bell, Gift, Sparkles, Coins, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import axios from "axios";
+import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
 
 interface Notification {
   id: string;
@@ -61,6 +62,25 @@ export default function NotificationsPage() {
 
   return (
     <div className="p-6">
+      {/* Push Notification Settings */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+        <h2 className="text-lg font-medium mb-3">Notification Settings</h2>
+        <div className="space-y-3">
+          <PushNotificationToggle
+            variant="switch"
+            label="Browser Push Notifications"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Receive notifications even when you&aposre not actively using the
+            site
+          </p>
+        </div>
+      </div>
+
+      {/* Recent Notifications Header */}
+      <h2 className="text-lg font-medium mb-3">Recent Notifications</h2>
+
+      {/* Notification List */}
       {notifications?.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
           No notifications yet

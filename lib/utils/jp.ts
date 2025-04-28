@@ -43,7 +43,7 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
         },
       },
     });
-     createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
+    await createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
   } catch (error) {
     console.error(error);
     throw error;

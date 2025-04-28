@@ -18,7 +18,6 @@ import PageLoader from "@/components/PageLoader";
 import { useParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ConfirmAction from "@/components/ConfirmAction";
-import { useEffect } from "react";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
 export default function ProsperityReviewPage() {
@@ -58,16 +57,6 @@ export default function ProsperityReviewPage() {
       toast.error(getAxiosErrorMessage(error, "Failed to update status"));
     },
   });
-
-  // Add this useEffect to handle automatic status change
-  useEffect(() => {
-    if (application && application.status === "APPLIED") {
-      updateStatus.mutate({
-        id: application.id,
-        status: "IN_REVIEW",
-      });
-    }
-  }, [application, updateStatus]);
 
   if (isLoading || !application) return <PageLoader />;
 
@@ -172,7 +161,7 @@ export default function ProsperityReviewPage() {
               <Button
                 variant="destructive"
                 className="flex-1"
-                disabled={updateStatus.isPending}
+                disabled={updateStatus.isPending || isLoading}
               >
                 Reject Application
               </Button>
