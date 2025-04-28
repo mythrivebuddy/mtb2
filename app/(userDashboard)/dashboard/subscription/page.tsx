@@ -3,17 +3,13 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { format, differenceInDays } from "date-fns";
+import { format } from "date-fns";
 import { Check, Loader2, Info, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
-import { 
-  PayPalScriptProvider, 
-  PayPalButtons 
-} from "@paypal/react-paypal-js";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
-// Types
 interface Plan {
   id: string;
   name: string;
@@ -21,6 +17,24 @@ interface Plan {
   discountPercent: number;
   durationDays: number | null;
   price: string;
+  paypalPlanId: string;
+  paypalProductId: string;
+}
+
+interface LifetimeTier {
+  tier: string;
+  planId: string;
+  planName: string;
+  price: string;
+  paypalPlanId: string;
+  userRange: string;
+}
+
+interface CurrentLifetimePlan {
+  planId: string;
+  planName: string;
+  price: string;
+  paypalPlanId: string;
 }
 
 interface SubscriptionData {
@@ -29,79 +43,42 @@ interface SubscriptionData {
   planEnd: string | null;
   hasActiveSubscription: boolean;
   plans: Plan[];
+  currentLifetimePlan: CurrentLifetimePlan;
   lifetimePlanUsers?: number;
   limitedOfferAvailable?: boolean;
+  lifetimeTiers: LifetimeTier[];
 }
 
-const calculateProratedPrice = (
-  currentPlan: Plan,
-  newPlan: Plan,
-  planStart: string | null
-): number => {
-  if (!currentPlan || !planStart) return parseFloat(newPlan.price);
-
-  const currentPrice = parseFloat(currentPlan.price);
-  const newPrice = parseFloat(newPlan.price);
-  const daysUsed = differenceInDays(new Date(), new Date(planStart));
-  
-  if (newPlan.durationDays === null && currentPlan.durationDays) {
-    const daysRemaining = currentPlan.durationDays - daysUsed;
-    const refundAmount = (daysRemaining / currentPlan.durationDays) * currentPrice;
-    return Math.max(0, newPrice - refundAmount);
-  }
-
-  if (currentPlan.durationDays === 30 && newPlan.durationDays === 365) {
-    const daysRemaining = currentPlan.durationDays - daysUsed;
-    const refundAmount = (daysRemaining / currentPlan.durationDays) * currentPrice;
-    return Math.max(0, newPrice - refundAmount);
-  }
-
-  return newPrice;
-};
-
-// Payment Modal Component
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: Plan;
   price: string;
-  onSuccess: () => void;
+  paypalPlanId: string;
+  isSubscription: boolean;
+  onSuccess: (paidAmount: string) => void;
 }
-
-// Define PayPal response types for better type safety
-// type PayPalOrderStatus = 'CREATED' | 'SAVED' | 'APPROVED' | 'VOIDED' | 'COMPLETED' | 'PAYER_ACTION_REQUIRED';
-
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
   onClose,
   plan,
   price,
+  paypalPlanId,
+  isSubscription,
   onSuccess,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Early return if modal is closed
-  if (!isOpen) return null;
 
-  // Verify PayPal payment with our backend
-  const verifyPayPalPayment = async (orderId: string): Promise<boolean> => {
-    try {
-      const response = await axios.post<{ success: boolean }>('/api/payments/paypal/verify', { orderId });
-      return response.data.success;
-    } catch (error) {
-      console.error('Payment verification failed:', error);
-      return false;
-    }
-  };
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Complete Your Subscription</h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             disabled={isProcessing}
             className="text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Close"
@@ -109,27 +86,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="mb-6">
           <p className="text-gray-600">
-            You&apos;re subscribing to the <span className="font-medium">{plan.name}</span>
+            You&apos;re subscribing to the{" "}
+            <span className="font-medium">{plan.name}</span>
           </p>
-          <div className="text-lg font-bold mt-2 flex items-center">
-            {parseFloat(price) < parseFloat(plan.price) && (
-              <>
-                <span className="line-through text-gray-500 mr-2">{`$${plan.price}`}</span>
-                <span>Total: ${price}</span>
-              </>
-            )}
-            {parseFloat(price) >= parseFloat(plan.price) && (
-              <span>Total: ${price}</span>
+          <div className="text-lg font-bold mt-2">
+            <span>Total: ${price}</span>
+            {isSubscription && (
+              <span> /{plan.name.includes("Monthly") ? "month" : "year"}</span>
             )}
           </div>
-          {parseFloat(price) < parseFloat(plan.price) && (
-            <p className="text-sm text-green-600 mt-1">
-              You save ${(parseFloat(plan.price) - parseFloat(price)).toFixed(2)} with prorated pricing
-            </p>
-          )}
         </div>
 
         {isProcessing && (
@@ -141,68 +109,111 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
         <PayPalScriptProvider
           options={{
-            clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "AUi4qbdDTZy5KuUipcF0TIfunsSzNjgSm4VCNJiIDj98Wq-zM_WdW5XLtRdS9FEG2rM0TvYT8U6iDh9h",
-            currency: "USD",
-            intent: "capture",
+            clientId: process.env.NEXT_PUBLIC_PP_CLIENT_ID || "",
+            intent: isSubscription ? "subscription" : "capture",
             components: "buttons",
-            "debug": process.env.NODE_ENV !== "production",
+            currency: "USD",
+            vault: true,
+            debug: process.env.NODE_ENV !== "production",
           }}
         >
           <PayPalButtons
-            style={{ 
+            style={{
               layout: "vertical",
               color: "blue",
               shape: "rect",
-              label: "pay"
+              label: isSubscription ? "subscribe" : "pay",
             }}
             disabled={isProcessing}
-            forceReRender={[price, isProcessing]}
-            createOrder={(_, actions) => {
-              return actions.order.create({
-                intent: "CAPTURE",
-                purchase_units: [{
-                  amount: {
-                    value: price,
-                    currency_code: "USD",
-                  },
-                  description: `Subscription to ${plan.name}`,
-                }],
-                application_context: {
-                  shipping_preference: "NO_SHIPPING"
-                }
-              });
-            }}
+            forceReRender={[price, paypalPlanId, isSubscription]}
+            createOrder={
+              isSubscription
+                ? undefined
+                : (_, actions) => {
+                    console.log(paypalPlanId);
+                    return actions.order.create({
+                      intent: "CAPTURE",
+                      purchase_units: [
+                        {
+                          amount: {
+                            value: price,
+                            currency_code: "USD",
+                          },
+                          description: `Subscription to ${plan.name}`,
+                        },
+                      ],
+                      application_context: {
+                        shipping_preference: "NO_SHIPPING",
+                      },
+                    });
+                  }
+            }
+            createSubscription={
+              isSubscription
+                ? (_, actions) => {
+                    console.log(paypalPlanId);
+                    return actions.subscription.create({
+                      plan_id: paypalPlanId,
+                      custom_id: `SUB-${plan.id}-${Date.now()}`,
+                    });
+                  }
+                : undefined
+            }
             onApprove={async (data, actions) => {
               setIsProcessing(true);
               try {
-                // Capture the funds from the transaction
-                const details = await actions.order?.capture();
-                console.log("Payment completed:", details);
-                
-                // Verify the payment with our backend
-                const verified = await verifyPayPalPayment(data.orderID);
-                
-                if (verified) {
-                  // Call the success callback to update subscription in our database
-                  await onSuccess();
-                  toast.success("Payment successful! Your subscription has been activated.");
+                let paidAmount: string;
+                if (isSubscription) {
+                  const details = await actions.subscription?.get();
+                  if (!details) {
+                    throw new Error("Failed to capture subscription");
+                  }
+                  paidAmount = price; // Use the plan price for subscriptions
+                  const subscriptionId = details.id;
+                  const res = await axios.post("/api/user/subscription/create",{subscriptionId});
+                  if(!res){
+                    throw new Error("Failed to update subscription in database");
+                  }
+                  console.log("Subscription created:", details);
                 } else {
-                  toast.error("Payment verification failed. Please contact support.");
+                  const details = await actions.order?.capture();
+                  if (!details || !details.purchase_units?.[0]?.amount?.value) {
+                    throw new Error("Failed to capture payment");
+                  }
+                  paidAmount = details.purchase_units[0].amount.value;
+                  console.log("Payment captured:", details);
                 }
-              } catch (error) {
+                await onSuccess(paidAmount);
+                toast.success(
+                  "Payment successful! Your subscription has been activated."
+                );
+              } catch (error: unknown) {
                 console.error("Payment processing error:", error);
-                toast.error("Payment processing failed. Please try again.");
+                if (
+                  error instanceof Error &&
+                  error.message.includes("Window closed")
+                ) {
+                  toast.error("Payment window was closed. Please try again.");
+                } else {
+                  toast.error(
+                    "Payment processing failed. Please try again or contact support."
+                  );
+                }
               } finally {
                 setIsProcessing(false);
                 onClose();
               }
             }}
             onError={(err) => {
-              console.error("PayPal error:", err);
-              toast.error("Payment failed. Please try again or use a different payment method.");
+              console.error("PayPal SDK error:", err);
+              toast.error(
+                "An error occurred with PayPal. Please try again or use a different payment method."
+              );
             }}
             onCancel={() => {
-              toast.info("Payment cancelled. Your subscription was not processed.");
+              toast.info(
+                "Payment cancelled. Your subscription was not processed."
+              );
             }}
           />
         </PayPalScriptProvider>
@@ -211,7 +222,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   );
 };
 
-// Plan Card Component
 interface PlanCardProps {
   name: string;
   price: string;
@@ -268,20 +278,19 @@ const PlanCard: React.FC<PlanCardProps> = ({
           : "bg-[#151E46] text-white hover:bg-[#14162F]/90"
       }`}
     >
-      {isCurrentPlan
-        ? "Current Plan"
-        : disabled
-        ? "Not Available"
-        : isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-          ) : (
-            "Subscribe"
-          )}
+      {isCurrentPlan ? (
+        "Current Plan"
+      ) : disabled ? (
+        "Not Available"
+      ) : isLoading ? (
+        <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+      ) : (
+        "Subscribe"
+      )}
     </button>
   </div>
 );
 
-// Current Plan Status Component
 interface CurrentPlanStatusProps {
   currentPlan: Plan;
   planStart: string | null;
@@ -302,14 +311,14 @@ const CurrentPlanStatus: React.FC<CurrentPlanStatusProps> = ({
         <h3 className="text-md font-medium">Your Current Subscription</h3>
         <p className="text-sm text-gray-600">
           You are currently subscribed to the{" "}
-          <span className="font-medium">{currentPlan.name}</span>
+          <span className="font-medium">{currentPlan.name}</span>;
           {planStart && (
             <span> since {format(new Date(planStart), "MMMM d, yyyy")}</span>
           )}
           {planEndDate && (
             <span> until {format(planEndDate, "MMMM d, yyyy")}</span>
           )}
-          {!planEndDate && currentPlan.name === "Lifetime Plan" && (
+          {!planEndDate && currentPlan.name.startsWith("Lifetime Plan") && (
             <span> with no expiration</span>
           )}
         </p>
@@ -318,25 +327,37 @@ const CurrentPlanStatus: React.FC<CurrentPlanStatusProps> = ({
   );
 };
 
-// Main Subscription Page Component
 const SubscriptionPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<string>("");
+  const [selectedPaypalPlanId, setSelectedPaypalPlanId] = useState<string>("");
+  const [isSubscription, setIsSubscription] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery<SubscriptionData>({
     queryKey: ["subscription"],
     queryFn: async () => {
-      const response = await axios.get<SubscriptionData>("/api/user/subscription");
+      const response = await axios.get<SubscriptionData>(
+        "/api/user/subscription"
+      );
       return response.data;
     },
   });
 
   const subscribeMutation = useMutation({
-    mutationFn: async (planId: string) => {
-      const response = await axios.post("/api/user/subscription", { planId });
+    mutationFn: async ({
+      planId,
+      price,
+    }: {
+      planId: string;
+      price: string;
+    }) => {
+      const response = await axios.post("/api/user/subscription", {
+        planId,
+        price,
+      });
       return response.data;
     },
     onSuccess: () => {
@@ -348,35 +369,44 @@ const SubscriptionPage: React.FC = () => {
     },
   });
 
-  const handleSubscribe = (planId: string, price: string, plan: Plan) => {
+  const handleSubscribe = (
+    planId: string,
+    price: string,
+    plan: Plan,
+    paypalPlanId: string,
+    isSub: boolean
+  ) => {
     setSelectedPlan(plan);
     setSelectedPrice(price);
+    setSelectedPaypalPlanId(paypalPlanId);
+    setIsSubscription(isSub);
     setIsModalOpen(true);
   };
 
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (paidAmount: string) => {
     if (!selectedPlan) {
       toast.error("No plan selected");
       return;
     }
-    
+
     setIsSubscribing(true);
     try {
-      // After successful PayPal payment, update the subscription in our database
-      await subscribeMutation.mutateAsync(selectedPlan.id);
-      // Close modal and reset state after successful subscription
+      await subscribeMutation.mutateAsync({
+        planId: selectedPlan.id,
+        price: paidAmount,
+      });
       setIsModalOpen(false);
       setSelectedPlan(null);
       setSelectedPrice("");
+      setSelectedPaypalPlanId("");
+      setIsSubscription(false);
     } catch (error) {
-      // Error is handled by the mutation's onError callback
       console.error("Failed to update subscription:", error);
     } finally {
       setIsSubscribing(false);
     }
   };
 
-  // Find plans by name
   const monthlyPlan = useMemo(
     () => data?.plans.find((plan) => plan.name === "Monthly Plan"),
     [data?.plans]
@@ -386,51 +416,52 @@ const SubscriptionPage: React.FC = () => {
     () => data?.plans.find((plan) => plan.name === "Yearly Plan"),
     [data?.plans]
   );
+  console.log(yearlyPlan);
 
-  const lifetimePlan = useMemo(
-    () => data?.plans.find((plan) => plan.name === "Lifetime Plan"),
+  const lifetimeStandardPlan = useMemo(
+    () => data?.plans.find((plan) => plan.name === "Lifetime Plan Standard"),
     [data?.plans]
   );
-
-  // Calculate prorated prices
-  const proratedYearlyPrice = useMemo(() => {
-    if (
-      data?.currentPlan &&
-      data.currentPlan.name === "Monthly Plan" &&
-      data.planStart &&
-      yearlyPlan
-    ) {
-      const price = calculateProratedPrice(
-        data.currentPlan,
-        yearlyPlan,
-        data.planStart
-      );
-      return price.toFixed(2);
-    }
-    return yearlyPlan?.price || "299";
-  }, [data?.currentPlan, data?.planStart, yearlyPlan]);
-
-  const proratedLifetimePrice = useMemo(() => {
-    if (data?.currentPlan && data.planStart && lifetimePlan) {
-      const price = calculateProratedPrice(
-        data.currentPlan,
-        lifetimePlan,
-        data.planStart
-      );
-      return price.toFixed(2);
-    }
-    return lifetimePlan?.price || "2999";
-  }, [data?.currentPlan, data?.planStart, lifetimePlan]);
+  console.log(lifetimeStandardPlan);
 
   if (isLoading) {
     return <PageLoader />;
   }
 
-  const hasLifetimePlan = data?.currentPlan?.name === "Lifetime Plan";
+  const hasLifetimePlan = data?.currentPlan?.name.startsWith("Lifetime Plan");
   const hasActivePlan = data?.hasActiveSubscription && data?.currentPlan;
 
+  // Filter lifetime tiers to show only current and future tiers
+  const availableTiers = (data?.lifetimeTiers || []).sort(
+    (a, b) => Number(a.price) - Number(b.price)
+  );
+  console.log("availableTiers:", availableTiers);
+
+  const getDisabledStatus = (planName: string) => {
+    if (!hasActivePlan) return false;
+
+    const currentPlan = data.currentPlan?.name;
+
+    if (currentPlan === "Lifetime Plan Standard") {
+      // If user has Lifetime Plan, everything else is disabled
+      return planName !== "Lifetime Plan Standard";
+    }
+
+    if (currentPlan === "Yearly Plan") {
+      // If user has Yearly Plan, Monthly is disabled, Lifetime is available
+      return planName === "Monthly Plan";
+    }
+
+    if (currentPlan === "Monthly Plan") {
+      // If user has Monthly Plan, everything is available
+      return false;
+    }
+
+    return false; // fallback
+  };
+
   return (
-    <div className="w-full mt-5">
+    <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg p-8">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">
@@ -457,116 +488,141 @@ const SubscriptionPage: React.FC = () => {
           />
         )}
 
+        {/* Always show all three plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {(!hasActivePlan || data?.currentPlan?.name !== "Monthly Plan") &&
-            data?.currentPlan?.name !== "Yearly Plan" &&
-            !hasLifetimePlan &&
-            monthlyPlan && (
-              <PlanCard
-                name="Monthly Plan"
-                price={monthlyPlan.price}
-                period="per month"
-                onSubscribe={() =>
-                  handleSubscribe(monthlyPlan.id, monthlyPlan.price, monthlyPlan)
-                }
-                isLoading={isSubscribing}
-                disabled={hasLifetimePlan}
-              />
-            )}
-
-          {data?.currentPlan?.name === "Monthly Plan" && (
+          {monthlyPlan && (
             <PlanCard
               name="Monthly Plan"
-              price={data.currentPlan.price}
+              price={monthlyPlan.price}
               period="per month"
-              onSubscribe={() => {}}
-              isLoading={false}
-              isCurrentPlan={true}
-            />
-          )}
-
-          {(!hasActivePlan || data?.currentPlan?.name !== "Yearly Plan") &&
-            !hasLifetimePlan &&
-            yearlyPlan && (
-              <PlanCard
-                name="Yearly Plan"
-                price={yearlyPlan.price} // Show original price on plan cards
-                period="per year"
-                discount={
-                  data?.currentPlan?.name !== "Monthly Plan"
-                    ? "Save 14%"
-                    : "Prorated price available"
-                }
-                onSubscribe={() =>
-                  handleSubscribe(yearlyPlan.id, proratedYearlyPrice, yearlyPlan)
-                }
-                isLoading={isSubscribing}
-                disabled={hasLifetimePlan}
-              />
-            )}
-
-          {data?.currentPlan?.name === "Yearly Plan" && (
-            <PlanCard
-              name="Yearly Plan"
-              price={data.currentPlan.price}
-              period="per year"
-              discount="Save 20%"
-              onSubscribe={() => {}}
-              isLoading={false}
-              isCurrentPlan={true}
-            />
-          )}
-
-          {!hasLifetimePlan && lifetimePlan && (
-            <PlanCard
-              name="Lifetime Plan"
-              price={lifetimePlan.price} // Show original price on plan cards
-              period="one-time payment"
-              discount={hasActivePlan ? "Prorated price available" : undefined}
               onSubscribe={() =>
-                handleSubscribe(lifetimePlan.id, proratedLifetimePrice, lifetimePlan)
+                handleSubscribe(
+                  monthlyPlan.id,
+                  monthlyPlan.price,
+                  monthlyPlan,
+                  monthlyPlan.paypalPlanId,
+                  true
+                )
               }
               isLoading={isSubscribing}
+              isCurrentPlan={
+                !!(hasActivePlan && data.currentPlan?.name === "Monthly Plan")
+              }
+              disabled={getDisabledStatus("Monthly Plan")}
             />
           )}
-
-          {hasLifetimePlan && lifetimePlan && (
+          {yearlyPlan && (
+            <PlanCard
+              name="Yearly Plan"
+              price={yearlyPlan.price}
+              period="per year"
+              discount="Save 14%"
+              onSubscribe={() =>
+                handleSubscribe(
+                  yearlyPlan.id,
+                  yearlyPlan.price,
+                  yearlyPlan,
+                  yearlyPlan.paypalPlanId,
+                  true
+                )
+              }
+              isLoading={isSubscribing}
+              isCurrentPlan={
+                !!(hasActivePlan && data.currentPlan?.name === "Yearly Plan")
+              }
+              disabled={getDisabledStatus("Yearly Plan")}
+            />
+          )}
+          {lifetimeStandardPlan && (
             <PlanCard
               name="Lifetime Plan"
-              price={data?.currentPlan?.price || "2999"}
+              price={lifetimeStandardPlan.price}
               period="one-time payment"
-              onSubscribe={() => {}}
-              isLoading={false}
-              isCurrentPlan={true}
+              onSubscribe={() =>
+                handleSubscribe(
+                  lifetimeStandardPlan.id,
+                  lifetimeStandardPlan.price,
+                  lifetimeStandardPlan,
+                  lifetimeStandardPlan.paypalPlanId,
+                  false
+                )
+              }
+              isLoading={isSubscribing}
+              isCurrentPlan={
+                !!(
+                  hasActivePlan &&
+                  data.currentPlan?.name === "Lifetime Plan Standard"
+                )
+              }
+              disabled={getDisabledStatus("Lifetime Plan Standard")}
             />
           )}
         </div>
 
-        {!hasLifetimePlan && data?.limitedOfferAvailable && (
+        {/* Show limited offer section only if lifetimePlanUsers < 50 */}
+        {data?.limitedOfferAvailable && (
           <div className="bg-[#FFF7F7] shadow-md rounded-lg px-6 py-10 text-center mt-6">
-            <div className="flex items-center justify-center mb-2">
+            <div className="flex items-center justify-center mb-4">
               <AlertCircle className="w-5 h-5 text-jp-orange mr-2" />
               <h3 className="text-xl font-semibold text-jp-orange">
-                Limited Offer
+                Limited Lifetime Offer
               </h3>
             </div>
             <p className="text-gray-600 mb-4">
-              $499 for first 10 Lifetime members ({data.lifetimePlanUsers}/10
-              spots claimed)
+              Only {50 - (data.lifetimePlanUsers || 0)} spots left at discounted
+              rates! ({data.lifetimePlanUsers}/50 claimed)
             </p>
-            <button
-              onClick={() =>
-                handleSubscribe("lifetime-limited", "499", lifetimePlan!)
-              }
-              disabled={isSubscribing}
-              className="bg-[#FF6B6B] text-white rounded-lg px-8 py-2 hover:bg-[#FF6B6B]/90 transition-colors"
-            >
-              {isSubscribing ? (
-                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-              ) : (
-                "Claim Your Spot"
-              )}
-            </button>
+            <div className="mb-6">
+              <table className="w-full text-left text-sm text-gray-600">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2">Tier</th>
+                    <th className="py-2">User Range</th>
+                    <th className="py-2">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {availableTiers.map((tier) => (
+                    <tr
+                      key={tier.tier}
+                      className={`${
+                        tier.planName === data.currentLifetimePlan.planName
+                          ? "bg-jp-orange/10 font-semibold"
+                          : "text-gray-400"
+                      } hover:bg-gray-50`}
+                    >
+                      <td className="py-2">{tier.tier}</td>
+                      <td className="py-2">{tier.userRange}</td>
+                      <td className="py-2">${tier.price}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Only show claim button for the current tier */}
+            {data.currentLifetimePlan && (
+              <button
+                onClick={() =>
+                  handleSubscribe(
+                    data.currentLifetimePlan.planId,
+                    data.currentLifetimePlan.price,
+                    data.plans.find(
+                      (p) => p.id === data.currentLifetimePlan.planId
+                    )!,
+                    data.currentLifetimePlan.paypalPlanId,
+                    false
+                  )
+                }
+                disabled={isSubscribing}
+                className="bg-[#FF6B6B] text-white rounded-lg px-8 py-2 hover:bg-[#FF6B6B]/90 transition-colors"
+              >
+                {isSubscribing ? (
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                ) : (
+                  `Claim ${data.currentLifetimePlan.planName} for $${data.currentLifetimePlan.price}`
+                )}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -574,9 +630,17 @@ const SubscriptionPage: React.FC = () => {
       {selectedPlan && (
         <PaymentModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedPlan(null);
+            setSelectedPrice("");
+            setSelectedPaypalPlanId("");
+            setIsSubscription(false);
+          }}
           plan={selectedPlan}
           price={selectedPrice}
+          paypalPlanId={selectedPaypalPlanId}
+          isSubscription={isSubscription}
           onSuccess={handlePaymentSuccess}
         />
       )}
