@@ -134,17 +134,17 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 label="1%Progress Vault"
               />
 
-            <NavItem
-              href="/dashboard/spotlight"
-              icon={<Sparkles size={20} />}
-              label="Spotlight"
-            />
-            <NavItem
-              href="/dashboard/transactions-history"
-              icon={<History size={20} />}
-              label="Transactions"
-            />
-         
+              <NavItem
+                href="/dashboard/spotlight"
+                icon={<Sparkles size={20} />}
+                label="Spotlight"
+              />
+              <NavItem
+                href="/dashboard/transactions-history"
+                icon={<History size={20} />}
+                label="Transactions"
+              />
+
               <NavItem
                 href="/dashboard/prosperity"
                 icon={<Gift size={20} />}

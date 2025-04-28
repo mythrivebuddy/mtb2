@@ -2,59 +2,98 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRole } from "@/lib/utils/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { differenceInDays } from "date-fns";
 
 // Schema for subscription request validation
 const subscriptionSchema = z.object({
-  planId: z.string().min(1),
+  planId: z.string().uuid(),
+  price: z.string(), // Price paid by the user
 });
 
-/**
- * Calculate prorated upgrade price based on current plan and usage
- */
-const calculateProratedPrice = (
-  currentPlan: { price: string; durationDays: number | null },
-  newPlan: { price: string; durationDays: number | null },
-  currentPlanStart: Date
-): number => {
-  const currentPrice = parseFloat(currentPlan.price);
-  const newPrice = parseFloat(newPlan.price);
-  const now = new Date();
+// Determine the current Lifetime tier based on user count
+async function getCurrentLifetimePlan() {
+  const lifetimePlanUsers = await prisma.user.count({
+    where: {
+      plan: {
+        name: {
+          startsWith: "Lifetime Plan",
+        },
+      },
+    },
+  });
 
-  // For lifetime plan upgrades
-  if (newPlan.durationDays === null) {
-    // If current plan is monthly
-    if (currentPlan.durationDays === 30) {
-      const daysUsed = differenceInDays(now, currentPlanStart);
-      const daysRemaining = Math.max(0, currentPlan.durationDays - daysUsed);
-      const refundAmount =
-        (daysRemaining / currentPlan.durationDays) * currentPrice;
-      return Math.max(0, newPrice - refundAmount);
-    }
+  let tierName: string;
+  let defaultPrice: string;
 
-    // If current plan is yearly
-    if (currentPlan.durationDays === 365) {
-      const daysUsed = differenceInDays(now, currentPlanStart);
-      const daysRemaining = Math.max(0, currentPlan.durationDays - daysUsed);
-      const refundAmount =
-        (daysRemaining / currentPlan.durationDays) * currentPrice;
-      return Math.max(0, newPrice - refundAmount);
-    }
-
-    return newPrice;
+  if (lifetimePlanUsers < 10) {
+    tierName = "Lifetime Plan Tier-1";
+    defaultPrice = "499";
+  } else if (lifetimePlanUsers < 20) {
+    tierName = "Lifetime Plan Tier-2";
+    defaultPrice = "699";
+  } else if (lifetimePlanUsers < 30) {
+    tierName = "Lifetime Plan Tier-3";
+    defaultPrice = "999";
+  } else if (lifetimePlanUsers < 40) {
+    tierName = "Lifetime Plan Tier-4";
+    defaultPrice = "1399";
+  } else if (lifetimePlanUsers < 50) {
+    tierName = "Lifetime Plan Tier-5";
+    defaultPrice = "1899";
+  } else {
+    tierName = "Lifetime Plan Standard";
+    defaultPrice = "2999";
   }
 
-  // If upgrading from monthly to yearly
-  if (currentPlan.durationDays === 30 && newPlan.durationDays === 365) {
-    const daysUsed = differenceInDays(now, currentPlanStart);
-    const daysRemaining = Math.max(0, currentPlan.durationDays - daysUsed);
-    const refundAmount =
-      (daysRemaining / currentPlan.durationDays) * currentPrice;
-    return Math.max(0, newPrice - refundAmount);
-  }
+  const plan = await prisma.plan.findFirst({
+    where: { name: tierName, isActive: true },
+    select: { id: true, name: true, price: true, paypalPlanId: true },
+  });
 
-  return newPrice;
-};
+  // Fetch all Lifetime tiers for the Claim Spot section
+  const lifetimeTiers = await prisma.plan.findMany({
+    where: {
+      name: {
+        startsWith: "Lifetime Plan",
+      },
+      isActive: true,
+    },
+    select: { id: true, name: true, price: true, paypalPlanId: true },
+    orderBy: { price: "asc" },
+  });
+
+  // Define user ranges for each tier
+  const userRanges: Record<string, string> = {
+    "Lifetime Plan Tier-1": "1-10",
+    "Lifetime Plan Tier-2": "11-20",
+    "Lifetime Plan Tier-3": "21-30",
+    "Lifetime Plan Tier-4": "31-40",
+    "Lifetime Plan Tier-5": "41-50",
+    "Lifetime Plan Standard": "51+",
+  };
+
+  return {
+    planId: plan?.id,
+    planName: plan?.name || tierName,
+    price: plan?.price || defaultPrice,
+    paypalPlanId: plan?.paypalPlanId,
+    lifetimePlanUsers,
+    limitedOfferAvailable: lifetimePlanUsers < 50,
+    lifetimeTiers: lifetimeTiers.map((tier) => {
+      const tierNumberMatch = tier.name.match(/Tier-(\d+)/);
+      const tierNumber = tierNumberMatch ? parseInt(tierNumberMatch[1]) : null;
+      return {
+        tier: tier.name.includes("Standard")
+          ? "Standard"
+          : `Tier ${tierNumber || ""}`,
+        planId: tier.id,
+        planName: tier.name,
+        price: tier.price,
+        paypalPlanId: tier.paypalPlanId,
+        userRange: userRanges[tier.name] || "Unknown",
+      };
+    }),
+  };
+}
 
 // GET: Fetch the current user's subscription and available plans
 export async function GET() {
@@ -64,33 +103,34 @@ export async function GET() {
       "You are not authorized for this action"
     );
 
-    // Get the user with their plan information
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        plan: true,
-      },
+      include: { plan: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get all available plans
-    const plans = await prisma.plan.findMany();
-
-    // Get count of lifetime plan users
-    const lifetimePlanUsers = await prisma.user.count({
-      where: {
-        plan: {
-          name: "Lifetime Plan",
-        },
-      },
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true },
     });
 
-    // Check if user has an active subscription
+    const currentLifetimePlan = await getCurrentLifetimePlan();
+
+    // Validate that currentLifetimePlan has valid data
+    if (!currentLifetimePlan.planId || !currentLifetimePlan.paypalPlanId) {
+      console.error(`Plan not found for tier: ${currentLifetimePlan.planName}`);
+      return NextResponse.json(
+        {
+          error: `Plan configuration error for ${currentLifetimePlan.planName}`,
+        },
+        { status: 500 }
+      );
+    }
+
     const hasActiveSubscription =
-      user.planId &&
+      !!user.planId &&
       (user.planEnd === null || new Date(user.planEnd) > new Date());
 
     return NextResponse.json({
@@ -99,8 +139,15 @@ export async function GET() {
       planEnd: user.planEnd,
       hasActiveSubscription,
       plans,
-      lifetimePlanUsers,
-      limitedOfferAvailable: lifetimePlanUsers < 10,
+      currentLifetimePlan: {
+        planId: currentLifetimePlan.planId,
+        planName: currentLifetimePlan.planName,
+        price: currentLifetimePlan.price,
+        paypalPlanId: currentLifetimePlan.paypalPlanId,
+      },
+      lifetimePlanUsers: currentLifetimePlan.lifetimePlanUsers,
+      limitedOfferAvailable: currentLifetimePlan.limitedOfferAvailable,
+      lifetimeTiers: currentLifetimePlan.lifetimeTiers,
     });
   } catch (error) {
     console.error("Error fetching subscription:", error);
@@ -119,184 +166,63 @@ export async function POST(req: NextRequest) {
       "You are not authorized for this action"
     );
 
-    // Parse and validate the request body
     const body = await req.json();
-    const result = subscriptionSchema.safeParse(body);
-
-    if (!result.success) {
+    const parseResult = subscriptionSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
         { error: "Invalid request data" },
         { status: 400 }
       );
     }
+    const { planId } = parseResult.data;
 
-    const { planId } = result.data;
-    
-    // Note: Payment verification is now handled by the PayPal verify endpoint
-    // When this endpoint is called, we assume the payment has been verified
-    // in the client-side via the PayPal verify endpoint
-    
-    // Get the user with their current plan
+    const planRecord = await prisma.plan.findUnique({
+      where: { id: planId },
+    });
+    if (!planRecord) {
+      return NextResponse.json({ error: "Plan not found" }, { status: 404 });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        plan: true,
-      },
+      include: { plan: true },
     });
-
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Handle different plan types
-    let planName;
-    let price;
-    let durationDays;
-    let proratedPrice = null;
-
-    switch (planId) {
-      case "monthly":
-        planName = "Monthly Plan";
-        price = "29";
-        durationDays = 30;
-
-        // Prevent downgrade from higher plans
-        if (
-          user.plan &&
-          (user.plan.name === "Yearly Plan" ||
-            user.plan.name === "Lifetime Plan")
-        ) {
-          return NextResponse.json(
-            { error: "Cannot downgrade from a higher tier plan" },
-            { status: 400 }
-          );
-        }
-        break;
-
-      case "yearly":
-        planName = "Yearly Plan";
-        price = "299";
-        durationDays = 365;
-
-        // Prevent downgrade from lifetime plan
-        if (user.plan && user.plan.name === "Lifetime Plan") {
-          return NextResponse.json(
-            { error: "Cannot downgrade from a Lifetime plan" },
-            { status: 400 }
-          );
-        }
-
-        // Calculate prorated price if upgrading from monthly
-        if (user.plan && user.plan.name === "Monthly Plan" && user.planStart) {
-          const currentPlan = {
-            price: user.plan.price,
-            durationDays: user.plan.durationDays,
-          };
-          const newPlan = { price, durationDays };
-          proratedPrice = calculateProratedPrice(
-            currentPlan,
-            newPlan,
-            new Date(user.planStart)
-          );
-          price = proratedPrice.toFixed(2);
-        }
-        break;
-
-      case "lifetime":
-        planName = "Lifetime Plan";
-        price = "2999";
-        durationDays = null;
-
-        // Calculate prorated price if upgrading from another plan
-        if (user.plan && user.planStart) {
-          const currentPlan = {
-            price: user.plan.price,
-            durationDays: user.plan.durationDays,
-          };
-          const newPlan = { price, durationDays };
-          proratedPrice = calculateProratedPrice(
-            currentPlan,
-            newPlan,
-            new Date(user.planStart)
-          );
-          price = proratedPrice.toFixed(2);
-        }
-        break;
-
-      case "lifetime-limited":
-        // Check if limited offer is still available
-        const lifetimePlanUsers = await prisma.user.count({
-          where: {
-            plan: {
-              name: "Lifetime Plan",
-            },
-          },
-        });
-
-        if (lifetimePlanUsers >= 10) {
-          return NextResponse.json(
-            { error: "Limited offer is no longer available" },
-            { status: 400 }
-          );
-        }
-
-        planName = "Lifetime Plan";
-        price = "499";
-        durationDays = null;
-
-        // Calculate prorated price if upgrading from another plan
-        if (user.plan && user.planStart) {
-          const currentPlan = {
-            price: user.plan.price,
-            durationDays: user.plan.durationDays,
-          };
-          const newPlan = { price, durationDays };
-          proratedPrice = calculateProratedPrice(
-            currentPlan,
-            newPlan,
-            new Date(user.planStart)
-          );
-          price = proratedPrice.toFixed(2);
-        }
-        break;
-
-      default:
-        return NextResponse.json(
-          { error: "Invalid plan selected" },
-          { status: 400 }
-        );
+    const tierMap: Record<string, number> = {
+      "Monthly Plan": 1,
+      "Yearly Plan": 2,
+      "Lifetime Plan Tier-1": 3,
+      "Lifetime Plan Tier-2": 3,
+      "Lifetime Plan Tier-3": 3,
+      "Lifetime Plan Tier-4": 3,
+      "Lifetime Plan Tier-5": 3,
+      "Lifetime Plan Standard": 3,
+    };
+    const currentTier = user.plan ? tierMap[user.plan.name] || 0 : 0;
+    const newTier = tierMap[planRecord.name] || 0;
+    if (currentTier > newTier) {
+      return NextResponse.json(
+        { error: "Cannot downgrade to a lower tier plan" },
+        { status: 400 }
+      );
     }
 
-    // Get or create the plan
-    const plan = await prisma.plan.upsert({
-      where: { name: planName },
-      update: {},
-      create: {
-        name: planName,
-        price,
-        jpMultiplier: 1.5,
-        discountPercent: planName === "Yearly Plan" ? 20.0 : 0,
-        durationDays,
-      },
-    });
-
-    // Calculate plan end date based on duration
     const now = new Date();
-    const planEnd = durationDays
-      ? new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+    const planEnd = planRecord.durationDays
+      ? new Date(now.getTime() + planRecord.durationDays * 86400e3)
       : null;
 
-    // Update the user's subscription
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        planId: plan.id,
+        planId: planRecord.id,
         planStart: now,
         planEnd,
       },
-      include: {
-        plan: true,
-      },
+      include: { plan: true },
     });
 
     return NextResponse.json({
@@ -305,7 +231,6 @@ export async function POST(req: NextRequest) {
         plan: updatedUser.plan,
         planStart: updatedUser.planStart,
         planEnd: updatedUser.planEnd,
-        proratedPrice: proratedPrice !== null ? proratedPrice : null,
       },
     });
   } catch (error) {
