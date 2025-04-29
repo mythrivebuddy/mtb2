@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowLeft,
   Linkedin,
-  Twitter,
+  // Twitter,
   Instagram,
   Globe,
   Share2,
@@ -43,7 +43,7 @@ interface UserData {
   featuredWorkDesc: string | null;
   socialHandles: {
     facebook: string;
-    twitter: string;
+    x: string;
     linkedin: string;
     instagram: string;
     youtube: string;
@@ -110,6 +110,8 @@ export default function UserDetailsPage() {
     navigator.clipboard.writeText(profileUrl);
     toast.success("Profile link copied to clipboard!");
   };
+
+  console.log("userdata=",userData);
 
   if (isLoading) {
     return (
@@ -294,7 +296,7 @@ export default function UserDetailsPage() {
               </div>
             )}
 
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 items-center ">
               {userData.socialHandles.facebook && (
                 <a
                   href={userData.socialHandles.facebook}
@@ -304,13 +306,22 @@ export default function UserDetailsPage() {
                   <Facebook className="h-6 w-6 text-blue-600 hover:text-blue-800" />
                 </a>
               )}
-              {userData.socialHandles.twitter && (
+              {userData.socialHandles.x && (
                 <a
-                  href={userData.socialHandles.twitter}
+                  href={userData.socialHandles.x}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Twitter className="h-6 w-6 text-blue-400 hover:text-blue-600" />
+                  {/* <Twitter className="h-6 w-6 text-blue-400 hover:text-blue-600" />
+                   */}
+
+<svg
+className="h-4 w-4"
+                          fill="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
                 </a>
               )}
               {userData.socialHandles.linkedin && (
