@@ -182,6 +182,7 @@ export default function TopBar({ user }: { user?: UserType }) {
       const { data } = await axios.get<{ unreadCount: number }>(
         "/api/user/notifications/unread"
       );
+      
       return data.unreadCount;
     },
     enabled: !!user?.id,
