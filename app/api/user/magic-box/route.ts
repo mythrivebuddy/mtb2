@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { ActivityType } from "@prisma/client";
-import { getMagicBoxSharedNotificationData } from "@/lib/utils/notifications";
+import { getMagicBoxRewardNotificationData, getMagicBoxSharedNotificationData } from "@/lib/utils/notifications";
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 // GET: Retrieve or create user's magic box for today
 export async function GET() {
@@ -182,7 +184,14 @@ export async function POST(request: NextRequest) {
         isOpened: true,
         openedAt: new Date(),
         jpAmount,
-        randomUserIds: randomUsers.map((user) => user.id),
+        // !commented for tesing only
+        // randomUserIds: randomUs/ers.map((user) => user.id),
+        randomUserIds: [
+          "135277e5-c5a0-4f30-9ff4-80c8ea073274",
+          "2df547e6-8a99-4446-b7a1-bb40c03da956",
+          "3cf52e3d-1da3-4519-ab27-cd4d95433bcd",
+          "cm8bfebgv0001w5twdko6ldbt",
+        ],
       },
     });
 
@@ -259,6 +268,19 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Get selected user's details for email
+    const selectedUser = await prisma.user.findUnique({
+      where: { id: selectedUserId },
+      select: { email: true, name: true },
+    });
+
+    if (!selectedUser) {
+      return NextResponse.json(
+        { error: "Selected user not found" },
+        { status: 404 }
+      );
+    }
+
     // Get JP amount
     const jpAmount = magicBox.jpAmount || 0;
     const userJpAmount = Math.floor(jpAmount / 2); // Half goes to user
@@ -267,18 +289,24 @@ export async function PUT(request: NextRequest) {
     const magicBoxActivity = await prisma.activity.findUnique({
       where: { activity: ActivityType.MAGIC_BOX_REWARD },
     });
-    console.log("magicBoxActivity", magicBoxActivity);
+    console.log("magicBoxActivity", magicBoxActivity); //?dev
+
     const magicBoxRewardActivity = await prisma.activity.findUnique({
       where: { activity: ActivityType.MAGIC_BOX_SHARED_REWARD },
     });
-    console.log("magicBoxRewardActivity", magicBoxRewardActivity);
+    console.log("magicBoxRewardActivity", magicBoxRewardActivity); //?dev
 
     // get data to give notificaiton to user who has recieve the th other half
-    const notificationData = getMagicBoxSharedNotificationData(
+    const reciverNotificationData = getMagicBoxSharedNotificationData(
       userId,
       session?.user?.name || "",
       selectedUserId,
       sharedJpAmount
+    );
+
+    const senderNotificationData = getMagicBoxRewardNotificationData(
+      userId,
+      userJpAmount
     );
 
     const [updatedBox] = await prisma.$transaction([
@@ -316,8 +344,29 @@ export async function PUT(request: NextRequest) {
           },
         ],
       }),
-      prisma.notification.create({ data: notificationData }),
+      prisma.notification.create({ data: reciverNotificationData }),
+      prisma.notification.create({ data: senderNotificationData }),
     ]);
+
+    // Send notification to the selected user
+    await sendPushNotificationToUser(
+      selectedUserId,
+      "Magic Box Shared",
+      `You have received ${sharedJpAmount} JP from ${session?.user?.name || ""}`
+    );
+
+    // Send email to selected user
+    await sendEmailUsingTemplate({
+      toEmail: selectedUser.email,
+      toName: selectedUser.name,
+      templateId: "magic-box-shared",
+      templateData: {
+        username: selectedUser.name,
+        senderName: session.user.name,
+        jpAmount: sharedJpAmount,
+        profileUrl: `${process.env.NEXT_URL}/profile/${userId}`,
+      },
+    });
 
     return NextResponse.json(
       {
