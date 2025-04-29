@@ -148,11 +148,12 @@
 // };
 
 // export default InsightsPage;
+
 import Image from "next/image";
 
 export default function DailyThriveInsights() {
   return (
-    <div className=" bg-white py-12 px-4 sm:px-6 lg:px-8 rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div className="bg-white py-12 px-4 sm:px-6 lg:px-8 rounded-lg border bg-card text-card-foreground shadow-sm">
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-12">

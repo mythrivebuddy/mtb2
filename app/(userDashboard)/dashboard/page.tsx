@@ -77,7 +77,7 @@ export default function DashboardPage() {
   console.log("currentProsperity", currentProsperity);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-6 py-6">
+    <div className="py-6">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Main Dashboard Content */}
         <div className="flex-1">
