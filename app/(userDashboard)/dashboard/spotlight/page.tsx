@@ -87,43 +87,58 @@ export default function SpotlightPage() {
         <h2 className="text-2xl font-semibold mb-6">What is Spotlight?</h2>
 
         <p className="text-gray-600 mb-6">
-          Spotlight is a premium feature that puts your business profile in
-          front of thousands of potential customers. When you are in the
-          spotlight, your profile appears at the top of search results and gets
-          featured in our weekly newsletter to our entire user base.
+        A rotating daily Spotlight that showcases one solopreneur to the ecosystem with their one-line pitch, profile, and link.
+
         </p>
 
         <h3 className="text-xl font-semibold mb-4">Benefits:</h3>
         <ul className="list-disc pl-6 text-gray-600 mb-8">
-          <li className="mb-2">Increased visibility and exposure</li>
-          <li className="mb-2">Higher engagement rates</li>
-          <li className="mb-2">Priority placement in search results</li>
-          <li className="mb-2">Featured in our weekly newsletter</li>
-          <li>Access to premium analytics</li>
+          <li className="mb-2">Increased visibility and exposure, leading to new business opportunities.
+          </li>
+          <li className="mb-2">Boosts social proof by being featured in our Social Media.
+          </li>
+          <li className="mb-2">Increases internal belief and momentum in your business.
+          </li>
         </ul>
 
+
+
+     
         <div className="border-t pt-6 mt-6">
-          <h3 className="text-xl font-semibold mb-4">Terms and Conditions</h3>
+          <h3 className="text-xl font-semibold mb-4">Terms and Conditions:</h3>
 
           <div className="bg-gray-50 p-4 rounded-lg mb-6">
             <p className="text-gray-600 mb-3">
-              1. Spotlight duration is 7 days from the date of approval.
+              1. Spotlight duration can be increased/decreased to provide sufficient business visibility.
+
             </p>
             <p className="text-gray-600 mb-3">
-              2. Content must comply with our community guidelines and terms of
-              service.
+              2. Content must comply with our community guidelines and terms of service.
+
             </p>
             <p className="text-gray-600 mb-3">
-              3. We reserve the right to remove your spotlight if it violates
-              our policies.
+              3. We reserve the right to remove your spotlight if it violates our policies.
+
             </p>
             <p className="text-gray-600 mb-3">
               4. Spotlight placement is subject to availability and approval.
+
             </p>
             <p className="text-gray-600">
-              5. No refunds will be issued once the spotlight is active.
+              5. No JoyPearls will be credited back once the applied for Spotlight
+
             </p>
           </div>
+
+          <h3 className="text-xl font-semibold mb-4"> Requirements:</h3>
+        <ul className="list-disc pl-6 text-gray-600 mb-8">
+          <li className="mb-2">You must have 5,000 JP tokens to apply (lower amounts for premium plan members).
+
+          </li>
+          <li className="mb-2"> You must have a complete business profile
+          </li>
+         
+        </ul>
 
           <div className="flex items-center space-x-2 mb-6">
             <Checkbox
