@@ -2,10 +2,17 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 const AboutUsPage = () => {
+  const router = useRouter(); 
+  const handleRedirect = () => {
+    // Handle signup logic here
+    router.push("/signin");
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 flex flex-col items-center p-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#f1f3fd00]  via-blue-50 to-blue-100 flex flex-col items-center p-8">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
@@ -17,7 +24,7 @@ const AboutUsPage = () => {
           Welcome to <span className="text-blue-600">MyThriveBuddy.com</span>
         </h1>
         <p className="text-xl md:text-2xl text-gray-600">
-          Your trusted companion for daily wins, and joy pearls growth. 🪙
+          Where solopreneurs fuel their mindset, sharpen their tools, get seen, and grow with a tribe. 🌟
         </p>
       </motion.div>
 
@@ -30,12 +37,13 @@ const AboutUsPage = () => {
           hidden: { opacity: 0, y: 50 },
           visible: { opacity: 1, y: 0, transition: { staggerChildren: 0.3 } },
         }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24"
+        className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-24"
       >
         {[
-          { title: "Track", desc: "Monitor your daily tasks effortlessly." },
-          { title: "Celebrate", desc: "Every small win deserves a big cheer." },
-          { title: "Grow", desc: "Progress towards your dreams sustainably." },
+          { title: "Mindset", desc: "Fuel your dreams with resilience, confidence, and joy." },
+          { title: "Tools", desc: "Turn small actions into unstoppable momentum." },
+          { title: "Visibility", desc: "Get seen, get celebrated, grow faster." },
+          { title: "Supportive Network", desc: "Rise higher with a community that’s got your back." },
         ].map((item, idx) => (
           <motion.div
             key={idx}
@@ -47,7 +55,7 @@ const AboutUsPage = () => {
         ))}
       </motion.div>
 
-      {/* About Section */}
+      {/* Our Story */}
       <motion.section
         initial={{ opacity: 0, x: -50 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -57,13 +65,17 @@ const AboutUsPage = () => {
       >
         <h2 className="text-4xl font-bold text-gray-800 mb-6">Our Story</h2>
         <p className="text-lg text-gray-600 leading-relaxed">
-          Born from a simple idea — that progress should feel good, not overwhelming. 
-          <span className="font-semibold text-blue-600"> MyThriveBuddy</span> was created for dreamers, doers, 
-          and everyday heroes chasing growth at their own pace. We believe every small aligned action creates a ripple of greatness. 🌟
+          At <span className="font-semibold text-blue-600">MyThriveBuddy</span>, we believe that thriving as a solopreneur isn’t about doing it all alone — it’s about having the right support at every step.
+          <br /><br />
+          Born from a passion for making growth joyful and sustainable, MTB was created to help dreamers, doers, and everyday heroes thrive with ease. We know that consistent, aligned action creates unstoppable momentum. 🌟
+          <br /><br />
+          That is why MyThriveBuddy focuses on the four must-haves every solopreneur needs: a resilient <strong>Mindset</strong>, practical <strong>Tools</strong>, meaningful <strong>Visibility</strong>, and a <strong>Supportive Network</strong>.
+          <br /><br />
+          With these foundations in place, you do not just chase dreams — you <em>build</em> them, one small win at a time.
         </p>
       </motion.section>
 
-      {/* Vision Mission */}
+      {/* Vision and Mission */}
       <motion.section
         initial={{ opacity: 0, x: 50 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -73,20 +85,19 @@ const AboutUsPage = () => {
       >
         <h2 className="text-4xl font-bold text-gray-800 mb-6">Our Vision & Mission</h2>
         <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-          We envision a world where success is measured by daily commitment, not just results. 
-          Our mission is to create joyful, sustainable tools that turn your ambitions into tangible aligned actions.
+          We envision a world where success is not defined by hustle or isolation, but by sustainable growth, daily joy, and authentic connections.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-10">
           <div className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition">
             <h3 className="text-2xl font-semibold text-blue-700 mb-4">Vision</h3>
             <p className="text-gray-600">
-              Empower individuals to thrive authentically and build lives they love — one action, one habit, one day at a time.
+              To empower individuals to thrive authentically by strengthening their mindset, equipping them with tools, amplifying their visibility, and surrounding them with a supportive network.
             </p>
           </div>
           <div className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition">
             <h3 className="text-2xl font-semibold text-blue-700 mb-4">Mission</h3>
             <p className="text-gray-600">
-              Celebrate progress, simplify task-tracking, and inspire joy in every micro-win you create daily.
+              To make solopreneurship easier, more joyful, and more connected by celebrating progress, offering powerful tools, creating visibility opportunities, and nurturing community support.
             </p>
           </div>
         </div>
@@ -102,10 +113,11 @@ const AboutUsPage = () => {
       >
         <h2 className="text-4xl font-bold text-gray-800 mb-6">Why Choose Us? 🚀</h2>
         <ul className="text-gray-600 text-lg space-y-4">
-          <li>✨ Easy-to-use platform, beautifully designed for your journey</li>
-          <li>🌱 Community-focused encouragement, not competition</li>
-          <li>🔔 Personalized reminders to keep your actions aligned</li>
-          <li>🎯 Built for real people chasing real dreams at their own pace</li>
+          <li>✨ A beautifully designed, easy-to-use platform tailored for your real journey</li>
+          <li>🌱 Growth powered by community, encouragement, and authentic support — not competition</li>
+          <li>🔧 Practical tools and personalized reminders to help you stay aligned and make steady progress</li>
+          <li>🌟 Opportunities to gain visibility, be seen, and celebrate your wins</li>
+          <li>🧠 Mindset-focused features to help you thrive from the inside out</li>
         </ul>
       </motion.section>
 
@@ -121,8 +133,8 @@ const AboutUsPage = () => {
         <p className="text-lg text-gray-600 mb-6">
           Let’s build your dreams — one small, powerful step at a time. 🌿
         </p>
-        <button className="bg-blue-600 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-blue-700 transition">
-          Join the Journey 🚀
+        <button onClick={handleRedirect} className="bg-blue-600 text-white py-3 px-8 rounded-full text-lg font-semibold hover:bg-blue-700 transition">
+            <span>Join Us Now</span>
         </button>
       </motion.section>
     </div>

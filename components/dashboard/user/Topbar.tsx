@@ -1,17 +1,10 @@
 "use client";
 
 import {
-  BarChart,
-  History,
-  LogOut,
-  CreditCard,
-  MessageSquare,
   Search,
-  Users,
 } from "lucide-react";
 import { Badge, BadgeProps } from "@/components/ui/badge";
 import React, { useState, useEffect } from "react";
-import { UserRound } from "lucide-react";
 import { User as UserType } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
@@ -27,14 +20,8 @@ import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
 // import type { Notification as PrismaNotification } from "@prisma/client";
 import { formatJP } from "@/lib/utils/formatJP";
-import { signOut } from "next-auth/react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
+import UserProfileDropdown from "./UserProfileDropDown";
+
 // Add this function at the top or import from a utils file
 // function formatJP(value: number): string {
 //   if (value >= 1_000_000) return Math.floor(value / 1_000_000) + "M";
@@ -45,13 +32,13 @@ import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
 // Add interface for user profile response
 interface ProfileResponse {
   profile: {
-    fullName: string;
+    profilePicture?: string | null;
+    fullName?: string;
     bio?: string;
     skills?: string;
     instagram?: string;
     linkedin?: string;
     website?: string;
-    profilePicture?: string | null;
   };
 }
 
@@ -91,7 +78,6 @@ export default function TopBar({ user }: { user?: UserType }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
-  const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
   // Add local state for profile picture for immediate updates
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
     null
@@ -307,82 +293,9 @@ export default function TopBar({ user }: { user?: UserType }) {
               )}
             </div>
           </TopBarBadge>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="h-8 w-8 sm:h-10 sm:w-10 aspect-square cursor-pointer">
-                <Avatar className="rounded-md border border-[#4B65A2] w-full h-full">
-                  {profilePicture ? (
-                    <AvatarImage
-                      src={profilePicture}
-                      alt="Profile"
-                      className="object-cover"
-                    />
-                  ) : null}
-                  <AvatarFallback className="rounded-md bg-white w-full h-full flex items-center justify-center uppercase">
-                    {userName ? (
-                      <span className="text-lg sm:text-2xl">
-                        {getInitials(userName)}
-                      </span>
-                    ) : (
-                      <UserRound size={20} />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 mt-2 space-y-1" align="end">
-              <Link href="/dashboard/my-profile">
-                <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
-                  <UserRound size={18} />
-                  <span>My Profile</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/dashboard/insights">
-                <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
-                  <BarChart size={18} />
-                  <span>Insights</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/dashboard/subscription">
-                <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
-                  <CreditCard size={18} />
-                  <span>Subscription</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/dashboard/refer-friend">
-                <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
-                  <Users size={18} />
-                  <span>Refer a Friend</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/dashboard/transactions-history">
-                <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
-                  <History size={18} />
-                  <span>Transactions</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="">
-                <DropdownMenuItem
-                  onClick={() => setIsComingSoonModalOpen(true)}
-                  className="cursor-pointer flex items-center space-x-2"
-                >
-                  <MessageSquare size={20} />
-                  <span>Messages</span>
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuItem
-                className="cursor-pointer flex items-center space-x-2 text-red-500"
-                onClick={() => signOut()}
-              >
-                <LogOut size={18} />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <ComingSoonModal
-            open={isComingSoonModalOpen}
-            onOpenChange={setIsComingSoonModalOpen}
+          <UserProfileDropdown 
+            userName={userName}
+            profilePicture={profilePicture}
           />
         </div>
       </div>

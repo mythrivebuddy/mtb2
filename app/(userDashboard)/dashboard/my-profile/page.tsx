@@ -15,6 +15,7 @@ import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
+
 interface ProfileResponse {
   profile: {
     fullName: string;
@@ -102,6 +103,7 @@ export default function MyProfile() {
     onSuccess: (data) => {
       toast.success(hasProfile === true ? "Profile updated successfully!" : "Profile created successfully!");
       if (data.profile.profilePicture) {
+        console.log("Profile picture URL:", data.profile.profilePicture);
         setProfileImage(data.profile.profilePicture);
         setNewProfileImage(null);
       }
@@ -177,12 +179,11 @@ export default function MyProfile() {
   };
 
   // Loading state
-  if (isLoadingProfile || hasProfile === undefined) {
+  if (isLoadingProfile ) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 size={40} className="animate-spin text-primary" />
-          <p className="text-lg">Loading profile...</p>
         </div>
       </div>
     );
