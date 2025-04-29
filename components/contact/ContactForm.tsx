@@ -1,16 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "sonner";
 import axios from "axios";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
+
+declare global {
+  interface Window {
+    grecaptcha: {
+      ready: (cb: () => void) => Promise<void>;
+      execute: (
+        siteKey: string,
+        options: { action: string }
+      ) => Promise<string>;
+    };
+  }
+}
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -21,40 +33,96 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function ContactForm() {
+function ContactFormContent() {
   const [isLoading, setIsLoading] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const { data: session } = useSession();
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      subject: "general",
+    },
+  });
+  const fetchActivity = async () => {
+    const response = await axios.get("/api/contactus/joy-pearls");
+    console.log("Activity response:", response.data); //?dev
+    return response.data;
+  }
+
+  const {data:activityData} = useQuery({
+    queryKey: ["activity"], 
+    queryFn: fetchActivity,
+    enabled: !!session?.user,
   });
 
-  const handleCaptchaChange = (token: string | null) => {
-    setCaptchaToken(token);
+
+  useEffect(() => {
+    if (session?.user) {
+      setValue("name", session.user.name || "");
+      setValue("email", session.user.email || "");
+    }
+  }, [session, setValue]);
+
+  useEffect(() => {
+    const loadRecaptcha = async () => {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+      script.id = "recaptcha-script";
+      document.head.appendChild(script);
+    };
+    loadRecaptcha();
+
+    return () => {
+      // Remove script tag
+      const script = document.getElementById("recaptcha-script");
+      if (script) {
+        document.head.removeChild(script);
+      }
+
+      // Remove badge
+      const badges = document.getElementsByClassName("grecaptcha-badge");
+      while (badges.length > 0) {
+        badges[0].remove();
+      }
+    };
+  }, []);
+
+  const executeRecaptcha = async () => {
+    try {
+      await window.grecaptcha.ready(() => {});
+      return await window.grecaptcha.execute(
+        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string,
+        { action: "contact_submit" }
+      );
+    } catch (error) {
+      console.error("reCAPTCHA error:", error);
+      return null;
+    }
   };
 
   const onSubmit: SubmitHandler<FormData> = async (formData) => {
-    if (!captchaToken) {
-      toast.error("Please complete the captcha verification");
-      return;
-    }
-
     setIsLoading(true);
     try {
+      const token = await executeRecaptcha();
+      console.log("reCAPTCHA token:", token); //?dev
+      if (!token) {
+        toast.error("Failed to verify reCAPTCHA");
+        return;
+      }
+
       const response = await axios.post("/api/contactus", {
         formData,
-        captchaToken,
+        captchaToken: token,
       });
 
       toast.success(response.data.message);
       reset();
-      setCaptchaToken(null);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(
@@ -75,15 +143,18 @@ export default function ContactForm() {
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
           <div className="text-green-700 flex items-center justify-center gap-4 text-xs font-medium">
             <span>
-              • General <span className="font-bold">50 Joy Pearls 🪙</span>
+              • General <span className="font-bold">{activityData?.generalFeedbackJp
+              } Joy Pearls 🪙</span>
             </span>
             <span className="text-green-400">|</span>
             <span>
-              • Feature <span className="font-bold">100 Joy Pearls 🪙</span>
+              • Feature <span className="font-bold">{activityData?.featureRequestJp
+              } Joy Pearls 🪙</span>
             </span>
             <span className="text-green-400">|</span>
             <span>
-              • Bug <span className="font-bold">150 Joy Pearls 🪙</span>
+              • Bug <span className="font-bold">{activityData?.bugReportJp
+              } Joy Pearls 🪙</span>
             </span>
           </div>
         </div>
@@ -203,21 +274,18 @@ export default function ContactForm() {
           )}
         </div>
 
-        <div className="flex justify-start">
-          <ReCAPTCHA
-            sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
-            onChange={handleCaptchaChange}
-          />
-        </div>
-
         <Button
           type="submit"
-          className="w-full h-12 text-[16px] "
-          disabled={isLoading || !captchaToken}
+          className="w-full h-12 text-[16px]"
+          disabled={isLoading}
         >
           {isLoading ? "Sending..." : "Send Message"}
         </Button>
       </form>
     </div>
   );
+}
+
+export default function ContactForm() {
+  return <ContactFormContent />;
 }

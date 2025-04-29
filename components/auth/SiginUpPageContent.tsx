@@ -1,9 +1,10 @@
 "use client";
 import { useSession } from "next-auth/react";
 import AppLayout from "../layout/AppLayout";
-import { useRouter } from "next/router";
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import SignUpForm from "./SignUpForm";
+import { useRouter } from "next/navigation";
+import PageLoader from "../PageLoader";
 
 const SiginUpPageContent = () => {
   const { data: session } = useSession();
@@ -31,7 +32,11 @@ const SiginUpPageContent = () => {
           </h1>
           <p className="text-gray-600">Join MyThriveBuddy today</p>
         </div>
-        <SignUpForm />
+        {/* <SignUpForm /> */}
+
+        <Suspense fallback={<PageLoader />}>
+          <SignUpForm />
+        </Suspense>
       </div>
       {/* //     </div>
     //   </div>

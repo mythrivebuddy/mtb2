@@ -5,57 +5,68 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Home,
-  BarChart2,
-  CreditCard,
   LayoutList,
-  MessageCircle,
   User,
   HelpCircle,
   Phone,
-  LogOut,
-  UserRound,
-  Vault,
   Gift,
   Sparkles,
-  History,
   ShoppingCartIcon,
-  UserPlus,
   Menu,
+  WandSparklesIcon,
+  LucideSignalHigh,
+  TrendingUp,
+  BookOpen,
+  GlobeLock,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
-import { signOut } from "next-auth/react";
 
 // Reusable navigation item component
 type NavItemProps = {
-  href: string;
+  href?: string;
   icon: React.ReactNode;
   label: string;
   badge?: string | number;
 };
-
 const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
+  const content = (
+    <>
+      <div className="w-8">{icon}</div>
+      <span className="font-normal text-lg">{label}</span>
+      {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
+    </>
+  );
+
   return (
     <li>
-      <Link
-        href={href}
-        className={cn(
-          "flex items-center py-2",
-          isActive ? "text-jp-orange" : "text-[#6C7894]"
-        )}
-      >
-        <div className="w-8">{icon}</div>
-        <span className="font-normal text-lg">{label}</span>
-        {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
-      </Link>
+      {href ? (
+        <Link
+          href={href}
+          className={cn(
+            "flex items-center py-2",
+            isActive ? "text-jp-orange" : "text-[#6C7894]"
+          )}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div
+          className={cn(
+            "flex items-center py-2 cursor-pointer hover:text-jp-orange text-[#6C7894]"
+          )}
+        >
+          {content}
+        </div>
+      )}
     </li>
   );
 };
-
 // Main navigation section component
 type NavSectionProps = {
   title: string;
@@ -65,7 +76,7 @@ type NavSectionProps = {
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
   <div className={cn("space-y-2", className)}>
-    <h4 className="text-[#405D9F] font-normal text-lg">{title}</h4>
+    <h4 className="text-[#405D9F] font-normal text-sm">{title}</h4>
     <nav>
       <ul className="">{children}</ul>
     </nav>
@@ -123,15 +134,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* User Profile Section */}
           <div className="flex flex-col my-6 px-5">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
-                {user?.name ? (
-                  <h2 className="text-xl text-white">
-                    {user.name.slice(0, 2).toUpperCase()}
-                  </h2>
-                ) : (
-                  <UserRound size={24} />
-                )}
-              </div>
               <div>
                 <div className="flex items-center gap-1">
                   <p className="text-sm">Hello</p>
@@ -146,73 +148,59 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
+                <NavItem href="/" icon={<Home size={20} />} label="Home" />
                 <NavItem
                   href="/dashboard"
-                  icon={<Home size={20} />}
-                  label="Home"
+                  icon={<LayoutDashboard size={20} />}
+                  label="Dashboard"
                 />
-                <NavItem
-                  href="/dashboard/insights"
-                  icon={<BarChart2 size={20} />}
-                  label="Insights"
-                />
-                <NavItem
-                  href="/dashboard/subscription"
-                  icon={<CreditCard size={20} />}
-                  label="Subscription"
-                />
+
                 <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                 />
+              </NavSection>
+              <NavSection title="Features">
                 <NavItem
                   href="/dashboard/miracle-log"
-                  icon={<Sparkles size={20} />}
+                  icon={<WandSparklesIcon size={20} />}
                   label="Miracle Log"
                 />
                 <NavItem
                   href="/dashboard/progress-vault"
-                  icon={<Vault size={20} />}
-                  label="1%Progress Vault"
+                  icon={<LucideSignalHigh size={20} />}
+                  label="1% Progress Vault"
+                />
+                <NavItem
+                  href="/dashboard/aligned-actions"
+                  icon={<TrendingUp size={20} />}
+                  label="1% Start"
                 />
                 <NavItem
                   href="/dashboard/prosperity"
                   icon={<Gift size={20} />}
                   label="Prosperity Drops"
                 />
-                <ComingSoonWrapper>
-                  <NavItem
-                    href=""
-                    icon={<MessageCircle size={20} />}
-                    label="Messages"
-                    badge={2}
-                  />
-                </ComingSoonWrapper>
+
                 <NavItem
                   href="/dashboard/spotlight"
                   icon={<Sparkles size={20} />}
                   label="Spotlight"
                 />
-
-                <NavItem
-                  href="/dashboard/transactions-history"
-                  icon={<History size={20} />}
-                  label="Transactions"
-                />
-                <NavItem
-                  href="/dashboard/store"
-                  icon={<ShoppingCartIcon size={20} />}
-                  label="Store"
-                />
+                <ComingSoonWrapper>
+                  <NavItem
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Store"
+                  />
+                </ComingSoonWrapper>
               </NavSection>
-
               {/* Settings Section */}
               <NavSection title="Settings">
                 <NavItem
-                  href="/dashboard/profile"
+                  href="/dashboard/business-profile"
                   icon={<User size={20} />}
-                  label="Profile"
+                  label="Business Profile"
                 />
                 <NavItem
                   href="/dashboard/faq"
@@ -225,13 +213,15 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Contact us"
                 />
                 <NavItem
-                  href="/dashboard/refer-friend"
-                  icon={<UserPlus size={20} />}
-                  label="Refer a friend"
+                  href="/blog"
+                  icon={<BookOpen size={20} />}
+                  label="Blog"
                 />
-                <button onClick={() => signOut()}>
-                  <NavItem href="" icon={<LogOut size={20} />} label="Logout" />
-                </button>
+                <NavItem
+                  href="/about-us"
+                  icon={<GlobeLock size={20} />}
+                  label="About us"
+                />
               </NavSection>
             </div>
           </div>

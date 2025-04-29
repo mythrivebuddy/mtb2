@@ -1,10 +1,16 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Trash2, Eye, Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Trash2, Eye, Loader2, Info } from "lucide-react";
+import {
+  progressvaultSchema,
+  type progressVaultFormType,
+} from "@/schema/zodSchema";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -21,247 +27,238 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import axios from "axios";
+import { getAxiosErrorMessage } from "@/utils/ax";
+import { startOfDay, endOfDay } from "date-fns";
 
 interface ProgressVault {
   id: string;
   content: string;
   createdAt: string;
-  formattedDate?: string;
-  formattedTime?: string;
-  formattedDay?: string;
 }
 
 export default function ProgressVaultPage() {
-  const [content, setContent] = useState('');
   const [editingLog, setEditingLog] = useState<ProgressVault | null>(null);
   const [viewLog, setViewLog] = useState<ProgressVault | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteLog, setDeleteLog] = useState<ProgressVault | null>(null);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [todayEntriesCount, setTodayEntriesCount] = useState(0);
+
   const queryClient = useQueryClient();
 
-  // Fetch logs
-  const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['ProgressVault'],
-    queryFn: async () => {
-      const res = await fetch('/api/user/progress-vault');
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to fetch logs');
-      }
-      return res.json();
+  const {
+    handleSubmit,
+    register,
+    reset,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<progressVaultFormType>({
+    resolver: zodResolver(progressvaultSchema),
+    defaultValues: {
+      content: "",
     },
   });
 
-  // Create log
+  const { data: logs = [], isLoading } = useQuery({
+    queryKey: ["progressvault"],
+    queryFn: async () => {
+      const res = await axios.get("/api/user/progress-vault");
+      return res.data;
+    },
+  });
+
+  // Count today's entries
+  useEffect(() => {
+    if (logs.length > 0) {
+      const today = new Date();
+      const startOfToday = startOfDay(today);
+      const endOfToday = endOfDay(today);
+      
+      const todayLogs = logs.filter((log: ProgressVault) => {
+        const logDate = new Date(log.createdAt);
+        return logDate >= startOfToday && logDate <= endOfToday;
+      });
+      
+      setTodayEntriesCount(todayLogs.length);
+    }
+  }, [logs]);
+
   const createMutation = useMutation({
     mutationFn: async (content: string) => {
-      setIsSubmitting(true);
-      const res = await fetch('/api/user/progress-vault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to create log');
-      }
-      return res.json();
+      const res = await axios.post("/api/user/progress-vault", { content });
+      return res.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['ProgressVault'] });
-      queryClient.invalidateQueries({ queryKey: ['userInfo'] });
-      setContent('');
-      
-      // Check if there's a warning about JP limit
-      if (data.warning) {
-        toast.warning(data.warning);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["progressvault"] });
+      queryClient.invalidateQueries({ queryKey: ["userInfo"] });
+      reset();
+      toast.success("Log created successfully");
+    },
+    onError: (error) => {
+      const errorMessage = getAxiosErrorMessage(error, "An error occurred");
+      if (errorMessage.includes("Daily limit of 3 entries reached")) {
+        toast.error("You've reached the daily limit of 3 entries. Please try again tomorrow.");
       } else {
-        toast.success('Progress vault entry created successfully');
+        toast.error(errorMessage);
       }
     },
-    onError: (error: Error) => {
-      if (error.message.includes("Daily JP limit")) {
-        toast.error("You've reached the maximum JP (150) for today!");
-      } else if (error.message.includes("Daily limit of 3 logs")) {
-        toast.error("You've reached the maximum number of logs for today. Please delete one to add more.");
-      } else {
-        toast.error(error.message || 'Failed to create log');
-      }
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    }
   });
 
-  // Update log
   const updateMutation = useMutation({
     mutationFn: async ({ id, content }: { id: string; content: string }) => {
-      setIsSubmitting(true);
-      const res = await fetch(`/api/user/progress-vault/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+      const res = await axios.put(`/api/user/progress-vault/${id}`, {
+        content,
       });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to update log');
-      }
-      return res.json();
+      return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ProgressVault'] });
+      queryClient.invalidateQueries({ queryKey: ["progressvault"] });
       setEditingLog(null);
-      setContent('');
-      toast.success('Progress vault entry updated successfully');
+      setUpdateDialogOpen(false);
+      toast.success("Log updated successfully");
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to update log');
+    onError: () => {
+      toast.error("Failed to update log");
     },
-    onSettled: () => {
-      setIsSubmitting(false);
-    }
   });
 
-  // Delete log
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/user/progress-vault/${id}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to delete log');
-      }
-      return res.json();
+      const res = await axios.delete(`/api/user/progress-vault/${id}`);
+      return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ProgressVault'] });
-      toast.success('Progress vault entry deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["progressvault"] });
+      toast.success("Log deleted successfully");
+      setDeleteLog(null);
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete log');
+    onError: () => {
+      toast.error("Failed to delete log");
+      setDeleteLog(null);
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim()) {
-      toast.error('Please enter some content');
-      return;
-    }
-
+  const onSubmit = (data: progressVaultFormType) => {
     if (editingLog) {
-      updateMutation.mutate({ id: editingLog.id, content });
+      updateMutation.mutate({ id: editingLog.id, content: data.content });
     } else {
-      createMutation.mutate(content);
+      createMutation.mutate(data.content);
     }
   };
 
-  const handleDelete = (id: string) => {
-    
-      deleteMutation.mutate(id);
-    
+  const handleDeleteConfirm = () => {
+    if (deleteLog) {
+      deleteMutation.mutate(deleteLog.id);
+    }
   };
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
+      {/* Create Form */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>1% Progress Vault</CardTitle>
-          <CardDescription>
-            Record your daily progress and achievements. You can create up to 3 entries per day. Each entry earns you 50 JP points, with a daily limit of 150 JP points.
-          </CardDescription>
+          <CardTitle>Progress Vault</CardTitle>
+          <CardDescription>Record your daily progress</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="mb-4">
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write down whatever positive thing you did today! Whether it's big or small."
-              className="mb-4"
-              rows={4}
-              disabled={isSubmitting}
-            />
-            <div className="flex gap-2">
-              <Button 
-                type="submit"
-                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingLog ? 'Update' : 'Save'}
-              </Button>
-              {editingLog && (
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setEditingLog(null);
-                    setContent('');
-                  }}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
+          {todayEntriesCount >= 3 ? (
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 flex items-center">
+                <Info className="w-4 h-4 mr-2" />
+                You have reached the daily limit of 3 entries. You can add more entries tomorrow.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                You can add up to 3 entries per day ({todayEntriesCount}/3 used today)
+              </p>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="relative">
+              <Input
+                {...register("content")}
+                placeholder="Share your progress vault today (max 120 characters)"
+                disabled={isSubmitting || createMutation.isPending || todayEntriesCount >= 3}
+              />
+              {errors.content && (
+                <p className="text-red-500 text-sm mt-1 absolute -bottom-6 left-0">
+                  {errors.content.message}
+                </p>
               )}
+            </div>
+            <div className="flex gap-2 mt-8">
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || createMutation.isPending || todayEntriesCount >= 3}
+              >
+                {createMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Save
+              </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
+      {/* Table Display */}
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading your progress entries...</span>
+          <span className="ml-2">Loading your progress vault...</span>
         </div>
       ) : logs.length === 0 ? (
         <Card>
-          <CardContent className="py-10 text-center">
-            <p className="text-muted-foreground">No progress entries yet. Start by adding your first entry above!</p>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            No progress vault yet. Start by adding your first entry above!
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Your Progress Entries</CardTitle>
-            <CardDescription>
-              View, edit, or delete your progress entries
-            </CardDescription>
+            <CardTitle>Your Progress Vault</CardTitle>
+            <CardDescription>View, edit, or delete your progress Vault</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Entry</TableHead>
+                  <TableHead>ProgressVault</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead className="w-[200px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {logs.map((log: ProgressVault) => {
-                  // Format date information
                   const date = new Date(log.createdAt);
-                  const formattedDate = date.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
-                  });
-                  const formattedTime = date.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                  });
-                  const formattedDay = date.toLocaleDateString('en-US', { weekday: 'long' });
-                  
                   return (
                     <TableRow key={log.id}>
-                      <TableCell className="font-medium">
+                      <TableCell>
                         {log.content.length > 100
                           ? `${log.content.slice(0, 100)}...`
                           : log.content}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-sm font-medium">{formattedDay}</span>
-                          <span className="text-xs text-gray-500">{formattedDate}</span>
-                          <span className="text-xs text-gray-500">{formattedTime}</span>
+                          <span className="text-sm font-medium">
+                            {date.toLocaleDateString("en-US", {
+                              weekday: "long",
+                            })}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {date.toLocaleDateString()} |{" "}
+                            {date.toLocaleTimeString()}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -270,7 +267,6 @@ export default function ProgressVaultPage() {
                             variant="ghost"
                             size="icon"
                             onClick={() => setViewLog(log)}
-                            title="View"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -279,17 +275,16 @@ export default function ProgressVaultPage() {
                             size="icon"
                             onClick={() => {
                               setEditingLog(log);
-                              setContent(log.content);
+                              setValue("content", log.content);
+                              setUpdateDialogOpen(true);
                             }}
-                            title="Edit"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(log.id)}
-                            title="Delete"
+                            onClick={() => setDeleteLog(log)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -304,25 +299,23 @@ export default function ProgressVaultPage() {
         </Card>
       )}
 
+      {/* View Modal */}
       <Dialog open={!!viewLog} onOpenChange={() => setViewLog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Progress Vault Entry</DialogTitle>
+            <DialogTitle>Progress Vault</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
             {viewLog && (
               <>
                 <div className="mb-4 text-sm text-gray-500">
-                  {new Date(viewLog.createdAt).toLocaleDateString('en-US', { 
-                    weekday: 'long',
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                  {' at '}
-                  {new Date(viewLog.createdAt).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                  {new Date(viewLog.createdAt).toLocaleString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </div>
                 <p className="whitespace-pre-wrap">{viewLog.content}</p>
@@ -330,10 +323,101 @@ export default function ProgressVaultPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewLog(null)}>Close</Button>
+            <Button variant="outline" onClick={() => setViewLog(null)}>
+              Close
+            </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Modal */}
+      <Dialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            Are you sure you want to delete this?
+            <div className="italic text-sm text-muted-foreground mt-2">
+              {deleteLog?.content}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteLog(null)}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}{" "}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Modal */}
+      <Dialog
+        open={updateDialogOpen}
+        onOpenChange={() => {
+          setUpdateDialogOpen(false);
+          setEditingLog(null);
+          reset();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Your Progress Vault</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <Input
+              {...register("content")}
+              defaultValue={editingLog?.content}
+              className="mt-4"
+              maxLength={120}
+              disabled={updateMutation.isPending}
+            />
+            {errors.content && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.content.message}
+              </p>
+            )}
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setUpdateDialogOpen(false);
+                  setEditingLog(null);
+                  reset();
+                }}
+                disabled={updateMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Update
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
   );
-} 
+}
+
+
+
+
+

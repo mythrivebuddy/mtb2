@@ -50,6 +50,17 @@ export function getSpotlightApprovedNotificationData(userId: string) {
     type: NotificationType.SPOTLIGHT_APPROVED,
     title: "Spotlight Approved",
     message: "Your spotlight application has been approved",
+    metadata: { url: "/dashboard/spotlight" },
+  };
+}
+
+// Returns notification data for spotlight approved
+export function getSpotlightAppliedNotificationData(userId: string) {
+  return {
+    userId,
+    type: NotificationType.SPOTLIGHT_APPLIED,
+    title: "Spotlight Applied",
+    message: "You have applied for spotlight and it is under review",
     metadata: {},
   };
 }
@@ -78,6 +89,19 @@ export function getMagicBoxSharedNotificationData(
     title: "Magic Box Received",
     message: `${sharedByUserName} shared ${amount} JP with you through a Magic Box!`,
     metadata: { sharedByUserId, sharedByUserName, amount },
+  };
+}
+
+// Returns notification data for magic box reward (for sender)
+export function getMagicBoxRewardNotificationData(
+  userId: string,
+  amount: number
+) {
+  return {
+    userId,
+    type: NotificationType.JP_EARNED,
+    title: "Magic Box Reward",
+    message: `You earned ${amount} JP from opening the Magic Box!`,
   };
 }
 
@@ -133,12 +157,41 @@ export async function createProsperityAppliedNotification(userId: string) {
   );
 }
 
+/**
+ * Create a notification for prosperity approval (in-app only, no push)
+ * @param userId - ID of the user to notify
+ */
+export async function createProsperityApprovedNotification(userId: string) {
+  return createNotification(
+    userId,
+    NotificationType.PROSPERITY_APPROVED,
+    "Prosperity Drop Approved",
+    "Your prosperity drop application has been approved"
+    // { url: "/dashboard/prosperity" }
+  );
+}
+
+/**
+ * Create a notification for spotlight approval (in-app only, no push)
+ * @param userId - ID of the user to notify
+ */
 export async function createSpotlightApprovedNotification(userId: string) {
+  // Create in-app notification only
   return createNotification(
     userId,
     NotificationType.SPOTLIGHT_APPROVED,
     "Spotlight Approved",
     "Your spotlight application has been approved",
+    { url: "/dashboard/spotlight" }
+  );
+}
+
+export async function createSpotlightAppliedNotification(userId: string) {
+  return createNotification(
+    userId,
+    NotificationType.SPOTLIGHT_APPLIED,
+    "Spotlight Applied",
+    "You have applied for spotlight and it is under review",
     {}
   );
 }

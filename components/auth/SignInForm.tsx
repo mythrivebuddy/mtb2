@@ -58,7 +58,7 @@ function SignInFormContent() {
       // When response is successful, redirect and toast success.
       if (response?.ok) {
         router.push("/dashboard");
-        toast.success("Login successful");
+        toast.success("Signin successful");
         return;
       }
 

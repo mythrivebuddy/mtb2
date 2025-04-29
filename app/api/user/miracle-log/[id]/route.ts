@@ -30,7 +30,7 @@ export async function PUT(
       return NextResponse.json({ message: "Not found" }, { status: 404 });
     }
 
-    const updatedLog = await prisma.miracleLog.update({
+      const updatedLog = await prisma.miracleLog.update({
       where: { id: id },
       data: { content }
     });
@@ -41,7 +41,6 @@ export async function PUT(
     return NextResponse.json({ message: "Failed to update log" },{ status: 500 });
   }
 }
-
 export async function DELETE(req: Request, 
    { params }: { params: Promise<{ id: string }> }) {
   try {

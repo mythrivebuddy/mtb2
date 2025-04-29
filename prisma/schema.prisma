@@ -35,6 +35,7 @@ enum ActivityType {
   GENERAL_FEEDBACK
   FEATURE_REQUEST
   BUG_REPORT
+  ALIGNED_ACTION
 }
 
 enum TransactionType {
@@ -67,8 +68,10 @@ enum NotificationType {
   JP_EARNED
   PROSPERITY_APPLIED
   SPOTLIGHT_APPROVED
+  SPOTLIGHT_APPLIED
   SPOTLIGHT_ACTIVE
   MAGIC_BOX_SHARED
+  PROSPERITY_APPROVED
 }
 
 model User {
@@ -93,6 +96,7 @@ model User {
   isBlocked                     Boolean?              @default(false)
   spotlight                     Spotlight[]
   userBusinessProfile           UserBusinessProfile[]
+  userProfile                   UserProfile?          // Relation to the new UserProfile model
   blockedUsers                  BlockedUsers[]
   miracleLog                    MiracleLog[]
   progressVault                 ProgressVault[]
@@ -101,10 +105,19 @@ model User {
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
 
+   // PayPal subscription tracking:
+  subscriptionId     String?   @unique
+  subscriptionStatus String?
+  subscriptionStart  DateTime?
+  subscriptionEnd    DateTime?
+  
+  //address   Json
+  //phone      String?
   cart       Cart[]
   orders     Order[]
   wishlists  Wishlist[]
   membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+  profileViews                  ProfileView[]
 
   referralCode String? @unique
   referredById String?
@@ -120,8 +133,12 @@ model User {
   website       String?
   socialHandles Json?
 
-  magicBoxes   MagicBox[]
-  Notification Notification[]
+  magicBoxes MagicBox[]
+  invoice    Invoice[]
+  Notification      Notification[]
+  pushSubscriptions PushSubscription[]
+
+  alignedActions AlignedAction[]
 
   @@index([name])
 }
@@ -152,6 +169,12 @@ model Plan {
   durationDays    Int? // NULL for lifetime plans, else number of days
   users           User[]
   price           String
+  paypalPlanId    String? @unique // PayPal plan ID
+  paypalProductId String? // PayPal product ID
+  interval        String?
+  isActive        Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
 }
 
 model Spotlight {
@@ -417,6 +440,26 @@ model MagicBoxSettings {
   updatedAt   DateTime @updatedAt
 }
 
+model Invoice {
+  id                   String   @id @default(uuid())
+  user                 User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
+  userSubscriptionId   String
+  amount               Float
+  saleId               String   @unique         // PayPal sale ID (resource.id)
+  createdAt            DateTime @default(now())
+}
+
+model ProfileView {
+  id       String   @id @default(uuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewedAt DateTime @default(now())
+  viewerId String? // Optional - track who viewed the profile
+
+  @@index([userId])
+  @@index([viewedAt])
+}
+
 model Notification {
   id        String           @id @default(uuid())
   userId    String
@@ -430,4 +473,54 @@ model Notification {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String // Public key for encryption
+  auth      String // Auth secret for the subscription
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model AlignedAction {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mood         String // enum: sleep, goodToGo, motivated, highlyMotivated
+  tasks        String[] // Array of 3 task strings
+  selectedTask String // The selected task from the tasks array
+  category     String // enum: creative, nurturing, revenueGenerating, admin
+  timeFrom     DateTime
+  timeTo       DateTime
+  completed    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  reminderSent Boolean  @default(false)
+
+  @@index([userId, createdAt])
+  @@index([timeFrom]) // Index for finding upcoming actions
+}
+
+// New UserProfile model for storing user profile information
+model UserProfile {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String
+  bio             String?
+  skills          String?
+  instagram       String?
+  linkedin        String?
+  website         String?
+  profilePicture  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
 }

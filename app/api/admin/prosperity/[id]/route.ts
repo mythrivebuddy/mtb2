@@ -2,6 +2,8 @@ import { checkRole } from "@/lib/utils/auth";
 import { ProsperityDropStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { createProsperityApprovedNotification } from "@/lib/utils/notifications";
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 // Define valid status transitions
 const VALID_STATUS_TRANSITIONS: Record<
@@ -34,6 +36,7 @@ export async function PUT(
 
     const prosperityDrop = await prisma.prosperityDrop.findUnique({
       where: { id },
+      include: { user: true }, // Include the user to get their ID
     });
 
     if (!prosperityDrop) {
@@ -69,6 +72,20 @@ export async function PUT(
       where: { id },
       data: { status: newStatus },
     });
+
+    // If status changed to APPROVED, send notifications
+    if (newStatus === ProsperityDropStatus.APPROVED) {
+      // Create in-app notification
+      await createProsperityApprovedNotification(prosperityDrop.userId);
+
+      // Send push notification
+      await sendPushNotificationToUser(
+        prosperityDrop.userId,
+        "Prosperity Drop Approved",
+        "Your prosperity drop application has been approved. Congratulations!",
+        { url: "/dashboard" }
+      );
+    }
 
     return NextResponse.json(
       {
