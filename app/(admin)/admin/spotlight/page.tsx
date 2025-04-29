@@ -219,7 +219,7 @@ export default function SpotlightApplication() {
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                     <Button
                       variant="outline"
-                      onClick={() => console.log("hello")}
+                      onClick={() => router.push(`/profile/${app.user.id}`)}
                     >
                       View Profile
                     </Button>
