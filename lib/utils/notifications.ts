@@ -92,6 +92,19 @@ export function getMagicBoxSharedNotificationData(
   };
 }
 
+// Returns notification data for magic box reward (for sender)
+export function getMagicBoxRewardNotificationData(
+  userId: string,
+  amount: number
+) {
+  return {
+    userId,
+    type: NotificationType.JP_EARNED,
+    title: "Magic Box Reward",
+    message: `You earned ${amount} JP from opening the Magic Box!`,
+  };
+}
+
 // Returns notification data for spotlight transaction (spending JP to activate)
 export function getSpotlightTransactionNotificationData(
   userId: string,
@@ -153,7 +166,7 @@ export async function createProsperityApprovedNotification(userId: string) {
     userId,
     NotificationType.PROSPERITY_APPROVED,
     "Prosperity Drop Approved",
-    "Your prosperity drop application has been approved",
+    "Your prosperity drop application has been approved"
     // { url: "/dashboard/prosperity" }
   );
 }
