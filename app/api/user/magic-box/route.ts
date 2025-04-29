@@ -371,8 +371,8 @@ export async function PUT(request: NextRequest) {
         },
       }),
       sendEmailUsingTemplate({
-        toEmail: session.user.email,
-        toName: session.user.name,
+        toEmail: session.user.email!,
+        toName: session.user.name!,
         templateId: "magic-box-sender",
         templateData: {
           username: session.user.name,
