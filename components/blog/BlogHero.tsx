@@ -166,7 +166,6 @@ const BlogHero: React.FC = () => {
         </div>
       )}
 
-      {/* global scrollbar‐hiding + pulse */}
       <style jsx global>{`
         .no-scrollbar {
           -ms-overflow-style: none;
