@@ -88,7 +88,7 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
       </p>
     </div>
     <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
-      <h2 className="text-2xl font-semibold mb-4">Contact Details</h2>
+      <h2 className="text-2xl font-semibold mb-4">Contact Details </h2>
       <p>
         <strong>Email:</strong> {profileData?.email || "Not provided"}
       </p>
