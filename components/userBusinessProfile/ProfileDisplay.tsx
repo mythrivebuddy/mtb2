@@ -1,5 +1,5 @@
 import React from "react";
-import { Facebook, Instagram, Linkedin, Music, Youtube } from "lucide-react";
+import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 import Image from "next/image";
 import XIcon from "@/components/icons/XIcon";
 import TikTokIcon from "../icons/TiktokIcon";

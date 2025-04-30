@@ -14,7 +14,6 @@ import {
   Share2,
   Facebook,
   Youtube,
-  Music2Icon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
