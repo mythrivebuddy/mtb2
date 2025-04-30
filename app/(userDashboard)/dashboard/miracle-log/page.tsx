@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import axios from 'axios';
 import { getAxiosErrorMessage } from '@/utils/ax';
+import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 
 interface MiracleLog {
   id: string;
@@ -130,11 +131,14 @@ export default function MiracleLogPage() {
   };
 
   return (
+    <>
+     <CustomAccordion/>
     <div className="container mx-auto p-6 max-w-4xl">
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Miracle Log</CardTitle>
           <CardDescription>
+           
             Record your daily miracles and positive moments
           </CardDescription>
         </CardHeader>
@@ -372,5 +376,6 @@ export default function MiracleLogPage() {
         </DialogContent>
       </Dialog>
     </div>
+        </>
   );
 }

@@ -9,7 +9,6 @@ import {
   User,
   HelpCircle,
   Phone,
-  Gift,
   Sparkles,
   ShoppingCartIcon,
   Menu,
@@ -19,6 +18,7 @@ import {
   BookOpen,
   GlobeLock,
   LayoutDashboard,
+  Droplet,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -179,7 +179,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 />
                 <NavItem
                   href="/dashboard/prosperity"
-                  icon={<Gift size={20} />}
+                  icon={<Droplet size={20} />}
                   label="Prosperity Drops"
                 />
 

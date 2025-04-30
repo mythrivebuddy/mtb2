@@ -59,7 +59,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
     refetchOnWindowFocus: false,
     // staleTime: 1000 * 60 * 2, // 2 minutes
   });
-  console.log("boxData", boxData); //?dev
+  //console.log("boxData", boxData); //?dev
 
   // Open box mutation
   const openBoxMutation = useMutation({
