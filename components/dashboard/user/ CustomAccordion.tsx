@@ -2,8 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import clsx from 'clsx';
+
 
 const allAccordionData = [
   {
@@ -90,7 +91,7 @@ const allAccordionData = [
 
 export default function AccordionWrapper() {
   const pathname = usePathname();
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0); // Default open for visual flow
 
   let selectedType = '';
   if (pathname.includes('miracle-log')) selectedType = 'miracle_log';
@@ -107,30 +108,40 @@ export default function AccordionWrapper() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      {filteredData.map((item, index) => (
-        <div
-          key={index}
-          className="w-full border border-green-700 rounded-lg bg-green-100"
-        >
-          <button
-            onClick={() => setOpenIndex(openIndex === index ? null : index)}
-            className="w-full flex items-center justify-between px-6 py-4 text-left text-xl font-semibold text-gray-800 hover:bg-green-200 rounded-lg transition-all duration-300"
-          >
-            <span>{item.title}</span>
-            <ChevronDown
-              className={clsx(
-                'w-5 h-5 text-gray-500 transition-transform duration-200',
-                openIndex === index && 'rotate-180'
+      {filteredData.map((item, index) => {
+        const isOpen = openIndex === index;
+        return (
+          <div key={index} className="w-full border border-green-700 rounded-lg bg-green-100 mb-4 overflow-hidden">
+            <button
+              onClick={() => setOpenIndex(isOpen ? null : index)}
+              className="w-full flex items-center justify-between px-6 py-4 text-left text-xl font-semibold text-gray-800 hover:bg-green-200 transition-all duration-300"
+            >
+              <span className="text-sm text-green-700">{item.title}</span>
+              <motion.div
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              </motion.div>
+            </button>
+
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                >
+                  <div className="px-6 py-4 text-gray-700 border-t border-green-600">
+                    {item.content}
+                  </div>
+                </motion.div>
               )}
-            />
-          </button>
-          {openIndex === index && (
-            <div className="px-6 py-4 text-gray-700 border-t border-green-600">
-              {item.content}
-            </div>
-          )}
-        </div>
-      ))}
+            </AnimatePresence>
+          </div>
+        );
+      })}
     </div>
   );
 }
