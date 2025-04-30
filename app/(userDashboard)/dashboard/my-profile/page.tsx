@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UploadCloud, Instagram, Linkedin, Globe, Loader2, Pencil, UserPlus } from "lucide-react";
+import { UploadCloud, Loader2, Pencil, UserPlus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,16 +15,11 @@ import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
-
 interface ProfileResponse {
   profile: {
-    fullName: string;
+    name: string;
     bio?: string;
-    skills?: string;
-    instagram?: string;
-    linkedin?: string;
-    website?: string;
-    profilePicture?: string | null;
+    image?: string | null;
   };
 }
 
@@ -40,21 +35,17 @@ export default function MyProfile() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue
+    reset
   } = useForm<ProfileFormType>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: "",
+      name: "",
       bio: "",
-      skills: "",
-      instagram: "",
-      linkedin: "",
-      website: "",
     }
   });
 
   // Fetch user profile data
-  const { data: profileData, isLoading: isLoadingProfile} = useQuery<ProfileResponse>({
+  const { data: profileData, isLoading: isLoadingProfile } = useQuery<ProfileResponse>({
     queryKey: ['userProfile'],
     queryFn: async () => {
       try {
@@ -64,9 +55,7 @@ export default function MyProfile() {
       } catch (error) {
         const axiosError = error as AxiosError;
         if (axiosError.response?.status === 404) {
-          // Profile doesn't exist
           setHasProfile(false);
-          
         }
         throw error;
       }
@@ -77,18 +66,16 @@ export default function MyProfile() {
   useEffect(() => {
     if (profileData?.profile) {
       const { profile } = profileData;
-      Object.entries(profile).forEach(([key, value]) => {
-        if (key !== 'profilePicture' && value !== undefined) {
-          setValue(key as keyof ProfileFormType, value as string);
-        }
+      reset({
+        name: profile.name,
+        bio: profile.bio || '',
       });
       
-      // Set profile image if available
-      if (profile.profilePicture) {
-        setProfileImage(profile.profilePicture);
+      if (profile.image) {
+        setProfileImage(profile.image);
       }
     }
-  }, [profileData, setValue]);
+  }, [profileData, reset]);
 
   // Save profile data
   const saveProfileMutation = useMutation({
@@ -101,26 +88,24 @@ export default function MyProfile() {
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success(hasProfile === true ? "Profile updated successfully!" : "Profile created successfully!");
-      if (data.profile.profilePicture) {
-        console.log("Profile picture URL:", data.profile.profilePicture);
-        setProfileImage(data.profile.profilePicture);
+      toast.success(hasProfile ? "Profile updated successfully!" : "Profile created successfully!");
+      if (data.profile.image) {
+        setProfileImage(data.profile.image);
         setNewProfileImage(null);
       }
-      setIsEditMode(false); // Exit edit mode after saving
-      setHasProfile(true); // Profile now exists
+      setIsEditMode(false);
+      setHasProfile(true);
       
-      // Invalidate and refetch the userProfile query to update Topbar immediately
+      // Invalidate and refetch the userProfile query
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       
-      // Dispatch a custom event to notify other components of profile update
-      const profileUpdatedEvent = new CustomEvent('profileUpdated', { 
+      // Dispatch a custom event to notify other components
+      window.dispatchEvent(new CustomEvent('profileUpdated', { 
         detail: { 
-          profilePicture: data.profile.profilePicture,
-          fullName: data.profile.fullName
+          profilePicture: data.profile.image,
+          fullName: data.profile.name
         } 
-      });
-      window.dispatchEvent(profileUpdatedEvent);
+      }));
     },
     onError: (error) => {
       toast.error(getAxiosErrorMessage(error, "Failed to save profile"));
@@ -131,8 +116,6 @@ export default function MyProfile() {
     const file = event.target.files?.[0];
     if (file) {
       setNewProfileImage(file);
-      
-      // Create preview URL for immediate UI update
       const reader = new FileReader();
       reader.onload = (e) => {
         setProfileImage(e.target?.result as string);
@@ -178,8 +161,7 @@ export default function MyProfile() {
       .substring(0, 2);
   };
 
-  // Loading state
-  if (isLoadingProfile ) {
+  if (isLoadingProfile) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -189,7 +171,6 @@ export default function MyProfile() {
     );
   }
 
-  // Create Profile View - When no profile exists
   if (hasProfile === false) {
     return (
       <div className="max-w-3xl mx-auto p-6">
@@ -197,7 +178,6 @@ export default function MyProfile() {
           <CardHeader>
             <CardTitle className="text-2xl">Create Profile</CardTitle>
           </CardHeader>
-
           <CardContent className="flex flex-col gap-6">
             <div className="bg-muted p-4 rounded-lg mb-4">
               <div className="flex items-center gap-3">
@@ -216,7 +196,7 @@ export default function MyProfile() {
                     <AvatarImage src={profileImage} alt="Profile" />
                   ) : null}
                   <AvatarFallback>
-                    {getInitials(profileData?.profile?.fullName || "")}
+                    {getInitials(profileData?.profile?.name || "")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -235,13 +215,13 @@ export default function MyProfile() {
               </div>
 
               <div>
-                <Label>Full Name</Label>
+                <Label>Name</Label>
                 <Input
-                  {...register("fullName")}
-                  placeholder="Enter your full name"
+                  {...register("name")}
+                  placeholder="Enter your name"
                 />
-                {errors.fullName && (
-                  <p className="text-sm text-red-500 mt-1">{errors.fullName.message}</p>
+                {errors.name && (
+                  <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
                 )}
               </div>
 
@@ -254,56 +234,6 @@ export default function MyProfile() {
                 {errors.bio && (
                   <p className="text-sm text-red-500 mt-1">{errors.bio.message}</p>
                 )}
-              </div>
-
-              <div>
-                <Label>Skills / Focus Areas</Label>
-                <Input
-                  {...register("skills")}
-                  placeholder="Eg. Marketing, Coaching, Branding"
-                />
-                {errors.skills && (
-                  <p className="text-sm text-red-500 mt-1">{errors.skills.message}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <Instagram size={18} /> Instagram
-                  </Label>
-                  <Input
-                    {...register("instagram")}
-                    placeholder="Instagram Profile URL"
-                  />
-                  {errors.instagram && (
-                    <p className="text-sm text-red-500 mt-1">{errors.instagram.message}</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <Linkedin size={18} /> LinkedIn
-                  </Label>
-                  <Input
-                    {...register("linkedin")}
-                    placeholder="LinkedIn Profile URL"
-                  />
-                  {errors.linkedin && (
-                    <p className="text-sm text-red-500 mt-1">{errors.linkedin.message}</p>
-                  )}
-                </div>
-                <div>
-                  <Label className="flex items-center gap-2">
-                    <Globe size={18} /> Website
-                  </Label>
-                  <Input
-                    {...register("website")}
-                    placeholder="Website URL"
-                  />
-                  {errors.website && (
-                    <p className="text-sm text-red-500 mt-1">{errors.website.message}</p>
-                  )}
-                </div>
               </div>
 
               <div className="flex flex-col md:flex-row gap-4 mt-6">
@@ -329,7 +259,6 @@ export default function MyProfile() {
     );
   }
 
-  // View/Edit Profile - When profile exists
   return (
     <div className="max-w-3xl mx-auto p-6">
       <Card className="rounded-2xl shadow-md">
@@ -365,7 +294,7 @@ export default function MyProfile() {
                   <AvatarImage src={profileImage} alt="Profile" />
                 ) : null}
                 <AvatarFallback>
-                  {getInitials(profileData?.profile?.fullName || "")}
+                  {getInitials(profileData?.profile?.name || "")}
                 </AvatarFallback>
               </Avatar>
               {isEditMode && (
@@ -386,15 +315,15 @@ export default function MyProfile() {
             </div>
 
             <div>
-              <Label>Full Name</Label>
+              <Label>Name</Label>
               <Input
-                {...register("fullName")}
-                placeholder="Enter your full name"
+                {...register("name")}
+                placeholder="Enter your name"
                 disabled={!isEditMode}
                 className={!isEditMode ? "bg-muted" : ""}
               />
-              {errors.fullName && (
-                <p className="text-sm text-red-500 mt-1">{errors.fullName.message}</p>
+              {errors.name && (
+                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
               )}
             </div>
 
@@ -409,64 +338,6 @@ export default function MyProfile() {
               {errors.bio && (
                 <p className="text-sm text-red-500 mt-1">{errors.bio.message}</p>
               )}
-            </div>
-
-            <div>
-              <Label>Skills / Focus Areas</Label>
-              <Input
-                {...register("skills")}
-                placeholder="Eg. Marketing, Coaching, Branding"
-                disabled={!isEditMode}
-                className={!isEditMode ? "bg-muted" : ""}
-              />
-              {errors.skills && (
-                <p className="text-sm text-red-500 mt-1">{errors.skills.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Instagram size={18} /> Instagram
-                </Label>
-                <Input
-                  {...register("instagram")}
-                  placeholder="Instagram Profile URL"
-                  disabled={!isEditMode}
-                  className={!isEditMode ? "bg-muted" : ""}
-                />
-                {errors.instagram && (
-                  <p className="text-sm text-red-500 mt-1">{errors.instagram.message}</p>
-                )}
-              </div>
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Linkedin size={18} /> LinkedIn
-                </Label>
-                <Input
-                  {...register("linkedin")}
-                  placeholder="LinkedIn Profile URL"
-                  disabled={!isEditMode}
-                  className={!isEditMode ? "bg-muted" : ""}
-                />
-                {errors.linkedin && (
-                  <p className="text-sm text-red-500 mt-1">{errors.linkedin.message}</p>
-                )}
-              </div>
-              <div>
-                <Label className="flex items-center gap-2">
-                  <Globe size={18} /> Website
-                </Label>
-                <Input
-                  {...register("website")}
-                  placeholder="Website URL"
-                  disabled={!isEditMode}
-                  className={!isEditMode ? "bg-muted" : ""}
-                />
-                {errors.website && (
-                  <p className="text-sm text-red-500 mt-1">{errors.website.message}</p>
-                )}
-              </div>
             </div>
 
             {isEditMode && (

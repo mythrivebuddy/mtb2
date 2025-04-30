@@ -9,7 +9,6 @@ import {
   User,
   HelpCircle,
   Phone,
-  Gift,
   Sparkles,
   ShoppingCartIcon,
   Menu,

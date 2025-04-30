@@ -18,29 +18,9 @@ import Link from "next/link";
 import { Gift } from "lucide-react";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
-// import type { Notification as PrismaNotification } from "@prisma/client";
 import { formatJP } from "@/lib/utils/formatJP";
 import UserProfileDropdown from "./UserProfileDropDown";
 
-// Add this function at the top or import from a utils file
-// function formatJP(value: number): string {
-//   if (value >= 1_000_000) return Math.floor(value / 1_000_000) + "M";
-//   if (value >= 1_000) return Math.floor(value / 1_000) + "K";
-//   return value.toString();
-// }
-
-// Add interface for user profile response
-interface ProfileResponse {
-  profile: {
-    profilePicture?: string | null;
-    fullName?: string;
-    bio?: string;
-    skills?: string;
-    instagram?: string;
-    linkedin?: string;
-    website?: string;
-  };
-}
 
 const TopBarBadge = ({
   children,
@@ -78,13 +58,21 @@ export default function TopBar({ user }: { user?: UserType }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
-  // Add local state for profile picture for immediate updates
-  const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
-    null
-  );
-  const [localUserName, setLocalUserName] = useState<string | undefined>(
-    undefined
-  );
+  const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(user?.image || null);
+
+  // Listen for profile updates from other components
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      if (event.detail?.profilePicture) {
+        setLocalProfilePicture(event.detail.profilePicture);
+      }
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, []);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
@@ -92,76 +80,7 @@ export default function TopBar({ user }: { user?: UserType }) {
     enabled: searchTerm.length > 0,
   });
 
-  // Fetch user's profile data including profile picture
-  const { data: userProfileData, refetch: refetchUserProfile } =
-    useQuery<ProfileResponse>({
-      queryKey: ["userProfile"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get<ProfileResponse>(
-            "/api/user/my-profile"
-          );
-          return response.data;
-        } catch (getAxiosErrorMessage) {
-          console.error("Error fetching user profile:", getAxiosErrorMessage);
-          return {
-            profile: {
-              fullName: "",
-              bio: "",
-              skills: "",
-              instagram: "",
-              linkedin: "",
-              website: "",
-              profilePicture: null,
-            },
-          };
-        }
-      },
-      enabled: !!user?.id,
-      staleTime: 1000 * 60 * 5, // Reduced to 5 minutes to be more reactive
-      refetchOnWindowFocus: true, // Refetch when window regains focus
-      refetchOnMount: true, // Always refetch when component mounts
-    });
 
-  // Update local state when profile data is loaded
-  useEffect(() => {
-    if (userProfileData?.profile) {
-      setLocalProfilePicture(userProfileData.profile.profilePicture || null);
-      setLocalUserName(userProfileData.profile.fullName);
-    }
-  }, [userProfileData]);
-
-  // Listen for profile updates from other components
-  useEffect(() => {
-    const handleProfileUpdate = (event: CustomEvent) => {
-      if (event.detail) {
-        // Update local state immediately for instant UI updates
-        if (event.detail.profilePicture) {
-          setLocalProfilePicture(event.detail.profilePicture);
-        }
-        if (event.detail.fullName) {
-          setLocalUserName(event.detail.fullName);
-        }
-
-        // Also refetch the latest data
-        refetchUserProfile();
-      }
-    };
-
-    // Add event listener
-    window.addEventListener(
-      "profileUpdated",
-      handleProfileUpdate as EventListener
-    );
-
-    // Clean up
-    return () => {
-      window.removeEventListener(
-        "profileUpdated",
-        handleProfileUpdate as EventListener
-      );
-    };
-  }, [refetchUserProfile]);
 
   const { data: hasUnopenedBox } = useQuery({
     queryKey: ["magicBoxStatus"],
@@ -192,12 +111,6 @@ export default function TopBar({ user }: { user?: UserType }) {
   // Get the last segment of the pathname and remove query params
   const currentRoute = pathname.split("/").pop()?.split("?")[0] || "dashboard";
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
-
-  // Get user profile picture with priority to local state for immediate updates
-  const profilePicture =
-    localProfilePicture || userProfileData?.profile?.profilePicture;
-  const userName =
-    localUserName || userProfileData?.profile?.fullName || user?.name;
 
   return (
     <header className=" bg-transparent flex items-center justify-between">
@@ -295,8 +208,8 @@ export default function TopBar({ user }: { user?: UserType }) {
             </div>
           </TopBarBadge>
           <UserProfileDropdown 
-            userName={userName}
-            profilePicture={profilePicture}
+            userName={user?.name}
+            profilePicture={localProfilePicture}
           />
         </div>
       </div>
