@@ -60,22 +60,33 @@ export async function POST(request: Request): Promise<Response> {
           let activityType: ActivityType;
           let jpAmount: number;
           
+          // Get the current JP amounts from the activity table
+          const activityData = await prisma.activity.findUnique({
+            where: { activity: ActivityType.GENERAL_FEEDBACK },
+          });
+
           switch (subject.toLowerCase()) {
             case "general":
               activityType = ActivityType.GENERAL_FEEDBACK;
-              jpAmount = 50;
+              jpAmount = activityData?.jpAmount || 50;
               break;
             case "feature":
               activityType = ActivityType.FEATURE_REQUEST;
-              jpAmount = 100;
+              const featureActivity = await prisma.activity.findUnique({
+                where: { activity: ActivityType.FEATURE_REQUEST },
+              });
+              jpAmount = featureActivity?.jpAmount || 100;
               break;
             case "bug":
               activityType = ActivityType.BUG_REPORT;
-              jpAmount = 150;
+              const bugActivity = await prisma.activity.findUnique({
+                where: { activity: ActivityType.BUG_REPORT },
+              });
+              jpAmount = bugActivity?.jpAmount || 150;
               break;
             default:
               activityType = ActivityType.GENERAL_FEEDBACK;
-              jpAmount = 50;
+              jpAmount = activityData?.jpAmount || 50;
           }
 
           await assignJp(user, activityType);
@@ -112,7 +123,7 @@ export async function POST(request: Request): Promise<Response> {
       <h2 style="color: #1E2875; font-size: 24px; margin-bottom: 20px;">Hello ${name},</h2>
       
       <p style="color: #4a4a4a; font-size: 16px; line-height: 1.7; margin-bottom: 20px;">
-        Thank you for reaching out to <strong>MyThriveBuddy</strong>. We’ve received your message and our team will get back to you as soon as possible.
+        Thank you for reaching out to <strong>MyThriveBuddy</strong>. We've received your message and our team will get back to you as soon as possible.
       </p>
 
       ${jpMessage ? `

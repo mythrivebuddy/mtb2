@@ -148,6 +148,16 @@ export const step4Schema = z.object({
 });
 
 
+// Profile Schema
+export const profileSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  bio: z.string().max(500, "Bio cannot exceed 500 characters").min(10, "Bio must be at least 10 characters"),
+  skills: z.string().max(100, "Skills cannot exceed 200 characters").min(5, "Skills must be at least 5 characters"),
+  instagram: z.string().url("Please enter a valid URL"),
+  linkedin: z.string().url("Please enter a valid URL"),
+  website: z.string().url("Please enter a valid URL"),
+});
+
 export type ProsperityFormType = z.infer<typeof prosperitySchema>;
 export type SignupFormType = z.infer<typeof signupSchema>;
 export type SigninFormType = z.infer<typeof signinSchema>;
@@ -157,4 +167,5 @@ export type Step1FormType = z.infer<typeof step1Schema>;
 export type Step2FormType = z.infer<typeof step2Schema>;
 export type Step3FormType = z.infer<typeof step3Schema>;
 export type Step4FormType = z.infer<typeof step4Schema>;
+export type ProfileFormType = z.infer<typeof profileSchema>;
 

@@ -1,18 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { addMinutes } from "date-fns";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 // This endpoint can be called by a CRON job service (e.g., Vercel Cron)
 // It should be scheduled to run every 5 minutes
-export async function GET() {
+export async function GET(req:NextRequest) {
   try {
     // Get authorization token from request headers
-    // const authHeader = req.headers.get("authorization");
+    const authHeader = req.headers.get("authorization");
     
     // // Basic auth check for cron job
-    // if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     
     // Get current time
     const now = new Date();

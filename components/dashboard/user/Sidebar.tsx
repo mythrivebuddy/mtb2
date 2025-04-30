@@ -5,31 +5,24 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Home,
-  BarChart2,
-  CreditCard,
   LayoutList,
-  MessageCircle,
   User,
   HelpCircle,
   Phone,
-  LogOut,
-  UserRound,
   Gift,
   Sparkles,
-  History,
   ShoppingCartIcon,
-  UserPlus,
   Menu,
   WandSparklesIcon,
   LucideSignalHigh,
   TrendingUp,
+  BookOpen,
+  GlobeLock,
+  LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
-import { signOut } from "next-auth/react";
-import ConfirmAction from "@/components/ConfirmAction";
-import { getInitials } from "@/utils/getInitials";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -83,7 +76,7 @@ type NavSectionProps = {
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
   <div className={cn("space-y-2", className)}>
-    <h4 className="text-[#405D9F] font-normal text-lg">{title}</h4>
+    <h4 className="text-[#405D9F] font-normal text-sm">{title}</h4>
     <nav>
       <ul className="">{children}</ul>
     </nav>
@@ -141,15 +134,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           {/* User Profile Section */}
           <div className="flex flex-col my-6 px-5">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-lg bg-blue-600 overflow-hidden flex items-center justify-center">
-                {user?.name ? (
-                  <h2 className="text-xl text-white">
-                    {getInitials(user.name)}
-                  </h2>
-                ) : (
-                  <UserRound size={24} />
-                )}
-              </div>
               <div>
                 <div className="flex items-center gap-1">
                   <p className="text-sm">Hello</p>
@@ -167,24 +151,17 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem href="/" icon={<Home size={20} />} label="Home" />
                 <NavItem
                   href="/dashboard"
-                  icon={<LayoutList size={20} />}
+                  icon={<LayoutDashboard size={20} />}
                   label="Dashboard"
                 />
-                <NavItem
-                  href="/dashboard/insights"
-                  icon={<BarChart2 size={20} />}
-                  label="Insights"
-                />
-                <NavItem
-                  href="/dashboard/subscription"
-                  icon={<CreditCard size={20} />}
-                  label="Subscription"
-                />
+
                 <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                 />
+              </NavSection>
+              <NavSection title="Features">
                 <NavItem
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
@@ -205,43 +182,25 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   icon={<Gift size={20} />}
                   label="Prosperity Drops"
                 />
-                <ComingSoonWrapper>
-                  <NavItem
-                    href=""
-                    icon={<MessageCircle size={20} />}
-                    label="Messages"
-                    badge={2}
-                  />
-                </ComingSoonWrapper>
+
                 <NavItem
                   href="/dashboard/spotlight"
                   icon={<Sparkles size={20} />}
                   label="Spotlight"
                 />
-
-                <NavItem
-                  href="/dashboard/transactions-history"
-                  icon={<History size={20} />}
-                  label="Transactions"
-                />
-                <NavItem
-                  href="/dashboard/store"
-                  icon={<ShoppingCartIcon size={20} />}
-                  label="Store"
-                />
-                {/* <NavItem
-                  href="/dashboard/magic-box"
-                  icon={<Wand2 size={20} />}
-                  label="Magic Box"
-                /> */}
+                <ComingSoonWrapper>
+                  <NavItem
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Store"
+                  />
+                </ComingSoonWrapper>
               </NavSection>
-
               {/* Settings Section */}
               <NavSection title="Settings">
                 <NavItem
-                  href="/dashboard/profile"
+                  href="/dashboard/business-profile"
                   icon={<User size={20} />}
-                  label="Profile"
+                  label="Business Profile"
                 />
                 <NavItem
                   href="/dashboard/faq"
@@ -254,20 +213,15 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Contact us"
                 />
                 <NavItem
-                  href="/dashboard/refer-friend"
-                  icon={<UserPlus size={20} />}
-                  label="Refer a friend"
+                  href="/blog"
+                  icon={<BookOpen size={20} />}
+                  label="Blog"
                 />
-                <ConfirmAction
-                  action={() => signOut()}
-                  title="Confirm Logout"
-                  description="Are you sure you want to logout? You will need to sign in again to access your account."
-                  confirmText="Logout"
-                >
-                  <button>
-                    <NavItem icon={<LogOut size={20} />} label="Logout" />
-                  </button>
-                </ConfirmAction>
+                <NavItem
+                  href="/about-us"
+                  icon={<GlobeLock size={20} />}
+                  label="About us"
+                />
               </NavSection>
             </div>
           </div>

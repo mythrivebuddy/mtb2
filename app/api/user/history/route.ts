@@ -25,6 +25,9 @@ export async function GET(request: Request) {
       }),
     ]);
 
+    const totalPages = Math.ceil(total / limit);
+    const currentPage = page > totalPages ? totalPages : page;
+
     const formattedTransactions = transactions.map((tx) => ({
       ...tx,
       activity: {
@@ -37,6 +40,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       transactions: formattedTransactions,
       total,
+      page: currentPage,
+      limit,
+      totalPages,
     });
   } catch (error) {
     console.error("Error fetching user history:", error);

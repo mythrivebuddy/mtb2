@@ -187,32 +187,26 @@ export default function SpotlightCard() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0A0B1C] rounded-[32px] md:px-8 px-4 text-white relative overflow-hidden h-full"
+      className="rounded-[32px] md:px-10 px-4 text-white relative overflow-hidden h-full"
+      style={{
+        backgroundImage: `url('/landing-bg.svg')`, // Replace with your image URL or path
+        backgroundSize: "100% 100%", // Adjusts image to cover the container
+        backgroundPosition: "center", // Centers the image
+        backgroundRepeat: "no-repeat", // Prevents image repetition
+      }}
     >
       <div>
-        <h2 className="text-[32px] font-bold leading-tight my-8">
+        <h2 className="md:text-[36px] text-lg font-bold leading-normal my-8">
           Spotlight of
-          <br />
+          <br className="md:block hidden" />
           the Day.
         </h2>
 
-        <p className="text-[#B4B4B4] text-[16px] mb-6">
+        <p className="text-[#B4B4B4] md:text-[25px] mb-6">
           Meet the inspiring solopreneur leading the way today.
         </p>
 
-        <div className="flex items-center space-x-5 mb-6">
-          <div className="relative w-[80px] h-[80px]">
-            <Image
-              src={
-                spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkImage ||
-                avtarImg
-              }
-              alt="Profile"
-              fill
-              className="rounded-full object-cover"
-              priority
-            />
-          </div>
+        <div className="flex items-end space-x-5 mb-6">
           <div>
             <h3 className="text-[24px] font-bold">
               {isLoading
@@ -224,10 +218,30 @@ export default function SpotlightCard() {
                 "Marketing Coordinator"}
             </p>
           </div>
+          <div className="relative md:w-[160px] md:h-[160px] w-[90px] h-[70px]">
+            <Image
+              src={
+                spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkImage ||
+                avtarImg
+              }
+              alt="Profile"
+              fill
+              className="rounded-full object-cover"
+              priority
+            />
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 md:mt-[160px]">
-          <p className="text-[#636363] text-[16px] leading-relaxed mb-6">
+        <div
+          className=" rounded-2xl md:p-6 p-2 md:mt-[160px]"
+          style={{
+            backgroundImage: `url('/spotlight-bg.svg')`, // Replace with your image URL or path
+            backgroundSize: "cover", // Adjusts image to cover the container
+            backgroundPosition: "center", // Centers the image
+            backgroundRepeat: "no-repeat", // Prevents image repetition
+          }}
+        >
+          <p className="text-[#50525B] text-[16px] leading-relaxed mb-6">
             {spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkDesc ||
               `This creates a sense of recognition and highlights the individual in
               focus, while maintaining the overall theme of growth and
@@ -241,7 +255,7 @@ export default function SpotlightCard() {
             target="_blank"
             onClick={handleConnectClick}
           >
-            <button className="w-full bg-[#1E2875] text-white py-3 rounded-lg font-medium hover:bg-[#1E2875]/90 transition-colors">
+            <button className=" bg-[#151E46] text-white py-2 px-4 rounded-full font-medium hover:bg-[#1E2875]/90 transition-colors">
               Let&apos;s Connect
             </button>
           </a>

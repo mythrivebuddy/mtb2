@@ -24,7 +24,7 @@ export default function Navbar() {
             height={40}
             className="object-contain"
           />
-          <span className="font-semibold text-lg sm:text-[22px] text-[#1E2875]">
+          <span className="font-semibold md:text-lg  text-[#1E2875]">
             MyThriveBuddy.com
           </span>
           <span className="text-[10px] sm:text-[12px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
@@ -37,6 +37,7 @@ export default function Navbar() {
          {session && <NavLink href="/dashboard">Dashboard</NavLink>}
           <NavLink href="/blog">Blog</NavLink>
           <NavLink href="/contact">Contact Us</NavLink>
+          <NavLink href="/about-us">About Us</NavLink>
           <div className="flex items-center space-x-3">
             {session ? (
               <Button
@@ -98,6 +99,7 @@ export default function Navbar() {
           <div className="flex flex-col space-y-4">
             <NavLink href="/blog">Blog</NavLink>
             <NavLink href="/contact">Contact Us</NavLink>
+            <NavLink href="/about-us">About Us</NavLink>
             {session ? (
               <Button
                 onClick={() => signOut()}
