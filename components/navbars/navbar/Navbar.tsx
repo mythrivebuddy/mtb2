@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import logoImg from "../../../public/logo.png";
 import NavLink from "./NavLink";
 import { Button } from "../../ui/button";
 
