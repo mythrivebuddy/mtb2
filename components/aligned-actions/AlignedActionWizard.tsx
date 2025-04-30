@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
+
 
 interface AlignedActionWizardProps {
   onComplete: () => void;
@@ -183,7 +183,7 @@ export default function AlignedActionWizard({
 
   return (
     <>
-    <CustomAccordion/>
+
     <div className="space-y-6">
       {/* Step indicators */}
       <div className="flex justify-center mb-8">
