@@ -14,6 +14,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { getInitials } from "@/utils/getInitials";
+
 
 interface ProfileResponse {
   profile: {
@@ -152,14 +154,6 @@ export default function MyProfile() {
     setIsEditMode(!isEditMode);
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return "?";
-    return name.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
 
   if (isLoadingProfile) {
     return (
