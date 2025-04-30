@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/table";
 import { useState } from "react";
 import { Pagination } from "@/components/ui/pagination";
+import { getInitials } from "@/utils/getInitials";
+import Image from "next/image";
 
 interface SpotlightApplication {
   id: string;
@@ -27,6 +29,7 @@ interface SpotlightApplication {
     name: string;
     email: string;
     id: string;
+    image: string | null;
   };
   status: SpotlightStatus;
   appliedAt: string;
@@ -50,14 +53,6 @@ const updateSpotlightStatus = async (id: string) => {
     status: "IN_REVIEW",
   });
   return response.data;
-};
-
-const getInitials = (name: string) => {
-  const names = name.trim().split(" ");
-  return names
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
 };
 
 const getStatusBadgeVariant = (
@@ -140,7 +135,17 @@ export default function SpotlightApplication() {
             <div className="flex items-start">
               <div className="mr-6">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-pink-100 flex items-center justify-center text-lg font-bold">
-                  {getInitials(currentSpotlight.user.name)}
+                  {currentSpotlight.user.image ? (
+                    <Image
+                      src={currentSpotlight.user.image}
+                      alt={currentSpotlight.user.name}
+                      width={96}
+                      height={96}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    getInitials(currentSpotlight.user.name)
+                  )}
                 </div>
               </div>
               <div className="flex-1">
@@ -194,8 +199,18 @@ export default function SpotlightApplication() {
                 <TableRow key={app.id}>
                   <TableCell className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-medium">
-                        {getInitials(app.user.name)}
+                      <div className="h-10 w-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-sm font-medium">
+                        {app.user.image ? (
+                          <Image
+                            src={app.user.image}
+                            alt={app.user.name}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          getInitials(app.user.name)
+                        )}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium">

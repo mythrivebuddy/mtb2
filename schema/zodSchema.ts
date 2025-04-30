@@ -150,12 +150,8 @@ export const step4Schema = z.object({
 
 // Profile Schema
 export const profileSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
   bio: z.string().max(500, "Bio cannot exceed 500 characters").min(10, "Bio must be at least 10 characters"),
-  skills: z.string().max(100, "Skills cannot exceed 200 characters").min(5, "Skills must be at least 5 characters"),
-  instagram: z.string().url("Please enter a valid URL"),
-  linkedin: z.string().url("Please enter a valid URL"),
-  website: z.string().url("Please enter a valid URL"),
 });
 
 export type ProsperityFormType = z.infer<typeof prosperitySchema>;
