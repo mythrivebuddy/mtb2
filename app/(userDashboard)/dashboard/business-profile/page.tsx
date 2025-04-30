@@ -214,7 +214,7 @@ const Page = () => {
     <div className="flex-1 md:p-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">
         Business Profile
-      </h1>
+      </h1> 
       <CompletionBar percentage={profile?.completionPercentage ?? 0} />
       {loading && (
         <div className="mb-4 flex justify-center items-center">
@@ -222,6 +222,7 @@ const Page = () => {
         </div>
       )}
       {!isEditing ? (
+        
         <ProfileDisplay
           profileData={profile}
           onEditClick={() => setIsEditing(true)}
