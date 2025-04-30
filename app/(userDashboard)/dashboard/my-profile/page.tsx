@@ -35,7 +35,6 @@ export default function MyProfile() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
     reset
   } = useForm<ProfileFormType>({
     resolver: zodResolver(profileSchema),
