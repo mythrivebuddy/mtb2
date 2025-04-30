@@ -148,11 +148,12 @@
 // };
 
 // export default InsightsPage;
+
 import Image from "next/image";
 
 export default function DailyThriveInsights() {
   return (
-    <div className=" bg-white py-12 px-4 sm:px-6 lg:px-8 rounded-lg border bg-card text-card-foreground shadow-sm">
+    <div className="bg-white py-12 px-4 sm:px-6 lg:px-8 rounded-lg border bg-card text-card-foreground shadow-sm">
       <div className="max-w-6xl mx-auto">
         {/* Header Section */}
         <div className="text-center mb-12">
@@ -197,7 +198,7 @@ export default function DailyThriveInsights() {
             <div className="bg-[linear-gradient(90deg,#B9591C_0%,#8E3903_100%)] flex items-center rounded-lg min-h-40 p-8 pt-10 text-white text-center relative">
               <p className="text-xl font-medium">
                 Using Spotlight, you generated $6,453 in monthly sales from just
-                4 visibility momentst.
+                4 visibility moments.
               </p>
               <div className="absolute -bottom-3 left-4 shadow-md bg-white rounded-md">
                 <div className="w-[58px] h-[58px] flex items-center justify-center">
