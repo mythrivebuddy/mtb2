@@ -61,13 +61,14 @@ export default function Page() {
     <AppLayout>
       <div className="p-8 m-2">
         <h1 className="text-4xl font-bold text-gray-900 mb-5">{blog?.title}</h1>
-        <Image
-          src={blog?.image as string}
-          alt={blog?.title as string}
-          width={800}
-          height={200}
-          className="rounded-lg w-full h-[300px] object-cover"
-        />
+        <div className="relative w-full aspect-[16/5] mb-6 rounded-lg overflow-hidden">
+          <Image
+            src={blog?.image as string}
+            alt={blog?.title as string}
+            fill
+            className="object-cover"
+          />
+        </div>
         <div className="flex justify-between text-gray-500 text-base my-5">
           <span className="italic">Read time: {blog?.readTime}</span>
         </div>
