@@ -235,6 +235,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Blog"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
+                
                 <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}
