@@ -30,8 +30,9 @@ type NavItemProps = {
   icon: React.ReactNode;
   label: string;
   badge?: string | number;
+  onLinkClick?: () => void; // Add prop for handling link click
 };
-const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
+const NavItem = ({ href, icon, label, badge, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
@@ -52,6 +53,7 @@ const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
             "flex items-center py-2",
             isActive ? "text-jp-orange" : "text-[#6C7894]"
           )}
+          onClick={onLinkClick} // Call onLinkClick when link is clicked
         >
           {content}
         </Link>
@@ -67,6 +69,7 @@ const NavItem = ({ href, icon, label, badge }: NavItemProps) => {
     </li>
   );
 };
+
 // Main navigation section component
 type NavSectionProps = {
   title: string;
@@ -148,17 +151,23 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
-                <NavItem href="/" icon={<Home size={20} />} label="Home" />
+                <NavItem
+                  href="/"
+                  icon={<Home size={20} />}
+                  label="Home"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
                 <NavItem
                   href="/dashboard"
                   icon={<LayoutDashboard size={20} />}
                   label="Dashboard"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
-
                 <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
               </NavSection>
               <NavSection title="Features">
@@ -166,32 +175,37 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
                   label="Miracle Log"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/dashboard/progress-vault"
                   icon={<LucideSignalHigh size={20} />}
                   label="1% Progress Vault"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/dashboard/aligned-actions"
                   icon={<TrendingUp size={20} />}
                   label="1% Start"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/dashboard/prosperity"
                   icon={<Droplet size={20} />}
                   label="Prosperity Drops"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
-
                 <NavItem
                   href="/dashboard/spotlight"
                   icon={<Sparkles size={20} />}
                   label="Spotlight"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <ComingSoonWrapper>
                   <NavItem
                     icon={<ShoppingCartIcon size={20} />}
                     label="Store"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
                 </ComingSoonWrapper>
               </NavSection>
@@ -201,26 +215,32 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   href="/dashboard/business-profile"
                   icon={<User size={20} />}
                   label="Business Profile"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/dashboard/faq"
                   icon={<HelpCircle size={20} />}
                   label="FAQ's"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/contact"
                   icon={<Phone size={20} />}
                   label="Contact us"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/blog"
                   icon={<BookOpen size={20} />}
                   label="Blog"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
+                
                 <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}
                   label="About us"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
               </NavSection>
             </div>

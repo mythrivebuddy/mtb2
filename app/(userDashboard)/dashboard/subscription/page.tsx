@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
-import { Check, Loader2, Info, AlertCircle, X } from "lucide-react";
+import { Loader2, Info, X } from "lucide-react";
 import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import PageLoader from "@/components/PageLoader";
@@ -168,11 +168,16 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                   if (!details) {
                     throw new Error("Failed to capture subscription");
                   }
-                  paidAmount = price; // Use the plan price for subscriptions
+                  paidAmount = price;
                   const subscriptionId = details.id;
-                  const res = await axios.post("/api/user/subscription/create",{subscriptionId});
-                  if(!res){
-                    throw new Error("Failed to update subscription in database");
+                  const res = await axios.post(
+                    "/api/user/subscription/create",
+                    { subscriptionId }
+                  );
+                  if (!res) {
+                    throw new Error(
+                      "Failed to update subscription in database"
+                    );
                   }
                   console.log("Subscription created:", details);
                 } else {
@@ -243,51 +248,33 @@ const PlanCard: React.FC<PlanCardProps> = ({
   isCurrentPlan,
   disabled = false,
 }) => (
-  <div
-    className={`bg-[#F1F3FF] shadow-md rounded-lg p-6 flex flex-col justify-between items-center h-full ${
-      isCurrentPlan ? "border-2 border-[#151E46]" : ""
-    }`}
-  >
-    <div className="w-full flex flex-col items-center">
-      <h3 className="text-lg font-semibold mb-2">{name}</h3>
-      {isCurrentPlan && (
-        <div className="bg-[#151E46] text-white text-xs px-3 py-1 rounded-full mb-3 flex items-center">
-          <Check className="w-3 h-3 mr-1" /> Current Plan
-        </div>
-      )}
-      <div className="flex items-baseline mb-2">
-        <span className="text-lg">$</span>
-        <span className="text-2xl font-bold">{price} </span>
-      </div>
-      <div>
-        {(period || discount) && (
-          <span className="text-sm text-gray-600 mb-4">
-            {` ${period}`}
-            {discount && ` (${discount})`}
-          </span>
-        )}
-      </div>
+  <div className="bg-[#F1F3FF] border border-gray-200 rounded-lg overflow-hidden p-5">
+    <div className="p-6 text-center min-h-[148px]">
+      <h2 className="text-3xl font-bold text-gray-900">{name}</h2>
+      <p className="text-xl text-gray-600 mt-2">
+        ${price} {period}
+        {discount && ` (${discount})`}
+      </p>
     </div>
-
-    <button
-      onClick={onSubscribe}
-      disabled={isLoading || disabled || isCurrentPlan}
-      className={`w-full rounded-md py-2 transition-colors mt-4 ${
-        isCurrentPlan || disabled
-          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-          : "bg-[#151E46] text-white hover:bg-[#14162F]/90"
-      }`}
-    >
-      {isCurrentPlan ? (
-        "Current Plan"
-      ) : disabled ? (
-        "Not Available"
-      ) : isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-      ) : (
-        "Subscribe"
-      )}
-    </button>
+    <div className="px-6 pb-6">
+      <button
+        onClick={onSubscribe}
+        disabled={isLoading || disabled || isCurrentPlan}
+        className={`w-full py-3 px-4 rounded-md text-lg font-medium transition-colors ${
+          isCurrentPlan || disabled
+            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+            : name === "Monthly Plan"
+              ? "bg-[#151E46] hover:bg-[#1a2a5e] text-white"
+              : "bg-[#111c40] hover:bg-[#1a2a5e] text-white"
+        }`}
+      >
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+        ) : (
+          "Subscribe"
+        )}
+      </button>
+    </div>
   </div>
 );
 
@@ -311,7 +298,7 @@ const CurrentPlanStatus: React.FC<CurrentPlanStatusProps> = ({
         <h3 className="text-md font-medium">Your Current Subscription</h3>
         <p className="text-sm text-gray-600">
           You are currently subscribed to the{" "}
-          <span className="font-medium">{currentPlan.name}</span>;
+          <span className="font-medium">{currentPlan.name}</span>
           {planStart && (
             <span> since {format(new Date(planStart), "MMMM d, yyyy")}</span>
           )}
@@ -416,13 +403,11 @@ const SubscriptionPage: React.FC = () => {
     () => data?.plans.find((plan) => plan.name === "Yearly Plan"),
     [data?.plans]
   );
-  console.log(yearlyPlan);
 
   const lifetimeStandardPlan = useMemo(
     () => data?.plans.find((plan) => plan.name === "Lifetime Plan Standard"),
     [data?.plans]
   );
-  console.log(lifetimeStandardPlan);
 
   if (isLoading) {
     return <PageLoader />;
@@ -431,11 +416,9 @@ const SubscriptionPage: React.FC = () => {
   const hasLifetimePlan = data?.currentPlan?.name.startsWith("Lifetime Plan");
   const hasActivePlan = data?.hasActiveSubscription && data?.currentPlan;
 
-  // Filter lifetime tiers to show only current and future tiers
-  const availableTiers = (data?.lifetimeTiers || []).sort(
-    (a, b) => Number(a.price) - Number(b.price)
-  );
-  console.log("availableTiers:", availableTiers);
+  const availableTiers = (data?.lifetimeTiers || [])
+    .filter((tier) => tier.planName !== "Lifetime Plan Standard")
+    .sort((a, b) => Number(a.price) - Number(b.price));
 
   const getDisabledStatus = (planName: string) => {
     if (!hasActivePlan) return false;
@@ -443,35 +426,51 @@ const SubscriptionPage: React.FC = () => {
     const currentPlan = data.currentPlan?.name;
 
     if (currentPlan === "Lifetime Plan Standard") {
-      // If user has Lifetime Plan, everything else is disabled
       return planName !== "Lifetime Plan Standard";
     }
 
     if (currentPlan === "Yearly Plan") {
-      // If user has Yearly Plan, Monthly is disabled, Lifetime is available
       return planName === "Monthly Plan";
     }
 
     if (currentPlan === "Monthly Plan") {
-      // If user has Monthly Plan, everything is available
       return false;
     }
 
-    return false; // fallback
+    return false;
   };
 
+  const taglines = [
+    "Early Bird Gets The Best Deal!",
+    "Still Early — Save Big!",
+    "Almost Half Gone – Act Fast!",
+    "Last Few Spots Left!",
+    "Final Chance At This Offer!",
+  ];
+
+  const currentTierIndex = availableTiers.findIndex(
+    (tier) => tier.planId === data?.currentLifetimePlan.planId
+  );
+  const currentTier = availableTiers[currentTierIndex];
+  const upperLimit = currentTier
+    ? currentTier.userRange.split("-")[1].trim()
+    : "50";
+  const spotsClaimed = data?.lifetimePlanUsers || 0;
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2">
+    <div className=" bg-white py-12 px-4 sm:px-6 lg:px-8 ">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
             {hasActivePlan
               ? hasLifetimePlan
                 ? "You Have Lifetime Access"
                 : "Upgrade Your Plan"
-              : "Unlock Unlimited JoyPearls 🚀"}
-          </h2>
-          <p className="text-gray-600">
+              : "Unlock Unlimited JoyPearls"}
+            <span className="ml-2">🚀</span>
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             {hasActivePlan
               ? hasLifetimePlan
                 ? "You have unlimited access to all premium features with your Lifetime plan."
@@ -488,8 +487,8 @@ const SubscriptionPage: React.FC = () => {
           />
         )}
 
-        {/* Always show all three plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           {monthlyPlan && (
             <PlanCard
               name="Monthly Plan"
@@ -516,7 +515,11 @@ const SubscriptionPage: React.FC = () => {
               name="Yearly Plan"
               price={yearlyPlan.price}
               period="per year"
-              discount="Save 14%"
+              discount={
+                yearlyPlan.discountPercent
+                  ? `Save ${yearlyPlan.discountPercent}%`
+                  : undefined
+              }
               onSubscribe={() =>
                 handleSubscribe(
                   yearlyPlan.id,
@@ -537,7 +540,7 @@ const SubscriptionPage: React.FC = () => {
             <PlanCard
               name="Lifetime Plan"
               price={lifetimeStandardPlan.price}
-              period="one-time payment"
+              period="One-time payment"
               onSubscribe={() =>
                 handleSubscribe(
                   lifetimeStandardPlan.id,
@@ -559,93 +562,101 @@ const SubscriptionPage: React.FC = () => {
           )}
         </div>
 
-        {/* Show limited offer section only if lifetimePlanUsers < 50 */}
+        {/* Banner and Table Section */}
         {data?.limitedOfferAvailable && (
-          <div className="bg-[#FFF7F7] shadow-md rounded-lg px-6 py-10 text-center mt-6">
-            <div className="flex items-center justify-center mb-4">
-              <AlertCircle className="w-5 h-5 text-jp-orange mr-2" />
-              <h3 className="text-xl font-semibold text-jp-orange">
-                Limited Lifetime Offer
-              </h3>
-            </div>
-            <p className="text-gray-600 mb-4">
-              Only {50 - (data.lifetimePlanUsers || 0)} spots left at discounted
-              rates! ({data.lifetimePlanUsers}/50 claimed)
-            </p>
-            <div className="mb-6">
-              <table className="w-full text-left text-sm text-gray-600">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-2">Tier</th>
-                    <th className="py-2">User Range</th>
-                    <th className="py-2">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableTiers.map((tier) => (
-                    <tr
-                      key={tier.tier}
-                      className={`${
-                        tier.planName === data.currentLifetimePlan.planName
-                          ? "bg-jp-orange/10 font-semibold"
-                          : "text-gray-400"
-                      } hover:bg-gray-50`}
-                    >
-                      <td className="py-2">{tier.tier}</td>
-                      <td className="py-2">{tier.userRange}</td>
-                      <td className="py-2">${tier.price}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* Only show claim button for the current tier */}
-            {data.currentLifetimePlan && (
-              <button
-                onClick={() =>
-                  handleSubscribe(
-                    data.currentLifetimePlan.planId,
-                    data.currentLifetimePlan.price,
-                    data.plans.find(
-                      (p) => p.id === data.currentLifetimePlan.planId
-                    )!,
-                    data.currentLifetimePlan.paypalPlanId,
-                    false
-                  )
-                }
-                disabled={isSubscribing}
-                className="bg-[#FF6B6B] text-white rounded-lg px-8 py-2 hover:bg-[#FF6B6B]/90 transition-colors"
-              >
-                {isSubscribing ? (
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                ) : (
-                  `Claim ${data.currentLifetimePlan.planName} for $${data.currentLifetimePlan.price}`
-                )}
+          <div className="bg-[#111c40] text-white rounded-lg p-6 mb-8 relative">
+            <div className="mb-8">
+              <button className="w-full md:w-auto mx-auto block bg-slate-200 text-[#111c40] hover:bg-gray-100 py-3 px-6 rounded-md text-lg font-semibold transition-colors absolute -top-3">
+                Invest Once, Thrive Forever — Grab Your Lifetime Plan Now!
               </button>
-            )}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-12">
+              {/* Pricing Table */}
+              <div className="col-span-1 lg:col-span-3">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="py-3 text-left">Range</th>
+                        <th className="py-3 text-left">Price</th>
+                        <th className="py-3 text-left">Tagline</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availableTiers.map((tier, index) => (
+                        <tr
+                          key={tier.tier}
+                          className={
+                            index !== currentTierIndex ? "text-gray-400" : ""
+                          }
+                        >
+                          <td className="py-3">{tier.userRange}</td>
+                          <td className="py-3">${tier.price}</td>
+                          <td className="py-3">{taglines[index]}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              {/* Limited Offer Box */}
+              <div className="col-span-1 bg-white text-[#111c40] rounded-lg p-6">
+                <div className="text-center">
+                  <h3 className="text-3xl font-bold mb-2">Limited Offer</h3>
+                  <p className="text-[#ff7f7f] font-medium mb-4">
+                    {taglines[currentTierIndex]}
+                  </p>
+                  <div className="text-5xl font-bold mb-6">
+                    {spotsClaimed}/{upperLimit}
+                  </div>
+                  <button
+                    onClick={() =>
+                      handleSubscribe(
+                        data.currentLifetimePlan.planId,
+                        data.currentLifetimePlan.price,
+                        data.plans.find(
+                          (p) => p.id === data.currentLifetimePlan.planId
+                        )!,
+                        data.currentLifetimePlan.paypalPlanId,
+                        false
+                      )
+                    }
+                    disabled={isSubscribing}
+                    className="w-full bg-[#ff7f7f] hover:bg-[#ff6666] text-white py-3 px-4 rounded-md text-lg font-medium transition-colors"
+                  >
+                    {isSubscribing ? (
+                      <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                    ) : (
+                      `Claim Spot for $${data.currentLifetimePlan.price}`
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </div>
 
-      {selectedPlan && (
-        <PaymentModal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setSelectedPlan(null);
-            setSelectedPrice("");
-            setSelectedPaypalPlanId("");
-            setIsSubscription(false);
-          }}
-          plan={selectedPlan}
-          price={selectedPrice}
-          paypalPlanId={selectedPaypalPlanId}
-          isSubscription={isSubscription}
-          onSuccess={handlePaymentSuccess}
-        />
-      )}
+        {selectedPlan && (
+          <PaymentModal
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedPlan(null);
+              setSelectedPrice("");
+              setSelectedPaypalPlanId("");
+              setIsSubscription(false);
+            }}
+            plan={selectedPlan}
+            price={selectedPrice}
+            paypalPlanId={selectedPaypalPlanId}
+            isSubscription={isSubscription}
+            onSuccess={handlePaymentSuccess}
+          />
+        )}
+      </div>
     </div>
   );
 };
 
 export default SubscriptionPage;
+ 

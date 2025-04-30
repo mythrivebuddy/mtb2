@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
     if (!validationResult.success) {
       console.log("Validation errors:", validationResult.error.format());
       return NextResponse.json(
-        { message: "Invalid profile data", errors: validationResult.error.format() },
+        {
+          message: "Invalid profile data",
+          errors: validationResult.error.format(),
+        },
         { status: 400 }
       );
     }
@@ -73,7 +76,6 @@ export async function POST(req: NextRequest) {
       message: "Profile updated successfully",
       profile: updatedUser,
     });
-
   } catch (error) {
     console.error("Error updating profile:", error);
     return NextResponse.json(
@@ -114,7 +116,6 @@ export async function GET() {
       message: "Profile fetched successfully",
       profile: user,
     });
-
   } catch (error) {
     console.error("Error fetching profile:", error);
     return NextResponse.json(
@@ -123,5 +124,3 @@ export async function GET() {
     );
   }
 }
-
-

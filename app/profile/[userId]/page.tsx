@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +11,6 @@ import {
   Linkedin,
   // Twitter,
   Instagram,
-  Globe,
   Share2,
   Facebook,
   Youtube,
@@ -83,7 +80,7 @@ export default function UserDetailsPage() {
     if (session?.user?.id && userId !== session.user.id) {
       timeoutId = setTimeout(() => {
         axios
-          .post('/api/user/insights/profile-views', {
+          .post("/api/user/insights/profile-views", {
             userId,
             viewerId: session.user.id,
           })
@@ -111,7 +108,7 @@ export default function UserDetailsPage() {
     toast.success("Profile link copied to clipboard!");
   };
 
-  console.log("userdata=",userData);
+  console.log("userdata=", userData);
 
   if (isLoading) {
     return (
@@ -150,7 +147,7 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 h-full overflow-x-auto">
+    <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <Card className="bg-white/80 shadow-sm">
           <CardHeader>
@@ -284,14 +281,14 @@ export default function UserDetailsPage() {
           <CardContent className="space-y-6">
             {userData.website && (
               <div className="flex items-center space-x-2">
-                <Globe className="h-5 w-5 text-gray-500" />
                 <a
                   href={userData.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
                 >
-                  {userData.website}
+                  <button className="bg-blue-600 text-white text-base font-normal px-4 py-1 rounded hover:bg-blue-700 transition">
+                    Visit Website
+                  </button>
                 </a>
               </div>
             )}
@@ -315,13 +312,13 @@ export default function UserDetailsPage() {
                   {/* <Twitter className="h-6 w-6 text-blue-400 hover:text-blue-600" />
                    */}
 
-<svg
-className="h-4 w-4"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
                 </a>
               )}
               {userData.socialHandles.linkedin && (

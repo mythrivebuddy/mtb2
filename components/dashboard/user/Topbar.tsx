@@ -101,6 +101,7 @@ export default function TopBar({ user }: { user?: UserType }) {
       const { data } = await axios.get<{ unreadCount: number }>(
         "/api/user/notifications/unread"
       );
+      
       return data.unreadCount;
     },
     enabled: !!user?.id,
@@ -166,7 +167,7 @@ export default function TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
 
-        <div className="flex gap-3 sm:gap-6">
+        <div className="flex gap-3">
           <TopBarBadge>
             <Image
               src="/Pearls.png"
