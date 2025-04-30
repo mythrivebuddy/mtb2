@@ -198,7 +198,7 @@ export default function DailyThriveInsights() {
             <div className="bg-[linear-gradient(90deg,#B9591C_0%,#8E3903_100%)] flex items-center rounded-lg min-h-40 p-8 pt-10 text-white text-center relative">
               <p className="text-xl font-medium">
                 Using Spotlight, you generated $6,453 in monthly sales from just
-                4 visibility momentst.
+                4 visibility moments.
               </p>
               <div className="absolute -bottom-3 left-4 shadow-md bg-white rounded-md">
                 <div className="w-[58px] h-[58px] flex items-center justify-center">

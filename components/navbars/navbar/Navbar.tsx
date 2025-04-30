@@ -16,18 +16,18 @@ export default function Navbar() {
     <div className="relative">
       <div className="flex items-center justify-between">
         {/* Logo Section */}
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href="/" className="flex items-center space-x-2 relative">
           <Image
-            src={logoImg}
+            src="/icon-logo-mtb.png"
             alt="MyThriveBuddy"
-            width={40}
-            height={40}
+            width={50}
+            height={50}
             className="object-contain"
           />
-          <span className="font-semibold md:text-lg  text-[#1E2875]">
+          <span className="font-semibold md:text-[22px]  text-black">
             MyThriveBuddy.com
           </span>
-          <span className="text-[10px] sm:text-[12px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
+          <span className="md:text-[10px] absolute right-0 -top-3 text-[7px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
             BETA
           </span>
         </Link>

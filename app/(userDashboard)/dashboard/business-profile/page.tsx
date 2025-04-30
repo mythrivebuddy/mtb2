@@ -211,7 +211,7 @@ const Page = () => {
   }
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 md:p-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-800">
         Business Profile
       </h1>
