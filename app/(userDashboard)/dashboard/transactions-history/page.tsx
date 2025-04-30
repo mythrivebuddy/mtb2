@@ -18,7 +18,7 @@ import { TransactionDataTable } from "@/components/transaction-history/data-tabl
 import { Pagination } from "@/components/ui/pagination";
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_LIMIT = 5;
+const DEFAULT_LIMIT = 10;
 
 const LimitSelect = ({
   value,

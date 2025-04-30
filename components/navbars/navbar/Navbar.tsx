@@ -24,7 +24,7 @@ export default function Navbar() {
             height={40}
             className="object-contain"
           />
-          <span className="font-semibold text-lg sm:text-[22px] text-[#1E2875]">
+          <span className="font-semibold md:text-lg  text-[#1E2875]">
             MyThriveBuddy.com
           </span>
           <span className="text-[10px] sm:text-[12px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">

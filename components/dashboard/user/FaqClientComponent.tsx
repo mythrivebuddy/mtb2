@@ -83,7 +83,13 @@ const FaqClientComponent = () => {
                   }`}
                 >
                   <CardContent className="p-0 text-gray-700 text-sm">
-                    {faq.answer}
+                    {/* {faq.answer} */}
+
+                    <div
+          className="prose prose-lg max-w-none"
+          dangerouslySetInnerHTML={{ __html: faq?.answer ?? "" }}
+        >
+      </div>
                   </CardContent>
                 </div>
               </Card>
