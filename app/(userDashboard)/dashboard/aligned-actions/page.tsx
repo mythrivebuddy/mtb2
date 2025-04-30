@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import AlignedActionWizard from "@/components/aligned-actions/AlignedActionWizard";
 import ReminderListener from "@/components/aligned-actions/ReminderListener";
+import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 
 interface AlignedAction {
   id: string;
@@ -70,6 +71,8 @@ export default function AlignedActionsPage() {
   }
 
   return (
+    <>
+    <CustomAccordion/>
     <div className="container mx-auto py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -186,5 +189,6 @@ export default function AlignedActionsPage() {
       {/* Reminder listener component */}
       <ReminderListener onRefetch={refetch} />
     </div>
+            </>
   );
 }

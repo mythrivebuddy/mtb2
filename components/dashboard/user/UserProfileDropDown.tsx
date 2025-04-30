@@ -30,7 +30,7 @@ type UserDropdownProps = {
 
 const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) => {
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
-  console.log("UserProfileDropdown", { profilePicture, userName });
+  // console.log("UserProfileDropdown", { profilePicture, userName });
 
   return (
     <>

@@ -12,6 +12,7 @@ import { Prisma } from "@prisma/client";
 import axios from "axios";
 import ConfirmAction from "@/components/ConfirmAction";
 import { toast } from "sonner";
+import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 
 export default function SpotlightPage() {
   const [isChecked, setIsChecked] = useState(false);
@@ -80,6 +81,8 @@ export default function SpotlightPage() {
   };
 
   return (
+    <>
+    <CustomAccordion />
     <div className="container mx-auto px-0 py-8">
       {/* <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1> */}
 
@@ -177,5 +180,6 @@ export default function SpotlightPage() {
         </div>
       </Card>
     </div>
+              </>
   );
 }

@@ -96,7 +96,7 @@ model User {
   isBlocked                     Boolean?              @default(false)
   spotlight                     Spotlight[]
   userBusinessProfile           UserBusinessProfile[]
-  userProfile                   UserProfile?          // Relation to the new UserProfile model
+  // userProfile                   UserProfile?          // Relation to the new UserProfile model
   blockedUsers                  BlockedUsers[]
   miracleLog                    MiracleLog[]
   progressVault                 ProgressVault[]
@@ -139,7 +139,8 @@ model User {
   pushSubscriptions PushSubscription[]
 
   alignedActions AlignedAction[]
-
+  // Relation to the new UserProfile model
+  bio             String?
   @@index([name])
 }
 
@@ -508,19 +509,19 @@ model AlignedAction {
 }
 
 // New UserProfile model for storing user profile information
-model UserProfile {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName        String
-  bio             String?
-  skills          String?
-  instagram       String?
-  linkedin        String?
-  website         String?
-  profilePicture  String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+// model UserProfile {
+//   id              String    @id @default(uuid())
+//   userId          String    @unique
+//   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   fullName        String
+//   bio             String?
+//   skills          String?
+//   instagram       String?
+//   linkedin        String?
+//   website         String?
+//   profilePicture  String?
+//   createdAt       DateTime  @default(now())
+//   updatedAt       DateTime  @updatedAt
 
-  @@index([userId])
-}
+//   @@index([userId])
+// }

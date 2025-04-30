@@ -23,6 +23,8 @@ export async function GET(
 
     const response = {
       name: user.name,
+      fullname: user.fullName,
+      bio: user.bio,
       email: user.email,
       image: user.image,
       // name:profile?.name || null,
