@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import TikTokIcon from "@/components/icons/TiktokIcon";
 // import { FaWhatsapp } from 'react-icons/fa6'
 
 interface UserData {
@@ -347,7 +348,7 @@ export default function UserDetailsPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Music2Icon className="h-6 w-6 text-blue-700 hover:text-blue-900" />
+                  <TikTokIcon className="h-6 w-6 text-blue-700 hover:text-blue-900" />
                 </a>
               )}
               {userData.socialHandles.instagram && (

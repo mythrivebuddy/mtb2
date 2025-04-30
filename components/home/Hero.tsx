@@ -25,8 +25,8 @@ export default function Hero() {
       </div>
 
       <p className="md:text-[18px] text-[14px] text-[#636363] leading-relaxed max-w-xl">
-        Join the world&apos;s only platform / ecosystem that aims to provide
-        growth, joy, sense of belonging.
+        Solopreneurship doesn&apos;t have to be lonely. Join the ecosystem built
+        to make your journey joyful, connected and wildly fulfilling.
       </p>
 
       <div className="pt-2 sm:pt-4">
