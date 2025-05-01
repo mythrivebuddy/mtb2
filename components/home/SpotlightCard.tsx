@@ -206,8 +206,8 @@ export default function SpotlightCard() {
           Meet the inspiring solopreneur leading the way today.
         </p>
 
-        <div className="flex items-end space-x-5 mb-6">
-          <div>
+        <div className="flex items-end space-x-5 mb-6 space-between pl-[2%] pr-[8%]">
+          <div className="grow">
             <h3 className="text-[24px] font-bold">
               {isLoading
                 ? "Loading..."
@@ -233,7 +233,7 @@ export default function SpotlightCard() {
         </div>
 
         <div
-          className=" rounded-2xl md:p-6 p-2 md:mt-[160px]"
+          className=" rounded-2xl md:p-6 p-10 md:mt-[160px] mb-5"
           style={{
             backgroundImage: `url('/spotlight-bg.svg')`, // Replace with your image URL or path
             backgroundSize: "cover", // Adjusts image to cover the container

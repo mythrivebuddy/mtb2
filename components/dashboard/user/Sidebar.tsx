@@ -129,7 +129,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
       <div className="h-full self-stretch">
         <aside
           className={cn(
-            "fixed lg:static top-0 left-0 h-full bg-white shadow-lg rounded-3xl overflow-y-auto transition-transform duration-300 z-50",
+            "fixed lg:static top-0 left-0 h-[100vh] bg-white shadow-lg rounded-3xl custom-scroll overflow-y-scroll transition-transform duration-300 z-50",
             "w-64 lg:w-64",
             isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
@@ -235,7 +235,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Blog"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
-                
+
                 <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}

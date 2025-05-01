@@ -108,9 +108,6 @@
   display: none; /* Chrome, Safari, Opera */
 }
 
-
-
-
 /* Comin soon */
 
 .message {
@@ -153,11 +150,15 @@
 }
 .text-back {
   transform: rotateY(180deg);
-  
 }
 
-@media screen and (max-width:995px){
-  .texts{
+@media screen and (max-width: 995px) {
+  .texts {
     font-size: 10vh;
   }
-} 
+}
+
+.custom-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+}
