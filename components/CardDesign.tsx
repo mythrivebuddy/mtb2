@@ -10,7 +10,7 @@ const Card = ({ title, description, bgColor, icon }: { title: string; descriptio
   </div>
 );
 
-const CardGrid = () => {
+const    CardGrid = () => {
   const cards = [
     { title: 'MagicBox', description: 'Unlock Your Daily JoyPearl Surprise!', bgColor: 'bg-purple-700', icon: '/placeholder-icon1.png' },
     { title: 'BuddyLens', description: 'Ask, Reflect, and Grow with BuddyLens!', bgColor: 'bg-indigo-700', icon: '/placeholder-icon2.png' },
