@@ -127,7 +127,8 @@ export const authConfig: AuthOptions = {
 
           // Get referral code from cookies
           const cookieStore = await cookies();
-          const referralCode = cookieStore.get('referral_code')?.value;
+          const referralCode = cookieStore.get('referralCode')?.value;
+          console.log("referralCode", referralCode);
           let referredById = null;
 
           if (referralCode) {
@@ -174,7 +175,7 @@ export const authConfig: AuthOptions = {
             }
 
             // Clear the referral cookie
-            cookieStore.delete('referral_code');
+            cookieStore.delete('referralCode');
           }
 
           // Assign signup reward
