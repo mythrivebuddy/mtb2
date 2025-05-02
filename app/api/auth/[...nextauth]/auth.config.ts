@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
-
+import { cookies } from "next/headers";
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
 // const DEFAULT_MAX_AGE = 1 * 60;
@@ -126,10 +126,22 @@ export const authConfig: AuthOptions = {
         }
 
         if (!dbUser) {
-          // if user does not exist, create a new user and let signin
-          const role =
-            user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
-          // console.log(role);
+          const role = user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
+
+          // Get referral code from cookies
+          const cookieStore = await cookies();
+          const referralCode = cookieStore.get('referralCode')?.value;
+          console.log("referralCode", referralCode);
+          let referredById = null;
+
+          if (referralCode) {
+            const referrer = await prisma.user.findUnique({
+              where: { referralCode },
+            });
+            if (referrer) {
+              referredById = referrer.id;
+            }
+          }
 
           const createdUser = await prisma.user.create({
             data: {
@@ -145,8 +157,30 @@ export const authConfig: AuthOptions = {
             },
           });
 
-          // TODO add logic to assign JP as signup reward
-          //** assign JP as signin reward
+          // If user was referred, create referral record and assign JP
+          if (referredById) {
+            await prisma.referral.create({
+              data: {
+                referrerId: referredById,
+                referredId: createdUser.id,
+              },
+            });
+
+            // Assign JP to both users
+            assignJp(createdUser, ActivityType.REFER_TO);
+            const referrer = await prisma.user.findUnique({
+              where: { id: referredById },
+              include: { plan: true },
+            });
+            if (referrer) {
+              assignJp(referrer, ActivityType.REFER_BY);
+            }
+
+            // Clear the referral cookie
+            cookieStore.delete('referralCode');
+          }
+
+          // Assign signup reward
           assignJp(createdUser, ActivityType.SIGNUP);
 
           // console.log("user created info", createdUser);
