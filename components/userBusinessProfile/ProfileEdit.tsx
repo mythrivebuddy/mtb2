@@ -187,8 +187,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
             commonClassName={commonClassName}
           />
           <SocialHandlesCard
-            label="Twitter"
-            name="socialHandles.twitter"
+            label="X"
+            name="socialHandles.x"
             register={register}
             commonClassName={commonClassName}
           />

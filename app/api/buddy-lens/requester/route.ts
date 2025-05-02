@@ -1,16 +1,14 @@
-
-import { NextResponse } from 'next/server';
-import {  Prisma } from '@prisma/client';
-import { getServerSession } from "next-auth"; // or however you get the logged-in user
-import { authConfig } from '../../auth/[...nextauth]/auth.config';
-import {prisma} from '@/lib/prisma';
-
-
-
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth"; 
+import { authConfig } from "../../auth/[...nextauth]/auth.config";
+import { prisma } from "@/lib/prisma";
 
 // Helper to return error response
-const errorResponse = (message: string, status: number = 400) =>
-  NextResponse.json({ error: message }, { status });
+
+ function errorResponse(message: string, status: number = 400) {
+  return NextResponse.json({ message }, { status });
+}
 
 // POST: Create a new BuddyLens request and notify reviewers (excluding requester)
 // export async function POST(req: Request) {
@@ -137,8 +135,7 @@ const errorResponse = (message: string, status: number = 400) =>
 //   }
 // }
 
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const {
@@ -161,15 +158,15 @@ export async function POST(req: Request) {
       !expiresAt ||
       !jpCost
     ) {
-      return errorResponse('All required fields must be provided');
+      return errorResponse("All required fields must be provided");
     }
 
     if (!Array.isArray(questions)) {
-      return errorResponse('Questions must be an array');
+      return errorResponse("Questions must be an array");
     }
 
     if (new Date(expiresAt) <= new Date()) {
-      return errorResponse('Expiration must be a future date');
+      return errorResponse("Expiration must be a future date");
     }
 
     // Validate requesterId exists and has USER role
@@ -178,16 +175,24 @@ export async function POST(req: Request) {
       select: { id: true, email: true, role: true, jpBalance: true }, // Include jpBalance
     });
     if (!requester) {
-      return errorResponse('Invalid requester ID', 400);
+      console.log("Requester not found");
+      return errorResponse("Invalid requester ID", 400);
     }
-    if (requester.role !== 'USER') {
-      return errorResponse('Requester must have USER role', 403);
+    if (requester.role !== "USER") {
+      return errorResponse("Requester must have USER role", 403);
     }
-    console.log('Requester validated:', { id: requester.id, email: requester.email });
+    console.log("Requester validated:", {
+      id: requester.id,
+      email: requester.email,
+    });
 
     // Validate if the requester has enough Joy Pearls to set for the review
     if (requester.jpBalance < jpCost) {
-      return errorResponse('Insufficient Joy Pearls to create the request', 400);
+      console.log("insufficeint JP for requesta");
+      return errorResponse(
+        "Insufficient Joy Pearls to create the request",
+        400
+      );
     }
 
     // Create the request and notifications in a transaction
@@ -203,38 +208,47 @@ export async function POST(req: Request) {
           questions,
           jpCost,
           expiresAt: new Date(expiresAt),
-          status: 'OPEN',
+          status: "OPEN",
         },
       });
 
       // Deduct the Joy Pearls from the requester
-      await prisma.user.update({
-        where: { id: requesterId },
-        data: {
-          jpBalance: { decrement: jpCost },
-        },
-      });
+      // await prisma.user.update({
+      //   where: { id: requesterId },
+      //   data: {
+      //     jpBalance: { decrement: jpCost },
+      //   },
+      // });
 
       // Fetch all users with USER role, explicitly excluding the requester
       const reviewers = await prisma.user.findMany({
         where: {
-          role: 'USER',
+          role: "USER",
           id: { not: requesterId }, // Exclude the requester
         },
         select: { id: true, email: true },
       });
 
       // Log reviewers for debugging
-      console.log('Reviewers queried:', reviewers.map((r) => ({ id: r.id, email: r.email })));
+      console.log(
+        "Reviewers queried:",
+        reviewers.map((r) => ({ id: r.id, email: r.email }))
+      );
 
       // Triple-check requester is not in reviewers
       const filteredReviewers = reviewers.filter((r) => r.id !== requesterId);
       if (filteredReviewers.length !== reviewers.length) {
-        console.error('Requester included in reviewers despite filter:', requesterId);
+        console.error(
+          "Requester included in reviewers despite filter:",
+          requesterId
+        );
       }
       if (filteredReviewers.some((r) => r.id === requesterId)) {
-        console.error('Requester still in filtered reviewers:', requesterId);
-        return errorResponse('Internal error: Requester included in reviewers', 500);
+        console.error("Requester still in filtered reviewers:", requesterId);
+        return errorResponse(
+          "Internal error: Requester included in reviewers",
+          500
+        );
       }
 
       // Create notifications for other users
@@ -249,31 +263,34 @@ export async function POST(req: Request) {
         await prisma.userNotification.createMany({
           data: notifications,
         });
-        console.log('Notifications created for', notifications.length, 'reviewers');
+        console.log(
+          "Notifications created for",
+          notifications.length,
+          "reviewers"
+        );
       } else {
-        console.log('No other USER role users found to notify');
+        console.log("No other USER role users found to notify");
       }
 
       return request;
     });
 
     return NextResponse.json(
-      { message: 'Request created successfully', data: newRequest },
+      { message: "Request created successfully", data: newRequest },
       { status: 201 }
     );
   } catch (error) {
-    console.error('POST Error:', error);
-    return errorResponse('Failed to create request', 500);
+    console.error("POST Error:", error ?? "Unknown error");
+    return errorResponse("Failed to create request", 500);
   }
 }
 
-
 // GET: Fetch all requests or a specific request by ID
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const searchParams = req.nextUrl.searchParams;
+    const id = searchParams.get("id");
 
     // 1. Get current user (requester)
     const session = await getServerSession(authConfig);
@@ -286,18 +303,18 @@ export async function GET(req: Request) {
           requester: true,
           reviewer: true,
           review: true,
-          transaction: true,
+          // transaction: true, //! deepak chnges
         },
       });
 
       if (!request || request.isDeleted) {
-        return errorResponse('Request not found', 404);
+        return errorResponse("Request not found", 404);
       }
 
       return NextResponse.json(request, { status: 200 });
     } else {
       const requests = await prisma.buddyLensRequest.findMany({
-        where: { 
+        where: {
           isDeleted: false,
           // 2. Exclude requests where requesterId === current user id
           requesterId: currentUserId ? { not: currentUserId } : undefined,
@@ -306,23 +323,23 @@ export async function GET(req: Request) {
           requester: true,
           reviewer: true,
           review: true,
-          transaction: true,
+          // transaction: true, //! deepak chnges
         },
       });
 
       return NextResponse.json(requests, { status: 200 });
     }
   } catch (error) {
-    console.error('GET Error:', error);
-    return errorResponse('Failed to fetch requests', 500);
+    console.error("GET Error:", error);
+    return errorResponse("Failed to fetch requests", 500);
   }
 }
 // PUT: Update a BuddyLens request by ID
-export async function PUT(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
+export async function PUT(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const id = searchParams.get("id");
 
-  if (!id) return errorResponse('Request ID is required');
+  if (!id) return errorResponse("Request ID is required");
 
   try {
     const body = await req.json();
@@ -339,7 +356,7 @@ export async function PUT(req: Request) {
       status,
     } = body;
 
-    const updateData  = {
+    const updateData = {
       ...(socialMediaUrl && { socialMediaUrl }),
       ...(tier && { tier }),
       ...(platform && { platform }),
@@ -358,24 +375,24 @@ export async function PUT(req: Request) {
     });
 
     return NextResponse.json(
-      { message: 'Request updated successfully', data: updatedRequest },
+      { message: "Request updated successfully", data: updatedRequest },
       { status: 200 }
     );
   } catch (error) {
-    console.error('PUT Error:', error);
+    console.error("PUT Error:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      return errorResponse('Invalid request ID', 400);
+      return errorResponse("Invalid request ID", 400);
     }
-    return errorResponse('Failed to update request', 500);
+    return errorResponse("Failed to update request", 500);
   }
 }
 
 // DELETE: Soft delete a BuddyLens request by ID
-export async function DELETE(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id');
+export async function DELETE(req: NextRequest) {
+  const searchParams = req.nextUrl.searchParams;
+  const id = searchParams.get("id");
 
-  if (!id) return errorResponse('Request ID is required');
+  if (!id) return errorResponse("Request ID is required");
 
   try {
     await prisma.buddyLensRequest.update({
@@ -384,11 +401,11 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json(
-      { message: 'Request deleted successfully' },
+      { message: "Request deleted successfully" },
       { status: 200 }
     );
   } catch (error) {
-    console.error('DELETE Error:', error);
-    return errorResponse('Failed to delete request', 500);
+    console.error("DELETE Error:", error);
+    return errorResponse("Failed to delete request", 500);
   }
 }

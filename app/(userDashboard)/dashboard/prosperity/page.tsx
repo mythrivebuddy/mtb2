@@ -37,6 +37,8 @@ const ProsperityPage = () => {
       toast.success("Prosperity Drop application submitted successfully");
       queryClient.invalidateQueries({ queryKey: ["prosperityDrops"] });
       queryClient.invalidateQueries({ queryKey: ["userInfo"] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
+
       reset(); // Reset form using react-hook-form
     },
     onError: (error) => {

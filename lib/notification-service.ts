@@ -10,8 +10,48 @@ interface Notification {
 }
 
 export class NotificationService {
-  static async getNotifications(userId: string, unreadOnly: boolean = false): Promise<Notification[]> {
+  // static async getNotifications(userId: string, unreadOnly: boolean = false): Promise<Notification[]> {
+  //   try {
+  //     const notifications = await prisma.userNotification.findMany({
+  //       where: {
+  //         userId,
+  //         ...(unreadOnly ? { read: false } : {}),
+  //       },
+  //       orderBy: {
+  //         createdAt: 'desc',
+  //       },
+  //       select: {
+  //         id: true,
+  //         message: true,
+  //         link: true,
+  //         read: true,
+  //         createdAt: true,
+  //       },
+  //     });
+
+  //     return notifications.map((notification) => ({
+  //       id: notification.id,
+  //       message: notification.message,
+  //       link: notification.link || undefined,
+  //       read: notification.read,
+  //       createdAt: notification.createdAt.toISOString(),
+  //     }));
+  //   } catch (err) {
+  //     console.error('Error fetching notifications:', err);
+  //     throw new Error('Failed to fetch notifications');
+  //   }
+  // }
+
+
+  static async getNotifications(
+    userId: string,
+    unreadOnly: boolean = false,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<Notification[]> {
     try {
+      const skip = (page - 1) * limit;
+  
       const notifications = await prisma.userNotification.findMany({
         where: {
           userId,
@@ -20,6 +60,8 @@ export class NotificationService {
         orderBy: {
           createdAt: 'desc',
         },
+        take: limit,
+        skip: skip,
         select: {
           id: true,
           message: true,
@@ -28,7 +70,7 @@ export class NotificationService {
           createdAt: true,
         },
       });
-
+  
       return notifications.map((notification) => ({
         id: notification.id,
         message: notification.message,
@@ -41,7 +83,7 @@ export class NotificationService {
       throw new Error('Failed to fetch notifications');
     }
   }
-
+  
   static async markAsRead(notificationId: string): Promise<void> {
     
     try {

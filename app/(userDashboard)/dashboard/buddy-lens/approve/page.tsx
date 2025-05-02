@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CloudCog } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,6 @@ interface BuddyLensRequest {
 }
 
 export default function BuddyLensApprovePage() {
-  const queryClient = useQueryClient();
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,6 +67,7 @@ export default function BuddyLensApprovePage() {
     isLoading: isRequestLoading,
     error: requestError,
   } = useQuery<BuddyLensRequest | null>({
+    // queryKey: ['buddyLensRequest'], //!DEEPAK CHANG4S
     queryKey: ['buddyLensRequest', requestId],
     queryFn: async () => {
       if (!requestId || !reviewerId || !session?.user?.id) return null;
@@ -94,7 +94,7 @@ export default function BuddyLensApprovePage() {
       }
 
       if (requestData.pendingReviewerId !== reviewerId) {
-        console.error(`Invalid reviewer: pendingReviewerId ${requestData.pendingReviewerId}, expected ${reviewerId}`);
+        console.log(`Invalid reviewer: pendingReviewerId ${requestData.pendingReviewerId}, expected ${reviewerId}`);
         toast.error('Invalid reviewer for this claim');
         router.push('/dashboard/buddy-lens/requester');
         return null;
@@ -103,7 +103,7 @@ export default function BuddyLensApprovePage() {
       return requestData;
     },
     enabled: !!requestId && !!reviewerId && !!session?.user?.id && sessionStatus === 'authenticated',
-    retry: 3,
+    retry: false,
     retryDelay: 1000,
   });
 
@@ -131,7 +131,7 @@ export default function BuddyLensApprovePage() {
     },
     onSuccess: (data, variables) => {
       toast.success(data.message || (variables ? 'Claim approved successfully' : 'Claim rejected successfully'));
-      queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
+      // queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
       router.push('/dashboard/buddy-lens');
     },
     onError: (error) => {
@@ -158,8 +158,8 @@ export default function BuddyLensApprovePage() {
     },
     onSuccess: (data) => {
       toast.success(data.message || 'Claim cancelled successfully');
-      queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
-      router.push('/dashboard/buddy-lens/requester');
+      // queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
+      router.push('/dashboard/buddy-lens');
     },
     onError: (error) => {
       const errorMessage = getAxiosErrorMessage(error, "Error message");

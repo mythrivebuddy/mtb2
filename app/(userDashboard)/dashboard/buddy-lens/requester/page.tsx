@@ -38,45 +38,53 @@ export default function BuddyLensRequestPage() {
 
   const requesterId = session?.user?.id;
 
-  const { mutate: submitRequest, isPending: isSubmitting } = useMutation({
-    mutationFn: async () => {
-      if (!requesterId) {
-        throw new Error('User not logged in');
-      }
-
-      if (!socialMediaUrl || !tier || !domain || !expiresAt || questions.some(q => !q.trim())) {
-        throw new Error('Please fill in all fields');
-      }
-
-      return axios.post(`/api/buddy-lens/requester`, {
-        requesterId,
-        socialMediaUrl,
-        tier,
-        domain,
-        questions,
-        expiresAt,
-        jpCost,
-      });
-    },
-    onSuccess: () => {
-      toast.success('Request submitted!');
-      router.push("/dashboard/buddy-lens");
-
-      // Clear the form
-      setSocialMediaUrl('');
-      setTier('5min');
-      setDomain('');
-      setQuestions(['']);
-      setExpiresAt('');
-      setJpCost(500);
-    },
-    onError: (error: AxiosError<ApiErrorResponse>) => {
-      console.error('Failed to mark notification as read:', error);
-      toast.error(
-        error.response?.data?.message || error.message || 'Something went wrong!'
-      );
+const { mutate: submitRequest, isPending: isSubmitting } = useMutation({
+  mutationFn: async () => {
+    if (!requesterId) {
+      throw new Error('User not logged in');
     }
-  });
+
+    if (!socialMediaUrl || !tier || !domain || !expiresAt || questions.some(q => !q.trim())) {
+      throw new Error('Please fill in all fields');
+    }
+
+    return axios.post(`/api/buddy-lens/requester`, {
+      requesterId,
+      socialMediaUrl,
+      tier,
+      domain,
+      questions,
+      expiresAt,
+      jpCost,
+    });
+  },
+
+  onSuccess: () => {
+    toast.success('Request submitted!');
+    router.push("/dashboard/buddy-lens");
+
+    // Clear the form
+    setSocialMediaUrl('');
+    setTier('5min');
+    setDomain('');
+    setQuestions(['']);
+    setExpiresAt('');
+    setJpCost(500);
+  },
+
+  onError: (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<ApiErrorResponse>;
+      const message = axiosError.response?.data?.message || axiosError.message || 'Something went wrong';
+      toast.error(`Error: ${message}`);
+      console.error('Axios error response:', axiosError.response);
+    } else if (error instanceof Error) {
+      toast.error(error.message);
+    } else {
+      toast.error('Unexpected error occurred');
+    }
+  }
+});
 
   const handleAddQuestion = () => {
     setQuestions([...questions, '']);

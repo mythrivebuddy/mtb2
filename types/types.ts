@@ -19,4 +19,6 @@ export interface Category {
   isActive?: boolean;
 } 
 
+
+
 export type User = Prisma.UserGetPayload<{ include: { userBusinessProfile: true, spotlight: true, transaction: true }, omit: {password:true} }>

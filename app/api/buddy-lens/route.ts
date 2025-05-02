@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         userId: session.user.id,
         activityId: "BUDDY_LENS_REQUEST",
         jpAmount: jpCost,
-        buddyLensRequestId: request.id,
+        // buddyLensRequestId: request.id,
       },
     });
 

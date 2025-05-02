@@ -1,4 +1,4 @@
-b-- CreateTable
+-- CreateTable
 CREATE TABLE "Blog" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,

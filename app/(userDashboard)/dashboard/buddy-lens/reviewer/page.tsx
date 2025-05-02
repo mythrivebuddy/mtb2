@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Eye, Send, Star, LinkIcon, FileQuestion } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface BuddyLensRequest {
   id: string;
@@ -36,6 +37,7 @@ interface Review {
   feedback: string;
   rating: number;
   reviewText: string;
+  answers: string[];
 }
 
 export default function BuddyLensReviewPage() {
@@ -44,6 +46,7 @@ export default function BuddyLensReviewPage() {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const requestId = searchParams.get('requestId');
+  
 
   // Local UI state
   const [answers, setAnswers] = useState<string[]>([]);
@@ -51,6 +54,7 @@ export default function BuddyLensReviewPage() {
   const [rating, setRating] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
   const [ratingError, setRatingError] = useState<string>('');
+  const router = useRouter();
 
   // Fetch requests
   const {
@@ -170,7 +174,7 @@ export default function BuddyLensReviewPage() {
       });
     },
     onSuccess: () => {
-      toast.success(` rozdanie Review submitted successfully! You earned ${selectedRequest?.jpCost} JoyPearls.`);
+      toast.success(`Review submitted successfully! You earned ${selectedRequest?.jpCost} JoyPearls.`);
       setAnswers([]);
       setReviewText('');
       setRating(null);
@@ -180,6 +184,8 @@ export default function BuddyLensReviewPage() {
       );
       queryClient.invalidateQueries({ queryKey: ['buddyLensSelectedRequest', requestId, reviewerId] });
       queryClient.invalidateQueries({ queryKey: ['buddyLensReviewedRequests', reviewerId] });
+      queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
+      router.push("/dashboard/buddy-lens")
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to submit review');
@@ -212,7 +218,8 @@ export default function BuddyLensReviewPage() {
         <h2 className="text-3xl font-semibold text-center">👀 Review Page</h2>
 
         {isRequestsLoading || isNotificationsLoading || isReviewedRequestsLoading || isSelectedRequestLoading ? (
-          <p>Loading...</p>
+          <p
+          >Loading...</p>
         ) : !selectedRequest ? (
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Open Requests</h3>
@@ -369,6 +376,14 @@ export default function BuddyLensReviewPage() {
                       <p className="text-sm text-gray-600">
                         <span className="font-medium text-black">Review Text:</span> {review.reviewText}
                       </p>
+                      <p className="text-sm text-gray-600">
+                            <span className="font-medium text-black">Answers:</span>
+                      </p>
+                      <ul className="list-disc pl-6 text-sm text-gray-600">
+                        {review.answers.map((answer: string, index: number) => (
+                          <li key={index}>{answer}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </Card>

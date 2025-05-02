@@ -203,6 +203,9 @@ export async function PATCH(req: NextRequest) {
         },
       });
 
+      // if already reviewd 
+      
+
       if (!notificationExists) {
         const message = approve
           ? `Your claim for the BuddyLens request in ${request.domain} has been approved! Start your review now.`
@@ -218,6 +221,7 @@ export async function PATCH(req: NextRequest) {
         });
       }
 
+    
       // Send email within transaction if reviewer has email
       if (reviewer.email) {
         const subject = approve
