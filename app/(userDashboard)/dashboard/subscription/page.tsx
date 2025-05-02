@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from "react";
@@ -73,26 +74,28 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto px-4 sm:px-6">
+      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-sm sm:max-w-md md:max-w-lg">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Complete Your Subscription</h2>
+          <h2 className="text-lg sm:text-xl font-semibold">
+            Complete Your Subscription
+          </h2>
           <button
             onClick={onClose}
             disabled={isProcessing}
             className="text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Close"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <div className="mb-6">
-          <p className="text-gray-600">
-            You&apos;re subscribing to the{" "}
+        <div className="mb-4 sm:mb-6">
+          <p className="text-gray-600 text-sm sm:text-base">
+            You're subscribing to the{" "}
             <span className="font-medium">{plan.name}</span>
           </p>
-          <div className="text-lg font-bold mt-2">
+          <div className="text-base sm:text-lg font-bold mt-2">
             <span>Total: ${price}</span>
             {isSubscription && (
               <span> /{plan.name.includes("Monthly") ? "month" : "year"}</span>
@@ -102,8 +105,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
         {isProcessing && (
           <div className="flex justify-center items-center my-4 py-2 bg-gray-50 rounded-md">
-            <Loader2 className="w-5 h-5 animate-spin mr-2 text-blue-500" />
-            <span className="text-gray-700">Processing payment...</span>
+            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2 text-blue-500" />
+            <span className="text-gray-700 text-sm sm:text-base">
+              Processing payment...
+            </span>
           </div>
         )}
 
@@ -248,24 +253,24 @@ const PlanCard: React.FC<PlanCardProps> = ({
   isCurrentPlan,
   disabled = false,
 }) => (
-  <div className="bg-[#F1F3FF] border border-gray-200 rounded-lg overflow-hidden p-5">
-    <div className="p-6 text-center min-h-[148px]">
-      <h2 className="text-3xl font-bold text-gray-900">{name}</h2>
-      <p className="text-xl text-gray-600 mt-2">
+  <div className="bg-[#F1F3FF] border border-gray-200 rounded-lg overflow-hidden flex flex-col h-full">
+    <div className="p-4 sm:p-6 text-center flex-grow">
+      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{name}</h2>
+      <p className="text-base sm:text-xl text-gray-600 mt-2">
         ${price} {period}
         {discount && ` (${discount})`}
       </p>
     </div>
-    <div className="px-6 pb-6">
+    <div className="px-4 sm:px-6 pb-4 sm:pb-6 mt-auto">
       <button
         onClick={onSubscribe}
         disabled={isLoading || disabled || isCurrentPlan}
-        className={`w-full py-3 px-4 rounded-md text-lg font-medium transition-colors ${
+        className={`w-full md:w-48 py-2 sm:py-3 px-4 rounded-md text-base sm:text-lg font-medium transition-colors mx-auto block ${
           isCurrentPlan || disabled
             ? "bg-gray-300 text-gray-600 cursor-not-allowed"
             : name === "Monthly Plan"
-              ? "bg-[#151E46] hover:bg-[#1a2a5e] text-white"
-              : "bg-[#111c40] hover:bg-[#1a2a5e] text-white"
+            ? "bg-[#151E46] hover:bg-[#1a2a5e] text-white"
+            : "bg-[#111c40] hover:bg-[#1a2a5e] text-white"
         }`}
       >
         {isLoading ? (
@@ -292,11 +297,13 @@ const CurrentPlanStatus: React.FC<CurrentPlanStatusProps> = ({
   const planEndDate = planEnd ? new Date(planEnd) : null;
 
   return (
-    <div className="bg-[#EDF2FF] rounded-lg p-4 mb-6 flex items-start">
-      <Info className="text-blue-500 mr-3 mt-1 flex-shrink-0" />
+    <div className="bg-[#EDF2FF] rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 flex items-start">
+      <Info className="text-blue-500 mr-2 sm:mr-3 mt-1 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
       <div>
-        <h3 className="text-md font-medium">Your Current Subscription</h3>
-        <p className="text-sm text-gray-600">
+        <h3 className="text-sm sm:text-base font-medium">
+          Your Current Subscription
+        </h3>
+        <p className="text-xs sm:text-sm text-gray-600">
           You are currently subscribed to the{" "}
           <span className="font-medium">{currentPlan.name}</span>
           {planStart && (
@@ -458,11 +465,11 @@ const SubscriptionPage: React.FC = () => {
   const spotsClaimed = data?.lifetimePlanUsers || 0;
 
   return (
-    <div className=" bg-white py-12 px-4 sm:px-6 lg:px-8 ">
+    <div className="w-full min-h-screen bg-dashboard max-w-full overflow-x-hidden py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
+        <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
             {hasActivePlan
               ? hasLifetimePlan
                 ? "You Have Lifetime Access"
@@ -470,7 +477,7 @@ const SubscriptionPage: React.FC = () => {
               : "Unlock Unlimited JoyPearls"}
             <span className="ml-2">🚀</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
             {hasActivePlan
               ? hasLifetimePlan
                 ? "You have unlimited access to all premium features with your Lifetime plan."
@@ -488,7 +495,7 @@ const SubscriptionPage: React.FC = () => {
         )}
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
           {monthlyPlan && (
             <PlanCard
               name="Monthly Plan"
@@ -564,22 +571,28 @@ const SubscriptionPage: React.FC = () => {
 
         {/* Banner and Table Section */}
         {data?.limitedOfferAvailable && (
-          <div className="bg-[#111c40] text-white rounded-lg p-6 mb-8 relative">
-            <div className="mb-8">
-              <button className="w-full md:w-auto mx-auto block bg-slate-200 text-[#111c40] hover:bg-gray-100 py-3 px-6 rounded-md text-lg font-semibold transition-colors absolute -top-3">
+          <div className="bg-[#111c40] text-white rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 relative">
+            <div className="mb-6 sm:mb-8">
+              <button className="w-full sm:w-auto mx-auto block bg-slate-200 text-[#111c40] hover:bg-gray-100 py-2 sm:py-3 px-4 sm:px-6 rounded-md text-base sm:text-lg font-semibold transition-colors absolute -top-3 left-1/2 transform -translate-x-1/2">
                 Invest Once, Thrive Forever — Grab Your Lifetime Plan Now!
               </button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-12">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 mt-8 sm:mt-12">
               {/* Pricing Table */}
               <div className="col-span-1 lg:col-span-3">
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead>
                       <tr className="border-b border-gray-700">
-                        <th className="py-3 text-left">Range</th>
-                        <th className="py-3 text-left">Price</th>
-                        <th className="py-3 text-left">Tagline</th>
+                        <th className="py-2 sm:py-3 text-left text-sm sm:text-base">
+                          Range
+                        </th>
+                        <th className="py-2 sm:py-3 text-left text-sm sm:text-base">
+                          Price
+                        </th>
+                        <th className="py-2 sm:py-3 text-left text-sm sm:text-base">
+                          Tagline
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -590,9 +603,15 @@ const SubscriptionPage: React.FC = () => {
                             index !== currentTierIndex ? "text-gray-400" : ""
                           }
                         >
-                          <td className="py-3">{tier.userRange}</td>
-                          <td className="py-3">${tier.price}</td>
-                          <td className="py-3">{taglines[index]}</td>
+                          <td className="py-2 sm:py-3 text-sm sm:text-base">
+                            {tier.userRange}
+                          </td>
+                          <td className="py-2 sm:py-3 text-sm sm:text-base">
+                            ${tier.price}
+                          </td>
+                          <td className="py-2 sm:py-3 text-sm sm:text-base">
+                            {taglines[index]}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -600,13 +619,15 @@ const SubscriptionPage: React.FC = () => {
                 </div>
               </div>
               {/* Limited Offer Box */}
-              <div className="col-span-1 bg-white text-[#111c40] rounded-lg p-6">
+              <div className="col-span-1 bg-white text-[#111c40] rounded-lg p-4 sm:p-6">
                 <div className="text-center">
-                  <h3 className="text-3xl font-bold mb-2">Limited Offer</h3>
-                  <p className="text-[#ff7f7f] font-medium mb-4">
+                  <h3 className="text-2xl sm:text-3xl font-bold mb-2">
+                    Limited Offer
+                  </h3>
+                  <p className="text-[#ff7f7f] font-medium mb-4 text-sm sm:text-base">
                     {taglines[currentTierIndex]}
                   </p>
-                  <div className="text-5xl font-bold mb-6">
+                  <div className="text-4xl sm:text-5xl font-bold mb-4 sm:mb-6">
                     {spotsClaimed}/{upperLimit}
                   </div>
                   <button
@@ -622,7 +643,7 @@ const SubscriptionPage: React.FC = () => {
                       )
                     }
                     disabled={isSubscribing}
-                    className="w-full bg-[#ff7f7f] hover:bg-[#ff6666] text-white py-3 px-4 rounded-md text-lg font-medium transition-colors"
+                    className="w-full bg-[#ff7f7f] hover:bg-[#ff6666] text-white py-2 sm:py-3 px-4 rounded-md text-base sm:text-lg font-medium transition-colors"
                   >
                     {isSubscribing ? (
                       <Loader2 className="w-4 h-4 animate-spin mx-auto" />
@@ -659,4 +680,5 @@ const SubscriptionPage: React.FC = () => {
 };
 
 export default SubscriptionPage;
+
  
