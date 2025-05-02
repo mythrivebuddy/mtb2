@@ -12,7 +12,7 @@ const AboutUsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-transparent via-blue-50 to-blue-100 flex flex-col items-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-transparent via-blue-50 to-blue-100 flex flex-col items-center sm:px-6 lg:px-8">
       {/* Hero Section */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
