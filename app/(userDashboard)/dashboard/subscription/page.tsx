@@ -92,7 +92,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
 
         <div className="mb-4 sm:mb-6">
           <p className="text-gray-600 text-sm sm:text-base">
-            You're subscribing to the{" "}
+            You are subscribing to the{" "}
             <span className="font-medium">{plan.name}</span>
           </p>
           <div className="text-base sm:text-lg font-bold mt-2">
