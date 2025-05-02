@@ -107,8 +107,6 @@ export const authConfig: AuthOptions = {
     async signIn({ user, account }) {
       // console.log("signIn", user, account); // Debugging
 
-      // console.log("state _______________________________________________", state);
-
       // Skip logic for Credentials login, as it's already handled in `authorize`
       if (account?.provider === "credentials") {
         return true; // Allow login immediately
