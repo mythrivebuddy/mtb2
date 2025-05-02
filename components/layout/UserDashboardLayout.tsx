@@ -16,7 +16,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   } = useQuery<User>({
     queryKey: ["userInfo"],
     queryFn: async () => {
-      const response = await axios.get("/api/user");
+      const response = await axios.get(`/api/user`);
       return response.data.user;
     },
     retry: false,
