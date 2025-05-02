@@ -6,7 +6,6 @@ import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
 // const DEFAULT_MAX_AGE = 1 * 60;
@@ -106,6 +105,8 @@ export const authConfig: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      // console.log("signIn", user, account); // Debugging
+
       // Skip logic for Credentials login, as it's already handled in `authorize`
       if (account?.provider === "credentials") {
         return true; // Allow login immediately
@@ -117,9 +118,11 @@ export const authConfig: AuthOptions = {
             email: user.email!,
           },
         });
+        // console.log("user exists info", dbUser);
 
         if (dbUser && dbUser.authMethod === AuthMethod.CREDENTIALS) {
-          return "/signin?error=account-exists-with-credentials";
+          // Instead of throwing an error, return false with a customized error
+          return "/signin?error=account-exists-with-credentials"; // or another URL where you'll handle this
         }
 
         if (!dbUser) {
@@ -148,10 +151,9 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
               authMethod: AuthMethod.GOOGLE,
               isEmailVerified: true,
-              referredById: referredById,
             },
             include: {
-              plan: true,
+              plan: true, //its include for jp assignment only
             },
           });
 
@@ -181,6 +183,7 @@ export const authConfig: AuthOptions = {
           // Assign signup reward
           assignJp(createdUser, ActivityType.SIGNUP);
 
+          // console.log("user created info", createdUser);
           user.role = createdUser.role;
           user.id = createdUser.id;
         } else {
@@ -197,11 +200,15 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
             },
             include: {
-              plan: true,
+              plan: true, //its include for jp assignment only
             },
           });
 
+          //** assign JP as signin reward
           assignJp(updatedUser, ActivityType.DAILY_LOGIN);
+
+          // console.log("user updated info", updatedUser);
+          // Use dbUser data for existing users
           user.role = dbUser.role;
           user.id = dbUser.id;
         }
