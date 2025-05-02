@@ -5,7 +5,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
 
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
@@ -106,6 +105,8 @@ export const authConfig: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      // console.log("signIn", user, account); // Debugging
+
       // Skip logic for Credentials login, as it's already handled in `authorize`
       if (account?.provider === "credentials") {
         return true; // Allow login immediately
@@ -117,27 +118,18 @@ export const authConfig: AuthOptions = {
             email: user.email!,
           },
         });
+        // console.log("user exists info", dbUser);
 
         if (dbUser && dbUser.authMethod === AuthMethod.CREDENTIALS) {
-          return "/signin?error=account-exists-with-credentials";
+          // Instead of throwing an error, return false with a customized error
+          return "/signin?error=account-exists-with-credentials"; // or another URL where you'll handle this
         }
 
         if (!dbUser) {
-          const role = user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
-
-          // Get referral code from cookies
-          const cookieStore = await cookies();
-          const referralCode = cookieStore.get('referral_code')?.value;
-          let referredById = null;
-
-          if (referralCode) {
-            const referrer = await prisma.user.findUnique({
-              where: { referralCode },
-            });
-            if (referrer) {
-              referredById = referrer.id;
-            }
-          }
+          // if user does not exist, create a new user and let signin
+          const role =
+            user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
+          // console.log(role);
 
           const createdUser = await prisma.user.create({
             data: {
@@ -147,39 +139,17 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
               authMethod: AuthMethod.GOOGLE,
               isEmailVerified: true,
-              referredById: referredById,
             },
             include: {
-              plan: true,
+              plan: true, //its include for jp assignment only
             },
           });
 
-          // If user was referred, create referral record and assign JP
-          if (referredById) {
-            await prisma.referral.create({
-              data: {
-                referrerId: referredById,
-                referredId: createdUser.id,
-              },
-            });
-
-            // Assign JP to both users
-            assignJp(createdUser, ActivityType.REFER_TO);
-            const referrer = await prisma.user.findUnique({
-              where: { id: referredById },
-              include: { plan: true },
-            });
-            if (referrer) {
-              assignJp(referrer, ActivityType.REFER_BY);
-            }
-
-            // Clear the referral cookie
-            cookieStore.delete('referral_code');
-          }
-
-          // Assign signup reward
+          // TODO add logic to assign JP as signup reward
+          //** assign JP as signin reward
           assignJp(createdUser, ActivityType.SIGNUP);
 
+          // console.log("user created info", createdUser);
           user.role = createdUser.role;
           user.id = createdUser.id;
         } else {
@@ -196,11 +166,15 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
             },
             include: {
-              plan: true,
+              plan: true, //its include for jp assignment only
             },
           });
 
+          //** assign JP as signin reward
           assignJp(updatedUser, ActivityType.DAILY_LOGIN);
+
+          // console.log("user updated info", updatedUser);
+          // Use dbUser data for existing users
           user.role = dbUser.role;
           user.id = dbUser.id;
         }
