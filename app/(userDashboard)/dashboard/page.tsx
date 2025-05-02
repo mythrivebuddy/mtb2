@@ -77,7 +77,7 @@ export default function DashboardPage() {
   console.log("currentProsperity", currentProsperity);
 
   return (
-    <div className="px-4 sm:px-6 lg:px-6 py-6">
+    <div className="py-6">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Main Dashboard Content */}
         <div className="flex-1">
@@ -86,7 +86,7 @@ export default function DashboardPage() {
             <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
             <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
           </div>
-          
+
           <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
             Spotlight
           </h2>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Divider */}
-        <div className="hidden lg:block h-auto w-px bg-gray-300 dark:bg-brown-500"></div>
+        {/* <div className="hidden lg:block h-auto w-px bg-gray-300 dark:bg-brown-500"></div> */}
 
         {/* Right Panel */}
         <div className="lg:flex-[0.4] mt-6 lg:mt-0">

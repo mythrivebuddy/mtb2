@@ -1,68 +1,67 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
-import { Prisma } from "@prisma/client";
+import type { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 
 type whereProps = Prisma.BlogWhereInput;
 
-
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    // Extract pagination and category parameters from URL
-    const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "6");
-    const category = searchParams.get("category");
-    const search = searchParams.get("search");
+    const { searchParams } = request.nextUrl;
+    // page & limit (admin or user can override)
+    const page = Math.max(parseInt(searchParams.get("page") || "1"), 1);
+    const limit = Math.min(
+      Math.max(parseInt(searchParams.get("limit") || "6"), 1),
+      100
+    );
+    const skip = (page - 1) * limit;
 
-    const validPage = page > 0 ? page : 1;
-    const validLimit = limit > 0 && limit <= 100 ? limit : 6;
-    const skip = (validPage - 1) * validLimit;
-
-    // Build a where clause if a category filter is provided
+    // optional filters
     const where: whereProps = {};
-    if (search) {
-      where.title = { contains: search, mode: "insensitive" };
+    if (searchParams.get("search")) {
+      where.title = {
+        contains: searchParams.get("search")!,
+        mode: "insensitive",
+      };
     }
-    if (category) {
-      where.category = category;
+    if (searchParams.get("category")) {
+      where.category = searchParams.get("category")!;
     }
 
-    // Get total count for the filtered query
-    const totalCount = await prisma.blog.count({ where });
-
-    // Fetch blogs with filtering and pagination
-    const blogs = await prisma.blog.findMany({
-      skip,
-      take: validLimit,
-      orderBy: { createdAt: "desc" },
-      where,
-      select: {
-        id: true,
-        title: true,
-        excerpt: true,
-        image: true,
-        category: true,
-        content: true,
-        readTime: true,
-        createdAt: true,
-      },
-    });
+    // atomically get count + page of blogs
+    const [totalCount, blogs] = await prisma.$transaction([
+      prisma.blog.count({ where }),
+      prisma.blog.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          title: true,
+          excerpt: true,
+          image: true,
+          category: true,
+          content: true,
+          readTime: true,
+          createdAt: true,
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       message: "Blogs retrieved successfully",
       blogs,
       totalCount,
-      page: validPage,
-      limit: validLimit,
-      totalPages: Math.ceil(totalCount / validLimit),
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit),
     });
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Blog API Error:", errorMessage);
+  } catch (err) {
+    console.error("Blog API Error:", err);
+    const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: "Failed to fetch blogs", message: errorMessage },
+      { error: "Failed to fetch blogs", message },
       { status: 500 }
     );
   }

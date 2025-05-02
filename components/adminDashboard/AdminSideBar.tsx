@@ -105,6 +105,7 @@ const Sidebar = () => {
               <NavItem href="/admin/prosperity" label="Prosperity" />
               <NavItem href="/admin/faq" label="Faqs" />
               <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
+              <NavItem href="/admin/plans" label="Plans" />
               <NavItem
                 href="/admin/manage-store-product"
                 label="Manage Store Products"

@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { ActivityType } from "@prisma/client";
-import { getMagicBoxRewardNotificationData, getMagicBoxSharedNotificationData } from "@/lib/utils/notifications";
+import {
+  getMagicBoxRewardNotificationData,
+  getMagicBoxSharedNotificationData,
+} from "@/lib/utils/notifications";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
@@ -184,14 +187,13 @@ export async function POST(request: NextRequest) {
         isOpened: true,
         openedAt: new Date(),
         jpAmount,
-        // !commented for tesing only
-        // randomUserIds: randomUs/ers.map((user) => user.id),
-        randomUserIds: [
-          "135277e5-c5a0-4f30-9ff4-80c8ea073274",
-          "2df547e6-8a99-4446-b7a1-bb40c03da956",
-          "3cf52e3d-1da3-4519-ab27-cd4d95433bcd",
-          "cm8bfebgv0001w5twdko6ldbt",
-        ],
+        randomUserIds: randomUsers.map((user) => user.id),
+        // randomUserIds: [
+        //   "135277e5-c5a0-4f30-9ff4-80c8ea073274",
+        //   "2df547e6-8a99-4446-b7a1-bb40c03da956",
+        //   "3cf52e3d-1da3-4519-ab27-cd4d95433bcd",
+        //   "cm8bfebgv0001w5twdko6ldbt",
+        // ],
       },
     });
 
@@ -355,18 +357,31 @@ export async function PUT(request: NextRequest) {
       `You have received ${sharedJpAmount} JP from ${session?.user?.name || ""}`
     );
 
-    // Send email to selected user
-    await sendEmailUsingTemplate({
-      toEmail: selectedUser.email,
-      toName: selectedUser.name,
-      templateId: "magic-box-shared",
-      templateData: {
-        username: selectedUser.name,
-        senderName: session.user.name,
-        jpAmount: sharedJpAmount,
-        profileUrl: `${process.env.NEXT_URL}/profile/${userId}`,
-      },
-    });
+    // Send email to both users
+    await Promise.all([
+      sendEmailUsingTemplate({
+        toEmail: selectedUser.email,
+        toName: selectedUser.name,
+        templateId: "magic-box-shared",
+        templateData: {
+          username: selectedUser.name,
+          senderName: session.user.name,
+          jpAmount: sharedJpAmount,
+          profileUrl: `${process.env.NEXT_URL}/profile/${userId}`,
+        },
+      }),
+      sendEmailUsingTemplate({
+        toEmail: session.user.email!,
+        toName: session.user.name!,
+        templateId: "magic-box-sender",
+        templateData: {
+          username: session.user.name,
+          receiverName: selectedUser.name,
+          jpAmount: userJpAmount,
+          sharedAmount: sharedJpAmount,
+        },
+      }),
+    ]);
 
     return NextResponse.json(
       {

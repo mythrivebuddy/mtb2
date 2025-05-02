@@ -80,6 +80,18 @@ async function main() {
         <p>Keep spreading the joy!</p>
       `,
     },
+    {
+      templateId: "magic-box-sender",
+      subject: "Magic Box Shared Successfully! 🎁",
+      description:
+        "Email sent to confirm when a user shares their magic box JP.",
+      htmlContent: `
+        <p>Hello {{username}},</p>
+        <p>You've successfully shared your Magic Box with {{receiverName}}!</p>
+        <p>You received {{jpAmount}} JP and shared {{sharedAmount}} JP with {{receiverName}}.</p>
+        <p>Thank you for spreading joy in our community!</p>
+      `,
+    },
   ];
 
   for (const tmpl of templates) {
