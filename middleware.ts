@@ -1,5 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from 'next/server'
 
 export default withAuth(
   function middleware(req) {
@@ -28,7 +29,31 @@ export default withAuth(
   }
 );
 
-// Specify the routes that should be protected by this middleware
+export function middleware(request: NextRequest) {
+  // Check if the request is for the signup page and has a referral code
+  if (request.nextUrl.pathname === '/signup') {
+    const ref = request.nextUrl.searchParams.get('ref')
+    
+    if (ref) {
+      // Create a response
+      const response = NextResponse.next()
+      
+      // Set the referral code in a cookie that expires in 7 days
+      response.cookies.set('referral_code', ref, {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      })
+      
+      return response
+    }
+  }
+  
+  return NextResponse.next()
+}
+
+// Combine both matchers into a single config
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*"], // Protect specific pages
+  matcher: ["/signup", "/dashboard/:path*", "/leaderboard", "/admin/:path*"],
 };
