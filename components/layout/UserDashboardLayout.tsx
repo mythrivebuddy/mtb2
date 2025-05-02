@@ -33,11 +33,18 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="flex min-h-screen w-full bg-dashboard">
-      <Sidebar user={user} />
-      {/* Main Content Area with TopBar */}
-      <div className="flex-1 flex flex-col overflow-hidden lg:pl-7 pt-16 lg:pt-7 px-4 sm:px-6 lg:px-7">
-        <TopBar user={user} />
-        <main className="flex-1 overflow-auto bg-transparent">
+      {/* Fixed Sidebar */}
+      <div className="fixed top-0 left-0 w-64 z-20 m-3">
+        <Sidebar user={user} />
+      </div>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20">
+        {/* Fixed TopBar */}
+        <div className=" z-10 md:mx-10 mx-5">
+          <TopBar user={user} />
+        </div>
+        {/* Scrollable Main Content */}
+        <main className="flex-1 overflow-auto md:pt-4 px-4 sm:px-6 lg:px-7 bg-transparent">
           {children}
         </main>
       </div>

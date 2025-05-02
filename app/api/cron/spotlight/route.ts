@@ -1,16 +1,16 @@
 import { checkAndRotateSpotlight } from "@/lib/utils/spotlight";
-import {  NextResponse } from "next/server";
+import {  NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Verify cron secret to ensure only authorized calls are made
     // * vercel automcatically add this to Auth header when it invokes the cron job
 
     //?dev - commented for tesing in dev
-    // const authHeader = request.headers.get("authorization");
-    // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    // }
+    const authHeader = request.headers.get("authorization");
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Run the spotlight rotation check
     await checkAndRotateSpotlight();

@@ -23,12 +23,12 @@ export default function BlogCard({
   return (
     <Link href={`/blog/${slug}`} className="block h-full">
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
-        <div className="relative h-48 w-full">
+        <div className="relative w-full aspect-[4/2]">
           <Image
             src={image}
             alt={title}
             fill
-            sizes="(max-width: 300px)"
+            sizes="(max-width: 768px) 100vw, 33vw"
             className="object-cover"
           />
         </div>

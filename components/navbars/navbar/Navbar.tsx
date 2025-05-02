@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import logoImg from "../../../public/logo.png";
 import NavLink from "./NavLink";
 import { Button } from "../../ui/button";
 
@@ -16,27 +15,28 @@ export default function Navbar() {
     <div className="relative">
       <div className="flex items-center justify-between">
         {/* Logo Section */}
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href="/" className="flex items-center space-x-2 relative">
           <Image
-            src={logoImg}
+            src="/icon-logo-mtb.png"
             alt="MyThriveBuddy"
-            width={40}
-            height={40}
+            width={50}
+            height={50}
             className="object-contain"
           />
-          <span className="font-semibold text-lg sm:text-[22px] text-[#1E2875]">
+          <span className="font-semibold md:text-[22px]  text-black">
             MyThriveBuddy.com
           </span>
-          <span className="text-[10px] sm:text-[12px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
+          <span className="md:text-[10px] absolute right-0 -top-3 text-[7px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
             BETA
           </span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
-         {session && <NavLink href="/dashboard">Dashboard</NavLink>}
+          {session && <NavLink href="/dashboard">Dashboard</NavLink>}
           <NavLink href="/blog">Blog</NavLink>
           <NavLink href="/contact">Contact Us</NavLink>
+          <NavLink href="/about-us">About Us</NavLink>
           <div className="flex items-center space-x-3">
             {session ? (
               <Button
@@ -96,8 +96,10 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-white mt-2 p-4 rounded-lg shadow-lg md:hidden z-50">
           <div className="flex flex-col space-y-4">
+            {session && <NavLink href="/dashboard">Dashboard</NavLink>}
             <NavLink href="/blog">Blog</NavLink>
             <NavLink href="/contact">Contact Us</NavLink>
+            <NavLink href="/about-us">About Us</NavLink>
             {session ? (
               <Button
                 onClick={() => signOut()}

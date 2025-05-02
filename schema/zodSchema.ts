@@ -179,6 +179,12 @@ export const buddyLensRequestSchema = z.object({
 
 
 
+// Profile Schema
+export const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  bio: z.string().max(500, "Bio cannot exceed 500 characters").min(10, "Bio must be at least 10 characters"),
+});
+
 export type ProsperityFormType = z.infer<typeof prosperitySchema>;
 export type SignupFormType = z.infer<typeof signupSchema>;
 export type SigninFormType = z.infer<typeof signinSchema>;
@@ -189,3 +195,5 @@ export type Step2FormType = z.infer<typeof step2Schema>;
 export type Step3FormType = z.infer<typeof step3Schema>;
 export type Step4FormType = z.infer<typeof step4Schema>;
 export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
+export type ProfileFormType = z.infer<typeof profileSchema>;
+

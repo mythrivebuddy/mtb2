@@ -26,6 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 
+
 interface AlignedActionWizardProps {
   onComplete: () => void;
   onCancel: () => void;
@@ -181,6 +182,8 @@ export default function AlignedActionWizard({
   };
 
   return (
+    <>
+
     <div className="space-y-6">
       {/* Step indicators */}
       <div className="flex justify-center mb-8">
@@ -673,9 +676,9 @@ export default function AlignedActionWizard({
                               const date = timeToDate(e.target.value);
                               if (date) field.onChange(date);
                             }}
-                            className="pl-10"
+                            // className="pl-10"
                           />
-                          <svg
+                          {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -687,7 +690,7 @@ export default function AlignedActionWizard({
                               strokeWidth={2}
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
-                          </svg>
+                          </svg> */}
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -710,9 +713,9 @@ export default function AlignedActionWizard({
                               const date = timeToDate(e.target.value);
                               if (date) field.onChange(date);
                             }}
-                            className="pl-10"
+                            // className="pl-10"
                           />
-                          <svg
+                          {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -724,7 +727,7 @@ export default function AlignedActionWizard({
                               strokeWidth={2}
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
-                          </svg>
+                          </svg> */}
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -1065,5 +1068,6 @@ export default function AlignedActionWizard({
         </div>
       )}
     </div>
+    </>
   );
 }

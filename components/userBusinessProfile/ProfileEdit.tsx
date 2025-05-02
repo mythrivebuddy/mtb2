@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { BusinessProfile } from "@/app/(userDashboard)/dashboard/profile/page";
+import { BusinessProfile } from "@/app/(userDashboard)/dashboard/business-profile/page";
 import SocialHandlesCard from "./SocialHandlesCard";
 
 interface ProfileEditProps {
@@ -49,7 +49,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
         <h2 className="text-2xl font-semibold mb-4">Basic Information</h2>
         <div className="mb-4">
           <label htmlFor="name" className="block font-medium mb-1">
-            Name
+            Name: <span className="text-sm text-gray-500">(Optional)</span>
           </label>
           <input
             id="name"
@@ -63,7 +63,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
         </div>
         <div className="mb-4">
           <label htmlFor="businessInfo" className="block font-medium mb-1">
-            Business Information
+            Business Information: <span className="text-sm text-gray-500">(Optional)</span>
           </label>
           <textarea
             id="businessInfo"
@@ -82,7 +82,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="missionStatement"
               className="block font-medium mb-1"
             >
-              Mission Statement
+              Mission Statement: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <textarea
               id="missionStatement"
@@ -93,7 +93,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
           </div>
           <div>
             <label htmlFor="goals" className="block font-medium mb-1">
-              Goals
+              Goals: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <textarea
               id="goals"
@@ -111,7 +111,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="keyOfferings" className="block font-medium mb-1">
-              Key Offerings
+              Key Offerings: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <textarea
               id="keyOfferings"
@@ -122,7 +122,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
           </div>
           <div>
             <label htmlFor="achievements" className="block font-medium mb-1">
-              Achievements
+              Achievements: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <textarea
               id="achievements"
@@ -138,7 +138,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label htmlFor="email" className="block font-medium mb-1">
-              Email
+              Email: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <input
               id="email"
@@ -149,7 +149,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
           </div>
           <div>
             <label htmlFor="phone" className="block font-medium mb-1">
-              Phone
+              Phone: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <input
               id="phone"
@@ -160,7 +160,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
           </div>
           <div>
             <label htmlFor="website" className="block font-medium mb-1">
-              Website
+              Website: <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <input
               id="website"

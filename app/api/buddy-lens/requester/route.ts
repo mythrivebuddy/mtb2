@@ -387,25 +387,3 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE: Soft delete a BuddyLens request by ID
-export async function DELETE(req: NextRequest) {
-  const searchParams = req.nextUrl.searchParams;
-  const id = searchParams.get("id");
-
-  if (!id) return errorResponse("Request ID is required");
-
-  try {
-    await prisma.buddyLensRequest.update({
-      where: { id },
-      data: { isDeleted: true },
-    });
-
-    return NextResponse.json(
-      { message: "Request deleted successfully" },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("DELETE Error:", error);
-    return errorResponse("Failed to delete request", 500);
-  }
-}

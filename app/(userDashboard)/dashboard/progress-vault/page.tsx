@@ -37,6 +37,7 @@ import {
 import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { startOfDay, endOfDay } from "date-fns";
+import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 
 interface ProgressVault {
   id: string;
@@ -160,12 +161,18 @@ export default function ProgressVaultPage() {
   };
 
   return (
+    <>
+    <CustomAccordion/>
+   
     <div className="container mx-auto p-6 max-w-4xl">
       {/* Create Form */}
+      
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Progress Vault</CardTitle>
+          
           <CardDescription>Record your daily progress</CardDescription>
+          
         </CardHeader>
         <CardContent>
           {todayEntriesCount >= 3 ? (
@@ -414,5 +421,11 @@ export default function ProgressVaultPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
+
+
+
+
+

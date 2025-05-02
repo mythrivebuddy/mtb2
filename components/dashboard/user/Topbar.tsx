@@ -1,9 +1,10 @@
 "use client";
 
-import { Search } from "lucide-react";
+import {
+  Search,
+} from "lucide-react";
 import { Badge, BadgeProps } from "@/components/ui/badge";
-import React, { useState } from "react";
-import { UserRound } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { User as UserType } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
@@ -17,15 +18,9 @@ import Link from "next/link";
 import { Gift } from "lucide-react";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
-// import type { Notification as PrismaNotification } from "@prisma/client";
 import { formatJP } from "@/lib/utils/formatJP";
+import UserProfileDropdown from "./UserProfileDropDown";
 
-// Add this function at the top or import from a utils file
-// function formatJP(value: number): string {
-//   if (value >= 1_000_000) return Math.floor(value / 1_000_000) + "M";
-//   if (value >= 1_000) return Math.floor(value / 1_000) + "K";
-//   return value.toString();
-// }
 
 const TopBarBadge = ({
   children,
@@ -63,12 +58,29 @@ export default function TopBar({ user }: { user?: UserType }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
+  const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(user?.image || null);
+
+  // Listen for profile updates from other components
+  useEffect(() => {
+    const handleProfileUpdate = (event: CustomEvent) => {
+      if (event.detail?.profilePicture) {
+        setLocalProfilePicture(event.detail.profilePicture);
+      }
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
+    };
+  }, []);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
     queryFn: () => fetchUsers(searchTerm),
     enabled: searchTerm.length > 0,
   });
+
+
 
   const { data: hasUnopenedBox } = useQuery({
     queryKey: ["magicBoxStatus"],
@@ -89,6 +101,7 @@ export default function TopBar({ user }: { user?: UserType }) {
       const { data } = await axios.get<{ unreadCount: number }>(
         "/api/user/notifications/unread"
       );
+      
       return data.unreadCount;
     },
     enabled: !!user?.id,
@@ -154,7 +167,7 @@ export default function TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
 
-        <div className="flex gap-3 sm:gap-6">
+        <div className="flex gap-3">
           <TopBarBadge>
             <Image
               src="/Pearls.png"
@@ -194,18 +207,10 @@ export default function TopBar({ user }: { user?: UserType }) {
               )}
             </div>
           </TopBarBadge>
-
-          <div className="h-8 w-8 sm:h-10 sm:w-10 aspect-square cursor-pointer">
-            <div className="rounded-md bg-white border border-[#4B65A2] flex items-center justify-center w-full h-full uppercase">
-              {user?.name ? (
-                <h2 className="text-lg sm:text-2xl">
-                  {getInitials(user.name)}
-                </h2>
-              ) : (
-                <UserRound size={20} />
-              )}
-            </div>
-          </div>
+          <UserProfileDropdown 
+            userName={user?.name}
+            profilePicture={localProfilePicture}
+          />
         </div>
       </div>
 

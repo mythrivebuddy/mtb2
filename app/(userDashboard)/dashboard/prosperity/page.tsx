@@ -16,6 +16,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { ProsperityFormType, prosperitySchema } from "@/schema/zodSchema";
+import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 
 const ProsperityPage = () => {
   const queryClient = useQueryClient();
@@ -51,103 +52,112 @@ const ProsperityPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-0 space-y-6">
-      {/* Requirements Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Requirements</CardTitle>
-          <CardDescription>
-            Before you apply, please ensure you meet the following criteria
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="list-disc pl-6 space-y-2">
-            <li>
-              You must have 5,000 JP tokens to apply (lower amounts for premium
-              plan members)
-            </li>
-            <li>Your account must be at least 30 days old</li>
-            <li>You must have a complete business profile</li>
-            <li>You must provide valid documentation of your business needs</li>
-            <li>Application does not guarantee approval</li>
-          </ul>
-        </CardContent>
-      </Card>
-
-      {/* Terms and Conditions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Terms and Conditions</CardTitle>
-          <CardDescription>
-            Please read carefully before applying
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <p>
-              By applying for a Prosperity Drop, you acknowledge and agree to
-              the following:
+    <>
+      <CustomAccordion />
+      <div className="container mx-auto px-0 space-y-6">
+        {/* Description Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>What is Prosperity Drops?</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">
+              Quarterly grants awarded to deserving solopreneurs, funded by the
+              platform once profitable.
             </p>
-            <ul className="list-decimal pl-6 space-y-2">
-              <li>The application fee of 5,000 JP is non-refundable</li>
+            <div className="space-y-4">
+              <h3 className="font-semibold">Benefits:</h3>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Provides tangible financial aid to support key goals.</li>
+                <li>
+                  Builds trust that the platform truly invests in members.
+                </li>
+                <li>Encourages a shared vision of success and support.</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Requirements Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Requirements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                You must have 5,000 JP tokens to apply (lower amounts for
+                premium plan members)
+              </li>
+              <li>You must have a complete business profile</li>
+              <li>Your account must be at least 30 days old</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        {/* Terms and Conditions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Terms and Conditions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="list-disc pl-6 space-y-2">
+              <li>
+                No JoyPearls will be credited back once the applied for
+                Prosperity Drops
+              </li>
+              <li>
+                You must provide valid documentation of your business needs
+              </li>
+              <li>Application does not guarantee approval</li>
               <li>All information provided must be accurate and verifiable</li>
               <li>
                 MTB reserves the right to approve or reject any application
               </li>
-              <li>Approved drops will be processed within 14 business days</li>
               <li>
                 Misuse or fraudulent applications will result in account
                 suspension
               </li>
             </ul>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Application Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Apply for Prosperity Drop</CardTitle>
-          <CardDescription>
-            Fill out the form below to submit your application
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <InputWithLabel
-              label="Project Title"
-              id="title"
-              placeholder="Enter your project title"
-              error={errors.title}
-              {...register("title")}
-            />
+        {/* Application Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Apply for Prosperity Drop</CardTitle>
+            <CardDescription>
+              Fill out the form below to submit your application
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <InputWithLabel
+                label="Project Title"
+                id="title"
+                placeholder="Enter your project title"
+                error={errors.title}
+                {...register("title")}
+              />
 
-            <TextareaWithLabel
-              label="Project Description"
-              id="description"
-              placeholder="Describe your project and how the prosperity drop will help..."
-              error={errors.description}
-              {...register("description")}
-            />
+              <TextareaWithLabel
+                label="Project Description"
+                id="description"
+                placeholder="Describe your project and how the prosperity drop will help..."
+                error={errors.description}
+                {...register("description")}
+              />
 
-            {/* <ConfirmAction
-              action={handleSubmit(onSubmit)}
-              // isDisabled={mutation.isPending || !isValid}
-            > */}
-              <Button
-                type="submit"
-                className="w-full"
-                // disabled={mutation.isPending || !isValid}
-              >
+              <Button type="submit" className="w-full">
                 {mutation.isPending
                   ? "Submitting..."
                   : "Submit Application (5,000 JP)"}
               </Button>
-            {/* </ConfirmAction> */}
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 };
 
