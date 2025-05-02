@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -88,10 +87,14 @@ export default function SignUpForm() {
 
   const handleGoogleLogin = async () => {
     try {
+      // Get referral code from URL or cookies
+      // const referralCode = searchParams.get('ref');
+      
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: "/dashboard",
       });
+      
       if (result?.ok) {
         router.push("/dashboard");
         toast.success("Signed in successfully");
