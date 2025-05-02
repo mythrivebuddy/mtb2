@@ -7,7 +7,7 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications"; // F
 
 // Define valid status transitions
 const VALID_STATUS_TRANSITIONS: Record<SpotlightStatus, SpotlightStatus[]> = {
-  APPLIED: ["IN_REVIEW"],
+  APPLIED: ["IN_REVIEW", "APPROVED", "DISAPPROVED"],
   IN_REVIEW: ["APPROVED", "DISAPPROVED"],
   APPROVED: ["ACTIVE"],
   DISAPPROVED: [], // Terminal state

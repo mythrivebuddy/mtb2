@@ -89,6 +89,16 @@ async function main() {
       transactionType: TransactionType.CREDIT,
     },
     {
+      activity: ActivityType.BUDDY_LENS_REQUEST,
+      jpAmount: 0,
+      transactionType: TransactionType.DEBIT,
+    },
+    {
+      activity: ActivityType.BUDDY_LENS_REVIEW,
+      jpAmount: 0,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
       activity: ActivityType.ALIGNED_ACTION,
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,

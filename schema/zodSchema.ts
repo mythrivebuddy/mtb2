@@ -147,6 +147,37 @@ export const step4Schema = z.object({
 
 });
 
+// Buddy-lends request form schema
+
+export const buddyLensRequestSchema = z.object({
+  socialMediaUrl: z.string().url('Invalid URL').min(1, 'Social Media URL is required'),
+  tier: z.enum(['5min', '10min', '15min']),
+  domain: z.string().min(1, 'Domain is required'),
+  questions: z
+    .array(z.string().min(1, 'Question cannot be empty'))
+    .min(1, 'At least one question is required')
+    .max(3, 'Maximum of 3 questions allowed'),
+  expiresAt: z.string().min(1, 'Expiry date/time is required'),
+  jpCost: z.number(),
+}).superRefine((data, ctx) => {
+  const { tier, jpCost } = data;
+
+  const expectedCosts: Record<string, number> = {
+    '5min': 500,
+    '10min': 1000,
+    '15min': 500,
+  };
+
+  if (jpCost !== expectedCosts[tier]) {
+    ctx.addIssue({
+      path: ['jpCost'],
+      code: z.ZodIssueCode.custom,
+      message: `JP cost for ${tier} should be ${expectedCosts[tier]}`,
+    });
+  }
+});
+
+
 
 // Profile Schema
 export const profileSchema = z.object({
@@ -163,5 +194,6 @@ export type Step1FormType = z.infer<typeof step1Schema>;
 export type Step2FormType = z.infer<typeof step2Schema>;
 export type Step3FormType = z.infer<typeof step3Schema>;
 export type Step4FormType = z.infer<typeof step4Schema>;
+export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 

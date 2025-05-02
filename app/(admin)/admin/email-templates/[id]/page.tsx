@@ -38,7 +38,7 @@ const saveTemplate = async ({
   isNew: boolean;
 }): Promise<void> => {
   const url = isNew
-    ? "/api/admin/email-templates"
+    ? `/api/admin/email-templates`
     : `/api/admin/email-templates/${id}`;
   const method = isNew ? "POST" : "PUT";
 

@@ -48,7 +48,13 @@ export async function GET(request: NextRequest) {
 
     // Parallelize database queries
     const [totalUsers, users] = await Promise.all([
-      prisma.user.count(),
+      prisma.user.count(
+        {
+        where: {
+          role: "USER",
+        },
+      }
+    ),
       prisma.user.findMany({
         where: {
           role: "USER",
