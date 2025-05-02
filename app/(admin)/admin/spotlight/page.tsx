@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { useState } from "react";
 import { Pagination } from "@/components/ui/pagination";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
+import ConfirmAction from "@/components/ConfirmAction";
 
 interface SpotlightApplication {
   id: string;
@@ -48,10 +49,14 @@ const fetchSpotlightApplications = async (
   return data;
 };
 
-const updateSpotlightStatus = async (id: string) => {
-  const response = await axios.put(`/api/admin/spotlight/${id}`, {
-    status: "IN_REVIEW",
-  });
+const updateSpotlightStatus = async ({
+  id,
+  status,
+}: {
+  id: string;
+  status: SpotlightStatus;
+}) => {
+  const response = await axios.put(`/api/admin/spotlight/${id}`, { status });
   return response.data;
 };
 
@@ -77,6 +82,7 @@ const getStatusBadgeVariant = (
 export default function SpotlightApplication() {
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const limit = 6;
 
   const { data: applications, isLoading } = useQuery({
@@ -87,9 +93,10 @@ export default function SpotlightApplication() {
 
   const mutation = useMutation({
     mutationFn: updateSpotlightStatus,
-    onSuccess: (_, id) => {
-      router.push(`/admin/spotlight/${id}`);
-      toast.success("Status updated to IN_REVIEW");
+    onSuccess: () => {
+      toast.success("Status updated successfully");
+      router.refresh();
+      queryClient.invalidateQueries({ queryKey: ["spotlightApplications"] });
     },
     onError: (error) => {
       toast.error(getAxiosErrorMessage(error, "Failed to update status"));
@@ -97,15 +104,16 @@ export default function SpotlightApplication() {
     },
   });
 
-  const handleReview = (
+  const handleViewProfile = async (
+    userId: string,
     spotlightId: string,
-    currentStatus: SpotlightStatus
+    status: SpotlightStatus
   ) => {
-    if (currentStatus === "APPLIED") {
-      mutation.mutate(spotlightId);
-    } else {
-      router.push(`/admin/spotlight/${spotlightId}`);
+    if (status === SpotlightStatus.APPLIED) {
+      await mutation.mutateAsync({ id: spotlightId, status: "IN_REVIEW" });
+      queryClient.invalidateQueries({ queryKey: ["spotlightApplications"] });
     }
+    window.open(`/profile/${userId}`, "_blank");
   };
 
   if (isLoading) {
@@ -234,21 +242,60 @@ export default function SpotlightApplication() {
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
                     <Button
                       variant="outline"
-                      onClick={() => router.push(`/profile/${app.user.id}`)}
+                      onClick={() =>
+                        handleViewProfile(app.user.id, app.id, app.status)
+                      }
+                      disabled={mutation.isPending}
                     >
                       View Profile
                     </Button>
                   </TableCell>
                   <TableCell className="px-6 py-4 whitespace-nowrap text-sm">
-                    <Button
-                      variant="default"
-                      onClick={() => handleReview(app.id, app.status)}
-                      disabled={
-                        mutation.isPending && mutation.variables === app.id
-                      }
-                    >
-                      View Application
-                    </Button>
+                    <div className="flex gap-2">
+                      <ConfirmAction
+                        action={() =>
+                          mutation.mutate({ id: app.id, status: "APPROVED" })
+                        }
+                        isDisabled={mutation.isPending}
+                        description="Are you sure you want to approve this application?"
+                      >
+                        <Button
+                          variant="default"
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={
+                            mutation.isPending ||
+                            !(
+                              app.status === "APPLIED" ||
+                              app.status === "IN_REVIEW"
+                            )
+                          }
+                          size="sm"
+                        >
+                          Approve
+                        </Button>
+                      </ConfirmAction>
+                      <ConfirmAction
+                        action={() =>
+                          mutation.mutate({ id: app.id, status: "DISAPPROVED" })
+                        }
+                        isDisabled={mutation.isPending}
+                        description="Are you sure you want to disapprove this application?"
+                      >
+                        <Button
+                          variant="destructive"
+                          disabled={
+                            mutation.isPending ||
+                            !(
+                              app.status === "APPLIED" ||
+                              app.status === "IN_REVIEW"
+                            )
+                          }
+                          size="sm"
+                        >
+                          Disapprove
+                        </Button>
+                      </ConfirmAction>
+                    </div>
                   </TableCell>
                 </TableRow>
               )
