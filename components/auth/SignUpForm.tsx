@@ -296,8 +296,10 @@ export default function SignUpForm() {
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: "/dashboard",
+        // state: "gggggggggg",
       });
       if (result?.ok) {
+        console.log("herer in okay");
         router.push("/dashboard");
         toast.success("Signed in successfully");
         return;
