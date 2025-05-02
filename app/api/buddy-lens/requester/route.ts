@@ -294,7 +294,7 @@ export async function GET(req: NextRequest) {
 
     // 1. Get current user (requester)
     const session = await getServerSession(authConfig);
-    const currentUserId = session?.user?.id; // Adjust based on your session user object
+    const UserId = session?.user?.id; // Adjust based on your session user object
 
     if (id) {
       const request = await prisma.buddyLensRequest.findUnique({
@@ -317,7 +317,7 @@ export async function GET(req: NextRequest) {
         where: {
           isDeleted: false,
           // 2. Exclude requests where requesterId === current user id
-          requesterId: currentUserId ? { not: currentUserId } : undefined,
+          requesterId: UserId ? { not: UserId } : undefined,
         },
         include: {
           requester: true,
@@ -334,6 +334,7 @@ export async function GET(req: NextRequest) {
     return errorResponse("Failed to fetch requests", 500);
   }
 }
+
 // PUT: Update a BuddyLens request by ID
 export async function PUT(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
