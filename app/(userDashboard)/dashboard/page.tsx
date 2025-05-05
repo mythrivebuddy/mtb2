@@ -42,7 +42,7 @@ export default function DashboardPage() {
     useQuery<Prisma.ProsperityDropGetPayload<{ include: { user: true } }>[]>({
       queryKey: ["prosperityDrops", session?.user?.id],
       queryFn: async () => {
-        const response = await axios.get("/api/user/prosperity");
+        const response = await axios.get(`/api/user/prosperity`);
         return response.data;
       },
       retry: false,

@@ -35,6 +35,8 @@ enum ActivityType {
   GENERAL_FEEDBACK
   FEATURE_REQUEST
   BUG_REPORT
+  BUDDY_LENS_REQUEST
+  BUDDY_LENS_REVIEW
   ALIGNED_ACTION
 }
 
@@ -62,6 +64,20 @@ enum ProsperityDropStatus {
 enum SpotlightActivityType {
   VIEW
   CONNECT
+}
+
+enum BuddyLensRequestStatus {
+  OPEN
+  CLAIMED
+  COMPLETED
+  CANCELLED
+  PENDING
+}
+
+enum BuddyLensReviewStatus {
+  DRAFT
+  SUBMITTED
+  REPORTED
 }
 
 enum NotificationType {
@@ -109,6 +125,12 @@ model User {
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
   prosperityDrops               ProsperityDrop[]
+  magicBoxes                    MagicBox[]
+  buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
+  buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
+  BuddyLensReview               BuddyLensReview[]
+  userNotifications             UserNotification[]    @relation("UserNotifications")
+  pendingReviews                BuddyLensRequest[]    @relation("PendingReviewer")
 
    // PayPal subscription tracking:
   subscriptionId     String?   @unique
@@ -138,7 +160,6 @@ model User {
   website       String?
   socialHandles Json?
 
-  magicBoxes MagicBox[]
   invoice    Invoice[]
   Notification      Notification[]
   pushSubscriptions PushSubscription[]
@@ -150,13 +171,15 @@ model User {
 }
 
 model Transaction {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity   Activity @relation(fields: [activityId], references: [id])
-  activityId String
-  jpAmount   Int
-  createdAt  DateTime @default(now())
+  id                 String            @id @default(uuid())
+  userId             String
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity           Activity          @relation(fields: [activityId], references: [id])
+  activityId         String
+  jpAmount           Int
+  createdAt          DateTime          @default(now())
+  // buddyLensRequest   BuddyLensRequest? @relation(fields: [buddyLensRequestId], references: [id])
+  // buddyLensRequestId String?           @unique
 }
 
 model Activity {
@@ -446,6 +469,59 @@ model MagicBoxSettings {
   updatedAt   DateTime @updatedAt
 }
 
+model BuddyLensRequest {
+  id                String                 @id @default(uuid())
+  requesterId       String
+  requester         User                   @relation("BuddyLensRequests", fields: [requesterId], references: [id])
+  reviewerId        String?
+  pendingReviewerId String?
+  reviewer          User?                  @relation("BuddyLensReviews", fields: [reviewerId], references: [id])
+  socialMediaUrl    String
+  tier              String                 @default("5min")
+  questions         String[]
+  jpCost            Int
+  domain            String
+  status            BuddyLensRequestStatus @default(OPEN)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  expiresAt         DateTime               @default(now())
+  completedAt       DateTime?
+  review            BuddyLensReview?
+  // transaction       Transaction?
+  isDeleted         Boolean                @default(false)
+  pendingReviewer   User?                  @relation("PendingReviewer", fields: [pendingReviewerId], references: [id])
+
+  @@index([requesterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model BuddyLensReview {
+  id          String                @id @default(uuid())
+  reviewerId  String
+  requestId   String                @unique
+  request     BuddyLensRequest      @relation(fields: [requestId], references: [id])
+  reviewer    User                  @relation(fields: [reviewerId], references: [id])
+  answers     String[]
+  reviewText  String
+  status      BuddyLensReviewStatus @default(DRAFT)
+  rating      Int?
+  feedback    String?
+  submittedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+model UserNotification {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  link      String?
+  user      User     @relation(name: "UserNotifications", fields: [userId], references: [id])
+}
 model Invoice {
   id                   String   @id @default(uuid())
   user                 User     @relation(fields: [userSubscriptionId], references: [subscriptionId])

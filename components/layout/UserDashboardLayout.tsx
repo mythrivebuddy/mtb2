@@ -16,7 +16,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   } = useQuery<User>({
     queryKey: ["userInfo"],
     queryFn: async () => {
-      const response = await axios.get("/api/user");
+      const response = await axios.get(`/api/user`);
       return response.data.user;
     },
     retry: false,
@@ -32,7 +32,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-dashboard">
+    <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
       {/* Fixed Sidebar */}
       <div className="fixed top-0 left-0 w-64 z-20 m-3">
         <Sidebar user={user} />
