@@ -127,9 +127,10 @@
 //     </AppLayout>
 //   );
 // }
+
 // app/(public)/blog/[blogname]/page.tsx
 import { Metadata } from "next";
-import ClientBlogPage from "../BlogData";
+import ClientBlogPage from "./BlogData";
 
 interface BlogPost {
   id: string;
@@ -141,11 +142,15 @@ interface BlogPost {
   date: string;
 }
 
+type PageProps = {
+  params: Promise<{ blogname: string }>;
+};
+
 const fetchBlog = async (slug: string): Promise<BlogPost> => {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs/getParticularBlog/${slug}`,
     {
-      cache: "force-cache", // Leverage Next.js caching (optional, adjust as needed)
+      cache: "force-cache",
     }
   );
   if (!res.ok) {
@@ -156,17 +161,16 @@ const fetchBlog = async (slug: string): Promise<BlogPost> => {
 
 export async function generateMetadata({
   params,
-}: {
-  params: { blogname: string };
-}): Promise<Metadata> {
-  const blog = await fetchBlog(params.blogname);
+}: PageProps): Promise<Metadata> {
+  const { blogname } = await params; // Await the params Promise
+  const blog = await fetchBlog(blogname);
   return {
     title: `${blog.title} - MyThriveBuddy`,
     description: blog.excerpt,
     openGraph: {
       title: blog.title,
       description: blog.excerpt,
-      url: `https://mythrivebuddy.com/blog/${params.blogname}`,
+      url: `https://mythrivebuddy.com/blog/${blogname}`,
       siteName: "MyThriveBuddy",
       images: [
         {
@@ -189,11 +193,17 @@ export async function generateMetadata({
   };
 }
 
-export default async function Page({
-  params,
-}: {
-  params: { blogname: string };
-}) {
-  const blog = await fetchBlog(params.blogname);
-  return <ClientBlogPage blog={blog} />;
+export default async function Page({ params }: PageProps) {
+  try {
+    const { blogname } = await params; // Await the params Promise
+    const blog = await fetchBlog(blogname);
+    return <ClientBlogPage blog={blog} />;
+  } catch (error) {
+    return (
+      <div className="text-center text-2xl text-red-500 p-10">
+        Error loading blog:{" "}
+        {error instanceof Error ? error.message : "Unknown error"}
+      </div>
+    );
+  }
 }
