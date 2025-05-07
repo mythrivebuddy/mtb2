@@ -10,5 +10,5 @@
 ALTER TABLE "Transaction" ALTER COLUMN "jpAmount" SET NOT NULL;
 
 -- AlterTable
-ALTER TABLE "User" DROP COLUMN "address",
-DROP COLUMN "phone";
+-- ALTER TABLE "User" DROP COLUMN "address",
+-- DROP COLUMN "phone";
