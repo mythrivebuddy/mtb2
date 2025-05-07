@@ -22,7 +22,7 @@ const Card = ({
   </div>
 );
 
-const CardGrid = () => {
+const    CardGrid = () => {
   const cards = [
     {
       title: "MagicBox",

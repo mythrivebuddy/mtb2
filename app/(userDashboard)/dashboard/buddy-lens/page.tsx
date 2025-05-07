@@ -47,17 +47,30 @@ export default function BuddyLensDashboard() {
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<'my-requests' | 'to-review' | 'reviewed'>('my-requests');
 
+ 
   // Fetch user's own requests
   const {
     data: myRequests = [],
     isLoading: isMyRequestsLoading,
     error: myRequestsError,
   } = useQuery({
-    queryKey: ['myBuddyLensRequests', userId] as [string, string | undefined],
+    queryKey: ['buddyLensRequest', userId] as [string, string | undefined],
     queryFn: async () => {
-      const response = await axios.get('/api/buddy-lens/requester');
-      console.log('My Requests:', response.data);
-      return response.data.filter((req: BuddyLensRequest) => !req.isDeleted);
+      try {
+        const response = await axios.get(`/api/buddy-lens/requester/${userId}`);
+        console.log('Raw API Response (My Requests):', response.data); // Debug: Log raw response
+        const filteredRequests = response.data.filter(
+          (req: BuddyLensRequest) => {
+            console.log('Request (My Requests):', req); // Debug: Log each request
+            return req.requesterId === userId && !req.isDeleted;
+          }
+        );
+        console.log('Filtered Requests (My Requests):', filteredRequests); // Debug: Log filtered result
+        return filteredRequests;
+      } catch (error) {
+        console.error('Fetch error (My Requests):', error);
+        throw error;
+      }
     },
     enabled: !!userId,
     refetchInterval: 10000,
@@ -271,7 +284,7 @@ export default function BuddyLensDashboard() {
                       </a>
                     </div>
                     <div className="flex gap-2">
-                      {req.status === 'CLAIMED' && (
+                      {req.status === 'OPEN' && (
                         <Button
                           onClick={() => deleteRequestMutation.mutate(req.id)}
                           disabled={deleteRequestMutation.isPending}

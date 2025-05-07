@@ -346,7 +346,7 @@ export async function GET(req: NextRequest) {
     const reviews = await prisma.buddyLensReview.findMany({
       where: {
         OR: [
-          { reviewerId: session.user.id },
+          // { reviewerId: session.user.id },
           { request: { requesterId: session.user.id } },
         ],
       },
