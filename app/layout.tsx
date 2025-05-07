@@ -1,4 +1,3 @@
-// import { Providers } from '@/lib/providers'
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Provider from "@/providers/Provider";
@@ -12,7 +11,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`} suppressHydrationWarning>
+      <body
+        className={`${inter.className} antialiased`}
+        suppressHydrationWarning
+      >
         <div className="h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] overflow-y-auto">
           <Provider>{children}</Provider>
         </div>
