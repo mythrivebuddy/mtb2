@@ -40,7 +40,8 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20">
         {/* Fixed TopBar */}
-        <div className=" z-10 md:mx-10 mx-5">
+        {/* <div className="md:mx-10 mx-5"> */}
+        <div className="md:mx-10 mx-5">
           <TopBar user={user} />
         </div>
         {/* Scrollable Main Content */}
