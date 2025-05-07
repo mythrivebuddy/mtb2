@@ -1,23 +1,22 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 async function main() {
   await prisma.activity.upsert({
-    where: { activity: 'BUDDY_LENS_REQUEST' },
+    where: { activity: "BUDDY_LENS_REQUEST" },
     update: {},
     create: {
-      activity: 'BUDDY_LENS_REQUEST',
+      activity: "BUDDY_LENS_REQUEST",
       jpAmount: 500, // Default, varies by tier
-      transactionType: 'DEBIT',
+      transactionType: "DEBIT",
     },
   });
   await prisma.activity.upsert({
-    where: { activity: 'BUDDY_LENS_REVIEW' },
+    where: { activity: "BUDDY_LENS_REVIEW" },
     update: {},
     create: {
-      activity: 'BUDDY_LENS_REVIEW',
+      activity: "BUDDY_LENS_REVIEW",
       jpAmount: 500, // Default, varies
-      transactionType: 'CREDIT',
+      transactionType: "CREDIT",
     },
   });
 }

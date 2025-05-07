@@ -1,6 +1,7 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") //new edition
 }
 
 generator client {
@@ -132,19 +133,19 @@ model User {
   userNotifications             UserNotification[]    @relation("UserNotifications")
   pendingReviews                BuddyLensRequest[]    @relation("PendingReviewer")
 
-   // PayPal subscription tracking:
+  // PayPal subscription tracking:
   subscriptionId     String?   @unique
   subscriptionStatus String?
   subscriptionStart  DateTime?
   subscriptionEnd    DateTime?
-  
+
   //address   Json
   //phone      String?
-  cart       Cart[]
-  orders     Order[]
-  wishlists  Wishlist[]
-  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
-  profileViews                  ProfileView[]
+  cart         Cart[]
+  orders       Order[]
+  wishlists    Wishlist[]
+  membership   String        @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+  profileViews ProfileView[]
 
   referralCode String? @unique
   referredById String?
@@ -160,24 +161,25 @@ model User {
   website       String?
   socialHandles Json?
 
-  invoice    Invoice[]
+  invoice           Invoice[]
   Notification      Notification[]
   pushSubscriptions PushSubscription[]
 
   alignedActions AlignedAction[]
   // Relation to the new UserProfile model
-  bio             String?
+  bio            String?
+
   @@index([name])
 }
 
 model Transaction {
-  id                 String            @id @default(uuid())
-  userId             String
-  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity           Activity          @relation(fields: [activityId], references: [id])
-  activityId         String
-  jpAmount           Int
-  createdAt          DateTime          @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId String
+  jpAmount   Int
+  createdAt  DateTime @default(now())
   // buddyLensRequest   BuddyLensRequest? @relation(fields: [buddyLensRequestId], references: [id])
   // buddyLensRequestId String?           @unique
 }
@@ -191,17 +193,17 @@ model Activity {
 }
 
 model Plan {
-  id              String @id @default(uuid())
-  name            String @unique
-  jpMultiplier    Float  @default(1.0) // Earn more JP per action
-  discountPercent Float  @default(0.0) // Discount on JP spending
+  id              String   @id @default(uuid())
+  name            String   @unique
+  jpMultiplier    Float    @default(1.0) // Earn more JP per action
+  discountPercent Float    @default(0.0) // Discount on JP spending
   durationDays    Int? // NULL for lifetime plans, else number of days
   users           User[]
   price           String
-  paypalPlanId    String? @unique // PayPal plan ID
+  paypalPlanId    String?  @unique // PayPal plan ID
   paypalProductId String? // PayPal product ID
   interval        String?
-  isActive        Boolean @default(true)
+  isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now())
 }
@@ -522,13 +524,14 @@ model UserNotification {
   link      String?
   user      User     @relation(name: "UserNotifications", fields: [userId], references: [id])
 }
+
 model Invoice {
-  id                   String   @id @default(uuid())
-  user                 User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
-  userSubscriptionId   String
-  amount               Float
-  saleId               String   @unique         // PayPal sale ID (resource.id)
-  createdAt            DateTime @default(now())
+  id                 String   @id @default(uuid())
+  user               User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
+  userSubscriptionId String
+  amount             Float
+  saleId             String   @unique // PayPal sale ID (resource.id)
+  createdAt          DateTime @default(now())
 }
 
 model ProfileView {

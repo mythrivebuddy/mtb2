@@ -1,4 +1,3 @@
-// import { Providers } from '@/lib/providers'
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Provider from "@/providers/Provider";

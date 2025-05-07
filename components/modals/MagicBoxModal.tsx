@@ -331,7 +331,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       <AnimatePresence>
         {showConfetti && (
           <motion.div
-            className="fixed inset-0 pointer-events-none z-[9999]"
+            className="fixed inset-0 pointer-events-none z-[999999999]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -344,6 +344,11 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
               numberOfPieces={200}
               recycle={false}
               // opacity={confettiOpacity}
+              // className=""
+              style={{
+                position:'fixed',
+                zIndex: '999999'
+              }}
             />
           </motion.div>
         )}
