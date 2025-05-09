@@ -99,7 +99,8 @@ const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
       <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">Social Handles</h2>
         <div className="flex space-x-4 p-4">
-          {profileData?.socialHandles ? (
+          {profileData?.socialHandles &&
+          Object.keys(profileData.socialHandles).length ? (
             <>
               {profileData?.socialHandles?.linkedin && (
                 <a

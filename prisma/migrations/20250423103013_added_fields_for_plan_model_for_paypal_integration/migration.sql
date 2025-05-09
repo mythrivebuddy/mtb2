@@ -15,8 +15,8 @@ ADD COLUMN     "paypalProductId" TEXT,
 ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 -- AlterTable
--- ALTER TABLE "User" DROP COLUMN "address",
--- DROP COLUMN "phone";
+ALTER TABLE "User" DROP COLUMN "address",
+DROP COLUMN "phone";
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Plan_paypalPlanId_key" ON "Plan"("paypalPlanId");

@@ -2,8 +2,6 @@ import {  Role } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
-
-
 async function main() {
   const defaultPassword = await hash("password123", 10);
 
