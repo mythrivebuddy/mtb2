@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         // feedbackType,
         domain,
         // prelatform,
-        expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
+        // expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
         status: BuddyLensRequestStatus.PENDING,
       },
     });

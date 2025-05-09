@@ -10,9 +10,11 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getAxiosErrorMessage } from '@/utils/ax';
+import { request } from 'http';
 
 interface BuddyLensRequest {
   id: string;
+  name: string;
   feedbackType: string;
   platform: string;
   domain: string;
@@ -22,7 +24,7 @@ interface BuddyLensRequest {
   status: string;
   requesterId: string;
   pendingReviewerId?: string;
-  reviewer?: { name: string };
+  reviewer?: { name: string; email: string };
 }
 
 export default function BuddyLensApprovePage() {
@@ -30,7 +32,7 @@ export default function BuddyLensApprovePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Get parameters from URL
+  // Get request ID and reviewer ID from search params
   const requestId = searchParams?.get('requestId');
   const reviewerId = searchParams?.get('reviewerId');
 
@@ -42,7 +44,7 @@ export default function BuddyLensApprovePage() {
     console.log('Referrer:', document.referrer);
   }, [searchParams, requestId, reviewerId]);
 
-  // Validate URL parameters
+  // Validate session
   useEffect(() => {
     if (sessionStatus === 'loading') return;
 
@@ -50,73 +52,88 @@ export default function BuddyLensApprovePage() {
       console.error('No session or user ID found');
       toast.error('Please login to continue');
       router.push('/login');
-      return;
     }
+  }, [session, sessionStatus, router]);
 
-    if (!requestId || !reviewerId) {
-      console.error('Missing required parameters:', { requestId, reviewerId });
-      toast.error('Invalid approval link. Please use a valid link from your notifications.');
-      setTimeout(() => router.push('/dashboard/buddy-lens'), 2000);
-      return;
-    }
-  }, [requestId, reviewerId, session, sessionStatus, router]);
-
-  // Fetch request data with React Query
+  // Fetch request(s) data with React Query
   const {
-    data: request,
-    isLoading: isRequestLoading,
-    error: requestError,
-  } = useQuery<BuddyLensRequest | null>({
-    // queryKey: ['buddyLensRequest'], //!DEEPAK CHANG4S
-    queryKey: ['buddyLensRequest', requestId],
+    data: requests,
+    isLoading: isRequestsLoading,
+    error: requestsError,
+  } = useQuery<BuddyLensRequest[] | BuddyLensRequest | null>({
+    queryKey: ['buddyLensRequests', requestId],
     queryFn: async () => {
-      if (!requestId || !reviewerId || !session?.user?.id) return null;
+      if (!session?.user?.id) return null;
 
-      console.log(`Fetching: GET /api/buddy-lens/approve?requestId=${requestId}`);
-      const response = await axios.get(`/api/buddy-lens/approve?requestId=${requestId}`, {
+      const url = requestId
+        ? `/api/buddy-lens/approve?requestId=${requestId}`
+        : `/api/buddy-lens/approve`;
+
+      console.log(`Fetching: GET ${url}`);
+      const response = await axios.get(url, {
         headers: { 'Content-Type': 'application/json' },
       });
-      const requestData: BuddyLensRequest = response.data;
+
+      const requestData = response.data;
       console.log('Request data:', requestData);
 
-      if (requestData.requesterId !== session.user.id) {
-        console.error(`Unauthorized: requesterId ${requestData.requesterId} does not match user ${session.user.id}`);
-        toast.error('You are not authorized to approve this request');
-        router.push('/dashboard/buddy-lens/requester');
-        return null;
+      // Handle single request case
+      if (requestId) {
+        const singleRequest: BuddyLensRequest = requestData;
+
+        if (singleRequest.requesterId !== session.user.id) {
+          console.error(
+            `Unauthorized: requesterId ${singleRequest.requesterId} does not match user ${session.user.id}`
+          );
+          toast.error('You are not authorized to approve this request');
+          router.push('/dashboard/buddy-lens');
+          return null;
+        }
+
+        if (singleRequest.status !== 'PENDING') {
+          console.error(`Invalid status: ${singleRequest.status}, expected PENDING`);
+          toast.error('This claim is no longer pending review');
+          router.push('/dashboard/buddy-lens');
+          return null;
+        }
+
+        if (reviewerId && singleRequest.pendingReviewerId !== reviewerId) {
+          console.log(
+            `Invalid reviewer: pendingReviewerId ${singleRequest.pendingReviewerId}, expected ${reviewerId}`
+          );
+          toast.error('Invalid reviewer for this claim');
+          router.push('/dashboard/buddy-lens');
+          return null;
+        }
+
+        return singleRequest;
       }
 
-      if (requestData.status !== 'PENDING') {
-        console.error(`Invalid status: ${requestData.status}, expected PENDING`);
-        toast.error('This claim is no longer pending review');
-        router.push('/dashboard/buddy-lens/requester');
-        return null;
-      }
-
-      if (requestData.pendingReviewerId !== reviewerId) {
-        console.log(`Invalid reviewer: pendingReviewerId ${requestData.pendingReviewerId}, expected ${reviewerId}`);
-        toast.error('Invalid reviewer for this claim');
-        router.push('/dashboard/buddy-lens/requester');
-        return null;
-      }
-
-      return requestData;
+      // Handle multiple requests case
+      return requestData as BuddyLensRequest[];
     },
-    enabled: !!requestId && !!reviewerId && !!session?.user?.id && sessionStatus === 'authenticated',
+    enabled: !!session?.user?.id && sessionStatus === 'authenticated',
     retry: false,
     retryDelay: 1000,
   });
 
   // Mutation for approve/reject actions
   const { mutateAsync: handleApproveReject, isPending: isApproveLoading } = useMutation({
-    mutationFn: async (approve: boolean) => {
+    mutationFn: async ({
+      requestId,
+      reviewerId,
+      approve,
+    }: {
+      requestId: string;
+      reviewerId: string;
+      approve: boolean;
+    }) => {
       if (!session?.user?.id || !requestId || !reviewerId) {
         throw new Error('Missing required information');
       }
 
-      console.log('Sending: PATCH /api/buddy-lens/approve', { requestId, reviewerId, approve });
-      const response = await axios.patch(
-        '/api/buddy-lens/approve',
+      console.log('Sending: PATCH /api/buddy-lens/approve', { requestId, reviewerId, approve  });
+      const response = await axios.patch(`/api/buddy-lens/approve`,
         {
           requestId,
           reviewerId,
@@ -127,68 +144,50 @@ export default function BuddyLensApprovePage() {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+          console.log("data:" , response.data);
+
       return response.data;
     },
     onSuccess: (data, variables) => {
-      toast.success(data.message || (variables ? 'Claim approved successfully' : 'Claim rejected successfully'));
-      // queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
+      toast.success(
+        data.message || (variables.approve ? 'Claim approved successfully' : 'Claim rejected successfully')
+      );
       router.push('/dashboard/buddy-lens');
     },
     onError: (error) => {
-      const errorMessage = getAxiosErrorMessage(error, "Error message");
+      const errorMessage = getAxiosErrorMessage(error, 'Error processing request');
       toast.error(errorMessage);
     },
   });
 
   // Mutation for cancel action
-  const { mutateAsync: handleCancel, isPending: isCancelLoading } = useMutation({
-    mutationFn: async () => {
-      if (!session?.user?.id || !requestId || !reviewerId) {
-        throw new Error('Missing required information');
-      }
+  // const { mutateAsync: handleCancel, isPending: isCancelLoading } = useMutation({
+  //   mutationFn: async ({ requestId, reviewerId }: { requestId: string; reviewerId: string }) => {
+  //     if (!session?.user?.id || !requestId || !reviewerId) {
+  //       throw new Error('Missing required information');
+  //     }
 
-      console.log(`Sending: DELETE /api/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`);
-      const response = await axios.delete(
-        `/api/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`,
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message || 'Claim cancelled successfully');
-      // queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
-      router.push('/dashboard/buddy-lens');
-    },
-    onError: (error) => {
-      const errorMessage = getAxiosErrorMessage(error, "Error message");
-      toast.error(errorMessage);
-    },
-  });
+  //     console.log(`Sending: DELETE /api/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`);
+  //     const response = await axios.delete(
+  //       `/api/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`,
+  //       {
+  //         headers: { 'Content-Type': 'application/json' },
+  //       }
+  //     );
+  //     return response.data;
+  //   },
+  //   onSuccess: (data) => {
+  //     toast.success(data.message || 'Claim cancelled successfully');
+  //     router.push('/dashboard/buddy-lens');
+  //   },
+  //   onError: (error) => {
+  //     const errorMessage = getAxiosErrorMessage(error, 'Error cancelling request');
+  //     toast.error(errorMessage);
+  //   },
+  // });
 
-  // Show error UI if parameters are missing
-  if (!requestId || !reviewerId) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="p-6">
-          <h2 className="text-2xl font-semibold text-center">Invalid Link</h2>
-          <p className="mt-2 text-center text-gray-600">
-            Please use a valid approval link from your notifications.
-          </p>
-          <Button
-            onClick={() => router.push('/dashboard/buddy-lens/requester')}
-            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Go to Dashboard
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show loading state while fetching data
-  if (sessionStatus === 'loading' || isRequestLoading) {
+  // Show loading state
+  if (sessionStatus === 'loading' || isRequestsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <CloudCog className="animate-spin h-8 w-8 mr-2" />
@@ -197,14 +196,14 @@ export default function BuddyLensApprovePage() {
     );
   }
 
-  // Show error state if request fetch failed
-  if (requestError) {
+  // Show error state
+  if (requestsError) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="p-6">
-          <h2 className="text-2xl font-semibold text-center">Error Loading Request</h2>
+          <h2 className="text-2xl font-semibold text-center">Error Loading Requests</h2>
           <p className="mt-2 text-center text-gray-600">
-            {getAxiosErrorMessage(requestError, "Failed to load request data")}
+            {getAxiosErrorMessage(requestsError, 'Failed to load request data')}
           </p>
           <Button
             onClick={() => router.push('/dashboard/buddy-lens/requester')}
@@ -217,63 +216,479 @@ export default function BuddyLensApprovePage() {
     );
   }
 
-  // Show UI when request is loaded
+  // Show UI for requests
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <Card className="rounded-2xl shadow-lg p-6 space-y-6">
-        <h2 className="text-3xl font-semibold text-center">Approve Reviewer Claim</h2>
-        {request && (
+    <div className="max-w-4xl mx-auto p-6">
+      <h2 className="text-3xl font-semibold text-center mb-6">Pending Reviewer Claims</h2>
+      {Array.isArray(requests) && requests.length === 0 && (
+        <Card className="p-6 text-center">
+          <p className="text-gray-600">No pending claims to approve.</p>
+          <Button
+            onClick={() => router.push('/dashboard/buddy-lens')}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Go to Dashboard
+          </Button>
+        </Card>
+      )}
+
+      {Array.isArray(requests) && requests.length > 0 && (
+        <div className="space-y-6">
+          {requests.map((request) => (
+            <Card key={request.id} className="rounded-2xl shadow-lg p-6 space-y-4">
+               <p>
+                <strong>Reviewer Name:</strong>  { request.reviewer?.name }
+              </p>
+              
+              <p>
+                <strong>Domain:</strong> {request.domain}
+              </p>
+              <p>
+                <strong>Tier:</strong> {request.tier}
+              </p>
+              <p>
+                <strong>Reward:</strong> {request.jpCost} JoyPearls
+              </p>
+              {/* <p>
+                <strong>Reviewer:</strong> {requests?.reviewer?.name || request.pendingReviewerId}
+              </p> */}
+              <p>
+                <strong>Reviewer Profile:</strong>{' '}
+                <a
+                  href={`http://localhost:3000/profile/${request.pendingReviewerId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600"
+                >
+                  Click here to view
+                </a>
+              </p>
+              <p>
+                <strong>Social Media URL:</strong>{' '}
+                <a
+                  href={request.socialMediaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600"
+                >
+                  {request.socialMediaUrl}
+                </a>
+              </p>
+              <div className="flex gap-11">
+                <Button
+                  onClick={() =>
+                    handleApproveReject({
+                      requestId: request.id,
+                      reviewerId: request.pendingReviewerId || '',
+                      approve: true,
+                    })
+                  }
+                  disabled={isApproveLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Approve
+                </Button>
+                <Button
+                  onClick={() =>
+                    handleApproveReject({
+                      requestId: request.id,
+                      reviewerId: request.pendingReviewerId || '',
+                      approve: false,
+                    })
+                  }
+                  disabled={isApproveLoading }
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Reject
+                </Button>
+                {/* <Button
+                  onClick={() =>
+                    handleCancel({
+                      requestId: request.id,
+                      reviewerId: request.pendingReviewerId || '',
+                    })
+                  }
+                  disabled={isApproveLoading || isCancelLoading}
+                  className="bg-gray-600 hover:bg-gray-700 text-white"
+                >
+                  Cancel
+                </Button> */}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+      
+      {!Array.isArray(requests) && requests && (
+        <Card className="rounded-2xl shadow-lg p-6 space-y-6">
+          <h2 className="text-3xl font-semibold text-center">Approve Reviewer Claim</h2>
           <div className="space-y-4">
             <p>
-              <strong>Request:</strong> {request.feedbackType} on {request.platform}
+              <strong>Domain:</strong> {requests.domain}
             </p>
             <p>
-              <strong>Domain:</strong> {request.domain}
+              <strong>Tier:</strong> {requests.tier}
             </p>
             <p>
-              <strong>Tier:</strong> {request.tier}
+              <strong>Reward:</strong> {requests.jpCost} JoyPearls
             </p>
+            {/* <p>
+              <strong>Reviewer:</strong> {reviewer.name }
+            </p> */}
             <p>
-              <strong>Reward:</strong> {request.jpCost} JoyPearls
-            </p>
-            <p>
-              <strong>Reviewer:</strong> {request.reviewer?.name || request.pendingReviewerId}
+              <strong>Reviewer Profile:</strong>{' '}
+              <a
+                href={`http://localhost:3000/profile/${requests.pendingReviewerId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600"
+              >
+                Click here to view
+              </a>
             </p>
             <p>
               <strong>Social Media URL:</strong>{' '}
-              <a href={request.socialMediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600">
-                {request.socialMediaUrl}
+              <a
+                href={requests.socialMediaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600"
+              >
+                {requests.socialMediaUrl}
               </a>
             </p>
-            <div className="flex gap-4">
+            <div className="flex gap-7">
               <Button
-                onClick={() => handleApproveReject(true)}
-                disabled={isApproveLoading || isCancelLoading}
+                onClick={() =>
+                  handleApproveReject({
+                    requestId: requests.id,
+                    reviewerId: requests.pendingReviewerId || reviewerId || '',
+                    approve: true,
+                  })
+                }
+                disabled={isApproveLoading }
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 Approve
               </Button>
               <Button
-                onClick={() => handleApproveReject(false)}
-                disabled={isApproveLoading || isCancelLoading}
+                onClick={() =>
+                  handleApproveReject({
+                    requestId: requests.id,
+                    reviewerId: requests.pendingReviewerId || reviewerId || '',
+                    approve: false,
+                  })
+                }
+                disabled={isApproveLoading }
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 Reject
               </Button>
-              <Button
-                onClick={() => handleCancel()}
+              {/* <Button
+                onClick={() =>
+                  handleCancel({
+                    requestId: requests.id,
+                    reviewerId: requests.pendingReviewerId || reviewerId || '',
+                  })
+                }
                 disabled={isApproveLoading || isCancelLoading}
                 className="bg-gray-600 hover:bg-gray-700 text-white"
               >
                 Cancel
-              </Button>
+              </Button> */}
             </div>
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }
+// 'use client';
+
+// import { useEffect } from 'react';
+// import { useSession } from 'next-auth/react';
+// import { useRouter, useSearchParams } from 'next/navigation';
+// import { CloudCog } from 'lucide-react';
+// import { useQuery, useMutation } from '@tanstack/react-query';
+// import axios from 'axios';
+// import { toast } from 'sonner';
+// import { Button } from '@/components/ui/button';
+// import { Card } from '@/components/ui/card';
+// import { getAxiosErrorMessage } from '@/utils/ax';
+
+// interface BuddyLensRequest {
+//   id: string;
+//   feedbackType: string;
+//   platform: string;
+//   domain: string;
+//   tier: string;
+//   jpCost: number;
+//   socialMediaUrl: string;
+//   status: string;
+//   requesterId: string;
+//   pendingReviewerId?: string;
+//   reviewer?: { name: string,email:string };
+// }
+
+// export default function BuddyLensApprovePage() {
+//   const { data: session, status: sessionStatus } = useSession();
+//   const router = useRouter();
+//   const searchParams = useSearchParams();
+
+//   // Get parameters from URL
+//   const requestId = searchParams?.get('requestId');
+//   const reviewerId = searchParams?.get('reviewerId');
+
+//   // Log URL and navigation source for debugging
+//   useEffect(() => {
+//     console.log('Approval page loaded with URL:', window.location.href);
+//     console.log('Search params:', { requestId, reviewerId });
+//     console.log('Raw search params:', searchParams?.toString());
+//     console.log('Referrer:', document.referrer);
+//   }, [searchParams, requestId, reviewerId]);
+
+//   // Validate URL parameters
+//   useEffect(() => {
+//     if (sessionStatus === 'loading') return;
+
+//     if (!session || !session.user?.id) {
+//       console.error('No session or user ID found');
+//       toast.error('Please login to continue');
+//       router.push('/login');
+//       return;
+//     }
+
+//     if (!requestId || !reviewerId) {
+//       console.error('Missing required parameters:', { requestId, reviewerId });
+//       toast.error('Invalid approval link. Please use a valid link from your notifications.');
+//       setTimeout(() => router.push('/dashboard/buddy-lens'), 2000);
+//       return;
+//     }
+//   }, [requestId, reviewerId, session, sessionStatus, router]);
+
+//   // Fetch request data with React Query
+//   const {
+//     data: request,
+//     isLoading: isRequestLoading,
+//     error: requestError,
+//   } = useQuery<BuddyLensRequest | null>({
+//     // queryKey: ['buddyLensRequest'], //!DEEPAK CHANG4S
+//     queryKey: ['buddyLensRequest', requestId],
+//     queryFn: async () => {
+//       if (!requestId || !reviewerId || !session?.user?.id) return null;
+
+//       console.log(`Fetching: GET /api/buddy-lens/approve?requestId=${requestId}`);
+//       const response = await axios.get(`/api/buddy-lens/approve?requestId=${requestId}`, {
+//         headers: { 'Content-Type': 'application/json' },
+//       });
+//       const requestData: BuddyLensRequest = response.data;
+//       console.log('Request data:', requestData);
+
+//       if (requestData.requesterId !== session.user.id) {
+//         console.error(`Unauthorized: requesterId ${requestData.requesterId} does not match user ${session.user.id}`);
+//         toast.error('You are not authorized to approve this request');
+//         router.push('/dashboard/buddy-lens/requester');
+//         return null;
+//       }
+
+//       if (requestData.status !== 'PENDING') {
+//         console.error(`Invalid status: ${requestData.status}, expected PENDING`);
+//         toast.error('This claim is no longer pending review');
+//         router.push('/dashboard/buddy-lens/requester');
+//         return null;
+//       }
+
+//       if (requestData.pendingReviewerId !== reviewerId) {
+//         console.log(`Invalid reviewer: pendingReviewerId ${requestData.pendingReviewerId}, expected ${reviewerId}`);
+//         toast.error('Invalid reviewer for this claim');
+//         router.push('/dashboard/buddy-lens/requester');
+//         return null;
+//       }
+
+//       return requestData;
+//     },
+//     enabled: !!requestId && !!reviewerId && !!session?.user?.id && sessionStatus === 'authenticated',
+//     retry: false,
+//     retryDelay: 1000,
+//   });
+
+//   // Mutation for approve/reject actions
+//   const { mutateAsync: handleApproveReject, isPending: isApproveLoading } = useMutation({
+//     mutationFn: async (approve: boolean) => {
+//       if (!session?.user?.id || !requestId || !reviewerId) {
+//         throw new Error('Missing required information');
+//       }
+
+//       console.log('Sending: PATCH /api/buddy-lens/approve', { requestId, reviewerId, approve });
+//       const response = await axios.patch(
+//         `/api/buddy-lens/approve`,
+//         {
+//           requestId,
+//           reviewerId,
+//           approve,
+//           requesterId: session.user.id,
+//         },
+//         {
+//           headers: { 'Content-Type': 'application/json' },
+//         }
+//       );
+//       return response.data;
+//     },
+//     onSuccess: (data, variables) => {
+//       toast.success(data.message || (variables ? 'Claim approved successfully' : 'Claim rejected successfully'));
+//       // queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
+//       router.push('/dashboard/buddy-lens');
+//     },
+//     onError: (error) => {
+//       const errorMessage = getAxiosErrorMessage(error, "Error message");
+//       toast.error(errorMessage);
+//     },
+//   });
+
+//   // Mutation for cancel action
+//   const { mutateAsync: handleCancel, isPending: isCancelLoading } = useMutation({
+//     mutationFn: async () => {
+//       if (!session?.user?.id || !requestId || !reviewerId) {
+//         throw new Error('Missing required information');
+//       }
+
+//       console.log(`Sending: DELETE /api/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`);
+//       const response = await axios.delete(
+//         `/api/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`,
+//         {
+//           headers: { 'Content-Type': 'application/json' },
+//         }
+//       );
+//       return response.data;
+//     },
+//     onSuccess: (data) => {
+//       toast.success(data.message || 'Claim cancelled successfully');
+//       // queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', requestId] });
+//       router.push('/dashboard/buddy-lens');
+//     },
+//     onError: (error) => {
+//       const errorMessage = getAxiosErrorMessage(error, "Error message");
+//       toast.error(errorMessage);
+//     },
+//   });
+
+//   // Show error UI if parameters are missing
+//   if (!requestId || !reviewerId) {
+//     return (
+//       <div className="flex items-center justify-center min-h-screen">
+//         <Card className="p-6">
+//           <h2 className="text-2xl font-semibold text-center">Invalid Link</h2>
+//           <p className="mt-2 text-center text-gray-600">
+//             Please use a valid approval link from your notifications.
+//           </p>
+//           <Button
+//             onClick={() => router.push('/dashboard/buddy-lens/requester')}
+//             className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white"
+//           >
+//             Go to Dashboard
+//           </Button>
+//         </Card>
+//       </div>
+//     );
+//   }
+
+//   // Show loading state while fetching data
+//   if (sessionStatus === 'loading' || isRequestLoading) {
+//     return (
+//       <div className="flex items-center justify-center min-h-screen">
+//         <CloudCog className="animate-spin h-8 w-8 mr-2" />
+//         <span>Loading...</span>
+//       </div>
+//     );
+//   }
+
+//   // Show error state if request fetch failed
+//   if (requestError) {
+//     return (
+//       <div className="flex items-center justify-center min-h-screen">
+//         <Card className="p-6">
+//           <h2 className="text-2xl font-semibold text-center">Error Loading Request</h2>
+//           <p className="mt-2 text-center text-gray-600">
+//             {getAxiosErrorMessage(requestError, "Failed to load request data")}
+//           </p>
+//           <Button
+//             onClick={() => router.push('/dashboard/buddy-lens/requester')}
+//             className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white"
+//           >
+//             Go to Dashboard
+//           </Button>
+//         </Card>
+//       </div>
+//     );
+//   }
+
+//   // Show UI when request is loaded
+//   return (
+//     <div className="max-w-2xl mx-auto p-6">
+//       <Card className="rounded-2xl shadow-lg p-6 space-y-6">
+//         <h2 className="text-3xl font-semibold text-center">Approve Reviewer Claim</h2>
+//         {request && (
+//           <div className="space-y-4">
+//             {/* <p>
+//               <strong>Request:</strong> {request.feedbackType} on {request.platform}
+//             </p> */}
+//             <p>
+//               <strong>Domain:</strong> {request.domain}
+//             </p>
+//             <p>
+//               <strong>Tier:</strong> {request.tier}
+//             </p>
+//             <p>
+//               <strong>Reward:</strong> {request.jpCost} JoyPearls
+//             </p>
+//             <p>
+//               <strong>Reviewer:</strong> {request.reviewer?.name || request.pendingReviewerId}
+//             </p>
+
+//             {/* Reviewer Profile link */}
+//             <p>
+//               <strong>Reviewer profile: </strong> 
+//               <a href={`http://localhost:3000/dashboard/${reviewerId}`} target="_blank" rel="noopener noreferrer" className="text-blue-600">
+//               click here to view
+
+//               </a>
+//             </p>
+            
+//             <p>
+//               <strong>Social Media URL:</strong>{' '}
+//               <a href={request.socialMediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600">
+//                 {request.socialMediaUrl}
+//               </a>
+//             </p>
+//             <div className="flex gap-4">
+//               <Button
+//                 onClick={() => handleApproveReject(true)}
+//                 disabled={isApproveLoading || isCancelLoading}
+//                 className="bg-green-600 hover:bg-green-700 text-white"
+//               >
+//                 Approve
+//               </Button>
+//               <Button
+//                 onClick={() => handleApproveReject(false)}
+//                 disabled={isApproveLoading || isCancelLoading}
+//                 className="bg-red-600 hover:bg-red-700 text-white"
+//               >
+//                 Reject
+//               </Button>
+//               <Button
+//                 onClick={() => handleCancel()}
+//                 disabled={isApproveLoading || isCancelLoading}
+//                 className="bg-gray-600 hover:bg-gray-700 text-white"
+//               >
+//                 Cancel
+//               </Button>
+//             </div>
+//           </div>
+//         )}
+//       </Card>
+//     </div>
+//   );
+// }
 
 // 'use client';
 

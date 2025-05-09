@@ -150,14 +150,22 @@ export const step4Schema = z.object({
 // Buddy-lends request form schema
 
 export const buddyLensRequestSchema = z.object({
-  socialMediaUrl: z.string().url('Invalid URL').min(1, 'Social Media URL is required'),
+  socialMediaUrl: z
+    .string()
+    .url('Invalid URL')
+    .min(1, 'Social Media URL is required'),
+  
   tier: z.enum(['5min', '10min', '15min']),
+  
   domain: z.string().min(1, 'Domain is required'),
+  
   questions: z
     .array(z.string().min(1, 'Question cannot be empty'))
     .min(1, 'At least one question is required')
-    .max(3, 'Maximum of 3 questions allowed'),
-  expiresAt: z.string().min(1, 'Expiry date/time is required'),
+    .max(3, 'Maximum of 3 questions allowed'),  // Fixed this part
+  
+  // expiresAt: z.string().min(1, 'Expiry date/time is required'),
+  
   jpCost: z.number(),
 }).superRefine((data, ctx) => {
   const { tier, jpCost } = data;
@@ -165,7 +173,7 @@ export const buddyLensRequestSchema = z.object({
   const expectedCosts: Record<string, number> = {
     '5min': 500,
     '10min': 1000,
-    '15min': 500,
+    '15min': 1500,
   };
 
   if (jpCost !== expectedCosts[tier]) {

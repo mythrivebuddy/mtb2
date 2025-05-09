@@ -121,8 +121,6 @@ interface CreateReviewBody {
   status?: "SUBMITTED" | "DRAFT";
 }
 
-
-
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
@@ -137,45 +135,61 @@ export async function POST(req: NextRequest) {
       status = "SUBMITTED",
     } = (await req.json()) as CreateReviewBody;
     const reviewerId = session.user.id;
+    console.log("POST /api/buddy-lens/reviewer", reviewerId);
 
     if (!requestId || !answers || !reviewText || !rating)
-      return errorResponse("Missing request ID, answers, review text, or rating", 400);
+      return errorResponse(
+        "Missing request ID, answers, review text, or rating",
+        400
+      );
 
-    if (!Array.isArray(answers)) return errorResponse("Answers must be an array", 400);
-    if (rating < 1 || rating > 5) return errorResponse("Rating must be between 1 and 5", 400);
-    if (!["SUBMITTED", "DRAFT"].includes(status)) return errorResponse("Invalid status", 400);
+    if (!Array.isArray(answers))
+      return errorResponse("Answers must be an array", 400);
+    if (rating < 1 || rating > 5)
+      return errorResponse("Rating must be between 1 and 5", 400);
+    if (!["SUBMITTED", "DRAFT"].includes(status))
+      return errorResponse("Invalid status", 400);
 
     const request = await prisma.buddyLensRequest.findUnique({
       where: { id: requestId },
       select: {
         id: true,
         requesterId: true,
-        requester: { select: { email: true, name: true, jpBalance: true, plan: true } },
+        requester: {
+          select: { email: true, name: true, jpBalance: true, plan: true },
+        },
         reviewerId: true,
         status: true,
         domain: true,
         tier: true,
         jpCost: true,
-        expiresAt: true,
+        // expiresAt: true,
         isDeleted: true,
         reviewer: { select: { email: true, name: true } },
       },
     });
 
-    if (!request || request.isDeleted) return errorResponse("Request not found", 404);
-    if (request.reviewerId !== reviewerId) return errorResponse("You are not assigned to this request", 403);
-    if (request.status !== "CLAIMED") return errorResponse("Request is not claimed", 400);
-    if (new Date(request.expiresAt) < new Date()) return errorResponse("Request has expired", 400);
+    if (!request || request.isDeleted)
+      return errorResponse("Request not found", 404);
+    if (request.reviewerId !== reviewerId)
+      return errorResponse("You are not assigned to this request", 403);
+    if (request.status !== "CLAIMED")
+      return errorResponse("Request is not claimed", 400);
+    // if (new Date(request.expiresAt) < new Date()) return errorResponse("Request has expired", 400);
 
     const jpCost = request.jpCost ?? 0;
-    if (jpCost <= 0) return errorResponse("Invalid JP cost for this request", 400);
+    if (jpCost <= 0)
+      return errorResponse("Invalid JP cost for this request", 400);
 
     const existingReview = await prisma.buddyLensReview.findFirst({
       where: { requestId, reviewerId },
     });
 
     if (existingReview) {
-      return errorResponse("You have already submitted a review for this request", 409);
+      return errorResponse(
+        "You have already submitted a review for this request",
+        409
+      );
     }
 
     const newReview = await prisma.$transaction(async (prisma) => {
@@ -243,14 +257,13 @@ export async function POST(req: NextRequest) {
           ],
         });
 
-       // Notify reviewer
+        // Notify reviewer
         const reviewerLink = `/dashboard/buddy-lens/reviewer/${request.id}`;
         await NotificationService.createNotification(
           reviewerId,
           `You have earned ${jpCost} Joy Pearls for reviewing a BuddyLens request in ${request.domain}.`,
           reviewerLink
         );
-
 
         // Notify requester
         const requesterLink = `/dashboard/buddy-lens/reviewer/${request.id}`;
@@ -279,7 +292,7 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        // Email to reviewer
+        // Email to reviewer after submission reviewed for requester
         if (request.reviewer?.email) {
           const subject = "You Earned Joy Pearls for Reviewing a Request";
           const htmlContent = `
@@ -300,8 +313,10 @@ export async function POST(req: NextRequest) {
       return review;
     });
 
-    return NextResponse.json({ message: "Review submitted", data: newReview }, { status: 201 });
-
+    return NextResponse.json(
+      { message: "Review submitted", data: newReview },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Review submission error:", error);
     const apiError = error as ApiError;
@@ -312,7 +327,6 @@ export async function POST(req: NextRequest) {
     });
   }
 }
-
 
 export async function GET(req: NextRequest) {
   try {
@@ -350,8 +364,18 @@ export async function GET(req: NextRequest) {
           { request: { requesterId: session.user.id } },
         ],
       },
-      include: { request: { select: { domain: true } } },
+      include: {
+        request: { select: { domain: true } },
+        reviewer: {
+          select: { email: true, name: true, jpBalance: true, plan: true },
+        },
+      },
     });
+
+    console.log(
+      "request-----------------------------------------------------------",
+      reviews
+    );
 
     return NextResponse.json(reviews);
   } catch (error: unknown) {
@@ -517,6 +541,7 @@ export async function PATCH(req: NextRequest) {
     if (!requestId || !reviewerId) {
       return errorResponse("Missing request ID or reviewer ID", 400);
     }
+    
     if (reviewerId !== session.user.id) {
       return errorResponse("Unauthorized reviewer ID", 403);
     }
@@ -533,7 +558,7 @@ export async function PATCH(req: NextRequest) {
         isDeleted: true,
       },
     });
-
+    console.log("request", request);
     if (!request || request.isDeleted) {
       return errorResponse("Request not found", 404);
     }
@@ -556,7 +581,7 @@ export async function PATCH(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
     const approvalUrl = `${baseUrl}/dashboard/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`;
 
-    // Prepare email content
+    // Prepare email content for requester to approve or reject claim request
     const subject = "BuddyLens Review Request Claim Notification";
     const htmlContent = `
       <html>

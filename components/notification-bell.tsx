@@ -36,7 +36,7 @@ export function NotificationBell() {
   } = useQuery({
     queryKey: ['notifications', userId],
     queryFn: async () => {
-      const response = await axios.get('/api/buddy-lens/notifications', {
+      const response = await axios.get(`/api/buddy-lens/notifications`, {
         params: { unreadOnly: true },
       });
       return response.data;
@@ -60,7 +60,7 @@ export function NotificationBell() {
 
   const markNotificationAsRead = useMutation({
     mutationFn: async (notificationId: string) => {
-      await axios.patch('/api/buddy-lens/notifications', {
+      await axios.patch(`/api/buddy-lens/notifications`, {
         notificationId,
       });
     },

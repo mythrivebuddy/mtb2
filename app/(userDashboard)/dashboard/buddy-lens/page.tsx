@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import axios, { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BuddyLensRequest } from '@/types/claim';
 import { LinkIcon, Trash2 } from 'lucide-react';
 import { NotificationBell } from '@/components/notification-bell';
+import { getAxiosErrorMessage } from '@/utils/ax';
 
 interface Review {
   id: string;
@@ -41,13 +43,18 @@ interface DeleteRequestError {
   details?: string;
 }
 
+interface ClaimActionInput {
+  requestId: string;
+  action: 'APPROVE' | 'REJECT';
+}
+
 export default function BuddyLensDashboard() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<'my-requests' | 'to-review' | 'reviewed'>('my-requests');
+  const router = useRouter();
 
- 
   // Fetch user's own requests
   const {
     data: myRequests = [],
@@ -137,45 +144,40 @@ export default function BuddyLensDashboard() {
 
   // Mutation for approving/rejecting a claim
   const claimActionMutation = useMutation({
-    mutationFn: async ({
-      requestId,
-      action,
-    }: {
-      requestId: string;
-      action: 'APPROVE' | 'REJECT';
-    }) => {
-      const request = reviewRequests.find((r: BuddyLensRequest) => r.id === requestId);
-      if (!request?.pendingReviewerId) {
-        throw new Error('No reviewer to approve/reject');
+    mutationFn: async ({ requestId, action }: ClaimActionInput) => {
+      if (!session?.user?.id || !requestId) {
+        throw new Error('Missing required information');
       }
-      await axios.patch('/api/buddy-lens/approve', {
-        requestId,
-        reviewerId: request.pendingReviewerId,
-        approve: action === 'APPROVE',
-      });
-    },
-    onSuccess: (_, { requestId, action }) => {
-      toast.success(`Claim ${action.toLowerCase()}d successfully`);
-      queryClient.setQueryData(['buddyLensRequestsToReview', userId], (old: BuddyLensRequest[] | undefined) =>
-        old?.map((req) =>
-          req.id === requestId
-            ? action === 'APPROVE'
-              ? {
-                  ...req,
-                  status: 'CLAIMED',
-                  reviewerId: req.pendingReviewerId,
-                  pendingReviewerId: null,
-                }
-              : { ...req, status: 'OPEN', pendingReviewerId: null }
-            : req
-        )
+      const approve = action === 'APPROVE';
+      const req = myRequests.find((r: BuddyLensRequest) => r.id === requestId);
+      if (!req?.pendingReviewerId) {
+        throw new Error('No pending reviewer for this request');
+      }
+      console.log('Sending: PATCH /api/buddy-lens/approve', { requestId, reviewerId: req.pendingReviewerId, approve });
+      const response = await axios.patch(
+        '/api/buddy-lens/approve',
+        {
+          requestId,
+          reviewerId: req.pendingReviewerId,
+          approve,
+          requesterId: session.user.id,
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
+      return response.data;
     },
-    onError: (error: AxiosError<{ error: string }>, { action }) => {
-      toast.error(error.response?.data?.error || `Failed to ${action.toLowerCase()} claim`);
+    onSuccess: (data, { action }) => {
+      toast.success(data.message || (action === 'APPROVE' ? 'Claim approved successfully' : 'Claim rejected successfully'));
+      queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', userId] });
+      router.push('/dashboard/buddy-lens');
+    },
+    onError: (error) => {
+      const errorMessage = getAxiosErrorMessage(error, 'Error processing claim');
+      toast.error(errorMessage);
     },
   });
-
   // Mutation for deleting a request
   const deleteRequestMutation = useMutation<
     DeleteRequestResponse,

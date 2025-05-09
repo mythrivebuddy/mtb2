@@ -75,6 +75,7 @@ enum BuddyLensRequestStatus {
 }
 
 enum BuddyLensReviewStatus {
+  // PENDING   // Claim awaiting approval , new added
   DRAFT
   SUBMITTED
   REPORTED
@@ -127,19 +128,19 @@ model User {
   userNotifications             UserNotification[]    @relation("UserNotifications")
   pendingReviews                BuddyLensRequest[]    @relation("PendingReviewer")
 
-   // PayPal subscription tracking:
+  // PayPal subscription tracking:
   subscriptionId     String?   @unique
   subscriptionStatus String?
   subscriptionStart  DateTime?
   subscriptionEnd    DateTime?
-  
+
   //address   Json
   //phone      String?
-  cart       Cart[]
-  orders     Order[]
-  wishlists  Wishlist[]
-  membership String     @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
-  profileViews                  ProfileView[]
+  cart         Cart[]
+  orders       Order[]
+  wishlists    Wishlist[]
+  membership   String        @default("FREE") // FREE, MONTHLY, YEARLY, LIFETIME
+  profileViews ProfileView[]
 
   referralCode String? @unique
   referredById String?
@@ -155,24 +156,25 @@ model User {
   website       String?
   socialHandles Json?
 
-  invoice    Invoice[]
+  invoice           Invoice[]
   Notification      Notification[]
   pushSubscriptions PushSubscription[]
 
   alignedActions AlignedAction[]
   // Relation to the new UserProfile model
-  bio             String?
+  bio            String?
+
   @@index([name])
 }
 
 model Transaction {
-  id                 String            @id @default(uuid())
-  userId             String
-  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity           Activity          @relation(fields: [activityId], references: [id])
-  activityId         String
-  jpAmount           Int
-  createdAt          DateTime          @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId String
+  jpAmount   Int
+  createdAt  DateTime @default(now())
   // buddyLensRequest   BuddyLensRequest? @relation(fields: [buddyLensRequestId], references: [id])
   // buddyLensRequestId String?           @unique
 }
@@ -186,17 +188,17 @@ model Activity {
 }
 
 model Plan {
-  id              String @id @default(uuid())
-  name            String @unique
-  jpMultiplier    Float  @default(1.0) // Earn more JP per action
-  discountPercent Float  @default(0.0) // Discount on JP spending
+  id              String   @id @default(uuid())
+  name            String   @unique
+  jpMultiplier    Float    @default(1.0) // Earn more JP per action
+  discountPercent Float    @default(0.0) // Discount on JP spending
   durationDays    Int? // NULL for lifetime plans, else number of days
   users           User[]
   price           String
-  paypalPlanId    String? @unique // PayPal plan ID
+  paypalPlanId    String?  @unique // PayPal plan ID
   paypalProductId String? // PayPal product ID
   interval        String?
-  isActive        Boolean @default(true)
+  isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @default(now())
 }
@@ -464,6 +466,7 @@ model MagicBoxSettings {
   updatedAt   DateTime @updatedAt
 }
 
+
 model BuddyLensRequest {
   id                String                 @id @default(uuid())
   requesterId       String
@@ -508,6 +511,58 @@ model BuddyLensReview {
   updatedAt   DateTime              @updatedAt
 }
 
+// model BuddyLensRequest {
+//   id                String                 @id @default(uuid())
+//   requesterId       String
+//   requester         User                   @relation("BuddyLensRequests", fields: [requesterId], references: [id])
+//   // reviewerId        String?
+//   // pendingReviewerId String?
+//   // reviewer          User?                  @relation("BuddyLensReviews", fields: [reviewerId], references: [id])
+//   socialMediaUrl    String
+//   tier              String                 @default("5min")
+//   questions         String[]
+//   jpCost            Int
+//   domain            String
+//   status            BuddyLensRequestStatus @default(OPEN)
+//   createdAt         DateTime               @default(now())
+//   updatedAt         DateTime               @updatedAt
+//   // expiresAt         DateTime               @default(now())
+//   completedAt       DateTime?
+//   // review            BuddyLensReview?
+//   review            BuddyLensReview[]     // Multiple reviews/claims per request
+//   // transaction       Transaction?
+//   isDeleted         Boolean                @default(false)
+//   // pendingReviewer   User?                  @relation("PendingReviewer", fields: [pendingReviewerId], references: [id])
+//   // @@index([expiresAt])
+
+//   @@index([requesterId])
+//   @@index([status])
+//     // @@index([reviewerId])
+//   User User[] @relation("BuddyLensReviews")
+// }
+
+// model BuddyLensReview {
+//   id         String @id @default(uuid())
+//   reviewerId String
+//   // requestId   String                @unique
+//   requestId   String
+//   request     BuddyLensRequest      @relation(fields: [requestId], references: [id])
+//   reviewer    User                  @relation(fields: [reviewerId], references: [id])
+//   answers     String[]
+//   reviewText  String
+//   // status      BuddyLensReviewStatus @default(DRAFT)
+//   status      BuddyLensReviewStatus @default(PENDING)
+//   rating      Int?
+//   feedback    String?
+//   submittedAt DateTime?
+//   createdAt   DateTime              @default(now())
+//   updatedAt   DateTime              @updatedAt
+//   @@index([requestId])
+//   @@index([reviewerId])
+//   @@index([status])
+//   @@unique([requestId, reviewerId]) // Prevent duplicate claims by the same reviewer
+// }
+
 model UserNotification {
   id        String   @id @default(uuid())
   userId    String
@@ -517,13 +572,14 @@ model UserNotification {
   link      String?
   user      User     @relation(name: "UserNotifications", fields: [userId], references: [id])
 }
+
 model Invoice {
-  id                   String   @id @default(uuid())
-  user                 User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
-  userSubscriptionId   String
-  amount               Float
-  saleId               String   @unique         // PayPal sale ID (resource.id)
-  createdAt            DateTime @default(now())
+  id                 String   @id @default(uuid())
+  user               User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
+  userSubscriptionId String
+  amount             Float
+  saleId             String   @unique // PayPal sale ID (resource.id)
+  createdAt          DateTime @default(now())
 }
 
 model ProfileView {
@@ -601,3 +657,7 @@ model AlignedAction {
 
 //   @@index([userId])
 // }
+
+
+
+

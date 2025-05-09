@@ -76,6 +76,52 @@ async function sendEmail(toEmail: string, toName: string, subject: string, htmlC
 
 
 // GET API
+// export async function GET(req: Request) {
+//   try {
+//     const session = await getServerSession(authConfig);
+//     console.log('GET /api/buddy-lens/approve - Session:', session?.user?.id || 'No session');
+//     if (!session?.user) {
+//       return errorResponse('Unauthorized', 401);
+//     }
+
+//     const { searchParams } = new URL(req.url);
+//     const requestId = searchParams.get('requestId');
+
+//     if (!requestId) {
+//       return errorResponse('Missing request ID', 400);
+//     }
+
+//     const request = await prisma.buddyLensRequest.findUnique({
+//       where: { id: requestId },
+//       include: {
+//         requester: { select: { id: true, name: true, email: true } },
+//         reviewer: { select: { id: true, name: true } },
+//       },
+//     });
+
+//     console.log('GET /api/buddy-lens/approve - Request:', request ? request.id : 'Not found');
+//     if (!request || request.isDeleted) {
+//       return errorResponse('Request not found', 404);
+//     }
+
+//     if (request.requesterId !== session.user.id && request.reviewerId !== session.user.id) {
+//       console.log('GET /api/buddy-lens/approve - Unauthorized:', {
+//         requesterId: request.requesterId,
+//         reviewerId: request.reviewerId,
+//         userId: session.user.id,
+//       });
+//       return errorResponse('Unauthorized to view this request', 403);
+//     }
+
+//     return NextResponse.json(request);
+//   } catch (error) {
+//     console.error('GET /api/buddy-lens/approve - Error:', error);
+//     return errorResponse('Failed to fetch request', 500);
+//   }
+// }
+
+
+// GET API with approve links for approve page
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authConfig);
@@ -87,39 +133,53 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const requestId = searchParams.get('requestId');
 
-    if (!requestId) {
-      return errorResponse('Missing request ID', 400);
-    }
-
-    const request = await prisma.buddyLensRequest.findUnique({
-      where: { id: requestId },
-      include: {
-        requester: { select: { id: true, name: true, email: true } },
-        reviewer: { select: { id: true, name: true } },
-      },
-    });
-
-    console.log('GET /api/buddy-lens/approve - Request:', request ? request.id : 'Not found');
-    if (!request || request.isDeleted) {
-      return errorResponse('Request not found', 404);
-    }
-
-    if (request.requesterId !== session.user.id && request.reviewerId !== session.user.id) {
-      console.log('GET /api/buddy-lens/approve - Unauthorized:', {
-        requesterId: request.requesterId,
-        reviewerId: request.reviewerId,
-        userId: session.user.id,
+    if (requestId) {
+      // Fetch a single request by ID (existing logic)
+      const request = await prisma.buddyLensRequest.findUnique({
+        where: { id: requestId },
+        include: {
+          requester: { select: { id: true, name: true, email: true } },
+          reviewer: { select: { id: true, name: true, email: true } },
+        },
       });
-      return errorResponse('Unauthorized to view this request', 403);
-    }
 
-    return NextResponse.json(request);
+      console.log('GET /api/buddy-lens/approve - Request:', request ? request.id : 'Not found');
+      if (!request || request.isDeleted) {
+        return errorResponse('Request not found', 404);
+      }
+
+      if (request.requesterId !== session.user.id && request.reviewerId !== session.user.id) {
+        console.log('GET /api/buddy-lens/approve - Unauthorized:', {
+          requesterId: request.requesterId,
+          reviewerId: request.reviewerId,
+          userId: session.user.id,
+        });
+        return errorResponse('Unauthorized to view this request', 403);
+      }
+
+      return NextResponse.json(request);
+    } else {
+      // Fetch all pending requests for the requester
+      const requests = await prisma.buddyLensRequest.findMany({
+        where: {
+          requesterId: session.user.id,
+          status: 'PENDING',
+          isDeleted: false,
+        },
+        include: {
+          requester: { select: { id: true, name: true, email: true } },
+          reviewer: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      console.log('GET /api/buddy-lens/approve - Fetched pending requests:', requests.length);
+      return NextResponse.json(requests);
+    }
   } catch (error) {
     console.error('GET /api/buddy-lens/approve - Error:', error);
-    return errorResponse('Failed to fetch request', 500);
+    return errorResponse('Failed to fetch requests', 500);
   }
 }
-
 
 // PATCH API with email 
 export async function PATCH(req: NextRequest) {
@@ -208,7 +268,8 @@ export async function PATCH(req: NextRequest) {
 
       if (!notificationExists) {
         const message = approve
-          ? `Your claim for the BuddyLens request in ${request.domain} has been approved! Start your review now.`
+          ? `Your claim for the BuddyLens request in ${request.domain} has been approved! Start your 
+          now.`
           : `Your claim for the BuddyLens request in ${request.domain} was rejected.`;
         const link = approve
           ? `/dashboard/buddy-lens/reviewer?requestId=${requestId}`
@@ -368,110 +429,6 @@ export async function PATCH(req: NextRequest) {
   
 }
 
-// PATCH  API
-// export async function PATCH(req: Request) {
-//   try {
-//     const session = await getServerSession(authConfig);
-//     console.log('PATCH /api/buddy-lens/approve - Session:', session?.user?.id || 'No session');
-//     if (!session?.user) {
-//       return errorResponse('Unauthorized', 401);
-//     }
-
-//     const body = await req.json();
-//     console.log('PATCH /api/buddy-lens/approve - Body:', body);
-//     const { requestId, reviewerId, approve, requesterId } = body;
-
-//     if (!requestId || !reviewerId || approve === undefined || !requesterId) {
-//       return errorResponse('Missing request ID, reviewer ID, approve status, or requester ID', 400);
-//     }
-
-//     if (reviewerId !== session.user.id) {
-//       console.log('for testing only -----------------------------------------------------',session.user.id,reviewerId)
-//       console.log('PATCH /api/buddy-lens/approve - Unauthorized:', {
-//         requesterId,
-//         userId: session.user.id,
-//       });
-//       return errorResponse('Only the requester can approve or reject claims', 403);
-//     }
-
-//     const request = await prisma.buddyLensRequest.findUnique({
-//       where: { id: requestId },
-//       include: {
-//         requester: { select: { id: true, name: true } },
-//         reviewer: { select: { id: true, name: true } },
-//       },
-//     });
-
-//     console.log('PATCH /api/buddy-lens/approve - Request:', request ? request.id : 'Not found');
-//     if (!request || request.isDeleted) {
-//       return errorResponse('Request not found', 404);
-//     }
-
-//     if (request.status !== 'PENDING') {
-//       return errorResponse(`Request is not in PENDING status, current status: ${request.status}`, 400);
-//     }
-
-//     if (request.pendingReviewerId !== reviewerId) {
-//       console.log('PATCH /api/buddy-lens/approve - Invalid reviewer:', {
-//         pendingReviewerId: request.pendingReviewerId,
-//         reviewerId,
-//       });
-//       return errorResponse('Reviewer ID does not match pending reviewer', 403);
-//     }
-//     const updatedRequest = await prisma.$transaction(async (prisma) => {
-//       const updateData = approve
-//         ? { status: 'CLAIMED', reviewerId, pendingReviewerId: null }
-//         : { status: 'OPEN', pendingReviewerId: null };
-
-//       const updated = await prisma.buddyLensRequest.update({
-//         where: { id: requestId },
-//         data: {
-//           status: approve ? 'CLAIMED' as const : 'OPEN' as const,
-//           reviewerId: approve ? reviewerId : undefined,
-//           pendingReviewerId: null
-//         },
-//       });
-
-//       const notificationExists = await prisma.userNotification.findFirst({
-//         where: {
-//           userId: reviewerId,
-//           link: `/dashboard/buddy-lens/reviewer?requestId=${requestId}`,
-//         },
-//       });
-
-//       if (!notificationExists) {
-//         const message = approve
-//           ? `Your claim for request has been approved! Start your review now.`
-//           : `Your claim for for request was rejected.`;
-//         const link = approve
-//           ? `/dashboard/buddy-lens/reviewer?requestId=${requestId}`
-//           : `/dashboard/buddy-lens/reviewer`;
-
-//         console.log('PATCH /api/buddy-lens/approve - Creating notification:', { reviewerId, message, link });
-//         await NotificationService.createNotification(reviewerId, message, link).catch((err) => {
-//           console.error('PATCH /api/buddy-lens/approve - Notification error:', err);
-//           throw new Error('Failed to send notification');
-//         });
-//       }
-
-//       return updated;
-//     });
-
-
-
-//     console.log('PATCH /api/buddy-lens/approve - Updated request:', updatedRequest.id);
-//     return NextResponse.json(
-//       {
-//         message: approve ? 'Claim approved successfully' : 'Claim rejected successfully',
-//         data: updatedRequest,
-//       },
-//       { status: 200 }
-//     );
-//   } catch (error) {
-//     console.error('PATCH /api/buddy-lens/approve - Error:', error);
-//     return errorResponse('Failed to process claim approval', 500);
-//   }
-// }
 
 export async function DELETE(req: Request) {
   try {

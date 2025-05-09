@@ -195,24 +195,24 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="space-y-1">
               <button
                 onClick={() => setIsBuddyLensOpen(!isBuddyLensOpen)}
-                className="flex items-center justify-between w-full py-2 text-sm font-medium rounded-md hover:bg-muted"
+                className="flex items-center justify-between w-full py-2 text-sm rounded-md hover:bg-muted"
               >
                 <span className="flex items-center gap-1 text-[#6C7894]">
                   <Eye size={20} />
-                  <span className="text-xl">Buddy Lens</span>
+                  <span className="text-lg">Buddy Lens</span>
                 </span>
                 <ChevronDown
-                  size={21}
+                  size={20}
                   className={`transition-transform ${isBuddyLensOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
               {isBuddyLensOpen && (
                 <div className="pl-8 mt-1 space-y-1">
-                  <NavItem href="/dashboard/buddy-lens" icon={<HomeIcon size={16} />} label="My BuddyLens" />
-                  <NavItem href="/dashboard/buddy-lens/requester" icon={<UserRound size={16} />} label="Request" />
-                  <NavItem href="/dashboard/buddy-lens/reviewer" icon={<ScanEye  size={16} />} label="Review" />
-                  <NavItem href="/dashboard/buddy-lens/approve" icon={<FileUser   size={16} />} label="Approve" />
+                  <NavItem href="/dashboard/buddy-lens" icon={<HomeIcon size={20} />} label="My BuddyLens" />
+                  <NavItem href="/dashboard/buddy-lens/requester" icon={<UserRound size={20} />} label="Request" />
+                  <NavItem href="/dashboard/buddy-lens/reviewer" icon={<ScanEye  size={20} />} label="Review" />
+                  <NavItem href="/dashboard/buddy-lens/approve" icon={<FileUser   size={20} />} label="Approve" />
                 </div>
               )}
             </div>
