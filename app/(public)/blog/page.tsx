@@ -7,12 +7,13 @@ export const metadata: Metadata = {
   description: "Latest insights and stories from our community of solopreneurs",
   openGraph: {
     title: "Blog - MyThriveBuddy",
-    description: "Latest insights and stories from our community of solopreneurs",
+    description:
+      "Latest insights and stories from our community of solopreneurs",
     url: "https://mythrivebuddy.com/blog",
     siteName: "MyThriveBuddy",
     images: [
       {
-        url: "/images/og-image.jpg",
+        url: "/logo.png",
         width: 1200,
         height: 630,
         alt: "MyThriveBuddy Blog",
@@ -24,8 +25,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Blog - MyThriveBuddy",
-    description: "Latest insights and stories from our community of solopreneurs",
-    images: ["/images/og-image.jpg"],
+    description:
+      "Latest insights and stories from our community of solopreneurs",
+    images: ["/logo.png"],
   },
 };
 
