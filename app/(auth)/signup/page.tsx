@@ -3,15 +3,17 @@ import SiginUpPageContent from "@/components/auth/SiginUpPageContent";
 
 export const metadata: Metadata = {
   title: "Sign Up - MyThriveBuddy",
-  description: "Create your MyThriveBuddy account and start your solopreneurship journey today",
+  description:
+    "Create your MyThriveBuddy account and start your solopreneurship journey today",
   openGraph: {
     title: "Sign Up - MyThriveBuddy",
-    description: "Create your MyThriveBuddy account and start your solopreneurship journey today",
+    description:
+      "Create your MyThriveBuddy account and start your solopreneurship journey today",
     url: "https://mythrivebuddy.com/signup",
     siteName: "MyThriveBuddy",
     images: [
       {
-        url: "/images/og-image.jpg",
+        url: "/logo.png",
         width: 1200,
         height: 630,
         alt: "Sign Up - MyThriveBuddy",
@@ -23,8 +25,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Sign Up - MyThriveBuddy",
-    description: "Create your MyThriveBuddy account and start your solopreneurship journey today",
-    images: ["/images/og-image.jpg"],
+    description:
+      "Create your MyThriveBuddy account and start your solopreneurship journey today",
+    images: ["/logo.png"],
   },
 };
 
