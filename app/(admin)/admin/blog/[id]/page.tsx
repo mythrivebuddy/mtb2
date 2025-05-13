@@ -3,7 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { toast } from "sonner";
 import BlogForm from "@/components/adminDashboard/BlogForm";
 
 export default function BlogEditor() {
@@ -27,9 +26,6 @@ export default function BlogEditor() {
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ["blogs"] });
-    toast.success(
-      isNew ? "Blog created successfully" : "Blog updated successfully"
-    );
     router.push("/admin/blog"); // Redirect to blog list page
   };
 
