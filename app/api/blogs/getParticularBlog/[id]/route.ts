@@ -1,21 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { slug } = await params;
-
-  const desluggedTitle = slug.replace(/-/g, " ").toLowerCase();
-
+  const { id } = await params;
+  const pureId = id.split("-")[0];
   try {
-    const blog = await prisma.blog.findFirst({
+    const blog = await prisma.blog.findUnique({
       where: {
-        title: {
-          equals: desluggedTitle,
-          mode: "insensitive",
-        },
+        id: pureId,
       },
       select: {
         id: true,
@@ -27,7 +22,6 @@ export async function GET(
         readTime: true,
       },
     });
-    console.log(blog);
 
     if (!blog) {
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });
