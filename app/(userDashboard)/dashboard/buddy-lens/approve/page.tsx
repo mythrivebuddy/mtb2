@@ -1,31 +1,36 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { CloudCog } from 'lucide-react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import axios from 'axios';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { getAxiosErrorMessage } from '@/utils/ax';
-import { request } from 'http';
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { CloudCog } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { getAxiosErrorMessage } from "@/utils/ax";
+import { request } from "http";
+import { Prisma } from "@prisma/client";
 
-interface BuddyLensRequest {
-  id: string;
-  name: string;
-  feedbackType: string;
-  platform: string;
-  domain: string;
-  tier: string;
-  jpCost: number;
-  socialMediaUrl: string;
-  status: string;
-  requesterId: string;
-  pendingReviewerId?: string;
-  reviewer?: { name: string; email: string };
-}
+// interface BuddyLensRequest {
+//   id: string;
+//   name: string;
+//   feedbackType: string;
+//   platform: string;
+//   domain: string;
+//   tier: string;
+//   jpCost: number;
+//   socialMediaUrl: string;
+//   status: string;
+//   requesterId: string;
+//   pendingReviewerId?: string;
+//   reviewer?: { name: string; email: string };
+// }
+
+type BuddyLensRequest = Prisma.BuddyLensReviewGetPayload<{
+  include: { reviewer: true; request: true };
+}>;
 
 export default function BuddyLensApprovePage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -33,25 +38,25 @@ export default function BuddyLensApprovePage() {
   const searchParams = useSearchParams();
 
   // Get request ID and reviewer ID from search params
-  const requestId = searchParams?.get('requestId');
-  const reviewerId = searchParams?.get('reviewerId');
+  const requestId = searchParams?.get("requestId");
+  const reviewerId = searchParams?.get("reviewerId");
 
   // Log URL and navigation source for debugging
   useEffect(() => {
-    console.log('Approval page loaded with URL:', window.location.href);
-    console.log('Search params:', { requestId, reviewerId });
-    console.log('Raw search params:', searchParams?.toString());
-    console.log('Referrer:', document.referrer);
+    console.log("Approval page loaded with URL:", window.location.href);
+    console.log("Search params:", { requestId, reviewerId });
+    console.log("Raw search params:", searchParams?.toString());
+    console.log("Referrer:", document.referrer);
   }, [searchParams, requestId, reviewerId]);
 
   // Validate session
   useEffect(() => {
-    if (sessionStatus === 'loading') return;
+    if (sessionStatus === "loading") return;
 
     if (!session || !session.user?.id) {
-      console.error('No session or user ID found');
-      toast.error('Please login to continue');
-      router.push('/login');
+      console.error("No session or user ID found");
+      toast.error("Please login to continue");
+      router.push("/login");
     }
   }, [session, sessionStatus, router]);
 
@@ -61,7 +66,7 @@ export default function BuddyLensApprovePage() {
     isLoading: isRequestsLoading,
     error: requestsError,
   } = useQuery<BuddyLensRequest[] | BuddyLensRequest | null>({
-    queryKey: ['buddyLensRequests', requestId],
+    queryKey: ["buddyLensRequests", requestId],
     queryFn: async () => {
       if (!session?.user?.id) return null;
 
@@ -71,94 +76,114 @@ export default function BuddyLensApprovePage() {
 
       console.log(`Fetching: GET ${url}`);
       const response = await axios.get(url, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
 
       const requestData = response.data;
-      console.log('Request data:', requestData);
+      console.log("Request data:", requestData);
 
       // Handle single request case
       if (requestId) {
-        const singleRequest: BuddyLensRequest = requestData;
+        const singleRequestReview: BuddyLensRequest = requestData;
 
-        if (singleRequest.requesterId !== session.user.id) {
+        if (singleRequestReview.request.requesterId !== session.user.id) {
           console.error(
-            `Unauthorized: requesterId ${singleRequest.requesterId} does not match user ${session.user.id}`
+            `Unauthorized: requesterId ${singleRequestReview.request.requesterId} does not match user ${session.user.id}`
           );
-          toast.error('You are not authorized to approve this request');
-          router.push('/dashboard/buddy-lens');
+          toast.error("You are not authorized to approve this request");
+          router.push("/dashboard/buddy-lens");
           return null;
         }
 
-        if (singleRequest.status !== 'PENDING') {
-          console.error(`Invalid status: ${singleRequest.status}, expected PENDING`);
-          toast.error('This claim is no longer pending review');
-          router.push('/dashboard/buddy-lens');
+        if (singleRequestReview.status !== "PENDING") {
+          console.error(
+            `Invalid status: ${singleRequestReview.status}, expected PENDING`
+          );
+          toast.error("This claim is no longer pending review");
+          router.push("/dashboard/buddy-lens");
           return null;
         }
 
-        if (reviewerId && singleRequest.pendingReviewerId !== reviewerId) {
+        if (reviewerId && singleRequestReview.reviewerId !== reviewerId) {
           console.log(
-            `Invalid reviewer: pendingReviewerId ${singleRequest.pendingReviewerId}, expected ${reviewerId}`
+            `Invalid reviewer: pendingReviewerId ${singleRequestReview.reviewerId}, expected ${reviewerId}`
           );
-          toast.error('Invalid reviewer for this claim');
-          router.push('/dashboard/buddy-lens');
+          toast.error("Invalid reviewer for this claim");
+          router.push("/dashboard/buddy-lens");
           return null;
         }
 
-        return singleRequest;
+        return singleRequestReview;
       }
 
       // Handle multiple requests case
       return requestData as BuddyLensRequest[];
     },
-    enabled: !!session?.user?.id && sessionStatus === 'authenticated',
+    enabled: !!session?.user?.id && sessionStatus === "authenticated",
     retry: false,
     retryDelay: 1000,
   });
 
-  // Mutation for approve/reject actions
-  const { mutateAsync: handleApproveReject, isPending: isApproveLoading } = useMutation({
-    mutationFn: async ({
-      requestId,
-      reviewerId,
-      approve,
-    }: {
-      requestId: string;
-      reviewerId: string;
-      approve: boolean;
-    }) => {
-      if (!session?.user?.id || !requestId || !reviewerId) {
-        throw new Error('Missing required information');
-      }
+  console.log("requests TO APPROVE---------------------------", requests);
 
-      console.log('Sending: PATCH /api/buddy-lens/approve', { requestId, reviewerId, approve  });
-      const response = await axios.patch(`/api/buddy-lens/approve`,
-        {
+  // Mutation for approve/reject actions
+  const { mutateAsync: handleApproveReject, isPending: isApproveLoading } =
+    useMutation({
+      mutationFn: async ({
+        requestId,
+        reviewerId,
+        approve,
+      }: {
+        requestId: string;
+        reviewerId: string;
+        approve: boolean;
+      }) => {
+        console.log("ids", requestId, "s", reviewerId, "s", approve);
+
+        if (!session?.user?.id || !requestId || !reviewerId) {
+          throw new Error("Missing required information");
+        }
+
+        console.log("Sending: PATCH /api/buddy-lens/approve", {
           requestId,
           reviewerId,
           approve,
-          requesterId: session.user.id,
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-          console.log("data:" , response.data);
+        });
+        const response = await axios.patch(
+          `/api/buddy-lens/approve`,
+          {
+            requestId,
+            reviewerId,
+            approve,
+            requesterId: session.user.id,
+          },
+          {
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        console.log("data:", response.data);
 
-      return response.data;
-    },
-    onSuccess: (data, variables) => {
-      toast.success(
-        data.message || (variables.approve ? 'Claim approved successfully' : 'Claim rejected successfully')
-      );
-      router.push('/dashboard/buddy-lens');
-    },
-    onError: (error) => {
-      const errorMessage = getAxiosErrorMessage(error, 'Error processing request');
-      toast.error(errorMessage);
-    },
-  });
+        return response.data;
+      },
+      onSuccess: (data, variables) => {
+        toast.success(
+          data.message ||
+            (variables.approve
+              ? "Claim approved successfully"
+              : "Claim rejected successfully")
+        );
+        router.push("/dashboard/buddy-lens");
+      },
+      onError: (error) => {
+        const errorMessage = getAxiosErrorMessage(
+          error,
+          "Error processing request"
+        );
+        toast.error(errorMessage);
+      },
+    });
+
+  console.log("requests ---------------------  ", requests);
 
   // Mutation for cancel action
   // const { mutateAsync: handleCancel, isPending: isCancelLoading } = useMutation({
@@ -187,7 +212,7 @@ export default function BuddyLensApprovePage() {
   // });
 
   // Show loading state
-  if (sessionStatus === 'loading' || isRequestsLoading) {
+  if (sessionStatus === "loading" || isRequestsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <CloudCog className="animate-spin h-8 w-8 mr-2" />
@@ -201,12 +226,14 @@ export default function BuddyLensApprovePage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="p-6">
-          <h2 className="text-2xl font-semibold text-center">Error Loading Requests</h2>
+          <h2 className="text-2xl font-semibold text-center">
+            Error Loading Requests
+          </h2>
           <p className="mt-2 text-center text-gray-600">
-            {getAxiosErrorMessage(requestsError, 'Failed to load request data')}
+            {getAxiosErrorMessage(requestsError, "Failed to load request data")}
           </p>
           <Button
-            onClick={() => router.push('/dashboard/buddy-lens/requester')}
+            onClick={() => router.push("/dashboard/buddy-lens/requester")}
             className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             Go to Dashboard
@@ -219,12 +246,14 @@ export default function BuddyLensApprovePage() {
   // Show UI for requests
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h2 className="text-3xl font-semibold text-center mb-6">Pending Reviewer Claims</h2>
+      <h2 className="text-3xl font-semibold text-center mb-6">
+        Pending Reviewer Claims
+      </h2>
       {Array.isArray(requests) && requests.length === 0 && (
         <Card className="p-6 text-center">
           <p className="text-gray-600">No pending claims to approve.</p>
           <Button
-            onClick={() => router.push('/dashboard/buddy-lens')}
+            onClick={() => router.push("/dashboard/buddy-lens")}
             className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
           >
             Go to Dashboard
@@ -235,27 +264,28 @@ export default function BuddyLensApprovePage() {
       {Array.isArray(requests) && requests.length > 0 && (
         <div className="space-y-6">
           {requests.map((request) => (
-            <Card key={request.id} className="rounded-2xl shadow-lg p-6 space-y-4">
-               <p>
-                <strong>Reviewer Name:</strong>  { request.reviewer?.name }
-              </p>
-              
+            <Card
+              key={request.id}
+              className="rounded-2xl shadow-lg p-6 space-y-4"
+            >
               <p>
-                <strong>Domain:</strong> {request.domain}
+                <strong>Reviewer Name:</strong> {request?.reviewer?.name}
+              </p>
+
+              <p>
+                <strong>Domain:</strong> {request.request.domain}
               </p>
               <p>
-                <strong>Tier:</strong> {request.tier}
+                <strong>Tier:</strong> {request.request.tier}
               </p>
               <p>
-                <strong>Reward:</strong> {request.jpCost} JoyPearls
+                <strong>Reward:</strong> {request.request.jpCost} JoyPearls
               </p>
-              {/* <p>
-                <strong>Reviewer:</strong> {requests?.reviewer?.name || request.pendingReviewerId}
-              </p> */}
+            
               <p>
-                <strong>Reviewer Profile:</strong>{' '}
+                <strong>Reviewer Profile:</strong>{" "}
                 <a
-                  href={`http://localhost:3000/profile/${request.pendingReviewerId}`}
+                  href={`http://localhost:3000/profile/${request.reviewerId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600"
@@ -264,22 +294,22 @@ export default function BuddyLensApprovePage() {
                 </a>
               </p>
               <p>
-                <strong>Social Media URL:</strong>{' '}
+                <strong>Social Media URL:</strong>{" "}
                 <a
-                  href={request.socialMediaUrl}
+                  href={request.request.socialMediaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600"
                 >
-                  {request.socialMediaUrl}
+                  {request.request.socialMediaUrl}
                 </a>
               </p>
               <div className="flex gap-11">
                 <Button
                   onClick={() =>
                     handleApproveReject({
-                      requestId: request.id,
-                      reviewerId: request.pendingReviewerId || '',
+                      requestId: request.request.id,
+                      reviewerId: request.reviewerId || "",
                       approve: true,
                     })
                   }
@@ -291,12 +321,12 @@ export default function BuddyLensApprovePage() {
                 <Button
                   onClick={() =>
                     handleApproveReject({
-                      requestId: request.id,
-                      reviewerId: request.pendingReviewerId || '',
+                      requestId: request.request.id,
+                      reviewerId: request.reviewerId || "",
                       approve: false,
                     })
                   }
-                  disabled={isApproveLoading }
+                  disabled={isApproveLoading}
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   Reject
@@ -318,27 +348,32 @@ export default function BuddyLensApprovePage() {
           ))}
         </div>
       )}
-      
+
       {!Array.isArray(requests) && requests && (
         <Card className="rounded-2xl shadow-lg p-6 space-y-6">
-          <h2 className="text-3xl font-semibold text-center">Approve Reviewer Claim</h2>
+          <h2 className="text-3xl font-semibold text-center">
+            Approve Reviewer Claim
+          </h2>
           <div className="space-y-4">
+             <p>
+                <strong>Reviewer Name:</strong> {requests?.reviewer?.name}
+              </p>
             <p>
-              <strong>Domain:</strong> {requests.domain}
+              <strong>Domain:</strong> {requests.request.domain}
             </p>
             <p>
-              <strong>Tier:</strong> {requests.tier}
+              <strong>Tier:</strong> {requests.request.tier}
             </p>
             <p>
-              <strong>Reward:</strong> {requests.jpCost} JoyPearls
+              <strong>Reward:</strong> {requests.request.jpCost} JoyPearls
             </p>
             {/* <p>
               <strong>Reviewer:</strong> {reviewer.name }
             </p> */}
             <p>
-              <strong>Reviewer Profile:</strong>{' '}
+              <strong>Reviewer Profile:</strong>{" "}
               <a
-                href={`http://localhost:3000/profile/${requests.pendingReviewerId}`}
+                href={`http://localhost:3000/profile/${requests.reviewerId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600"
@@ -347,26 +382,26 @@ export default function BuddyLensApprovePage() {
               </a>
             </p>
             <p>
-              <strong>Social Media URL:</strong>{' '}
+              <strong>Social Media URL:</strong>{" "}
               <a
-                href={requests.socialMediaUrl}
+                href={requests.request.socialMediaUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600"
               >
-                {requests.socialMediaUrl}
+                {requests.request.socialMediaUrl}
               </a>
             </p>
             <div className="flex gap-7">
               <Button
                 onClick={() =>
                   handleApproveReject({
-                    requestId: requests.id,
-                    reviewerId: requests.pendingReviewerId || reviewerId || '',
+                    requestId: requests.request.id,
+                    reviewerId: requests.reviewerId || reviewerId || "",
                     approve: true,
                   })
                 }
-                disabled={isApproveLoading }
+                disabled={isApproveLoading}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 Approve
@@ -374,12 +409,12 @@ export default function BuddyLensApprovePage() {
               <Button
                 onClick={() =>
                   handleApproveReject({
-                    requestId: requests.id,
-                    reviewerId: requests.pendingReviewerId || reviewerId || '',
+                    requestId: requests.request.id,
+                    reviewerId: requests.reviewerId || reviewerId || "",
                     approve: false,
                   })
                 }
-                disabled={isApproveLoading }
+                disabled={isApproveLoading}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 Reject
@@ -647,13 +682,13 @@ export default function BuddyLensApprovePage() {
 
 //             {/* Reviewer Profile link */}
 //             <p>
-//               <strong>Reviewer profile: </strong> 
+//               <strong>Reviewer profile: </strong>
 //               <a href={`http://localhost:3000/dashboard/${reviewerId}`} target="_blank" rel="noopener noreferrer" className="text-blue-600">
 //               click here to view
 
 //               </a>
 //             </p>
-            
+
 //             <p>
 //               <strong>Social Media URL:</strong>{' '}
 //               <a href={request.socialMediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600">
@@ -733,7 +768,7 @@ export default function BuddyLensApprovePage() {
 //     console.log('Search params:', { requestId, reviewerId });
 //     console.log('Raw search params:', searchParams?.toString());
 //     console.log('Referrer:', document.referrer);
-//   }, [searchParams,requestId,reviewerId ]);  
+//   }, [searchParams,requestId,reviewerId ]);
 
 //   // Validate URL parameters
 //   useEffect(() => {

@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
-import { getServerSession } from "next-auth"; 
+import { BuddyLensReviewStatus, Prisma } from "@prisma/client";
+import { getServerSession } from "next-auth";
 import { authConfig } from "../../auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 
 // Helper to return error response
 
- function errorResponse(message: string, status: number = 400) {
+function errorResponse(message: string, status: number = 400) {
   return NextResponse.json({ message }, { status });
 }
-
 
 // Define interface for pending reviewers
 interface UserSummary {
@@ -21,6 +20,10 @@ interface UserSummary {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log(
+      "body ---------------------------------- -------------- -----",
+      body
+    );
     const {
       requesterId,
       reviewerId,
@@ -31,6 +34,10 @@ export async function POST(req: NextRequest) {
       jpCost,
       // expiresAt,
     } = body;
+    console.log(
+      "reviewerId -----------------------------------------",
+      reviewerId
+    );
 
     if (
       !requesterId ||
@@ -55,7 +62,13 @@ export async function POST(req: NextRequest) {
     // Validate requesterId exists and has USER role
     const requester = await prisma.user.findUnique({
       where: { id: requesterId },
-      select: { id: true, email: true, role: true, jpBalance: true, name: true}, // Include jpBalance
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        jpBalance: true,
+        name: true,
+      }, // Include jpBalance
     });
     if (!requester) {
       console.log("Requester not found");
@@ -157,19 +170,22 @@ export async function POST(req: NextRequest) {
 
       return request;
     });
+    console.log("Request created: --------------------------", newRequest);
 
     return NextResponse.json(
       { message: "Request created successfully", data: newRequest },
       { status: 201 }
     );
   } catch (error) {
-    console.error("POST Error:", error ?? "Unknown error");
+    console.error(
+      "POST Error:",
+      error instanceof Error ? error.message : "Unknown error"
+    );
     return errorResponse("Failed to create request", 500);
   }
 }
 
 // ! NEW POST API
-
 
 // export async function POST(req: NextRequest) {
 //   try {
@@ -319,7 +335,6 @@ export async function POST(req: NextRequest) {
 //   }
 // }
 
-
 //!OLD API GET: Fetch all requests or a specific request by ID
 export async function GET(req: NextRequest) {
   try {
@@ -335,14 +350,22 @@ export async function GET(req: NextRequest) {
         where: { id },
         include: {
           requester: true,
-          reviewer: {
+          // reviewer: {  //?? 9may
+          //   select: {
+          //     name: true,
+          //     email: true, // optional
+          //     id: true,
+          //   },
+          // },
+          review: {
             select: {
-              name: true,
-              email: true, // optional
-              id: true,
+              reviewer: {
+                omit: {
+                  password: true,
+                },
+              },
             },
           },
-          review: true,
           // transaction: true, //! deepak chnges
         },
       });
@@ -358,11 +381,27 @@ export async function GET(req: NextRequest) {
           isDeleted: false,
           // 2. Exclude requests where requesterId === current user id
           requesterId: UserId ? { not: UserId } : undefined,
+          status: "OPEN",
+          NOT: {
+            review: {
+              some: {
+                status: BuddyLensReviewStatus.DISAPPROVED,
+              },
+            },
+          },
         },
         include: {
           requester: true,
-          reviewer: true,
-          review: true,
+          // reviewer: true,  //??
+          review: {
+            include: {
+              reviewer: {
+                omit: {
+                  password: true,
+                },
+              },
+            },
+          },
           // transaction: true, //! deepak chnges
         },
       });
@@ -492,4 +531,3 @@ export async function PUT(req: NextRequest) {
     return errorResponse("Failed to update request", 500);
   }
 }
-

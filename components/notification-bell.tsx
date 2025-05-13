@@ -78,11 +78,12 @@ export function NotificationBell() {
   });
 
   const handleNotificationClick = (notification: Notification) => {
+    console.log('Notification clicked:', notification);
     if (notification.link) {
       router.push(notification.link);
     }
-    markNotificationAsRead.mutate(notification.id);
-    setIsOpen(false);
+    // markNotificationAsRead.mutate(notification.id);
+    setIsOpen(true);
   };
 
   if (error) {

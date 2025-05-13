@@ -1,18 +1,24 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import axios, { AxiosError } from 'axios';
-import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BuddyLensRequest } from '@/types/claim';
-import { LinkIcon, Trash2 } from 'lucide-react';
-import { NotificationBell } from '@/components/notification-bell';
-import { getAxiosErrorMessage } from '@/utils/ax';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { BuddyLensRequest } from "@/types/claim";
+import { LinkIcon, Trash2 } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 interface Review {
   id: string;
@@ -45,14 +51,16 @@ interface DeleteRequestError {
 
 interface ClaimActionInput {
   requestId: string;
-  action: 'APPROVE' | 'REJECT';
+  action: "APPROVE" | "REJECT";
 }
 
 export default function BuddyLensDashboard() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState<'my-requests' | 'to-review' | 'reviewed'>('my-requests');
+  const [activeSection, setActiveSection] = useState<
+    "my-requests" | "to-review" | "reviewed"
+  >("my-requests");
   const router = useRouter();
 
   // Fetch user's own requests
@@ -61,26 +69,26 @@ export default function BuddyLensDashboard() {
     isLoading: isMyRequestsLoading,
     error: myRequestsError,
   } = useQuery({
-    queryKey: ['buddyLensRequest', userId] as [string, string | undefined],
+    queryKey: ["buddyLensRequest", userId] as [string, string | undefined],
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/buddy-lens/requester/${userId}`);
-        console.log('Raw API Response (My Requests):', response.data); // Debug: Log raw response
+        console.log("Raw API Response (My Requests):", response.data); // Debug: Log raw response
         const filteredRequests = response.data.filter(
           (req: BuddyLensRequest) => {
-            console.log('Request (My Requests):', req); // Debug: Log each request
+            console.log("Request (My Requests):", req); // Debug: Log each request
             return req.requesterId === userId && !req.isDeleted;
           }
         );
-        console.log('Filtered Requests (My Requests):', filteredRequests); // Debug: Log filtered result
+        console.log("Filtered Requests (My Requests):", filteredRequests); // Debug: Log filtered result
         return filteredRequests;
       } catch (error) {
-        console.error('Fetch error (My Requests):', error);
+        console.error("Fetch error (My Requests):", error);
         throw error;
       }
     },
     enabled: !!userId,
-    refetchInterval: 10000,
+    // refetchInterval: 10000,
   });
 
   // Fetch requests to review (other users' requests)
@@ -89,19 +97,22 @@ export default function BuddyLensDashboard() {
     isLoading: isReviewRequestsLoading,
     error: reviewRequestsError,
   } = useQuery({
-    queryKey: ['buddyLensRequestsToReview', userId] as [string, string | undefined],
+    queryKey: ["buddyLensRequestsToReview", userId] as [
+      string,
+      string | undefined,
+    ],
     queryFn: async () => {
-      const response = await axios.get('/api/buddy-lens/requester');
-      console.log('Requests to review:', response.data);
+      const response = await axios.get("/api/buddy-lens/requester");
+      console.log("Requests to review:", response.data);
       return response.data.filter(
         (req: BuddyLensRequest) =>
           req.requesterId !== userId &&
-          ['OPEN', 'PENDING', 'CLAIMED'].includes(req.status) &&
+          ["OPEN", "PENDING", "CLAIMED"].includes(req.status) &&
           !req.isDeleted
       );
     },
     enabled: !!userId,
-    refetchInterval: 10000,
+    // refetchInterval: 10000,
   });
 
   // Fetch reviewed requests
@@ -110,10 +121,13 @@ export default function BuddyLensDashboard() {
     isLoading: isReviewedRequestsLoading,
     error: reviewedRequestsError,
   } = useQuery({
-    queryKey: ['buddyLensReviewedRequests', userId] as [string, string | undefined],
+    queryKey: ["buddyLensReviewedRequests", userId] as [
+      string,
+      string | undefined,
+    ],
     queryFn: async () => {
-      const response = await axios.get('/api/buddy-lens/reviewer');
-      console.log('Reviewed Requests:', response.data);
+      const response = await axios.get("/api/buddy-lens/reviewer");
+      console.log("Reviewed Requests:", response.data);
       return response.data;
     },
     enabled: !!userId,
@@ -122,23 +136,26 @@ export default function BuddyLensDashboard() {
   // Mutation for claiming a request
   const claimRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      await axios.patch('/api/buddy-lens/reviewer', {
+      await axios.patch("/api/buddy-lens/reviewer", {
         requestId,
         reviewerId: userId,
       });
     },
     onSuccess: (_, requestId) => {
-      toast.success('Claim request sent for approval');
-      queryClient.setQueryData(['buddyLensRequestsToReview', userId], (old: BuddyLensRequest[] | undefined) =>
-        old?.map((req) =>
-          req.id === requestId
-            ? { ...req, status: 'PENDING', pendingReviewerId: userId }
-            : req
-        )
+      toast.success("Claim request sent for approval");
+      queryClient.setQueryData(
+        ["buddyLensRequestsToReview", userId],
+        (old: BuddyLensRequest[] | undefined) =>
+          old?.map((req) =>
+            req.id === requestId
+              ? { ...req, status: "PENDING", pendingReviewerId: userId }
+              : req
+          )
       );
+      queryClient.invalidateQueries({ queryKey: ["buddyLensRequestsToReview"] });
     },
     onError: () => {
-      toast.error('Failed to claim request');
+      toast.error("Failed to claim request");
     },
   });
 
@@ -146,16 +163,20 @@ export default function BuddyLensDashboard() {
   const claimActionMutation = useMutation({
     mutationFn: async ({ requestId, action }: ClaimActionInput) => {
       if (!session?.user?.id || !requestId) {
-        throw new Error('Missing required information');
+        throw new Error("Missing required information");
       }
-      const approve = action === 'APPROVE';
+      const approve = action === "APPROVE";
       const req = myRequests.find((r: BuddyLensRequest) => r.id === requestId);
       if (!req?.pendingReviewerId) {
-        throw new Error('No pending reviewer for this request');
+        throw new Error("No pending reviewer for this request");
       }
-      console.log('Sending: PATCH /api/buddy-lens/approve', { requestId, reviewerId: req.pendingReviewerId, approve });
+      console.log("Sending: PATCH /api/buddy-lens/approve", {
+        requestId,
+        reviewerId: req.pendingReviewerId,
+        approve,
+      });
       const response = await axios.patch(
-        '/api/buddy-lens/approve',
+        "/api/buddy-lens/approve",
         {
           requestId,
           reviewerId: req.pendingReviewerId,
@@ -163,18 +184,26 @@ export default function BuddyLensDashboard() {
           requesterId: session.user.id,
         },
         {
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         }
       );
       return response.data;
     },
     onSuccess: (data, { action }) => {
-      toast.success(data.message || (action === 'APPROVE' ? 'Claim approved successfully' : 'Claim rejected successfully'));
-      queryClient.invalidateQueries({ queryKey: ['buddyLensRequest', userId] });
-      router.push('/dashboard/buddy-lens');
+      toast.success(
+        data.message ||
+          (action === "APPROVE"
+            ? "Claim approved successfully"
+            : "Claim rejected successfully")
+      );
+      queryClient.invalidateQueries({ queryKey: ["buddyLensRequest", userId] });
+      router.push("/dashboard/buddy-lens");
     },
     onError: (error) => {
-      const errorMessage = getAxiosErrorMessage(error, 'Error processing claim');
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Error processing claim"
+      );
       toast.error(errorMessage);
     },
   });
@@ -186,48 +215,69 @@ export default function BuddyLensDashboard() {
     { previousRequests: BuddyLensRequest[] | undefined }
   >({
     mutationFn: async (requestId: string) => {
-      const response = await axios.delete(`/api/buddy-lens/requester/${requestId}`);
+      const response = await axios.delete(
+        `/api/buddy-lens/requester/${requestId}`
+      );
       return response.data;
     },
     onMutate: async (requestId: string) => {
       // Cancel ongoing queries to avoid race conditions
-      await queryClient.cancelQueries({ queryKey: ['myBuddyLensRequests', userId] });
+      await queryClient.cancelQueries({
+        queryKey: ["myBuddyLensRequests", userId],
+      });
 
       // Snapshot the previous state
-      const previousRequests = queryClient.getQueryData(['myBuddyLensRequests', userId]) as BuddyLensRequest[] | undefined;
+      const previousRequests = queryClient.getQueryData([
+        "myBuddyLensRequests",
+        userId,
+      ]) as BuddyLensRequest[] | undefined;
 
       // Optimistically update the UI by removing the request
-      queryClient.setQueryData(['myBuddyLensRequests', userId], (old: BuddyLensRequest[] | undefined) =>
-        old?.filter((req) => req.id !== requestId)
+      queryClient.setQueryData(
+        ["myBuddyLensRequests", userId],
+        (old: BuddyLensRequest[] | undefined) =>
+          old?.filter((req) => req.id !== requestId)
       );
 
       // Return context for rollback
       return { previousRequests };
     },
     onSuccess: () => {
-      toast.success('Request deleted successfully');
+      toast.success("Request deleted successfully");
     },
     onError: (error: AxiosError<DeleteRequestError>, requestId, context) => {
       // Rollback to previous state on error
-      queryClient.setQueryData(['myBuddyLensRequests', userId], context?.previousRequests);
-      toast.error(error.response?.data?.error || 'Failed to delete request');
+      queryClient.setQueryData(
+        ["myBuddyLensRequests", userId],
+        context?.previousRequests
+      );
+      toast.error(error.response?.data?.error || "Failed to delete request");
     },
     onSettled: () => {
       // Invalidate queries to ensure fresh data
       if (userId) {
-        queryClient.invalidateQueries({ queryKey: ['myBuddyLensRequests', userId] });
+        queryClient.invalidateQueries({
+          queryKey: ["myBuddyLensRequests", userId],
+        });
       }
     },
   });
 
   if (!userId) {
-    return <div className="text-center p-8">Please log in to use BuddyLens Dashboard.</div>;
+    return (
+      <div className="text-center p-8">
+        Please log in to use BuddyLens Dashboard.
+      </div>
+    );
   }
 
   if (myRequestsError || reviewRequestsError || reviewedRequestsError) {
     return (
       <div className="text-center p-8 text-red-600">
-        Error: {myRequestsError?.message || reviewRequestsError?.message || reviewedRequestsError?.message}
+        Error:{" "}
+        {myRequestsError?.message ||
+          reviewRequestsError?.message ||
+          reviewedRequestsError?.message}
       </div>
     );
   }
@@ -243,7 +293,9 @@ export default function BuddyLensDashboard() {
         {/* Dropdown Menu */}
         <Select
           value={activeSection}
-          onValueChange={(value: 'my-requests' | 'to-review' | 'reviewed') => setActiveSection(value)}
+          onValueChange={(value: "my-requests" | "to-review" | "reviewed") =>
+            setActiveSection(value)
+          }
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Select Section" />
@@ -256,7 +308,7 @@ export default function BuddyLensDashboard() {
         </Select>
 
         {/* My Requests Section */}
-        {activeSection === 'my-requests' && (
+        {activeSection === "my-requests" && (
           <div className="space-y-4">
             <h3 className="text-xl font-medium">My Requests</h3>
             {isMyRequestsLoading ? (
@@ -268,13 +320,17 @@ export default function BuddyLensDashboard() {
                 <Card key={req.id} className="p-4 space-y-2">
                   <div className="flex justify-between items-start gap-6">
                     <div className="space-y-1">
-                      <p className="font-medium">{req.feedbackType}</p>
+                      {/* <p className="font-medium">{req.feedbackType}</p> */}
                       <p className="text-sm text-gray-600">
-                        {req.platform} - {req.domain}
+                        Domain: {req.domain}
                       </p>
                       <p className="text-sm text-gray-600">Tier: {req.tier}</p>
-                      <p className="text-sm text-gray-600">Reward: {req.jpCost} JoyPearls</p>
-                      <p className="text-sm text-gray-600">Status: {req.status}</p>
+                      <p className="text-sm text-gray-600">
+                        Reward: {req.jpCost} JoyPearls
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Status: {req.status}
+                      </p>
                       <a
                         href={req.socialMediaUrl}
                         target="_blank"
@@ -286,7 +342,7 @@ export default function BuddyLensDashboard() {
                       </a>
                     </div>
                     <div className="flex gap-2">
-                      {req.status === 'OPEN' && (
+                      {req.status === "OPEN" && (
                         <Button
                           onClick={() => deleteRequestMutation.mutate(req.id)}
                           disabled={deleteRequestMutation.isPending}
@@ -295,13 +351,13 @@ export default function BuddyLensDashboard() {
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
-                      {req.status === 'PENDING' && (
+                      {req.status === "PENDING" && (
                         <>
                           <Button
                             onClick={() =>
                               claimActionMutation.mutate({
                                 requestId: req.id,
-                                action: 'APPROVE',
+                                action: "APPROVE",
                               })
                             }
                             disabled={claimActionMutation.isPending}
@@ -313,7 +369,7 @@ export default function BuddyLensDashboard() {
                             onClick={() =>
                               claimActionMutation.mutate({
                                 requestId: req.id,
-                                action: 'REJECT',
+                                action: "REJECT",
                               })
                             }
                             disabled={claimActionMutation.isPending}
@@ -332,7 +388,7 @@ export default function BuddyLensDashboard() {
         )}
 
         {/* Requests to Review Section */}
-        {activeSection === 'to-review' && (
+        {activeSection === "to-review" && (
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Requests to Review</h3>
             {isReviewRequestsLoading ? (
@@ -340,52 +396,68 @@ export default function BuddyLensDashboard() {
             ) : reviewRequests.length === 0 ? (
               <p>No requests available to review.</p>
             ) : (
-              reviewRequests.map((req: BuddyLensRequest) => (
-                <Card key={req.id} className="p-4 space-y-2">
-                  <div className="flex justify-between items-start gap-6">
-                    <div className="space-y-1">
-                      <p className="font-medium">{req.feedbackType}</p>
-                      <p className="text-sm text-gray-600">
-                        {req.platform} - {req.domain}
-                      </p>
-                      <p className="text-sm text-gray-600">Tier: {req.tier}</p>
-                      <p className="text-sm text-gray-600">Reward: {req.jpCost} JoyPearls</p>
-                      <p className="text-sm text-gray-600">Status: {req.status}</p>
-                      <a
-                        href={req.socialMediaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 flex items-center gap-1"
-                      >
-                        <LinkIcon className="w-4 h-4" />
-                        View Content
-                      </a>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      {req.status === 'OPEN' && (
-                        <Button
-                          onClick={() => claimRequestMutation.mutate(req.id)}
-                          disabled={claimRequestMutation.isPending}
-                          className="bg-blue-600 hover:bg-blue-700"
+              reviewRequests.map((req: BuddyLensRequest) => {
+                console.log("req", req);
+                return (
+                  <Card key={req.id} className="p-4 space-y-2">
+                    <div className="flex justify-between items-start gap-6">
+                      <div className="space-y-1">
+                        {/* <p className="font-medium">{req.feedbackType}</p> */}
+                        <p className="text-sm text-gray-600">
+                          Domain: {req.domain}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Tier: {req.tier}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Reward: {req.jpCost} JoyPearls
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Status: {req.status}
+                        </p>
+                        <a
+                          href={req.socialMediaUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 flex items-center gap-1"
                         >
-                          Claim Request
-                        </Button>
-                      )}
-                      {req.status === 'PENDING' && req.pendingReviewerId === userId && (
-                        <Button disabled className="bg-gray-400 cursor-not-allowed">
-                          Pending Approval
-                        </Button>
-                      )}
+                          <LinkIcon className="w-4 h-4" />
+                          View Content
+                        </a>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {!req.review || req.review.filter(r => r.reviewer.id === userId)[0]?.status !== "PENDING" && (
+                          <Button
+                            onClick={() => claimRequestMutation.mutate(req.id)}
+                            disabled={claimRequestMutation.isPending}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Claim Request
+                          </Button>
+                        )}
+                        {
+                          req.review && req.review.filter(r => r.reviewer.id === userId)[0]?.status === "PENDING" && (
+                            // req.pendingReviewerId === userId && (
+                            <Button
+                              disabled
+                              className="bg-gray-400 cursor-not-allowed"
+                            >
+                              Pending Approval
+                            </Button>
+                          )
+                          // )
+                        }
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                );
+              })
             )}
           </div>
         )}
 
         {/* Reviewed Requests Section */}
-        {activeSection === 'reviewed' && (
+        {activeSection === "reviewed" && (
           <div className="space-y-4">
             <h3 className="text-xl font-medium">Reviewed Requests</h3>
             {isReviewedRequestsLoading ? (
@@ -395,14 +467,20 @@ export default function BuddyLensDashboard() {
             ) : (
               reviewedRequests.map((review: Review) => {
                 const request =
-                  reviewRequests.find((r: BuddyLensRequest) => r.id === review.requestId) ||
-                  myRequests.find((r: BuddyLensRequest) => r.id === review.requestId);
+                  reviewRequests.find(
+                    (r: BuddyLensRequest) => r.id === review.requestId
+                  ) ||
+                  myRequests.find(
+                    (r: BuddyLensRequest) => r.id === review.requestId
+                  );
                 return (
                   <Card key={review.id} className="p-4 space-y-2">
                     <div className="space-y-1">
-                      <p className="font-medium">{review.request?.domain || 'Unknown Request'}</p>
+                      <p className="font-medium">
+                        {review.request?.domain || "Unknown Request"}
+                      </p>
                       <a
-                        href={request?.socialMediaUrl || '#'}
+                        href={request?.socialMediaUrl || "#"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 flex items-center gap-1"
@@ -411,6 +489,9 @@ export default function BuddyLensDashboard() {
                         View Content
                       </a>
                       <div className="mt-3 p-3 bg-gray-100 rounded">
+                        <p className="text-sm">
+                          <strong>Reviewr Name: </strong> {review.reviewer.name}
+                        </p>
                         <p className="text-sm">
                           <strong>Domain: </strong>
                           {review?.request?.domain}
@@ -437,7 +518,7 @@ export default function BuddyLensDashboard() {
                             ))}
                           </ul>
                         ) : (
-                          'No answers provided'
+                          "No answers provided"
                         )}
                         <p className="text-sm text-gray-600">
                           <strong>Reviewed on: </strong>

@@ -1,8 +1,9 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ReactNode } from "react";
 import { FieldError } from "react-hook-form";
 export interface FormInputExtraProps {
-  label: string;
+  label: ReactNode;
   direction?: string;
   error?: FieldError;
 }

@@ -158,20 +158,23 @@ export async function POST(req: NextRequest) {
         requester: {
           select: { email: true, name: true, jpBalance: true, plan: true },
         },
-        reviewerId: true,
+        reviewerId: true, //? 9may
+        reviewer: true, //? 9may
+        review: { include: { reviewer: { omit: { password: true } } } },
         status: true,
         domain: true,
         tier: true,
         jpCost: true,
         // expiresAt: true,
         isDeleted: true,
-        reviewer: { select: { email: true, name: true } },
+        // reviewer: { select: { email: true, name: true } },
       },
     });
 
     if (!request || request.isDeleted)
       return errorResponse("Request not found", 404);
-    if (request.reviewerId !== reviewerId)
+    if (request.review.some((r) => r.reviewerId !== reviewerId))
+      //?? 9may
       return errorResponse("You are not assigned to this request", 403);
     if (request.status !== "CLAIMED")
       return errorResponse("Request is not claimed", 400);
@@ -185,7 +188,7 @@ export async function POST(req: NextRequest) {
       where: { requestId, reviewerId },
     });
 
-    if (existingReview) {
+    if (existingReview && existingReview?.status === "SUBMITTED") {
       return errorResponse(
         "You have already submitted a review for this request",
         409
@@ -193,10 +196,11 @@ export async function POST(req: NextRequest) {
     }
 
     const newReview = await prisma.$transaction(async (prisma) => {
-      const review = await prisma.buddyLensReview.create({
+      const review = await prisma.buddyLensReview.update({
+        where: { requestId_reviewerId: { requestId, reviewerId } },
         data: {
-          requestId,
-          reviewerId,
+          // requestId,
+          // reviewerId,
           answers,
           reviewText,
           rating,
@@ -359,10 +363,10 @@ export async function GET(req: NextRequest) {
 
     const reviews = await prisma.buddyLensReview.findMany({
       where: {
-        OR: [
-          // { reviewerId: session.user.id },
-          { request: { requesterId: session.user.id } },
-        ],
+        // OR: [
+        // { reviewerId: session.user.id },
+        request: { requesterId: session.user.id },
+        // ],
       },
       include: {
         request: { select: { domain: true } },
@@ -537,11 +541,12 @@ export async function PATCH(req: NextRequest) {
       return errorResponse("Please log in", 401);
     }
 
-    const { requestId, reviewerId } = await req.json();
+    const { requestId, reviewerId }: { requestId: string; reviewerId: string } =
+      await req.json();
     if (!requestId || !reviewerId) {
       return errorResponse("Missing request ID or reviewer ID", 400);
     }
-    
+
     if (reviewerId !== session.user.id) {
       return errorResponse("Unauthorized reviewer ID", 403);
     }
@@ -553,16 +558,29 @@ export async function PATCH(req: NextRequest) {
         requesterId: true,
         requester: { select: { email: true, name: true } },
         status: true,
-        pendingReviewerId: true,
+        // pendingReviewerId: true,
+        review: {
+          //?9may
+          include: {
+            reviewer: {
+              omit: { password: true },
+            },
+          },
+        },
         domain: true,
         isDeleted: true,
+        reviewerId: true,
+        reviewer: {
+          omit: { password: true },
+        },
       },
     });
     console.log("request", request);
     if (!request || request.isDeleted) {
       return errorResponse("Request not found", 404);
     }
-    if (request.status !== "OPEN" || request.pendingReviewerId) {
+    if (request.status !== "OPEN" || request.reviewerId) {
+      //?9may
       return errorResponse("Request is not open", 400);
     }
     if (request.requesterId === reviewerId) {
@@ -617,7 +635,15 @@ export async function PATCH(req: NextRequest) {
     const updatedRequest = await prisma.$transaction(async (prisma) => {
       const updated = await prisma.buddyLensRequest.update({
         where: { id: requestId },
-        data: { pendingReviewerId: reviewerId, status: "PENDING" },
+        data: {
+          review: {
+            create: {
+              reviewerId: reviewerId,
+              status: "PENDING",
+              reviewText: "",
+            },
+          },
+        },
       });
 
       const notificationLink = `/dashboard/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`;
