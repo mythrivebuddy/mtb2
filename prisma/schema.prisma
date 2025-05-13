@@ -70,9 +70,9 @@
   enum BuddyLensRequestStatus {
     OPEN
     CLAIMED
-    COMPLETED
+    COMPLETED 
     CANCELLED
-    PENDING
+    PENDING // NOt in use
   }
 
   enum BuddyLensReviewStatus {

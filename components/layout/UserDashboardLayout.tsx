@@ -38,7 +38,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         <Sidebar user={user} />
       </div>
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20">
+      <div className="flex-1 flex flex-col ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20 !h-full">
         {/* Fixed TopBar */}
         {/* <div className="md:mx-10 mx-5"> */}
         <div className="md:mx-10 mx-5">

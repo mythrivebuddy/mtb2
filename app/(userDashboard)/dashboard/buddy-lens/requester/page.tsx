@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -137,6 +137,10 @@ export default function BuddyLensRequestPage() {
     },
   });
 
+  useEffect(() => {
+    console.log("Form state error:", errors);
+  });
+
   const domain = watch("domain");
   const questions = watch("questions");
 
@@ -146,7 +150,10 @@ export default function BuddyLensRequestPage() {
         <h2 className="text-3xl font-bold text-center text-gray-800">
           📋 BuddyLens Review Request
         </h2>
-        <form onSubmit={handleSubmit((data) => submitRequest(data))} className="space-y-8">
+        <form
+          onSubmit={handleSubmit((data) => submitRequest(data))}
+          className="space-y-8"
+        >
           <InputWithLabel
             label={
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -232,52 +239,64 @@ export default function BuddyLensRequestPage() {
                 <FileQuestion className="w-4 h-4" />
                 Choose Questions
               </label>
-              {[0, 1, 2].map((index) => (
-                <div key={index} className="space-y-2">
-                  <select
-                    value={questions[index]}
-                    onChange={async (e) => {
-                      const updated = [...questions];
-                      updated[index] = e.target.value;
-                      setValue("questions", updated, {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      });
-                      await trigger("questions");
-                    }}
-                    className="w-full border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option value="">Select a question</option>
-                    {DOMAIN_QUESTIONS[domain]?.map((q) => (
-                      <option key={q} value={q}>
-                        {q}
-                      </option>
-                    ))}
-                    <option value="Other">Other (Custom Question)</option>
-                  </select>
-                  {questions[index] === "Other" && (
-                    <Input
-                      type="text"
-                      placeholder="Enter your custom question"
-                      value={questions[index]}
+              {[0, 1, 2].map((index) => {
+                const domainQuestions = DOMAIN_QUESTIONS[domain] || [];
+                const isCustom =
+                  questions[index] &&
+                  !domainQuestions.includes(questions[index]) &&
+                  questions[index] !== "";
+
+                return (
+                  <div key={index} className="space-y-2">
+                    <select
+                      value={isCustom ? "Other" : questions[index]}
                       onChange={async (e) => {
                         const updated = [...questions];
-                        updated[index] = e.target.value;
+                        if (e.target.value === "Other") {
+                          updated[index] = "";
+                        } else {
+                          updated[index] = e.target.value;
+                        }
                         setValue("questions", updated, {
                           shouldValidate: true,
                           shouldDirty: true,
                         });
                         await trigger("questions");
                       }}
-                    />
-                  )}
-                  {errors.questions?.[index] && (
-                    <p className="text-red-500 text-sm">
-                      {errors.questions[index]?.message}
-                    </p>
-                  )}
-                </div>
-              ))}
+                      className="w-full border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">Select a question</option>
+                      {domainQuestions.map((q) => (
+                        <option key={q} value={q}>
+                          {q}
+                        </option>
+                      ))}
+                      <option value="Other">Other (Custom Question)</option>
+                    </select>
+                    {(questions[index] === "" && domain) || isCustom ? (
+                      <Input
+                        type="text"
+                        placeholder="Enter your custom question"
+                        value={questions[index]}
+                        onChange={async (e) => {
+                          const updated = [...questions];
+                          updated[index] = e.target.value;
+                          setValue("questions", updated, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
+                          await trigger("questions");
+                        }}
+                      />
+                    ) : null}
+                    {errors.questions?.[index] && (
+                      <p className="text-red-500 text-sm">
+                        {errors.questions[index]?.message}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
