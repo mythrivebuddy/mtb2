@@ -146,9 +146,9 @@ type PageProps = {
   params: Promise<{ blogname: string }>;
 };
 
-const fetchBlog = async (slug: string): Promise<BlogPost> => {
+const fetchBlog = async (id: string): Promise<BlogPost> => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs/getParticularBlog/${slug}`,
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/blogs/getParticularBlog/${id}`,
     {
       cache: "force-cache",
     }
@@ -163,7 +163,10 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { blogname } = await params; // Await the params Promise
-  const blog = await fetchBlog(blogname);
+  console.log(blogname);
+  const id = blogname.split("-")[0];
+  console.log(id);
+  const blog = await fetchBlog(id);
   return {
     title: `${blog.title} - MyThriveBuddy`,
     description: blog.excerpt,

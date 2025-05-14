@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: "MyThriveBuddy",
     images: [
       {
-        url: "/images/og-image.jpg",
+        url: "/logo.png",
         width: 1200,
         height: 630,
         alt: "MyThriveBuddy - Solopreneurship Made Amazing",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     title: "MyThriveBuddy - Solopreneurship Made Amazing",
     description:
       "Solopreneurship doesn't have to be lonely. Join the ecosystem built to make your journey joyful, connected and wildly fulfilling.",
-    images: ["/images/og-image.jpg"],
+    images: ["/logo.png"],
   },
 };
 

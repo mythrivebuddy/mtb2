@@ -78,11 +78,11 @@ export default function BlogForm({
       return response.data;
     },
     onSuccess: () => {
-      toast.success(
-        isEdit
-          ? "Blog post updated successfully!"
-          : "Blog post created successfully!"
-      );
+      // toast.success(
+      //   isEdit
+      //     ? "Blog post updated successfully!"
+      //     : "Blog post created successfully!"
+      // );
       onSuccess();
     },
     onError: () => {

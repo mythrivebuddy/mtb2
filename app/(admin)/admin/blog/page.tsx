@@ -15,6 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import ConfirmAction from "@/components/ConfirmAction";
 
 interface Blog {
   id: string;
@@ -193,12 +194,21 @@ export default function BlogPost() {
                           >
                             Edit
                           </button>
-                          <button
-                            className="px-2 py-1 text-sm rounded-full bg-red-100 text-red-800"
-                            onClick={() => deleteBlogMutation.mutate(blog.id)}
+                          <ConfirmAction
+                            action={() => deleteBlogMutation.mutate(blog.id)}
+                            title="Delete Blog"
+                            description="Are you sure you want to delete this blog?"
+                            confirmText="Delete"
+                            isDisabled={deleteBlogMutation.isPending}
                           >
-                            Delete
-                          </button>
+                            <button
+                              className="px-2 py-1 text-sm rounded-full bg-red-100 text-red-800"
+                              // onClick={() => deleteBlogMutation.mutate(blog.id)}
+                              disabled={deleteBlogMutation.isPending}
+                            >
+                              Delete
+                            </button>
+                          </ConfirmAction>
                         </TableCell>
                       </TableRow>
                     ))}
