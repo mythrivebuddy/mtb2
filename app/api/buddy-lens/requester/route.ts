@@ -11,11 +11,11 @@ function errorResponse(message: string, status: number = 400) {
 }
 
 // Define interface for pending reviewers
-interface UserSummary {
-  id: string;
-  name: string | null;
-  email: string;
-}
+// interface UserSummary {
+//   id: string;
+//   name: string | null;
+//   email: string;
+// }
 // ! OLD POST API
 export async function POST(req: NextRequest) {
   try {

@@ -438,18 +438,18 @@ export default function BuddyLensDashboard() {
                             href={req.socialMediaUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 flex items-center gap-1"
+                            className="text-blue-600 flex items-center gap-1 text-sm"
                           >
-                            <LinkIcon className="w-4 h-4" />
+                            <LinkIcon className="w-3 h-3" />
                             View Content
                           </a>
                           <a
                             href={`/profile/${req.requester?.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 flex items-center gap-1"
+                            className="text-blue-600 flex items-center gap-1 text-sm"
                           >
-                            <LinkIcon className="w-4 h-4" />
+                            <LinkIcon className="w-3 h-3" />
                             View Profile
                           </a>
                         </div>
@@ -515,14 +515,14 @@ export default function BuddyLensDashboard() {
                           href={request?.socialMediaUrl || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 flex items-center gap-1"
+                          className="text-blue-600 flex items-center gap-1 text-sm"
                         >
-                          <LinkIcon className="w-4 h-4" />
+                          <LinkIcon className="w-3 h-3" />
                           View Content
                         </a>
                         <div className="mt-3 p-3 bg-gray-100 rounded">
                           <p className="text-sm">
-                            <strong>Reviewr Name: </strong>{" "}
+                            <strong>Reviewer Name: </strong>{" "}
                             {review.reviewer.name}
                           </p>
                           <p className="text-sm">

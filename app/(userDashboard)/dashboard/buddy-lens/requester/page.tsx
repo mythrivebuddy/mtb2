@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect, useState } from "react";
+import { JSX, useEffect } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -122,7 +122,7 @@ export default function BuddyLensRequestPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, touchedFields, dirtyFields },
+    formState: { errors },
     setValue,
     watch,
     trigger,
@@ -187,7 +187,7 @@ export default function BuddyLensRequestPage() {
                     {...register("domain")}
                     value={label}
                     checked={domain === label}
-                    onChange={(e) => {
+                    onChange={() => {
                       setValue("domain", label, {
                         shouldValidate: true,
                         shouldDirty: true,

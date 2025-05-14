@@ -76,24 +76,25 @@ export default function BuddyLensReviewPage() {
   const router = useRouter();
 
   // Fetch requests
-  const {
-    data: requests = [],
-    isLoading: isRequestsLoading,
-    error: requestsError,
-  } = useQuery({
-    queryKey: ["buddyLensRequests", reviewerId],
-    queryFn: async () => {
-      const response = await axios.get(`/api/buddy-lens/requester`);
-      return response.data.filter(
-        (req: BuddyLensRequest) =>
-          ["OPEN", "PENDING", "CLAIMED"].includes(req.status) &&
-          !req.isDeleted &&
-          req.requesterId !== reviewerId
-      );
-    },
-    enabled: !!reviewerId,
-    // refetchInterval: 10000, // Poll every 10 seconds
-  });
+  // ? IMP
+  // const {
+  //   // data: requests = [],
+  //   isLoading: isRequestsLoading,
+  //   error: requestsError,
+  // } = useQuery({
+  //   queryKey: ["buddyLensRequests", reviewerId],
+  //   queryFn: async () => {
+  //     const response = await axios.get(`/api/buddy-lens/requester`);
+  //     return response.data.filter(
+  //       (req: BuddyLensRequest) =>
+  //         ["OPEN", "PENDING", "CLAIMED"].includes(req.status) &&
+  //         !req.isDeleted &&
+  //         req.requesterId !== reviewerId
+  //     );
+  //   },
+  //   enabled: !!reviewerId,
+  //   // refetchInterval: 10000, // Poll every 10 seconds
+  // });
 
   // Fetch notifications
   const {
@@ -184,13 +185,13 @@ export default function BuddyLensReviewPage() {
       }
 
       // Calculate time elapsed and remaining
+      // eslint-disable-next-line prefer-const
       let timerInterval: string | number | NodeJS.Timeout | undefined;
       const calculateRemaining = () => {
         const elapsed = Math.floor(
           (Date.now() - parseInt(startTime as string)) / 1000
         );
         const remaining = Math.max(0, initialTime - elapsed);
-
 
         setTimeRemaining(remaining);
 
@@ -221,32 +222,33 @@ export default function BuddyLensReviewPage() {
   };
 
   // Mutation for claiming a request
-  const claimRequestMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      if (!reviewerId) {
-        throw new Error("User ID not found");
-      }
-      await axios.patch(`/api/buddy-lens/reviewer`, {
-        requestId,
-        reviewerId,
-      });
-    },
-    onSuccess: (_, requestId) => {
-      toast.success("Claim request submitted, awaiting approval");
-      queryClient.setQueryData(
-        ["buddyLensRequests", reviewerId],
-        (old: BuddyLensRequest[] | undefined) =>
-          old?.map((req) =>
-            req.id === requestId
-              ? { ...req, status: "PENDING", pendingReviewerId: reviewerId }
-              : req
-          )
-      );
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to claim request");
-    },
-  });
+  // ? IMP
+  // const claimRequestMutation = useMutation({
+  //   mutationFn: async (requestId: string) => {
+  //     if (!reviewerId) {
+  //       throw new Error("User ID not found");
+  //     }
+  //     await axios.patch(`/api/buddy-lens/reviewer`, {
+  //       requestId,
+  //       reviewerId,
+  //     });
+  //   },
+  //   onSuccess: (_, requestId) => {
+  //     toast.success("Claim request submitted, awaiting approval");
+  //     queryClient.setQueryData(
+  //       ["buddyLensRequests", reviewerId],
+  //       (old: BuddyLensRequest[] | undefined) =>
+  //         old?.map((req) =>
+  //           req.id === requestId
+  //             ? { ...req, status: "PENDING", pendingReviewerId: reviewerId }
+  //             : req
+  //         )
+  //     );
+  //   },
+  //   onError: (error) => {
+  //     toast.error(error.message || "Failed to claim request");
+  //   },
+  // });
 
   // Mutation for submitting a review
   const submitReviewMutation = useMutation({
@@ -319,7 +321,7 @@ export default function BuddyLensReviewPage() {
   }
 
   if (
-    requestsError ||
+    // requestsError ||  // ? IMP
     notificationsError ||
     reviewedRequestsError ||
     selectedRequestError
@@ -327,10 +329,12 @@ export default function BuddyLensReviewPage() {
     return (
       <div className="text-center p-8 text-red-600">
         Error:{" "}
-        {requestsError?.message ||
+        {
+          // requestsError?.message ||  // ? IMP
           notificationsError?.message ||
-          reviewedRequestsError?.message ||
-          selectedRequestError?.message}
+            reviewedRequestsError?.message ||
+            selectedRequestError?.message
+        }
       </div>
     );
   }
@@ -340,145 +344,149 @@ export default function BuddyLensReviewPage() {
       <Card className="rounded-2xl shadow-lg p-6 space-y-6">
         <h2 className="text-3xl font-semibold text-center">👀 Review Page</h2>
 
-        {isRequestsLoading ||
-        isNotificationsLoading ||
-        isReviewedRequestsLoading ||
-        isSelectedRequestLoading ? (
-          <p>Loading...</p>
-        ) : !selectedRequest ? (
-         <></>
-        ) : (
-          <div className="space-y-6">
-            {/* <h3 className="text-xl font-medium">
+        {
+          // isRequestsLoading ||
+          isNotificationsLoading ||
+          isReviewedRequestsLoading ||
+          isSelectedRequestLoading ? (
+            <p>Loading...</p>
+          ) : !selectedRequest ? (
+            <></>
+          ) : (
+            <div className="space-y-6">
+              {/* <h3 className="text-xl font-medium">
               Review: {selectedRequest.request.feedbackType}
             </h3> */}
 
-            {/* Timer Section */}
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-100 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">Time Remaining:</span>
-              </div>
-              <div
-                className={`font-mono font-bold text-lg ${isExpired ? "text-red-600" : timeRemaining && timeRemaining < 60 ? "text-orange-600" : "text-blue-600"}`}
-              >
-                {formatTimeRemaining()}
-              </div>
-            </div>
-
-            {isExpired && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                <p className="font-bold">Time Expired!</p>
-                <p>
-                  You can no longer submit this review. Please claim a new
-                  request.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <LinkIcon className="w-4 h-4" />
-                Social Media URL
-              </label>
-              <a
-                href={selectedRequest.request.socialMediaUrl}
-                target="_blank"
-                className="text-blue-600"
-              >
-                {selectedRequest.request.socialMediaUrl}
-              </a>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <FileQuestion className="w-4 h-4" />
-                Answer Questions
-              </label>
-              {selectedRequest?.request?.questions?.map((q: string, index: number) => (
-                <div key={index} className="space-y-1">
-                  <p className="text-sm">{q}</p>
-                  <Textarea
-                    placeholder={`Answer ${index + 1}`}
-                    value={answers[index] || ""}
-                    onChange={(e) => {
-                      const updated = [...answers];
-                      updated[index] = e.target.value;
-                      setAnswers(updated);
-                    }}
-                    disabled={isExpired}
-                  />
+              {/* Timer Section */}
+              <div className="flex items-center justify-between px-4 py-2 bg-gray-100 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium">Time Remaining:</span>
                 </div>
-              ))}
-            </div>
+                <div
+                  className={`font-mono font-bold text-lg ${isExpired ? "text-red-600" : timeRemaining && timeRemaining < 60 ? "text-orange-600" : "text-blue-600"}`}
+                >
+                  {formatTimeRemaining()}
+                </div>
+              </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Eye className="w-4 h-4" />
-                Review Text
-              </label>
-              <Textarea
-                placeholder="Write your review here"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                disabled={isExpired}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Star className="w-4 h-4" />
-                Rating (1-5)
-              </label>
-              <Input
-                type="number"
-                min={1}
-                max={5}
-                value={rating || ""}
-                onChange={(e) => {
-                  const newRating = Number(e.target.value);
-                  if (newRating > 5) {
-                    setRatingError("Rating cannot be greater than 5!");
-                  } else if (newRating >= 1 && newRating <= 5) {
-                    setRating(newRating);
-                    setRatingError("");
-                  } else {
-                    setRatingError("Rating must be between 1 and 5.");
-                  }
-                }}
-                disabled={isExpired}
-              />
-              {ratingError && (
-                <p className="text-red-500 text-sm">{ratingError}</p>
+              {isExpired && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  <p className="font-bold">Time Expired!</p>
+                  <p>
+                    You can no longer submit this review. Please claim a new
+                    request.
+                  </p>
+                </div>
               )}
-            </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Send className="w-4 h-4" />
-                Additional Feedback
-              </label>
-              <Textarea
-                placeholder="Optional feedback"
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                disabled={isExpired}
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <LinkIcon className="w-4 h-4" />
+                  Social Media URL
+                </label>
+                <a
+                  href={selectedRequest.request.socialMediaUrl}
+                  target="_blank"
+                  className="text-blue-600"
+                >
+                  {selectedRequest.request.socialMediaUrl}
+                </a>
+              </div>
 
-            <Button
-              onClick={() => submitReviewMutation.mutate()}
-              disabled={submitReviewMutation.isPending || isExpired}
-              className={`w-full text-white ${isExpired ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
-            >
-              {submitReviewMutation.isPending
-                ? "Submitting..."
-                : isExpired
-                  ? "Time Expired"
-                  : "Submit Review"}
-            </Button>
-          </div>
-        )}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <FileQuestion className="w-4 h-4" />
+                  Answer Questions
+                </label>
+                {selectedRequest?.request?.questions?.map(
+                  (q: string, index: number) => (
+                    <div key={index} className="space-y-1">
+                      <p className="text-sm">{q}</p>
+                      <Textarea
+                        placeholder={`Answer ${index + 1}`}
+                        value={answers[index] || ""}
+                        onChange={(e) => {
+                          const updated = [...answers];
+                          updated[index] = e.target.value;
+                          setAnswers(updated);
+                        }}
+                        disabled={isExpired}
+                      />
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Eye className="w-4 h-4" />
+                  Review Text
+                </label>
+                <Textarea
+                  placeholder="Write your review here"
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  disabled={isExpired}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Star className="w-4 h-4" />
+                  Rating (1-5)
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={5}
+                  value={rating || ""}
+                  onChange={(e) => {
+                    const newRating = Number(e.target.value);
+                    if (newRating > 5) {
+                      setRatingError("Rating cannot be greater than 5!");
+                    } else if (newRating >= 1 && newRating <= 5) {
+                      setRating(newRating);
+                      setRatingError("");
+                    } else {
+                      setRatingError("Rating must be between 1 and 5.");
+                    }
+                  }}
+                  disabled={isExpired}
+                />
+                {ratingError && (
+                  <p className="text-red-500 text-sm">{ratingError}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Send className="w-4 h-4" />
+                  Additional Feedback
+                </label>
+                <Textarea
+                  placeholder="Optional feedback"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  disabled={isExpired}
+                />
+              </div>
+
+              <Button
+                onClick={() => submitReviewMutation.mutate()}
+                disabled={submitReviewMutation.isPending || isExpired}
+                className={`w-full text-white ${isExpired ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+              >
+                {submitReviewMutation.isPending
+                  ? "Submitting..."
+                  : isExpired
+                    ? "Time Expired"
+                    : "Submit Review"}
+              </Button>
+            </div>
+          )
+        }
 
         {!selectedRequest && (
           <div className="space-y-4 mt-6">
@@ -492,16 +500,17 @@ export default function BuddyLensReviewPage() {
                 <Card key={review.id} className="p-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p>
+                      <p className="flex gap-1">
                         <strong>Reviewer Profile:</strong>{" "}
-                        <a
-                          href={`http://localhost:3000/profile/${review.reviewerId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600"
-                        >
-                          Click here to view
-                        </a>
+                          <a
+                            href={`/profile/${review.reviewerId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 flex items-center gap-1 text-sm"
+                          >
+                            <LinkIcon className="w-3 h-3" />
+                            view profile
+                          </a>
                       </p>
                       <p className="text-sm text-gray-600">
                         <span className="font-medium text-black">
@@ -551,8 +560,6 @@ export default function BuddyLensReviewPage() {
     </div>
   );
 }
-
-
 
 // <div className="space-y-4">
 //   <h3 className="text-xl font-medium">Open Requests</h3>

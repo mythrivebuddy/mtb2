@@ -3,14 +3,13 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CloudCog } from "lucide-react";
+import { CloudCog, LinkIcon } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { request } from "http";
 import { Prisma } from "@prisma/client";
 
 // interface BuddyLensRequest {
@@ -50,15 +49,15 @@ export default function BuddyLensApprovePage() {
   }, [searchParams, requestId, reviewerId]);
 
   // Validate session
-  useEffect(() => {
-    if (sessionStatus === "loading") return;
+  // useEffect(() => {
+  //   if (sessionStatus === "loading") return;
 
-    if (!session || !session.user?.id) {
-      console.error("No session or user ID found");
-      toast.error("Please login to continue");
-      router.push("/login");
-    }
-  }, [session, sessionStatus, router]);
+  //   if (!session || !session.user?.id) {
+  //     console.error("No session or user ID found");
+  //     toast.error("Please login to continue");
+  //     router.push("/login");
+  //   }
+  // }, [session, sessionStatus, router]);
 
   // Fetch request(s) data with React Query
   const {
@@ -255,16 +254,21 @@ export default function BuddyLensApprovePage() {
               <p>
                 <strong>Reward:</strong> {request.request.jpCost} JoyPearls
               </p>
-            
-              <p>
+
+              <p className="flex items-center gap-1">
                 <strong>Reviewer Profile:</strong>{" "}
                 <a
                   href={`/profile/${request.reviewerId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600"
+                  className="text-blue-600 flex items-center gap-1"
                 >
-                 view profile
+                  {" "}
+                  <span>
+                    {" "}
+                    <LinkIcon className="w-4 h-4" />
+                  </span>
+                  view profile
                 </a>
               </p>
               <p>
@@ -329,9 +333,9 @@ export default function BuddyLensApprovePage() {
             Approve Reviewer Claim
           </h2> */}
           <div className="space-y-4">
-             <p>
-                <strong>Reviewer Name:</strong> {requests?.reviewer?.name}
-              </p>
+            <p>
+              <strong>Reviewer Name:</strong> {requests?.reviewer?.name}
+            </p>
             <p>
               <strong>Domain:</strong> {requests.request.domain}
             </p>
@@ -344,14 +348,18 @@ export default function BuddyLensApprovePage() {
             {/* <p>
               <strong>Reviewer:</strong> {reviewer.name }
             </p> */}
-            <p>
+            <p className="flex items-center gap-1">
               <strong>Reviewer Profile:</strong>{" "}
               <a
                 href={`/profile/${requests.reviewerId}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600"
+                className="text-blue-600 flex items-center gap-1"
               >
+                <span>
+                  {" "}
+                  <LinkIcon className="w-4 h-4" />
+                </span>
                 view profile
               </a>
             </p>
