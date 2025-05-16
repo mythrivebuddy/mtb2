@@ -5,7 +5,7 @@ import { authConfig } from "../../auth/[...nextauth]/auth.config";
 import { NotificationService } from "@/lib/notification-service";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, BuddyLensRequestStatus } from "@prisma/client";
 
 // import sendEmail from '@/lib/email/sendEmail';
 
@@ -207,6 +207,11 @@ export async function POST(req: NextRequest) {
           feedback,
           status,
           submittedAt: status === "SUBMITTED" ? new Date() : undefined,
+          request: {
+            update:{
+              status: BuddyLensRequestStatus.COMPLETED,
+            }
+          }
         },
       });
 
