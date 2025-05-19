@@ -171,6 +171,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // console.log(
+    //   "when submitting request ------------------ ",
+    //   "reviewerID",
+    //   reviewerId,
+    //   request?.review
+    // );
+
     if (!request || request.isDeleted)
       return errorResponse("Request not found", 404);
     if (request.review.some((r) => r.reviewerId !== reviewerId))
@@ -208,10 +215,10 @@ export async function POST(req: NextRequest) {
           status,
           submittedAt: status === "SUBMITTED" ? new Date() : undefined,
           request: {
-            update:{
+            update: {
               status: BuddyLensRequestStatus.COMPLETED,
-            }
-          }
+            },
+          },
         },
       });
 

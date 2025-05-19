@@ -10,7 +10,6 @@ import {
   User,
   Tag,
   Award,
-  Clock,
   ExternalLink,
   CheckCircle,
 } from "lucide-react";
@@ -89,7 +88,7 @@ function MyRequestsCard({
     review,
     reviewerId,
     id,
-      } = req;
+  } = req;
 
   return (
     <Card className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
@@ -117,10 +116,10 @@ function MyRequestsCard({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              {/* <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Clock className="w-4 h-4 text-gray-500" />
                 <span className="font-medium">Status:</span> {status}
-              </div>
+              </div> */}
 
               <a
                 href={socialMediaUrl}
@@ -179,7 +178,9 @@ function MyRequestsCard({
         )}
 
         {status === "COMPLETED" && (
-          <Link href={`/dashboard/buddy-lens/reviewer/${review.filter((r) => r.reviewerId === reviewerId)[0].id}`}>
+          <Link
+            href={`/dashboard/buddy-lens/reviewer/${review.filter((r) => r.reviewerId === reviewerId)[0].id}`}
+          >
             <Button
               variant="default"
               size="sm"
@@ -191,17 +192,20 @@ function MyRequestsCard({
           </Link>
         )}
 
-        {review.length > 0 && !reviewerId && status !== "COMPLETED" && (
-          <Link href={`/dashboard/buddy-lens/approve?requestId=${id}`}>
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
-            >
-              View Claims
-            </Button>
-          </Link>
-        )}
+        {review.length > 0 &&
+          !reviewerId &&
+          status !== "COMPLETED" &&
+          review.some((r) => r.status === "PENDING") && (
+            <Link href={`/dashboard/buddy-lens/approve?requestId=${id}`}>
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+              >
+                View Claims
+              </Button>
+            </Link>
+          )}
       </CardFooter>
     </Card>
   );
@@ -215,7 +219,6 @@ export default function MyRequests({ userId }: Props) {
   const {
     data: myRequests = [],
     isLoading,
-    error,
   } = useQuery<BuddyLensRequest[]>({
     queryKey: QUERY_KEY,
     queryFn: async () => {
@@ -226,6 +229,8 @@ export default function MyRequests({ userId }: Props) {
     },
     enabled: !!userId,
   });
+
+  console.log("My Requests: ", myRequests);
 
   const deleteRequestMutation = useMutation<
     DeleteRequestResponse,
@@ -263,7 +268,7 @@ export default function MyRequests({ userId }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between py-4 border-b border-gray-200 mb-4">
         <p className="text-base font-normal text-gray-800">
-          List of all profile audit requests in the system
+          List of all profile audit requests you have submitted
         </p>
         <Link href="/dashboard/buddy-lens/requester">
           <Button className="bg-jp-orange hover:bg-jp-orange/90 text-white flex items-center gap-1.5">
@@ -300,4 +305,3 @@ export default function MyRequests({ userId }: Props) {
     </div>
   );
 }
-

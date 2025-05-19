@@ -1,15 +1,16 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { toast } from "sonner";
-import { User, Tag, Award,  ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { User, Tag, Award, ExternalLink, CheckCircle } from "lucide-react";
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { BuddyLensRequest } from "@/types/claim";
 import PageLoader from "../PageLoader";
-import { BuddyLensRequest } from "@/types/claim";
+import { useSession } from "next-auth/react";
 
 interface Props {
   userId: string;
@@ -17,22 +18,13 @@ interface Props {
 
 function RequestStatusBadge({ status }: { status: string }) {
   switch (status) {
-    case "OPEN":
-      return (
-        <Badge
-          variant="outline"
-          className="bg-blue-50 text-blue-700 border-blue-200"
-        >
-          Open
-        </Badge>
-      );
     case "PENDING":
       return (
         <Badge
           variant="outline"
           className="bg-amber-50 text-amber-700 border-amber-200"
         >
-          Pending
+          Pending Approval
         </Badge>
       );
     case "CLAIMED":
@@ -41,7 +33,25 @@ function RequestStatusBadge({ status }: { status: string }) {
           variant="outline"
           className="bg-green-50 text-green-700 border-green-200"
         >
-          Claimed
+          Approved
+        </Badge>
+      );
+    case "SUBMITTED":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-50 text-blue-700 border-blue-200"
+        >
+          Submitted
+        </Badge>
+      );
+    case "DISAPPROVED":
+      return (  
+        <Badge
+          variant="outline"
+          className="bg-red-50 text-red-700 border-red-200"
+        >
+          Disapproved
         </Badge>
       );
     default:
@@ -49,17 +59,13 @@ function RequestStatusBadge({ status }: { status: string }) {
   }
 }
 
-function AvailableRequestCard({
-  req,
-  onClaim,
-  isClaimPending,
-  userId,
-}: {
-  req: BuddyLensRequest;
-  onClaim: () => void;
-  isClaimPending: boolean;
-  userId: string;
-}) {
+function ClaimCard({ req }: { req: BuddyLensRequest }) {
+  const { data: session } = useSession();
+  const review = req.review?.find((r) => r.reviewerId === session?.user?.id);
+
+  console.log("ClaimCard -- -", req);
+  console.log("ClaimCard", req.jpCost, review);
+
   return (
     <Card className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-0">
@@ -69,7 +75,7 @@ function AvailableRequestCard({
               <h3 className="font-medium text-gray-900">
                 Domain: {req.domain}
               </h3>
-              <RequestStatusBadge status={req.status} />
+              <RequestStatusBadge status={review?.status || "PENDING"} />
             </div>
           </div>
 
@@ -87,11 +93,6 @@ function AvailableRequestCard({
                   {req.jpCost} JoyPearls
                 </span>
               </div>
-
-              {/* <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="w-4 h-4 text-gray-500" />
-                <span className="font-medium">Status:</span> {req.status}
-              </div> */}
 
               <a
                 href={req.socialMediaUrl}
@@ -126,109 +127,53 @@ function AvailableRequestCard({
       </CardContent>
 
       <CardFooter className="flex justify-end gap-2 p-4 bg-gray-50 border-t border-gray-200">
-        {
-          !req.review ||
-            (!req.review.find((r) => r.reviewer.id === userId) && (
-              <Button
-                onClick={onClaim}
-                disabled={isClaimPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                size="sm"
-              >
-                Claim Request
-              </Button>
-            ))
-          //  (
-          //   <Button disabled className="bg-gray-400 cursor-not-allowed" size="sm">
-          //     Pending Approval
-          //   </Button>
-          // )
-        }
+        {review?.status === "APPROVED" && (
+          <Link href={`/dashboard/buddy-lens/reviewer?requestId=${req.id}`}>
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Submit Review
+            </Button>
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );
 }
 
-export default function AvailableRequest({ userId }: Props) {
-  const queryClient = useQueryClient();
-
-  const {
-    data: reviewRequests = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["buddyLensAvailableRequest", userId],
+export default function MyClaims({ userId }: Props) {
+  const { data: claims = [], isLoading } = useQuery({
+    queryKey: ["myBuddyLensClaims", userId],
     queryFn: async () => {
-      const response = await axios.get("/api/buddy-lens/requester");
-      return response.data.filter(
-        (req: BuddyLensRequest) =>
-          req.requesterId !== userId &&
-          ["OPEN", "PENDING", "CLAIMED"].includes(req.status) &&
-          !req.isDeleted
-      );
+      const response = await axios.get("/api/buddy-lens/reviewer/claims");
+      return response.data;
     },
     enabled: !!userId,
   });
-
-  console.log("Review Requests: ", reviewRequests);
-
-  const claimRequestMutation = useMutation({
-    mutationFn: async (requestId: string) => {
-      await axios.patch("/api/buddy-lens/reviewer", {
-        requestId,
-        reviewerId: userId,
-      });
-    },
-    onSuccess: (_, requestId) => {
-      toast.success("Claim request sent for approval");
-      queryClient.setQueryData(
-        ["buddyLensAvailableRequest", userId],
-        (old: BuddyLensRequest[] | undefined) =>
-          old?.map((req) =>
-            req.id === requestId
-              ? { ...req, status: "PENDING", pendingReviewerId: userId }
-              : req
-          )
-      );
-      queryClient.invalidateQueries({
-        queryKey: ["buddyLensAvailableRequest", userId],
-      });
-    },
-    onError: () => {
-      toast.error("Failed to claim request");
-    },
-  });
-
-  if (error) {
-    return (
-      <div className="text-center p-8 text-red-600">Error: {error.message}</div>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between py-4 border-b border-gray-200 mb-4">
         <p className="text-base font-normal text-gray-800">
-          List of all available profile audit requests in the system
+          List of all profile audit request you have claimed
         </p>
       </div>
 
       {isLoading ? (
         <PageLoader />
-      ) : reviewRequests.length === 0 ? (
+      ) : claims.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-gray-600">No requests available to review.</p>
+          <p className="text-gray-600">
+            You haven&apos;t claimed any requests yet.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {reviewRequests.map((req: BuddyLensRequest) => (
-            <AvailableRequestCard
-              key={req.id}
-              req={req}
-              onClaim={() => claimRequestMutation.mutate(req.id)}
-              isClaimPending={claimRequestMutation.isPending}
-              userId={userId}
-            />
+          {claims.map((req: BuddyLensRequest) => (
+            <ClaimCard key={req.id} req={req} />
           ))}
         </div>
       )}

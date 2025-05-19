@@ -5,9 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import PageLoader from "@/components/PageLoader";
 import { BuddyLensReview } from "@/types/claim";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, ChevronLeft, Clock, ExternalLink, Star, Tag, User } from "lucide-react";
+import {  ChevronLeft, Clock, ExternalLink, Star, Tag, User } from "lucide-react";
 import Link from "next/link";
 
 export default function ReviewPage() {

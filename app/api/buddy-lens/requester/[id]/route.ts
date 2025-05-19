@@ -27,6 +27,8 @@ export async function DELETE(
     }
 
     // Check for reviews in APPROVED or SUBMITTED state and delete others in a transaction
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [existingReviews, _deleteReviews, deletedRequest] = await prisma
       .$transaction([
         prisma.buddyLensReview.findMany({

@@ -82,38 +82,38 @@ export default function BuddyLensApprovePage() {
       console.log("Request data:", requestData);
 
       // Handle single request case
-      if (requestId) {
-        const singleRequestReview: BuddyLensRequest = requestData;
+      // if (requestId) {
+      //   const singleRequestReview: BuddyLensRequest[] = requestData;
 
-        if (singleRequestReview.request.requesterId !== session.user.id) {
-          console.error(
-            `Unauthorized: requesterId ${singleRequestReview.request.requesterId} does not match user ${session.user.id}`
-          );
-          toast.error("You are not authorized to approve this request");
-          router.push("/dashboard/buddy-lens");
-          return null;
-        }
+      //   if (singleRequestReview.request.requesterId !== session.user.id) {
+      //     console.error(
+      //       `Unauthorized: requesterId ${singleRequestReview.request.requesterId} does not match user ${session.user.id}`
+      //     );
+      //     toast.error("You are not authorized to approve this request");
+      //     router.push("/dashboard/buddy-lens");
+      //     return null;
+      //   }
 
-        if (singleRequestReview.status !== "PENDING") {
-          console.error(
-            `Invalid status: ${singleRequestReview.status}, expected PENDING`
-          );
-          toast.error("This claim is no longer pending review");
-          router.push("/dashboard/buddy-lens");
-          return null;
-        }
+      //   if (singleRequestReview.status !== "PENDING") {
+      //     console.error(
+      //       `Invalid status: ${singleRequestReview.status}, expected PENDING`
+      //     );
+      //     toast.error("This claim is no longer pending review");
+      //     router.push("/dashboard/buddy-lens");
+      //     return null;
+      //   }
 
-        if (reviewerId && singleRequestReview.reviewerId !== reviewerId) {
-          console.log(
-            `Invalid reviewer: pendingReviewerId ${singleRequestReview.reviewerId}, expected ${reviewerId}`
-          );
-          toast.error("Invalid reviewer for this claim");
-          router.push("/dashboard/buddy-lens");
-          return null;
-        }
+      //   if (reviewerId && singleRequestReview.reviewerId !== reviewerId) {
+      //     console.log(
+      //       `Invalid reviewer: pendingReviewerId ${singleRequestReview.reviewerId}, expected ${reviewerId}`
+      //     );
+      //     toast.error("Invalid reviewer for this claim");
+      //     router.push("/dashboard/buddy-lens");
+      //     return null;
+      //   }
 
-        return singleRequestReview;
-      }
+      //   return singleRequestReview;
+      // }
 
       // Handle multiple requests case
       return requestData as BuddyLensRequest[];
@@ -209,7 +209,7 @@ export default function BuddyLensApprovePage() {
             onClick={() => router.push("/dashboard/buddy-lens/requester")}
             className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Go to Dashboard
+            Go to Buddy Lens
           </Button>
         </Card>
       </div>
@@ -229,12 +229,12 @@ export default function BuddyLensApprovePage() {
             onClick={() => router.push("/dashboard/buddy-lens")}
             className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
           >
-            Go to Dashboard
+            Go to Buddy lens
           </Button>
         </Card>
       )}
 
-      {Array.isArray(requests) && requests.length > 0 && (
+      {Array.isArray(requests) && requests.length > 0 ? (
         <div className="space-y-6">
           {requests.map((request) => (
             <Card
@@ -325,98 +325,110 @@ export default function BuddyLensApprovePage() {
             </Card>
           ))}
         </div>
-      )}
-
-      {!Array.isArray(requests) && requests && (
-        <Card className="rounded-2xl shadow-lg p-6 space-y-6">
-          {/* <h2 className="text-3xl font-semibold text-center">
-            Approve Reviewer Claim
-          </h2> */}
-          <div className="space-y-4">
-            <p>
-              <strong>Reviewer Name:</strong> {requests?.reviewer?.name}
-            </p>
-            <p>
-              <strong>Domain:</strong> {requests.request.domain}
-            </p>
-            <p>
-              <strong>Tier:</strong> {requests.request.tier}
-            </p>
-            <p>
-              <strong>Reward:</strong> {requests.request.jpCost} JoyPearls
-            </p>
-            {/* <p>
-              <strong>Reviewer:</strong> {reviewer.name }
-            </p> */}
-            <p className="flex items-center gap-1">
-              <strong>Reviewer Profile:</strong>{" "}
-              <a
-                href={`/profile/${requests.reviewerId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 flex items-center gap-1"
-              >
-                <span>
-                  {" "}
-                  <LinkIcon className="w-4 h-4" />
-                </span>
-                view profile
-              </a>
-            </p>
-            <p>
-              <strong>Social Media URL:</strong>{" "}
-              <a
-                href={requests.request.socialMediaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600"
-              >
-                {requests.request.socialMediaUrl}
-              </a>
-            </p>
-            <div className="flex gap-7">
-              <Button
-                onClick={() =>
-                  handleApproveReject({
-                    requestId: requests.request.id,
-                    reviewerId: requests.reviewerId || reviewerId || "",
-                    approve: true,
-                  })
-                }
-                disabled={isApproveLoading}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Approve
-              </Button>
-              <Button
-                onClick={() =>
-                  handleApproveReject({
-                    requestId: requests.request.id,
-                    reviewerId: requests.reviewerId || reviewerId || "",
-                    approve: false,
-                  })
-                }
-                disabled={isApproveLoading}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                Reject
-              </Button>
-              {/* <Button
-                onClick={() =>
-                  handleCancel({
-                    requestId: requests.id,
-                    reviewerId: requests.pendingReviewerId || reviewerId || '',
-                  })
-                }
-                disabled={isApproveLoading || isCancelLoading}
-                className="bg-gray-600 hover:bg-gray-700 text-white"
-              >
-                Cancel
-              </Button> */}
-            </div>
-          </div>
+      ): (
+        <Card className="p-6 text-center">
+          <p className="text-gray-600">No pending claims to approve.</p>
+          <Button
+            onClick={() => router.push("/dashboard/buddy-lens")}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            Go to Buddy lens
+          </Button>
         </Card>
       )}
     </div>
   );
 }
+
+// {
+//   !Array.isArray(requests) && requests && (
+//     <Card className="rounded-2xl shadow-lg p-6 space-y-6">
+//       {/* <h2 className="text-3xl font-semibold text-center">
+//       Approve Reviewer Claim
+//     </h2> */}
+//       <div className="space-y-4">
+//         <p>
+//           <strong>Reviewer Name:</strong> {requests?.reviewer?.name}
+//         </p>
+//         <p>
+//           <strong>Domain:</strong> {requests.request.domain}
+//         </p>
+//         <p>
+//           <strong>Tier:</strong> {requests.request.tier}
+//         </p>
+//         <p>
+//           <strong>Reward:</strong> {requests.request.jpCost} JoyPearls
+//         </p>
+//         {/* <p>
+//         <strong>Reviewer:</strong> {reviewer.name }
+//       </p> */}
+//         <p className="flex items-center gap-1">
+//           <strong>Reviewer Profile:</strong>{" "}
+//           <a
+//             href={`/profile/${requests.reviewerId}`}
+//             target="_blank"
+//             rel="noopener noreferrer"
+//             className="text-blue-600 flex items-center gap-1"
+//           >
+//             <span>
+//               {" "}
+//               <LinkIcon className="w-4 h-4" />
+//             </span>
+//             view profile
+//           </a>
+//         </p>
+//         <p>
+//           <strong>Social Media URL:</strong>{" "}
+//           <a
+//             href={requests.request.socialMediaUrl}
+//             target="_blank"
+//             rel="noopener noreferrer"
+//             className="text-blue-600"
+//           >
+//             {requests.request.socialMediaUrl}
+//           </a>
+//         </p>
+//         <div className="flex gap-7">
+//           <Button
+//             onClick={() =>
+//               handleApproveReject({
+//                 requestId: requests.request.id,
+//                 reviewerId: requests.reviewerId || reviewerId || "",
+//                 approve: true,
+//               })
+//             }
+//             disabled={isApproveLoading}
+//             className="bg-green-600 hover:bg-green-700 text-white"
+//           >
+//             Approve
+//           </Button>
+//           <Button
+//             onClick={() =>
+//               handleApproveReject({
+//                 requestId: requests.request.id,
+//                 reviewerId: requests.reviewerId || reviewerId || "",
+//                 approve: false,
+//               })
+//             }
+//             disabled={isApproveLoading}
+//             className="bg-red-600 hover:bg-red-700 text-white"
+//           >
+//             Reject
+//           </Button>
+//           {/* <Button
+//           onClick={() =>
+//             handleCancel({
+//               requestId: requests.id,
+//               reviewerId: requests.pendingReviewerId || reviewerId || '',
+//             })
+//           }
+//           disabled={isApproveLoading || isCancelLoading}
+//           className="bg-gray-600 hover:bg-gray-700 text-white"
+//         >
+//           Cancel
+//         </Button> */}
+//         </div>
+//       </div>
+//     </Card>
+//   );
+// }

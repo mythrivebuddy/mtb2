@@ -19,4 +19,5 @@ export const ROUTE_TITLES: Record<string, string> = {
   "business-profile": "Business Profile",
   "refer-friend": "Refer a Friend",
   "my-profile": "My Profile",
-  };
+  "buddy-lens": "Buddy Lens",
+};

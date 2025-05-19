@@ -16,4 +16,5 @@ export const activityDisplayMap: Record<string, string> = {
   REFER_TO: "Referred To",
   MAGIC_BOX_REWARD: "Magic Box Reward",
   MAGIC_BOX_SHARED_REWARD: "Magic Box Shared Reward",
+  
 };
