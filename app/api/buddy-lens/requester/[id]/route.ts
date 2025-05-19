@@ -26,10 +26,40 @@ export async function DELETE(
       );
     }
 
-    // Delete the request from the database
-    const deletedRequest = await prisma.buddyLensRequest.delete({
-      where: { id },
-    });
+    // Check for reviews in APPROVED or SUBMITTED state and delete others in a transaction
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [existingReviews, _deleteReviews, deletedRequest] = await prisma
+      .$transaction([
+        prisma.buddyLensReview.findMany({
+          where: {
+            requestId: id,
+            status: { in: ["APPROVED", "SUBMITTED"] },
+          },
+        }),
+        prisma.buddyLensReview.deleteMany({
+          where: {
+            requestId: id,
+            status: { notIn: ["APPROVED", "SUBMITTED"] },
+          },
+        }),
+        prisma.buddyLensRequest.delete({
+          where: { id },
+        }),
+      ])
+      .catch((err) => {
+        throw err;
+      });
+
+    if (existingReviews.length > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot delete request: It has reviews in APPROVED or SUBMITTED state.",
+        },
+        { status: 400 }
+      );
+    }
 
     console.log("Request deleted successfully:", deletedRequest);
 
@@ -38,6 +68,7 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error: unknown) {
+    console.log("Error deleting request:", error);
     // Type guard for Prisma errors
     const isPrismaError = (
       err: unknown

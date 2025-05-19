@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, Send, Star, LinkIcon, FileQuestion, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { BuddyLensReviewStatus, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { BuddyLensReview } from "@/types/claim";
 
 // interface BuddyLensRequest {
@@ -54,9 +54,9 @@ type BuddyLensRequest = Prisma.BuddyLensRequestGetPayload<{
 //   answers: string[];
 // }
 
-type Review = Prisma.BuddyLensReviewGetPayload<{
-  include: { request: true; reviewer: true };
-}>;
+// type Review = Prisma.BuddyLensReviewGetPayload<{
+//   include: { request: true; reviewer: true };
+// }>;
 
 export default function BuddyLensReviewPage() {
   const { data: session } = useSession();
@@ -114,21 +114,21 @@ export default function BuddyLensReviewPage() {
   });
 
   // Fetch reviewed requests
-  const {
-    data: reviewedRequests = [],
-    isLoading: isReviewedRequestsLoading,
-    error: reviewedRequestsError,
-  } = useQuery({
-    queryKey: ["buddyLensReviewedRequests", reviewerId],
-    queryFn: async () => {
-      const response = await axios.get(`/api/buddy-lens/reviewer`, {
-        params: { reviewerId },
-      });
-      return response.data;
-    },
-    enabled: !!reviewerId,
-    refetchInterval: 10000,
-  });
+  // const {
+  //   data: reviewedRequests = [],
+  //   isLoading: isReviewedRequestsLoading,
+  //   error: reviewedRequestsError,
+  // } = useQuery({
+  //   queryKey: ["buddyLensReviewedRequests", reviewerId],
+  //   queryFn: async () => {
+  //     const response = await axios.get(`/api/buddy-lens/reviewer`, {
+  //       params: { reviewerId },
+  //     });
+  //     return response.data;
+  //   },
+  //   enabled: !!reviewerId,
+  //   refetchInterval: 10000,
+  // });
 
   // Fetch selected request based on requestId from URL
   const {
@@ -139,9 +139,7 @@ export default function BuddyLensReviewPage() {
     queryKey: ["buddyLensSelectedRequest", requestId, reviewerId],
     queryFn: async () => {
       if (!requestId) return null;
-      const response = await axios.get(
-        `/api/buddy-lens/approve?requestId=${requestId}&status=${BuddyLensReviewStatus.APPROVED}`
-      );
+      const response = await axios.get(`/api/buddy-lens/review/${requestId}`);
       if (
         response.data &&
         response.data.status === "APPROVED" &&
@@ -323,7 +321,7 @@ export default function BuddyLensReviewPage() {
   if (
     // requestsError ||  // ? IMP
     notificationsError ||
-    reviewedRequestsError ||
+    // reviewedRequestsError ||
     selectedRequestError
   ) {
     return (
@@ -332,7 +330,7 @@ export default function BuddyLensReviewPage() {
         {
           // requestsError?.message ||  // ? IMP
           notificationsError?.message ||
-            reviewedRequestsError?.message ||
+            // reviewedRequestsError?.message ||
             selectedRequestError?.message
         }
       </div>
@@ -347,7 +345,7 @@ export default function BuddyLensReviewPage() {
         {
           // isRequestsLoading ||
           isNotificationsLoading ||
-          isReviewedRequestsLoading ||
+          // isReviewedRequestsLoading ||
           isSelectedRequestLoading ? (
             <p>Loading...</p>
           ) : !selectedRequest ? (
@@ -488,7 +486,7 @@ export default function BuddyLensReviewPage() {
           )
         }
 
-        {!selectedRequest && (
+        {/* {!selectedRequest && (
           <div className="space-y-4 mt-6">
             <h3 className="text-xl font-medium">Reviewed Requests</h3>
             {isReviewedRequestsLoading ? (
@@ -502,15 +500,15 @@ export default function BuddyLensReviewPage() {
                     <div>
                       <p className="flex gap-1">
                         <strong>Reviewer Profile:</strong>{" "}
-                          <a
-                            href={`/profile/${review.reviewerId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 flex items-center gap-1 text-sm"
-                          >
-                            <LinkIcon className="w-3 h-3" />
-                            view profile
-                          </a>
+                        <a
+                          href={`/profile/${review.reviewerId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 flex items-center gap-1 text-sm"
+                        >
+                          <LinkIcon className="w-3 h-3" />
+                          view profile
+                        </a>
                       </p>
                       <p className="text-sm text-gray-600">
                         <span className="font-medium text-black">
@@ -555,7 +553,7 @@ export default function BuddyLensReviewPage() {
               ))
             )}
           </div>
-        )}
+        )} */}
       </Card>
     </div>
   );

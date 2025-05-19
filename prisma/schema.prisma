@@ -72,7 +72,7 @@
     CLAIMED
     COMPLETED 
     CANCELLED
-    PENDING // NOt in use
+    PENDING //! not in use
   }
 
   enum BuddyLensReviewStatus {
@@ -82,7 +82,6 @@
     SUBMITTED //when review submits the review afeter aprrove
     DRAFT //! not in use
     REPORTED //! not in use
-
   }
 
   enum NotificationType {

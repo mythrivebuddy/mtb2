@@ -224,6 +224,7 @@ export async function GET(req: NextRequest) {
         return errorResponse("Request not found", 404);
       }
 
+      console.log("single request", request);
       return NextResponse.json(request, { status: 200 });
     } else {
       const requests = await prisma.buddyLensRequest.findMany({
@@ -235,7 +236,14 @@ export async function GET(req: NextRequest) {
           NOT: {
             review: {
               some: {
-                status: BuddyLensReviewStatus.DISAPPROVED,
+                OR: [
+                  {
+                    status: BuddyLensReviewStatus.DISAPPROVED,
+                  },
+                  {
+                    reviewerId: UserId,
+                  },
+                ],
               },
             },
           },
@@ -255,6 +263,8 @@ export async function GET(req: NextRequest) {
           // transaction: true, //! deepak chnges
         },
       });
+      console.log("UserId", UserId);
+      console.log("Requests fetched: ", requests);
 
       return NextResponse.json(requests, { status: 200 });
     }

@@ -3,7 +3,7 @@ import React from "react";
 
 const PageLoader = () => {
     return (
-      <div className="pt-16 flex justify-center items-center">
+      <div className="py-16 flex justify-center items-center">
         <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
       </div>
     );

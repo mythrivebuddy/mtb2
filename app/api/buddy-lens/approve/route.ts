@@ -115,19 +115,20 @@ export async function GET(req: Request) {
         // reviewerId
       );
       // Fetch a single request by ID (existing logic)
-      const review = await prisma.buddyLensReview.findFirst({
+      const review = await prisma.buddyLensReview.findMany({
         where: {
           request: {
             id: requestId,
             // reviewerId: reviewerId!,
+            status: BuddyLensRequestStatus.OPEN,
           },
           status,
         },
         include: {
           request: {
             include: {
-              requester: { select: { id: true, name: true, email: true } },
-              reviewer: { select: { id: true, name: true, email: true } },
+              requester: { omit: { password: true } },
+              reviewer: { omit: { password: true } },
             },
           },
           reviewer: { omit: { password: true } },
@@ -136,19 +137,22 @@ export async function GET(req: Request) {
 
       console.log("review ------", review);
 
-      console.log(
-        "GET /api/buddy-lens/approve - Request:",
-        review ? review.request.id : "Not found"
-      );
-      if (!review || review.request.isDeleted) {
-        return errorResponse("Request not found", 404);
+      // console.log(
+      //   "GET /api/buddy-lens/approve - Request:",
+      //   review ? review.request.id : "Not found"
+      // );
+      if (!review || review.length === 0) {
+        return NextResponse.json(
+          { message: "Request not found" },
+          { status: 404 }
+        );
       }
-      console.log(
-        "review.request.requesterId",
-        review.request.requesterId,
-        "session.user.id ",
-        session.user.id
-      );
+      // console.log(
+      //   "review.request.requesterId",
+      //   review.request.requesterId,
+      //   "session.user.id ",
+      //   session.user.id
+      // );
       // if (
       //   review.request.requesterId !== session.user.id ||
       //   review.request.reviewerId !== session.user.id
@@ -178,7 +182,7 @@ export async function GET(req: Request) {
             status: BuddyLensRequestStatus.OPEN,
             isDeleted: false,
           },
-          status: BuddyLensReviewStatus.PENDING,
+          status,
         },
         include: {
           request: {
