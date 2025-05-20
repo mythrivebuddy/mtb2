@@ -187,7 +187,7 @@ export default function SpotlightCard() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="rounded-[32px] md:px-10 px-4 text-white relative overflow-hidden h-full"
+      className="rounded-[32px] md:px-10 px-4 text-white relative overflow-hidden h-full custom-phone-bg"
       style={{
         backgroundImage: `url('/landing-bg.svg')`, // Replace with your image URL or path
         backgroundSize: "100% 100%", // Adjusts image to cover the container
@@ -233,7 +233,7 @@ export default function SpotlightCard() {
         </div>
 
         <div
-          className=" rounded-2xl md:p-6 p-10 md:mt-[160px] mb-5"
+          className=" rounded-2xl  p-6 md:mt-[160px] mb-5"
           style={{
             backgroundImage: `url('/spotlight-bg.svg')`, // Replace with your image URL or path
             backgroundSize: "cover", // Adjusts image to cover the container
@@ -249,7 +249,7 @@ export default function SpotlightCard() {
           </p>
           <a
             href={
-              spotlight?.user?.userBusinessProfile?.[0]?.priorityContactLink ||
+              spotlight?.user?.userBusinessProfile?.[0]?.priorityContactLink || 
               "#"
             }
             target="_blank"
