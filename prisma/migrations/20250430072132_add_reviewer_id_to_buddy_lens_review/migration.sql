@@ -19,8 +19,8 @@
 -- the enum.
 
 
-ALTER TYPE "ActivityType" ADD VALUE 'BUDDY_LENS_REQUEST';
-ALTER TYPE "ActivityType" ADD VALUE 'BUDDY_LENS_REVIEW';
+-- ALTER TYPE "ActivityType" ADD VALUE 'BUDDY_LENS_REQUEST';
+-- ALTER TYPE "ActivityType" ADD VALUE 'BUDDY_LENS_REVIEW';
 
 -- AlterEnum
 ALTER TYPE "BuddyLensRequestStatus" ADD VALUE 'PENDING';
