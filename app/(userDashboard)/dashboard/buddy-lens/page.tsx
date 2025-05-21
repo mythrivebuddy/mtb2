@@ -41,8 +41,8 @@ export default function BuddyLensDashboard() {
           className="w-full"
         >
           <TabsList className="mb-4  grid w-full grid-cols-3">
-            <TabsTrigger value="my-requests">My Requests</TabsTrigger>
-            <TabsTrigger value="my-claims">My Claims</TabsTrigger>
+            <TabsTrigger value="my-requests">My Request(s)</TabsTrigger>
+            <TabsTrigger value="my-claims">My Claim(s)</TabsTrigger>
             <TabsTrigger value="available request">
               Available Request(s)
             </TabsTrigger>
