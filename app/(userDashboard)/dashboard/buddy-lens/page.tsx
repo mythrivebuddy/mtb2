@@ -44,7 +44,7 @@ export default function BuddyLensDashboard() {
             <TabsTrigger value="my-requests">My Requests</TabsTrigger>
             <TabsTrigger value="my-claims">My Claims</TabsTrigger>
             <TabsTrigger value="available request">
-              Available Request
+              Available Request(s)
             </TabsTrigger>
           </TabsList>
           <TabsContent value="my-requests">
