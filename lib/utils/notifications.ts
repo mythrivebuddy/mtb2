@@ -220,3 +220,186 @@ export async function createMagicBoxSharedNotification(
     { sharedByUserId, sharedByUserName, amount }
   );
 }
+
+// Returns notification data for BuddyLens claim
+export function getBuddyLensClaimedNotificationData(
+  userId: string,
+  reviewerName: string,
+  domain: string
+) {
+  return {
+    userId,
+    type: NotificationType.BUDDY_LENS_CLAIMED,
+    title: "BuddyLens Request Claimed",
+    message: `${reviewerName} claimed your BuddyLens request in ${domain}. Approve or reject.`,
+    metadata: { url: `/dashboard/buddy-lens/approve` },
+  };
+}
+
+// Returns notification data for BuddyLens approval
+export function getBuddyLensApprovedNotificationData(
+  userId: string,
+  domain: string,
+  requestId: string
+) {
+  return {
+    userId,
+    type: NotificationType.BUDDY_LENS_APPROVED,
+    title: "BuddyLens Claim Approved",
+    message: `Your claim for the BuddyLens request in ${domain} has been approved! Start reviewing now.`,
+    metadata: { url: `/dashboard/buddy-lens/reviewer?requestId=${requestId}` },
+  };
+}
+
+// Returns notification data for BuddyLens rejection
+export function getBuddyLensRejectedNotificationData(
+  userId: string,
+  domain: string
+) {
+  return {
+    userId,
+    type: NotificationType.BUDDY_LENS_REJECTED,
+    title: "BuddyLens Claim Rejected",
+    message: `Your claim for the BuddyLens request in ${domain} was rejected.`,
+    metadata: { url: `/dashboard/buddy-lens/reviewer` },
+  };
+}
+
+// Returns notification data for BuddyLens review completion
+export function getBuddyLensReviewedNotificationData(
+  userId: string,
+  domain: string,
+  jpAmount: number,
+  requestId: string
+) {
+  return {
+    userId,
+    type: NotificationType.BUDDY_LENS_REVIEWED,
+    title: "BuddyLens Review Completed",
+    message: `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Joy Pearls have been deducted.`,
+    metadata: { url: `/dashboard/buddy-lens/reviewer/${requestId}`, jpAmount },
+  };
+}
+
+// Returns notification data for BuddyLens reviewer completion
+export function getBuddyLensReviewerCompletedNotificationData(
+  userId: string,
+  domain: string,
+  jpAmount: number,
+  requestId: string
+) {
+  return {
+    userId,
+    type: NotificationType.BUDDY_LENS_COMPLETED,
+    title: "BuddyLens Review Reward",
+    message: `You have earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`,
+    metadata: { url: `/dashboard/buddy-lens/reviewer/${requestId}`, jpAmount },
+  };
+}
+
+// Returns notification data for BuddyLens cancellation
+export function getBuddyLensCancelledNotificationData(
+  userId: string,
+  domain: string
+) {
+  return {
+    userId,
+    type: NotificationType.BUDDY_LENS_REJECTED, // Using REJECTED type since it's similar
+    title: "BuddyLens Claim Cancelled",
+    message: `The claim for your BuddyLens request in ${domain} has been cancelled by the requester.`,
+    metadata: { url: `/dashboard/buddy-lens/reviewer` },
+  };
+}
+
+// Create BuddyLens claim notification
+export async function createBuddyLensClaimedNotification(
+  userId: string,
+  reviewerName: string,
+  domain: string,
+  requestId: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.BUDDY_LENS_CLAIMED,
+    "BuddyLens Request Claimed",
+    `${reviewerName} claimed your BuddyLens request in ${domain}. Approve or reject.`,
+    {
+      url: `/dashboard/buddy-lens/approve?requestId=${requestId}`,
+    }
+  );
+}
+
+// Create BuddyLens approval notification
+export async function createBuddyLensApprovedNotification(
+  userId: string,
+  domain: string,
+  requestId: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.BUDDY_LENS_APPROVED,
+    "BuddyLens Claim Approved",
+    `Your claim for the BuddyLens request in ${domain} has been approved! Start reviewing now.`,
+    { url: `/dashboard/buddy-lens/reviewer?requestId=${requestId}` }
+  );
+}
+
+// Create BuddyLens rejection notification
+export async function createBuddyLensRejectedNotification(
+  userId: string,
+  domain: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.BUDDY_LENS_REJECTED,
+    "BuddyLens Claim Rejected",
+    `Your claim for the BuddyLens request in ${domain} was rejected.`,
+    { url: `/dashboard/buddy-lens/reviewer` }
+  );
+}
+
+// Create BuddyLens review completion notification
+export async function createBuddyLensReviewedNotification(
+  userId: string,
+  domain: string,
+  jpAmount: number,
+  reviewId: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.BUDDY_LENS_REVIEWED,
+    "BuddyLens Review Completed",
+    `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Joy Pearls have been deducted.`,
+    { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount }
+  );
+}
+
+// Create BuddyLens reviewer completion notification
+export async function createBuddyLensReviewerCompletedNotification(
+  userId: string,
+  domain: string,
+  jpAmount: number,
+  // reviewId: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.BUDDY_LENS_COMPLETED,
+    "BuddyLens Review Reward",
+    `You have earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`,
+    // { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount }
+  );
+}
+
+// Create BuddyLens cancellation notification
+export async function createBuddyLensCancelledNotification(
+  userId: string,
+  domain: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.BUDDY_LENS_REJECTED, // Using REJECTED type since it's similar
+    "BuddyLens Claim Cancelled",
+    `The claim for your BuddyLens request in ${domain} has been cancelled by the requester.`,
+    { url: `/dashboard/buddy-lens/reviewer` }
+  );
+}

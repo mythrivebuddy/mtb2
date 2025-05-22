@@ -6,6 +6,7 @@ import { NotificationService } from "@/lib/notification-service";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { ActivityType, BuddyLensRequestStatus } from "@prisma/client";
+import { createBuddyLensReviewedNotification, createBuddyLensReviewerCompletedNotification, createBuddyLensClaimedNotification } from "@/lib/utils/notifications";
 
 // import sendEmail from '@/lib/email/sendEmail';
 
@@ -272,26 +273,26 @@ export async function POST(req: NextRequest) {
             },
           ],
         });
+        console.log("review ***************************** ", review);
 
         // Notify reviewer
-        const reviewerLink = `/dashboard/buddy-lens/reviewer/${request.id}`;
-        await NotificationService.createNotification(
+        await createBuddyLensReviewerCompletedNotification(
           reviewerId,
-          `You have earned ${jpCost} Joy Pearls for reviewing a BuddyLens request in ${request.domain}.`,
-          reviewerLink
+          request.domain,
+          jpCost,
         );
 
         // Notify requester
-        const requesterLink = `/dashboard/buddy-lens/reviewer/${request.id}`;
-        await NotificationService.createNotification(
+        await createBuddyLensReviewedNotification(
           request.requesterId,
-          `Your BuddyLens request in ${request.domain} has been reviewed. Joy Pearls have been deducted from your account.`,
-          requesterLink
+          request.domain,
+          jpCost,
+          review.id
         );
 
         // Email to requester
         if (request.requester.email) {
-          const reviewUrl = `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}${requesterLink}`;
+          const reviewUrl = `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/dashboard/buddy-lens/reviewer/${request.id}`;
           const subject = "Joy Pearls Deducted for Reviewed Request";
           const htmlContent = `
             <p>Hello ${request.requester.name || "User"},</p>
@@ -314,7 +315,7 @@ export async function POST(req: NextRequest) {
           const htmlContent = `
             <p>Hello ${request.reviewer.name || "Reviewer"},</p>
             <p>Thank you for reviewing the BuddyLens request in ${request.domain}. You have earned ${jpCost} Joy Pearls.</p>
-            <p><a href="${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}${requesterLink}">View Review</a></p>
+            <p><a href="${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/dashboard/buddy-lens/reviewer/${request.id}">View Review</a></p>
           `;
           await sendEmail(
             request.reviewer.email,
@@ -658,11 +659,12 @@ export async function PATCH(req: NextRequest) {
         },
       });
 
-      const notificationLink = `/dashboard/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`;
-      await NotificationService.createNotification(
+      // const notificationLink = `/dashboard/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`;
+      await createBuddyLensClaimedNotification(
         request.requesterId,
-        `${reviewer.name || "A reviewer"} claimed your BuddyLens request in ${request.domain}. Approve or reject.`,
-        notificationLink
+        reviewer.name || "A reviewer",
+        request.domain,
+        requestId
       );
 
       // Send email within transaction if email exists
