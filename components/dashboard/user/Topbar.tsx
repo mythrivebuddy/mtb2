@@ -20,7 +20,7 @@ import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
 import { formatJP } from "@/lib/utils/formatJP";
 import UserProfileDropdown from "./UserProfileDropDown";
-
+import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; //!added by aaisha
 
 const TopBarBadge = ({
   children,
@@ -101,7 +101,7 @@ export default function TopBar({ user }: { user?: UserType }) {
       const { data } = await axios.get<{ unreadCount: number }>(
         "/api/user/notifications/unread"
       );
-      
+
       return data.unreadCount;
     },
     enabled: !!user?.id,
@@ -167,6 +167,18 @@ export default function TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
 
+        {/* //! Streak added by aaisha */}
+        <div className="flex gap-3">
+          {/* <StreakDisplay /> */}
+
+          <TopBarBadge>
+              <div className="relative">
+                <StreakDisplay />
+               
+              </div>
+            </TopBarBadge>
+        </div>
+
         <div className="flex gap-3">
           <TopBarBadge>
             <Image
@@ -207,7 +219,7 @@ export default function TopBar({ user }: { user?: UserType }) {
               )}
             </div>
           </TopBarBadge>
-          <UserProfileDropdown 
+          <UserProfileDropdown
             userName={user?.name}
             profilePicture={localProfilePicture}
           />

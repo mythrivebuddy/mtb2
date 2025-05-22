@@ -103,6 +103,26 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.STREAK_7_DAYS,
+      jpAmount: 100,           // reward for 7-day streak
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.STREAK_21_DAYS,
+      jpAmount: 300,           // reward for 21-day streak
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.STREAK_45_DAYS,
+      jpAmount: 700,           // reward for 45-day streak
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.STREAK_90_DAYS,
+      jpAmount: 1500,          // reward for 90-day streak
+      transactionType: TransactionType.CREDIT,
+    },
   ];
 
   for (const activity of activities) {

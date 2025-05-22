@@ -13,6 +13,7 @@ import {
   prosperitySteps,
   ProsperityStepperMap,
 } from "@/lib/constants/applicationSteps";
+import PageSkeleton from "@/components/PageSkeleton";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -57,7 +58,9 @@ export default function DashboardPage() {
     userLoading ||
     prosperityLoading
   ) {
-    return <PageLoader />;
+    // return <PageLoader />;
+    return <PageSkeleton type="dashboard" />;
+
   }
 
   const currentSpotlight:
