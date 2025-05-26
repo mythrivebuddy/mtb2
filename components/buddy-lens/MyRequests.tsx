@@ -111,7 +111,7 @@ function MyRequestsCard({
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Award className="w-4 h-4 text-gray-500" />
                 <span className="font-medium">Reward:</span>
-                <span className="font-semibold text-jp-orange">
+                <span className="font-semibold text-jp-orange custom-txt">
                   {jpCost} JoyPearls
                 </span>
               </div>
@@ -266,8 +266,8 @@ export default function MyRequests({ userId }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between py-4 border-b border-gray-200 mb-4">
-        <p className="text-base font-normal text-gray-800">
+      <div className="md:flex items-center gap-8  md:justify-between py-4 border-b border-gray-200 mb-4">
+        <p className="text-base font-normal text-gray-800 my-5">
           List of all profile audit requests you have submitted
         </p>
         <Link href="/dashboard/buddy-lens/requester">
@@ -281,7 +281,9 @@ export default function MyRequests({ userId }: Props) {
       {isLoading ? (
         <PageLoader />
       ) : myRequests.length === 0 ? (
+
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200 flex items-center flex-col">
+
           <p className="text-gray-600 mb-4">No requests created yet.</p>
           <Link href="/dashboard/buddy-lens/requester">
             <Button className="bg-jp-orange hover:bg-jp-orange/90 text-white flex items-center gap-1.5">
