@@ -149,7 +149,7 @@
   /* background-color: #FFF; */
 }
 .text-back {
-  transform: rotateY(180deg);
+  transform:h-10 items-center justify-center rounded-md bg-muted p-1 text-muted rotateY(180deg);
 }
 
 @media screen and (max-width: 995px) {
@@ -157,6 +157,21 @@
     font-size: 10vh;
   }
 }
+
+
+@media screen and (max-width: 767px){
+  .custom-responsive{
+    display: flex !important;
+    flex-wrap: wrap !important;
+  
+
+  }
+
+  .custom-txt{
+    font-size: 12px;
+  }
+}
+
 
 .custom-scroll::-webkit-scrollbar {
   display: none;

@@ -207,7 +207,7 @@ export default function AvailableRequest({ userId }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between py-4 border-b border-gray-200 mb-4">
+      <div className="flex gap-5 items-center md:justify-between py-4 border-b border-gray-200 mb-4 custom-responsive">
         <p className="text-base font-normal text-gray-800">
           List of all available profile audit requests in the system
         </p>
