@@ -34,7 +34,7 @@ export default function BlogEditor() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="md:container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">
         {isNew ? "Create New Blog" : "Edit Blog"}
       </h1>
