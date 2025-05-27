@@ -8,7 +8,6 @@ import { format } from "date-fns";
 import { Loader2, Info, X } from "lucide-react";
 import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import PageSkeleton from "../PageSkeleton";
 

@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import PageLoader from "@/components/PageLoader";
 import { Activity } from "@prisma/client";
 import { UpdateActivityJPForm } from "@/components/adminDashboard/UpdateActivityJPForm";
 import { MagicBoxSettingsForm } from "@/components/adminDashboard/MagicBoxSettingsForm";

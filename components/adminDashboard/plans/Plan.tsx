@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Plan } from "@prisma/client";
 import { toast } from "sonner";
-import PageLoader from "@/components/PageLoader";
 import {
   Table,
   TableBody,
