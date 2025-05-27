@@ -1,7 +1,7 @@
 import React from "react";
 import { Heart, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { Item, WishlistItem } from "@/types/store";
+import { Item, WishlistItem } from "@/types/client/store";
 import { useAddToCartMutation, useRemoveFromWishlistMutation } from "@/hooks/useAddToCart";
 
 interface WishlistSectionProps {

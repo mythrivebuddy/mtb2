@@ -75,4 +75,5 @@ export interface Category {
 export interface WishlistItem {
   id: string;
   itemId: string;
+  item: Item;
 }

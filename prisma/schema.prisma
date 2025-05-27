@@ -39,6 +39,18 @@ enum ActivityType {
   BUDDY_LENS_REQUEST
   BUDDY_LENS_REVIEW
   ALIGNED_ACTION
+  MIRACLE_STREAK_REWARD_7_DAYS
+  MIRACLE_STREAK_REWARD_21_DAYS
+  MIRACLE_STREAK_REWARD_45_DAYS
+  MIRACLE_STREAK_REWARD_90_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_7_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_21_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_45_DAYS
+  PROGRESS_VAULT_STREAK_REWARD_90_DAYS
+  STREAK_7_DAYS
+  STREAK_21_DAYS
+  STREAK_45_DAYS
+  STREAK_90_DAYS
 }
 
 enum TransactionType {
@@ -102,6 +114,11 @@ enum NotificationType {
 enum BreathWorkType {
   OM
   VOOO
+}
+
+enum StreakType {
+  MIRACLE_LOG
+  PROGRESS_VAULT
 }
 
 model User {
@@ -177,6 +194,10 @@ model User {
   alignedActions AlignedAction[]
   // Relation to the new UserProfile model
   bio            String?
+
+  streak        Streak[]
+  streakHistory StreakHistory[]
+  userStreak    UserStreak? // added for user streak 
 
   @@index([name])
 }
@@ -671,3 +692,41 @@ model AlignedAction {
 
 //   @@index([userId])
 // }
+
+model Streak {
+  id                     String     @id @default(cuid())
+  userId                 String
+  user                   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                   StreakType
+  miracle_log_count      Int        @default(0)
+  progress_vault_count   Int        @default(0)
+  miracle_log_last_at    DateTime?
+  progress_vault_last_at DateTime?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+
+  @@unique([userId, type])
+}
+
+model StreakHistory {
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      StreakType
+  count     Int
+  date      DateTime   @default(now())
+  createdAt DateTime   @default(now())
+
+  @@index([userId, type])
+}
+
+model UserStreak {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  currentStreak Int      @default(0)
+  lastActiveDay DateTime // Tracks last day with any activity
+  loginCount    Int      @default(0) // Tracks explicit logins
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

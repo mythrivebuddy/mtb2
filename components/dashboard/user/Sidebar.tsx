@@ -10,7 +10,7 @@ import {
   HelpCircle,
   Phone,
   Sparkles,
-    ShoppingCartIcon,
+  ShoppingCartIcon,
   Menu,
   WandSparklesIcon,
   LucideSignalHigh,
@@ -25,23 +25,23 @@ import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
+
 // Reusable navigation item component
 type NavItemProps = {
   href?: string;
   icon: React.ReactNode;
   label: string;
-  badge?: string | number;
   onLinkClick?: () => void; // Add prop for handling link click
 };
-const NavItem = ({ href, icon, label, badge, onLinkClick }: NavItemProps) => {
+const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
   const content = (
     <>
       <div className="w-8">{icon}</div>
-      <span className="font-normal text-lg">{label}</span>
-      {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
+      <span className="font-normal text-[17px]">{label}</span>
+      
     </>
   );
 
@@ -91,6 +91,8 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 const Sidebar = ({ user }: { user?: UserType }) => {
   const [isOpen, setIsOpen] = useState(false);
   // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
+
+  
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -157,19 +159,19 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   href="/"
                   icon={<Home size={20} />}
                   label="Home"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  onLinkClick={toggleSidebar}
                 />
                 <NavItem
                   href="/dashboard"
                   icon={<LayoutDashboard size={20} />}
                   label="Dashboard"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  onLinkClick={toggleSidebar}
                 />
                 <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  onLinkClick={toggleSidebar}
                 />
               </NavSection>
               <NavSection title="Features">
@@ -177,8 +179,9 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
                   label="Miracle Log"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  onLinkClick={toggleSidebar}
                 />
+
                 <NavItem
                   href="/dashboard/progress-vault"
                   icon={<LucideSignalHigh size={20} />}

@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import PageLoader from "@/components/PageLoader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { BuddyLensReview } from "@/types/client/budg-lens";
+import PageSkeleton from "@/components/PageSkeleton";
 
 export default function ReviewPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,7 +29,7 @@ export default function ReviewPage() {
     enabled: !!id,
   });
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading)     return <PageSkeleton type="reviewer" />;
   if (error || !data) return <p>Review not found.</p>;
 
   return (
@@ -134,7 +134,7 @@ export default function ReviewPage() {
               )}
             </div>
           </div>
-        </CardContent>
+        </CardContent> 
       </Card>
     </div>
   );

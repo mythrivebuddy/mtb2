@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
@@ -12,58 +12,16 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, Send, Star, LinkIcon, FileQuestion, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Prisma } from "@prisma/client";
-import { BuddyLensReview } from "@/types/client/budg-lens";
+import { BuddyLensRequest, BuddyLensReview } from "@/types/client/budg-lens";
 
-// interface BuddyLensRequest {
-//   id: string;
-//   feedbackType: string;
-//   domain: string;
-//   tier: string;
-//   jpCost: number;
-//   status: string;
-//   socialMediaUrl: string;
-//   requesterId: string;
-//   reviewerId?: string;
-//   pendingReviewerId?: string;
-//   isDeleted: boolean;
-//   questions: string[];
-//   reviewerName: string;
-//   expiresAt?: string; // Add expiresAt field
-// }
 
-type BuddyLensRequest = Prisma.BuddyLensRequestGetPayload<{
-  include: { reviewer: true };
-}> & {
-  feedbackType: string;
-  pendingReviewerId?: string; // Add pendingReviewerId property
-};
-
-// interface Review {
-//   id: string;
-//   name: string;
-//   requestId: string;
-//   reviewerId: string;
-//   request: {
-//     domain: string;
-//     name: string;
-//   };
-//   feedback: string;
-//   rating: number;
-//   reviewText: string;
-//   answers: string[];
-// }
-
-// type Review = Prisma.BuddyLensReviewGetPayload<{
-//   include: { request: true; reviewer: true };
-// }>;
-
-export default function BuddyLensReviewPage() {
+const ReviewerForm = () => {
   const { data: session } = useSession();
   const reviewerId = session?.user?.id;
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const router = useRouter();
 
   // Local UI state
   const [answers, setAnswers] = useState<string[]>([]);
@@ -73,32 +31,9 @@ export default function BuddyLensReviewPage() {
   const [ratingError, setRatingError] = useState<string>("");
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [isExpired, setIsExpired] = useState(false);
-  const router = useRouter();
-
-  // Fetch requests
-  // ? IMP
-  // const {
-  //   // data: requests = [],
-  //   isLoading: isRequestsLoading,
-  //   error: requestsError,
-  // } = useQuery({
-  //   queryKey: ["buddyLensRequests", reviewerId],
-  //   queryFn: async () => {
-  //     const response = await axios.get(`/api/buddy-lens/requester`);
-  //     return response.data.filter(
-  //       (req: BuddyLensRequest) =>
-  //         ["OPEN", "PENDING", "CLAIMED"].includes(req.status) &&
-  //         !req.isDeleted &&
-  //         req.requesterId !== reviewerId
-  //     );
-  //   },
-  //   enabled: !!reviewerId,
-  //   // refetchInterval: 10000, // Poll every 10 seconds
-  // });
 
   // Fetch notifications
   const {
-    // data: notifications = [],
     isLoading: isNotificationsLoading,
     error: notificationsError,
   } = useQuery({
@@ -112,23 +47,6 @@ export default function BuddyLensReviewPage() {
     enabled: !!reviewerId,
     refetchInterval: 10000,
   });
-
-  // Fetch reviewed requests
-  // const {
-  //   data: reviewedRequests = [],
-  //   isLoading: isReviewedRequestsLoading,
-  //   error: reviewedRequestsError,
-  // } = useQuery({
-  //   queryKey: ["buddyLensReviewedRequests", reviewerId],
-  //   queryFn: async () => {
-  //     const response = await axios.get(`/api/buddy-lens/reviewer`, {
-  //       params: { reviewerId },
-  //     });
-  //     return response.data;
-  //   },
-  //   enabled: !!reviewerId,
-  //   refetchInterval: 10000,
-  // });
 
   // Fetch selected request based on requestId from URL
   const {
@@ -209,8 +127,6 @@ export default function BuddyLensReviewPage() {
     }
   }, [selectedRequest]);
 
-  // Function to update timer
-
   // Format time remaining as MM:SS
   const formatTimeRemaining = () => {
     if (timeRemaining === null) return "--:--";
@@ -218,35 +134,6 @@ export default function BuddyLensReviewPage() {
     const seconds = timeRemaining % 60;
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
-
-  // Mutation for claiming a request
-  // ? IMP
-  // const claimRequestMutation = useMutation({
-  //   mutationFn: async (requestId: string) => {
-  //     if (!reviewerId) {
-  //       throw new Error("User ID not found");
-  //     }
-  //     await axios.patch(`/api/buddy-lens/reviewer`, {
-  //       requestId,
-  //       reviewerId,
-  //     });
-  //   },
-  //   onSuccess: (_, requestId) => {
-  //     toast.success("Claim request submitted, awaiting approval");
-  //     queryClient.setQueryData(
-  //       ["buddyLensRequests", reviewerId],
-  //       (old: BuddyLensRequest[] | undefined) =>
-  //         old?.map((req) =>
-  //           req.id === requestId
-  //             ? { ...req, status: "PENDING", pendingReviewerId: reviewerId }
-  //             : req
-  //         )
-  //     );
-  //   },
-  //   onError: (error) => {
-  //     toast.error(error.message || "Failed to claim request");
-  //   },
-  // });
 
   // Mutation for submitting a review
   const submitReviewMutation = useMutation({
@@ -318,21 +205,10 @@ export default function BuddyLensReviewPage() {
     return <div>Please log in to view requests.</div>;
   }
 
-  if (
-    // requestsError ||  // ? IMP
-    notificationsError ||
-    // reviewedRequestsError ||
-    selectedRequestError
-  ) {
+  if (notificationsError || selectedRequestError) {
     return (
       <div className="text-center p-8 text-red-600">
-        Error:{" "}
-        {
-          // requestsError?.message ||  // ? IMP
-          notificationsError?.message ||
-            // reviewedRequestsError?.message ||
-            selectedRequestError?.message
-        }
+        Error: {notificationsError?.message || selectedRequestError?.message}
       </div>
     );
   }
@@ -342,273 +218,163 @@ export default function BuddyLensReviewPage() {
       <Card className="rounded-2xl shadow-lg p-6 space-y-6">
         <h2 className="text-3xl font-semibold text-center">👀 Review Page</h2>
 
-        {
-          // isRequestsLoading ||
-          isNotificationsLoading ||
-          // isReviewedRequestsLoading ||
-          isSelectedRequestLoading ? (
-            <p>Loading...</p>
-          ) : !selectedRequest ? (
-            <></>
-          ) : (
-            <div className="space-y-6">
-              {/* <h3 className="text-xl font-medium">
-              Review: {selectedRequest.request.feedbackType}
-            </h3> */}
-
-              {/* Timer Section */}
-              <div className="flex items-center justify-between px-4 py-2 bg-gray-100 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium">Time Remaining:</span>
-                </div>
-                <div
-                  className={`font-mono font-bold text-lg ${isExpired ? "text-red-600" : timeRemaining && timeRemaining < 60 ? "text-orange-600" : "text-blue-600"}`}
-                >
-                  {formatTimeRemaining()}
-                </div>
+        {isNotificationsLoading || isSelectedRequestLoading ? (
+          <p>Loading...</p>
+        ) : !selectedRequest ? (
+          <></>
+        ) : (
+          <div className="space-y-6">
+            {/* Timer Section */}
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-100 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <span className="font-medium">Time Remaining:</span>
               </div>
-
-              {isExpired && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                  <p className="font-bold">Time Expired!</p>
-                  <p>
-                    You can no longer submit this review. Please claim a new
-                    request.
-                  </p>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <LinkIcon className="w-4 h-4" />
-                  Social Media URL
-                </label>
-                <a
-                  href={selectedRequest.request.socialMediaUrl}
-                  target="_blank"
-                  className="text-blue-600"
-                >
-                  {selectedRequest.request.socialMediaUrl}
-                </a>
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <FileQuestion className="w-4 h-4" />
-                  Answer Questions
-                </label>
-                {selectedRequest?.request?.questions?.map(
-                  (q: string, index: number) => (
-                    <div key={index} className="space-y-1">
-                      <p className="text-sm">{q}</p>
-                      <Textarea
-                        placeholder={`Answer ${index + 1}`}
-                        value={answers[index] || ""}
-                        onChange={(e) => {
-                          const updated = [...answers];
-                          updated[index] = e.target.value;
-                          setAnswers(updated);
-                        }}
-                        disabled={isExpired}
-                      />
-                    </div>
-                  )
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Eye className="w-4 h-4" />
-                  Review Text
-                </label>
-                <Textarea
-                  placeholder="Write your review here"
-                  value={reviewText}
-                  onChange={(e) => setReviewText(e.target.value)}
-                  disabled={isExpired}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Star className="w-4 h-4" />
-                  Rating (1-5)
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={5}
-                  value={rating || ""}
-                  onChange={(e) => {
-                    const newRating = Number(e.target.value);
-                    if (newRating > 5) {
-                      setRatingError("Rating cannot be greater than 5!");
-                    } else if (newRating >= 1 && newRating <= 5) {
-                      setRating(newRating);
-                      setRatingError("");
-                    } else {
-                      setRatingError("Rating must be between 1 and 5.");
-                    }
-                  }}
-                  disabled={isExpired}
-                />
-                {ratingError && (
-                  <p className="text-red-500 text-sm">{ratingError}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <Send className="w-4 h-4" />
-                  Additional Feedback
-                </label>
-                <Textarea
-                  placeholder="Optional feedback"
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  disabled={isExpired}
-                />
-              </div>
-
-              <Button
-                onClick={() => submitReviewMutation.mutate()}
-                disabled={submitReviewMutation.isPending || isExpired}
-                className={`w-full text-white ${isExpired ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"}`}
+              <div
+                className={`font-mono font-bold text-lg ${
+                  isExpired
+                    ? "text-red-600"
+                    : timeRemaining && timeRemaining < 60
+                    ? "text-orange-600"
+                    : "text-blue-600"
+                }`}
               >
-                {submitReviewMutation.isPending
-                  ? "Submitting..."
-                  : isExpired
-                    ? "Time Expired"
-                    : "Submit Review"}
-              </Button>
+                {formatTimeRemaining()}
+              </div>
             </div>
-          )
-        }
 
-        {/* {!selectedRequest && (
-          <div className="space-y-4 mt-6">
-            <h3 className="text-xl font-medium">Reviewed Requests</h3>
-            {isReviewedRequestsLoading ? (
-              <p>Loading reviewed requests...</p>
-            ) : reviewedRequests.length === 0 ? (
-              <p>No reviewed requests available.</p>
-            ) : (
-              reviewedRequests.map((review: Review) => (
-                <Card key={review.id} className="p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="flex gap-1">
-                        <strong>Reviewer Profile:</strong>{" "}
-                        <a
-                          href={`/profile/${review.reviewerId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 flex items-center gap-1 text-sm"
-                        >
-                          <LinkIcon className="w-3 h-3" />
-                          view profile
-                        </a>
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-black">
-                          Reviewer Name:
-                        </span>{" "}
-                        {review.reviewer.name}
-                      </p>
-
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-black">
-                          Request Domain:
-                        </span>{" "}
-                        {review.request.domain}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-black">
-                          Feedback:
-                        </span>{" "}
-                        {review.feedback}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-black">Rating:</span>{" "}
-                        {review.rating}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-black">
-                          Review Text:
-                        </span>{" "}
-                        {review.reviewText}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-black">Answers:</span>
-                      </p>
-                      <ul className="list-disc pl-6 text-sm text-gray-600">
-                        {review.answers.map((answer: string, index: number) => (
-                          <li key={index}>{answer}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </Card>
-              ))
+            {isExpired && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <p className="font-bold">Time Expired!</p>
+                <p>
+                  You can no longer submit this review. Please claim a new
+                  request.
+                </p>
+              </div>
             )}
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <LinkIcon className="w-4 h-4" />
+                Social Media URL
+              </label>
+              <a
+                href={selectedRequest.request.socialMediaUrl}
+                target="_blank"
+                className="text-blue-600"
+              >
+                {selectedRequest.request.socialMediaUrl}
+              </a>
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <FileQuestion className="w-4 h-4" />
+                Answer Questions
+              </label>
+              {selectedRequest?.request?.questions?.map(
+                (q: string, index: number) => (
+                  <div key={index} className="space-y-1">
+                    <p className="text-sm">{q}</p>
+                    <Textarea
+                      placeholder={`Answer ${index + 1}`}
+                      value={answers[index] || ""}
+                      onChange={(e) => {
+                        const updated = [...answers];
+                        updated[index] = e.target.value;
+                        setAnswers(updated);
+                      }}
+                      disabled={isExpired}
+                    />
+                  </div>
+                )
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Eye className="w-4 h-4" />
+                Review Text
+              </label>
+              <Textarea
+                placeholder="Write your review here"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                disabled={isExpired}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Star className="w-4 h-4" />
+                Rating (1-5)
+              </label>
+              <Input
+                type="number"
+                min={1}
+                max={5}
+                value={rating || ""}
+                onChange={(e) => {
+                  const newRating = Number(e.target.value);
+                  if (newRating > 5) {
+                    setRatingError("Rating cannot be greater than 5!");
+                  } else if (newRating >= 1 && newRating <= 5) {
+                    setRating(newRating);
+                    setRatingError("");
+                  } else {
+                    setRatingError("Rating must be between 1 and 5.");
+                  }
+                }}
+                disabled={isExpired}
+              />
+              {ratingError && (
+                <p className="text-red-500 text-sm">{ratingError}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Send className="w-4 h-4" />
+                Additional Feedback
+              </label>
+              <Textarea
+                placeholder="Optional feedback"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                disabled={isExpired}
+              />
+            </div>
+
+            <Button
+              onClick={() => submitReviewMutation.mutate()}
+              disabled={submitReviewMutation.isPending || isExpired}
+              className={`w-full text-white ${
+                isExpired
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {submitReviewMutation.isPending
+                ? "Submitting..."
+                : isExpired
+                ? "Time Expired"
+                : "Submit Review"}
+            </Button>
           </div>
-        )} */}
+        )}
       </Card>
     </div>
   );
-}
+};
 
-// <div className="space-y-4">
-//   <h3 className="text-xl font-medium">Open Requests</h3>
-//   {requests.length === 0 && <p>No open requests available.</p>}
-//   {requests.map((req: BuddyLensRequest) => (
-//     <Card key={req.id} className="p-4">
-//       <div className="flex justify-between items-center">
-//         <div>
-//           <p className="font-medium">{req.feedbackType}</p>
-//           <p className="text-sm text-gray-600">{req.domain}</p>
-//           <p className="text-sm text-gray-600">Tier: {req.tier}</p>
-//           <p className="text-sm text-gray-600">
-//             Reward: {req.jpCost} JoyPearls
-//           </p>
-//           <p className="text-sm text-gray-600">
-//             <Clock className="inline-block w-4 h-4 mr-1" />
-//             Time Limit:{" "}
-//             {req.tier === "PREMIUM"
-//               ? "10 minutes"
-//               : req.tier === "ENTERPRISE"
-//                 ? "15 minutes"
-//                 : "5 minutes"}
-//           </p>
-//           <a
-//             href={req.socialMediaUrl}
-//             target="_blank"
-//             className="text-blue-600 flex items-center gap-1"
-//           >
-//             <LinkIcon className="w-4 h-4" /> View Content
-//           </a>
-//         </div>
-//         <Button
-//           onClick={() => claimRequestMutation.mutate(req.id)}
-//           disabled={
-//             req.status === "PENDING" ||
-//             req.status === "CLAIMED" ||
-//             claimRequestMutation.isPending
-//           }
-//           className={
-//             req.status === "PENDING" || req.status === "CLAIMED"
-//               ? "bg-gray-400 cursor-not-allowed"
-//               : "bg-blue-600 hover:bg-blue-700"
-//           }
-//         >
-//           {req.status === "PENDING" && req.pendingReviewerId === reviewerId
-//             ? "Pending Approval"
-//             : req.status === "CLAIMED"
-//               ? "Claimed"
-//               : "Claim Request"}
-//         </Button>
-//       </div>
-//     </Card>
-//   ))}
-// </div>;
+const BuddyLensReviewPage = () => {
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center">
+      <Suspense fallback={<div>Loading...</div>}>
+        <ReviewerForm />
+      </Suspense>
+    </div>
+  );
+};
+
+export default BuddyLensReviewPage;

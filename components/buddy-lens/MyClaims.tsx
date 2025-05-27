@@ -9,8 +9,8 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BuddyLensRequest } from "@/types/client/budg-lens";
-import PageLoader from "../PageLoader";
 import { useSession } from "next-auth/react";
+import PageSkeleton from "../PageSkeleton";
 
 interface Props {
   userId: string;
@@ -163,14 +163,13 @@ export default function MyClaims({ userId }: Props) {
       </div>
 
       {isLoading ? (
-        <PageLoader />
-      ) : claims.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-gray-600">
-            You haven&apos;t claimed any requests yet.
-          </p>
-        </div>
-      ) : (
+        <PageSkeleton type="claims" />) : claims.length === 0 ? (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-gray-600">
+              You haven&apos;t claimed any requests yet.
+            </p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 gap-6">
           {claims.map((req: BuddyLensRequest) => (
             <ClaimCard key={req.id} req={req} />

@@ -1,8 +1,8 @@
 import React from "react";
 import Image from "next/image";
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
-import { BusinessProfile } from "@/app/(userDashboard)/dashboard/business-profile/page";
 import SocialHandlesCard from "./SocialHandlesCard";
+import { BusinessProfile } from "../business-profile/BusinessProfile";
 
 interface ProfileEditProps {
   onCancel: () => void;
