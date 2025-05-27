@@ -13,12 +13,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
 import { Prisma, ProsperityDropStatus } from "@prisma/client";
-import PageLoader from "@/components/PageLoader";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import PageSkeleton from "@/components/PageSkeleton";
 
 export default function ProsperityPage() {
   const router = useRouter();
@@ -57,7 +57,9 @@ export default function ProsperityPage() {
     },
   });
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading)
+    return <PageSkeleton type="prosperity-drop" />;
+
 
   const getStatusBadgeColor = (status: ProsperityDropStatus) => {
     const colors = {

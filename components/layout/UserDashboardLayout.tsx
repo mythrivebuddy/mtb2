@@ -6,12 +6,10 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
-import PageLoader from "../PageLoader";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
     data: user,
-    isLoading,
     error,
   } = useQuery<User>({
     queryKey: ["userInfo"],
@@ -22,9 +20,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     retry: false,
   });
 
-  if (isLoading) {
-    return <PageLoader />;
-  }
+  // if (isLoading) {
+  //   return <PageLoader />;
+  // }
 
   if (error) {
     console.error("Failed to fetch user data:", error);

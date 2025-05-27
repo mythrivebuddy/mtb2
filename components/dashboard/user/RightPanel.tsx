@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { format } from "date-fns";
-
+import PageSkeleton from "@/components/PageSkeleton";
 type Buddy = {
   id: number;
   name: string;
@@ -126,7 +126,9 @@ const RightPanel = ({ className }: { className?: string }) => {
           </Link>
         </div>
         {isLoading ? (
-          <p className="break-words">Loading history...</p>
+              <PageSkeleton type="transaction-history" />
+
+
         ) : (
           <div className="space-y-3">
             {historyItems.map((item) => (

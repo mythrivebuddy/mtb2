@@ -19,6 +19,7 @@ import {
   DEFAULT_LEADERBOARD_PAGE,
   DEFAULT_LEADERBOARD_PAGE_LIMIT,
 } from "@/lib/constant";
+import PageSkeleton from "../PageSkeleton";
 
 type SortKey = "jpEarned" | "jpSpent" | "jpBalance" | "jpTransaction";
 type SortSelectProps = {
@@ -76,25 +77,27 @@ const LeaderboardContent = () => {
   };
 
   if (isLoading) {
-    return (
-      <>
-        <SortSelect
-          orderBy={orderBy}
-          // page={page}
-          // limit={limit}
-          onValueChange={handleSort}
-        />
-        <Card className="p-4">
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="w-full h-16" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </>
-    );
+    return <PageSkeleton type="leaderboard" />;
+    
+    // return (
+    //   <>
+    //     <SortSelect
+    //       orderBy={orderBy}
+    //       // page={page}
+    //       // limit={limit}
+    //       onValueChange={handleSort}
+    //     />
+    //     <Card className="p-4">
+    //       <CardContent>
+    //         <div className="space-y-4">
+    //           {[1, 2, 3, 4].map((i) => (
+    //             <Skeleton key={i} className="w-full h-16" />
+    //           ))}
+    //         </div>
+    //       </CardContent>
+    //     </Card>
+    //   </>
+    // );
   }
 
   const { users = [] } = data || {};

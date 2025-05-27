@@ -19,8 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ConfirmAction from "@/components/ConfirmAction";
 import type { BuddyLensRequest } from "@/types/claim";
-import PageLoader from "../PageLoader";
-
+import PageSkeleton from "../PageSkeleton";
 interface Props {
   userId: string;
 }
@@ -279,7 +278,7 @@ export default function MyRequests({ userId }: Props) {
       </div>
 
       {isLoading ? (
-        <PageLoader />
+        <PageSkeleton type="my-requests" />
       ) : myRequests.length === 0 ? (
 
         <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200 flex items-center flex-col">

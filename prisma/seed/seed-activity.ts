@@ -76,13 +76,11 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
-
     {
       activity: ActivityType.FEATURE_REQUEST,
       jpAmount: 100,
       transactionType: TransactionType.CREDIT,
     },
-
     {
       activity: ActivityType.BUG_REPORT,
       jpAmount: 150,
@@ -104,6 +102,25 @@ async function main() {
       transactionType: TransactionType.CREDIT,
     },
     {
+      activity: ActivityType.STREAK_7_DAYS,
+      jpAmount: 100,           // reward for 7-day streak
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.STREAK_21_DAYS,
+      jpAmount: 300,           // reward for 21-day streak
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.STREAK_45_DAYS,
+      jpAmount: 700,           // reward for 45-day streak
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.STREAK_90_DAYS,
+      jpAmount: 1500,          // reward for 90-day streak
+      transactionType: TransactionType.CREDIT,
+    }, {
       activity: ActivityType.MIRACLE_STREAK_REWARD_7_DAYS,
       jpAmount: 750,
       transactionType: TransactionType.CREDIT,

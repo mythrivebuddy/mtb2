@@ -4,12 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SpotlightStatus } from "@prisma/client";
 import { format } from "date-fns";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import PageSkeleton from "@/components/PageSkeleton";
 import {
   Table,
   TableHeader,
@@ -117,12 +117,8 @@ export default function SpotlightApplication() {
   };
 
   if (isLoading) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <Skeleton className="h-32 mb-6" />
-        <Skeleton className="h-64" />
-      </div>
-    );
+    return <PageSkeleton type="spotlight" />;
+
   }
 
   const currentSpotlight = applications?.spotlightApplications?.find(

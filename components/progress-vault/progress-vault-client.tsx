@@ -38,6 +38,7 @@ import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { startOfDay, endOfDay } from "date-fns";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
+import PageSkeleton from "../PageSkeleton";
 
 interface ProgressVault {
   id: string;
@@ -96,12 +97,12 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
       const today = new Date();
       const startOfToday = startOfDay(today);
       const endOfToday = endOfDay(today);
-      
+
       const todayLogs = logs.filter((log: ProgressVault) => {
         const logDate = new Date(log.createdAt);
         return logDate >= startOfToday && logDate <= endOfToday;
       });
-      
+
       setTodayEntriesCount(todayLogs.length);
     }
   }, [logs]);
@@ -213,7 +214,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
                 </p>
               </div>
             )}
-            
+
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="relative">
                 <Input
@@ -228,8 +229,8 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
                 )}
               </div>
               <div className="flex gap-2 mt-8">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isSubmitting || createMutation.isPending || todayEntriesCount >= 3}
                 >
                   {createMutation.isPending && (
@@ -243,10 +244,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
         </Card>
 
         {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading your progress vault...</span>
-          </div>
+          <PageSkeleton type="Progress-vault" />
         ) : logs.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">

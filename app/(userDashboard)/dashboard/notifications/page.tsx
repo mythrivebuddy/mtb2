@@ -3,7 +3,7 @@ import NotificationsPage from '@/components/notifications/Notification'
 function page() {
   return (
     <div>
-      <NotificationsPage/>
+      <NotificationsPage />
     </div>
   )
 }
