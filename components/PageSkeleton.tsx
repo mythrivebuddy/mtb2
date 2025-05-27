@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 
 type PageSkeletonProps = {
-  type: "dashboard" | "leaderboard" | "align-action" | "my-requests" | "available-requests" | "approve" | "claims" | "reviewer" | "miracle-log" | "my-profile" | "notification" | "Progress-vault" | "refer-friend" | "subscription" | " user-profile" | "email-templates" | "prosperity-drop" | "faq" | "update-jp" | " manage-plans" | "manage-store-product" | "transaction-history";
+  type: "dashboard" | "leaderboard" | "align-action" | "my-requests" | "available-requests" | "approve" | "claims" | "reviewer" | "miracle-log" | "my-profile" | "notification" | "Progress-vault" | "refer-friend" | "subscription" | " user-profile" | "email-templates" | "prosperity-drop" | "faq" | "update-jp" | " manage-plans" | "manage-store-product" | "transaction-history" | "buddylens" | "spotlight";
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -816,6 +816,45 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
     )
   }
 
+  // for buddylens
+  if (type === "buddylens") {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="rounded-2xl shadow-lg p-6 space-y-6 animate-pulse">
+          {/* Tabs */}
+          <div className="mb-4 grid w-full grid-cols-3 gap-4">
+            <div className="h-10 bg-gray-300 rounded-full" />
+            <div className="h-10 bg-gray-300 rounded-full" />
+            <div className="h-10 bg-gray-300 rounded-full" />
+          </div>
+
+          {/* Simulated Tab Content — repeatable card-like blocks */}
+          <div className="space-y-6">
+            {[...Array(3)].map((_, index) => (
+              <div
+                key={index}
+                className="border rounded-xl p-4 shadow-sm bg-gray-100 space-y-4"
+              >
+                {/* Title */}
+                <div className="h-6 bg-gray-300 rounded w-1/2" />
+
+                {/* Description */}
+                <div className="h-4 bg-gray-200 rounded w-3/4" />
+                <div className="h-4 bg-gray-200 rounded w-2/3" />
+
+                {/* Button row */}
+                <div className="flex space-x-4 pt-2">
+                  <div className="h-10 w-24 bg-gray-300 rounded-md" />
+                  <div className="h-10 w-24 bg-gray-300 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+
+  }
 
   // ! admin-panel
   // for email-templates
@@ -1088,6 +1127,78 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
       </div>
 
     )
+  }
+
+  // for spotlight
+  if (type  === "spotlight"){
+    return (
+      <div className="bg-white p-6 rounded-lg shadow animate-pulse space-y-8">
+        {/* Title */}
+        <div className="h-6 w-2/3 bg-gray-300 rounded" />
+  
+        {/* Current Spotlight */}
+        <div className="space-y-4">
+          <div className="h-5 w-1/3 bg-gray-300 rounded" />
+          <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-lg">
+            <div className="flex items-start space-x-6">
+              {/* Avatar */}
+              <div className="w-24 h-24 rounded-full bg-gray-300" />
+              {/* Details */}
+              <div className="flex-1 space-y-2">
+                <div className="h-5 w-1/2 bg-gray-300 rounded" />
+                <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                <div className="h-4 w-1/3 bg-gray-200 rounded" />
+                <div className="h-10 w-32 mt-4 bg-gray-300 rounded" />
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        {/* Table Heading */}
+        <div className="h-5 w-1/3 bg-gray-300 rounded" />
+  
+        {/* Table Skeleton */}
+        <div className="space-y-4">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between border-b pb-4 pt-2"
+            >
+              {/* User Info */}
+              <div className="flex items-center space-x-4">
+                <div className="h-10 w-10 rounded-full bg-gray-300" />
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-gray-300 rounded" />
+                  <div className="h-3 w-32 bg-gray-200 rounded" />
+                </div>
+              </div>
+  
+              {/* Date */}
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+  
+              {/* Status */}
+              <div className="h-6 w-20 bg-gray-300 rounded-full" />
+  
+              {/* View Profile */}
+              <div className="h-10 w-24 bg-gray-300 rounded" />
+  
+              {/* Actions */}
+              <div className="flex gap-2">
+                <div className="h-10 w-20 bg-gray-300 rounded" />
+                <div className="h-10 w-24 bg-gray-300 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+  
+        {/* Pagination */}
+        <div className="flex justify-center mt-6 space-x-4">
+          <div className="h-8 w-8 rounded bg-gray-300" />
+          <div className="h-8 w-8 rounded bg-gray-300" />
+          <div className="h-8 w-8 rounded bg-gray-300" />
+        </div>
+      </div>
+    );
   }
 
 

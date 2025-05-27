@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import {prisma} from "@/lib/prisma";
 import { assignJp } from "@/lib/utils/jp";
-import { ActivityType } from "@prisma/client";
+import { ActivityType, StreakType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
+import { startOfDay } from "date-fns";
 
-export async function GET( ) {
+export async function GET() {
   try {
     const session = await checkRole("USER");
 
@@ -28,9 +29,6 @@ export async function GET( ) {
   }
 }
 
-
-
-
 export async function POST(req: Request) {
   try {
     const session = await checkRole("USER");
@@ -45,9 +43,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Valid content is required" }, { status: 400 });
     }
 
-    // Get the start and end of the current day
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -112,6 +108,110 @@ export async function POST(req: Request) {
           where: { id: log.id },
           data: { jpPointsAssigned: true },
         });
+
+        // Handle streak - only increment if this is the first log of the day
+        if (activeLogsToday === 1) {
+          const streak = await prisma.streak.findUnique({
+            where: {
+              userId_type: {
+                userId: session.user.id,
+                type: StreakType.PROGRESS_VAULT
+              }
+            },
+          });
+
+          if (!streak) {
+            // Create new streak
+            await prisma.streak.create({
+              data: {
+                user: { connect: { id: session.user.id } },
+                type: StreakType.PROGRESS_VAULT,
+                progress_vault_count: 1,
+                progress_vault_last_at: today,
+              },
+            });
+
+            // Create streak history entry
+            await prisma.streakHistory.create({
+              data: {
+                user: { connect: { id: session.user.id } },
+                type: StreakType.PROGRESS_VAULT,
+                count: 1,
+                date: today,
+              },
+            });
+          } else {
+            const lastLogDate = startOfDay(new Date(streak.progress_vault_last_at!));
+            const daysSinceLastLog = Math.floor((today.getTime() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (daysSinceLastLog > 1) {
+              // Reset streak if more than 1 day has passed
+              await prisma.streak.update({
+                where: {
+                  userId_type: {
+                    userId: session.user.id,
+                    type: StreakType.PROGRESS_VAULT
+                  }
+                },
+                data: {
+                  progress_vault_count: 1,
+                  progress_vault_last_at: today,
+                },
+              });
+
+              // Create streak history entry for reset
+              await prisma.streakHistory.create({
+                data: {
+                  user: { connect: { id: session.user.id } },
+                  type: StreakType.PROGRESS_VAULT,
+                  count: 1,
+                  date: today,
+                },
+              });
+            } else if (daysSinceLastLog === 1) {
+              // Increment streak if exactly 1 day has passed
+              const newStreak = streak.progress_vault_count + 1;
+              await prisma.streak.update({
+                where: {
+                  userId_type: {
+                    userId: session.user.id,
+                    type: StreakType.PROGRESS_VAULT
+                  }
+                },
+                data: {
+                  progress_vault_count: newStreak,
+                  progress_vault_last_at: today,
+                },
+              });
+
+              // Create streak history entry
+              await prisma.streakHistory.create({
+                data: {
+                  user: { connect: { id: session.user.id } },
+                  type: StreakType.PROGRESS_VAULT,
+                  count: newStreak,
+                  date: today,
+                },
+              });
+
+              // Check for streak rewards
+              let rewardActivity: ActivityType | null = null;
+              if (newStreak === 7) {
+                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_7_DAYS;
+              } else if (newStreak === 21) {
+                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_21_DAYS;
+              } else if (newStreak === 45) {
+                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_45_DAYS;
+              } else if (newStreak === 90) {
+                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_90_DAYS;
+              }
+
+              if (rewardActivity) {
+                await assignJp(user, rewardActivity);
+              }
+            }
+          }
+        }
       } catch (error) {
         // If the error is about daily JP limit, we still want to return the log
         if (error instanceof Error && error.message.includes("Daily JP limit")) {
