@@ -103,6 +103,46 @@ async function main() {
       jpAmount: 50,
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.MIRACLE_STREAK_REWARD_7_DAYS,
+      jpAmount: 750,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.MIRACLE_STREAK_REWARD_21_DAYS,
+      jpAmount: 1500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.MIRACLE_STREAK_REWARD_45_DAYS,
+      jpAmount: 2500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.MIRACLE_STREAK_REWARD_90_DAYS,
+      jpAmount: 4000,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.PROGRESS_VAULT_STREAK_REWARD_7_DAYS,
+      jpAmount: 750,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.PROGRESS_VAULT_STREAK_REWARD_21_DAYS,
+      jpAmount: 1500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.PROGRESS_VAULT_STREAK_REWARD_45_DAYS,
+      jpAmount: 2500,
+      transactionType: TransactionType.CREDIT,
+    },
+    {
+      activity: ActivityType.PROGRESS_VAULT_STREAK_REWARD_90_DAYS,
+      jpAmount: 4000,
+      transactionType: TransactionType.CREDIT,
+    },
   ];
 
   for (const activity of activities) {
