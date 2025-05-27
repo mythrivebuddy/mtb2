@@ -2,7 +2,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "../../auth/[...nextauth]/auth.config";
-import { NotificationService } from "@/lib/notification-service";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { ActivityType, BuddyLensRequestStatus } from "@prisma/client";

@@ -11,22 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Prisma } from "@prisma/client";
-
-// interface BuddyLensRequest {
-//   id: string;
-//   name: string;
-//   feedbackType: string;
-//   platform: string;
-//   domain: string;
-//   tier: string;
-//   jpCost: number;
-//   socialMediaUrl: string;
-//   status: string;
-//   requesterId: string;
-//   pendingReviewerId?: string;
-//   reviewer?: { name: string; email: string };
-// }
-
 type BuddyLensRequest = Prisma.BuddyLensReviewGetPayload<{
   include: { reviewer: true; request: true };
 }>;
@@ -325,7 +309,7 @@ export default function BuddyLensApprovePage() {
             </Card>
           ))}
         </div>
-      ): (
+      ) : (
         <Card className="p-6 text-center">
           <p className="text-gray-600">No pending claims to approve.</p>
           <Button

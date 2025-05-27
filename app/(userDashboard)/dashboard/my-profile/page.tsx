@@ -15,15 +15,8 @@ import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { getInitials } from "@/utils/getInitials";
+import { ProfileResponse } from "@/types/client/my-profile";
 
-
-interface ProfileResponse {
-  profile: {
-    name: string;
-    bio?: string;
-    image?: string | null;
-  };
-}
 
 export default function MyProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { LinkIcon } from "lucide-react";
-import { BuddyLensRequest } from "@/types/claim";
+import { BuddyLensRequest } from "@/types/client/budg-lens";
 
 interface Props {
   userId: string;

@@ -19,19 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-
-interface ReferralStats {
-  referralCode: string;
-  totalReferrals: number;
-  totalRewards: number;
-  referrals: Array<{
-    id: string;
-    name: string;
-    email: string;
-    joinedAt: string;
-    rewardEarned: number;
-  }>;
-}
+import { ReferralStats } from '@/types/client/refer-friend';
 
 async function fetchReferralStats(): Promise<ReferralStats> {
   try {

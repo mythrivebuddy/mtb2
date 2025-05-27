@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Eye, Send, Star, LinkIcon, FileQuestion, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Prisma } from "@prisma/client";
-import { BuddyLensReview } from "@/types/claim";
+import { BuddyLensReview } from "@/types/client/budg-lens";
 
 // interface BuddyLensRequest {
 //   id: string;

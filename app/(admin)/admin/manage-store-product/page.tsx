@@ -5,35 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { Item, ItemFormData, Category } from "@/types/client/manage-store-product";
 
-interface Item {
-  id: string;
-  name: string;
-  category: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
-  imageUrl: string;
-  downloadUrl?: string;
-  createdAt: string;
-}
-
-interface ItemFormData {
-  name: string;
-  category: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
-  imageFile?: File;
-  downloadFile?: File;
-}
-
-interface Category {
-  id: string;
-  name: string;
-}
 
 export default function ProductManagement() {
   const [isModalOpen, setModalOpen] = useState<boolean>(false);

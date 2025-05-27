@@ -104,6 +104,26 @@ export const profileSchema = z.object({
   bio: z.string().max(500, "Bio cannot exceed 500 characters").min(10, "Bio must be at least 10 characters"),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email format"),
+});
+
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordInputs = z.infer<typeof resetPasswordSchema>;
+
+
+export type BuddyLensRequestInputs = z.infer<typeof buddyLensRequestSchema>;
+export type forgotPasswordInputs = z.infer<typeof forgotPasswordSchema>;
 export type ProsperityFormType = z.infer<typeof prosperitySchema>;
 export type SignupFormType = z.infer<typeof signupSchema>;
 export type SigninFormType = z.infer<typeof signinSchema>;

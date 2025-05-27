@@ -19,14 +19,7 @@ import {
   DEFAULT_LEADERBOARD_PAGE,
   DEFAULT_LEADERBOARD_PAGE_LIMIT,
 } from "@/lib/constant";
-
-type SortKey = "jpEarned" | "jpSpent" | "jpBalance" | "jpTransaction";
-type SortSelectProps = {
-  orderBy: SortKey;
-  // page: number;
-  // limit: number;
-  onValueChange: (value: SortKey) => void;
-};
+import { SortKey, SortSelectProps } from "@/types/client/leaderboard";
 
 // Create a new component for the Select UI
 const SortSelect = ({

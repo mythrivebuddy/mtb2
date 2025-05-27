@@ -9,18 +9,7 @@ import axios from "axios";
 import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
 import PageLoader from "@/components/PageLoader";
 import Link from "next/link";
-
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: any;
-}
-
+import { Notification } from "@/types/client/notifcation";
 export default function NotificationsPage() {
   // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
@@ -86,7 +75,7 @@ export default function NotificationsPage() {
           No notifications yet
         </div>
       ) : (
-        notifications?.map((notification, i) => {
+        notifications?.map((notification) => {
           const url = notification.metadata?.url;
           const card = (
             <div

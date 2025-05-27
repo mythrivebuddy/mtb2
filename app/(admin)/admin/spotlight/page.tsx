@@ -5,7 +5,6 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SpotlightStatus } from "@prisma/client";
 import { format } from "date-fns";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
@@ -23,18 +22,10 @@ import { Pagination } from "@/components/ui/pagination";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import ConfirmAction from "@/components/ConfirmAction";
+import { type SpotlightApplication } from "@/types/client/spotligh";
+import { SpotlightStatus } from "@prisma/client";
 
-interface SpotlightApplication {
-  id: string;
-  user: {
-    name: string;
-    email: string;
-    id: string;
-    image: string | null;
-  };
-  status: SpotlightStatus;
-  appliedAt: string;
-}
+
 
 const fetchSpotlightApplications = async (
   currentPage: number,

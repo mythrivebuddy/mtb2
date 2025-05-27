@@ -28,12 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import axios from 'axios';
 import { getAxiosErrorMessage } from '@/utils/ax';
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
-
-interface MiracleLog {
-  id: string;
-  content: string;
-  createdAt: string;
-}
+import { MiracleLog } from '@/types/client/mericle-lo';
 
 export default function MiracleLogPage() {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);

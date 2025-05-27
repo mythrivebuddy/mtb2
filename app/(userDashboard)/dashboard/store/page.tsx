@@ -17,31 +17,9 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
+import { Category } from "@/types/client/manage-store-product";
+import { Item, WishlistItem } from "@/types/client/store";
 
-interface Category {
-  id: string;
-  name: string;
-}
-
-interface Item {
-  id: string;
-  name: string;
-  categoryId: string;
-  category: {
-    id: string;
-    name: string;
-  };
-  imageUrl: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
-}
-
-interface WishlistItem {
-  id: string;
-  itemId: string;
-}
 
 const fetchCategories = async (): Promise<Category[]> => {
   const res = await axios.get("/api/user/store/items/get-categories");

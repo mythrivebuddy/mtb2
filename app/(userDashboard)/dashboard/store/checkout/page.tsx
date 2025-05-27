@@ -11,33 +11,9 @@ import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import PaymentModal from "@/components/PaymentModal";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { Item, User } from "@/types/client/store";
 
 // Interfaces
-interface Item {
-  id: string;
-  name: string;
-  imageUrl: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
-  category: {
-    id: string;
-    name: string;
-  };
-}
-
-interface User {
-  id: string;
-  name: string;
-  phone: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    pincode: string;
-  };
-}
 
 // Mock user data
 const mockUser: User = {

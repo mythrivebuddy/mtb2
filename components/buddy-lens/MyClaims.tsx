@@ -8,7 +8,7 @@ import { User, Tag, Award, ExternalLink, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { BuddyLensRequest } from "@/types/claim";
+import type { BuddyLensRequest } from "@/types/client/budg-lens";
 import PageLoader from "../PageLoader";
 import { useSession } from "next-auth/react";
 
@@ -46,7 +46,7 @@ function RequestStatusBadge({ status }: { status: string }) {
         </Badge>
       );
     case "DISAPPROVED":
-      return (  
+      return (
         <Badge
           variant="outline"
           className="bg-red-50 text-red-700 border-red-200"

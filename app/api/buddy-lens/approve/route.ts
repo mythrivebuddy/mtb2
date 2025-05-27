@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NotificationService } from "@/lib/notification-service";
+// import { NotificationService } from "@/lib/notification-service";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { BuddyLensRequestStatus, BuddyLensReviewStatus } from "@prisma/client";
-import { createBuddyLensClaimedNotification, createBuddyLensApprovedNotification, createBuddyLensRejectedNotification, createBuddyLensCancelledNotification } from "@/lib/utils/notifications";
+import {
+  createBuddyLensApprovedNotification,
+  createBuddyLensCancelledNotification,
+} from "@/lib/utils/notifications";
 
 interface ApiError extends Error {
   response?: {
@@ -353,7 +356,7 @@ export async function PATCH(req: NextRequest) {
             request.domain,
             requestId
           );
-        } 
+        }
         // else {
         //   await createBuddyLensCancelledNotification(
         //     reviewerId,
@@ -608,10 +611,7 @@ export async function DELETE(req: Request) {
       });
 
       if (!notificationExists) {
-        await createBuddyLensCancelledNotification(
-          reviewerId,
-          request.domain
-        );
+        await createBuddyLensCancelledNotification(reviewerId, request.domain);
       }
 
       return updated;

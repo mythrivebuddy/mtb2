@@ -38,12 +38,8 @@ import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { startOfDay, endOfDay } from "date-fns";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
+import { ProgressVault } from "@/types/client/progress-vault";
 
-interface ProgressVault {
-  id: string;
-  content: string;
-  createdAt: string;
-}
 
 export default function ProgressVaultPage() {
   const [editingLog, setEditingLog] = useState<ProgressVault | null>(null);

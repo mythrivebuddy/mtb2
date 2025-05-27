@@ -12,33 +12,7 @@ import ProfileEdit from "@/components/userBusinessProfile/ProfileEdit";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageLoader from "@/components/PageLoader";
-
-interface SocialHandles {
-  linkedin?: string;
-  instagram?: string;
-  x?: string;
-  youtube?: string;
-  facebook?: string;
-  tiktok?: string;
-}
-
-export interface BusinessProfile {
-  name: string;
-  businessInfo?: string;
-  missionStatement?: string;
-  goals?: string;
-  keyOfferings?: string;
-  achievements?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  socialHandles?: SocialHandles;
-  featuredWorkTitle?: string;
-  featuredWorkDesc?: string;
-  featuredWorkImage?: string;
-  priorityContactLink?: string;
-  completionPercentage?: number;
-}
+import { BusinessProfile } from "@/types/client/business-profile";
 
 // Fallback profile object to use when API returns no profile
 const defaultProfile: BusinessProfile = {

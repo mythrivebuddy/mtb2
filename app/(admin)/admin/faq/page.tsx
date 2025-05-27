@@ -1,22 +1,15 @@
+"use client";
 
-
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { Editor } from "@tinymce/tinymce-react";
+import { Faq } from "@/types/client/faq";
 
-
-interface Faq {
-  id: string;
-  question: string;
-  answer: string;
-}
 
 export default function FaqManager() {
   const [faqs, setFaqs] = useState<Faq[]>([]);
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -26,11 +19,11 @@ export default function FaqManager() {
   const fetchFaqs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/admin/faq');
+      const res = await axios.get("/api/admin/faq");
       setFaqs(res.data);
     } catch (err) {
-      console.error('Failed to fetch FAQs:', err);
-      setError('Failed to load FAQs');
+      console.error("Failed to fetch FAQs:", err);
+      setError("Failed to load FAQs");
     } finally {
       setLoading(false);
     }
@@ -42,22 +35,22 @@ export default function FaqManager() {
 
     try {
       if (editingId) {
-        await axios.put('/api/admin/faq', {
+        await axios.put("/api/admin/faq", {
           id: editingId,
           question,
           answer,
         });
         setEditingId(null);
       } else {
-        await axios.post('/api/admin/faq', { question, answer });
+        await axios.post("/api/admin/faq", { question, answer });
       }
 
-      setQuestion('');
-      setAnswer('');
+      setQuestion("");
+      setAnswer("");
       fetchFaqs();
     } catch (err) {
-      console.error('Failed to submit FAQ:', err);
-      setError('Failed to submit FAQ');
+      console.error("Failed to submit FAQ:", err);
+      setError("Failed to submit FAQ");
     }
   };
 
@@ -75,8 +68,8 @@ export default function FaqManager() {
       setShowConfirm(false);
       setFaqToDelete(null);
     } catch (err) {
-      console.error('Failed to delete FAQ:', err);
-      setError('Failed to delete FAQ');
+      console.error("Failed to delete FAQ:", err);
+      setError("Failed to delete FAQ");
     }
   };
 
@@ -110,32 +103,35 @@ export default function FaqManager() {
           onChange={(e) => setAnswer(e.target.value)}
         /> */}
 
- <Editor
-        value={answer}
-        onEditorChange={(content) => setAnswer(content)}
-        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-        tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
-        init={{
-          height: 300,
-          menubar: false,
-          plugins: "link image media table code fullscreen",
-          toolbar:
-            "code | fontsize | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | outdent indent | link image media | table | fullscreen | undo redo",
-          content_style:
-            "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-        }}
-      />
+        <Editor
+          value={answer}
+          onEditorChange={(content) => setAnswer(content)}
+          apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+          tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
+          init={{
+            height: 300,
+            menubar: false,
+            plugins: "link image media table code fullscreen",
+            toolbar:
+              "code | fontsize | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | outdent indent | link image media | table | fullscreen | undo redo",
+            content_style:
+              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+          }}
+        />
 
-        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
-          {editingId ? 'Update FAQ' : 'Add FAQ'}
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          {editingId ? "Update FAQ" : "Add FAQ"}
         </button>
         {editingId && (
           <button
             type="button"
             onClick={() => {
               setEditingId(null);
-              setQuestion('');
-              setAnswer('');
+              setQuestion("");
+              setAnswer("");
             }}
             className="ml-2 px-4 py-2 bg-gray-500 text-white rounded"
           >
@@ -162,12 +158,10 @@ export default function FaqManager() {
 
                     {/* <p className="text-gray-700" dangerouslySetInnerHTML={{ __html: faq.answer }} >
                     </p> */}
-                <div
-          className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: faq?.answer ?? "" }}
-        >
-      </div>
-
+                    <div
+                      className="prose prose-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: faq?.answer ?? "" }}
+                    ></div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
@@ -196,7 +190,9 @@ export default function FaqManager() {
       {showConfirm && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <div className="bg-white p-6 rounded-lg shadow-md max-w-sm w-full">
-            <h3 className="text-lg font-semibold mb-4 text-center">Are you sure you want to delete this FAQ?</h3>
+            <h3 className="text-lg font-semibold mb-4 text-center">
+              Are you sure you want to delete this FAQ?
+            </h3>
             <div className="flex justify-end gap-4">
               <button
                 className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
