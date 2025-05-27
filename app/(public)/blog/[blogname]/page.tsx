@@ -131,16 +131,8 @@
 // app/(public)/blog/[blogname]/page.tsx
 import { Metadata } from "next";
 import ClientBlogPage from "./BlogData";
+import { BlogPost } from "@/types/client/blog";
 
-interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  image: string;
-  content: string;
-  readTime: string;
-  date: string;
-}
 
 type PageProps = {
   params: Promise<{ blogname: string }>;

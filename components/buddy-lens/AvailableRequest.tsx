@@ -8,7 +8,7 @@ import { User, Tag, Award, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BuddyLensRequest } from "@/types/claim";
+import { BuddyLensRequest } from "@/types/client/budg-lens";
 import PageSkeleton from "../PageSkeleton";
 
 interface Props {

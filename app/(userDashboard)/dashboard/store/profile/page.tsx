@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import OrderSection from "@/components/storeProfile/OrderSection";
 import CartSection from "@/components/storeProfile/CartSection";
 import WishlistSection from "@/components/storeProfile/WishlistSection";
-import { Item, Order, CartItem, WishlistItem } from "@/types/store";
+import { Item, Order, CartItem, WishlistItem } from "@/types/client/store";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
 interface User {

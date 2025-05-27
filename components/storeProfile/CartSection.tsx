@@ -3,7 +3,7 @@ import { ShoppingCart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
-import { Item, CartItem } from "@/types/store";
+import { Item, CartItem } from "@/types/client/store";
 
 interface CartSectionProps {
   cart: CartItem[];

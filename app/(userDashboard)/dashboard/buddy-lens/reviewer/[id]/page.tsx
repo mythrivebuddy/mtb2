@@ -3,11 +3,18 @@
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { BuddyLensReview } from "@/types/claim";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {  ChevronLeft, Clock, ExternalLink, Star, Tag, User } from "lucide-react";
+import {
+  ChevronLeft,
+  Clock,
+  ExternalLink,
+  Star,
+  Tag,
+  User,
+} from "lucide-react";
 import Link from "next/link";
+import { BuddyLensReview } from "@/types/client/budg-lens";
 import PageSkeleton from "@/components/PageSkeleton";
 
 export default function ReviewPage() {

@@ -16,17 +16,8 @@ import AlignedActionWizard from "@/components/aligned-actions/AlignedActionWizar
 import ReminderListener from "@/components/aligned-actions/ReminderListener";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 import PageSkeleton from "../PageSkeleton";
+import { AlignedAction } from "@/types/client/align-action";
 
-interface AlignedAction {
-  id: string;
-  mood: string;
-  timeFrom: string;
-  timeTo: string;
-  category: string;
-  selectedTask: string;
-  tasks: string[];
-  completed: boolean;
-}
 
 export default function AlignedActionsPage() {
   const { data: session } = useSession();

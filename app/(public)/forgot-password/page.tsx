@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { toast } from "sonner";
@@ -11,13 +10,7 @@ import { InputWithLabel } from "@/components/inputs/InputWithLabel";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import ResetFormPageWrapper from "@/components/wrappers/ResetFormPageWrapper";
 import { useRouter } from "next/navigation";
-
-// TODO move to zod schema file
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email format"),
-});
-
-type forgotPasswordInputs = z.infer<typeof forgotPasswordSchema>;
+import { forgotPasswordInputs, forgotPasswordSchema } from "@/schema/zodSchema";
 
 const ForgotPasswordPage = () => {
   const {

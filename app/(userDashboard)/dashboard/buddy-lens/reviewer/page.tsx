@@ -12,8 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Eye, Send, Star, LinkIcon, FileQuestion, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { BuddyLensRequest, BuddyLensReview } from "@/types/client/budg-lens";
 
-import { BuddyLensRequest, BuddyLensReview } from "@/types/claim";
 
 const ReviewerForm = () => {
   const { data: session } = useSession();

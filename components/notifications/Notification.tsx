@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils/tw";
 import axios from "axios";
 import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
 import PageSkeleton from "../PageSkeleton";
+import Link from "next/link";
 
 interface Notification {
   id: string;
@@ -20,7 +21,7 @@ interface Notification {
   metadata: any;
 }
 
-export default function NotificationsPage() {
+export default function NotificationsPage()  {
   // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -37,6 +38,8 @@ export default function NotificationsPage() {
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     }
   }, [queryClient, isLoading]);
+
+  console.log(notifications);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -83,40 +86,55 @@ export default function NotificationsPage() {
           No notifications yet
         </div>
       ) : (
-        notifications?.map((notification) => (
-          <div
-            key={notification.id}
-            className={cn(
-              "bg-white p-4 rounded-lg shadow-sm border mb-3",
-              !notification.isRead && "border-blue-500"
-            )}
-          >
-            <div className="flex items-start gap-4">
-              <div className="mt-1">
-                {getNotificationIcon(notification.type)}
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-medium">{notification.title}</h3>
+        notifications?.map((notification) => {
+          const url = notification.metadata?.url;
+          const card = (
+            <div
+              key={notification.id}
+              className={cn(
+                "bg-white p-4 rounded-lg shadow-sm border mb-3 ",
+                !notification.isRead && "border-blue-500"
+              )}
+            >
+              <div className="flex items-start gap-4">
+                <div className="mt-1">
+                  {getNotificationIcon(notification.type)}
                 </div>
-                <p className="text-gray-600 mt-1">{notification.message}</p>
-                <div className="flex justify-between mt-2 text-xs text-gray-500">
-                  <span>
-                    {formatDistanceToNow(new Date(notification.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </span>
-                  {notification.isRead && (
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" />
-                      Read
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium">{notification.title}</h3>
+                  </div>
+                  <p className="text-gray-600 mt-1">{notification.message}</p>
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>
+                      {formatDistanceToNow(new Date(notification.createdAt), {
+                        addSuffix: true,
+                      })}
                     </span>
-                  )}
+                    {notification.isRead && (
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Read
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))
+          );
+          return url ? (
+            <Link
+              href={url}
+              key={notification.id}
+              // legacyBehavior
+              className="cursor-pointer"
+            >
+              {card}
+            </Link>
+          ) : (
+            card
+          );
+        })
       )}
     </div>
   );

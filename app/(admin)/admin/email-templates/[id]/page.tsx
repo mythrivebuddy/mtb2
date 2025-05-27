@@ -4,21 +4,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import EmailTemplateEditor from "@/components/EmailTemplateEditor";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-interface EmailTemplate {
-  id?: string;
-  templateId: string;
-  subject: string;
-  htmlContent: string;
-  description?: string;
-}
-
-interface TemplateFormData {
-  templateId: string;
-  subject: string;
-  htmlContent: string;
-  description?: string;
-}
+import { EmailTemplate, TemplateFormData } from "@/types/client/email-template";
 
 const fetchTemplate = async (id: string): Promise<EmailTemplate> => {
   const response = await fetch(`/api/admin/email-templates/${id}`);

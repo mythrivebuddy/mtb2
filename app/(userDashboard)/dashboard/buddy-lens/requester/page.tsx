@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import axios, { AxiosError } from "axios";
-import { buddyLensRequestSchema } from "@/schema/zodSchema";
+import { BuddyLensRequestInputs, buddyLensRequestSchema } from "@/schema/zodSchema";
 import {
   LinkIcon,
   FileQuestion,
@@ -25,9 +25,7 @@ import {
 import { InputWithLabel } from "@/components/inputs/InputWithLabel";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { z } from "zod";
 
-type FormData = z.infer<typeof buddyLensRequestSchema>;
 
 interface ApiErrorResponse {
   message?: string;
@@ -92,7 +90,7 @@ export default function BuddyLensRequestPage() {
   const requesterId = session?.user?.id;
 
   const { mutate: submitRequest, isPending: isSubmitting } = useMutation({
-    mutationFn: async (data: FormData) => {
+    mutationFn: async (data: BuddyLensRequestInputs) => {
       if (!requesterId) throw new Error("User not logged in");
       return axios.post("/api/buddy-lens/requester", {
         ...data,
@@ -126,7 +124,7 @@ export default function BuddyLensRequestPage() {
     setValue,
     watch,
     trigger,
-  } = useForm<FormData>({
+  } = useForm<BuddyLensRequestInputs>({
     resolver: zodResolver(buddyLensRequestSchema),
     defaultValues: {
       socialMediaUrl: "",

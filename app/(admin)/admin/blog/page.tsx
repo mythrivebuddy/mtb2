@@ -16,25 +16,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import ConfirmAction from "@/components/ConfirmAction";
+import { BlogResponse } from "@/types/client/blog";
 
-interface Blog {
-  id: string;
-  title: string;
-  image?: string;
-  excerpt: string;
-  category: string;
-  content: string;
-  readTime: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface BlogResponse {
-  blogs: Blog[];
-  totalCount: number;
-  page: number;
-  totalPages: number;
-}
 
 // Custom debounce hook
 function useDebounce(value: string, delay: number) {

@@ -17,10 +17,6 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import PageLoader from "@/components/PageLoader";
 
-interface VerifyResponse {
-  success: boolean;
-}
-
 export default function VerifyEmail() {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -33,7 +29,12 @@ function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const { data, error, isPending, isError } = useQuery<VerifyResponse, Error>({
+  const { data, error, isPending, isError } = useQuery<
+    {
+      success: boolean;
+    },
+    Error
+  >({
     queryKey: ["verify-email", token],
     queryFn: async () => {
       if (!token) throw new Error("Invalid verification link");

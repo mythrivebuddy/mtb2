@@ -1,6 +1,6 @@
 import React from "react";
 import { Star } from "lucide-react";
-import { Order, Item } from "@/types/store";
+import { Order, Item } from "@/types/client/store";
 
 interface OrdersSectionProps {
   orders: Order[];

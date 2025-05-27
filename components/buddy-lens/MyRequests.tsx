@@ -18,7 +18,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ConfirmAction from "@/components/ConfirmAction";
-import type { BuddyLensRequest } from "@/types/claim";
+import type { BuddyLensRequest } from "@/types/client/budg-lens";
 import PageSkeleton from "../PageSkeleton";
 interface Props {
   userId: string;
@@ -215,10 +215,7 @@ export default function MyRequests({ userId }: Props) {
 
   const QUERY_KEY = ["myBuddyLensRequests", userId];
 
-  const {
-    data: myRequests = [],
-    isLoading,
-  } = useQuery<BuddyLensRequest[]>({
+  const { data: myRequests = [], isLoading } = useQuery<BuddyLensRequest[]>({
     queryKey: QUERY_KEY,
     queryFn: async () => {
       const res = await axios.get(`/api/buddy-lens/requester/${userId}`);

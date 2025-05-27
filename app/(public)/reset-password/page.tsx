@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import React, { Suspense } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { toast } from "sonner";
@@ -11,19 +10,9 @@ import FormWrapper from "@/components/wrappers/FormWrapper";
 import { InputWithLabel } from "@/components/inputs/InputWithLabel";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import ResetFormPageWrapper from "@/components/wrappers/ResetFormPageWrapper";
+import { ResetPasswordInputs, resetPasswordSchema } from "@/schema/zodSchema";
 
-// TODO move to zod schema file
-const resetPasswordSchema = z
-  .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
 
-type ResetPasswordInputs = z.infer<typeof resetPasswordSchema>;
 
 const ResetPasswordForm = () => {
   const searchParams = useSearchParams();

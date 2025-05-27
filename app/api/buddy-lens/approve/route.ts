@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { NotificationService } from "@/lib/notification-service";
+// import { NotificationService } from "@/lib/notification-service";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { BuddyLensRequestStatus, BuddyLensReviewStatus } from "@prisma/client";
+import {
+  createBuddyLensApprovedNotification,
+  createBuddyLensCancelledNotification,
+} from "@/lib/utils/notifications";
 
 interface ApiError extends Error {
   response?: {
@@ -346,30 +350,19 @@ export async function PATCH(req: NextRequest) {
       // if already reviewd
 
       if (!notificationExists) {
-        const message = approve
-          ? `Your claim for the BuddyLens request in ${request.domain} has been approved! Start reviewing 
-          now.`
-          : `Your claim for the BuddyLens request in ${request.domain} was rejected.`;
-        const link = approve
-          ? `/dashboard/buddy-lens/reviewer?requestId=${requestId}`
-          : `/dashboard/buddy-lens/reviewer`;
-
-        console.log("PATCH /api/buddy-lens/approve - Creating notification:", {
-          reviewerId,
-          message,
-          link,
-        });
-        await NotificationService.createNotification(
-          reviewerId,
-          message,
-          link
-        ).catch((err) => {
-          console.error(
-            "PATCH /api/buddy-lens/approve - Notification error:",
-            err
+        if (approve) {
+          await createBuddyLensApprovedNotification(
+            reviewerId,
+            request.domain,
+            requestId
           );
-          throw new Error("Failed to send notification");
-        });
+        }
+        // else {
+        //   await createBuddyLensCancelledNotification(
+        //     reviewerId,
+        //     request.domain
+        //   );
+        // }
       }
 
       // Send email within transaction if reviewer has email
@@ -618,21 +611,7 @@ export async function DELETE(req: Request) {
       });
 
       if (!notificationExists) {
-        console.log("DELETE /api/buddy-lens/approve - Creating notification:", {
-          reviewerId,
-          message: `The claim for request has been cancelled by the requester.`,
-        });
-        await NotificationService.createNotification(
-          reviewerId,
-          `The claim for request has been cancelled by the requester.`,
-          `/dashboard/buddy-lens/reviewer`
-        ).catch((err) => {
-          console.error(
-            "DELETE /api/buddy-lens/approve - Notification error:",
-            err
-          );
-          throw new Error("Failed to send notification");
-        });
+        await createBuddyLensCancelledNotification(reviewerId, request.domain);
       }
 
       return updated;

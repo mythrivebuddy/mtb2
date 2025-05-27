@@ -4,20 +4,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
+import { ClientBlogPageProps } from "@/types/client/blog";
 
-interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  image: string;
-  content: string;
-  readTime: string;
-  date: string;
-}
-
-interface ClientBlogPageProps {
-  blog: BlogPost;
-}
 
 export default function ClientBlogPage({ blog }: ClientBlogPageProps) {
   return (
