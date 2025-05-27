@@ -1,4 +1,4 @@
-"use client";
+
 
 import DashboardCentrePart from "@/components/adminDashboard/CentrePart";
 export default function AdminDashboard() {
