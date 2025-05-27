@@ -281,7 +281,9 @@ export default function MyRequests({ userId }: Props) {
       {isLoading ? (
         <PageLoader />
       ) : myRequests.length === 0 ? (
-        <div className="text-center  mx-auto py-12 bg-gray-50 rounded-lg border border-gray-200">
+
+        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200 flex items-center flex-col">
+
           <p className="text-gray-600 mb-4">No requests created yet.</p>
           <Link href="/dashboard/buddy-lens/requester">
             <Button className="bg-jp-orange hover:bg-jp-orange/90 text-white flex items-center gap-1.5">

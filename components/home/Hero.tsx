@@ -13,7 +13,7 @@ export default function Hero() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="space-y-4 max-w-2xl mx-auto px-4 sm:px-6"
+      className="space-y-4 max-w-2xl mx-auto md:px-4 sm:px-6"
     >
       <div className="space-y-2">
         <h1 className="md:text-[56px] text-[36px] font-bold text-[#1E2875] leading-tight">
