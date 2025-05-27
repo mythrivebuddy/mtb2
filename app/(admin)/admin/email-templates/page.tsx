@@ -16,7 +16,7 @@ import {
   TableCell,
   TableBody,
 } from "@/components/ui/table";
-
+import PageSkeleton from "@/components/PageSkeleton";
 interface template {
   id: string;
   templateId: string;
@@ -52,8 +52,9 @@ export default function EmailTemplatesPage() {
     setIsModalOpen(false);
   };
 
+  //   !
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <PageSkeleton type="email-templates" />;
   }
 
   return (
@@ -66,7 +67,7 @@ export default function EmailTemplatesPage() {
       </div>
 
       {/* Modal for Editor Selection */}
-      
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-96">

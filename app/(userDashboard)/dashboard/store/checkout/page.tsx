@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -52,7 +52,7 @@ const mockUser: User = {
   },
 };
 
-const CheckoutPage = () => {
+const CheckoutContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cartItems = searchParams.getAll("cartItem");
@@ -248,8 +248,6 @@ const CheckoutPage = () => {
       {/* Payment Modal */}
       <PayPalScriptProvider options={{
         clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "",
-        currency: "USD", 
-        intent: "capture"
       }}>
         <PaymentModal
           isOpen={isPaymentModalOpen}
@@ -261,6 +259,16 @@ const CheckoutPage = () => {
           isLoading={placeOrderMutation.isPending}
         />
       </PayPalScriptProvider>
+    </div>
+  );
+};
+
+const CheckoutPage = () => {
+  return (
+    <div className="w-full h-full">
+      <Suspense fallback={<PageLoader />}>
+        <CheckoutContent />
+      </Suspense>
     </div>
   );
 };

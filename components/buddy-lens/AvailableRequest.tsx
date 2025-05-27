@@ -3,13 +3,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
-import { User, Tag, Award,  ExternalLink } from "lucide-react";
+import { User, Tag, Award, ExternalLink } from "lucide-react";
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import PageLoader from "../PageLoader";
 import { BuddyLensRequest } from "@/types/claim";
+import PageSkeleton from "../PageSkeleton";
 
 interface Props {
   userId: string;
@@ -128,16 +128,16 @@ function AvailableRequestCard({
       <CardFooter className="flex justify-end gap-2 p-4 bg-gray-50 border-t border-gray-200">
         {
           !req.review ||
-            (!req.review.find((r) => r.reviewer.id === userId) && (
-              <Button
-                onClick={onClaim}
-                disabled={isClaimPending}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                size="sm"
-              >
-                Claim Request
-              </Button>
-            ))
+          (!req.review.find((r) => r.reviewer.id === userId) && (
+            <Button
+              onClick={onClaim}
+              disabled={isClaimPending}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
+            >
+              Claim Request
+            </Button>
+          ))
           //  (
           //   <Button disabled className="bg-gray-400 cursor-not-allowed" size="sm">
           //     Pending Approval
@@ -214,12 +214,12 @@ export default function AvailableRequest({ userId }: Props) {
       </div>
 
       {isLoading ? (
-        <PageLoader />
+        <PageSkeleton type="available-requests" />
       ) : reviewRequests.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-gray-600">No requests available to review.</p>
-        </div>
-      ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-gray-600">No requests available to review.</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 gap-6">
           {reviewRequests.map((req: BuddyLensRequest) => (
             <AvailableRequestCard

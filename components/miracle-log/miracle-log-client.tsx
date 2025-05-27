@@ -35,6 +35,7 @@ import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { startOfDay, endOfDay } from "date-fns"; // Added for daily limit check
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
+import PageSkeleton from "../PageSkeleton";
 
 interface MiracleLog {
   id: string;
@@ -47,7 +48,7 @@ interface MiracleLogClientProps {
   initialStreak: { count: number };
 }
 
-export default function MiracleLogClient({}: MiracleLogClientProps) {
+export default function MiracleLogClient({ }: MiracleLogClientProps) {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);
   const [viewLog, setViewLog] = useState<MiracleLog | null>(null);
   const [deleteLog, setDeleteLog] = useState<MiracleLog | null>(null);
@@ -279,10 +280,7 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
           </CardContent>
         </Card>
         {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading your miracle logs...</span>
-          </div>
+          <PageSkeleton type="miracle-log" />
         ) : logs.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center">
@@ -417,7 +415,7 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        
+
         <Dialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
           <DialogContent>
             <DialogHeader>

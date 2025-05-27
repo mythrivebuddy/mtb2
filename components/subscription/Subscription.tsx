@@ -8,8 +8,8 @@ import { format } from "date-fns";
 import { Loader2, Info, X } from "lucide-react";
 import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import PageSkeleton from "../PageSkeleton";
 
 interface Plan {
   id: string;
@@ -135,33 +135,33 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               isSubscription
                 ? undefined
                 : (_, actions) => {
-                    console.log(paypalPlanId);
-                    return actions.order.create({
-                      intent: "CAPTURE",
-                      purchase_units: [
-                        {
-                          amount: {
-                            value: price,
-                            currency_code: "USD",
-                          },
-                          description: `Subscription to ${plan.name}`,
+                  console.log(paypalPlanId);
+                  return actions.order.create({
+                    intent: "CAPTURE",
+                    purchase_units: [
+                      {
+                        amount: {
+                          value: price,
+                          currency_code: "USD",
                         },
-                      ],
-                      application_context: {
-                        shipping_preference: "NO_SHIPPING",
+                        description: `Subscription to ${plan.name}`,
                       },
-                    });
-                  }
+                    ],
+                    application_context: {
+                      shipping_preference: "NO_SHIPPING",
+                    },
+                  });
+                }
             }
             createSubscription={
               isSubscription
                 ? (_, actions) => {
-                    console.log(paypalPlanId);
-                    return actions.subscription.create({
-                      plan_id: paypalPlanId,
-                      custom_id: `SUB-${plan.id}-${Date.now()}`,
-                    });
-                  }
+                  console.log(paypalPlanId);
+                  return actions.subscription.create({
+                    plan_id: paypalPlanId,
+                    custom_id: `SUB-${plan.id}-${Date.now()}`,
+                  });
+                }
                 : undefined
             }
             onApprove={async (data, actions) => {
@@ -265,13 +265,12 @@ const PlanCard: React.FC<PlanCardProps> = ({
       <button
         onClick={onSubscribe}
         disabled={isLoading || disabled || isCurrentPlan}
-        className={`w-full md:w-48 py-2 sm:py-3 px-4 rounded-md text-base sm:text-lg font-medium transition-colors mx-auto block ${
-          isCurrentPlan || disabled
+        className={`w-full md:w-48 py-2 sm:py-3 px-4 rounded-md text-base sm:text-lg font-medium transition-colors mx-auto block ${isCurrentPlan || disabled
             ? "bg-gray-300 text-gray-600 cursor-not-allowed"
             : name === "Monthly Plan"
-            ? "bg-[#151E46] hover:bg-[#1a2a5e] text-white"
-            : "bg-[#111c40] hover:bg-[#1a2a5e] text-white"
-        }`}
+              ? "bg-[#151E46] hover:bg-[#1a2a5e] text-white"
+              : "bg-[#111c40] hover:bg-[#1a2a5e] text-white"
+          }`}
       >
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin mx-auto" />
@@ -417,7 +416,7 @@ const SubscriptionPage: React.FC = () => {
   );
 
   if (isLoading) {
-    return <PageLoader />;
+    return <PageSkeleton type="subscription" />;
   }
 
   const hasLifetimePlan = data?.currentPlan?.name.startsWith("Lifetime Plan");
@@ -681,4 +680,3 @@ const SubscriptionPage: React.FC = () => {
 
 export default SubscriptionPage;
 
- 

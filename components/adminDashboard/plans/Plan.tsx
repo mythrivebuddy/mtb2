@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Plan } from "@prisma/client";
 import { toast } from "sonner";
-import PageLoader from "@/components/PageLoader";
 import {
   Table,
   TableBody,
@@ -13,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import PageSkeleton from "@/components/PageSkeleton";
 
 export default function AdminPlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -77,8 +77,7 @@ export default function AdminPlansPage() {
   };
 
   if (loading) {
-    return <PageLoader />;
-  }
+    return <PageSkeleton type=" manage-plans" />;  }
 
   return (
     <div className="p-4">

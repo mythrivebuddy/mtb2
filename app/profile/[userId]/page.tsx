@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import PageSkeleton from "@/components/PageSkeleton";
 import {
   ArrowLeft,
   Linkedin,
@@ -15,7 +16,6 @@ import {
   Facebook,
   Youtube,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
 import { useEffect } from "react";
 import axios from "axios";
@@ -111,24 +111,8 @@ export default function UserDetailsPage() {
   console.log("userdata=", userData);
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <Skeleton className="h-8 w-32" />
-          <div className="flex items-center space-x-4">
-            <Skeleton className="h-24 w-24 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-          </div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton type=" user-profile" />;
+
   }
 
   if (error || !userData) {

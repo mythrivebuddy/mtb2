@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
-
+import PageSkeleton from "@/components/PageSkeleton";
 interface Item {
   id: string;
   name: string;
@@ -425,8 +425,8 @@ export default function ProductManagement() {
                     ? "Updating..."
                     : "Update Item"
                   : createMutation.isPending
-                  ? "Creating..."
-                  : "Create Item"}
+                    ? "Creating..."
+                    : "Create Item"}
               </button>
             </form>
           </div>
@@ -506,7 +506,7 @@ export default function ProductManagement() {
       </div>
 
       {isLoading ? (
-        <div>Loading items...</div>
+        <PageSkeleton type="manage-store-product" />
       ) : error ? (
         <div>Error loading items: {error.message}</div>
       ) : typedItems.length === 0 ? (
@@ -578,7 +578,7 @@ export default function ProductManagement() {
                         disabled={deleteMutation.isPending}
                       >
                         {deleteMutation.isPending &&
-                        deleteMutation.variables === item.id
+                          deleteMutation.variables === item.id
                           ? "Deleting..."
                           : "Delete"}
                       </button>

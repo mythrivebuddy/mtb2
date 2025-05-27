@@ -4,7 +4,6 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Prisma } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
-import PageLoader from "@/components/PageLoader";
 import RightPanel from "@/components/dashboard/user/RightPanel";
 import { ApplicationStepper } from "@/components/ApplicationStepper";
 import {
@@ -13,6 +12,7 @@ import {
   prosperitySteps,
   ProsperityStepperMap,
 } from "@/lib/constants/applicationSteps";
+import PageSkeleton from "@/components/PageSkeleton";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -57,7 +57,9 @@ export default function DashboardPage() {
     userLoading ||
     prosperityLoading
   ) {
-    return <PageLoader />;
+    // return <PageLoader />;
+    return <PageSkeleton type="dashboard" />;
+
   }
 
   const currentSpotlight:

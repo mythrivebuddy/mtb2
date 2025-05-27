@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import AlignedActionWizard from "@/components/aligned-actions/AlignedActionWizard";
 import ReminderListener from "@/components/aligned-actions/ReminderListener";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
+import PageSkeleton from "../PageSkeleton";
 
 interface AlignedAction {
   id: string;
@@ -133,7 +134,7 @@ export default function AlignedActionsPage() {
       )}
 
       {isLoading ? (
-        <div className="text-center py-8">Loading...</div>
+        <div className="text-center py-8"><PageSkeleton type="align-action" /></div>
       ) : hasCreatedToday ? (
         <div className="grid gap-6">
           {actions.map((action: AlignedAction) => (

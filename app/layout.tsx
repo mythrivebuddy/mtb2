@@ -3,6 +3,8 @@ import "./globals.css";
 import Provider from "@/providers/Provider";
 
 const inter = Inter({ subsets: ["latin"] });
+import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";// ! added by aaisha
+
 
 export default function RootLayout({
   children,
@@ -33,7 +35,10 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <div className="h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] overflow-y-auto">
-          <Provider>{children}</Provider>
+          <Provider>
+            <LoginStreakTracker /> {/* //! added by aaisha */}
+            {children}
+          </Provider>
         </div>
       </body>
     </html>
