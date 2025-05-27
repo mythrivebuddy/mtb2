@@ -797,23 +797,23 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   }
 
   // for dashboard's right section transaction history
-  if (type === "transaction-history"){
-return(
-  <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="flex items-start w-full">
-                <Skeleton className="h-5 w-5 mr-2 rounded-full bg-blue-300" />
+  if (type === "transaction-history") {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="flex items-start w-full">
+            <Skeleton className="h-5 w-5 mr-2 rounded-full bg-blue-300" />
 
-                <div className="flex-1 space-y-1">
-                  <Skeleton className="h-4 w-full max-w-sm" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
+            <div className="flex-1 space-y-1">
+              <Skeleton className="h-4 w-full max-w-sm" />
+              <Skeleton className="h-3 w-32" />
+            </div>
 
-                <Skeleton className="h-4 w-16 ml-2 bg-red-300" />
-              </div>
-            ))}
+            <Skeleton className="h-4 w-16 ml-2 bg-red-300" />
           </div>
-)
+        ))}
+      </div>
+    )
   }
 
 
@@ -1039,53 +1039,53 @@ return(
   }
 
   // for manage-store-product
-  if (type === "manage-store-product"){
-    return(
+  if (type === "manage-store-product") {
+    return (
       <div className="animate-pulse p-4 space-y-4">
-      <Skeleton className="h-8 w-48" /> {/* Title Placeholder */}
+        <Skeleton className="h-8 w-48" /> {/* Title Placeholder */}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 border border-gray-200 bg-white rounded-md shadow-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              {[
-                "Name",
-                "Category",
-                "Base Price",
-                "Monthly Price",
-                "Yearly Price",
-                "Lifetime Price",
-                "Created At",
-                "Actions",
-              ].map((header, i) => (
-                <th
-                  key={i}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  <Skeleton className="h-4 w-24" />
-                </th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-gray-200">
-            {Array.from({ length: 5 }).map((_, rowIndex) => (
-              <tr key={rowIndex} className="bg-white">
-                {Array.from({ length: 7 }).map((_, colIndex) => (
-                  <td key={colIndex} className="px-6 py-4">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 border border-gray-200 bg-white rounded-md shadow-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                {[
+                  "Name",
+                  "Category",
+                  "Base Price",
+                  "Monthly Price",
+                  "Yearly Price",
+                  "Lifetime Price",
+                  "Created At",
+                  "Actions",
+                ].map((header, i) => (
+                  <th
+                    key={i}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     <Skeleton className="h-4 w-24" />
-                  </td>
+                  </th>
                 ))}
-                <td className="px-6 py-4 space-x-2">
-                  <Skeleton className="h-8 w-16 inline-block rounded-md bg-blue-600" />
-                  <Skeleton className="h-8 w-16 inline-block rounded-md bg-red-600" />
-                </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-gray-200">
+              {Array.from({ length: 5 }).map((_, rowIndex) => (
+                <tr key={rowIndex} className="bg-white">
+                  {Array.from({ length: 7 }).map((_, colIndex) => (
+                    <td key={colIndex} className="px-6 py-4">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                  ))}
+                  <td className="px-6 py-4 space-x-2">
+                    <Skeleton className="h-8 w-16 inline-block rounded-md bg-blue-600" />
+                    <Skeleton className="h-8 w-16 inline-block rounded-md bg-red-600" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
     )
   }

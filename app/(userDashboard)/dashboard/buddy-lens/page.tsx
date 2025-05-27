@@ -7,7 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import MyRequests from "@/components/buddy-lens/MyRequests";
 import AvailableRequest from "@/components/buddy-lens/AvailableRequest";
 import MyClaims from "@/components/buddy-lens/MyClaims";
-import PageLoader from "@/components/PageLoader";
+import PageSkeleton from "@/components/PageSkeleton";
 
 export default function BuddyLensDashboard() {
   const { data: session } = useSession();
@@ -17,7 +17,8 @@ export default function BuddyLensDashboard() {
   >("my-requests");
 
   if (!userId) {
-    return <PageLoader />;
+    return 
+    <PageSkeleton type="my-requests" />
   }
 
   return (
