@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Editor } from "@tinymce/tinymce-react";
-
+import PageSkeleton from '@/components/PageSkeleton';
 
 interface Faq {
   id: string;
@@ -22,6 +22,7 @@ export default function FaqManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [faqToDelete, setFaqToDelete] = useState<string | null>(null);
+
 
   const fetchFaqs = async () => {
     try {
@@ -110,21 +111,21 @@ export default function FaqManager() {
           onChange={(e) => setAnswer(e.target.value)}
         /> */}
 
- <Editor
-        value={answer}
-        onEditorChange={(content) => setAnswer(content)}
-        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-        tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
-        init={{
-          height: 300,
-          menubar: false,
-          plugins: "link image media table code fullscreen",
-          toolbar:
-            "code | fontsize | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | outdent indent | link image media | table | fullscreen | undo redo",
-          content_style:
-            "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
-        }}
-      />
+        <Editor
+          value={answer}
+          onEditorChange={(content) => setAnswer(content)}
+          apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+          tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
+          init={{
+            height: 300,
+            menubar: false,
+            plugins: "link image media table code fullscreen",
+            toolbar:
+              "code | fontsize | bold italic underline strikethrough superscript subscript | alignleft aligncenter alignright alignjustify | outdent indent | link image media | table | fullscreen | undo redo",
+            content_style:
+              "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+          }}
+        />
 
         <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">
           {editingId ? 'Update FAQ' : 'Add FAQ'}
@@ -149,7 +150,7 @@ export default function FaqManager() {
 
       {/* FAQ List */}
       {loading ? (
-        <p className="text-gray-500">Loading FAQs...</p>
+        <PageSkeleton type="faq" />
       ) : (
         <ul className="space-y-4">
           {faqs.length > 0 ? (
@@ -162,11 +163,11 @@ export default function FaqManager() {
 
                     {/* <p className="text-gray-700" dangerouslySetInnerHTML={{ __html: faq.answer }} >
                     </p> */}
-                <div
-          className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: faq?.answer ?? "" }}
-        >
-      </div>
+                    <div
+                      className="prose prose-lg max-w-none"
+                      dangerouslySetInnerHTML={{ __html: faq?.answer ?? "" }}
+                    >
+                    </div>
 
                   </div>
                   <div className="flex flex-col gap-2">

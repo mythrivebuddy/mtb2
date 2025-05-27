@@ -7,7 +7,7 @@ import { Bell, Gift, Sparkles, Coins, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import axios from "axios";
 import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
-import PageLoader from "@/components/PageLoader";
+import PageSkeleton from "@/components/PageSkeleton";
 
 interface Notification {
   id: string;
@@ -54,7 +54,7 @@ export default function NotificationsPage() {
   };
 
   if (isLoading) {
-    return <PageLoader />;
+    return <PageSkeleton type="notification" />;
   }
 
   return (

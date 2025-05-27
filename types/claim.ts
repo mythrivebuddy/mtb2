@@ -30,6 +30,7 @@ import { Prisma } from "@prisma/client";
 export type BuddyLensRequest = Prisma.BuddyLensRequestGetPayload<{
   include: {
     reviewer: true;
+    requester: true;
     request: true;
     review: { include: { reviewer: true } };
   };

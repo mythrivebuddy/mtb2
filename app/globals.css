@@ -162,3 +162,9 @@
   display: none;
   width: 0px;
 }
+
+@media screen and (max-width: 767px){
+  .custom-phone-bg{
+    background-size: cover !important;
+  }
+}

@@ -9,12 +9,12 @@ export async function GET(
 ) {
   const { id } = await params; // ✅ Access params from context
 
-  const buddyRequest = await prisma.buddyLensRequest.findUnique({
+  const buddyRequest = await prisma.buddyLensReview.findUnique({
     where: { id },
-    include: { review: true },
+    include: { request: true, reviewer: true },
   });
 
-  if (!buddyRequest || !buddyRequest.review) {
+  if (!buddyRequest || !buddyRequest) {
     return NextResponse.json({ message: "Review not found" }, { status: 404 });
   }
 

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       socialMediaUrl, 
       questions, 
       jpCost, 
-      expiresInDays = 7,
+      // expiresInDays = 7,
       domain,
     } = body;
 

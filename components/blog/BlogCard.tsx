@@ -13,6 +13,7 @@ interface BlogPost {
 }
 
 export default function BlogCard({
+  id,
   title,
   excerpt,
   image,
@@ -21,7 +22,7 @@ export default function BlogCard({
 }: BlogPost) {
   const slug = createSlug(title);
   return (
-    <Link href={`/blog/${slug}`} className="block h-full">
+    <Link href={`/blog/${id}-${slug}`} className="block h-full">
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
         <div className="relative w-full aspect-[4/2]">
           <Image

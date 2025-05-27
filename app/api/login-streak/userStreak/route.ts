@@ -1,6 +1,5 @@
 //  added by aaisha
 
-// app/api/streak/route.ts
 
 // app/api/streak/route.ts
 
@@ -35,7 +34,7 @@ export async function POST(req: Request) {
   const daysDiff = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
 
   let newStreak = 0;
-  let resetStreak = false;
+  // let resetStreak = false;
 
   if (daysDiff === 0) {
     // Already logged in today, just update login count if applicable
@@ -54,7 +53,7 @@ export async function POST(req: Request) {
   } else {
     // Missed a day, reset streak
     newStreak = 1;
-    resetStreak = true;
+    // resetStreak = true;
   }
 
   // Update user streak data
@@ -135,7 +134,7 @@ export async function POST(req: Request) {
 }
 
 
-export async function GET(req: Request) {
+export async function GET() {
   const session = await getServerSession(authConfig);
   const userId = session?.user?.id;
 

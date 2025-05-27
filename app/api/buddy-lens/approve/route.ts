@@ -85,51 +85,6 @@ async function sendEmail(
   }
 }
 
-// GET API
-// export async function GET(req: Request) {
-//   try {
-//     const session = await getServerSession(authConfig);
-//     console.log('GET /api/buddy-lens/approve - Session:', session?.user?.id || 'No session');
-//     if (!session?.user) {
-//       return errorResponse('Unauthorized', 401);
-//     }
-
-//     const { searchParams } = new URL(req.url);
-//     const requestId = searchParams.get('requestId');
-
-//     if (!requestId) {
-//       return errorResponse('Missing request ID', 400);
-//     }
-
-//     const request = await prisma.buddyLensRequest.findUnique({
-//       where: { id: requestId },
-//       include: {
-//         requester: { select: { id: true, name: true, email: true } },
-//         reviewer: { select: { id: true, name: true } },
-//       },
-//     });
-
-//     console.log('GET /api/buddy-lens/approve - Request:', request ? request.id : 'Not found');
-//     if (!request || request.isDeleted) {
-//       return errorResponse('Request not found', 404);
-//     }
-
-//     if (request.requesterId !== session.user.id && request.reviewerId !== session.user.id) {
-//       console.log('GET /api/buddy-lens/approve - Unauthorized:', {
-//         requesterId: request.requesterId,
-//         reviewerId: request.reviewerId,
-//         userId: session.user.id,
-//       });
-//       return errorResponse('Unauthorized to view this request', 403);
-//     }
-
-//     return NextResponse.json(request);
-//   } catch (error) {
-//     console.error('GET /api/buddy-lens/approve - Error:', error);
-//     return errorResponse('Failed to fetch request', 500);
-//   }
-// }
-
 // GET API with approve links for approve page
 export async function GET(req: Request) {
   console.log(
@@ -147,7 +102,9 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const requestId = searchParams.get("requestId");
-    const status = searchParams.get("status") as BuddyLensReviewStatus || BuddyLensReviewStatus.PENDING;
+    const status =
+      (searchParams.get("status") as BuddyLensReviewStatus) ||
+      BuddyLensReviewStatus.PENDING;
     // const reviewerId = searchParams.get("reviewerId");
 
     if (requestId) {
@@ -158,41 +115,44 @@ export async function GET(req: Request) {
         // reviewerId
       );
       // Fetch a single request by ID (existing logic)
-      const review = await prisma.buddyLensReview.findFirst({
+      const review = await prisma.buddyLensReview.findMany({
         where: {
           request: {
             id: requestId,
             // reviewerId: reviewerId!,
+            status: BuddyLensRequestStatus.OPEN,
           },
           status,
         },
         include: {
           request: {
             include: {
-              requester: { select: { id: true, name: true, email: true } },
-              reviewer: { select: { id: true, name: true, email: true } },
-                          },
+              requester: { omit: { password: true } },
+              reviewer: { omit: { password: true } },
+            },
           },
-          // requester: { select: { id: true, name: true, email: true } },
-          // reviewer: { select: { id: true, name: true, email: true } },
+          reviewer: { omit: { password: true } },
         },
       });
 
-      console.log('review ------',review)
+      console.log("review ------", review);
 
-      console.log(
-        "GET /api/buddy-lens/approve - Request:",
-        review ? review.request.id : "Not found"
-      );
-      if (!review || review.request.isDeleted) {
-        return errorResponse("Request not found", 404);
+      // console.log(
+      //   "GET /api/buddy-lens/approve - Request:",
+      //   review ? review.request.id : "Not found"
+      // );
+      if (!review || review.length === 0) {
+        return NextResponse.json(
+          { message: "Request not found" },
+          { status: 404 }
+        );
       }
-      console.log(
-        "review.request.requesterId",
-        review.request.requesterId,
-        "session.user.id ",
-        session.user.id
-      );
+      // console.log(
+      //   "review.request.requesterId",
+      //   review.request.requesterId,
+      //   "session.user.id ",
+      //   session.user.id
+      // );
       // if (
       //   review.request.requesterId !== session.user.id ||
       //   review.request.reviewerId !== session.user.id
@@ -222,7 +182,7 @@ export async function GET(req: Request) {
             status: BuddyLensRequestStatus.OPEN,
             isDeleted: false,
           },
-          status: BuddyLensReviewStatus.PENDING,
+          status,
         },
         include: {
           request: {
@@ -387,7 +347,7 @@ export async function PATCH(req: NextRequest) {
 
       if (!notificationExists) {
         const message = approve
-          ? `Your claim for the BuddyLens request in ${request.domain} has been approved! Start your 
+          ? `Your claim for the BuddyLens request in ${request.domain} has been approved! Start reviewing 
           now.`
           : `Your claim for the BuddyLens request in ${request.domain} was rejected.`;
         const link = approve

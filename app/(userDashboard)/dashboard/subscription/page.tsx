@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { Loader2, Info, X } from "lucide-react";
 import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import PageLoader from "@/components/PageLoader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { getAxiosErrorMessage } from "@/utils/ax";
 
 interface Plan {
@@ -417,7 +417,7 @@ const SubscriptionPage: React.FC = () => {
   );
 
   if (isLoading) {
-    return <PageLoader />;
+    return <PageSkeleton type="subscription" />;
   }
 
   const hasLifetimePlan = data?.currentPlan?.name.startsWith("Lifetime Plan");

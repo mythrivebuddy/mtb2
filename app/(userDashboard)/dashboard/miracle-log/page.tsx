@@ -8,6 +8,7 @@ import { Pencil, Trash2, Eye, Loader2 } from 'lucide-react';
 import { miracleLogSchema, type MiracleLogFormType } from '@/schema/zodSchema';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PageSkeleton from '@/components/PageSkeleton';
 import {
   Dialog,
   DialogContent,
@@ -184,10 +185,8 @@ export default function MiracleLogPage() {
       </Card>
 
       {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading your miracle logs...</span>
-        </div>
+           <PageSkeleton type="miracle-log" />
+
       ) : logs.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center">

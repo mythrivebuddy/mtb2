@@ -24,7 +24,7 @@ export function StreakDisplay() {
       <div className="text-xl">🔥</div>
       <div>
         <div className="font-bold text-md">
-          {streakCount} Day{streakCount !== 1 ? 's' : ''} streak
+          {streakCount} Day{streakCount !== 1 ? 's' : ''} Streak
         </div>
       </div>
     </div>

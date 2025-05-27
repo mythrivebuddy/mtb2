@@ -15,7 +15,7 @@ import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { getInitials } from "@/utils/getInitials";
-
+import PageSkeleton from "@/components/PageSkeleton";
 
 interface ProfileResponse {
   profile: {
@@ -156,13 +156,8 @@ export default function MyProfile() {
 
 
   if (isLoadingProfile) {
-    return (
-      <div className="h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 size={40} className="animate-spin text-primary" />
-        </div>
-      </div>
-    );
+    return <PageSkeleton type="my-profile" />;
+
   }
 
   if (hasProfile === false) {

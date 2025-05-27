@@ -10,11 +10,7 @@ import {
   HelpCircle,
   Phone,
   Sparkles,
-  Eye,
-  ChevronDown,
-  ScanEye,
-  FileUser,
-  ShoppingCartIcon,
+    ShoppingCartIcon,
   Menu,
   WandSparklesIcon,
   LucideSignalHigh,
@@ -24,7 +20,6 @@ import {
   GlobeLock,
   LayoutDashboard,
   Droplet,
-  UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -95,8 +90,7 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
-
+  // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -191,31 +185,55 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="1% Progress Vault"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
-                 {/* BuddyLens dropdown */}
-            <div className="space-y-1">
-              <button
-                onClick={() => setIsBuddyLensOpen(!isBuddyLensOpen)}
-                className="flex items-center justify-between w-full py-2 text-sm rounded-md hover:bg-muted"
-              >
-                <span className="flex items-center gap-1 text-[#6C7894]">
-                  <Eye size={20} />
-                  <span className="text-lg">Buddy Lens</span>
-                </span>
-                <ChevronDown
-                  size={20}
-                  className={`transition-transform ${isBuddyLensOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+                {/* BuddyLens dropdown */}
+                {/* <div className="space-y-1">
+                  <button
+                    onClick={() => setIsBuddyLensOpen(!isBuddyLensOpen)}
+                    className="flex items-center justify-between w-full py-2 text-sm rounded-md hover:bg-muted"
+                  >
+                    <span className="flex items-center gap-1 text-[#6C7894]">
+                      <Eye size={20} />
+                      <span className="text-lg">Buddy Lens</span>
+                    </span>
+                    <ChevronDown
+                      size={20}
+                      className={`transition-transform ${isBuddyLensOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
 
-              {isBuddyLensOpen && (
-                <div className="pl-8 mt-1 space-y-1">
-                  <NavItem href="/dashboard/buddy-lens" icon={<HomeIcon size={20} />} label="My BuddyLens" />
-                  <NavItem href="/dashboard/buddy-lens/requester" icon={<UserRound size={20} />} label="Request" />
-                  <NavItem href="/dashboard/buddy-lens/reviewer" icon={<ScanEye  size={20} />} label="Review" />
-                  <NavItem href="/dashboard/buddy-lens/approve" icon={<FileUser   size={20} />} label="Approve" />
-                </div>
-              )}
-            </div>
+                  {isBuddyLensOpen && (
+                    <div className="pl-8 mt-1 space-y-1">
+                      <NavItem
+                        href="/dashboard/buddy-lens"
+                        icon={<HomeIcon size={20} />}
+                        label="My BuddyLens"
+                      />
+                      <NavItem
+                        href="/dashboard/buddy-lens/requester"
+                        icon={<UserRound size={20} />}
+                        label="Request"
+                      />
+                      <NavItem
+                        href="/dashboard/buddy-lens/reviewer"
+                        icon={<ScanEye size={20} />}
+                        label="Review"
+                      />
+                      <NavItem
+                        href="/dashboard/buddy-lens/approve"
+                        icon={<FileUser size={20} />}
+                        label="Approve"
+                      />
+                    </div>
+                  )}
+                </div> */}
+
+                <NavItem
+                  href="/dashboard/buddy-lens"
+                  icon={<HomeIcon size={20} />}
+                  label="My BuddyLens"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+
                 <NavItem
                   href="/dashboard/aligned-actions"
                   icon={<TrendingUp size={20} />}

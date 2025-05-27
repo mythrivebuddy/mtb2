@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plan } from "@prisma/client";
 import { toast } from "sonner";
-import PageLoader from "@/components/PageLoader";
+import PageSkeleton from "@/components/PageSkeleton";
 import {
   Table,
   TableBody,
@@ -77,7 +77,8 @@ export default function AdminPlansPage() {
   };
 
   if (loading) {
-    return <PageLoader />;
+    return <PageSkeleton type=" manage-plans" />;
+
   }
 
   return (

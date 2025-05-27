@@ -4,7 +4,6 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Prisma } from "@prisma/client";
 import JPCard from "@/components/dashboard/JPCard";
-import PageLoader from "@/components/PageLoader";
 import RightPanel from "@/components/dashboard/user/RightPanel";
 import { ApplicationStepper } from "@/components/ApplicationStepper";
 import {

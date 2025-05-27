@@ -38,6 +38,7 @@ import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { startOfDay, endOfDay } from "date-fns";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
+import PageSkeleton from "@/components/PageSkeleton";
 
 interface ProgressVault {
   id: string;
@@ -220,10 +221,7 @@ export default function ProgressVaultPage() {
 
       {/* Table Display */}
       {isLoading ? (
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading your progress vault...</span>
-        </div>
+            <PageSkeleton type="Progress-vault" />
       ) : logs.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-muted-foreground">

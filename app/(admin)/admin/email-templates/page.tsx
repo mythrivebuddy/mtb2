@@ -16,13 +16,13 @@ import {
   TableCell,
   TableBody,
 } from "@/components/ui/table";
-
-interface template{
-  id: string,
-  templateId: string,
-  subject: string,
-  description: string,
-  updatedAt: Date
+import PageSkeleton from "@/components/PageSkeleton";
+interface template {
+  id: string;
+  templateId: string;
+  subject: string;
+  description: string;
+  updatedAt: Date;
 }
 
 const ITEMS_PER_PAGE = 6;
@@ -52,20 +52,22 @@ export default function EmailTemplatesPage() {
     setIsModalOpen(false);
   };
 
+  //   !
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <PageSkeleton type="email-templates" />;
   }
 
   return (
-    <div className="container bg-white rounded-lg mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Email Templates</h1>
+    <div className="md:container bg-white rounded-lg mx-auto py-8">
+      <div className="flex justify-between items-center mb-6 px-2">
+        <h1 className="md:text-2xl font-bold">Email Templates</h1>
         <Button onClick={() => setIsModalOpen(true)}>
           Create New Template
         </Button>
       </div>
 
       {/* Modal for Editor Selection */}
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-96">
@@ -139,6 +141,7 @@ export default function EmailTemplatesPage() {
           </div>
         </CardContent>
       </Card>
+
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}

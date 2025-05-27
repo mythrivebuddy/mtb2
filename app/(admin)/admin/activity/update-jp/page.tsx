@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import PageLoader from "@/components/PageLoader";
+import PageSkeleton from "@/components/PageSkeleton";
 import { Activity } from "@prisma/client";
 import { UpdateActivityJPForm } from "@/components/adminDashboard/UpdateActivityJPForm";
 import { MagicBoxSettingsForm } from "@/components/adminDashboard/MagicBoxSettingsForm";
@@ -25,7 +25,9 @@ export default function UpdateActivityJpPage() {
     },
   });
 
-  if (loadingA || loadingM) return <PageLoader />;
+  if (loadingA || loadingM)
+    return <PageSkeleton type="update-jp" />;
+
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
