@@ -39,6 +39,14 @@
     BUDDY_LENS_REQUEST
     BUDDY_LENS_REVIEW
     ALIGNED_ACTION
+    MIRACLE_STREAK_REWARD_7_DAYS
+    MIRACLE_STREAK_REWARD_21_DAYS
+    MIRACLE_STREAK_REWARD_45_DAYS
+    MIRACLE_STREAK_REWARD_90_DAYS
+    PROGRESS_VAULT_STREAK_REWARD_7_DAYS
+    PROGRESS_VAULT_STREAK_REWARD_21_DAYS
+    PROGRESS_VAULT_STREAK_REWARD_45_DAYS
+    PROGRESS_VAULT_STREAK_REWARD_90_DAYS
   }
 
   enum TransactionType {
@@ -97,6 +105,11 @@
   enum BreathWorkType {
     OM
     VOOO
+  }
+
+  enum StreakType {
+    MIRACLE_LOG
+    PROGRESS_VAULT
   }
 
   model User {
@@ -172,6 +185,9 @@
     alignedActions AlignedAction[]
     // Relation to the new UserProfile model
     bio            String?
+
+    streak        Streak[]
+    streakHistory StreakHistory[]
 
     @@index([name])
   }
@@ -666,3 +682,30 @@
 
   //   @@index([userId])
   // }
+
+  model Streak {
+    id                    String     @id @default(cuid())
+    userId                String
+    user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type                  StreakType
+    miracle_log_count     Int        @default(0)
+    progress_vault_count  Int        @default(0)
+    miracle_log_last_at   DateTime?
+    progress_vault_last_at DateTime?
+    createdAt             DateTime   @default(now())
+    updatedAt             DateTime   @updatedAt
+
+    @@unique([userId, type])
+  }
+
+  model StreakHistory {
+    id        String     @id @default(cuid())
+    userId    String
+    user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type      StreakType
+    count     Int
+    date      DateTime   @default(now())
+    createdAt DateTime   @default(now())
+
+    @@index([userId, type])
+  }
