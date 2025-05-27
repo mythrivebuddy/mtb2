@@ -66,7 +66,7 @@ const defaultProfile: BusinessProfile = {
   completionPercentage: 0,
 };
 
-const Page = () => {
+const BusinessProfile = () => {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
   const [isEditing, setIsEditing] = useState(false);
@@ -241,4 +241,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default BusinessProfile;

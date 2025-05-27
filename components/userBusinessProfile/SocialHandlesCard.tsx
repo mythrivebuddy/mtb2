@@ -1,7 +1,8 @@
 // components/SocialInputCard.tsx
 import React from "react";
 import type { UseFormRegister, Path } from "react-hook-form";
-import { BusinessProfile } from "@/app/(userDashboard)/dashboard/business-profile/page";
+import { BusinessProfile } from "../business-profile/BusinessProfile";
+
 
 interface SocialHandlesCardProps {
   label: string;
