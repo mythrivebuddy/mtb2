@@ -33,6 +33,7 @@ type NavItemProps = {
   label: string;
   onLinkClick?: () => void; // Add prop for handling link click
 };
+
 const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;

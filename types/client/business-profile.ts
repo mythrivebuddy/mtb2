@@ -23,4 +23,10 @@ export interface BusinessProfile {
   featuredWorkImage?: string;
   priorityContactLink?: string;
   completionPercentage?: number;
+  
+}
+
+export interface ProfileDisplayProps {
+  profileData: BusinessProfile | null;
+  onEditClick: () => void;
 }

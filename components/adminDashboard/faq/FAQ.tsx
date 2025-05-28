@@ -6,13 +6,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Editor } from "@tinymce/tinymce-react";
 import PageSkeleton from '@/components/PageSkeleton';
+import { Faq } from '@/types/client/faq';
 
-
-interface Faq {
-  id: string;
-  question: string;
-  answer: string;
-}
 
 export default function FaqManager() {
   const [faqs, setFaqs] = useState<Faq[]>([]);

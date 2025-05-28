@@ -22,11 +22,8 @@ import { signOut } from "next-auth/react";
 import { getInitials } from "@/utils/getInitials";// Make sure this helper exists
 import { useState } from "react";
 import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
+import { UserDropdownProps } from "@/types/client/nav";
 
-type UserDropdownProps = {
-  profilePicture?: string | null;
-  userName?: string;
-};
 
 const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) => {
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);

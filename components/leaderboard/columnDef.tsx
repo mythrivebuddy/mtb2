@@ -1,17 +1,6 @@
+import { LeaderboardUser } from "@/types/client/leaderboard";
 import { getInitials } from "@/utils/getInitials";
 import { ColumnDef } from "@tanstack/react-table";
-
-export interface LeaderboardUser {
-  id: string;
-  name: string;
-  image: string;
-  category: string;
-  jpEarned: number;
-  jpSpent: number;
-  jpTransaction: number;
-  jpBalance: number;
-  rank: number;
-}
 
 const getRankIcon = (rank: number) => {
   if (rank === 1) return "🏆";

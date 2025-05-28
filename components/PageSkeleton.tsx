@@ -1,6 +1,12 @@
 // components/PageSkeleton.tsx
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, } from "./ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "./ui/card";
 import {
   Table,
   TableHead,
@@ -11,11 +17,34 @@ import {
 } from "@/components/ui/table";
 
 type PageSkeletonProps = {
-  type: "dashboard" | "leaderboard" | "align-action" | "my-requests" | "available-requests" | "approve" | "claims" | "reviewer" | "miracle-log" | "my-profile" | "notification" | "Progress-vault" | "refer-friend" | "subscription" | " user-profile" | "email-templates" | "prosperity-drop" | "faq" | "update-jp" | " manage-plans" | "manage-store-product" | "transaction-history" | "buddylens" | "spotlight";
+  type:
+    | "dashboard"
+    | "leaderboard"
+    | "align-action"
+    | "my-requests"
+    | "available-requests"
+    | "approve"
+    | "claims"
+    | "reviewer"
+    | "miracle-log"
+    | "my-profile"
+    | "notification"
+    | "Progress-vault"
+    | "refer-friend"
+    | "subscription"
+    | " user-profile"
+    | "email-templates"
+    | "prosperity-drop"
+    | "faq"
+    | "update-jp"
+    | " manage-plans"
+    | "manage-store-product"
+    | "transaction-history"
+    | "buddylens"
+    | "spotlight";
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
-
   // ! user-panel
 
   // for dashboard
@@ -23,7 +52,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
     return (
       <div className="animate-pulse py-6">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-
           {/* Main Dashboard Content Skeleton */}
           <div className="flex-1">
             {/* JP Cards */}
@@ -102,7 +130,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </div>
       </div>
     );
-
   }
 
   // for leaderboard
@@ -142,8 +169,9 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className={`grid grid-cols-6 gap-4 p-4 ${i === 0 ? "bg-[#FFF5CC]" : "bg-white"
-                } border-b last:border-b-0`}
+              className={`grid grid-cols-6 gap-4 p-4 ${
+                i === 0 ? "bg-[#FFF5CC]" : "bg-white"
+              } border-b last:border-b-0`}
             >
               <Skeleton className="h-6 w-6 rounded-full" />
               <Skeleton className="h-6 w-16 rounded-md" />
@@ -214,7 +242,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   if (type === "my-requests") {
     return (
       <div className="space-y-6">
-
         {/* Request Cards */}
         <div className="animate-pulse grid grid-cols-1 gap-6">
           {Array.from({ length: 3 }).map((_, idx) => (
@@ -248,7 +275,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   if (type === "available-requests") {
     return (
       <div className="animate-pulse space-y-6">
-
         {/* Request Cards */}
         <div className="grid grid-cols-1 gap-6">
           {Array.from({ length: 3 }).map((_, idx) => (
@@ -327,7 +353,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   if (type === "claims") {
     return (
       <div className="space-y-6">
-
         {/* Request Cards */}
         <div className="animate-pulse grid grid-cols-1 gap-6">
           {Array.from({ length: 3 }).map((_, idx) => (
@@ -357,7 +382,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
     );
   }
 
-  // for reviewr 
+  // for reviewr
   if (type === "reviewer") {
     return (
       <div className="animate-pulse p-7 overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow rounded-lg flex justify-center items-center">
@@ -429,7 +454,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </div>
       </div>
     );
-
   }
 
   // for miracle-log
@@ -481,7 +505,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </div>
       </div>
     );
-
   }
 
   // for my-profile
@@ -533,8 +556,10 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="h-5 w-1/3 bg-gray-200 rounded mb-4" /> {/* Title */}
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-5 w-1/2 bg-gray-200 rounded" /> {/* Toggle Label */}
-            <div className="h-5 w-10 bg-gray-300 rounded-full ml-auto" /> {/* Switch */}
+            <div className="h-5 w-1/2 bg-gray-200 rounded" />{" "}
+            {/* Toggle Label */}
+            <div className="h-5 w-10 bg-gray-300 rounded-full ml-auto" />{" "}
+            {/* Switch */}
           </div>
           <div className="h-4 w-2/3 bg-gray-200 rounded" /> {/* Description */}
         </div>
@@ -553,10 +578,13 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
               <div className="h-6 w-6 bg-gray-300 rounded-full mt-1" />
               <div className="flex-1 space-y-2">
                 <div className="h-4 w-1/2 bg-gray-200 rounded" /> {/* Title */}
-                <div className="h-3 w-full bg-gray-100 rounded" /> {/* Message */}
+                <div className="h-3 w-full bg-gray-100 rounded" />{" "}
+                {/* Message */}
                 <div className="flex justify-between text-xs mt-2">
-                  <div className="h-3 w-20 bg-gray-100 rounded" /> {/* Timestamp */}
-                  <div className="h-3 w-12 bg-gray-100 rounded" /> {/* Read status */}
+                  <div className="h-3 w-20 bg-gray-100 rounded" />{" "}
+                  {/* Timestamp */}
+                  <div className="h-3 w-12 bg-gray-100 rounded" />{" "}
+                  {/* Read status */}
                 </div>
               </div>
             </div>
@@ -793,7 +821,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   // for dashboard's right section transaction history
@@ -813,7 +841,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   // for buddylens
@@ -853,7 +881,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </Card>
       </div>
     );
-
   }
 
   // ! admin-panel
@@ -898,14 +925,16 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   // for prosperity-drop
   if (type === "prosperity-drop") {
     return (
       <div className="animate-pulse mx-auto py-10 px-0">
-        <h1 className="text-2xl font-bold mb-6">Prosperity Drop Applications</h1>
+        <h1 className="text-2xl font-bold mb-6">
+          Prosperity Drop Applications
+        </h1>
         <div className="rounded-md border bg-white">
           <Table>
             <TableHeader>
@@ -921,12 +950,24 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             <TableBody>
               {[...Array(7)].map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-7 w-28" /></TableCell>
-                  <TableCell><Skeleton className="h-7 w-48" /></TableCell>
-                  <TableCell><Skeleton className="h-7 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-7 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-7 w-16 rounded-full" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-28 rounded-md" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-28" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-7 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-28 rounded-md" />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -956,8 +997,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </li>
         ))}
       </ul>
-    )
-
+    );
   }
 
   // for update-jp
@@ -1019,7 +1059,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   // for manage-plans
@@ -1036,7 +1076,13 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
                 {/* Table Header */}
                 <TableHeader className="bg-gray-50">
                   <TableRow>
-                    {["Name", "JP Multiplier", "Discount (%)", "Price", "Actions"].map((_, i) => (
+                    {[
+                      "Name",
+                      "JP Multiplier",
+                      "Discount (%)",
+                      "Price",
+                      "Actions",
+                    ].map((_, i) => (
                       <TableHead key={i} className="px-6 py-3">
                         <Skeleton className="h-4 w-24" />
                       </TableHead>
@@ -1074,7 +1120,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   // for manage-store-product
@@ -1082,7 +1128,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
     return (
       <div className="animate-pulse p-4 space-y-4">
         <Skeleton className="h-8 w-48" /> {/* Title Placeholder */}
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 border border-gray-200 bg-white rounded-md shadow-sm">
             <thead className="bg-gray-50">
@@ -1125,17 +1170,16 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           </table>
         </div>
       </div>
-
-    )
+    );
   }
 
   // for spotlight
-  if (type  === "spotlight"){
+  if (type === "spotlight") {
     return (
       <div className="bg-white p-6 rounded-lg shadow animate-pulse space-y-8">
         {/* Title */}
         <div className="h-6 w-2/3 bg-gray-300 rounded" />
-  
+
         {/* Current Spotlight */}
         <div className="space-y-4">
           <div className="h-5 w-1/3 bg-gray-300 rounded" />
@@ -1153,10 +1197,10 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             </div>
           </div>
         </div>
-  
+
         {/* Table Heading */}
         <div className="h-5 w-1/3 bg-gray-300 rounded" />
-  
+
         {/* Table Skeleton */}
         <div className="space-y-4">
           {[...Array(4)].map((_, i) => (
@@ -1172,16 +1216,16 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
                   <div className="h-3 w-32 bg-gray-200 rounded" />
                 </div>
               </div>
-  
+
               {/* Date */}
               <div className="h-4 w-32 bg-gray-200 rounded" />
-  
+
               {/* Status */}
               <div className="h-6 w-20 bg-gray-300 rounded-full" />
-  
+
               {/* View Profile */}
               <div className="h-10 w-24 bg-gray-300 rounded" />
-  
+
               {/* Actions */}
               <div className="flex gap-2">
                 <div className="h-10 w-20 bg-gray-300 rounded" />
@@ -1190,7 +1234,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             </div>
           ))}
         </div>
-  
+
         {/* Pagination */}
         <div className="flex justify-center mt-6 space-x-4">
           <div className="h-8 w-8 rounded bg-gray-300" />
@@ -1200,7 +1244,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
       </div>
     );
   }
-
 
   // fallback default
   return (

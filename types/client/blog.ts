@@ -1,4 +1,3 @@
-
 export interface Blog {
   id: string;
   title: string;
@@ -12,12 +11,13 @@ export interface Blog {
 }
 
 export interface BlogResponse {
-  blogs: Blog[];
+  message: string;
+  blogs: BlogPost[];
   totalCount: number;
   page: number;
+  limit: number;
   totalPages: number;
 }
-
 
 export interface BlogPost {
   id: string;
@@ -26,11 +26,18 @@ export interface BlogPost {
   image: string;
   content: string;
   readTime: string;
+  createdAt: string;
   date: string;
+  category: string;
 }
-
-
 
 export interface ClientBlogPageProps {
   blog: BlogPost;
 }
+
+export interface BlogFormProps {
+  blogId?: string;
+  onSuccess: () => void;
+  blogString?: string;
+}
+

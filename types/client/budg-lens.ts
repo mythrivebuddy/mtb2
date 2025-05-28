@@ -53,3 +53,15 @@ export interface Notification {
   read: boolean;
   createdAt: string; // ISO string from Prisma DateTime
 }
+
+
+
+export interface DeleteRequestResponse {
+  message: string;
+  data?: BuddyLensRequest;
+}
+
+export interface DeleteRequestError {
+  error: string;
+  details?: string;
+}

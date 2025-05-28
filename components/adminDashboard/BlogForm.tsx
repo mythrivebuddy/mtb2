@@ -5,12 +5,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Editor } from "@tinymce/tinymce-react";
+import { BlogFormProps } from "@/types/client/blog";
 
-interface BlogFormProps {
-  blogId?: string;
-  onSuccess: () => void;
-  blogString?: string;
-}
 
 export default function BlogForm({
   blogId,

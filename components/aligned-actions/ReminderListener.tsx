@@ -7,21 +7,8 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format, isWithinInterval } from "date-fns";
+import { AlignedAction, ReminderListenerProps } from "@/types/client/align-action";
 
-interface ReminderListenerProps {
-  onRefetch: () => void;
-}
-
-interface AlignedAction {
-  id: string;
-  mood: string;
-  selectedTask: string;
-  category: string;
-  timeFrom: string;
-  timeTo: string;
-  completed: boolean;
-  status?: string;
-}
 
 export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
   const { data: session, update: updateSession } = useSession();

@@ -53,33 +53,33 @@ export const prosperitySchema = z.object({
 });
 
 export const step1Schema = z.object({
-  mood: z.string().min(1, 'Please select a mood'),
+  mood: z.string().min(1, "Please select a mood"),
   tasks: z
     .array(
       z
         .string()
-        .min(1, 'Please enter a task')
-        .max(120, 'Each task must be less than or equal to 120 characters')
+        .min(1, "Please enter a task")
+        .max(120, "Each task must be less than or equal to 120 characters")
     )
-    .length(3, 'Exactly three tasks are required'),
+    .length(3, "Exactly three tasks are required"),
 });
 
-
 export const step2Schema = z.object({
-  selectedTask: z.string().min(1, 'Please select a task'),
-  categories: z.array(z.enum(['Creative', 'Revenue Generating', 'Nurturing', 'Admin'])).optional(),
-  emoji: z.string().min(1, 'Please select an emoji'),
-  emojiCategory: z.string().min(1, 'Please select an emoji category'),
+  selectedTask: z.string().min(1, "Please select a task"),
+  categories: z
+    .array(z.enum(["Creative", "Revenue Generating", "Nurturing", "Admin"]))
+    .optional(),
+  emoji: z.string().min(1, "Please select an emoji"),
+  emojiCategory: z.string().min(1, "Please select an emoji category"),
 });
 
 export const step3Schema = z.object({
-  fromTime: z.string().min(1, 'Please select a time'),
-  toTime: z.string().min(1, 'Please select a time'),
+  fromTime: z.string().min(1, "Please select a time"),
+  toTime: z.string().min(1, "Please select a time"),
 });
 
 export const step4Schema = z.object({
-  content: z.string().min(1, 'Please select a time'),
-
+  content: z.string().min(1, "Please select a time"),
 });
 
 // Buddy-lends request form schema
@@ -87,27 +87,29 @@ export const step4Schema = z.object({
 export const buddyLensRequestSchema = z.object({
   socialMediaUrl: z
     .string()
-    .url('Invalid URL')
-    .min(1, 'Social Media URL is required'),
-  tier: z.enum(['5min', '10min', '15min']),
-  domain: z.string().min(1, 'Domain is required'),
+    .url("Invalid URL")
+    .min(1, "Social Media URL is required"),
+  tier: z.enum(["5min", "10min", "15min"]),
+  domain: z.string().min(1, "Domain is required"),
   questions: z
-    .array(z.string().min(1, 'Question cannot be empty'))
-    .min(1, 'At least one question is required')
-    .max(3, 'Maximum of 3 questions allowed'),
+    .array(z.string().min(1, "Question cannot be empty"))
+    .min(1, "At least one question is required")
+    .max(3, "Maximum of 3 questions allowed"),
   jpCost: z.number({ required_error: "JoyPearls Cost is required" }),
 });
 
 // Profile Schema
 export const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  bio: z.string().max(500, "Bio cannot exceed 500 characters").min(10, "Bio must be at least 10 characters"),
+  bio: z
+    .string()
+    .max(500, "Bio cannot exceed 500 characters")
+    .min(10, "Bio must be at least 10 characters"),
 });
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email format"),
 });
-
 
 export const resetPasswordSchema = z
   .object({
@@ -119,9 +121,34 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const magicBoxSettingsSchema = z
+  .object({
+    minJpAmount: z.number().min(1).max(1000),
+    maxJpAmount: z.number().min(1).max(1000),
+  })
+  .refine((d) => d.minJpAmount <= d.maxJpAmount, {
+    message: "minJpAmount cannot be greater than maxJpAmount",
+    path: ["minJpAmount"],
+  });
+
+export const activitySchema = z.object({
+  activityId: z.string().min(1, "Activity is required"),
+  jpAmount: z.string().min(1, "JP amount is required"),
+});
+
+
+export const contactFormSchems = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  subject: z.string().min(1, "Please select a subject"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
+
+export type ContactForm = z.infer<typeof contactFormSchems>;
+export type ActivityFormValues = z.infer<typeof activitySchema>;
+export type MagicBoxSettings = z.infer<typeof magicBoxSettingsSchema>;
 export type ResetPasswordInputs = z.infer<typeof resetPasswordSchema>;
-
-
 export type BuddyLensRequestInputs = z.infer<typeof buddyLensRequestSchema>;
 export type forgotPasswordInputs = z.infer<typeof forgotPasswordSchema>;
 export type ProsperityFormType = z.infer<typeof prosperitySchema>;
@@ -135,4 +162,3 @@ export type Step3FormType = z.infer<typeof step3Schema>;
 export type Step4FormType = z.infer<typeof step4Schema>;
 export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
-

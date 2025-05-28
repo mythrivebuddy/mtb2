@@ -5,12 +5,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils/tw";
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
+import { NavItemProps } from "@/types/client/nav";
 
-type NavItemProps = {
-  href: string;
-  label: string;
-  badge?: string | number;
-};
 
 const NavItem = ({ href, label, badge }: NavItemProps) => {
   const pathname = usePathname();

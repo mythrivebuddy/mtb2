@@ -2,7 +2,6 @@
 
 import { Activity } from "@prisma/client";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
@@ -18,13 +17,8 @@ import {
 } from "@/components/ui/select";
 import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { ActivityFormValues, activitySchema } from "@/schema/zodSchema";
 
-const activitySchema = z.object({
-  activityId: z.string().min(1, "Activity is required"),
-  jpAmount: z.string().min(1, "JP amount is required"),
-});
-
-type ActivityFormValues = z.infer<typeof activitySchema>;
 
 export function UpdateActivityJPForm({
   activities,

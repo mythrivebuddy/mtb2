@@ -9,17 +9,8 @@ import axios from "axios";
 import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
 import PageSkeleton from "../PageSkeleton";
 import Link from "next/link";
+import { Notification } from "@/types/client/notifcation";
 
-interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata: any;
-}
 
 export default function NotificationsPage()  {
   // Fetch notifications

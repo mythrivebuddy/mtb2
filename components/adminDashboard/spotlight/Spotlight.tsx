@@ -23,18 +23,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import ConfirmAction from "@/components/ConfirmAction";
+import { type SpotlightApplication } from "@/types/client/spotligh";
 
-interface SpotlightApplication {
-  id: string;
-  user: {
-    name: string;
-    email: string;
-    id: string;
-    image: string | null;
-  };
-  status: SpotlightStatus;
-  appliedAt: string;
-}
 
 const fetchSpotlightApplications = async (
   currentPage: number,

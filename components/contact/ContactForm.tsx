@@ -3,7 +3,6 @@
 import { useState, useEffect} from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +10,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
+import { type ContactForm, contactFormSchems } from "@/schema/zodSchema";
 
 declare global {
   interface Window {
@@ -24,15 +24,6 @@ declare global {
   }
 }
 
-const schema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  subject: z.string().min(1, "Please select a subject"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-});
-
-type FormData = z.infer<typeof schema>;
-
 function ContactFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
@@ -43,8 +34,8 @@ function ContactFormContent() {
     reset,
     setValue,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
+  } = useForm<ContactForm>({
+    resolver: zodResolver(contactFormSchems),
     defaultValues: {
       subject: "general",
     },
@@ -106,7 +97,7 @@ function ContactFormContent() {
     }
   };
 
-  const onSubmit: SubmitHandler<FormData> = async (formData) => {
+  const onSubmit: SubmitHandler<ContactForm> = async (formData) => {
     setIsLoading(true);
     try {
       const token = await executeRecaptcha();

@@ -3,37 +3,8 @@ import { Facebook, Instagram, Linkedin, Youtube } from "lucide-react";
 import Image from "next/image";
 import XIcon from "@/components/icons/XIcon";
 import TikTokIcon from "../icons/TiktokIcon";
+import { ProfileDisplayProps } from "@/types/client/business-profile";
 
-interface SocialHandles {
-  linkedin?: string;
-  instagram?: string;
-  x?: string;
-  youtube?: string;
-  facebook?: string;
-  tiktok?: string;
-}
-
-interface BusinessProfile {
-  name: string;
-  businessInfo?: string;
-  missionStatement?: string;
-  goals?: string;
-  keyOfferings?: string;
-  achievements?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  socialHandles?: SocialHandles;
-  featuredWorkTitle?: string;
-  featuredWorkDesc?: string;
-  featuredWorkImage?: string;
-  priorityContactLink?: string;
-}
-
-interface ProfileDisplayProps {
-  profileData: BusinessProfile | null;
-  onEditClick: () => void;
-}
 
 const ProfileDisplay: React.FC<ProfileDisplayProps> = ({
   profileData,

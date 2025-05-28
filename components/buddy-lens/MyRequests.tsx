@@ -18,20 +18,10 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ConfirmAction from "@/components/ConfirmAction";
-import type { BuddyLensRequest } from "@/types/client/budg-lens";
+import type { BuddyLensRequest, DeleteRequestError, DeleteRequestResponse } from "@/types/client/budg-lens";
 import PageSkeleton from "../PageSkeleton";
 interface Props {
   userId: string;
-}
-
-interface DeleteRequestResponse {
-  message: string;
-  data?: BuddyLensRequest;
-}
-
-interface DeleteRequestError {
-  error: string;
-  details?: string;
 }
 
 function RequestStatusBadge({ status }: { status: string }) {
