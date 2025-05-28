@@ -3,29 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Card } from "@/components/ui/card";
 import { LinkIcon } from "lucide-react";
-import { BuddyLensRequest } from "@/types/client/budg-lens";
+import { BuddyLensRequest, BuddyLensReview } from "@/types/client/budg-lens";
 
 interface Props {
   userId: string;
-}
-
-interface Review {
-  id: string;
-  requestId: string;
-  comments: string;
-  rating: number;
-  feedback: string;
-  status: string;
-  reviewText: string;
-  answers: [];
-  createdAt: string;
-  request: {
-    domain: string;
-  };
-  reviewer: {
-    name: string;
-    email: string;
-  };
 }
 
 export default function ReviewedRequests({ userId }: Props) {
@@ -83,7 +64,7 @@ export default function ReviewedRequests({ userId }: Props) {
       ) : reviewedRequests.length === 0 ? (
         <p>No reviewed requests.</p>
       ) : (
-        reviewedRequests.map((review: Review) => {
+        reviewedRequests.map((review: BuddyLensReview) => {
           const request =
             reviewRequests.find(
               (r: BuddyLensRequest) => r.id === review.requestId

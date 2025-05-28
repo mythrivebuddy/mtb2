@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils/tw";
 import { formatJP } from "@/lib/utils/formatJP";
 import UserProfileDropdown from "./UserProfileDropDown";
 import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; //!added by aaisha
+import { SearchUser } from "@/types/client/nav";
 
 const TopBarBadge = ({
   children,
@@ -41,12 +42,6 @@ const TopBarBadge = ({
   );
 };
 
-interface SearchUser {
-  id: string;
-  name: string;
-  email: string;
-  image: string | null;
-}
 
 const fetchUsers = async (searchTerm: string) => {
   const { data } = await axios.get(`/api/user/search?q=${searchTerm}`);

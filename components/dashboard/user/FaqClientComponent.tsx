@@ -7,12 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
-
-interface Faq {
-  id: string;
-  question: string;
-  answer: string;
-}
+import { Faq } from '@/types/client/faq';
 
 const fetchFaqs = async (): Promise<Faq[]> => {
   const res = await axios.get('/api/admin/faq');

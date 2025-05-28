@@ -1,13 +1,8 @@
 // components/SpotlightHistoryTable.tsx
 import React from "react";
 import { format } from "date-fns";
+import { HistoryRecord } from "@/types/client/insights";
 
-interface HistoryRecord {
-  applicationDate: string;
-  activatedDate: string;
-  views: number;
-  clicks: number;
-}
 
 const SpotlightHistoryTable = ({
   history,

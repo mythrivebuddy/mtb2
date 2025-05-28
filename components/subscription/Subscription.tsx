@@ -10,55 +10,8 @@ import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import PageSkeleton from "../PageSkeleton";
+import { PaymentModalProps, Plan, SubscriptionData } from "@/types/client/subscription";
 
-interface Plan {
-  id: string;
-  name: string;
-  jpMultiplier: number;
-  discountPercent: number;
-  durationDays: number | null;
-  price: string;
-  paypalPlanId: string;
-  paypalProductId: string;
-}
-
-interface LifetimeTier {
-  tier: string;
-  planId: string;
-  planName: string;
-  price: string;
-  paypalPlanId: string;
-  userRange: string;
-}
-
-interface CurrentLifetimePlan {
-  planId: string;
-  planName: string;
-  price: string;
-  paypalPlanId: string;
-}
-
-interface SubscriptionData {
-  currentPlan: Plan | null;
-  planStart: string | null;
-  planEnd: string | null;
-  hasActiveSubscription: boolean;
-  plans: Plan[];
-  currentLifetimePlan: CurrentLifetimePlan;
-  lifetimePlanUsers?: number;
-  limitedOfferAvailable?: boolean;
-  lifetimeTiers: LifetimeTier[];
-}
-
-interface PaymentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  plan: Plan;
-  price: string;
-  paypalPlanId: string;
-  isSubscription: boolean;
-  onSuccess: (paidAmount: string) => void;
-}
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,

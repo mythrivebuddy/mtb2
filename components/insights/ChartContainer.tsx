@@ -1,5 +1,6 @@
 "use client";
 
+import { BaseChartData, ChartProps } from "@/types/client/insights";
 import React from "react";
 import {
   LineChart,
@@ -15,19 +16,6 @@ import {
 } from "recharts";
 
 // Define type for each chart data entry
-interface BaseChartData {
-  [key: string]: string | number;
-}
-
-// Define props using generic type for chart data
-interface ChartProps<T extends BaseChartData> {
-  title: string;
-  type: "line" | "bar";
-  data: T[];
-  xKey: keyof T;
-  lines?: { dataKey: keyof T; stroke: string; name: string }[];
-  bars?: { dataKey: keyof T; fill: string; name: string }[];
-}
 
 const ChartContainer = <T extends BaseChartData>({
   title,

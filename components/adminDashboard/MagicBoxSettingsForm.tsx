@@ -1,7 +1,6 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,18 +9,8 @@ import { Button } from "@/components/ui/button";
 import { InputWithLabel } from "@/components/inputs/InputWithLabel";
 import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import {  MagicBoxSettings, magicBoxSettingsSchema } from "@/schema/zodSchema";
 
-const schema = z
-  .object({
-    minJpAmount: z.number().min(1).max(1000),
-    maxJpAmount: z.number().min(1).max(1000),
-  })
-  .refine((d) => d.minJpAmount <= d.maxJpAmount, {
-    message: "minJpAmount cannot be greater than maxJpAmount",
-    path: ["minJpAmount"],
-  });
-
-type FormValues = z.infer<typeof schema>;
 
 export function MagicBoxSettingsForm({
   initialValues,
@@ -30,13 +19,13 @@ export function MagicBoxSettingsForm({
 }) {
   const queryClient = useQueryClient();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<MagicBoxSettings>({
+    resolver: zodResolver(magicBoxSettingsSchema),
     defaultValues: initialValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: FormValues) => {
+    mutationFn: async (data: MagicBoxSettings) => {
       const res = await axios.put("/api/admin/magic-box/settings", data);
       return res.data;
     },

@@ -27,15 +27,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 
 
-interface AlignedActionWizardProps {
-  onComplete: () => void;
-  onCancel: () => void;
-}
-
 export default function AlignedActionWizard({
   onComplete,
   onCancel,
-}: AlignedActionWizardProps) {
+}: {
+  onComplete: () => void;
+  onCancel: () => void;
+}) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     mood: "",

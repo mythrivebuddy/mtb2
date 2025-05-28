@@ -16,15 +16,7 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { getInitials } from "@/utils/getInitials";
 import PageSkeleton from "../PageSkeleton";
-
-
-interface ProfileResponse {
-  profile: {
-    name: string;
-    bio?: string;
-    image?: string | null;
-  };
-}
+import { ProfileResponse } from "@/types/client/my-profile";
 
 export default function MyProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);

@@ -1,10 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { JPCardProps } from "@/types/client/dashboard";
 import Image from "next/image";
 
-interface JPCardProps {
-  value: number;
-  label: string;
-}
 
 const JPCard = ({ value, label }: JPCardProps) => {
   return (

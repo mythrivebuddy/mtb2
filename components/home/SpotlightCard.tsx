@@ -106,22 +106,9 @@ import { motion } from "framer-motion";
 import avtarImg from "@/public/avtar.png";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { Prisma } from "@prisma/client";
+import { SpotlightResponse } from "@/types/client/spotligh";
 
 // Spotlight types
-interface SpotlightResponse {
-  id: string;
-  expiresAt: string;
-  user: {
-    name: string;
-    email: string;
-    image?: string;
-    userBusinessProfile: Prisma.UserGetPayload<{
-      include: { userBusinessProfile: true };
-    }>["userBusinessProfile"];
-  };
-}
-
 export default function SpotlightCard() {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const hasTrackedView = useRef(false);

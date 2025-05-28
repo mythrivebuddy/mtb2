@@ -7,26 +7,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import BlogCard from "./BlogCard";
 import Skeleton from "../Skeleton";
+import { BlogResponse } from "@/types/client/blog";
 
-interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  image: string;
-  content: string;
-  readTime: string;
-  createdAt: string;
-  date: string;
-}
-
-interface BlogResponse {
-  message: string;
-  blogs: BlogPost[];
-  totalCount: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
 
 const BlogHero: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");

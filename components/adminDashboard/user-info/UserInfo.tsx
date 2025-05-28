@@ -14,21 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
-
-interface IPlan {
-  name: string;
-}
-
-export interface IUser {
-  id: string;
-  name: string;
-  email: string;
-  jpEarned: number;
-  jpBalance: number;
-  createdAt: string;
-  isBlocked: boolean;
-  plan?: IPlan | null;
-}
+import { IBlockUserParams, IBlockUserResponse, IUser } from "@/types/client/user-info";
 
 async function fetchUsers(
   filter: string,
@@ -45,16 +31,6 @@ async function fetchUsers(
     },
   });
   return data;
-}
-
-interface IBlockUserParams {
-  userId: string;
-  reason: string;
-}
-
-interface IBlockUserResponse {
-  message: string;
-  user: IUser;
 }
 
 async function blockUser(

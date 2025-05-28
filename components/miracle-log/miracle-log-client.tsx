@@ -36,17 +36,8 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { startOfDay, endOfDay } from "date-fns"; // Added for daily limit check
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
+import { MiracleLog, MiracleLogClientProps } from "@/types/client/mericle-lo";
 
-interface MiracleLog {
-  id: string;
-  content: string;
-  createdAt: string;
-}
-
-interface MiracleLogClientProps {
-  initialLogs: MiracleLog[];
-  initialStreak: { count: number };
-}
 
 export default function MiracleLogClient({ }: MiracleLogClientProps) {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);

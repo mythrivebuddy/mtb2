@@ -10,26 +10,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { Prisma } from "@prisma/client";
 import PageSkeleton from "@/components/PageSkeleton";
-// interface BuddyLensRequest {
-//   id: string;
-//   name: string;
-//   feedbackType: string;
-//   platform: string;
-//   domain: string;
-//   tier: string;
-//   jpCost: number;
-//   socialMediaUrl: string;
-//   status: string;
-//   requesterId: string;
-//   pendingReviewerId?: string;
-//   reviewer?: { name: string; email: string };
-// }
-
-type BuddyLensRequest = Prisma.BuddyLensReviewGetPayload<{
-  include: { reviewer: true; request: true };
-}>;
+import { BuddyLensReview } from "@/types/client/budg-lens";
 
 export default function BuddyLensApprovePage() {
   const { data: session, status: sessionStatus } = useSession();
@@ -64,7 +46,7 @@ export default function BuddyLensApprovePage() {
     data: requests,
     isLoading: isRequestsLoading,
     error: requestsError,
-  } = useQuery<BuddyLensRequest[] | BuddyLensRequest | null>({
+  } = useQuery<BuddyLensReview[] | BuddyLensReview | null>({
     queryKey: ["buddyLensRequests", requestId],
     queryFn: async () => {
       if (!session?.user?.id) return null;
@@ -81,42 +63,7 @@ export default function BuddyLensApprovePage() {
       const requestData = response.data;
       console.log("Request data:", requestData);
 
-      // Handle single request case
-      // if (requestId) {
-      //   const singleRequestReview: BuddyLensRequest[] = requestData;
-
-      //   if (singleRequestReview.request.requesterId !== session.user.id) {
-      //     console.error(
-      //       `Unauthorized: requesterId ${singleRequestReview.request.requesterId} does not match user ${session.user.id}`
-      //     );
-      //     toast.error("You are not authorized to approve this request");
-      //     router.push("/dashboard/buddy-lens");
-      //     return null;
-      //   }
-
-      //   if (singleRequestReview.status !== "PENDING") {
-      //     console.error(
-      //       `Invalid status: ${singleRequestReview.status}, expected PENDING`
-      //     );
-      //     toast.error("This claim is no longer pending review");
-      //     router.push("/dashboard/buddy-lens");
-      //     return null;
-      //   }
-
-      //   if (reviewerId && singleRequestReview.reviewerId !== reviewerId) {
-      //     console.log(
-      //       `Invalid reviewer: pendingReviewerId ${singleRequestReview.reviewerId}, expected ${reviewerId}`
-      //     );
-      //     toast.error("Invalid reviewer for this claim");
-      //     router.push("/dashboard/buddy-lens");
-      //     return null;
-      //   }
-
-      //   return singleRequestReview;
-      // }
-
-      // Handle multiple requests case
-      return requestData as BuddyLensRequest[];
+      return requestData as BuddyLensReview[];
     },
     enabled: !!session?.user?.id && sessionStatus === "authenticated",
     retry: false,

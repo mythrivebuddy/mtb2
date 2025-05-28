@@ -1,16 +1,8 @@
 import createSlug from "@/lib/createSlug";
+import { BlogPost } from "@/types/client/blog";
 import Image from "next/image";
 import Link from "next/link";
 
-interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  image: string;
-  content: string;
-  date: string;
-  readTime: string;
-}
 
 export default function BlogCard({
   id,

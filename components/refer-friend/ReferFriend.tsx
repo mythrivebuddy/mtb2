@@ -19,19 +19,8 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import PageSkeleton from '../PageSkeleton';
+import { ReferralStats } from '@/types/client/refer-friend';
 
-interface ReferralStats {
-  referralCode: string;
-  totalReferrals: number;
-  totalRewards: number;
-  referrals: Array<{
-    id: string;
-    name: string;
-    email: string;
-    joinedAt: string;
-    rewardEarned: number;
-  }>;
-}
 
 async function fetchReferralStats(): Promise<ReferralStats> {
   try {

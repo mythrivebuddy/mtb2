@@ -11,10 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import { BuddyLensRequest } from "@/types/client/budg-lens";
 import PageSkeleton from "../PageSkeleton";
 
-interface Props {
-  userId: string;
-}
-
 function RequestStatusBadge({ status }: { status: string }) {
   switch (status) {
     case "OPEN":
@@ -149,7 +145,7 @@ function AvailableRequestCard({
   );
 }
 
-export default function AvailableRequest({ userId }: Props) {
+export default function AvailableRequest({ userId }: { userId: string }) {
   const queryClient = useQueryClient();
 
   const {
@@ -216,10 +212,10 @@ export default function AvailableRequest({ userId }: Props) {
       {isLoading ? (
         <PageSkeleton type="available-requests" />
       ) : reviewRequests.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-gray-600">No requests available to review.</p>
-          </div>
-        ) : (
+        <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-gray-600">No requests available to review.</p>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 gap-6">
           {reviewRequests.map((req: BuddyLensRequest) => (
             <AvailableRequestCard
