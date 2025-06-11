@@ -7,6 +7,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const pureId = id.split("-")[0];
+ 
   try {
     const blog = await prisma.blog.findUnique({
       where: {

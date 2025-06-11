@@ -172,7 +172,7 @@ export default function BlogPost() {
                           <button
                             className="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800"
                             onClick={() =>
-                              router.push(`/admin/blog/${blog.title}`)
+                              router.push(`/admin/blog/${blog.id}`)
                             }
                           >
                             Edit
