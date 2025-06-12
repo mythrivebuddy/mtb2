@@ -135,7 +135,7 @@ export default function UserDetailsPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         <Card className="bg-white/80 shadow-sm">
           <CardHeader>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 space-y-4 flex-wrap">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={userData.image || undefined} />
                 <AvatarFallback>
