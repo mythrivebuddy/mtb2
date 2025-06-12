@@ -146,7 +146,7 @@ export default function UserDetailsPage() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-3xl font-bold">
+                <CardTitle className="md:text-3xl text-xl font-bold">
                   {userData.name}
                 </CardTitle>
                 <p className="text-gray-600 mt-1">
