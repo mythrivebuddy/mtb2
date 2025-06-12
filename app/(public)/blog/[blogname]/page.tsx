@@ -17,18 +17,27 @@ const fetchBlog = async (id: string): Promise<BlogPost> => {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { blogname } = await params;  
-  const id = blogname.split("-")[0]; 
+  const { blogname } = await params;
+  const id = blogname.includes("-") ? blogname.split("-")[0] : null;
+  const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
+
+  if (!id) {
+    // Old URLs are handled by next.config.js redirects
+    return {
+      title: "Blog Not Found - MyThriveBuddy",
+      description: "The requested blog post could not be found.",
+    };
+  }
 
   try {
-    const blog = await fetchBlog(id); 
+    const blog = await fetchBlog(id);
     return {
       title: `${blog.title} - MyThriveBuddy`,
       description: blog.excerpt,
       openGraph: {
         title: blog.title,
         description: blog.excerpt,
-        url: `http://localhost:3000/blog/${blogname}`, // Use blogname for client-facing URL
+        url: `${baseUrl}/blog/${blogname}`,
         siteName: "MyThriveBuddy",
         images: [
           {
