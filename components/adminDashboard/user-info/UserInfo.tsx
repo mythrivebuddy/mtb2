@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
 import { IBlockUserParams, IBlockUserResponse, IUser } from "@/types/client/user-info";
+import useUsersRealtime from "@/hooks/useUserRealtime";
 
 async function fetchUsers(
   filter: string,
@@ -51,6 +52,7 @@ export default function UserInfoContent() {
   const pageSize = 6;
 
   const queryClient = useQueryClient();
+  useUsersRealtime(["users", filter, searchTerm, page]);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["users", filter, searchTerm, page],
@@ -136,9 +138,15 @@ export default function UserInfoContent() {
               <TableRow key={user.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
                       {user.name.slice(0, 2).toUpperCase()}
+                      {
+                        user.isOnline && (
+                          <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 "></span>
+                        )
+                      }
                     </div>
+    
                     <div>
                       <div className="text-sm font-medium">{user.name}</div>
                       <div className="text-sm text-gray-500">{user.email}</div>

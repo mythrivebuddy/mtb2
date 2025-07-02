@@ -59,6 +59,7 @@ export async function GET(request: Request) {
         createdAt: true,
         isBlocked: true,
         plan: { select: { name: true } },
+        isOnline:true,
       },
       orderBy: { createdAt: "desc" },
     });
