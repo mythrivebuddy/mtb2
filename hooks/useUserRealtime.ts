@@ -64,12 +64,12 @@ export default function useUsersRealtime(queryKey:QueryKey) {
           if ("isOnline" in payload.new) {
             console.log(
               `User ${payload.new.id} online status changed: ${payload.new.isOnline}`
-              .subscribe();
             );
-             queryClient.invalidateQueries({ queryKey });
+            queryClient.invalidateQueries({ queryKey });
           }
         }
       )
+      .subscribe();
       // window.location.reload();
     return () => {
       supabaseClient.removeChannel(channel);
