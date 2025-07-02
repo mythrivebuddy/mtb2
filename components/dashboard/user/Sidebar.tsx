@@ -20,6 +20,7 @@ import {
   GlobeLock,
   LayoutDashboard,
   Droplet,
+  Flower2,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -176,6 +177,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 />
               </NavSection>
               <NavSection title="Features">
+                <NavItem
+                  href="/dashboard/daily-bloom"
+                  icon={<Flower2 size={20} />}
+                  label="Daily Bloom"
+                  onLinkClick={toggleSidebar}
+                />
                 <NavItem
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
