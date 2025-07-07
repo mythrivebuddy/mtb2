@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/carousel";
 import { Category } from "@/types/client/manage-store-product";
 import { Item, WishlistItem } from "@/types/client/store";
+import Image from "next/image";
 
 
 const fetchCategories = async (): Promise<Category[]> => {
@@ -168,7 +169,7 @@ const StorePage: React.FC = () => {
               <CarouselContent>
                 {bannerImages.map((url, index) => (
                   <CarouselItem key={index} className="basis-full">
-                    <img
+                    <Image
                       src={url}
                       alt={`Banner ${index + 1}`}
                       className="w-full h-[200px] object-cover rounded-lg shadow-lg"
@@ -221,7 +222,7 @@ const StorePage: React.FC = () => {
                   className="bg-white shadow-lg rounded-xl p-4 hover:shadow-2xl transition-shadow relative"
                 >
                   <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                    <img
+                    <Image
                       src={item.imageUrl}
                       alt={item.name}
                       className="w-full h-full object-cover rounded-lg"
