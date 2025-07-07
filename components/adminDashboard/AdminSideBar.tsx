@@ -92,19 +92,20 @@ const Sidebar = () => {
         {/* Menu Section */}
         <div className="flex flex-col pl-5 py-6">
           <div className="flex flex-col gap-8 mt-10">
+              {/* Sequence and names of options in changed    :- lucky */}
             <NavSection title="Menu">
               <NavItem href="/admin/dashboard" label="Dashboard" />
-              <NavItem href="/admin/user-info" label="User Info" />
-              <NavItem href="/admin/spotlight" label="Spotlight" />
-              <NavItem href="/admin/blog" label="Create Blog" />
+              <NavItem href="/admin/user-info" label="User Management" />
+              <NavItem href="/admin/blog" label="Blog Management" />
+              <NavItem href="/admin/spotlight" label="Spotlight Management" />
+              <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
-              <NavItem href="/admin/prosperity" label="Prosperity" />
-              <NavItem href="/admin/faq" label="Faqs" />
-              <NavItem href="/admin/activity/update-jp" label="Manage Jp" />
-              <NavItem href="/admin/plans" label="Plans" />
+              <NavItem href="/admin/faq" label="FAQs" />
+              <NavItem href="/admin/activity/update-jp" label="JP Management" />
+              <NavItem href="/admin/plans" label="Manage Plans" />
               <NavItem
                 href="/admin/manage-store-product"
-                label="Manage Store Products"
+                label="Product Management"
               />
             </NavSection>
 
