@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import DailyBloomCLient from "@/components/DailyBloom/DailyBloomClient";
 
-// sdaas``
 
 
 // async function getMiracleLogs() {

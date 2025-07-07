@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {prisma} from "@/lib/prisma";
-import { assignJp } from "@/lib/utils/jp";
+import { assignwJp } from "@/lib/utils/jp";
 import { ActivityType, StreakType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
 import { startOfDay } from "date-fns";
