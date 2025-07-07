@@ -51,6 +51,10 @@ enum ActivityType {
   STREAK_21_DAYS
   STREAK_45_DAYS
   STREAK_90_DAYS
+
+  // change by {SUMIRAN BHAWSAR} for default jp amount and we can change dynamicaly 
+  DAILY_BLOOM_REWARD_CREATION
+  DAILY_BLOOM_REWARD_COMPLETION
 }
 
 enum TransactionType {
