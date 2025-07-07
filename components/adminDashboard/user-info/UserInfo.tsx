@@ -14,8 +14,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
-import { IBlockUserParams, IBlockUserResponse, IUser } from "@/types/client/user-info";
-import useUsersRealtime from "@/hooks/useUserRealtime";
+import {
+  IBlockUserParams,
+  IBlockUserResponse,
+  IUser,
+} from "@/types/client/user-info";
+import useAdminPresence from "@/hooks/useUserRealtime";
+
 
 async function fetchUsers(
   filter: string,
@@ -52,9 +57,9 @@ export default function UserInfoContent() {
   const pageSize = 6;
 
   const queryClient = useQueryClient();
-  useUsersRealtime(["users", filter, searchTerm, page]);
 
-  const { data, isLoading, isError, error } = useQuery({
+  
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["users", filter, searchTerm, page],
     queryFn: () => fetchUsers(filter, searchTerm, page, pageSize),
     refetchOnWindowFocus: false,
@@ -95,6 +100,9 @@ export default function UserInfoContent() {
   const users = data?.users || [];
   const totalUsers = data?.total || 0;
   const totalPages = Math.ceil(totalUsers / pageSize);
+  const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
+  console.log("Online users in UserInfoContent", onlineUsers);
+  const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -140,13 +148,11 @@ export default function UserInfoContent() {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
                       {user.name.slice(0, 2).toUpperCase()}
-                      {
-                        user.isOnline && (
-                          <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 "></span>
-                        )
-                      }
+                      {user.isOnline && onlineUserIds.has(user?.id) && (
+                        <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
+                      )}
                     </div>
-    
+
                     <div>
                       <div className="text-sm font-medium">{user.name}</div>
                       <div className="text-sm text-gray-500">{user.email}</div>

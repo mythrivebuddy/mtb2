@@ -1,78 +1,48 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { QueryKey, useQueryClient } from "@tanstack/react-query";
 import { supabaseClient } from "@/lib/supabaseClient";
-import { IUser } from "@/types/client/user-info";
 
-// export default function useUsersRealtime() {
-//   const queryClient = useQueryClient();
 
-//   // useEffect(() => {
-//   //   console.log("Setting up realtime subscription for user status updates");
-
-//   //   const channel = supabaseClient.channel("users-presence");
-
-//   //   const subscription = channel
-//   //     .on(
-//   //       "postgres_changes",
-//   //       {
-//   //         event: "UPDATE",
-//   //         schema: "public",
-//   //         table: "users",
-//   //         filter: "isOnline=eq.true",
-//   //       },
-//   //       (payload) => {
-//   //         console.log("Received user status update:", payload);
-//   //         const updatedUser = payload.new as IUser;
-//   //         console.log("User status updated:", updatedUser);
-
-//   //         queryClient.invalidateQueries({
-//   //           queryKey: ["users"],
-//   //           exact: false,
-//   //         });
-//   //       }
-//   //     )
-//   //     .subscribe((status) => {
-//   //       if (status === "SUBSCRIBED") {
-//   //         console.log("✅ Realtime subscription successful");
-//   //       }
-//   //     });
-
-//   //   // Cleanup function: remove the channel on unmount
-//   //   return () => {
-//   //     supabaseClient.removeChannel(channel);
-//   //   };
-//   // }, [queryClient, supabaseClient]);
-
-//   // return null; // No UI component, just side effects
-// }
-export default function useUsersRealtime(queryKey:QueryKey) {
+interface OnlineUser {
+  userId: string;
+}
+export default function useAdminPresence(queryKey: QueryKey) {
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const queryClient = useQueryClient();
-
   useEffect(() => {
-    const channel = supabaseClient
-      .channel("users-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "users",
+    const presenceChannel = supabaseClient.channel("user-presence", {
+      config: {
+        presence: {
+          key: "admin",
         },
-        (payload) => {
-          if ("isOnline" in payload.new) {
-            console.log(
-              `User ${payload.new.id} online status changed: ${payload.new.isOnline}`
-            );
-            queryClient.invalidateQueries({ queryKey });
-          }
-        }
-      )
-      .subscribe();
-      // window.location.reload();
-    return () => {
-      supabaseClient.removeChannel(channel);
+      },
+    });
+    const updatePresence = () => {
+      const presence = presenceChannel.presenceState();
+      const users = Object.keys(presence).map((userId) => ({ userId }));
+      // Remove admin-tracker from the list
+      // const filtered = users.filter((u) => u.userId !== "admin");
+      setOnlineUsers(users);
+      queryClient.invalidateQueries({queryKey})
     };
-  }, [queryClient,queryKey]);
+    presenceChannel
+      .on("presence", { event: "join" }, updatePresence)
+      .on("presence", { event: "leave" }, updatePresence)
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await presenceChannel.track({ isAdmin: true }); // admin tracking
+          updatePresence();
+        }
+      });
+
+
+    return () => {
+    
+    supabaseClient.removeChannel(presenceChannel);
+    };
+  }, [queryClient]);
+
+  return onlineUsers;
 }

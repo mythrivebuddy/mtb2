@@ -2,15 +2,14 @@
 
 import { supabaseClient } from "@/lib/supabaseClient";
 import axios from "axios";
-
-import { set } from "date-fns";
 import { useEffect } from "react";
 
 export interface UserPresenceProps {
     userId: string;
+    
 }
 
-// export default function useUserPresence({userId}: UserPresenceProps) {
+
 //     useEffect(()=>{
 //         if (!userId) {
 //             return
@@ -46,6 +45,11 @@ export interface UserPresenceProps {
 
 export default function useUserPresence({ userId }: UserPresenceProps) {
   useEffect(() => {
+    console.log("user id in useUserPresence hook", userId);
+    if (!userId) {
+      console.warn("No userId provided for presence tracking.");
+      return;
+    }
     const presenceChannel = supabaseClient.channel("user-presence", {
       config: {
         presence: {
@@ -73,20 +77,35 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
           console.log("[Presence] Subscribed!");
           await presenceChannel.track({ userId });
           await markOnlineStatus(true);
+          console.log("presenece channel onlnie user ids ",presenceChannel.presenceState());
         }
       });
 
-    const beforeUnloadHandler = () => {
-      markOnlineStatus(false);
-      presenceChannel.unsubscribe();
-    };
+   
+      const cleanUpPresence = () => {
+    presenceChannel.untrack();
+    markOnlineStatus(false);
+    supabaseClient.removeChannel(presenceChannel);
+  };
 
-    window.addEventListener("beforeunload", beforeUnloadHandler);
+  const beforeUnloadHandler = () => {
+    cleanUpPresence();
+  };
 
-    return () => {
-      markOnlineStatus(false);
-      presenceChannel.unsubscribe();
-      window.removeEventListener("beforeunload", beforeUnloadHandler);
-    };
+  const visibilityHandler = () => {
+    if (document.visibilityState === "hidden") {
+      cleanUpPresence();
+    }
+  };
+
+  window.addEventListener("beforeunload", beforeUnloadHandler);
+  document.addEventListener("visibilitychange", visibilityHandler);
+
+  return () => {
+    cleanUpPresence();
+    window.removeEventListener("beforeunload", beforeUnloadHandler);
+    document.removeEventListener("visibilitychange", visibilityHandler);
+  };
   }, [userId]);
 }
+

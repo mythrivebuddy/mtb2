@@ -57,11 +57,11 @@ export async function GET(request: Request) {
         jpEarned: true,
         jpBalance: true,
         createdAt: true,
-        isBlocked: true,
+        isBlocked: true,  
         plan: { select: { name: true } },
         isOnline:true,
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt:"desc" },
     });
 
     const totalUsers = await prisma.user.count({ where: whereClause });

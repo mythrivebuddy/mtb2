@@ -14,12 +14,14 @@ import {
 } from "@/lib/constants/applicationSteps";
 import PageSkeleton from "@/components/PageSkeleton";
 import useUserPresence, { UserPresenceProps } from "@/hooks/userUserPresence";
-import useUsersRealtime from "@/hooks/useUserRealtime";
+
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
-  useUserPresence({userId} as UserPresenceProps);
+  
+    useUserPresence({userId} as UserPresenceProps);
+  
   // useUsersRealtime();
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
