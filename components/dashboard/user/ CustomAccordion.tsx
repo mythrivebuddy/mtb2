@@ -7,6 +7,23 @@ import { useState } from 'react';
 
 
 const allAccordionData = [
+  
+  {
+    type: 'daily_bloom',
+    title: 'Read About This feature',
+    content: (
+      <>
+        <p className="mb-4">
+          Establish a clear plan for your day, turning your ambitions into a sequence of concrete actions you can tackle one by one.
+         </p>
+        <ul className="list-disc pl-5 space-y-2">
+         <li>Makes big goals less intimidating by breaking them into manageable daily steps.</li>
+          <li>Frees up your mental energy by capturing priorities, so you can focus on execution.</li>
+          <li>Creates a positive feedback loop of success that builds confidence and momentum.</li>
+        </ul>
+      </>
+    ),
+  },
   {
     type: 'miracle_log',
     title: 'Read About This feature',
@@ -99,6 +116,7 @@ export default function AccordionWrapper() {
   else if (pathname.includes('aligned-actions')) selectedType = '1_percent_start';
   else if (pathname.includes('prosperity')) selectedType = 'prosperity_drops';
   else if (pathname.includes('spotlight')) selectedType = 'spotlight';
+  else if (pathname.includes('daily-bloom')) selectedType = 'daily_bloom'
 
   const filteredData = allAccordionData.filter((item) => item.type === selectedType);
 

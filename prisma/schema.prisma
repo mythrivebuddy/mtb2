@@ -519,6 +519,9 @@ model Todo {
   isCompleted Boolean    @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  taskAddJP   Boolean   @default(false)
+  taskCompleteJP   Boolean   @default(false)
+
 
   // Relation to User
   userId String
@@ -640,7 +643,7 @@ enum StreakType {
 }
 
 enum Frequency {
-  DAILY
-  WEEKLY
-  MONTHLY
+  Daily
+  Weekly
+  Monthly
 }
