@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import DailyBloomCLient from "@/components/DailyBloom/DailyBloomClient";
 
+// khsgfldkjgosfdk
 
 // async function getMiracleLogs() {
 //   const session = await checkRole("USER");
