@@ -46,7 +46,7 @@ import DailyBloomCLient from "@/components/DailyBloom/DailyBloomClient";
 //   return { count: streak?.miracle_log_count || 0 };
 // }
 
-// hhfhhgjgk
+// ldsfksfdlsdklfds
 
 export default async function DailyBloom() {
   // const [logs, streak] = await Promise.all([
