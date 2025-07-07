@@ -72,6 +72,7 @@ model User {
   userStreak                    UserStreak?
   wishlists                     Wishlist[]
   buddyLensReviews              BuddyLensRequest[]   @relation("BuddyLensReviews")
+  todos                          Todo[]
 
   @@index([name])
 }
@@ -509,6 +510,26 @@ model UserStreak {
   user          User     @relation(fields: [userId], references: [id])
 }
 
+model Todo {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  frequency   Frequency? // Optional: for recurring tasks
+  isCompleted Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  taskAddJP   Boolean   @default(false)
+  taskCompleteJP   Boolean   @default(false)
+
+
+  // Relation to User
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 enum Role {
   ADMIN
   USER
@@ -619,4 +640,10 @@ enum BreathWorkType {
 enum StreakType {
   MIRACLE_LOG
   PROGRESS_VAULT
+}
+
+enum Frequency {
+  Daily
+  Weekly
+  Monthly
 }

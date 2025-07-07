@@ -20,7 +20,6 @@ export async function checkRole(
   msg: string = "You are not authorized for this action"
 ): Promise<Session> {
   const session = await getServerSession(authConfig);
-
   if (!session) {
     throw new Error("Unauthorized");
   }
@@ -29,6 +28,5 @@ export async function checkRole(
   if (!allowedRoles.includes(session.user.role as Role)) {
     throw new Error(msg);
   }
-
   return session;
 }
