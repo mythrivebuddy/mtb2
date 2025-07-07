@@ -12,6 +12,7 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import PaymentModal from "@/components/PaymentModal";
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Item, User } from "@/types/client/store";
+import Image from "next/image";
 
 // Interfaces
 
@@ -150,7 +151,7 @@ const CheckoutContent = () => {
                 <div className="space-y-4">
                   {items.map((item, index) => (
                     <div key={item.id} className="flex gap-4 border-b pb-4">
-                      <img src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded" />
+                      <Image src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded" />
                       <div className="flex-1">
                         <h3 className="font-medium">{item.name}</h3>
                         <p className="text-sm text-gray-500">Pack of 1, {item.category.name}</p>
