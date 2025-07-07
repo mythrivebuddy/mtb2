@@ -160,6 +160,11 @@ async function main() {
       jpAmount: 4000,
       transactionType: TransactionType.CREDIT,
     },
+    // {
+    //   activity: ActivityType.,
+    //   jpAmount: 10,
+    //   transactionType: TransactionType.CREDIT
+    // }
   ];
 
   for (const activity of activities) {

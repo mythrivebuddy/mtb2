@@ -63,6 +63,7 @@ model User {
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
+  todos                         Todo[]
   transaction                   Transaction[]
   plan                          Plan?                @relation(fields: [planId], references: [id])
   referredBy                    User?                @relation("UserReferrer", fields: [referredById], references: [id])
@@ -72,7 +73,6 @@ model User {
   userStreak                    UserStreak?
   wishlists                     Wishlist[]
   buddyLensReviews              BuddyLensRequest[]   @relation("BuddyLensReviews")
-  todos                          Todo[]
 
   @@index([name])
 }
@@ -511,21 +511,18 @@ model UserStreak {
 }
 
 model Todo {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  dueDate     DateTime?
-  frequency   Frequency? // Optional: for recurring tasks
-  isCompleted Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  taskAddJP   Boolean   @default(false)
-  taskCompleteJP   Boolean   @default(false)
-
-
-  // Relation to User
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String     @id @default(cuid())
+  title          String
+  description    String?
+  dueDate        DateTime?
+  frequency      Frequency?
+  isCompleted    Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  userId         String
+  taskAddJP      Boolean    @default(false)
+  taskCompleteJP Boolean    @default(false)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
