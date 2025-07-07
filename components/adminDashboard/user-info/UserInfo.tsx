@@ -101,7 +101,6 @@ export default function UserInfoContent() {
   const totalUsers = data?.total || 0;
   const totalPages = Math.ceil(totalUsers / pageSize);
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
-  console.log("Online users in UserInfoContent", onlineUsers);
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
 
   return (

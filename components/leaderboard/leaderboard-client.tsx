@@ -21,10 +21,8 @@ import {
 } from "@/lib/constant";
 import PageSkeleton from "../PageSkeleton";
 import { SortKey, SortSelectProps } from "@/types/client/leaderboard";
-import useAdminPresence from "@/hooks/useUserRealtime";
 
-import { useSession } from "next-auth/react";
-import useUserPresence, { UserPresenceProps } from "@/hooks/userUserPresence";
+
 
 
 
@@ -58,15 +56,7 @@ const LeaderboardContent = () => {
   const limit =
     Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;
   const orderBy = (searchParams.get("orderBy") as SortKey) || "jpEarned";
-   const {data:session} = useSession();
-  const userId = session?.user.id 
-  
-    
-    const onlineUsers = useAdminPresence(["leaderboard", page, limit, orderBy]);
-    console.log("Online users in UserInfoContent", onlineUsers);
-    const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
-    console.log("Online user IDs in LeaderboardContent", onlineUserIds);
-  
+
   
   const { data, isLoading } = useQuery({
     queryKey: ["leaderboard", page, limit, orderBy],
@@ -121,7 +111,7 @@ const LeaderboardContent = () => {
       />
       <Card>
         <CardContent className="p-0">
-          <DataTable columns={columns} data={users} totalPages={totalPages} onlineUsersIds={Array.from(onlineUserIds)}/>
+          <DataTable columns={columns} data={users} totalPages={totalPages}/>
         </CardContent>
       </Card>
     </>
@@ -130,9 +120,7 @@ const LeaderboardContent = () => {
 
 // Simplify the main page component
 const LeaderboardPage = () => {
-  const {data :session} = useSession()
-  const userId = session?.user.id;
-  useUserPresence({userId} as UserPresenceProps);
+
   return (
     <Suspense
       fallback={
