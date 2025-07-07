@@ -48,7 +48,7 @@ const fetchUsers = async (searchTerm: string) => {
   return data.users;
 };
 
-export default function TopBar({ user }: { user?: UserType }) {
+export default function   TopBar({ user }: { user?: UserType }) {
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);

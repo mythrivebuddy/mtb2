@@ -22,6 +22,10 @@ import {
 import PageSkeleton from "../PageSkeleton";
 import { SortKey, SortSelectProps } from "@/types/client/leaderboard";
 
+
+
+
+
 // Create a new component for the Select UI
 const SortSelect = ({
   orderBy,
@@ -53,6 +57,7 @@ const LeaderboardContent = () => {
     Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;
   const orderBy = (searchParams.get("orderBy") as SortKey) || "jpEarned";
 
+  
   const { data, isLoading } = useQuery({
     queryKey: ["leaderboard", page, limit, orderBy],
     queryFn: async () => {
@@ -106,7 +111,7 @@ const LeaderboardContent = () => {
       />
       <Card>
         <CardContent className="p-0">
-          <DataTable columns={columns} data={users} totalPages={totalPages} />
+          <DataTable columns={columns} data={users} totalPages={totalPages}/>
         </CardContent>
       </Card>
     </>
@@ -115,6 +120,7 @@ const LeaderboardContent = () => {
 
 // Simplify the main page component
 const LeaderboardPage = () => {
+
   return (
     <Suspense
       fallback={
