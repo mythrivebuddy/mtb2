@@ -1,7 +1,5 @@
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { checkRole } from "@/lib/utils/auth";
 import DailyBloomCLient from "@/components/DailyBloom/DailyBloomClient";
 
 
