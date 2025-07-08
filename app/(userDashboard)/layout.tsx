@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // app/layout.tsx
 "use client"
 import UserDashboardLayout from "@/components/layout/UserDashboardLayout";
