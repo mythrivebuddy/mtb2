@@ -117,7 +117,7 @@ export default function DailyBloomClient() {
       );
       return res.data;
     },
-    // keepPreviousData: true,
+    
   });
 
   const dailyBloom = data?.data || [];
@@ -328,7 +328,7 @@ export default function DailyBloomClient() {
               {dailyBloom.length === 0 ? (
                  <div className="py-10 text-center">
                     <p className="text-muted-foreground">
-                      No blooms match your filters.
+                      No blooms Available.
                     </p>
                   </div>
               ) : (
@@ -366,7 +366,7 @@ export default function DailyBloomClient() {
                                 },
                                 {
                                   onSuccess: () => {
-                                    toast.success(`Task marked as ${e.target.checked ? "complete" : "pending"}.`);
+                                    toast.success(`Task marked as ${!e.target.checked ? "complete" : "pending"}.`);
                                     queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
                                   },
                                 }
