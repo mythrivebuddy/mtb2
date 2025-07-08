@@ -3,8 +3,23 @@ import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-
-
+const nextDate = (
+  startDate: Date,
+  frequency: "Daily" | "Weekly" | "Monthly"
+): Date => {
+  const nextDate = new Date(startDate);
+  if (frequency === "Daily") {
+    nextDate.setDate(nextDate.getDate() + 1);
+  } else if (frequency === "Weekly") {
+    nextDate.setDate(nextDate.getDate() + 7);
+  } else if (frequency === "Monthly") {
+    nextDate.setMonth(nextDate.getMonth() + 1);
+  }
+  return nextDate;
+};
+import { assignJp } from "@/lib/utils/jp";
+import { ActivityType } from "@prisma/client";
+// import { startOfDay } from "date-fns";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +27,43 @@ export async function GET(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const now = new Date();
+
+    const completedRecurringTasks = await prisma.todo.findMany({
+      where: {
+        userId: session.user.id,
+        isCompleted: true,
+        frequency: {
+          in: ["Daily", "Weekly", "Monthly"],
+        },
+      },
+    });
+
+    const updatePromises = [];
+
+    for (const task of completedRecurringTasks) {
+      const newDate = nextDate(
+        task.updatedAt,
+        task.frequency as "Daily" | "Weekly" | "Monthly"
+      );
+
+      if (newDate <= now) {
+        updatePromises.push(
+          prisma.todo.update({
+            where: { id: task.id },
+            data: {
+              isCompleted: false,
+              dueDate: newDate,
+            },
+          })
+        );
+      }
+    }
+
+    if (updatePromises.length > 0) {
+      await prisma.$transaction(updatePromises);
     }
 
     const { searchParams } = request.nextUrl;
@@ -36,7 +88,6 @@ export async function GET(request: NextRequest) {
       whereClause.frequency = frequency;
     }
 
-    // Run both queries in parallel for efficiency
     const [blooms, totalCount] = await prisma.$transaction([
       prisma.todo.findMany({
         where: whereClause,
@@ -53,7 +104,6 @@ export async function GET(request: NextRequest) {
       data: blooms,
       totalCount: totalCount,
     });
-    
   } catch (e) {
     console.error(e);
     return NextResponse.json(
@@ -65,55 +115,123 @@ export async function GET(request: NextRequest) {
 
 export async function POST(req: Request) {
   try {
-
     const session = await checkRole("USER");
-// console.log('session', session)
-  const requestBody = await req.json();
+    const requestBody = await req.json();
+    // console.log('session', session)
+    // const requestBody = await req.json();
     // const { title, description, frequency, dueDate } = requestBody;
     console.log("API: Parsed request body:", requestBody);
     if (!session.user.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    
-    console.log("Before call")
+    console.log("Before call");
+    console.log("Before call");
     const {
-  title,
-  description,
-  frequency,
-  dueDate,
-  isCompleted,
-  taskAddJP,
-  taskCompleteJP
-} = requestBody;
+      title,
+      description,
+      frequency,
+      dueDate,
+      isCompleted,
+      taskAddJP,
+      taskCompleteJP,
+    } = requestBody;
+    //   title,
+    //   description,
+    //   frequency,
+    //   dueDate,
+    //   isCompleted,
+    //   taskAddJP,
+    //   taskCompleteJP,
+    // } = requestBody;
 
+    const newBloom = await prisma.todo.create({
+      data: {
+        title,
+        description,
+        frequency: frequency,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        isCompleted: isCompleted ?? false,
+        taskAddJP: taskAddJP ?? false,
+        taskCompleteJP: taskCompleteJP ?? false,
+        userId: session.user.id,
+      },
+    });
+    // const newBloom = await prisma.todo.create({
+    //   data: {
+    //     title,
+    //     description,
+    //     frequency: frequency,
+    //     dueDate: dueDate ? new Date(dueDate) : null,
+    //     isCompleted: isCompleted ?? false,
+    //     taskAddJP: taskAddJP ?? false,
+    //     taskCompleteJP: taskCompleteJP ?? false,
+    //     userId: session.user.id,
+    //   },
+    // });
 
-  const newBloom = await prisma.todo.create({
-  data: {
-    title,
-    description,
-    frequency: frequency, 
-    dueDate: dueDate ? new Date(dueDate) : null,
-    isCompleted: isCompleted ?? false,
-    taskAddJP: taskAddJP ?? false,
-    taskCompleteJP: taskCompleteJP ?? false,
-    userId: session.user.id,
-  },
-});
+    // sumiran bhawsar
+    if (!newBloom) {
+      return NextResponse.json(
+        { error: "error while creating a Daily Bloom", success: false },
+        { status: 500 }
+      );
+    }
 
-     return NextResponse.json(newBloom)
- } catch (err: any) {
-  console.error("Error creating Todo:", err);
+    const user = await prisma.user.findUnique({
+      where: { id: session?.user?.id },
+      include: { plan: true },
+    });
 
-  const errorMessage = typeof err === "object" && err !== null && "message" in err
-    ? err.message
-    : "Unknown error";
+    console.log(`user from the daily bloom route file : ${user}`);
 
-  return NextResponse.json({ error: errorMessage }, { status: 500 });
+    // const today = startOfDay(new Date())
+    // console.log(`today date from daily bloom : ${today}`);
+    // const endOfDay = new Date(today)
+    // console.log(`endofday date from daily bloom : ${endOfDay}`);
+
+    // // Count active (non-deleted) logs for today
+
+    // await prisma.todo.count({
+    //   where: {
+    //     userId: session?.user?.id,
+    //     createdAt: {
+    //       gte: today,
+    //       lte: endOfDay
+    //     }
+
+    //   }
+    // })
+
+    if (user) {
+      try {
+        // assign Award JP points and mark the newBloom true
+        await assignJp(user, ActivityType.DAILY_BLOOM_CREATION_REWARD);
+        await prisma.todo.update({
+          where: { id: newBloom?.id },
+          data: { taskAddJP: true },
+        });
+      } catch (error) {
+        console.log(`Error while assigning the jp when daily bloom is created`);
+        throw error;
+      }
+    }
+
+    return NextResponse.json({
+      message: "Daily Bloom created successfully",
+      newBloom,
+    });
+  } catch (err: any) {
+    console.error("Error creating Todo:", err);
+
+    const errorMessage =
+      typeof err === "object" && err !== null && "message" in err
+        ? err.message
+        : "Unknown error";
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
 }
-}
-
-
 
 /*
     from Frontend requests from the state : 
@@ -123,4 +241,3 @@ export async function POST(req: Request) {
     4. And similar to both the other
 
 */
-

@@ -569,6 +569,10 @@ enum ActivityType {
   PROGRESS_VAULT_STREAK_REWARD_90_DAYS
   BUDDY_LENS_REQUEST
   BUDDY_LENS_REVIEW
+
+  // sumiran bhawsar
+  DAILY_BLOOM_CREATION_REWARD
+  DAILY_BLOOM_COMPLETION_REWARD
 }
 
 enum TransactionType {
@@ -627,6 +631,8 @@ enum NotificationType {
   BUDDY_LENS_REJECTED
   BUDDY_LENS_REVIEWED
   BUDDY_LENS_COMPLETED
+
+  
 }
 
 enum BreathWorkType {
