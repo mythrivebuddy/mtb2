@@ -383,7 +383,7 @@ export default function DailyBloomClient() {
                                 },
                                 {
                                   onSuccess: () => {
-                                    toast.success(`Task marked as ${e.target.checked ? "complete" : "pending"}.`);
+                                    toast.success(`Task marked as ${!e.target.checked ? "complete" : "pending"}.`);
                                     queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
                                   },
                                 }
