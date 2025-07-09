@@ -6,20 +6,36 @@ import { checkRole } from "@/lib/utils/auth";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 
+/**
+ * Handles GET requests for a specific Daily Bloom entry.
+ * Fetches a single 'todo' item by its ID.
+ *
+ * @param _req - The NextRequest object (unused in this GET handler, hence `_req`).
+ * @param params - An object containing route parameters, specifically `Promise<{ id: string }>`.
+ * @returns A NextResponse containing the Daily Bloom entry or an error message.
+ */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Find a unique 'todo' item by its ID from the database
+    const id = (await params).id
     const bloom = await prisma?.todo.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
-    if (!bloom)
+    // If no bloom entry is found, return a 404 Not Found response
+    if (!bloom) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
 
+    // Return the found bloom entry as a JSON response
     return NextResponse.json(bloom);
-  } catch {
+  } catch (error: any) {
+    // Log the error for debugging purposes (optional, but recommended in development)
+    console.error("GET Error:", error.message);
+    // Return a 500 Internal Server Error response if fetching fails
     return NextResponse.json(
       { error: "Failed to fetch entry" },
       { status: 500 }
@@ -27,30 +43,46 @@ export async function GET(
   }
 }
 
+/**
+ * Handles PUT requests to update a specific Daily Bloom entry.
+ * Validates the request body against `dailyBloomSchema`, updates the entry,
+ * and potentially assigns JP points if the task is completed.
+ *
+ * @param req - The NextRequest object containing the request body.
+ * @param params - An object containing route parameters, specifically `Promise<{ id: string }>`.
+ * @returns A NextResponse containing the updated Daily Bloom entry or an error message.
+ */
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check if the user has the 'USER' role using a utility function
     const session = await checkRole("USER");
+    // Parse the JSON body from the request
     const body = await req.json();
 
-    // 1. Find existing bloom
+    const id = (await params).id
+    // 1. Find the existing bloom entry to ensure it exists before updating
     const existing = await prisma?.todo.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
+    // If the entry does not exist, return a 404 Not Found response
     if (!existing) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-    // 3. Full form update
+
+    // 3. Validate the request body against the dailyBloomSchema
     const validated = dailyBloomSchema.parse(body);
 
+    // Update the 'todo' item in the database with the validated data
     const updated = await prisma?.todo.update({
-      where: { id: params.id },
+      where: { id: id },
       data: validated,
     });
 
+    // If the update operation failed, return a 500 Internal Server Error
     if (!updated) {
       return NextResponse.json(
         { error: "error while updating a Daily Bloom", success: false },
@@ -58,9 +90,9 @@ export async function PUT(
       );
     }
 
+    // If the task is marked as completed (isCompleted === true)
     if (updated.isCompleted === true) {
-      // assign jp and first check the todo where the isComplete is true or not
-
+      // Retrieve user information, including their plan, to assign JP points
       const user = await prisma.user.findUnique({
         where: { id: session?.user?.id },
         include: { plan: true },
@@ -68,39 +100,60 @@ export async function PUT(
 
       if (user) {
         try {
-          // assign Award JP points for daily bloom completion and mark the newBloom true
-          await assignJp(user, ActivityType.DAILY_BLOOM_COMPLETION_REWARD);
+          // Assign Award JP points for daily bloom completion
+          await assignJp(user, ActivityType.ADD_LOG);
+          // Mark the task as having had its JP points assigned to prevent duplicate awards
           await prisma.todo.update({
             where: { id: updated?.id },
             data: { taskCompleteJP: true },
           });
         } catch (error: any) {
+          // Log any errors during JP assignment
           console.log(
             `Error while assigning the jp from the completion of the daily bloom task : ${error.message}`
           );
+          // Re-throw the error to be caught by the outer try-catch block
           throw error;
         }
       }
     }
 
+    // Return the updated bloom entry as a JSON response
     return NextResponse.json(updated);
   } catch (error: any) {
+    // Log the error for debugging purposes
     console.error("PUT Error:", error.message);
+    // Return a 500 Internal Server Error response with the error message
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
+/**
+ * Handles DELETE requests to remove a specific Daily Bloom entry.
+ * Deletes a 'todo' item by its ID.
+ *
+ * @param _req - The NextRequest object (unused in this DELETE handler).
+ * @param params - An object containing route parameters, specifically `Promise<{ id: string }>`.
+ * @returns A NextResponse indicating successful deletion or an error message.
+ */
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const id = (await params).id
+
+    // Delete the 'todo' item from the database by its ID
     await prisma?.todo.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
+    // Return a success message as a JSON response
     return NextResponse.json({ message: "Deleted successfully" });
-  } catch {
+  } catch (error: any) {
+    // Log the error for debugging purposes
+    console.error("DELETE Error:", error.message);
+    // Return a 500 Internal Server Error response if deletion fails
     return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
   }
 }

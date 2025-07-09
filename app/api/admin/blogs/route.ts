@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { supabase } from "@/lib/supabase";
+import { supabaseClient } from "@/lib/supabase"; // Fixed: Use named import
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 
@@ -22,17 +22,24 @@ export async function POST(req: NextRequest) {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `blog-images/${fileName}`;
 
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabaseClient.storage
         .from("blog-images")
         .upload(filePath, file);
 
-      if (error) throw new Error(`Supabase Upload Error: ${error.message}`);
+      if (uploadError) {
+        console.error("Supabase Upload Error:", uploadError);
+        throw new Error(`Supabase Upload Error: ${uploadError.message}`);
+      }
 
-      const { data: publicUrl } = supabase.storage
+      const { data } = supabaseClient.storage
         .from("blog-images")
         .getPublicUrl(filePath);
 
-      imageUrl = publicUrl.publicUrl;
+      if (!data || !data.publicUrl) {
+          throw new Error("Could not get public URL for the uploaded image.");
+      }
+
+      imageUrl = data.publicUrl;
     }
 
     // Save blog post in Prisma
@@ -65,6 +72,13 @@ export async function PUT(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const id = searchParams.get("id");
+    if (!id) {
+      return NextResponse.json(
+        { error: "Blog ID is required" },
+        { status: 400 }
+      );
+    }
+
     const formData = await req.formData();
     const title = formData.get("title") as string;
     const excerpt = formData.get("excerpt") as string;
@@ -73,14 +87,12 @@ export async function PUT(req: NextRequest) {
     const category = (formData.get("category") as string) || "uncategorized";
     const file = formData.get("imageFile") as File | null;
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Blog ID is required" },
-        { status: 400 }
-      );
+    const existingBlog = await prisma.blog.findUnique({ where: { id } });
+    if (!existingBlog) {
+        return NextResponse.json({ error: "Blog not found" }, { status: 404 });
     }
 
-    let imageUrl = "";
+    let imageUrl = existingBlog.image || "";
 
     // Check if a new image is provided
     if (file) {
@@ -88,27 +100,23 @@ export async function PUT(req: NextRequest) {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `blog-images/${fileName}`;
 
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabaseClient.storage
         .from("blog-images")
         .upload(filePath, file);
 
-      if (error) throw new Error(`Supabase Upload Error: ${error.message}`);
+      if (uploadError) {
+        console.error("Supabase Upload Error:", uploadError);
+        throw new Error(`Supabase Upload Error: ${uploadError.message}`);
+      }
 
-      const { data: publicUrl } = supabase.storage
+      const { data } = supabaseClient.storage
         .from("blog-images")
         .getPublicUrl(filePath);
 
-      imageUrl = publicUrl.publicUrl;
-    } else {
-      // Keep the existing image if no new file is provided
-      const existingBlog = await prisma.blog.findUnique({
-        where: { id },
-        select: { image: true },
-      });
-      if (!existingBlog) {
-        return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+      if (!data || !data.publicUrl) {
+          throw new Error("Could not get public URL for the uploaded image.");
       }
-      imageUrl = existingBlog.image || "";
+      imageUrl = data.publicUrl;
     }
 
     // Update the blog post in Prisma
@@ -150,25 +158,24 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Fetch blog to check for image
-    const blog = await prisma.blog.findUnique({
-      where: { id },
-      select: { image: true },
-    });
+    const blog = await prisma.blog.findUnique({ where: { id } });
 
     if (!blog) {
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });
     }
 
-    // Remove image from Supabase
+    // Remove image from Supabase if it exists
     if (blog.image) {
-      const filePath = blog.image.split("/").pop();
-      await supabase.storage
-        .from("blog-images")
-        .remove([`blog-images/${filePath}`]);
+        // Correctly extract the path from the full URL
+        const urlParts = blog.image.split('/');
+        const filePath = urlParts.slice(urlParts.indexOf('blog-images')).join('/');
+        
+        if (filePath) {
+             await supabaseClient.storage.from("blog-images").remove([filePath]);
+        }
     }
 
-    // Delete blog post
+    // Delete blog post from database
     await prisma.blog.delete({
       where: { id },
     });

@@ -1,6 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -18,9 +15,8 @@ import {
   Pencil,
   PlusCircle,
   ListChecks,
-  X,
 } from "lucide-react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { format } from "date-fns";
 
 import { dailyBloomSchema, DailyBloomFormType } from "@/schema/zodSchema";
@@ -49,6 +45,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Select,
@@ -65,6 +62,11 @@ import PageSkeleton from "../PageSkeleton";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
 
+// Define a proper type for a single bloom item, including the ID from the database
+interface DailyBloom extends DailyBloomFormType {
+  id: string;
+}
+
 const defaultFormValues: DailyBloomFormType = {
   title: "",
   description: "",
@@ -77,8 +79,8 @@ const defaultFormValues: DailyBloomFormType = {
 
 export default function DailyBloomClient() {
   const queryClient = useQueryClient();
-  const [editData, setEditData] = useState<any>(null);
-  const [viewData, setViewData] = useState<any>(null);
+  const [editData, setEditData] = useState<DailyBloom | null>(null);
+  const [viewData, setViewData] = useState<DailyBloom | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [addData, setAddData] = useState<boolean>(false);
   const [frequencyFilter, setFrequencyFilter] = useState("All");
@@ -93,7 +95,6 @@ export default function DailyBloomClient() {
     register,
     reset,
     control,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<DailyBloomFormType>({
@@ -101,9 +102,6 @@ export default function DailyBloomClient() {
     defaultValues: defaultFormValues,
   });
   
-  const watchedDueDate = watch("dueDate");
-  const watchedFrequency = watch("frequency");
-
   useEffect(() => {
     if (editData) {
       reset({
@@ -117,8 +115,8 @@ export default function DailyBloomClient() {
 
   useEffect(() => {
     if (addData) {
-       setAddInputType('frequency');
-       reset(defaultFormValues);
+        setAddInputType('frequency');
+        reset(defaultFormValues);
     }
   }, [addData, reset]);
   
@@ -126,7 +124,7 @@ export default function DailyBloomClient() {
     setCurrentPage(1);
   }, [frequencyFilter, statusFilter]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<{ data: DailyBloom[]; totalCount: number }>({
     queryKey: ["dailyBloom", frequencyFilter, statusFilter, currentPage],
     queryFn: async () => {
       const res = await axios.get(
@@ -134,7 +132,6 @@ export default function DailyBloomClient() {
       );
       return res.data; 
     },
-    // keepPreviousData: true,
   });
 
   const dailyBloom = data?.data || [];
@@ -142,8 +139,8 @@ export default function DailyBloomClient() {
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const createMutation = useMutation({
-    mutationFn: async (data: DailyBloomFormType) => {
-      const res = await axios.post("/api/user/daily-bloom", data);
+    mutationFn: async (newData: DailyBloomFormType) => {
+      const res = await axios.post("/api/user/daily-bloom", newData);
       return res.data;
     },
     onSuccess: () => {
@@ -151,7 +148,7 @@ export default function DailyBloomClient() {
       toast.success("Daily Bloom created successfully!");
       setAddData(false);
     },
-    onError: (error) => {
+    onError: (error: AxiosError) => {
       const errorMessage = getAxiosErrorMessage(
         error,
         "An error occurred while creating Daily Bloom."
@@ -161,21 +158,22 @@ export default function DailyBloomClient() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: {
+    mutationFn: async (payload: {
       id: string;
       updatedData: DailyBloomFormType;
     }) => {
       const res = await axios.put(
-        `/api/user/daily-bloom/${data.id}`,
-        data.updatedData
+        `/api/user/daily-bloom/${payload.id}`,
+        payload.updatedData
       );
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
     },
-    onError: (error) => {
-      toast.error("Failed to update task.");
+    onError: (error: AxiosError) => {
+      const errorMessage = getAxiosErrorMessage(error, "Failed to update task.");
+      toast.error(errorMessage);
     },
   });
 
@@ -188,19 +186,20 @@ export default function DailyBloomClient() {
       toast.success("Deleted successfully");
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
     },
-    onError: () => {
-      toast.error("Failed to delete");
+    onError: (error: AxiosError) => {
+        const errorMessage = getAxiosErrorMessage(error, "Failed to delete task.");
+        toast.error(errorMessage);
     },
   });
 
-  const onSubmit = (data: DailyBloomFormType) => {
-    createMutation.mutate(data);
+  const onSubmit = (formData: DailyBloomFormType) => {
+    createMutation.mutate(formData);
   };
 
-  const onUpdate = (data: DailyBloomFormType) => {
+  const onUpdate = (formData: DailyBloomFormType) => {
     if (editData) {
       updateMutation.mutate(
-        { id: editData.id, updatedData: data },
+        { id: editData.id, updatedData: formData },
         {
           onSuccess: () => {
             toast.success("Updated successfully");
@@ -214,6 +213,7 @@ export default function DailyBloomClient() {
 
   const handleCloseEditModal = () => {
     setEditData(null);
+    reset(defaultFormValues);
   };
 
   const handleDeleteConfirm = () => {
@@ -223,13 +223,23 @@ export default function DailyBloomClient() {
     }
   };
 
+  const handleUpdateCompletion = (bloom: DailyBloom, isCompleted: boolean) => {
+    updateMutation.mutate(
+      {
+        id: bloom.id,
+        updatedData: { ...bloom, isCompleted },
+      },
+      {
+        onSuccess: () => {
+          toast.success(`Task marked as ${isCompleted ? "complete" : "pending"}.`);
+          queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+        },
+      }
+    );
+  };
+
   return (
     <>
-      <style>{`
-        .group:hover .group-hover-content {
-          display: block;
-        }
-      `}</style>
       <CustomAccordion />
       <div className="container mx-auto p-3 max-w-4xl">
         <Card className="mb-8">
@@ -255,21 +265,21 @@ export default function DailyBloomClient() {
           <Card>
             <CardHeader>
               <CardTitle>Your Daily Blooms</CardTitle>
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mt-2">
                 <CardDescription className="w-full">
                   Overview of your tracked blooms
                 </CardDescription>
-                <div className="flex items-center space-x-2">
-                  <div className="relative group">
+                <div className="flex w-full md:w-auto items-center space-x-2 justify-end">
+                  <div className="relative group w-1/2 md:w-36">
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-36 justify-between"
+                      className="w-full justify-between"
                     >
                       <span>{statusFilter}</span>
                       <ListChecks className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <div className="group-hover-content hidden absolute z-10 w-full bg-background border rounded-md shadow-lg p-1 top-full">
+                    <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
                         variant={statusFilter === 'Pending' ? 'secondary' : 'ghost'}
@@ -290,16 +300,16 @@ export default function DailyBloomClient() {
                       </Button>
                     </div>
                   </div>
-                  <div className="relative group">
+                  <div className="relative group w-1/2 md:w-36">
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-36 justify-between"
+                      className="w-full justify-between"
                     >
                       <span>{frequencyFilter}</span>
                       <Repeat className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <div className="group-hover-content hidden absolute z-10 w-full bg-background border rounded-md shadow-lg p-1 top-full">
+                    <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
                         variant={frequencyFilter === 'All' ? 'secondary' : 'ghost'}
@@ -343,110 +353,129 @@ export default function DailyBloomClient() {
             </CardHeader>
             <CardContent>
               {dailyBloom.length === 0 ? (
-                 <div className="py-10 text-center">
+                  <div className="py-10 text-center">
                     <p className="text-muted-foreground">
                       No blooms match your filters.
                     </p>
                   </div>
               ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted">
-                    <TableHead className="text-center">Achieve</TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Frequency</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {dailyBloom.map((bloom: any) => {
-                    const dueDate = bloom.dueDate
-                      ? new Date(bloom.dueDate).toLocaleDateString("en-IN")
-                      : "-";
-
-                    return (
-                      <TableRow key={bloom.id}>
-                        <TableCell className="text-center">
-                          <Input
-                            type="checkbox"
-                            checked={bloom.isCompleted}
-                            onChange={(e) => {
-                              updateMutation.mutate(
-                                {
-                                  id: bloom.id,
-                                  updatedData: {
-                                    ...bloom,
-                                    isCompleted: e.target.checked,
-                                  },
-                                },
-                                {
-                                  onSuccess: () => {
-                                    toast.success(`Task marked as ${!e.target.checked ? "complete" : "pending"}.`);
-                                    queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-                                  },
-                                }
-                              );
-                            }}
-                            className="w-4 h-4 rounded-md checkbox-round mx-auto border-gray-300 text-black focus:ring-2 focus:ring-black/65 transition duration-200 cursor-pointer"
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {bloom.title.length > 10
+                <>
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted">
+                          <TableHead className="text-center">Achieve</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Frequency</TableHead>
+                          <TableHead className="text-center">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {dailyBloom.map((bloom: DailyBloom) => (
+                          <TableRow key={bloom.id}>
+                            <TableCell className="text-center">
+                              <Input
+                                type="checkbox"
+                                checked={bloom.isCompleted}
+                                onChange={(e) => handleUpdateCompletion(bloom, e.target.checked)}
+                                className="w-4 h-4 rounded-md cursor-pointer"
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{bloom.title.length > 10
                             ? `${bloom.title.slice(0, 10)}...`
-                            : bloom.title}
-                        </TableCell>
-                        <TableCell>
-                          {bloom.description && bloom.description.length > 10
-                            ? `${bloom.description.slice(0, 10)}...`
-                            : bloom.description || "-"}
-                        </TableCell>
-                        <TableCell>{dueDate}</TableCell>
-                        <TableCell>{bloom.frequency || "-"}</TableCell>
-                        <TableCell className="text-center space-x-3">
-                          <button onClick={() => setViewData(bloom)}>
-                            <EyeIcon className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => setEditData(bloom)}>
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => setDeleteId(bloom.id)}>
-                            <Trash2 className="w-4 h-4 " />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                            : bloom.title}</TableCell>
+                            <TableCell>
+                              {bloom.description
+                                ? bloom.description.length > 10
+                                  ? `${bloom.description.slice(0, 10)}...`
+                                  : bloom.description
+                                : ""}
+                            </TableCell>
+                            <TableCell>{bloom.dueDate ? new Date(bloom.dueDate).toLocaleDateString("en-IN") : "-"}</TableCell>
+                            <TableCell>{bloom.frequency || "-"}</TableCell>
+                            <TableCell className="text-center space-x-1">
+                              <Button variant="ghost" size="icon" onClick={() => setViewData(bloom)}>
+                                <EyeIcon className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => setEditData(bloom)}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteId(bloom.id)}>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="md:hidden space-y-4">
+                    {dailyBloom.map((bloom: DailyBloom) => (
+                      <Card key={bloom.id}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between gap-4">
+                            <CardTitle>{bloom.title}</CardTitle>
+                            <div className="flex flex-col items-center flex-shrink-0">
+                                <Input
+                                  type="checkbox"
+                                  checked={bloom.isCompleted}
+                                  onChange={(e) => handleUpdateCompletion(bloom, e.target.checked)}
+                                  className="w-5 h-5 rounded-md cursor-pointer"
+                                />
+                                <Label className="text-xs text-muted-foreground mt-1">Achieve</Label>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm">
+                            {bloom.description && (
+                                <p className="text-muted-foreground">{bloom.description}</p>
+                            )}
+                            <div className="flex items-center">
+                                <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
+                                <span>Frequency: {bloom.frequency || "-"}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                                <span>Due: {bloom.dueDate ? new Date(bloom.dueDate).toLocaleDateString("en-IN") : "-"}</span>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-end space-x-2">
+                           <Button variant="outline" size="sm" onClick={() => setViewData(bloom)}>View</Button>
+                           <Button variant="outline" size="sm" onClick={() => setEditData(bloom)}>Edit</Button>
+                           <Button variant="destructive" size="sm" onClick={() => setDeleteId(bloom.id)}>Delete</Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </>
               )}
             </CardContent>
             <div className="flex items-center justify-center space-x-2 py-4">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                >
-                    Previous
-                </Button>
-                <span className="text-sm text-muted-foreground">
+              <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+              >
+                  Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
                   Page {currentPage} of {totalPages > 0 ? totalPages : 1}
-                </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                >
-                    Next
-                </Button>
+              </span>
+              <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages || totalPages === 0}
+              >
+                  Next
+              </Button>
             </div>
           </Card>
         )}
-
-        {/* --- MODALS --- */}
         
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
           <DialogContent className="sm:max-w-lg">
@@ -501,7 +530,6 @@ export default function DailyBloomClient() {
           </DialogContent>
         </Dialog>
 
-        {/* ✅ MODIFIED EDIT MODAL */}
         <Dialog open={!!editData} onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}>
           <DialogContent>
             <DialogHeader>
@@ -519,13 +547,12 @@ export default function DailyBloomClient() {
                   <Textarea id="desc-edit" {...register("description")} />
                 </div>
                 
-                {/* Conditionally render based on which field has a value */}
                 {editData?.dueDate ? (
                   <Controller
                     name="dueDate"
                     control={control}
                     render={({ field }) => (
-                       <div className="grid w-full items-center gap-1.5">
+                        <div className="grid w-full items-center gap-1.5">
                         <Label htmlFor="date-edit">Due Date</Label>
                         <Input
                           id="date-edit"
@@ -533,8 +560,8 @@ export default function DailyBloomClient() {
                           value={field.value && !isNaN(new Date(field.value).getTime()) ? format(new Date(field.value), 'yyyy-MM-dd') : ''}
                           onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
                         />
-                         {errors.dueDate && <p className="text-sm text-red-500 mt-1">{errors.dueDate.message}</p>}
-                       </div>
+                          {errors.dueDate && <p className="text-sm text-red-500 mt-1">{errors.dueDate.message}</p>}
+                        </div>
                     )}
                   />
                 ) : (
@@ -554,7 +581,7 @@ export default function DailyBloomClient() {
                               <SelectItem value="Monthly">Monthly</SelectItem>
                             </SelectContent>
                           </Select>
-                         {errors.frequency && <p className="text-sm text-red-500 mt-1">{errors.frequency.message}</p>}
+                          {errors.frequency && <p className="text-sm text-red-500 mt-1">{errors.frequency.message}</p>}
                       </div>
                     )}
                   />
@@ -607,7 +634,7 @@ export default function DailyBloomClient() {
                           value={field.value && !isNaN(new Date(field.value).getTime()) ? format(new Date(field.value), "yyyy-MM-dd") : ""}
                           onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
                         />
-                         {errors.dueDate && <p className="text-red-500 text-sm mt-1">{errors.dueDate.message}</p>}
+                        {errors.dueDate && <p className="text-red-500 text-sm mt-1">{errors.dueDate.message}</p>}
                       </div>
                     )}
                   />
@@ -627,7 +654,7 @@ export default function DailyBloomClient() {
                               <SelectItem value="Monthly">Monthly</SelectItem>
                             </SelectContent>
                           </Select>
-                         {errors.frequency && <p className="text-sm text-red-500 mt-1">{errors.frequency.message}</p>}
+                          {errors.frequency && <p className="text-sm text-red-500 mt-1">{errors.frequency.message}</p>}
                       </div>
                     )}
                   />

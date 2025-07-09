@@ -52,8 +52,8 @@ export const authConfig: AuthOptions = {
           if (user.isBlocked) {
             // Optional: If user.blockedUsers contains additional info, use it.
             let blockedMessage = "Your account is blocked.";
-            if (user.blockedUsers && user.blockedUsers.length > 0) {
-              const blockedInfo = user.blockedUsers[0];
+            if (user.blockedUsers) {
+              const blockedInfo = user.blockedUsers;
               blockedMessage += ` Reason: ${
                 blockedInfo.reason
               }. Blocked on: ${new Date(
