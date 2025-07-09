@@ -1,9 +1,4 @@
-// app/(userDashboard)/layout.tsx
 "use client"; // This directive is crucial for using React Hooks in App Router layouts
-
-// It's good practice to remove unused eslint-disable directives.
-// If you're sure you're not using 'typescript-eslint/no-unused-vars' and it's not reporting issues, remove the line below.
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import UserDashboardLayout from "@/components/layout/UserDashboardLayout";
 // Ensure the import path and named export are correct for your hook
@@ -16,7 +11,8 @@ export default function Layout({ // Capitalized 'Layout' is common for component
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { data: session, status } = useSession();
+  // ✅ FIXED: Removed 'status' from the destructuring as it was not being used.
+  const { data: session } = useSession();
 
   // The 'id' from session?.user can be string, null, or undefined.
   // We ensure the type passed to useUserPresence is compatible.
