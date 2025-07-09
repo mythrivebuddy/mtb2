@@ -7,7 +7,6 @@ export default withAuth(
     const isAdmin = token?.role === "ADMIN";
     const path = req.nextUrl.pathname;
 
-    console.log('middleware called')
 
     // Redirect non-admin users from /admin
     if (path.startsWith("/dashboard") && isAdmin) {
