@@ -89,6 +89,11 @@ export async function GET(request: NextRequest) {
 
     if (status === "Pending") {
       whereClause.isCompleted = false;
+            if(whereClause.dueDate){
+              whereClause.dueDate = {
+              gte: now, 
+            };
+       }
       
        
   
