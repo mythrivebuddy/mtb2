@@ -146,6 +146,8 @@ export default function DailyBloomClient() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+      // Also invalidate overdue in case a new overdue task was created
+      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
       toast.success("Daily Bloom created successfully!");
       setAddData(false);
     },
@@ -169,8 +171,11 @@ export default function DailyBloomClient() {
       );
       return res.data;
     },
+    // ✅ THIS IS THE KEY FIX
     onSuccess: () => {
+      // Invalidate both queries to ensure both lists refresh automatically
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
       const errorMessage = getAxiosErrorMessage(error, "Failed to update task.");
@@ -183,9 +188,12 @@ export default function DailyBloomClient() {
       const res = await axios.delete(`/api/user/daily-bloom/${id}`);
       return res.data;
     },
+    // ✅ THIS IS THE KEY FIX
     onSuccess: () => {
       toast.success("Deleted successfully");
+      // Invalidate both queries to ensure both lists refresh automatically
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
         const errorMessage = getAxiosErrorMessage(error, "Failed to delete task.");
@@ -204,7 +212,6 @@ export default function DailyBloomClient() {
         {
           onSuccess: () => {
             toast.success("Updated successfully");
-            queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
             setEditData(null);
           },
         }
@@ -233,7 +240,6 @@ export default function DailyBloomClient() {
       {
         onSuccess: () => {
           toast.success(`Task marked as ${isCompleted ? "complete" : "pending"}.`);
-          queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
         },
       }
     );
@@ -259,9 +265,15 @@ export default function DailyBloomClient() {
             </Button>
           </CardContent>
         </Card>
-        <div>
-          <Overdue/>
-        </div>
+        
+        {/* Pass all handler functions as props to the Overdue component */}
+        <Overdue
+          onView={setViewData}
+          onEdit={setEditData}
+          onDelete={setDeleteId}
+          onUpdateCompletion={handleUpdateCompletion}
+        />
+
         {isLoading ? (
           <PageSkeleton type="leaderboard" />
         ) : (
@@ -480,6 +492,7 @@ export default function DailyBloomClient() {
           </Card>
         )}
         
+        {/* All Dialogs remain here in the parent component */}
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
