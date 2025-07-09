@@ -89,12 +89,11 @@ export async function GET(request: NextRequest) {
 
     if (status === "Pending") {
       whereClause.isCompleted = false;
-      whereClause.dueDate = {
-        gte: now, // Only fetch tasks that are not completed and due in the future
-      };
-        whereClause.dueDate = {
-        gte: now, // Only fetch tasks that are not completed and due in the future
-      };
+            if(whereClause.dueDate){
+              whereClause.dueDate = {
+              gte: now, 
+            };
+       }
   
     } else if (status === "Completed") {
       whereClause.isCompleted = true;

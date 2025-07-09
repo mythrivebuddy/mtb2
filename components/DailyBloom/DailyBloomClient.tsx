@@ -61,6 +61,7 @@ import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
+import Overdue from "./Overdue";
 
 // Define a proper type for a single bloom item, including the ID from the database
 interface DailyBloom extends DailyBloomFormType {
@@ -258,7 +259,9 @@ export default function DailyBloomClient() {
             </Button>
           </CardContent>
         </Card>
-
+        <div>
+          <Overdue/>
+        </div>
         {isLoading ? (
           <PageSkeleton type="leaderboard" />
         ) : (
