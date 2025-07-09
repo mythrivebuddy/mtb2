@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { dailyBloomSchema } from "@/schema/zodSchema";
 import { prisma } from "@/lib/prisma";
@@ -32,12 +31,15 @@ export async function GET(
 
     // Return the found bloom entry as a JSON response
     return NextResponse.json(bloom);
-  } catch (error: any) {
-    // Log the error for debugging purposes (optional, but recommended in development)
-    console.error("GET Error:", error.message);
+  } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+    let errorMessage = "Failed to fetch entry";
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    console.error("GET Error:", errorMessage);
     // Return a 500 Internal Server Error response if fetching fails
     return NextResponse.json(
-      { error: "Failed to fetch entry" },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -107,10 +109,13 @@ export async function PUT(
             where: { id: updated?.id },
             data: { taskCompleteJP: true },
           });
-        } catch (error: any) {
-          // Log any errors during JP assignment
+        } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+          let errorMessage = "Unknown error during JP assignment";
+          if (error instanceof Error) {
+            errorMessage = error.message;
+          }
           console.log(
-            `Error while assigning the jp from the completion of the daily bloom task : ${error.message}`
+            `Error while assigning the jp from the completion of the daily bloom task : ${errorMessage}`
           );
           // Re-throw the error to be caught by the outer try-catch block
           throw error;
@@ -120,11 +125,14 @@ export async function PUT(
 
     // Return the updated bloom entry as a JSON response
     return NextResponse.json(updated);
-  } catch (error: any) {
-    // Log the error for debugging purposes
-    console.error("PUT Error:", error.message);
+  } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+    let errorMessage = "An unknown error occurred";
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    console.error("PUT Error:", errorMessage);
     // Return a 500 Internal Server Error response with the error message
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -133,7 +141,7 @@ export async function PUT(
  * Deletes a 'todo' item by its ID.
  *
  * @param _req - The NextRequest object (unused in this DELETE handler).
- * @param params - An object containing route parameters, specifically `Promise<{ id: string }>`.
+ * @param params - An object containing route parameters, specifically `Promise<{ id:string }>`.
  * @returns A NextResponse indicating successful deletion or an error message.
  */
 export async function DELETE(
@@ -150,10 +158,13 @@ export async function DELETE(
 
     // Return a success message as a JSON response
     return NextResponse.json({ message: "Deleted successfully" });
-  } catch (error: any) {
-    // Log the error for debugging purposes
-    console.error("DELETE Error:", error.message);
+  } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+    let errorMessage = "Failed to delete";
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    console.error("DELETE Error:", errorMessage);
     // Return a 500 Internal Server Error response if deletion fails
-    return NextResponse.json({ error: "Failed to delete" }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
