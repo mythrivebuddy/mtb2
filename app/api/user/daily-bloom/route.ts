@@ -1,4 +1,3 @@
-
 import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -12,8 +11,7 @@ const nextDate = (
 ): Date => {
   const nextDate = new Date(startDate);
 
-  
-  nextDate.setHours(0, 0, 0, 0); 
+  nextDate.setHours(0, 0, 0, 0);
 
   if (frequency === "Daily") {
     nextDate.setDate(nextDate.getDate() + 1);
@@ -35,7 +33,6 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
 
-   
     const completedRecurringTasks = await prisma.todo.findMany({
       where: {
         userId: session.user.id,
@@ -48,7 +45,6 @@ export async function GET(request: NextRequest) {
 
     const updatePromises = [];
 
-   
     for (const task of completedRecurringTasks) {
       if (task.frequency) {
         const newDate = nextDate(
@@ -70,7 +66,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Execute all updates in a single transaction if there are any
     if (updatePromises.length > 0) {
       await prisma.$transaction(updatePromises);
     }
@@ -82,19 +77,21 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "8", 10);
     const skip = (page - 1) * limit;
 
-    // Build the where clause for fetching todos
     const whereClause: Prisma.TodoWhereInput = {
       userId: session.user.id,
     };
 
+    // ✅ CORRECTED LOGIC IS HERE
     if (status === "Pending") {
       whereClause.isCompleted = false;
-            if(whereClause.dueDate){
-              whereClause.dueDate = {
-              gte: now, 
-            };
-       }
-  
+      // A task is considered "Pending" if it's not complete AND either:
+      // 1. It has no due date (it's a recurring task without a specific deadline).
+      // 2. Its due date is today or in the future.
+      // This correctly excludes tasks whose due date is in the past.
+      whereClause.OR = [
+        { dueDate: null },
+        { dueDate: { gte: now } },
+      ];
     } else if (status === "Completed") {
       whereClause.isCompleted = true;
     }
@@ -103,11 +100,10 @@ export async function GET(request: NextRequest) {
       whereClause.frequency = frequency as "Daily" | "Weekly" | "Monthly";
     }
 
-    // Fetch the todos and the total count in a transaction
     const [blooms, totalCount] = await prisma.$transaction([
       prisma.todo.findMany({
         where: whereClause,
-        orderBy: { dueDate: "asc" },
+        orderBy: { createdAt: "desc" }, // Changed to createdAt for more predictable ordering
         skip: skip,
         take: limit,
       }),
@@ -129,6 +125,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// The POST function remains completely unchanged.
 export async function POST(req: NextRequest) {
   try {
     const session = await checkRole("USER");

@@ -126,13 +126,6 @@ export const dailyBloomSchema = z
         return undefined; // Treat null, undefined, or empty string as undefined
       }, 
       z.date()
-        .refine((date) => {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0); // Compare against the start of today
-          return date >= today;
-        }, {
-          message: "Due date cannot be in the past.",
-        })
         .optional()
         .nullable()
     ),
