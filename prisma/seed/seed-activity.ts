@@ -161,16 +161,16 @@ async function main() {
       transactionType: TransactionType.CREDIT,
     },
     // sumiran bhawsar
-    {
-      activity: ActivityType.DAILY_BLOOM_CREATION_REWARD,
-      jpAmount: 10,
-      transactionType: TransactionType.CREDIT
-    },
-    {
-      activity: ActivityType.DAILY_BLOOM_COMPLETION_REWARD,
-      jpAmount: 20,
-      transactionType: TransactionType.CREDIT
-    }
+    // {
+    //   activity: ActivityType.DAILY_BLOOM_CREATION_REWARD,
+    //   jpAmount: 10,
+    //   transactionType: TransactionType.CREDIT
+    // },
+    // {
+    //   activity: ActivityType.DAILY_BLOOM_COMPLETION_REWARD,
+    //   jpAmount: 20,
+    //   transactionType: TransactionType.CREDIT
+    // }
   ];
 
   for (const activity of activities) {

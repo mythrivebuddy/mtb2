@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { supabase } from "@/lib/supabase";
+import { supabaseClient } from "@/lib/supabase";
 import calculateProfileCompletion from "@/utils/calculateProfileCompletion";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
@@ -65,13 +65,13 @@ export async function PUT(req: Request) {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `spotlight-image/${fileName}`;
 
-      const { error } = await supabase.storage
+      const { error } = await supabaseClient.storage
         .from("spotlight-image")
         .upload(filePath, file);
 
       if (error) throw new Error(`Supabase Upload Error: ${error.message}`);
 
-      const { data: publicUrl } = supabase.storage
+      const { data: publicUrl } = supabaseClient.storage
         .from("spotlight-image")
         .getPublicUrl(filePath);
 

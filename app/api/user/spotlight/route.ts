@@ -54,7 +54,7 @@ export async function POST() {
     const jpRequired = getJpToDeduct(user, spotlightActivity);
 
     // Check if user's business profile is complete
-    const businessProfile = user.userBusinessProfile[0];
+    const businessProfile = user.userBusinessProfile;
     if (!businessProfile || !businessProfile.isProfileComplete) {
       return NextResponse.json(
         {

@@ -30,27 +30,25 @@ export async function GET(request: NextRequest) {
           },
           {
             userBusinessProfile: {
-              some: {
-                OR: [
-                  { name: { contains: searchTerm, mode: "insensitive" } },
-                  {
-                    businessInfo: { contains: searchTerm, mode: "insensitive" },
+              OR: [
+                { name: { contains: searchTerm, mode: "insensitive" } },
+                {
+                  businessInfo: { contains: searchTerm, mode: "insensitive" },
+                },
+                {
+                  missionStatement: {
+                    contains: searchTerm,
+                    mode: "insensitive",
                   },
-                  {
-                    missionStatement: {
-                      contains: searchTerm,
-                      mode: "insensitive",
-                    },
-                  },
-                  { goals: { contains: searchTerm, mode: "insensitive" } },
-                  {
-                    achievements: { contains: searchTerm, mode: "insensitive" },
-                  },
-                  {
-                    keyOfferings: { contains: searchTerm, mode: "insensitive" },
-                  },
-                ],
-              },
+                },
+                { goals: { contains: searchTerm, mode: "insensitive" } },
+                {
+                  achievements: { contains: searchTerm, mode: "insensitive" },
+                },
+                {
+                  keyOfferings: { contains: searchTerm, mode: "insensitive" },
+                },
+              ],
             },
           },
         ],

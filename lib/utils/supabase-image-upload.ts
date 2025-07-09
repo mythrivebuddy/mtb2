@@ -1,4 +1,4 @@
-import { supabase } from "../supabase";
+import { supabaseClient } from "../supabase";
 
 export default async function handleSupabaseImageUpload(file: File, bucket_name: string, folder_name: string): Promise<string> {
     let imageUrl = "";
@@ -9,14 +9,14 @@ export default async function handleSupabaseImageUpload(file: File, bucket_name:
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${folder_name}/${fileName}`;
 
-      const { data, error } = await supabase.storage
+      const { data, error } = await supabaseClient.storage
         .from(bucket_name)
         .upload(filePath, file);
 
       if (error) throw new Error(`Supabase Upload Error: ${error.message}`);
       console.log(data);
 
-      const { data: publicUrl } = supabase.storage
+      const { data: publicUrl } = supabaseClient.storage
         .from(bucket_name)
         .getPublicUrl(filePath);
 
