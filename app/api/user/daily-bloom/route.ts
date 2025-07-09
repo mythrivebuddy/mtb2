@@ -84,14 +84,14 @@ export async function GET(request: NextRequest) {
     // ✅ CORRECTED LOGIC IS HERE
     if (status === "Pending") {
       whereClause.isCompleted = false;
-      // A task is considered "Pending" if it's not complete AND either:
-      // 1. It has no due date (it's a recurring task without a specific deadline).
-      // 2. Its due date is today or in the future.
-      // This correctly excludes tasks whose due date is in the past.
-      whereClause.OR = [
-        { dueDate: null },
-        { dueDate: { gte: now } },
-      ];
+            if(whereClause.dueDate){
+              whereClause.dueDate = {
+              gte: now, 
+            };
+       }
+      
+       
+  
     } else if (status === "Completed") {
       whereClause.isCompleted = true;
     }
