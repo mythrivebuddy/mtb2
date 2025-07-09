@@ -72,6 +72,7 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
   if (!overdueBlooms || overdueBlooms.length === 0) {
     return null;
   }
+  
 
   return (
     // Updated card style to use a "destructive" theme for overdue items
