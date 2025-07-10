@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     await checkAndRotateSpotlight();
 
     // Return success response
-    return NextResponse.json(
+    return NextResponse.json( 
       {
         success: true,
         message: "Spotlight rotation check completed",

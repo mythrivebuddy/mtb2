@@ -27,24 +27,27 @@ import {
   DEFAULT_LEADERBOARD_PAGE_LIMIT,
 } from "@/lib/constant";
 
+
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, unknown>[];
   data: TData[];
   totalPages: number;
+ 
 }
 
 export function DataTable<TData>({
   columns,
   data,
   totalPages,
+ 
 }: DataTableProps<TData>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page")) || DEFAULT_LEADERBOARD_PAGE;
   const limit =
-    Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;
-
+   Number(searchParams.get("limit")) || DEFAULT_LEADERBOARD_PAGE_LIMIT;
   const table = useReactTable({
     data,
     columns,
@@ -67,15 +70,18 @@ export function DataTable<TData>({
     router.push(`${pathname}?${newSearchParams.toString()}`);
   };
 
+ 
+
   return (
     <div className="mx-auto bg-white shadow-md rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow
-              key={headerGroup.id}
-              className="text-gray-700 uppercase text-sm text-center"
+            key={headerGroup.id}
+            className="text-gray-700 uppercase text-sm text-center"
             >
+              
               {headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
@@ -114,6 +120,9 @@ export function DataTable<TData>({
             </TableRow>
           ))}
         </TableBody>
+        {/* this table body changed by toheed */}
+      
+
       </Table>
 
       {/* pagination controls */}
