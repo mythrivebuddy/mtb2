@@ -6,6 +6,15 @@ import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 
 
+/**
+ * Handles GET requests for a specific Daily Bloom entry.
+ * Fetches a single 'todo' item by its ID.
+ *
+ * @param _req - The NextRequest object (unused in this GET handler, hence _req).
+ * @param params - An object containing route parameters, specifically Promise<{ id: string }>.
+ * @returns A NextResponse containing the Daily Bloom entry or an error message.
+ */
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -38,6 +47,16 @@ export async function GET(
   }
 }
 
+
+/**
+ * Handles PUT requests to update a specific Daily Bloom entry.
+ * Validates the request body against dailyBloomSchema, updates the entry,
+ * and potentially assigns JP points if the task is completed.
+ *
+ * @param req - The NextRequest object containing the request body.
+ * @param params - An object containing route parameters, specifically Promise<{ id: string }>.
+ * @returns A NextResponse containing the updated Daily Bloom entry or an error message.
+ */
 
 export async function PUT(
   req: NextRequest,
@@ -122,6 +141,15 @@ export async function PUT(
 }
 
 
+/**
+ * Handles DELETE requests to remove a specific Daily Bloom entry.
+ * Deletes a 'todo' item by its ID.
+ *
+ * @param _req - The NextRequest object (unused in this DELETE handler).
+ * @param params - An object containing route parameters, specifically Promise<{ id:string }>.
+ * @returns A NextResponse indicating successful deletion or an error message.
+ */
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -145,4 +173,6 @@ export async function DELETE(
     // Return a 500 Internal Server Error response if deletion fails
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
+
 }
+

@@ -73,7 +73,9 @@ export default function ProsperityPage() {
 
   return (
     <div className="mx-auto py-10 px-0 ">
-      <h1 className="text-2xl font-bold mb-6">Prosperity Drops</h1>
+
+      <h1 className="text-2xl font-bold mb-6">Prosperity Drop</h1>
+
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>

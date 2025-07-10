@@ -20,7 +20,7 @@ import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
 import { formatJP } from "@/lib/utils/formatJP";
 import UserProfileDropdown from "./UserProfileDropDown";
-import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; //!added by aaisha
+import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; 
 import { SearchUser } from "@/types/client/nav";
 
 const TopBarBadge = ({
