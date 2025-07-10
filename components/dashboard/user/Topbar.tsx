@@ -20,7 +20,7 @@ import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import { cn } from "@/lib/utils/tw";
 import { formatJP } from "@/lib/utils/formatJP";
 import UserProfileDropdown from "./UserProfileDropDown";
-import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; //!added by aaisha
+import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; 
 import { SearchUser } from "@/types/client/nav";
 
 const TopBarBadge = ({
@@ -48,7 +48,7 @@ const fetchUsers = async (searchTerm: string) => {
   return data.users;
 };
 
-export default function TopBar({ user }: { user?: UserType }) {
+export default function   TopBar({ user }: { user?: UserType }) {
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);

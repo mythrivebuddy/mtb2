@@ -7,6 +7,7 @@ export const activityDisplayMap: Record<string, string> = {
   PROSPERITY_DROP: "Prosperity Drop",
   BUSINESSPROFILE_COMPLETE: "Business Profile Complete",
   MIRACLE_LOG: "Miracle Log",
+  DAILY_BLOOM: "Daily Bloom",
   PROGRESS_VAULT: "Progress Vault",
   // MAGIC_BOX: "Magic Box",
   GENERAL_FEEDBACK: "General Feedback",
@@ -16,5 +17,9 @@ export const activityDisplayMap: Record<string, string> = {
   REFER_TO: "Referred To",
   MAGIC_BOX_REWARD: "Magic Box Reward",
   MAGIC_BOX_SHARED_REWARD: "Magic Box Shared Reward",
-  
+
+  // SUMIRAN BHAWSAR
+
+  DAILY_BLOOM_CREATION_REWARD: "Daily Bloom Task Creation",
+  DAILY_BLOOM_COMPLETION_REWARD: "Daily Bloom Completion",
 };

@@ -38,6 +38,117 @@ export const miracleLogSchema = z.object({
     .min(1, "Content is required")
     .max(120, "Content cannot exceed 120 characters"),
 });
+
+// export const dailyBloomSchema = z.object({
+//   title: z
+//     .string()
+//     .min(1, "Title is required")
+//     .max(30, "Title Cannot exceed 30 characters"),
+//   description: z
+//     .string()
+//     .min(1, "Description is required")
+//     .max(120, "Description cannot exceed 120 characters"),
+//  dueDate: z.date()
+//   .default(() => new Date())
+//   .refine((date) => {
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0); // Set to midnight today for comparison
+//     return date >= today;
+//   }, {
+//     message: "Due date cannot be in the past.",
+//     path: ["dueDate"], // Optional: Helps pinpoint the error field
+//   }),
+//   frequency: z.enum(["Daily", "Weekly", "Monthly"]).optional().default("Daily"),
+//   isCompleted: z.boolean().default(false),
+//   taskAddJP: z.boolean().default(false),
+//   taskCompleteJP: z.boolean().default(false),
+// });
+
+// export const dailyBloomSchema = z.object({
+//   title: z
+//     .string()
+//     .min(1, "Title is required")
+//     .max(30, "Title Cannot exceed 30 characters"),
+//   description: z
+//     .string()
+//     .min(1, "Description is required") // Now required with min length
+//     .max(120, "Description cannot exceed 120 characters"),
+//   dueDate: z.preprocess((arg) => {
+//     if (typeof arg === 'string' && arg.length > 0) {
+//       const date = new Date(arg);
+//       // Check for valid date after parsing
+//       return isNaN(date.getTime()) ? undefined : date; // Return undefined for invalid date string
+//     }
+//     if (arg instanceof Date) {
+//       return arg;
+//     }
+//     return undefined; // For null, undefined, or empty string
+//   }, 
+//     z.date()
+//       .default(() => new Date()) // Your default value
+//       .refine((date) => {
+//         const today = new Date();
+//         today.setHours(0, 0, 0, 0); // Set to midnight today for comparison
+//         return date >= today;
+//       }, {
+//         message: "Due date cannot be in the past.",
+//         path: ["dueDate"],
+//       })
+//       .optional() // Keep optional because the form input can be empty initially
+//       .nullable() // Allow null if optional and not provided
+//   ),
+//   frequency: z.enum(["Daily", "Weekly", "Monthly"]).optional().default("Daily"), // Your default value
+//   isCompleted: z.boolean().default(false), // New field
+//   taskAddJP: z.boolean().default(false), // New field
+//   taskCompleteJP: z.boolean().default(false), // New field
+// });
+
+
+export const dailyBloomSchema = z
+  .object({
+    title: z
+      .string()
+      .min(1, "Title is required")
+      .max(30, "Title cannot exceed 30 characters"),
+    description: z
+      .string()
+      .max(120, "Description cannot exceed 120 characters")
+      .optional(), // Making description optional
+    dueDate: z.preprocess((arg) => {
+        if (typeof arg === 'string' && arg.length > 0) {
+          const date = new Date(arg);
+          // Return undefined for invalid date strings to let Zod handle the error
+          return isNaN(date.getTime()) ? undefined : date;
+        }
+        if (arg instanceof Date) {
+          return arg;
+        }
+        return undefined; // Treat null, undefined, or empty string as undefined
+      }, 
+      z.date()
+        .optional()
+        .nullable()
+    ),
+    frequency: z.enum(["Daily", "Weekly", "Monthly"]).optional().nullable(),
+    isCompleted: z.boolean().default(false),
+    taskAddJP: z.boolean().default(false),
+    taskCompleteJP: z.boolean().default(false),
+  })
+  // This is the custom validation rule
+  .superRefine((data, ctx) => {
+    // If both fields are missing, add an error.
+    if (!data.dueDate && !data.frequency) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Please select either a Due Date or a Frequency.",
+        // Apply the error message to one of the fields so it can be displayed.
+        path: ["dueDate"], 
+      });
+    }
+  });
+
+
+
 // Miracle Log Schema
 export const progressvaultSchema = z.object({
   content: z
@@ -136,14 +247,12 @@ export const activitySchema = z.object({
   jpAmount: z.string().min(1, "JP amount is required"),
 });
 
-
 export const contactFormSchems = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   subject: z.string().min(1, "Please select a subject"),
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
-
 
 export type ContactForm = z.infer<typeof contactFormSchems>;
 export type ActivityFormValues = z.infer<typeof activitySchema>;
@@ -162,3 +271,4 @@ export type Step3FormType = z.infer<typeof step3Schema>;
 export type Step4FormType = z.infer<typeof step4Schema>;
 export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
+export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
