@@ -1,7 +1,6 @@
 import { LeaderboardUser } from "@/types/client/leaderboard";
 import { getInitials } from "@/utils/getInitials";
 import { ColumnDef } from "@tanstack/react-table";
-import Image from "next/image";
 
 const getRankIcon = (rank: number) => {
   if (rank === 1) return "🏆";
@@ -28,7 +27,7 @@ export const columns: ColumnDef<LeaderboardUser>[] = [
         target="_blank"
       >
         {row.original.image ? (
-          <Image
+          <img
             src={row.original.image}
             alt={row.original.name}
             className="w-10 h-10 rounded object-cover"
