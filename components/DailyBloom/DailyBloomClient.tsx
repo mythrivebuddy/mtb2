@@ -142,6 +142,7 @@ export default function DailyBloomClient() {
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
       const res = await axios.post("/api/user/daily-bloom", newData);
+      console.log("final commit")
       return res.data;
     },
     onSuccess: () => {
