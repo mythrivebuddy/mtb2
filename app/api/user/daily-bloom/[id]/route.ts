@@ -108,7 +108,7 @@ export async function PUT(
       if (user) {
         try {
           // Assign Award JP points for daily bloom completion
-          await assignJp(user, ActivityType.ADD_LOG);
+          await assignJp(user, ActivityType.DAILY_BLOOM_COMPLETION_REWARD);
           // Mark the task as having had its JP points assigned to prevent duplicate awards
           await prisma.todo.update({
             where: { id: updated?.id },
