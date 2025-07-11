@@ -247,7 +247,7 @@ export default function SpotlightCard() {
             </button>
           </a>
         </div>
-      </div>
+      </div> 
     </motion.div>
   );
 }
