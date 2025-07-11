@@ -81,17 +81,17 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
     };
 
-    // ✅ CORRECTED LOGIC IS HERE
+    // ✅ THIS IS THE CORRECTED LOGIC
     if (status === "Pending") {
       whereClause.isCompleted = false;
-            if(whereClause.dueDate){
-              whereClause.dueDate = {
-              gte: now, 
-            };
-       }
-      
-       
-  
+      // A task is "Pending" (and not overdue) if it's not complete AND either:
+      // 1. It has no due date (e.g., a frequency-based task).
+      // 2. Its due date is today or in the future.
+      // This correctly excludes tasks whose due date is in the past.
+      whereClause.OR = [
+        { dueDate: null },
+        { dueDate: { gte: now } },
+      ];
     } else if (status === "Completed") {
       whereClause.isCompleted = true;
     }
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     const [blooms, totalCount] = await prisma.$transaction([
       prisma.todo.findMany({
         where: whereClause,
-        orderBy: { createdAt: "desc" }, // Changed to createdAt for more predictable ordering
+        orderBy: { createdAt: "desc" },
         skip: skip,
         take: limit,
       }),
@@ -179,7 +179,6 @@ export async function POST(req: NextRequest) {
         });
       } catch (error) {
         console.error(`Error while assigning JP when daily bloom is created:`, error);
-        // Continue without throwing to ensure the main response is sent
       }
     }
 

@@ -10,8 +10,7 @@ CREATE TYPE "Frequency" AS ENUM ('Daily', 'Weekly', 'Monthly');
 
 
 
-ALTER TYPE "ActivityType" ADD VALUE 'DAILY_BLOOM_CREATION_REWARD';
-ALTER TYPE "ActivityType" ADD VALUE 'DAILY_BLOOM_COMPLETION_REWARD';
+
 
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN     "isOnline" BOOLEAN DEFAULT false;
