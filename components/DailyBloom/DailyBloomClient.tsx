@@ -20,6 +20,7 @@ import axios, { AxiosError } from "axios";
 import { format } from "date-fns";
 
 import { dailyBloomSchema, DailyBloomFormType } from "@/schema/zodSchema";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,13 +47,6 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -77,6 +71,7 @@ const defaultFormValues: DailyBloomFormType = {
 };
 
 export default function DailyBloomClient() {
+  const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
   const [editData, setEditData] = useState<DailyBloom | null>(null);
   const [viewData, setViewData] = useState<DailyBloom | null>(null);
@@ -284,7 +279,6 @@ export default function DailyBloomClient() {
                   Overview of your tracked blooms
                 </CardDescription>
                 <div className="flex w-full md:w-auto items-center space-x-2 justify-end">
-                  {/* Status Filter */}
                   <div className="relative group w-1/2 md:w-36">
                     <Button
                       type="button"
@@ -317,7 +311,6 @@ export default function DailyBloomClient() {
                       </Button>
                     </div>
                   </div>
-                  {/* Frequency Filter */}
                   <div className="relative group w-1/2 md:w-36">
                     <Button
                       type="button"
@@ -377,7 +370,7 @@ export default function DailyBloomClient() {
               {dailyBloom.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="text-muted-foreground">
-                    No blooms match your filters.
+                    No blooms Available.
                   </p>
                 </div>
               ) : (
@@ -551,134 +544,134 @@ export default function DailyBloomClient() {
           </Card>
         )}
 
-        {/* All Dialogs */}
-       <Dialog open={addData} onOpenChange={setAddData}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Add Your Bloom</DialogTitle>
-    </DialogHeader>
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="grid gap-4 py-4">
-        {/* Title and Description Inputs */}
-        <div className="grid w-full items-center gap-1.5">
-          <Label htmlFor="title-add">Title</Label>
-          <Input id="title-add" {...register("title")} />
-          {errors.title && (
-            <p className="text-red-500 text-sm">{errors.title.message}</p>
-          )}
-        </div>
-        <div className="grid w-full items-center gap-1.5">
-          <Label htmlFor="desc-add">Description</Label>
-          <Textarea id="desc-add" {...register("description")} />
-        </div>
-
-        {/* Due Date / Frequency Toggle */}
-        <div className="grid gap-2">
-          <Label className="text-sm text-muted-foreground">
-            Select one: Due Date or Frequency
-          </Label>
-          <div className="flex bg-muted p-1 rounded-md">
-            <Button
-              type="button"
-              onClick={() => {
-                setAddInputType("date");
-                setValue("frequency", undefined);
-                setValue("dueDate", new Date());
-              }}
-              variant={addInputType === "date" ? "default" : "ghost"}
-              className="flex-1"
-            >
-              Due Date
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setAddInputType("frequency");
-                setValue("dueDate", undefined);
-                setValue("frequency", "Daily");
-              }}
-              variant={addInputType === "frequency" ? "default" : "ghost"}
-              className="flex-1"
-            >
-              Frequency
-            </Button>
-          </div>
-        </div>
-
-        {/* Conditional Input */}
-        {addInputType === "date" ? (
-          <Controller
-            name="dueDate"
-            control={control}
-            render={({ field }) => (
-              <div className="grid w-full items-center gap-1.5">
-                <Input
-                  type="date"
-                  value={
-                    field.value && !isNaN(new Date(field.value).getTime())
-                      ? format(new Date(field.value), "yyyy-MM-dd")
-                      : ""
-                  }
-                  onChange={(e) =>
-                    field.onChange(
-                      e.target.value ? new Date(e.target.value) : undefined
-                    )
-                  }
-                />
-              </div>
-            )}
-          />
-        ) : (
-          <Controller
-            name="frequency"
-            control={control}
-            render={({ field }) => {
-              // Separate value from the rest of the field props to satisfy TypeScript
-              const { value, ...restOfField } = field;
-              return (
+        {/* Add Dialog */}
+        <Dialog open={addData} onOpenChange={setAddData}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Your Bloom</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="grid gap-4 py-4">
                 <div className="grid w-full items-center gap-1.5">
-                  <Label htmlFor="frequency-select">Frequency</Label>
-                  <select
-                    id="frequency-select"
-                    {...restOfField}
-                    // --- THIS IS THE FIX ---
-                    // Convert null or undefined to an empty string
-                    value={value || ""}
-                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Monthly">Monthly</option>
-                  </select>
-                  {errors.frequency && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.frequency.message}
-                    </p>
+                  <Label htmlFor="title-add">Title</Label>
+                  <Input id="title-add" {...register("title")} />
+                  {errors.title && (
+                    <p className="text-red-500 text-sm">{errors.title.message}</p>
                   )}
                 </div>
-              );
-            }}
-          />
-        )}
-      </div>
-      <DialogFooter>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setAddData(false)}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          Add Task
-        </Button>
-      </DialogFooter>
-    </form>
-  </DialogContent>
-</Dialog>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="desc-add">Description</Label>
+                  <Textarea id="desc-add" {...register("description")} />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm text-muted-foreground">
+                    Select one: Due Date or Frequency
+                  </Label>
+                  <div className="flex bg-muted p-1 rounded-md">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setAddInputType("date");
+                        setValue("frequency", undefined);
+                        setValue("dueDate", new Date());
+                      }}
+                      variant={addInputType === "date" ? "default" : "ghost"}
+                      className="flex-1"
+                    >
+                      Due Date
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setAddInputType("frequency");
+                        setValue("dueDate", undefined);
+                        setValue("frequency", "Daily");
+                      }}
+                      variant={addInputType === "frequency" ? "default" : "ghost"}
+                      className="flex-1"
+                    >
+                      Frequency
+                    </Button>
+                  </div>
+                </div>
+                {addInputType === "date" ? (
+                  <Controller
+                    name="dueDate"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label>Due Date</Label>
+                        <Input
+                          type="date"
+                          min={today}
+                          value={
+                            field.value && !isNaN(new Date(field.value).getTime())
+                              ? format(new Date(field.value), "yyyy-MM-dd")
+                              : ""
+                          }
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value ? new Date(e.target.value) : undefined
+                            )
+                          }
+                        />
+                        {errors.dueDate && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.dueDate.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    name="frequency"
+                    control={control}
+                    render={({ field }) => {
+                      const { value, ...restOfField } = field;
+                      return (
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="frequency-select">Frequency</Label>
+                          <select
+                            id="frequency-select"
+                            {...restOfField}
+                            value={value || ""}
+                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                          </select>
+                          {errors.frequency && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.frequency.message}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAddData(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Add Task
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         {/* View Dialog */}
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
           <DialogContent className="sm:max-w-lg">
@@ -771,7 +764,6 @@ export default function DailyBloomClient() {
                   <Label htmlFor="desc-edit">Description</Label>
                   <Textarea id="desc-edit" {...register("description")} />
                 </div>
-
                 {editData?.dueDate ? (
                   <Controller
                     name="dueDate"
@@ -782,6 +774,8 @@ export default function DailyBloomClient() {
                         <Input
                           id="date-edit"
                           type="date"
+                          min={today}
+                          // The `min` attribute is removed here to allow editing overdue tasks
                           value={
                             field.value &&
                             !isNaN(new Date(field.value).getTime())
@@ -808,29 +802,29 @@ export default function DailyBloomClient() {
                   <Controller
                     name="frequency"
                     control={control}
-                    render={({ field }) => (
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label>Frequency</Label>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Frequency..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Daily">Daily</SelectItem>
-                            <SelectItem value="Weekly">Weekly</SelectItem>
-                            <SelectItem value="Monthly">Monthly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {errors.frequency && (
-                          <p className="text-sm text-red-500 mt-1">
-                            {errors.frequency.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    render={({ field }) => {
+                      const { value, ...restOfField } = field;
+                      return (
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="frequency-edit-select">Frequency</Label>
+                          <select
+                            id="frequency-edit-select"
+                            {...restOfField}
+                            value={value || ""}
+                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                          </select>
+                          {errors.frequency && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.frequency.message}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
                   />
                 )}
               </div>
