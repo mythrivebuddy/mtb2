@@ -114,11 +114,15 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
                       className="w-4 h-4 rounded-md cursor-pointer"
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{bloom.title}</TableCell>
+                  <TableCell className="font-medium"> {bloom.title
+                                ? bloom.title.length > 10
+                                  ? `${bloom.title.slice(0, 10)}...`
+                                  : bloom.title
+                                : ""}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {bloom.description
-                      ? bloom.description.length > 25
-                        ? `${bloom.description.slice(0, 25)}...`
+                      ? bloom.description.length > 10
+                        ? `${bloom.description.slice(0, 10)}...`
                         : bloom.description
                       : "—"}
                   </TableCell>

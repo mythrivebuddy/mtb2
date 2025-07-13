@@ -5,20 +5,24 @@ import { assignJp } from "@/lib/utils/jp";
 import { ActivityType, Prisma } from "@prisma/client";
 import { DailyBloomFormType } from "@/schema/zodSchema";
 
-const nextDate = (
+const nextDateUTC = (
   startDate: Date,
   frequency: "Daily" | "Weekly" | "Monthly"
 ): Date => {
-  const nextDate = new Date(startDate);
-
-  nextDate.setHours(0, 0, 0, 0);
+  const nextDate = new Date(
+    Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate()
+    )
+  );
 
   if (frequency === "Daily") {
-    nextDate.setDate(nextDate.getDate() + 1);
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
   } else if (frequency === "Weekly") {
-    nextDate.setDate(nextDate.getDate() + 7);
+    nextDate.setUTCDate(nextDate.getUTCDate() + 7);
   } else if (frequency === "Monthly") {
-    nextDate.setMonth(nextDate.getMonth() + 1);
+    nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
   }
   return nextDate;
 };
@@ -31,44 +35,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const now = new Date();
-
+    // --- Recurring Task Logic (Unchanged) ---
+    const nowForRecurrence = new Date();
     const completedRecurringTasks = await prisma.todo.findMany({
       where: {
         userId: session.user.id,
         isCompleted: true,
-        frequency: {
-          in: ["Daily", "Weekly", "Monthly"],
-        },
+        frequency: { in: ["Daily", "Weekly", "Monthly"] },
       },
     });
 
     const updatePromises = [];
-
     for (const task of completedRecurringTasks) {
       if (task.frequency) {
-        const newDate = nextDate(
+        const newDate = nextDateUTC(
           task.updatedAt,
           task.frequency as "Daily" | "Weekly" | "Monthly"
         );
-
-        if (newDate <= now) {
+        if (newDate <= nowForRecurrence) {
           updatePromises.push(
             prisma.todo.update({
               where: { id: task.id },
-              data: {
-                isCompleted: false,
-                dueDate: newDate,
-              },
+              data: { isCompleted: false, dueDate: newDate },
             })
           );
         }
       }
     }
-
     if (updatePromises.length > 0) {
       await prisma.$transaction(updatePromises);
     }
+    // --- End of Recurring Task Logic ---
 
     const { searchParams } = request.nextUrl;
     const frequency = searchParams.get("frequency");
@@ -77,45 +74,76 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "8", 10);
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.TodoWhereInput = {
-      userId: session.user.id,
-    };
+    // --- NEW LOGIC: Handle "Pending" with special sorting, others normally ---
 
-    // ✅ THIS IS THE CORRECTED LOGIC
     if (status === "Pending") {
-      whereClause.isCompleted = false;
-      // A task is "Pending" (and not overdue) if it's not complete AND either:
-      // 1. It has no due date (e.g., a frequency-based task).
-      // 2. Its due date is today or in the future.
-      // This correctly excludes tasks whose due date is in the past.
-      whereClause.OR = [
-        { dueDate: null },
-        { dueDate: { gte: now } },
+      // Use the advanced raw query for custom sorting
+      const now = new Date();
+      const startOfTodayUTC = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+      );
+      const startOfTomorrowUTC = new Date(startOfTodayUTC);
+      startOfTomorrowUTC.setUTCDate(startOfTomorrowUTC.getUTCDate() + 1);
+
+      const userId = session.user.id;
+
+      // Build the WHERE clause dynamically for the raw query
+      const whereConditions = [
+        Prisma.sql`"userId" = ${userId}`,
+        Prisma.sql`"isCompleted" = false`,
+        Prisma.sql`("dueDate" IS NULL OR "dueDate" >= ${startOfTodayUTC})`,
       ];
-    } else if (status === "Completed") {
-      whereClause.isCompleted = true;
+      if (frequency && frequency !== "All") {
+        whereConditions.push(Prisma.sql`"frequency" = ${frequency}`);
+      }
+      const whereSql = Prisma.sql`WHERE ${Prisma.join(whereConditions, " AND ")}`;
+
+      // The raw query that creates and sorts by a custom priority level
+      const blooms = await prisma.$queryRaw`
+        SELECT * FROM "Todo"
+        ${whereSql}
+        ORDER BY
+          CASE
+            WHEN "dueDate" >= ${startOfTodayUTC} AND "dueDate" < ${startOfTomorrowUTC} THEN 1
+            WHEN "frequency" = 'Daily' THEN 2
+            ELSE 3
+          END ASC,
+          "dueDate" ASC,
+          "createdAt" DESC
+        LIMIT ${limit}
+        OFFSET ${skip};
+      `;
+
+      // We also need the total count for pagination using the same WHERE clause
+      const countResult: { count: bigint }[] = await prisma.$queryRaw`
+        SELECT COUNT(*) FROM "Todo"
+        ${whereSql}
+      `;
+      const totalCount = Number(countResult[0].count);
+
+      return NextResponse.json({ data: blooms, totalCount });
+    } else {
+      // For "Completed" or any other status, use the simple, original logic
+      const whereClause: Prisma.TodoWhereInput = { userId: session.user.id };
+      if (status === "Completed") {
+        whereClause.isCompleted = true;
+      }
+      if (frequency && frequency !== "All") {
+        whereClause.frequency = frequency as "Daily" | "Weekly" | "Monthly";
+      }
+
+      const [blooms, totalCount] = await prisma.$transaction([
+        prisma.todo.findMany({
+          where: whereClause,
+          orderBy: { createdAt: "desc" },
+          skip: skip,
+          take: limit,
+        }),
+        prisma.todo.count({ where: whereClause }),
+      ]);
+
+      return NextResponse.json({ data: blooms, totalCount });
     }
-
-    if (frequency && frequency !== "All") {
-      whereClause.frequency = frequency as "Daily" | "Weekly" | "Monthly";
-    }
-
-    const [blooms, totalCount] = await prisma.$transaction([
-      prisma.todo.findMany({
-        where: whereClause,
-        orderBy: { createdAt: "desc" },
-        skip: skip,
-        take: limit,
-      }),
-      prisma.todo.count({
-        where: whereClause,
-      }),
-    ]);
-
-    return NextResponse.json({
-      data: blooms,
-      totalCount: totalCount,
-    });
   } catch (e) {
     console.error(e);
     return NextResponse.json(
@@ -178,7 +206,10 @@ export async function POST(req: NextRequest) {
           data: { taskAddJP: true },
         });
       } catch (error) {
-        console.error(`Error while assigning JP when daily bloom is created:`, error);
+        console.error(
+          `Error while assigning JP when daily bloom is created:`,
+          error
+        );
       }
     }
 
@@ -190,7 +221,10 @@ export async function POST(req: NextRequest) {
     console.error("Error creating Todo:", err);
 
     const errorMessage =
-      typeof err === "object" && err !== null && "message" in err && typeof err.message === "string"
+      typeof err === "object" &&
+      err !== null &&
+      "message" in err &&
+      typeof err.message === "string"
         ? err.message
         : "Unknown error";
 

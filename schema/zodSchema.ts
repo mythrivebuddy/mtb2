@@ -109,7 +109,7 @@ export const dailyBloomSchema = z
     title: z
       .string()
       .min(1, "Title is required")
-      .max(30, "Title cannot exceed 30 characters"),
+      .max(50, "Title cannot exceed 50 characters"),
     description: z
       .string()
       .max(120, "Description cannot exceed 120 characters")
