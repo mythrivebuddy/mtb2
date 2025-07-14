@@ -5,6 +5,8 @@ import { assignJp } from "@/lib/utils/jp";
 import { ActivityType, Prisma } from "@prisma/client";
 import { DailyBloomFormType } from "@/schema/zodSchema";
 
+
+
 const nextDateUTC = (
   startDate: Date,
   frequency: "Daily" | "Weekly" | "Monthly"
@@ -35,7 +37,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // --- Recurring Task Logic (Unchanged) ---
+    // --- Recurring Task Logic ---
     const nowForRecurrence = new Date();
     const completedRecurringTasks = await prisma.todo.findMany({
       where: {
@@ -52,11 +54,18 @@ export async function GET(request: NextRequest) {
           task.updatedAt,
           task.frequency as "Daily" | "Weekly" | "Monthly"
         );
+        
         if (newDate <= nowForRecurrence) {
           updatePromises.push(
             prisma.todo.update({
               where: { id: task.id },
-              data: { isCompleted: false, dueDate: newDate },
+              // --- THE DEFINITIVE FIX ---
+              // When a recurring task resets, we set isCompleted to false
+              // AND we explicitly set its dueDate to null.
+              data: { 
+                isCompleted: false,
+                dueDate: null 
+              },
             })
           );
         }
@@ -67,6 +76,7 @@ export async function GET(request: NextRequest) {
     }
     // --- End of Recurring Task Logic ---
 
+    // The rest of your GET request logic remains the same...
     const { searchParams } = request.nextUrl;
     const frequency = searchParams.get("frequency");
     const status = searchParams.get("status");
@@ -74,10 +84,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "8", 10);
     const skip = (page - 1) * limit;
 
-    // --- NEW LOGIC: Handle "Pending" with special sorting, others normally ---
-
     if (status === "Pending") {
-      // Use the advanced raw query for custom sorting
       const now = new Date();
       const startOfTodayUTC = new Date(
         Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
@@ -87,7 +94,6 @@ export async function GET(request: NextRequest) {
 
       const userId = session.user.id;
 
-      // Build the WHERE clause dynamically for the raw query
       const whereConditions = [
         Prisma.sql`"userId" = ${userId}`,
         Prisma.sql`"isCompleted" = false`,
@@ -98,7 +104,6 @@ export async function GET(request: NextRequest) {
       }
       const whereSql = Prisma.sql`WHERE ${Prisma.join(whereConditions, " AND ")}`;
 
-      // The raw query that creates and sorts by a custom priority level
       const blooms = await prisma.$queryRaw`
         SELECT * FROM "Todo"
         ${whereSql}
@@ -114,7 +119,6 @@ export async function GET(request: NextRequest) {
         OFFSET ${skip};
       `;
 
-      // We also need the total count for pagination using the same WHERE clause
       const countResult: { count: bigint }[] = await prisma.$queryRaw`
         SELECT COUNT(*) FROM "Todo"
         ${whereSql}
@@ -123,7 +127,6 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({ data: blooms, totalCount });
     } else {
-      // For "Completed" or any other status, use the simple, original logic
       const whereClause: Prisma.TodoWhereInput = { userId: session.user.id };
       if (status === "Completed") {
         whereClause.isCompleted = true;
@@ -152,6 +155,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 
 // The POST function remains completely unchanged.
 export async function POST(req: NextRequest) {
