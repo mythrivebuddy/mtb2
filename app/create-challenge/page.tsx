@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react";
-import {Calendar1Icon, CalendarIcon, PlusCircle, StarIcon} from "lucide-react";
+import {Calendar1Icon, PlusCircle, StarIcon} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 
