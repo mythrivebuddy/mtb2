@@ -9,38 +9,6 @@ export interface UserPresenceProps {
 }
 
 
-//     useEffect(()=>{
-//         if (!userId) {
-//             return
-//         }
-//         console.log("user id in useUserPresence hook", userId);
-        
-//        const markOnline = async()=>{
-//         await axios.post(`/api/mark-online-offline`,{
-//             userId,
-//             online: true
-//         });
-//         console.log("User marked as online");
-//        }
-//        markOnline();
-//        const markOffline = async()=>{
-//         await axios.post(`/api/mark-online-offline`,{
-//             userId,
-//             online: false
-//         });
-//        }
-//        window.addEventListener("beforeunload",markOffline);
-//        return()=>{
-//         markOffline();
-//         window.removeEventListener("beforeunload",markOffline);
-//        }
-
-//     },[userId]);
-
-//     return null; // This hook doesn't return anything, it just toggle user's online/offline status
-// }
-
-// hooks/useUserPresence.ts
 
 export default function useUserPresence({ userId }: UserPresenceProps) {
   useEffect(() => {
@@ -82,18 +50,22 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
 
    
       const cleanUpPresence = () => {
-    presenceChannel.untrack();
-    markOnlineStatus(false);
-    supabaseClient.removeChannel(presenceChannel);
+      presenceChannel.untrack();
+      markOnlineStatus(false);
+    // supabaseClient.removeChannel(presenceChannel);
   };
 
   const beforeUnloadHandler = () => {
     cleanUpPresence();
   };
 
-  const visibilityHandler = () => {
+  const visibilityHandler = async() => {
     if (document.visibilityState === "hidden") {
       cleanUpPresence();
+    } else if (document.visibilityState==="visible") {
+      await presenceChannel.track({userId})
+      await markOnlineStatus(true);
+      console.log("after return to tab onlnie user ids ",presenceChannel.presenceState());
     }
   };
 
@@ -103,8 +75,13 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
   return () => {
     cleanUpPresence();
     window.removeEventListener("beforeunload", beforeUnloadHandler);
+    supabaseClient.removeChannel(presenceChannel);
     document.removeEventListener("visibilitychange", visibilityHandler);
   };
   }, [userId]);
 }
+
+
+
+
 
