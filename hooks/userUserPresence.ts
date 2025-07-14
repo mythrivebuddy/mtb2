@@ -2,47 +2,17 @@
 
 import { supabaseClient } from "@/lib/supabaseClient";
 import axios from "axios";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { OnlineUser } from "@/types/client/user-info";
 export interface UserPresenceProps {
     userId: string;
 }
 
 
-//     useEffect(()=>{
-//         if (!userId) {
-//             return
-//         }
-//         console.log("user id in useUserPresence hook", userId);
-        
-//        const markOnline = async()=>{
-//         await axios.post(`/api/mark-online-offline`,{
-//             userId,
-//             online: true
-//         });
-//         console.log("User marked as online");
-//        }
-//        markOnline();
-//        const markOffline = async()=>{
-//         await axios.post(`/api/mark-online-offline`,{
-//             userId,
-//             online: false
-//         });
-//        }
-//        window.addEventListener("beforeunload",markOffline);
-//        return()=>{
-//         markOffline();
-//         window.removeEventListener("beforeunload",markOffline);
-//        }
-
-//     },[userId]);
-
-//     return null; // This hook doesn't return anything, it just toggle user's online/offline status
-// }
-
-// hooks/useUserPresence.ts
 
 export default function useUserPresence({ userId }: UserPresenceProps) {
+  const [onlineUsersLeaderboard,setOnlineUsersLeaderboard] = useState<OnlineUser[]>([]);
   useEffect(() => {
     console.log("user id in useUserPresence hook", userId);
     if (!userId) {
@@ -76,24 +46,33 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
           console.log("[Presence] Subscribed!");
           await presenceChannel.track({ userId });
           await markOnlineStatus(true);
+          const presence = presenceChannel.presenceState();
+          const users = Object.keys(presence).map((id) => ({ userId: id }));
+          setOnlineUsersLeaderboard(users);
+          console.log("users",users);
+          
           console.log("presenece channel onlnie user ids ",presenceChannel.presenceState());
         }
       });
 
    
       const cleanUpPresence = () => {
-    presenceChannel.untrack();
-    markOnlineStatus(false);
-    supabaseClient.removeChannel(presenceChannel);
+      presenceChannel.untrack();
+      markOnlineStatus(false);
+    // supabaseClient.removeChannel(presenceChannel);
   };
 
   const beforeUnloadHandler = () => {
     cleanUpPresence();
   };
 
-  const visibilityHandler = () => {
+  const visibilityHandler = async() => {
     if (document.visibilityState === "hidden") {
       cleanUpPresence();
+    } else if (document.visibilityState==="visible") {
+      await presenceChannel.track({userId})
+      await markOnlineStatus(true);
+      console.log("after return to tab onlnie user ids ",presenceChannel.presenceState());
     }
   };
 
@@ -103,8 +82,15 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
   return () => {
     cleanUpPresence();
     window.removeEventListener("beforeunload", beforeUnloadHandler);
+    supabaseClient.removeChannel(presenceChannel);
     document.removeEventListener("visibilitychange", visibilityHandler);
   };
   }, [userId]);
+  return onlineUsersLeaderboard;
+
 }
+
+
+
+
 

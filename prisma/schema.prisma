@@ -653,3 +653,67 @@ enum Frequency {
   Weekly
   Monthly
 }
+
+
+// model Challenge {
+//   id                String       @id @default(cuid())
+//   title             String
+//   description       String?
+//   cost              Float        @default(0)
+//   reward            Float        @default(0)
+//   penalty           Float        @default(0)
+//   startDate         DateTime
+//   endDate           DateTime
+//    visiblity         string    @default("Public" | "Personal")
+//   participationCode String       @unique @default(cuid())
+//   status            String       @default("PENDING") // e.g., "PENDING", "ACTIVE", "COMPLETED"
+//   createdAt         DateTime     @default(now())
+  
+//   // Relation to the User who created the challenge
+//   creatorId         String
+//   creator           User         @relation("CreatedChallenges", fields: [creatorId], references: [id])
+  
+//   // Relation to Tasks
+//   tasks             Task[]
+
+//   // Relation to Participants (through Enrollment)
+//   enrollments       Enrollment[]
+  
+//   @@map("challenges")
+// }
+
+// // Model for Tasks within a Challenge
+// model Task {
+//   id          String    @id @default(cuid())
+//   description String
+//   isCompleted Boolean   @default(false)
+  
+//   // Relation to the Challenge
+//   challengeId String
+//   challenge   Challenge @relation(fields: [challengeId], references: [id])
+  
+//   @@map("tasks")
+// }
+
+
+// // Model to track User enrollment in Challenges (Many-to-Many relationship)
+// model Enrollment {
+//   id        String   @id @default(cuid())
+//   joinedAt  DateTime @default(now())
+//   status    String   @default("IN_PROGRESS") // e.g., "IN_PROGRESS", "COMPLETED", "FAILED"
+
+//   // Relation to User
+//   userId    String
+//   user      User     @relation(fields: [userId], references: [id])
+
+//   // Relation to Challenge
+//   challengeId String
+//   challenge   Challenge @relation(fields: [challengeId], references: [id])
+
+//   @@unique([userId, challengeId]) // Ensures a user can only join a challenge once
+//   @@map("enrollments")
+// }
+
+
+// createdChallenges Challenge[]  @relation("CreatedChallenges")
+//   enrollments       Enrollment[]
