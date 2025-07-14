@@ -11,19 +11,31 @@ export async function GET() {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // --- TIMEZONE-SAFE FIX START ---
+
+    // 1. Get the current moment.
     const now = new Date();
+
+    // 2. Create a new Date object that represents the start of the current day in UTC.
+    // This effectively strips away the time and timezone information, giving us a clean
+    // "midnight UTC" timestamp to compare against.
+    const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    // --- TIMEZONE-SAFE FIX END ---
 
     const overdueBlooms = await prisma.todo.findMany({
       where: {
         userId: session.user.id,
         isCompleted: false,
         dueDate: {
-          lt: now,
-          not: null, 
+          // 3. The query now correctly finds tasks with a due date strictly *before*
+          //    the start of the current day in UTC.
+          lt: startOfTodayUTC,
+          not: null,
         },
       },
       orderBy: {
-        dueDate: 'asc', 
+        dueDate: 'asc',
       }
     });
 
