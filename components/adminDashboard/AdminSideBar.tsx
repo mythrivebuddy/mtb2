@@ -73,14 +73,14 @@ const Sidebar = () => {
         )}
       </button>
 
-      {/* Overlay for Mobile */}
+      {/* Overlay for Mobile phone  */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={toggleSidebar}
         ></div>
       )}
-
+{/* dasasd */}
       {/* Sidebar */}
       <aside
         className={cn(

@@ -58,7 +58,9 @@ export function UpdateActivityJPForm({
         <label className="text-sm font-medium">Select Activity</label>
         <Select
           onValueChange={(val) => {
-            // console.log(`kjndgjkvndxfjkvxknb : ${val}`);
+
+            // console.log(kjndgjkvndxfjkvxknb : ${val});
+
             return form.setValue("activityId", val);
           }}
           value={form.watch("activityId")}

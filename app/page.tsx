@@ -35,6 +35,8 @@ export const metadata: Metadata = {
 
 // TODO: add current active spotlight get it with api
 export default function Home() {
+  console.log("Hello ")
+  console.log("check")
   return (
     <>
       <AppLayout>

@@ -53,7 +53,7 @@ export const authConfig: AuthOptions = {
             // Optional: If user.blockedUsers contains additional info, use it.
             let blockedMessage = "Your account is blocked.";
             if (user.blockedUsers) {
-              const blockedInfo = user.blockedUsers;
+              const blockedInfo = user.blockedUsers[0];
               blockedMessage += ` Reason: ${
                 blockedInfo.reason
               }. Blocked on: ${new Date(
@@ -107,7 +107,7 @@ export const authConfig: AuthOptions = {
     async signIn({ user, account }) {
       // console.log("signIn", user, account); // Debugging
 
-      // Skip logic for Credentials login, as it's already handled in `authorize`
+      // Skip logic for Credentials login, as it's already handled in authorize
       if (account?.provider === "credentials") {
         return true; // Allow login immediately
       }
@@ -222,7 +222,7 @@ export const authConfig: AuthOptions = {
     async jwt({ token, user }) {
       // console.log("check user", user);
       if (user) {
-        token.role = user.role; // Now user.role exists because we added it in `signIn`
+        token.role = user.role; // Now user.role exists because we added it in signIn
         token.id = user.id;
         token.rememberMe = user.rememberMe ?? false;
         // console.log("remeberme tokencheck", token.rememberMe); //?dev
