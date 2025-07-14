@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { QueryKey, useQueryClient } from "@tanstack/react-query";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { OnlineUser } from "@/types/client/user-info";
 
 
-interface OnlineUser {
-  userId: string;
-}
+
 export default function useAdminPresence(queryKey: QueryKey) {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const queryClient = useQueryClient();

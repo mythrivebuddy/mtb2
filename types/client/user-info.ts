@@ -25,3 +25,6 @@ export interface IBlockUserResponse {
   message: string;
   user: IUser;
 }
+export interface OnlineUser {
+  userId: string;
+}
