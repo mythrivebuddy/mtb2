@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import DailyBloomCLient from "@/components/DailyBloom/DailyBloomClient";
 
+// khsgfldkjgosfdk
 
 // async function getMiracleLogs() {
 //   const session = await checkRole("USER");
@@ -45,8 +46,6 @@ import DailyBloomCLient from "@/components/DailyBloom/DailyBloomClient";
 
 //   return { count: streak?.miracle_log_count || 0 };
 // }
-
-// ldsfksfdlsdklfds
 
 export default async function DailyBloom() {
   // const [logs, streak] = await Promise.all([

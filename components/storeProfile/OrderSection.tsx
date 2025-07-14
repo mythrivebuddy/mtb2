@@ -1,6 +1,7 @@
 import React from "react";
 import { Star } from "lucide-react";
 import { Order, Item } from "@/types/client/store";
+import Image from "next/image";
 
 interface OrdersSectionProps {
   orders: Order[];
@@ -62,7 +63,7 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ orders}) => {
               <div className="space-y-3">
                 {order.items.map((orderItem) => (
                   <div key={orderItem.id} className="flex items-center space-x-4">
-                    <img
+                    <Image
                       src={orderItem.item.imageUrl}
                       alt={orderItem.item.name}
                       className="w-16 h-16 object-cover rounded-md"

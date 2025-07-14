@@ -6,7 +6,6 @@ import { useEffect } from "react";
 
 export interface UserPresenceProps {
     userId: string;
-    
 }
 
 

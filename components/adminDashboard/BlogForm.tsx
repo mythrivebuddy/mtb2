@@ -6,6 +6,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { Editor } from "@tinymce/tinymce-react";
 import { BlogFormProps } from "@/types/client/blog";
+import Image from "next/image";
 
 
 export default function BlogForm({
@@ -213,7 +214,7 @@ export default function BlogForm({
       />
       {previewImage && isEdit && (
         <div className="mt-4">
-          <img src={previewImage} alt="Preview" className="w-40 h-auto" />
+          <Image src={previewImage} alt="Preview" className="w-40 h-auto" />
         </div>
       )}
       <button type="submit" className="bg-blue-600 text-white rounded p-2">

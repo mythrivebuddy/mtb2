@@ -44,7 +44,10 @@ model User {
   bio                           String?
   isOnline                      Boolean?             @default(false)
   alignedActions                AlignedAction[]
-  blockedUsers                  BlockedUsers?
+
+  blockedUsers                  BlockedUsers[]
+
+
   buddyLensRequests             BuddyLensRequest[]   @relation("BuddyLensRequests")
   BuddyLensReviewer             BuddyLensRequest[]   @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
@@ -63,12 +66,16 @@ model User {
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
-  todos                         Todo[]
+
+  todos                          Todo[] 
+
   transaction                   Transaction[]
   plan                          Plan?                @relation(fields: [planId], references: [id])
   referredBy                    User?                @relation("UserReferrer", fields: [referredById], references: [id])
   referrals                     User[]               @relation("UserReferrer")
-  userBusinessProfile           UserBusinessProfile?
+
+  userBusinessProfile           UserBusinessProfile[]
+
   userNotifications             UserNotification[]   @relation("UserNotifications")
   userStreak                    UserStreak?
   wishlists                     Wishlist[]
@@ -569,6 +576,8 @@ enum ActivityType {
   PROGRESS_VAULT_STREAK_REWARD_90_DAYS
   BUDDY_LENS_REQUEST
   BUDDY_LENS_REVIEW
+  DAILY_BLOOM_CREATION_REWARD
+  DAILY_BLOOM_COMPLETION_REWARD
 }
 
 enum TransactionType {

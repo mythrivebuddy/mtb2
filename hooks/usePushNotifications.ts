@@ -1,3 +1,4 @@
+
 /**
  * Hook for managing push notification subscriptions
  */

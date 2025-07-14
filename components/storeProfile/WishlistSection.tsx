@@ -3,6 +3,7 @@ import { Heart, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { Item, WishlistItem } from "@/types/client/store";
 import { useAddToCartMutation, useRemoveFromWishlistMutation } from "@/hooks/useAddToCart";
+import Image from "next/image";
 
 interface WishlistSectionProps {
   wishlist: WishlistItem[];
@@ -60,7 +61,7 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
               >
                 {/* Item Info */}
                 <div className="flex items-center gap-4">
-                  <img
+                  <Image
                     src={item.imageUrl || '/placeholder-image.jpg'}
                     alt={item.name}
                     className="w-16 h-16 object-cover rounded-md"
