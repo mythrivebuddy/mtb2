@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { LeaderboardUser } from "@/types/client/leaderboard";
 import { getInitials } from "@/utils/getInitials";
 import { ColumnDef } from "@tanstack/react-table";
