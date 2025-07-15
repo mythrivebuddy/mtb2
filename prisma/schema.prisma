@@ -68,6 +68,8 @@ model User {
   streakHistory                 StreakHistory[]
 
   todos                          Todo[] 
+  createdChallenges Challenge[]  @relation("CreatedChallenges")
+  enrollments       ChallengeEnrollment[]
 
   transaction                   Transaction[]
   plan                          Plan?                @relation(fields: [planId], references: [id])
@@ -654,66 +656,72 @@ enum Frequency {
   Monthly
 }
 
+// --- ENUMS ---
+enum ChallengeMode {
+  PUBLIC
+  PERSONAL
+}
 
-// model Challenge {
-//   id                String       @id @default(cuid())
-//   title             String
-//   description       String?
-//   cost              Float        @default(0)
-//   reward            Float        @default(0)
-//   penalty           Float        @default(0)
-//   startDate         DateTime
-//   endDate           DateTime
-//    visiblity         string    @default("Public" | "Personal")
-//   participationCode String       @unique @default(cuid())
-//   status            String       @default("PENDING") // e.g., "PENDING", "ACTIVE", "COMPLETED"
-//   createdAt         DateTime     @default(now())
+enum ChallengeStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EnrollmentStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+// --- MODELS ---
+model Challenge {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  mode        ChallengeMode @default(PUBLIC)
+  cost        Float    @default(0)
+  reward      Float    @default(0)
+  penalty     Float    @default(0)
+  startDate   DateTime
+  endDate     DateTime
+  status      ChallengeStatus @default(UPCOMING)
+  createdAt   DateTime @default(now())
+
+  creatorId   String
+  creator     User     @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
   
-//   // Relation to the User who created the challenge
-//   creatorId         String
-//   creator           User         @relation("CreatedChallenges", fields: [creatorId], references: [id])
-  
-//   // Relation to Tasks
-//   tasks             Task[]
+  // Renamed relations to PascalCase
+  tasks       ChallengeTask[]
+  enrollments ChallengeEnrollment[]
 
-//   // Relation to Participants (through Enrollment)
-//   enrollments       Enrollment[]
-  
-//   @@map("challenges")
-// }
+  @@map("challenges")
+}
 
-// // Model for Tasks within a Challenge
-// model Task {
-//   id          String    @id @default(cuid())
-//   description String
-//   isCompleted Boolean   @default(false)
-  
-//   // Relation to the Challenge
-//   challengeId String
-//   challenge   Challenge @relation(fields: [challengeId], references: [id])
-  
-//   @@map("tasks")
-// }
+model ChallengeTask {
+  id          String  @id @default(cuid())
+  description String
+  isCompleted Boolean @default(false)
 
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
 
-// // Model to track User enrollment in Challenges (Many-to-Many relationship)
-// model Enrollment {
-//   id        String   @id @default(cuid())
-//   joinedAt  DateTime @default(now())
-//   status    String   @default("IN_PROGRESS") // e.g., "IN_PROGRESS", "COMPLETED", "FAILED"
+  @@map("challenge_tasks") // Mapped to a snake_case table name
+}
 
-//   // Relation to User
-//   userId    String
-//   user      User     @relation(fields: [userId], references: [id])
+model ChallengeEnrollment {
+  id        String   @id @default(cuid())
+  joinedAt  DateTime @default(now())
+  status    EnrollmentStatus @default(IN_PROGRESS)
 
-//   // Relation to Challenge
-//   challengeId String
-//   challenge   Challenge @relation(fields: [challengeId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Added onDelete
 
-//   @@unique([userId, challengeId]) // Ensures a user can only join a challenge once
-//   @@map("enrollments")
-// }
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
 
-
-// createdChallenges Challenge[]  @relation("CreatedChallenges")
-//   enrollments       Enrollment[]
+  @@unique([userId, challengeId])
+  @@map("challenge_enrollments") // Mapped to a snake_case table name
+}
