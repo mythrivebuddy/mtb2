@@ -571,6 +571,9 @@ export default function DailyBloomClient() {
                         <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="desc-add">Description</Label>
                             <Textarea id="desc-add" {...register("description")} />
+                             {errors.description && (
+                                <p className="text-red-500 text-sm">{errors.description.message}</p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label className="text-sm text-muted-foreground">
@@ -773,6 +776,9 @@ export default function DailyBloomClient() {
                         <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="desc-edit">Description</Label>
                             <Textarea id="desc-edit" {...register("description")} />
+                             {errors.description && (
+                                <p className="text-red-500 text-sm">{errors.description.message}</p>
+                            )}
                         </div>
                         {editData?.dueDate ? (
                             <Controller
