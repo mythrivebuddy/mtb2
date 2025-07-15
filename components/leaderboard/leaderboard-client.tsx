@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { columns } from "@/components/leaderboard/columnDef";
+import { getLeaderboardColumns } from "@/components/leaderboard/columnDef";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   DEFAULT_LEADERBOARD_PAGE,
@@ -21,7 +21,8 @@ import {
 } from "@/lib/constant";
 import PageSkeleton from "../PageSkeleton";
 import { SortKey, SortSelectProps } from "@/types/client/leaderboard";
-
+import { useSession } from "next-auth/react";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 
 
@@ -67,7 +68,11 @@ const LeaderboardContent = () => {
       return data;
     },
   });
+  const session = useSession();
 
+ 
+  const onlineUsers = useOnlineUserLeaderBoard()
+  const columns = getLeaderboardColumns(session?.data?.user?.id, onlineUsers);
   const handleSort = (value: string) => {
     router.push(
       `/dashboard/leaderboard?orderBy=${value}&page=${page}&limit=${limit}`
