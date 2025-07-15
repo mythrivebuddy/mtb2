@@ -155,35 +155,38 @@ export const dailyBloomSchema = z
 
 export const challengeSchema = z
   .object({
-    title: z.string().min(1, 'Title is required'),
-    description: z.string().min(1, 'Description is required'),
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
     mode: z.nativeEnum(ChallengeMode),
-    cost: z.number().min(50, 'Minimum cost is 50'),
-    reward: z.number().min(50, 'Minimum reward is 50'),
+    cost: z.number(),
+    reward: z.number(),
     penalty: z.number(),
 
-    startDate: z.coerce.date().refine((date) => {
+    startDate: z.coerce.date().refine(
+      (date) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return date > today;
-      }, {
-        message: 'Start date must be in the future.',
-      }),
+      },
+      {
+        message: "Start date must be in the future.",
+      }
+    ),
 
     endDate: z.coerce.date(),
 
     tasks: z
       .array(
         z.object({
-          description: z.string().min(1, 'Task description is required'),
+          description: z.string().min(1, "Task description is required"),
         })
       )
-      .min(1, 'At least 1 task is required')
-      .max(3, 'No more than 3 tasks are allowed'),
+      .min(1, "At least 1 task is required")
+      .max(3, "No more than 3 tasks are allowed"),
   })
   .refine((data) => data.endDate > data.startDate, {
-    message: 'End date must be after the start date.',
-    path: ['endDate'], 
+    message: "End date must be after the start date.",
+    path: ["endDate"],
   });
 
 // Miracle Log Schema
@@ -310,4 +313,3 @@ export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
 export type challengeSchemaFormType = z.infer<typeof challengeSchema>;
-

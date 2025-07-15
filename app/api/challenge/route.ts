@@ -1,89 +1,105 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { checkRole } from "@/lib/utils/auth";
-import { PrismaClient, ChallengeMode } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { challengeSchema } from "@/schema/zodSchema";
 
 const prisma = new PrismaClient();
 
-// A simple function to generate a URL-friendly slug from a title
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/ /g, "-")
-    .replace(/[^\w-]+/g, "");
+function generateSlug(title: string) {
+  return title.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
 }
 
-// Define the shape of the incoming request body for type safety
-interface CreateChallengeBody {
-  title: string;
-  description?: string;
-  mode: ChallengeMode;
-  cost: number;
-  reward: number;
-  penalty: number;
-  startDate: string;
-  endDate: string;
-  tasks?: { description: string }[];
-}
-
-// Export a named function for the POST method
 export async function POST(request: Request) {
   try {
+    // ✅ 1. First get the user from the session
     const session = await checkRole("USER");
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session?.user.id;
+    // ✅ 2. Get the data from the frontend
+    const body = await request.json();
+
+    // ✅ 3. Validate using zod schema
+    const result = challengeSchema.safeParse(body);
+
+    if (!result.success) {
+      const errorMessages = result.error.flatten().fieldErrors;
+      return NextResponse.json({ error: errorMessages }, { status: 400 });
+    }
 
     const {
       title,
       description,
       mode,
+      cost,
+      reward,
+      penalty,
       startDate,
       endDate,
       tasks,
-    }: CreateChallengeBody = await request.json();
+    } = result.data;
 
-    // --- 1. Authentication (Placeholder) ---
-    // In a real app, you'd get the user ID from a session or JWT token.
-    //const userId = 'clwqk4x70000008l4g9f8h3b1'; // Replace with actual authenticated user ID
-
-    console.log(
-      `title : ${title} description : ${description} mode : ${mode} startDate : ${startDate} endDate : ${endDate} Task : ${tasks}`
-    );
-
-    // --- 2. Validation ---
-    if (!title || !startDate || !endDate) {
+    // ✅ 4. Check all fields are not empty (redundant with Zod, but added for clarity)
+    if (
+      !title ||
+      !description ||
+      !mode ||
+      cost == null ||
+      reward == null ||
+      penalty == null ||
+      !startDate ||
+      !endDate ||
+      !Array.isArray(tasks) ||
+      tasks.length === 0
+    ) {
       return NextResponse.json(
-        { error: "Title, startDate, and endDate are required." },
+        { error: "All fields are required and must be valid." },
         { status: 400 }
       );
     }
 
-    // --- 3. Create the Challenge ---
+    // ✅ 5. Then create the challenge in DB
     const newChallenge = await prisma.challenge.create({
       data: {
         title,
         slug: generateSlug(title),
         description,
         mode,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        cost,
+        reward,
+        penalty,
+        startDate,
+        endDate,
         status: "UPCOMING",
         creator: {
-          connect: { id: userId },
+          connect: { id: session.user.id },
         },
         tasks: {
-          create:
-            tasks?.map((task) => ({ description: task.description })) || [],
+          create: tasks.map((task) => ({ description: task.description })),
         },
       },
     });
 
-    // --- 4. Send Success Response ---
-    return NextResponse.json(newChallenge, { status: 201 });
+    // ✅ 6. Check the challenge is created in DB
+    if (!newChallenge) {
+      return NextResponse.json(
+        { error: "Failed to create challenge in database." },
+        { status: 500 }
+      );
+    }
+
+    // ✅ 7. Send successful response with message
+    return NextResponse.json(
+      {
+        message: "Challenge created successfully",
+        data: newChallenge,
+      },
+      { status: 201 }
+    );
+
   } catch (error: any) {
     const errMessage =
       error instanceof Error ? error.message : JSON.stringify(error);
