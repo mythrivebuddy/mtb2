@@ -49,9 +49,7 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
           const presence = presenceChannel.presenceState();
           const users = Object.keys(presence).map((id) => ({ userId: id }));
           setOnlineUsersLeaderboard(users);
-          console.log("users",users);
-          
-          console.log("presenece channel onlnie user ids ",presenceChannel.presenceState());
+    
         }
       });
 
@@ -72,7 +70,7 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
     } else if (document.visibilityState==="visible") {
       await presenceChannel.track({userId})
       await markOnlineStatus(true);
-      console.log("after return to tab onlnie user ids ",presenceChannel.presenceState());
+      
     }
   };
 

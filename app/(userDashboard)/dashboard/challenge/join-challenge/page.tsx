@@ -15,23 +15,14 @@ export default function Page() {
   });
 
   const handleJoin = () => {
-    router.push("/main-challenge");
+    router.push("/dashboard/challenge/main-challenge");
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-100 to-purple-200 p-4">
       <div className="w-full max-w-3xl">
         <div className="space-y-6 rounded-2xl bg-white p-6 text-center shadow-2xl">
-          <input
-            className="w-full rounded-xl border-2 border-purple-200 p-3 focus:border-purple-400 focus:ring-2 focus:ring-purple-100"
-            placeholder="Enter Invite Link (e.g., https://challengehub.link/xyz)"
-          />
-          <button
-            onClick={handleJoin}
-            className="w-full rounded-xl bg-purple-500 p-3 text-white transition-colors hover:bg-purple-600"
-          >
-            Enter
-          </button>
+          
           <div className="mt-4">
             <h2 className="text-2xl font-semibold text-purple-900">
               Challenge Details
