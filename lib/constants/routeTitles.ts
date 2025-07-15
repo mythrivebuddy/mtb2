@@ -6,6 +6,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   subscription: "Subscription",
   "miracle-log": "Miracle Log",
   "daily-bloom":"Daily Blooms",
+  "challenge" : "Challenges",
   messages: "Messages",
   profile: "Profile",
   faq: "FAQ's",
