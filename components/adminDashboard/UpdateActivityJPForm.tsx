@@ -19,7 +19,6 @@ import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { ActivityFormValues, activitySchema } from "@/schema/zodSchema";
 
-
 export function UpdateActivityJPForm({
   activities,
 }: {
@@ -58,7 +57,12 @@ export function UpdateActivityJPForm({
       <div className="space-y-2">
         <label className="text-sm font-medium">Select Activity</label>
         <Select
-          onValueChange={(val) => form.setValue("activityId", val)}
+          onValueChange={(val) => {
+
+            // console.log(kjndgjkvndxfjkvxknb : ${val});
+
+            return form.setValue("activityId", val);
+          }}
           value={form.watch("activityId")}
         >
           <SelectTrigger>

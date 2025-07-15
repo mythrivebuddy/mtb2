@@ -14,8 +14,12 @@ import {
 } from "@/lib/constants/applicationSteps";
 import PageSkeleton from "@/components/PageSkeleton";
 
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  // const userId = session?.user?.id;
+  // this hook i have called in layout so on every route with this layout have access to this hook
+  // useUserPresence({ userId } as UserPresenceProps);
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
@@ -59,7 +63,6 @@ export default function DashboardPage() {
   ) {
     // return <PageLoader />;
     return <PageSkeleton type="dashboard" />;
-
   }
 
   const currentSpotlight:

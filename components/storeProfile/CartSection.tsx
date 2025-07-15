@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Item, CartItem } from "@/types/client/store";
+import Image from "next/image";
 
 interface CartSectionProps {
   cart: CartItem[];
@@ -95,7 +96,7 @@ const CartSection: React.FC<CartSectionProps> = ({
                   className="flex justify-between items-center border-b pb-4"
                 >
                   <div className="flex items-center gap-4">
-                    <img
+                    <Image
                       src={cartItem.item.imageUrl}
                       alt={cartItem.item.name}
                       className="w-16 h-16 object-cover rounded-md"

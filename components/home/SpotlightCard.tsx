@@ -208,7 +208,7 @@ export default function SpotlightCard() {
           <div className="relative md:w-[160px] md:h-[160px] w-[90px] h-[70px]">
             <Image
               src={
-                spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkImage ||
+                spotlight?.user?.userBusinessProfile?.[0].featuredWorkImage ||
                 avtarImg
               }
               alt="Profile"
@@ -229,14 +229,14 @@ export default function SpotlightCard() {
           }}
         >
           <p className="text-[#50525B] text-[16px] leading-relaxed mb-6">
-            {spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkDesc ||
+            {spotlight?.user?.userBusinessProfile?.[0].featuredWorkDesc ||
               `This creates a sense of recognition and highlights the individual in
               focus, while maintaining the overall theme of growth and
               inspiration.`}
           </p>
           <a
             href={
-              spotlight?.user?.userBusinessProfile?.[0]?.priorityContactLink || 
+              spotlight?.user?.userBusinessProfile?.[0].priorityContactLink || 
               "#"
             }
             target="_blank"
@@ -247,7 +247,7 @@ export default function SpotlightCard() {
             </button>
           </a>
         </div>
-      </div>
+      </div> 
     </motion.div>
   );
 }

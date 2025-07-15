@@ -18,7 +18,7 @@ export function isPlanActive(user: UserWithPlan) {
 export async function assignJp(user: UserWithPlan, activity: ActivityType) {
   try {
     const activityData = await prisma.activity.findUnique({
-      where: { activity: activity },
+      where: { activity },
     });
     if (!activityData) {
       throw new Error(`Activity ${activity} not found`);

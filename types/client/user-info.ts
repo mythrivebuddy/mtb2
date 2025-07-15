@@ -17,8 +17,14 @@ export interface IUser {
   createdAt: string;
   isBlocked: boolean;
   plan?: IPlan | null;
+
+  isOnline : boolean
+
 }
 export interface IBlockUserResponse {
   message: string;
   user: IUser;
+}
+export interface OnlineUser {
+  userId: string;
 }
