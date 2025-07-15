@@ -27,7 +27,8 @@ export default function CreateChallenge() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    router.push("/let-others-roll");
+    router.push("/dashboard/challenge/let-others-roll");
+;
   };
 
   useEffect(() => {
