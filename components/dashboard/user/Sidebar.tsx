@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   Droplet,
   Flower,
+  Swords,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -181,6 +182,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
                   label="Daily Blooms"
+                  onLinkClick={toggleSidebar}
+                />
+                 <NavItem
+                  href="/dashboard/challenge"
+                  icon={<Swords size={20} />}
+                  label="Challenges"
                   onLinkClick={toggleSidebar}
                 />
                 <NavItem

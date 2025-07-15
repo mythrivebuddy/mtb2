@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react"; // ✅ NEW: Import useState
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -30,15 +31,14 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import PageSkeleton from "../PageSkeleton"; // Assuming this path is correct
-import { DailyBloomFormType } from "@/schema/zodSchema"; // Assuming this path is correct
+import PageSkeleton from "../PageSkeleton";
+import { DailyBloomFormType } from "@/schema/zodSchema";
+import HoverDetails from "./HoverDetails"; // ✅ NEW: Import HoverDetails component
 
-// Re-using the DailyBloom interface from the parent component
 interface DailyBloom extends DailyBloomFormType {
   id: string;
 }
 
-// Define the props the Overdue component will accept from its parent
 interface OverdueProps {
   onView: (bloom: DailyBloom) => void;
   onEdit: (bloom: DailyBloom) => void;
@@ -46,14 +46,11 @@ interface OverdueProps {
   onUpdateCompletion: (bloom: DailyBloom, isCompleted: boolean) => void;
 }
 
-/**
- * Overdue Component
- * Fetches and displays tasks that are past their due date and are not yet completed.
- * It receives handler functions as props from the parent component to manage state and actions.
- */
 export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }: OverdueProps) {
   
-  // Fetch overdue tasks using react-query.
+  // ✅ NEW: State to track the hovered item ID
+  const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
+
   const { data: overdueBlooms, isLoading } = useQuery<DailyBloom[]>({
     queryKey: ["overdueDailyBlooms"],
     queryFn: async () => {
@@ -64,25 +61,21 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
   });
 
   if (isLoading) {
-    // Show a skeleton loader while fetching data.
     return <PageSkeleton type="leaderboard" />;
   }
 
-  // If there are no overdue blooms, we don't render the component.
   if (!overdueBlooms || overdueBlooms.length === 0) {
     return null;
   }
   
 
   return (
-    // Updated card style to use a "destructive" theme for overdue items
     <Card className="mb-8 border-destructive/30 bg-destructive/5">
       <CardHeader>
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-6 w-6 text-destructive" />
           <div>
             <CardTitle className="text-destructive">Overdue Blooms</CardTitle>
-            {/* ✅ FIXED: Replaced ' with &apos; to fix the build error */}
             <CardDescription className="text-destructive/80">
               These tasks have passed their due date. Let&apos;s get them done!
             </CardDescription>
@@ -90,17 +83,16 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
         </div>
       </CardHeader>
       <CardContent>
-        {/* Desktop Table View */}
+        {/* --- ✅ START: UPDATED DESKTOP TABLE --- */}
         <div className="hidden md:block">
-          <Table>
+          <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead className="text-center">Achieve</TableHead>
+                <TableHead className="w-[80px] text-center"></TableHead>
                 <TableHead>Title</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Due Date</TableHead>
-                <TableHead>Frequency</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
+                <TableHead className="w-[130px]">Due Date</TableHead>
+                <TableHead className="w-[120px]">Frequency</TableHead>
+                <TableHead className="w-[140px] text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -110,28 +102,33 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
                     <Input
                       type="checkbox"
                       checked={bloom.isCompleted}
-                      // Directly call the parent's handler function
                       onChange={(e) => onUpdateCompletion(bloom, e.target.checked)}
                       className="w-4 h-4 rounded-md cursor-pointer"
                     />
                   </TableCell>
-                  <TableCell className="font-medium"> {bloom.title
-                                ? bloom.title.length > 10
-                                  ? `${bloom.title.slice(0, 10)}...`
-                                  : bloom.title
-                                : ""}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {bloom.description
-                      ? bloom.description.length > 10
-                        ? `${bloom.description.slice(0, 10)}...`
-                        : bloom.description
-                      : "—"}
+
+                  <TableCell 
+                    className="font-medium relative"
+                    onMouseEnter={() => setHoveredBloomId(bloom.id)}
+                    onMouseLeave={() => setHoveredBloomId(null)}
+                  >
+                    <div className="break-words"> {bloom.title.length > 30
+                            ? `${bloom.title.slice(0, 30)}...`
+                            : bloom.title}</div>
+                    {hoveredBloomId === bloom.id && (
+                       <div 
+                         className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl"
+                       >
+                         <HoverDetails bloom={bloom} />
+                       </div>
+                    )}
                   </TableCell>
+                  
                   <TableCell className="font-semibold text-destructive">
                     {bloom.dueDate ? new Date(bloom.dueDate).toLocaleDateString("en-IN") : "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{bloom.frequency || "—"}</TableCell>
-                  <TableCell className="text-center space-x-1">
+                  <TableCell className="flex items-center justify-center space-x-1">
                     <Button variant="ghost" size="icon" onClick={() => onView(bloom)}>
                       <EyeIcon className="w-4 h-4" />
                     </Button>
@@ -147,30 +144,31 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
             </TableBody>
           </Table>
         </div>
+        {/* --- END: UPDATED DESKTOP TABLE --- */}
 
-        {/* Mobile Card View */}
+        {/* Mobile Card View - Unchanged */}
         <div className="md:hidden space-y-4">
           {overdueBlooms.map((bloom: DailyBloom) => (
             <Card key={bloom.id} className="bg-background/50">
-               <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <CardTitle>{bloom.title}</CardTitle>
-                    <div className="flex flex-col items-center flex-shrink-0">
-                        <Input
-                          type="checkbox"
-                          checked={bloom.isCompleted}
-                          onChange={(e) => onUpdateCompletion(bloom, e.target.checked)}
-                          className="w-5 h-5 rounded-md cursor-pointer"
-                        />
-                        <Label className="text-xs text-muted-foreground mt-1">Achieve</Label>
+                <CardHeader>
+                    <div className="flex items-start justify-between gap-4">
+                        <CardTitle className="break-all">{bloom.title}</CardTitle>
+                        <div className="flex flex-col items-center flex-shrink-0">
+                            <Input
+                                type="checkbox"
+                                checked={bloom.isCompleted}
+                                onChange={(e) => onUpdateCompletion(bloom, e.target.checked)}
+                                className="w-5 h-5 rounded-md cursor-pointer"
+                            />
+                            <Label className="text-xs text-muted-foreground mt-1">Achieve</Label>
+                        </div>
                     </div>
-                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3 text-sm">
                     {bloom.description && (
-                        <p className="text-muted-foreground">{bloom.description}</p>
+                        <p className="text-muted-foreground break-all">{bloom.description}</p>
                     )}
-                     <div className="flex items-center">
+                    <div className="flex items-center">
                         <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
                         <span>Frequency: {bloom.frequency || "-"}</span>
                     </div>
