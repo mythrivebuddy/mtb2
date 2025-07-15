@@ -158,8 +158,8 @@ export const challengeSchema = z
     title: z.string().min(1, 'Title is required'),
     description: z.string().min(1, 'Description is required'),
     mode: z.nativeEnum(ChallengeMode),
-    cost: z.number().min(50, 'Minimum cost is 50'),
-    reward: z.number().min(50, 'Minimum reward is 50'),
+    cost: z.number(),
+    reward: z.number(),
     penalty: z.number(),
 
     startDate: z.coerce.date().refine((date) => {
