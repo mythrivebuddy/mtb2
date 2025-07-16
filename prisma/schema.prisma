@@ -84,6 +84,7 @@ model User {
   buddyLensReviews              BuddyLensRequest[]   @relation("BuddyLensReviews")
 
   @@index([name])
+  DailyTaskCompletion ChallengeTaskCompletion[]
 }
 
 model Transaction {
@@ -659,7 +660,77 @@ enum Frequency {
   Monthly
 }
 
-// --- ENUMS ---
+// // --- ENUMS ---
+// enum ChallengeMode {
+//   PUBLIC
+//   PERSONAL
+// }
+
+// enum ChallengeStatus {
+//   UPCOMING
+//   ACTIVE
+//   COMPLETED
+//   CANCELLED
+// }
+
+// enum EnrollmentStatus {
+//   IN_PROGRESS
+//   COMPLETED
+//   FAILED
+// }
+
+// // --- MODELS ---
+// model Challenge {
+//   id          String   @id @default(cuid())
+//   slug        String   @unique
+//   title       String
+//   description String?
+//   mode        ChallengeMode @default(PUBLIC)
+//   cost        Float    @default(0)
+//   reward      Float    @default(0)
+//   penalty     Float    @default(0)
+//   startDate   DateTime
+//   endDate     DateTime
+//   status      ChallengeStatus @default(UPCOMING)
+//   createdAt   DateTime @default(now())
+
+//   creatorId   String
+//   creator     User     @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
+  
+//   // Renamed relations to PascalCase
+//   tasks       ChallengeTask[]
+//   enrollments ChallengeEnrollment[]
+
+//   @@map("challenges")
+// }
+
+// model ChallengeTask {
+//   id          String  @id @default(cuid())
+//   description String
+//   isCompleted Boolean @default(false)
+
+//   challengeId String
+//   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
+
+//   @@map("challenge_tasks") // Mapped to a snake_case table name
+// }
+
+// model ChallengeEnrollment {
+//   id        String   @id @default(cuid())
+//   joinedAt  DateTime @default(now())
+//   status    EnrollmentStatus @default(IN_PROGRESS)
+
+//   userId    String
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Added onDelete
+
+//   challengeId String
+//   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
+
+//   @@unique([userId, challengeId])
+//   @@map("challenge_enrollments") // Mapped to a snake_case table name
+// }
+
+
 enum ChallengeMode {
   PUBLIC
   PERSONAL
@@ -678,53 +749,71 @@ enum EnrollmentStatus {
   FAILED
 }
 
-// --- MODELS ---
 model Challenge {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  description String?
-  mode        ChallengeMode @default(PUBLIC)
-  cost        Float    @default(0)
-  reward      Float    @default(0)
-  penalty     Float    @default(0)
-  startDate   DateTime
-  endDate     DateTime
-  status      ChallengeStatus @default(UPCOMING)
-  createdAt   DateTime @default(now())
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  description      String?
+  mode             ChallengeMode @default(PUBLIC)
+  cost             Float    @default(0)
+  reward           Float    @default(0)
+  penalty          Float    @default(0)
+  startDate        DateTime
+  endDate          DateTime
+  status           ChallengeStatus @default(UPCOMING)
+  createdAt        DateTime @default(now())
 
-  creatorId   String
-  creator     User     @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
-  
-  // Renamed relations to PascalCase
-  tasks       ChallengeTask[]
-  enrollments ChallengeEnrollment[]
+  creatorId        String
+  creator          User     @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  tasks            ChallengeTask[]
+  enrollments      ChallengeEnrollment[]
 
   @@map("challenges")
 }
 
 model ChallengeTask {
-  id          String  @id @default(cuid())
-  description String
-  isCompleted Boolean @default(false)
+  id               String    @id @default(cuid())
+  description      String
 
-  challengeId String
-  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
+  challengeId      String
+  challenge        Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
-  @@map("challenge_tasks") // Mapped to a snake_case table name
+  dailyCompletions ChallengeTaskCompletion[]
+
+  @@map("challenge_tasks")
+}
+
+model ChallengeTaskCompletion {
+  id               String    @id @default(cuid())
+  completionDate   DateTime  @map("completion_date")
+
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  challengeTaskId  String
+  challengeTask    ChallengeTask @relation(fields: [challengeTaskId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, challengeTaskId, completionDate])
+  @@map("challenge_task_completions")
 }
 
 model ChallengeEnrollment {
-  id        String   @id @default(cuid())
-  joinedAt  DateTime @default(now())
-  status    EnrollmentStatus @default(IN_PROGRESS)
+  id               String   @id @default(cuid())
+  joinedAt         DateTime @default(now())
+  status           EnrollmentStatus @default(IN_PROGRESS)
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Added onDelete
+  // Self-contained streak tracking for this challenge enrollment
+  currentStreak    Int      @default(0) @map("current_streak")
+  longestStreak    Int      @default(0) @map("longest_streak")
+  lastStreakUpdate DateTime? @map("last_streak_update")
 
-  challengeId String
-  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  challengeId      String
+  challenge        Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId])
-  @@map("challenge_enrollments") // Mapped to a snake_case table name
+  @@map("challenge_enrollments")
 }

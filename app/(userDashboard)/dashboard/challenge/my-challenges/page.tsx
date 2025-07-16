@@ -6,7 +6,7 @@ import axios from "axios";
 import { Users, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// 1. Update the Challenge type to include status and mode
+// Define a type for our challenge data for better type safety
 type Challenge = {
   id: string;
   name: string;
@@ -66,6 +66,11 @@ export default function MyChallenges() {
     activeTab === "hosted" ? hostedChallenges : joinedChallenges;
   const isLoading = activeTab === "hosted" ? isLoadingHosted : isLoadingJoined;
   const isError = activeTab === "hosted" ? isErrorHosted : isErrorJoined;
+
+  const handleCardClick = (challengeId: string) => {
+    // Navigate to the dynamic detail page
+// CORRECT
+router.push(`/dashboard/challenge/${challengeId}`);  };
 
   const handleComplete = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
@@ -134,10 +139,10 @@ export default function MyChallenges() {
               currentChallenges.map((challenge) => (
                 <div
                   key={challenge.id}
-                  className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex flex-col sm:flex-row justify-between items-start"
+                  onClick={() => handleCardClick(challenge.id)}
+                  className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex flex-col sm:flex-row justify-between items-start cursor-pointer hover:shadow-lg hover:border-slate-200 transition-all"
                 >
                   <div className="flex-1">
-                    {/* 2. Add badges for Status and Mode here */}
                     <div className="flex items-center gap-x-3 mb-1">
                       <h2 className="text-xl font-semibold text-slate-800">
                         {challenge.name}
@@ -153,7 +158,6 @@ export default function MyChallenges() {
                         {challenge.mode}
                       </div>
                     </div>
-
                     <p className="text-slate-500 mt-1">
                       {challenge.description}
                     </p>
@@ -171,32 +175,11 @@ export default function MyChallenges() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 sm:mt-0 sm:ml-6 flex flex-col items-end space-y-3">
-                    <button
-                      onClick={() =>
-                        router.push(`/participants?id=${challenge.id}`)
-                      }
-                      className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors flex items-center text-sm font-medium"
-                    >
+                  <div className="mt-4 sm:mt-0 sm:ml-6 flex flex-col items-end space-y-3 opacity-75 group-hover:opacity-100 transition-opacity">
+                    <div className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg flex items-center text-sm font-medium">
                       <Users className="w-4 h-4 mr-2" />
                       <span>{challenge.participants} Participants</span>
-                    </button>
-                    {activeTab === "joined" && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleComplete(challenge)}
-                          className="bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 transition-colors flex items-center text-sm font-semibold"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1.5" /> Complete
-                        </button>
-                        <button
-                          onClick={() => handleFail(challenge)}
-                          className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors flex items-center text-sm font-semibold"
-                        >
-                          <XCircle className="w-4 h-4 mr-1.5" /> Fail
-                        </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -209,7 +192,6 @@ export default function MyChallenges() {
         )}
       </div>
 
-      {/* --- Modals remain unchanged --- */}
       {isCompletedModalOpen && selectedChallenge && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">

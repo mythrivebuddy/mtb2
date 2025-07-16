@@ -106,7 +106,6 @@ export default function CreateChallenge() {
       penalty: 0,
     },
   });
-const today = new Date().toISOString().split("T")[0];
   const { fields, append, remove } = useFieldArray({
     name: "tasks",
     control,
