@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount"; 
 import { ActivityType } from "@prisma/client";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { List, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -27,7 +28,7 @@ export default function Page() {
   const handleChallengeRecord = () => {
     router.push("challenge/my-challenges");
   };
-
+  useOnlineUserLeaderBoard()
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-4xl">
