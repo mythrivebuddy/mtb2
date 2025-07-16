@@ -67,6 +67,7 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
   if (!overdueBlooms || overdueBlooms.length === 0) {
     return null;
   }
+  
 
   return (
     <Card className="mb-8 border-destructive/30 bg-destructive/5">
