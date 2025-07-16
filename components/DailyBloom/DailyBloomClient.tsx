@@ -571,6 +571,9 @@ export default function DailyBloomClient() {
                         <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="desc-add">Description</Label>
                             <Textarea id="desc-add" {...register("description")} />
+                            {errors.description && (
+                                <p className="text-red-500 text-sm">{errors.description.message}</p>
+                            )}
                         </div>
                         <div className="grid gap-2">
                             <Label className="text-sm text-muted-foreground">
@@ -589,6 +592,9 @@ export default function DailyBloomClient() {
                                 >
                                     Due Date
                                 </Button>
+                                {errors.dueDate && (
+                                <p className="text-red-500 text-sm">{errors.dueDate.message}</p>
+                            )}
                                 <Button
                                     type="button"
                                     onClick={() => {
@@ -601,6 +607,9 @@ export default function DailyBloomClient() {
                                 >
                                     Frequency
                                 </Button>
+                                {errors.frequency && (
+                                <p className="text-red-500 text-sm">{errors.frequency.message}</p>
+                            )}
                             </div>
                         </div>
                         {addInputType === "date" ? (
@@ -773,6 +782,9 @@ export default function DailyBloomClient() {
                         <div className="grid w-full items-center gap-1.5">
                             <Label htmlFor="desc-edit">Description</Label>
                             <Textarea id="desc-edit" {...register("description")} />
+                            {errors.description && (
+                                <p className="text-red-500 text-sm">{errors.description.message}</p>
+                            )}
                         </div>
                         {editData?.dueDate ? (
                             <Controller
