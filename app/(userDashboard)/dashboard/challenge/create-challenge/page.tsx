@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useForm, useFieldArray } from "react-hook-form";
@@ -28,7 +27,7 @@ export default function CreateChallenge() {
       penalty: 0,
     },
   });
-
+const today = new Date().toISOString().split("T")[0];
   const { fields, append, remove } = useFieldArray({
     name: "tasks",
     control,
@@ -47,7 +46,6 @@ export default function CreateChallenge() {
 
         return res.data;
       } catch (error: any) {
-        // Handle validation errors from backend
         const message =
           error?.response?.data?.error ||
           error?.response?.data?.message ||
@@ -75,8 +73,6 @@ export default function CreateChallenge() {
     mutation.mutate(data);
   };
 
-  // ⬇️ rest of the UI (form, inputs, layout) remains unchanged
-
   return (
     // Main background matching the theme
     <div className="min-h-screen w-full ">
@@ -97,7 +93,12 @@ export default function CreateChallenge() {
           {/* Title, Cost, Reward */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-slate-700 mb-1">Challenge Title</label>
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Challenge Title
+              </label>
               <input
                 id="title"
                 placeholder="e.g., 30-Day Fitness"
@@ -111,7 +112,12 @@ export default function CreateChallenge() {
               )}
             </div>
             <div>
-              <label htmlFor="cost" className="block text-sm font-medium text-slate-700 mb-1">Cost (JP)</label>
+              <label
+                htmlFor="cost"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Cost (JP)
+              </label>
               <input
                 id="cost"
                 type="number"
@@ -126,7 +132,12 @@ export default function CreateChallenge() {
               )}
             </div>
             <div>
-              <label htmlFor="reward" className="block text-sm font-medium text-slate-700 mb-1">Reward (JP)</label>
+              <label
+                htmlFor="reward"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Reward (JP)
+              </label>
               <input
                 id="reward"
                 type="number"
@@ -144,7 +155,12 @@ export default function CreateChallenge() {
 
           {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1">Detailed Description</label>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-slate-700 mb-1"
+            >
+              Detailed Description
+            </label>
             <textarea
               id="description"
               placeholder="Explain the goals, rules, and what this challenge is about."
@@ -161,50 +177,109 @@ export default function CreateChallenge() {
 
           {/* Dates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="startDate" className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                <div className="relative">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                    <input id="startDate" type="date" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500" {...register("startDate")} />
-                </div>
-                {errors.startDate && <p className="text-red-500 text-sm mt-1">{errors.startDate.message}</p>}
+            <div>
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Start Date
+              </label>
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                <input
+                  id="startDate"
+                  min={today}
+                  type="date"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  {...register("startDate")}
+                />
               </div>
-              <div>
-                <label htmlFor="endDate" className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
-                <div className="relative">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                    <input id="endDate" type="date" className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500" {...register("endDate")} />
-                </div>
-                {errors.endDate && <p className="text-red-500 text-sm mt-1">{errors.endDate.message}</p>}
+              {errors.startDate && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.startDate.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                End Date
+              </label>
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                <input
+                  id="endDate"
+                  min={today}
+                  type="date"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  {...register("endDate")}
+                />
               </div>
+              {errors.endDate && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.endDate.message}
+                </p>
+              )}
+            </div>
           </div>
-          
+
           {/* Row 4: Mode & Penalty */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Challenge Mode</label>
-                <div className="flex items-center space-x-6 pt-2">
-                    <label htmlFor="modePublic" className="flex items-center cursor-pointer">
-                        <input id="modePublic" type="radio" value="PUBLIC" {...register("mode")} className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-300" />
-                        <span className="ml-2 text-slate-700">Public</span>
-                    </label>
-                    <label htmlFor="modePersonal" className="flex items-center cursor-pointer">
-                        <input id="modePersonal" type="radio" value="PERSONAL" {...register("mode")} className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-300" />
-                        <span className="ml-2 text-slate-700">Personal</span>
-                    </label>
-                </div>
-              </div>
-              <div>
-                  <label htmlFor="penalty" className="block text-sm font-medium text-slate-700 mb-1">Penalty (JP)</label>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Challenge Mode
+              </label>
+              <div className="flex items-center space-x-6 pt-2">
+                <label
+                  htmlFor="modePublic"
+                  className="flex items-center cursor-pointer"
+                >
                   <input
-                    id="penalty"
-                    type="number"
-                    placeholder="0"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    {...register("penalty", { valueAsNumber: true })}
+                    id="modePublic"
+                    type="radio"
+                    value="PUBLIC"
+                    {...register("mode")}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-300"
                   />
-                  {errors.penalty && <p className="text-red-500 text-sm mt-1">{errors.penalty.message}</p>}
+                  <span className="ml-2 text-slate-700">Public</span>
+                </label>
+                <label
+                  htmlFor="modePersonal"
+                  className="flex items-center cursor-pointer"
+                >
+                  <input
+                    id="modePersonal"
+                    type="radio"
+                    value="PERSONAL"
+                    {...register("mode")}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-slate-300"
+                  />
+                  <span className="ml-2 text-slate-700">Personal</span>
+                </label>
               </div>
+            </div>
+            <div>
+              <label
+                htmlFor="penalty"
+                className="block text-sm font-medium text-slate-700 mb-1"
+              >
+                Penalty (JP)
+              </label>
+              <input
+                id="penalty"
+                type="number"
+                placeholder="0"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                {...register("penalty", { valueAsNumber: true })}
+              />
+              {errors.penalty && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.penalty.message}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Tasks */}
@@ -212,7 +287,10 @@ export default function CreateChallenge() {
             <h3 className="font-semibold text-slate-800">Challenge Tasks</h3>
             {fields.map((field, index) => (
               <div key={field.id} className="flex items-center space-x-2">
-                <label htmlFor={`task-${index}`} className="sr-only">{`Task #${index + 1}`}</label>
+                <label
+                  htmlFor={`task-${index}`}
+                  className="sr-only"
+                >{`Task #${index + 1}`}</label>
                 <input
                   id={`task-${index}`}
                   placeholder={`Task #${index + 1}`}
@@ -244,10 +322,17 @@ export default function CreateChallenge() {
             <button
               type="button"
               onClick={() => append({ description: "" })}
-              className="w-full flex items-center justify-center px-4 py-3 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors"
+              disabled={fields.length >= 3}
+              className="w-full flex items-center justify-center px-4 py-3 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
             >
               <PlusCircle className="w-5 h-5 mr-2" /> Add Another Task
             </button>
+
+            {fields.length >= 3 && (
+              <p className="text-sm text-slate-500 text-center mt-2">
+                You have reached the maximum of 3 tasks.
+              </p>
+            )}
           </div>
 
           {/* Submit Buttons */}

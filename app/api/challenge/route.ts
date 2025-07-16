@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { checkRole } from "@/lib/utils/auth";
 import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -115,3 +114,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+
