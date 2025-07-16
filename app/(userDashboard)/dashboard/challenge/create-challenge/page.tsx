@@ -106,7 +106,6 @@ export default function CreateChallenge() {
       penalty: 0,
     },
   });
-const today = new Date().toISOString().split("T")[0];
   const { fields, append, remove } = useFieldArray({
     name: "tasks",
     control,
@@ -122,11 +121,9 @@ const today = new Date().toISOString().split("T")[0];
           },
         });
         return res.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const message =
-          error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          error.message ||
+          error ||
           "Something went wrong";
         throw new Error(
           typeof message === "string"
@@ -141,8 +138,8 @@ const today = new Date().toISOString().split("T")[0];
       alert(data.message || "Challenge created successfully!");
       router.push("/dashboard/challenge");
     },
-    onError: (error: any) => {
-      alert(error.message || "Failed to create challenge.");
+    onError: (error: unknown) => {
+      alert(error || "Failed to create challenge.");
     },
   });
 

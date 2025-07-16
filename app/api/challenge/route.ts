@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) { // FIX: Changed 'any' to 'unknown'
     const errMessage =
       error instanceof Error ? error.message : JSON.stringify(error);
     console.error("Failed to create challenge:", errMessage);
@@ -114,5 +114,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-
