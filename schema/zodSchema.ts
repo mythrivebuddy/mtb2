@@ -40,45 +40,6 @@ export const miracleLogSchema = z.object({
     .max(120, "Content cannot exceed 120 characters"),
 });
 
-// export const dailyBloomSchema = z.object({
-//     title: z
-//       .string()
-//       .min(1, "Title is required")
-//       .max(50, "Title cannot exceed 50 characters"),
-//     description: z
-//       .string()
-//       .max(120, "Description cannot exceed 120 characters")
-//       .optional(), // Making description optional
-//     dueDate: z.preprocess((arg) => {
-//         if (typeof arg === 'string' && arg.length > 0) {
-//           const date = new Date(arg);
-//           // Return undefined for invalid date strings to let Zod handle the error
-//           return isNaN(date.getTime()) ? undefined : date;
-//         }
-//         if (arg instanceof Date) {
-//           return arg;
-//         }
-//         return undefined; // Treat null, undefined, or empty string as undefined
-//       },
-//       z.date()
-//         .optional()
-//         .nullable()
-//     ),
-//     frequency: z.enum(["Daily", "Weekly", "Monthly"]).optional().nullable(),
-//     isCompleted: z.boolean().default(false),
-//     taskAddJP: z.boolean().default(false),
-//     taskCompleteJP: z.boolean().default(false),
-//   }).superRefine((data, ctx) => {
-//     // If both fields are missing, add an error.
-//     if (!data.dueDate && !data.frequency) {
-//       ctx.addIssue({
-//         code: z.ZodIssueCode.custom,
-//         message: "Please select either a Due Date or a Frequency.",
-//         // Apply the error message to one of the fields so it can be displayed.
-//         path: ["dueDate"],
-//       });
-//     }
-//   });
 
 export const dailyBloomSchema = z
   .object({
@@ -121,37 +82,6 @@ export const dailyBloomSchema = z
     }
   });
 
-// export const createChallengeSchema = z
-//   .object({
-//     title: z.string().min(3, 'Title must be at least 3 characters long.').max(50,"Title cannot be greater than 50 characters"),
-//     description: z.string().optional(),
-//     mode: z.enum(['PUBLIC', 'PERSONAL']),
-
-//     startDate: z.coerce.date().refine((date) => {
-//         const today = new Date();
-//         today.setHours(0, 0, 0, 0);
-//         return date > today;
-//       }, {
-//         message: 'Start date must be in the future.',
-//       }),
-
-//     endDate: z.coerce.date(),
-
-//     tasks: z
-//       .array(
-//         z.object({
-//           description: z.string().min(1, 'Task description cannot be empty.'),
-//         })
-//       )
-//       .optional(),
-//       reward: z.number(),
-//       penalty: z.number(),
-//       cost:z.number().min(50,"Cost need to be atleast 50")
-//   })
-//   .refine((data) => data.endDate > data.startDate, {
-//     message: 'End date must be after the start date.',
-//     path: ['endDate'],
-//   });
 
 export const challengeSchema = z
   .object({
