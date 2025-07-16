@@ -13,7 +13,7 @@ export default function Page() {
 
   useEffect(() => {
     const loadFee = async () => {
-      const amount = await getJpAmountForActivity("PROGRESS_VAULT_STREAK_REWARD_7_DAYS" as ActivityType);
+      const amount = await getJpAmountForActivity("CHALLENGE_CREATION_FEE" as ActivityType);
       setFee(amount);
     };
 
