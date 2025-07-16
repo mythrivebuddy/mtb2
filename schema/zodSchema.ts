@@ -284,7 +284,8 @@ export const magicBoxSettingsSchema = z
 
 export const activitySchema = z.object({
   activityId: z.string().min(1, "Activity is required"),
-  jpAmount: z.string().min(1, "JP amount is required"),
+  // jpAmount: z.string().min(1, "JP amount is required"),
+  jpAmount: z.string(),
 });
 
 export const contactFormSchems = z.object({

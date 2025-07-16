@@ -580,6 +580,9 @@ enum ActivityType {
   BUDDY_LENS_REVIEW
   DAILY_BLOOM_CREATION_REWARD
   DAILY_BLOOM_COMPLETION_REWARD
+
+  // add challenge creation fee activity  
+  CHALLENGE_CREATION_FEE
 }
 
 enum TransactionType {
