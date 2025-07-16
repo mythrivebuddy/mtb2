@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ChallengeMode } from "@prisma/client";
 
 const PASS_LENGTH = 8;
 
@@ -39,8 +40,6 @@ export const miracleLogSchema = z.object({
     .max(120, "Content cannot exceed 120 characters"),
 });
 
-
-
 // export const dailyBloomSchema = z.object({
 //     title: z
 //       .string()
@@ -60,7 +59,7 @@ export const miracleLogSchema = z.object({
 //           return arg;
 //         }
 //         return undefined; // Treat null, undefined, or empty string as undefined
-//       }, 
+//       },
 //       z.date()
 //         .optional()
 //         .nullable()
@@ -76,12 +75,10 @@ export const miracleLogSchema = z.object({
 //         code: z.ZodIssueCode.custom,
 //         message: "Please select either a Due Date or a Frequency.",
 //         // Apply the error message to one of the fields so it can be displayed.
-//         path: ["dueDate"], 
+//         path: ["dueDate"],
 //       });
 //     }
 //   });
-
-
 
 export const dailyBloomSchema = z
   .object({
@@ -117,12 +114,77 @@ export const dailyBloomSchema = z
     if (!isOneSelected) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please select either a Due Date or a Frequency, but not both.",
+        message:
+          "Please select either a Due Date or a Frequency, but not both.",
         path: ["dueDate"],
       });
     }
   });
 
+// export const createChallengeSchema = z
+//   .object({
+//     title: z.string().min(3, 'Title must be at least 3 characters long.').max(50,"Title cannot be greater than 50 characters"),
+//     description: z.string().optional(),
+//     mode: z.enum(['PUBLIC', 'PERSONAL']),
+
+//     startDate: z.coerce.date().refine((date) => {
+//         const today = new Date();
+//         today.setHours(0, 0, 0, 0);
+//         return date > today;
+//       }, {
+//         message: 'Start date must be in the future.',
+//       }),
+
+//     endDate: z.coerce.date(),
+
+//     tasks: z
+//       .array(
+//         z.object({
+//           description: z.string().min(1, 'Task description cannot be empty.'),
+//         })
+//       )
+//       .optional(),
+//       reward: z.number(),
+//       penalty: z.number(),
+//       cost:z.number().min(50,"Cost need to be atleast 50")
+//   })
+//   .refine((data) => data.endDate > data.startDate, {
+//     message: 'End date must be after the start date.',
+//     path: ['endDate'],
+//   });
+
+export const challengeSchema = z
+  .object({
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().min(1, 'Description is required'),
+    mode: z.nativeEnum(ChallengeMode),
+    cost: z.number().min(50, 'Minimum cost is 50'),
+    reward: z.number().min(50, 'Minimum reward is 50'),
+    penalty: z.number(),
+
+    startDate: z.coerce.date().refine((date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return date > today;
+      }, {
+        message: 'Start date must be in the future.',
+      }),
+
+    endDate: z.coerce.date(),
+
+    tasks: z
+      .array(
+        z.object({
+          description: z.string().min(1, 'Task description is required'),
+        })
+      )
+      .min(1, 'At least 1 task is required')
+      .max(3, 'No more than 3 tasks are allowed'),
+  })
+  .refine((data) => data.endDate > data.startDate, {
+    message: 'End date must be after the start date.',
+    path: ['endDate'], 
+  });
 
 // Miracle Log Schema
 export const progressvaultSchema = z.object({
@@ -247,3 +309,5 @@ export type Step4FormType = z.infer<typeof step4Schema>;
 export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
+export type challengeSchemaFormType = z.infer<typeof challengeSchema>;
+

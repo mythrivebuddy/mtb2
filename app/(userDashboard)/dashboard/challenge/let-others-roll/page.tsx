@@ -35,7 +35,7 @@ export default function LetOthersRoll() {
             <a href="#" className="hover:text-indigo-800"><Instagram className="w-6 h-6" /></a>
           </div>
           <button
-            onClick={() => router.push("/join-challenge")}
+            onClick={() => router.push("/dashboard/challenge/join-challenge")}
             className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all w-full mt-6"
           >
             Proceed to Join
