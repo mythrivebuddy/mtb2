@@ -7,7 +7,10 @@ import { challengeSchema } from "@/schema/zodSchema";
 const prisma = new PrismaClient();
 
 function generateSlug(title: string) {
-  return title.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
+  return title
+    .toLowerCase()
+    .replace(/ /g, "-")
+    .replace(/[^\w-]+/g, "");
 }
 
 export async function POST(request: Request) {
@@ -41,6 +44,8 @@ export async function POST(request: Request) {
       endDate,
       tasks,
     } = result.data;
+
+    console.log("title : ", title);
 
     // ✅ 4. Check all fields are not empty (redundant with Zod, but added for clarity)
     if (
@@ -99,7 +104,6 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-
   } catch (error: any) {
     const errMessage =
       error instanceof Error ? error.message : JSON.stringify(error);
