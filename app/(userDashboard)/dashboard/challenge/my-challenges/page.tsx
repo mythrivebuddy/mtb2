@@ -44,7 +44,9 @@ export default function MyChallenges() {
   });
 
   const handleCardClick = (challengeId: string) => {
-    router.push(`/dashboard/challenge/${challengeId}`);
+    // Navigate to the dynamic detail page
+    // CORRECT
+    router.push(`/dashboard/challenge/my-challenges/${challengeId}`);
   };
 
   const handleComplete = (challenge: Challenge) => {

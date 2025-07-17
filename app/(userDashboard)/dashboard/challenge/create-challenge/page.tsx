@@ -3,7 +3,12 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { challengeSchema, challengeSchemaFormType } from "@/schema/zodSchema";
-import { PlusCircle, X, Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
+import {
+  PlusCircle,
+  X,
+  Calendar as CalendarIcon,
+  AlertTriangle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -11,17 +16,17 @@ import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
 
-// --- Helper function to generate a slug from a title ---
+// --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
-  if (!title) return ""; // Handle empty title
+  if (!title) return "";
   return title
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-"); // Replace multiple hyphens with a single one
 };
 
-// --- MessageModal component (remains the same) ---
+// --- A reusable modal component for displaying messages ---
 const MessageModal = ({
   isOpen,
   onClose,
@@ -34,7 +39,7 @@ const MessageModal = ({
   message: string;
 }) => {
   if (!isOpen) return null;
-   
+    
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 p-6 text-center transform transition-all">
@@ -61,52 +66,59 @@ const MessageModal = ({
   );
 };
 
+// --- Type definition for the user data we expect from the API ---
 interface UserData {
   jpBalance: number;
 }
 
+// --- API function to fetch user data ---
 const fetchUser = async (): Promise<UserData> => {
   const { data } = await axios.get("/api/user");
-  console.log("user from the create challenge page : ", data);
   return data.user;
 };
-   const today = new Date().toISOString().split("T")[0];
+
+// --- Constant for today's date, to set min date on inputs ---
+const today = new Date().toISOString().split("T")[0];
 
 export default function CreateChallenge() {
   const router = useRouter();
+  
+  // --- State Management ---
   const [challengeCreationFee, setChallengeCreationFee] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // --- Data Fetching with TanStack Query ---
+  // Fetches the current user's data and caches it.
   const {
     data: user,
     isLoading: isUserLoading,
     error: userError,
   } = useQuery<UserData>({
-    queryKey: ["currentUser"],
-    queryFn: fetchUser,
+    queryKey: ["currentUser"], // Unique key for this query
+    queryFn: fetchUser,       // The function that will fetch the data
   });
 
+  // --- Effect to load the challenge creation fee once on component mount ---
   useEffect(() => {
     const loadFee = async () => {
       try {
-        const amount = await getJpAmountForActivity(
-          "CHALLENGE_CREATION_FEE" as ActivityType
-        );
+        const amount = await getJpAmountForActivity("CHALLENGE_CREATION_FEE" as ActivityType);
         setChallengeCreationFee(amount);
       } catch (error) {
         console.error("Failed to load challenge creation fee:", error);
       }
     };
     loadFee();
-  }, []);
+  }, []); // Empty dependency array means this runs only once
 
+  // --- Form Management with React Hook Form ---
   const {
     handleSubmit,
     register,
     control,
     formState: { errors },
   } = useForm<challengeSchemaFormType>({
-    resolver: zodResolver(challengeSchema),
+    resolver: zodResolver(challengeSchema), // Use Zod for validation
     defaultValues: {
       title: "",
       mode: "PUBLIC",
@@ -116,69 +128,67 @@ export default function CreateChallenge() {
       penalty: 0,
     },
   });
+
+  // --- Dynamic field array for adding/removing task inputs ---
   const { fields, append, remove } = useFieldArray({
     name: "tasks",
     control,
   });
 
+  // --- Data Mutation with TanStack Query ---
+  // Handles the API POST request to create the challenge.
   const mutation = useMutation({
     mutationFn: async (data: challengeSchemaFormType) => {
       try {
         const res = await axios.post("/api/challenge", data, {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
         return res.data;
       } catch (error: any) {
-        const message =
-          error?.response?.data?.message ||
-          error?.message ||
-          "Something went wrong";
-        throw new Error(message);
+        // Handle Axios error structure to get the most specific error message
+        const errorMessage = error.response?.data?.error || error.message || "An unexpected error occurred.";
+        throw new Error(errorMessage);
       }
     },
+    // --- Side effects on successful mutation ---
     onSuccess: (data) => {
-      // --- DEBUGGING LOGS START ---
-      console.log("Backend response data on success:", data);
-      // CORRECTED: Access data.data.id and data.data.title
-      const challengeId = data.data?.id; // <--- CHANGED FROM data.challenge?.id
-      const challengeTitle = data.data?.title; // <--- CHANGED FROM data.challenge?.title
-      console.log("Extracted challengeId (corrected):", challengeId);
-      console.log("Extracted challengeTitle (corrected):", challengeTitle);
+      const challengeId = data.data?.id;
+      const challengeTitle = data.data?.title;
 
       if (challengeId && challengeTitle) {
         const slug = generateSlug(challengeTitle);
-        console.log("Generated slug:", slug);
         const redirectUrl = `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`;
-        console.log("Redirecting to URL:", redirectUrl);
         router.push(redirectUrl);
       } else {
-        console.error("Missing challengeId or challengeTitle in backend response (after correction attempts).");
-        alert("Challenge created, but could not get shareable link details. Please check console for more info.");
+        // Fallback if the response format is unexpected
+        console.error("Missing challengeId or challengeTitle in backend response.");
+        alert("Challenge created, but could not get shareable link details.");
         router.push("/dashboard/challenge");
       }
-      // --- DEBUGGING LOGS END ---
     },
-    onError: (error: any) => {
-      setIsModalOpen(true);
-      // The modal will display the error.message from the thrown error
+    // --- Side effects on failed mutation ---
+    onError: (error: Error) => {
+      setIsModalOpen(true); // Show the error modal
     },
   });
 
+  // --- Form submission handler ---
   const onSubmit = (data: challengeSchemaFormType) => {
+    // Prevent submission if fee or user balance is not yet loaded
     if (challengeCreationFee === null) {
       alert("Still calculating the creation fee. Please wait a moment.");
       return;
     }
-
+    // Prevent submission if user has insufficient balance
     if (user && user.jpBalance < challengeCreationFee) {
       setIsModalOpen(true);
       return;
     }
+    // Trigger the mutation
     mutation.mutate(data);
   };
 
+  // --- Conditional Rendering for Loading and Error states ---
   if (isUserLoading || challengeCreationFee === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -197,13 +207,14 @@ export default function CreateChallenge() {
     );
   }
 
+  // --- Main Component Render ---
   return (
     <>
       <MessageModal
         isOpen={isModalOpen || mutation.isError}
         onClose={() => {
           setIsModalOpen(false);
-          mutation.reset();
+          mutation.reset(); // Reset mutation state when modal is closed
         }}
         title={mutation.isError ? "Challenge Creation Failed" : "Insufficient Balance"}
         message={
@@ -215,6 +226,7 @@ export default function CreateChallenge() {
 
       <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-purple-50 py-12">
         <div className="w-full max-w-4xl mx-auto px-4">
+          {/* Header Section */}
           <div className="text-center mb-10">
             <div className="flex justify-end gap-4 mb-4">
               <div className="px-4 py-2 bg-blue-100 text-blue-800 font-bold rounded-lg shadow-md">
@@ -232,11 +244,11 @@ export default function CreateChallenge() {
             </p>
           </div>
 
+          {/* Form Element */}
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="bg-white p-8 rounded-2xl shadow-xl space-y-6 border border-slate-100"
           >
-            {/* ... (rest of your form JSX remains the same) ... */}
             {/* Title, Cost, Reward */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -429,14 +441,15 @@ export default function CreateChallenge() {
               </div>
             </div>
 
-            {/* Tasks */}
+            {/* Tasks Section */}
             <div className="space-y-4 pt-4 border-t border-slate-200">
               <h3 className="font-semibold text-slate-800">Challenge Tasks</h3>
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-center space-x-2">
-                  <label htmlFor={`task-${index}`} className="sr-only">{`Task #${
-                    index + 1
-                  }`}</label>
+                  <label
+                    htmlFor={`task-${index}`}
+                    className="sr-only"
+                  >{`Task #${index + 1}`}</label>
                   <input
                     id={`task-${index}`}
                     placeholder={`Task #${index + 1}`}
@@ -454,6 +467,7 @@ export default function CreateChallenge() {
                   )}
                 </div>
               ))}
+              {/* Display task-related errors */}
               {errors.tasks?.root && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.tasks.root.message}
@@ -502,5 +516,5 @@ export default function CreateChallenge() {
         </div>
       </div>
     </>
-  );
+  )
 }
