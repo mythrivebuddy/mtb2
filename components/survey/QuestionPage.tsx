@@ -36,8 +36,7 @@ const questions = [
       "None",
     ],
   },
-  {
-  },
+
     {
     question: "What hidimba challenges are you facing with your current marketing strategy?",
     options: [
