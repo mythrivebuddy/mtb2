@@ -1,3 +1,4 @@
+// import withPWA from "next-pwa";
 import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -101,6 +102,19 @@ const nextConfig: NextConfig = {
     serverActions: {},
   },
   transpilePackages: ["@tinymce/tinymce-react"],
+
+  // pwa: {
+  //   dest: "public",
+  //   register: true,
+  //   skipWaiting: true,
+  // },
+
 };
+
+// const withPwa = withPWA({
+//   dest: "public",
+//   register: true,
+//   skipWaiting: true,
+// });
 
 export default nextConfig;

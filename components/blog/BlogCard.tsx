@@ -34,6 +34,7 @@ export default function BlogCard({
             <div className="flex items-center space-x-4">
               <span>{date}</span>
               <span>{readTime}</span>
+              <h1>hello</h1>
             </div>
           </div>
         </div>
