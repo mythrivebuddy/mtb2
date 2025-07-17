@@ -148,7 +148,7 @@ export default function UserInfoContent() {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
                       {user.name.slice(0, 2).toUpperCase()}
-                      {user.isOnline && onlineUserIds.has(user?.id) && (
+                      { onlineUserIds.has(user?.id) && (
                         <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
                       )}
                     </div>

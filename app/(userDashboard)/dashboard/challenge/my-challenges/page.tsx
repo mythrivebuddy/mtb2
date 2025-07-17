@@ -6,7 +6,7 @@ import axios from "axios";
 import { Users, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// 1. Update the Challenge type to include status and mode
+// Define a type for our challenge data for better type safety
 type Challenge = {
   id: string;
   name: string;
@@ -67,6 +67,11 @@ export default function MyChallenges() {
   const isLoading = activeTab === "hosted" ? isLoadingHosted : isLoadingJoined;
   const isError = activeTab === "hosted" ? isErrorHosted : isErrorJoined;
 
+  const handleCardClick = (challengeId: string) => {
+    // Navigate to the dynamic detail page
+// CORRECT
+router.push(`/dashboard/challenge/${challengeId}`);  };
+
   const handleComplete = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
     setIsCompletedModalOpen(true);
@@ -102,13 +107,21 @@ export default function MyChallenges() {
           <div className="bg-slate-200 p-1 rounded-xl flex">
             <button
               onClick={() => setActiveTab("hosted")}
-              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === "hosted" ? "bg-white text-slate-700 shadow" : "text-slate-500 hover:bg-slate-100"}`}
+              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+                activeTab === "hosted"
+                  ? "bg-white text-slate-700 shadow"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
             >
               Hosted
             </button>
             <button
               onClick={() => setActiveTab("joined")}
-              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === "joined" ? "bg-white text-slate-700 shadow" : "text-slate-500 hover:bg-slate-100"}`}
+              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+                activeTab === "joined"
+                  ? "bg-white text-slate-700 shadow"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
             >
               Joined
             </button>
@@ -134,26 +147,31 @@ export default function MyChallenges() {
               currentChallenges.map((challenge) => (
                 <div
                   key={challenge.id}
-                  className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex flex-col sm:flex-row justify-between items-start"
+                  onClick={() => handleCardClick(challenge.id)}
+                  className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 flex flex-col sm:flex-row justify-between items-start cursor-pointer hover:shadow-lg hover:border-slate-200 transition-all"
                 >
                   <div className="flex-1">
-                    {/* 2. Add badges for Status and Mode here */}
                     <div className="flex items-center gap-x-3 mb-1">
                       <h2 className="text-xl font-semibold text-slate-800">
                         {challenge.name}
                       </h2>
                       <div
-                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${statusColors[challenge.status] || "bg-gray-100"}`}
+                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                          statusColors[challenge.status] || "bg-gray-100"
+                        }`}
                       >
                         {challenge.status}
                       </div>
                       <div
-                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${challenge.mode === "PUBLIC" ? "bg-purple-100 text-purple-800" : "bg-slate-100 text-slate-800"}`}
+                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                          challenge.mode === "PUBLIC"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-slate-100 text-slate-800"
+                        }`}
                       >
                         {challenge.mode}
                       </div>
                     </div>
-
                     <p className="text-slate-500 mt-1">
                       {challenge.description}
                     </p>
@@ -171,32 +189,11 @@ export default function MyChallenges() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 sm:mt-0 sm:ml-6 flex flex-col items-end space-y-3">
-                    <button
-                      onClick={() =>
-                        router.push(`/participants?id=${challenge.id}`)
-                      }
-                      className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors flex items-center text-sm font-medium"
-                    >
+                  <div className="mt-4 sm:mt-0 sm:ml-6 flex flex-col items-end space-y-3 opacity-75 group-hover:opacity-100 transition-opacity">
+                    <div className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg flex items-center text-sm font-medium">
                       <Users className="w-4 h-4 mr-2" />
                       <span>{challenge.participants} Participants</span>
-                    </button>
-                    {activeTab === "joined" && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleComplete(challenge)}
-                          className="bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 transition-colors flex items-center text-sm font-semibold"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1.5" /> Complete
-                        </button>
-                        <button
-                          onClick={() => handleFail(challenge)}
-                          className="bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors flex items-center text-sm font-semibold"
-                        >
-                          <XCircle className="w-4 h-4 mr-1.5" /> Fail
-                        </button>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -209,7 +206,7 @@ export default function MyChallenges() {
         )}
       </div>
 
-      {/* --- Modals remain unchanged --- */}
+      {/* --- Modals --- */}
       {isCompletedModalOpen && selectedChallenge && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
@@ -218,10 +215,11 @@ export default function MyChallenges() {
               Challenge Completed!
             </h2>
             <p className="text-slate-500 mb-4">
-              Great job on completing the "{selectedChallenge.name}" challenge.
+              Great job on completing the &quot;{selectedChallenge.name}&quot;
+              challenge.
             </p>
             <p className="text-lg font-semibold text-purple-600 mb-6">
-              You've earned {selectedChallenge.reward} JP!
+              You&apos;ve earned {selectedChallenge.reward} JP!
             </p>
             <button
               onClick={closeModal}
@@ -241,7 +239,7 @@ export default function MyChallenges() {
               Challenge Failed
             </h2>
             <p className="text-slate-500 mb-4">
-              Don’t give up! Every attempt is a step forward.
+              Don&apos;t give up! Every attempt is a step forward.
             </p>
             <p className="text-lg font-semibold text-red-600 mb-6">
               Penalty: {selectedChallenge.penalty} JP deducted.

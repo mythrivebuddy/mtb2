@@ -24,11 +24,14 @@ export default function useAdminPresence(queryKey: QueryKey) {
       // Remove admin-tracker from the list
       // const filtered = users.filter((u) => u.userId !== "admin");
       setOnlineUsers(users);
+      console.log("Admin sees ",onlineUsers,users);
+      
       queryClient.invalidateQueries({queryKey})
     };
     presenceChannel
       .on("presence", { event: "join" }, updatePresence)
       .on("presence", { event: "leave" }, updatePresence)
+      .on('presence',{event:"sync"},updatePresence)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
           await presenceChannel.track({ isAdmin: true }); // admin tracking

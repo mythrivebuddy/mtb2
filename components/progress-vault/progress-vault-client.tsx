@@ -40,6 +40,7 @@ import { startOfDay, endOfDay } from "date-fns";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 import PageSkeleton from "../PageSkeleton";
 import { ProgressVault, ProgressVaultClientProps } from "@/types/client/progress-vault";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 
 export default function ProgressVaultClient({ initialLogs, initialStreak }: ProgressVaultClientProps) {
@@ -50,7 +51,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
   const [todayEntriesCount, setTodayEntriesCount] = useState(0);
 
   const queryClient = useQueryClient();
-
+  useOnlineUserLeaderBoard()
   const {
     handleSubmit,
     register,

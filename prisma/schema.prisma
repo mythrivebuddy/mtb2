@@ -84,6 +84,7 @@ model User {
   buddyLensReviews              BuddyLensRequest[]   @relation("BuddyLensReviews")
 
   @@index([name])
+  
 }
 
 model Transaction {
@@ -659,7 +660,7 @@ enum Frequency {
   Monthly
 }
 
-// --- ENUMS ---
+
 enum ChallengeMode {
   PUBLIC
   PERSONAL
@@ -669,7 +670,7 @@ enum ChallengeStatus {
   UPCOMING
   ACTIVE
   COMPLETED
-  CANCELLED
+  
 }
 
 enum EnrollmentStatus {
@@ -678,53 +679,84 @@ enum EnrollmentStatus {
   FAILED
 }
 
-// --- MODELS ---
-model Challenge {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  description String?
-  mode        ChallengeMode @default(PUBLIC)
-  cost        Float    @default(0)
-  reward      Float    @default(0)
-  penalty     Float    @default(0)
-  startDate   DateTime
-  endDate     DateTime
-  status      ChallengeStatus @default(UPCOMING)
-  createdAt   DateTime @default(now())
 
-  creatorId   String
-  creator     User     @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
-  
-  // Renamed relations to PascalCase
-  tasks       ChallengeTask[]
-  enrollments ChallengeEnrollment[]
+
+model Challenge {
+  id              String          @id @default(cuid())
+  slug            String          @unique
+  title           String
+  description     String?
+  mode            ChallengeMode   @default(PUBLIC)
+  cost            Float           @default(0)
+  reward          Float           @default(0)
+  penalty         Float           @default(0)
+  startDate       DateTime
+  endDate         DateTime
+  status          ChallengeStatus @default(UPCOMING)
+  createdAt       DateTime        @default(now())
+
+  creatorId       String
+  creator         User            @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // These are the "template" tasks for the challenge.
+  templateTasks   ChallengeTask[]
+  enrollments     ChallengeEnrollment[]
 
   @@map("challenges")
 }
 
+// This model acts as a TEMPLATE for tasks in a challenge.
+// It is NOT the user's individual task.
 model ChallengeTask {
-  id          String  @id @default(cuid())
-  description String
-  isCompleted Boolean @default(false)
+  id            String    @id @default(cuid())
+  description   String
 
-  challengeId String
-  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
+  challengeId   String
+  challenge     Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
-  @@map("challenge_tasks") // Mapped to a snake_case table name
+  // Relation to all the individual user task instances created from this template
+  userTaskInstances UserChallengeTask[]
+
+  @@map("challenge_tasks")
 }
 
-model ChallengeEnrollment {
-  id        String   @id @default(cuid())
-  joinedAt  DateTime @default(now())
-  status    EnrollmentStatus @default(IN_PROGRESS)
+// This is the new model representing an INDIVIDUAL user's copy of a task.
+model UserChallengeTask {
+  id            String   @id @default(cuid())
+  description   String   // Copied from the ChallengeTask template for convenience
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Added onDelete
+  // The boolean flag to track completion for this specific user's task.
+  isCompleted   Boolean  @default(false)
+
+  // Link to the user's overall enrollment in the challenge.
+  enrollmentId  String
+  enrollment    ChallengeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  // Link back to the original template task.
+  templateTaskId String
+  templateTask   ChallengeTask @relation(fields: [templateTaskId], references: [id], onDelete: Cascade)
+
+  @@map("user_challenge_tasks")
+}
+
+
+model ChallengeEnrollment {
+  id          String            @id @default(cuid())
+  joinedAt    DateTime          @default(now())
+  status      EnrollmentStatus  @default(IN_PROGRESS)
+  currentStreak  Int               @default(0)
+  longestStreak  Int               @default(0)
+
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   challengeId String
-  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade) // Added onDelete
+  challenge   Challenge         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  // Each enrollment now has its own list of individual tasks.
+  // Your application logic must create these when a user enrolls.
+  userTasks   UserChallengeTask[]
 
   @@unique([userId, challengeId])
-  @@map("challenge_enrollments") // Mapped to a snake_case table name
+  @@map("challenge_enrollments")
 }

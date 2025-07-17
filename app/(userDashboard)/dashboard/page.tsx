@@ -14,12 +14,17 @@ import {
 } from "@/lib/constants/applicationSteps";
 import PageSkeleton from "@/components/PageSkeleton";
 
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+
+
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  // const userId = session?.user?.id;
-  // this hook i have called in layout so on every route with this layout have access to this hook
-  // useUserPresence({ userId } as UserPresenceProps);
+
+  
+  useOnlineUserLeaderBoard()
+
+
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
@@ -80,6 +85,7 @@ export default function DashboardPage() {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
   console.log("currentProsperity", currentProsperity);
+
 
   return (
     <div className="py-6">
