@@ -36,8 +36,7 @@ const questions = [
       "None",
     ],
   },
-  {
-  },
+
     {
     question: "What hidimba challenges are you facing with your current marketing strategy?",
     options: [
@@ -48,7 +47,7 @@ const questions = [
       "Other",
     ],
   },
-   {
+  {
     question: "What hidimba challenges are you facing with your current marketing strategy?",
     options: [
       "Lack of budget",
@@ -58,7 +57,18 @@ const questions = [
       "Other",
     ],
   },
+  {
+    question: "What hidimba challenges are you facing with your current marketing strategy?",
+    options: [
+      "Lack of budget",
+      "Limited reach",
+      "Inconsistent messaging",
+      "Low engagement",
+      "Other",
+    ],
+  }
 ];
+
 
 
 export default function QuestionPageComponent({ questionId }: { questionId: string }) {
