@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // if using query param
-// OR use `params` from route file if using dynamic route like /question-page/[questionId]
+import { useRouter, useSearchParams } from "next/navigation"; 
+
 
 const questions = [
   {
