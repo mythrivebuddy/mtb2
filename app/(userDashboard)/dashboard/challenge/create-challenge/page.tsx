@@ -3,7 +3,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { challengeSchema, challengeSchemaFormType } from "@/schema/zodSchema";
-import { PlusCircle, X, Calendar as CalendarIcon, AlertTriangle } from "lucide-react"; // Added AlertTriangle
+import { PlusCircle, X, Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -11,7 +11,17 @@ import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
 
-// --- 1. Define the MessageModal component ---
+// --- Helper function to generate a slug from a title ---
+const generateSlug = (title: string) => {
+  if (!title) return ""; // Handle empty title
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+};
+
+// --- MessageModal component (remains the same) ---
 const MessageModal = ({
   isOpen,
   onClose,
@@ -65,7 +75,6 @@ const fetchUser = async (): Promise<UserData> => {
 export default function CreateChallenge() {
   const router = useRouter();
   const [challengeCreationFee, setChallengeCreationFee] = useState<number | null>(null);
-  // --- 2. Add state to control the modal's visibility ---
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
@@ -114,7 +123,6 @@ export default function CreateChallenge() {
 
   const mutation = useMutation({
     mutationFn: async (data: challengeSchemaFormType) => {
-      // ... mutation logic
       try {
         const res = await axios.post("/api/challenge", data, {
           headers: {
@@ -122,25 +130,39 @@ export default function CreateChallenge() {
           },
         });
         return res.data;
-      } catch (error: unknown) {
+      } catch (error: any) {
         const message =
-          error ||
+          error?.response?.data?.message ||
+          error?.message ||
           "Something went wrong";
-        throw new Error(
-          typeof message === "string"
-            ? message
-            : Object.values(message || {})
-                .flat()
-                .join(", ")
-        );
+        throw new Error(message);
       }
     },
     onSuccess: (data) => {
-      alert(data.message || "Challenge created successfully!");
-      router.push("/dashboard/challenge");
+      // --- DEBUGGING LOGS START ---
+      console.log("Backend response data on success:", data);
+      // CORRECTED: Access data.data.id and data.data.title
+      const challengeId = data.data?.id; // <--- CHANGED FROM data.challenge?.id
+      const challengeTitle = data.data?.title; // <--- CHANGED FROM data.challenge?.title
+      console.log("Extracted challengeId (corrected):", challengeId);
+      console.log("Extracted challengeTitle (corrected):", challengeTitle);
+
+      if (challengeId && challengeTitle) {
+        const slug = generateSlug(challengeTitle);
+        console.log("Generated slug:", slug);
+        const redirectUrl = `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`;
+        console.log("Redirecting to URL:", redirectUrl);
+        router.push(redirectUrl);
+      } else {
+        console.error("Missing challengeId or challengeTitle in backend response (after correction attempts).");
+        alert("Challenge created, but could not get shareable link details. Please check console for more info.");
+        router.push("/dashboard/challenge");
+      }
+      // --- DEBUGGING LOGS END ---
     },
-    onError: (error: unknown) => {
-      alert(error || "Failed to create challenge.");
+    onError: (error: any) => {
+      setIsModalOpen(true);
+      // The modal will display the error.message from the thrown error
     },
   });
 
@@ -150,10 +172,9 @@ export default function CreateChallenge() {
       return;
     }
 
-    // --- 3. Update the check to open the modal instead of an alert ---
     if (user && user.jpBalance < challengeCreationFee) {
-      setIsModalOpen(true); // Open the modal
-      return; // Stop the submission
+      setIsModalOpen(true);
+      return;
     }
     mutation.mutate(data);
   };
@@ -161,7 +182,7 @@ export default function CreateChallenge() {
   if (isUserLoading || challengeCreationFee === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-lg">Loading challenge data...</p>
+        <p className="text-lg text-slate-600">Loading challenge data...</p>
       </div>
     );
   }
@@ -178,38 +199,44 @@ export default function CreateChallenge() {
 
   return (
     <>
-      {/* --- 4. Render the modal component --- */}
       <MessageModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Insufficient Balance"
-        message={`You need ${challengeCreationFee} JP to create a challenge, but you only have ${user?.jpBalance} JP.`}
+        isOpen={isModalOpen || mutation.isError}
+        onClose={() => {
+          setIsModalOpen(false);
+          mutation.reset();
+        }}
+        title={mutation.isError ? "Challenge Creation Failed" : "Insufficient Balance"}
+        message={
+          mutation.isError
+            ? mutation.error?.message || "An unexpected error occurred."
+            : `You need ${challengeCreationFee} JP to create a challenge, but you only have ${user?.jpBalance} JP.`
+        }
       />
 
-      <div className="min-h-screen w-full ">
-        <div className="w-full max-w-4xl mx-auto">
+      <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-purple-50 py-12">
+        <div className="w-full max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">
             <div className="flex justify-end gap-4 mb-4">
-              <div className="px-4 py-2 bg-blue-100 text-blue-800 font-bold rounded-lg shadow">
+              <div className="px-4 py-2 bg-blue-100 text-blue-800 font-bold rounded-lg shadow-md">
                 Creation Fee: {challengeCreationFee} JP
               </div>
-              <div className="px-4 py-2 bg-purple-100 text-purple-800 font-bold rounded-lg shadow">
+              <div className="px-4 py-2 bg-purple-100 text-purple-800 font-bold rounded-lg shadow-md">
                 Your JP Balance: {user?.jpBalance ?? "N/A"}
               </div>
             </div>
-            <h1 className="text-4xl font-bold text-slate-800">
+            <h1 className="text-4xl font-extrabold text-slate-800">
               Create Your Challenge
             </h1>
-            <p className="text-slate-500 mt-2">
+            <p className="text-slate-500 mt-2 text-lg">
               Craft your unique challenge and inspire others!
             </p>
           </div>
 
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="bg-white p-8 rounded-2xl shadow-lg space-y-6"
+            className="bg-white p-8 rounded-2xl shadow-xl space-y-6 border border-slate-100"
           >
-            {/* The rest of your form JSX remains the same... */}
+            {/* ... (rest of your form JSX remains the same) ... */}
             {/* Title, Cost, Reward */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -222,7 +249,7 @@ export default function CreateChallenge() {
                 <input
                   id="title"
                   placeholder="e.g., 30-Day Fitness"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("title")}
                 />
                 {errors.title && (
@@ -242,7 +269,7 @@ export default function CreateChallenge() {
                   id="cost"
                   type="number"
                   placeholder="50"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("cost", { valueAsNumber: true })}
                 />
                 {errors.cost && (
@@ -262,7 +289,7 @@ export default function CreateChallenge() {
                   id="reward"
                   type="number"
                   placeholder="50"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("reward", { valueAsNumber: true })}
                 />
                 {errors.reward && (
@@ -284,7 +311,7 @@ export default function CreateChallenge() {
               <textarea
                 id="description"
                 placeholder="Explain the goals, rules, and what this challenge is about."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                 rows={4}
                 {...register("description")}
               />
@@ -333,7 +360,7 @@ export default function CreateChallenge() {
                     id="endDate"
                      min={today}
                     type="date"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                     {...register("endDate")}
                   />
                 </div>
@@ -391,7 +418,7 @@ export default function CreateChallenge() {
                   id="penalty"
                   type="number"
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("penalty", { valueAsNumber: true })}
                 />
                 {errors.penalty && (
@@ -413,7 +440,7 @@ export default function CreateChallenge() {
                   <input
                     id={`task-${index}`}
                     placeholder={`Task #${index + 1}`}
-                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                     {...register(`tasks.${index}.description`)}
                   />
                   {fields.length > 1 && (
@@ -438,21 +465,21 @@ export default function CreateChallenge() {
                 </p>
               )}
 
-            <button
-              type="button"
-              onClick={() => append({ description: "" })}
-              disabled={fields.length >= 3}
-              className="w-full flex items-center justify-center px-4 py-3 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
-            >
-              <PlusCircle className="w-5 h-5 mr-2" /> Add Another Task
-            </button>
+              <button
+                type="button"
+                onClick={() => append({ description: "" })}
+                disabled={fields.length >= 3}
+                className="w-full flex items-center justify-center px-4 py-3 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
+              >
+                <PlusCircle className="w-5 h-5 mr-2" /> Add Another Task
+              </button>
 
-            {fields.length >= 3 && (
-              <p className="text-sm text-slate-500 text-center mt-2">
-                You have reached the maximum of 3 tasks.
-              </p>
-            )}
-          </div>
+              {fields.length >= 3 && (
+                <p className="text-sm text-slate-500 text-center mt-2">
+                  You have reached the maximum of 3 tasks.
+                </p>
+              )}
+            </div>
 
             {/* Submit Buttons */}
             <div className="flex justify-end space-x-4 pt-6">
