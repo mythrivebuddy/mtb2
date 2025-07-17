@@ -31,6 +31,7 @@
 
 
 
+
 // Service worker for handling push notifications
 
 self.addEventListener("push", function (event) {
