@@ -7,6 +7,9 @@ import axios from "axios";
 import { User } from "@/types/types";
 import Sidebar from "../dashboard/user/Sidebar";
 
+import useUserPresence, { UserPresenceProps } from "@/hooks/userUserPresence";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const {
     data: user,
@@ -19,6 +22,10 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     },
     retry: false,
   });
+
+  const userId = user?.id;
+  useUserPresence({userId} as UserPresenceProps);
+  useOnlineUserLeaderBoard()
 
   // if (isLoading) {
   //   return <PageLoader />;

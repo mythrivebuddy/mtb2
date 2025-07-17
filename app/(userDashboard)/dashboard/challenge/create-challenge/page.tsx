@@ -121,11 +121,9 @@ export default function CreateChallenge() {
           },
         });
         return res.data;
-      } catch (error: any) {
+      } catch (error: unknown) {
         const message =
-          error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          error.message ||
+          error ||
           "Something went wrong";
         throw new Error(
           typeof message === "string"
@@ -140,8 +138,8 @@ export default function CreateChallenge() {
       alert(data.message || "Challenge created successfully!");
       router.push("/dashboard/challenge");
     },
-    onError: (error: any) => {
-      alert(error.message || "Failed to create challenge.");
+    onError: (error: unknown) => {
+      alert(error || "Failed to create challenge.");
     },
   });
 

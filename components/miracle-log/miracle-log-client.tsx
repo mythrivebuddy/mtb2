@@ -37,6 +37,7 @@ import { startOfDay, endOfDay } from "date-fns"; // Added for daily limit check
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { MiracleLog, MiracleLogClientProps } from "@/types/client/mericle-lo";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 
 export default function MiracleLogClient({ }: MiracleLogClientProps) {
@@ -60,6 +61,8 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
       content: "",
     },
   });
+
+  useOnlineUserLeaderBoard()
 
   useEffect(() => {
     console.log("error", errors);

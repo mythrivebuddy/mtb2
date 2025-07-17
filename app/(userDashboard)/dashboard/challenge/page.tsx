@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 // import { getJpAmountForActivity } from "@/lib/utils/jpAmount"; // Assuming this is a Server Action
 import { ActivityType } from "@prisma/client";
 // 1. Add the new icon to the import
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { List, PlusCircle, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";

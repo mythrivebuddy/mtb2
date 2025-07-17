@@ -107,13 +107,21 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
           <div className="bg-slate-200 p-1 rounded-xl flex">
             <button
               onClick={() => setActiveTab("hosted")}
-              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === "hosted" ? "bg-white text-slate-700 shadow" : "text-slate-500 hover:bg-slate-100"}`}
+              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+                activeTab === "hosted"
+                  ? "bg-white text-slate-700 shadow"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
             >
               Hosted
             </button>
             <button
               onClick={() => setActiveTab("joined")}
-              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === "joined" ? "bg-white text-slate-700 shadow" : "text-slate-500 hover:bg-slate-100"}`}
+              className={`px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+                activeTab === "joined"
+                  ? "bg-white text-slate-700 shadow"
+                  : "text-slate-500 hover:bg-slate-100"
+              }`}
             >
               Joined
             </button>
@@ -148,12 +156,18 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
                         {challenge.name}
                       </h2>
                       <div
-                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${statusColors[challenge.status] || "bg-gray-100"}`}
+                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                          statusColors[challenge.status] || "bg-gray-100"
+                        }`}
                       >
                         {challenge.status}
                       </div>
                       <div
-                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${challenge.mode === "PUBLIC" ? "bg-purple-100 text-purple-800" : "bg-slate-100 text-slate-800"}`}
+                        className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                          challenge.mode === "PUBLIC"
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-slate-100 text-slate-800"
+                        }`}
                       >
                         {challenge.mode}
                       </div>
@@ -192,6 +206,7 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
         )}
       </div>
 
+      {/* --- Modals --- */}
       {isCompletedModalOpen && selectedChallenge && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
@@ -200,10 +215,11 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
               Challenge Completed!
             </h2>
             <p className="text-slate-500 mb-4">
-              Great job on completing the "{selectedChallenge.name}" challenge.
+              Great job on completing the &quot;{selectedChallenge.name}&quot;
+              challenge.
             </p>
             <p className="text-lg font-semibold text-purple-600 mb-6">
-              You've earned {selectedChallenge.reward} JP!
+              You&apos;ve earned {selectedChallenge.reward} JP!
             </p>
             <button
               onClick={closeModal}
@@ -223,7 +239,7 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
               Challenge Failed
             </h2>
             <p className="text-slate-500 mb-4">
-              Don’t give up! Every attempt is a step forward.
+              Don&apos;t give up! Every attempt is a step forward.
             </p>
             <p className="text-lg font-semibold text-red-600 mb-6">
               Penalty: {selectedChallenge.penalty} JP deducted.

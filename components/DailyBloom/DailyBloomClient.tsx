@@ -56,6 +56,7 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
 import Overdue from "./Overdue";
 import HoverDetails from "./HoverDetails"; 
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 interface DailyBloom extends DailyBloomFormType {
   id: string;
@@ -85,7 +86,7 @@ export default function DailyBloomClient() {
   
   const [addInputType, setAddInputType] = useState<"frequency" | "date">("date");
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
-
+  useOnlineUserLeaderBoard()
   const {
     handleSubmit,
     register,

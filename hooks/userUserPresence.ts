@@ -3,8 +3,7 @@
 import { supabaseClient } from "@/lib/supabaseClient";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { OnlineUser } from "@/types/client/user-info";
+
 export interface UserPresenceProps {
     userId: string;
 }
@@ -12,13 +11,8 @@ export interface UserPresenceProps {
 
 
 export default function useUserPresence({ userId }: UserPresenceProps) {
-  const [onlineUsersLeaderboard,setOnlineUsersLeaderboard] = useState<OnlineUser[]>([]);
+
   useEffect(() => {
-    console.log("user id in useUserPresence hook", userId);
-    if (!userId) {
-      console.warn("No userId provided for presence tracking.");
-      return;
-    }
     const presenceChannel = supabaseClient.channel("user-presence", {
       config: {
         presence: {
@@ -46,10 +40,6 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
           console.log("[Presence] Subscribed!");
           await presenceChannel.track({ userId });
           await markOnlineStatus(true);
-          const presence = presenceChannel.presenceState();
-          const users = Object.keys(presence).map((id) => ({ userId: id }));
-          setOnlineUsersLeaderboard(users);
-    
         }
       });
 
@@ -84,10 +74,9 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
     document.removeEventListener("visibilitychange", visibilityHandler);
   };
   }, [userId]);
-  return onlineUsersLeaderboard;
+  
 
 }
-
 
 
 
