@@ -6,7 +6,7 @@ import axios from "axios";
 import { Users, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// Define a type for our challenge data for better type safety
+// Define a type for our challenge data to match the API response
 type Challenge = {
   id: string;
   name: string;
@@ -21,56 +21,31 @@ type Challenge = {
   enrollmentStatus?: "IN_PROGRESS" | "COMPLETED" | "FAILED";
 };
 
-// --- Data Fetching Functions ---
-const fetchHostedChallenges = async (): Promise<Challenge[]> => {
-  const { data } = await axios.get("/api/challenge/hosted");
-  return data;
-};
-
-const fetchJoinedChallenges = async (): Promise<Challenge[]> => {
-  const { data } = await axios.get("/api/challenge/joined");
+const fetchMyChallenges = async (type: "hosted" | "joined"): Promise<Challenge[]> => {
+  const { data } = await axios.get(`/api/challenge/my-challenge?type=${type}`);
   return data;
 };
 
 export default function MyChallenges() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("hosted");
+  const [activeTab, setActiveTab] = useState<"hosted" | "joined">("hosted");
   const [isCompletedModalOpen, setIsCompletedModalOpen] = useState(false);
   const [isFailedModalOpen, setIsFailedModalOpen] = useState(false);
-  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(
-    null
-  );
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
-  // --- React Query Hooks ---
-  const {
-    data: hostedChallenges,
-    isLoading: isLoadingHosted,
-    isError: isErrorHosted,
-  } = useQuery<Challenge[]>({
-    queryKey: ["hostedChallenges"],
-    queryFn: fetchHostedChallenges,
-    enabled: activeTab === "hosted",
-  });
 
   const {
-    data: joinedChallenges,
-    isLoading: isLoadingJoined,
-    isError: isErrorJoined,
+    data: challenges,
+    isLoading,
+    isError,
   } = useQuery<Challenge[]>({
-    queryKey: ["joinedChallenges"],
-    queryFn: fetchJoinedChallenges,
-    enabled: activeTab === "joined",
+    queryKey: ["myChallenges", activeTab], 
+    queryFn: () => fetchMyChallenges(activeTab), 
   });
-
-  const currentChallenges =
-    activeTab === "hosted" ? hostedChallenges : joinedChallenges;
-  const isLoading = activeTab === "hosted" ? isLoadingHosted : isLoadingJoined;
-  const isError = activeTab === "hosted" ? isErrorHosted : isErrorJoined;
 
   const handleCardClick = (challengeId: string) => {
-    // Navigate to the dynamic detail page
-// CORRECT
-router.push(`/dashboard/challenge/${challengeId}`);  };
+    router.push(`/dashboard/challenge/${challengeId}`);
+  };
 
   const handleComplete = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
@@ -103,6 +78,7 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
           </p>
         </div>
 
+        {/* --- Tab Buttons --- */}
         <div className="flex justify-center mb-8">
           <div className="bg-slate-200 p-1 rounded-xl flex">
             <button
@@ -128,6 +104,7 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
           </div>
         </div>
 
+        {/* --- Loading State --- */}
         {isLoading && (
           <div className="text-center py-10">
             <Loader2 className="w-8 h-8 mx-auto animate-spin text-slate-500" />
@@ -135,16 +112,18 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
           </div>
         )}
 
+        {/* --- Error State --- */}
         {isError && (
           <div className="text-center py-10 bg-red-50 text-red-600 rounded-lg">
             <p>Failed to load challenges. Please try again later.</p>
           </div>
         )}
 
+        {/* --- Content Display --- */}
         {!isLoading && !isError && (
           <div className="space-y-4">
-            {currentChallenges && currentChallenges.length > 0 ? (
-              currentChallenges.map((challenge) => (
+            {challenges && challenges.length > 0 ? (
+              challenges.map((challenge) => (
                 <div
                   key={challenge.id}
                   onClick={() => handleCardClick(challenge.id)}
@@ -199,14 +178,14 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
               ))
             ) : (
               <div className="text-center py-10">
-                <p className="text-slate-500">No challenges found.</p>
+                <p className="text-slate-500">No challenges found in this category.</p>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* --- Modals --- */}
+      {/* --- Completed Challenge Modal --- */}
       {isCompletedModalOpen && selectedChallenge && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
@@ -231,6 +210,7 @@ router.push(`/dashboard/challenge/${challengeId}`);  };
         </div>
       )}
 
+      {/* --- Failed Challenge Modal --- */}
       {isFailedModalOpen && selectedChallenge && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
