@@ -1,7 +1,11 @@
+// app/api/challenge/route.ts
+
 import { checkRole } from "@/lib/utils/auth";
-import { PrismaClient } from "@prisma/client";
+import { ActivityType, PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { challengeSchema } from "@/schema/zodSchema";
+// --- 1. Import the deductJp function ---
+import { deductJp } from "@/lib/utils/jp";
 
 const prisma = new PrismaClient();
 
@@ -14,17 +18,22 @@ function generateSlug(title: string) {
 
 export async function POST(request: Request) {
   try {
-    // ✅ 1. First get the user from the session
     const session = await checkRole("USER");
-
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ 2. Get the data from the frontend
-    const body = await request.json();
+    // --- 2. Fetch the full user object to get their plan and balance ---
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { plan: true }, // Include plan details for accurate JP calculation
+    });
 
-    // ✅ 3. Validate using zod schema
+    if (!user) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+
+    const body = await request.json();
     const result = challengeSchema.safeParse(body);
 
     if (!result.success) {
@@ -44,58 +53,43 @@ export async function POST(request: Request) {
       tasks,
     } = result.data;
 
-    console.log("title : ", title);
+    // --- 3. Use a Prisma transaction to ensure atomicity ---
+    // This makes sure that both the JP deduction and challenge creation succeed, or neither do.
+    const newChallenge = await prisma.$transaction(async (tx) => {
+      // Step A: Deduct JP for challenge creation.
+      // The 'tx' object is passed to ensure this operation is part of the transaction.
+      await deductJp(user, ActivityType.CHALLENGE_CREATION_FEE, tx);
 
-    // ✅ 4. Check all fields are not empty (redundant with Zod, but added for clarity)
-    if (
-      !title ||
-      !description ||
-      !mode ||
-      cost == null ||
-      reward == null ||
-      penalty == null ||
-      !startDate ||
-      !endDate ||
-      !Array.isArray(tasks) ||
-      tasks.length === 0
-    ) {
-      return NextResponse.json(
-        { error: "All fields are required and must be valid." },
-        { status: 400 }
-      );
-    }
+      // Step B: If JP deduction is successful, create the challenge.
+      const challenge = await tx.challenge.create({
+        data: {
+          title,
+          slug: generateSlug(title),
+          description,
+          mode,
+          cost,
+          reward,
+          penalty,
+          startDate,
+          endDate,
+          status: "UPCOMING",
+          creator: {
+            connect: { id: session.user.id },
+          },
+          tasks: {
+            create: tasks.map((task) => ({ description: task.description })),
+          },
+        },
+      });
 
-    // ✅ 5. Then create the challenge in DB
-    const newChallenge = await prisma.challenge.create({
-      data: {
-        title,
-        slug: generateSlug(title),
-        description,
-        mode,
-        cost,
-        reward,
-        penalty,
-        startDate,
-        endDate,
-        status: "UPCOMING",
-        creator: {
-          connect: { id: session.user.id },
-        },
-        tasks: {
-          create: tasks.map((task) => ({ description: task.description })),
-        },
-      },
+      if (!challenge) {
+        // If challenge creation fails, the transaction will be rolled back automatically.
+        throw new Error("Failed to create challenge in database.");
+      }
+
+      return challenge;
     });
 
-    // ✅ 6. Check the challenge is created in DB
-    if (!newChallenge) {
-      return NextResponse.json(
-        { error: "Failed to create challenge in database." },
-        { status: 500 }
-      );
-    }
-
-    // ✅ 7. Send successful response with message
     return NextResponse.json(
       {
         message: "Challenge created successfully",
@@ -104,6 +98,16 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
+    // --- 4. Add specific error handling for insufficient balance ---
+    if (error.message === "Insufficient JP balance") {
+      return NextResponse.json(
+        {
+          error: "You do not have enough JP to create this challenge.",
+        },
+        { status: 400 } // Use 400 for a client-side error (bad request)
+      );
+    }
+
     const errMessage =
       error instanceof Error ? error.message : JSON.stringify(error);
     console.error("Failed to create challenge:", errMessage);
@@ -114,5 +118,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-
