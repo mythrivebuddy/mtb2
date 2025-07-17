@@ -3,7 +3,12 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { challengeSchema, challengeSchemaFormType } from "@/schema/zodSchema";
-import { PlusCircle, X, Calendar as CalendarIcon, AlertTriangle } from "lucide-react"; // Added AlertTriangle
+import {
+  PlusCircle,
+  X,
+  Calendar as CalendarIcon,
+  AlertTriangle,
+} from "lucide-react"; // Added AlertTriangle
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -63,7 +68,9 @@ const fetchUser = async (): Promise<UserData> => {
 
 export default function CreateChallenge() {
   const router = useRouter();
-  const [challengeCreationFee, setChallengeCreationFee] = useState<number | null>(null);
+  const [challengeCreationFee, setChallengeCreationFee] = useState<
+    number | null
+  >(null);
   // --- 2. Add state to control the modal's visibility ---
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -122,9 +129,7 @@ export default function CreateChallenge() {
         });
         return res.data;
       } catch (error: unknown) {
-        const message =
-          error ||
-          "Something went wrong";
+        const message = error || "Something went wrong";
         throw new Error(
           typeof message === "string"
             ? message
@@ -136,7 +141,7 @@ export default function CreateChallenge() {
     },
     onSuccess: (data) => {
       alert(data.message || "Challenge created successfully!");
-      router.push("/dashboard/challenge");
+      router.push("/dashboard/challenge/my-challenges");
     },
     onError: (error: unknown) => {
       alert(error || "Failed to create challenge.");
@@ -404,9 +409,10 @@ export default function CreateChallenge() {
               <h3 className="font-semibold text-slate-800">Challenge Tasks</h3>
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-center space-x-2">
-                  <label htmlFor={`task-${index}`} className="sr-only">{`Task #${
-                    index + 1
-                  }`}</label>
+                  <label
+                    htmlFor={`task-${index}`}
+                    className="sr-only"
+                  >{`Task #${index + 1}`}</label>
                   <input
                     id={`task-${index}`}
                     placeholder={`Task #${index + 1}`}
@@ -435,21 +441,21 @@ export default function CreateChallenge() {
                 </p>
               )}
 
-            <button
-              type="button"
-              onClick={() => append({ description: "" })}
-              disabled={fields.length >= 3}
-              className="w-full flex items-center justify-center px-4 py-3 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
-            >
-              <PlusCircle className="w-5 h-5 mr-2" /> Add Another Task
-            </button>
+              <button
+                type="button"
+                onClick={() => append({ description: "" })}
+                disabled={fields.length >= 3}
+                className="w-full flex items-center justify-center px-4 py-3 bg-purple-100 text-purple-700 font-semibold rounded-lg hover:bg-purple-200 transition-colors disabled:bg-slate-200 disabled:text-slate-500 disabled:cursor-not-allowed"
+              >
+                <PlusCircle className="w-5 h-5 mr-2" /> Add Another Task
+              </button>
 
-            {fields.length >= 3 && (
-              <p className="text-sm text-slate-500 text-center mt-2">
-                You have reached the maximum of 3 tasks.
-              </p>
-            )}
-          </div>
+              {fields.length >= 3 && (
+                <p className="text-sm text-slate-500 text-center mt-2">
+                  You have reached the maximum of 3 tasks.
+                </p>
+              )}
+            </div>
 
             {/* Submit Buttons */}
             <div className="flex justify-end space-x-4 pt-6">

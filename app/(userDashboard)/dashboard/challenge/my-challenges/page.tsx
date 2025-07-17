@@ -69,8 +69,9 @@ export default function MyChallenges() {
 
   const handleCardClick = (challengeId: string) => {
     // Navigate to the dynamic detail page
-// CORRECT
-router.push(`/dashboard/challenge/${challengeId}`);  };
+    // CORRECT
+    router.push(`/dashboard/challenge/my-challenges/${challengeId}`);
+  };
 
   const handleComplete = (challenge: Challenge) => {
     setSelectedChallenge(challenge);

@@ -1,19 +1,20 @@
-"use client"
+"use client";
 
-import { Facebook, Instagram, Linkedin, LinkIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
-
-
-
+import { LinkIcon } from "lucide-react";
+// import { useRouter } from "next/navigation";
 
 export default function LetOthersRoll() {
-  const router = useRouter();
+  // const router = useRouter();
 
   return (
-     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-200 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl">
-        <h1 className="text-4xl font-extrabold text-indigo-900 text-center mb-8 drop-shadow-lg">Invite Others to Join!</h1>
-        <p className="text-center mb-8 text-lg text-indigo-700">Share your challenge with friends and grow your community!</p>
+        <h1 className="text-4xl font-extrabold text-indigo-900 text-center mb-8 drop-shadow-lg">
+          Invite Others to Join!
+        </h1>
+        <p className="text-center mb-8 text-lg text-indigo-700">
+          Share your challenge with friends and grow your community!
+        </p>
         <div className="bg-white p-6 rounded-2xl shadow-2xl space-y-6 text-center">
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
             <input
@@ -28,20 +29,10 @@ export default function LetOthersRoll() {
               <LinkIcon className="w-5 h-5 mr-2 inline" /> Copy Link
             </button>
           </div>
-          <p className="text-indigo-700">Or share via your favorite social platforms:</p>
-          <div className="flex justify-center space-x-6 text-indigo-600">
-            <a href="#" className="hover:text-indigo-800"><Facebook className="w-6 h-6" /></a>
-            <a href="#" className="hover:text-indigo-800"><Linkedin className="w-6 h-6" /></a>
-            <a href="#" className="hover:text-indigo-800"><Instagram className="w-6 h-6" /></a>
-          </div>
-          <button
-            onClick={() => router.push("/dashboard/challenge/join-challenge")}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all w-full mt-6"
-          >
-            Proceed to Join
-          </button>
         </div>
-        <p className="text-center mt-10 text-2xl font-bold text-indigo-900 drop-shadow-md">Let’s Expand the Fun!!</p>
+        <p className="text-center mt-10 text-2xl font-bold text-indigo-900 drop-shadow-md">
+          Let’s Expand the Fun!!
+        </p>
       </div>
     </div>
   );
