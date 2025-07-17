@@ -8,7 +8,7 @@ import {
   X,
   Calendar as CalendarIcon,
   AlertTriangle,
-} from "lucide-react"; // Added AlertTriangle
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -16,7 +16,17 @@ import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
 
-// --- 1. Define the MessageModal component ---
+// --- Helper function to generate a URL-friendly slug from a title ---
+const generateSlug = (title: string) => {
+  if (!title) return "";
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-"); // Replace multiple hyphens with a single one
+};
+
+// --- A reusable modal component for displaying messages ---
 const MessageModal = ({
   isOpen,
   onClose,
@@ -29,7 +39,7 @@ const MessageModal = ({
   message: string;
 }) => {
   if (!isOpen) return null;
-
+    
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 p-6 text-center transform transition-all">
@@ -56,54 +66,59 @@ const MessageModal = ({
   );
 };
 
+// --- Type definition for the user data we expect from the API ---
 interface UserData {
   jpBalance: number;
 }
 
+// --- API function to fetch user data ---
 const fetchUser = async (): Promise<UserData> => {
   const { data } = await axios.get("/api/user");
-  console.log("user from the create challenge page : ", data);
   return data.user;
 };
 
+// --- Constant for today's date, to set min date on inputs ---
+const today = new Date().toISOString().split("T")[0];
+
 export default function CreateChallenge() {
   const router = useRouter();
-  const [challengeCreationFee, setChallengeCreationFee] = useState<
-    number | null
-  >(null);
-  // --- 2. Add state to control the modal's visibility ---
+  
+  // --- State Management ---
+  const [challengeCreationFee, setChallengeCreationFee] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // --- Data Fetching with TanStack Query ---
+  // Fetches the current user's data and caches it.
   const {
     data: user,
     isLoading: isUserLoading,
     error: userError,
   } = useQuery<UserData>({
-    queryKey: ["currentUser"],
-    queryFn: fetchUser,
+    queryKey: ["currentUser"], // Unique key for this query
+    queryFn: fetchUser,       // The function that will fetch the data
   });
 
+  // --- Effect to load the challenge creation fee once on component mount ---
   useEffect(() => {
     const loadFee = async () => {
       try {
-        const amount = await getJpAmountForActivity(
-          "CHALLENGE_CREATION_FEE" as ActivityType
-        );
+        const amount = await getJpAmountForActivity("CHALLENGE_CREATION_FEE" as ActivityType);
         setChallengeCreationFee(amount);
       } catch (error) {
         console.error("Failed to load challenge creation fee:", error);
       }
     };
     loadFee();
-  }, []);
+  }, []); // Empty dependency array means this runs only once
 
+  // --- Form Management with React Hook Form ---
   const {
     handleSubmit,
     register,
     control,
     formState: { errors },
   } = useForm<challengeSchemaFormType>({
-    resolver: zodResolver(challengeSchema),
+    resolver: zodResolver(challengeSchema), // Use Zod for validation
     defaultValues: {
       title: "",
       mode: "PUBLIC",
@@ -113,59 +128,71 @@ export default function CreateChallenge() {
       penalty: 0,
     },
   });
+
+  // --- Dynamic field array for adding/removing task inputs ---
   const { fields, append, remove } = useFieldArray({
     name: "tasks",
     control,
   });
 
+  // --- Data Mutation with TanStack Query ---
+  // Handles the API POST request to create the challenge.
   const mutation = useMutation({
     mutationFn: async (data: challengeSchemaFormType) => {
-      // ... mutation logic
       try {
         const res = await axios.post("/api/challenge", data, {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
         return res.data;
-      } catch (error: unknown) {
-        const message = error || "Something went wrong";
-        throw new Error(
-          typeof message === "string"
-            ? message
-            : Object.values(message || {})
-                .flat()
-                .join(", ")
-        );
+      } catch (error: any) {
+        // Handle Axios error structure to get the most specific error message
+        const errorMessage = error.response?.data?.error || error.message || "An unexpected error occurred.";
+        throw new Error(errorMessage);
       }
     },
+    // --- Side effects on successful mutation ---
     onSuccess: (data) => {
-      alert(data.message || "Challenge created successfully!");
-      router.push("/dashboard/challenge/my-challenges");
+      const challengeId = data.data?.id;
+      const challengeTitle = data.data?.title;
+
+      if (challengeId && challengeTitle) {
+        const slug = generateSlug(challengeTitle);
+        const redirectUrl = `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`;
+        router.push(redirectUrl);
+      } else {
+        // Fallback if the response format is unexpected
+        console.error("Missing challengeId or challengeTitle in backend response.");
+        alert("Challenge created, but could not get shareable link details.");
+        router.push("/dashboard/challenge");
+      }
     },
-    onError: (error: unknown) => {
-      alert(error || "Failed to create challenge.");
+    // --- Side effects on failed mutation ---
+    onError: (error: Error) => {
+      setIsModalOpen(true); // Show the error modal
     },
   });
 
+  // --- Form submission handler ---
   const onSubmit = (data: challengeSchemaFormType) => {
+    // Prevent submission if fee or user balance is not yet loaded
     if (challengeCreationFee === null) {
       alert("Still calculating the creation fee. Please wait a moment.");
       return;
     }
-
-    // --- 3. Update the check to open the modal instead of an alert ---
+    // Prevent submission if user has insufficient balance
     if (user && user.jpBalance < challengeCreationFee) {
-      setIsModalOpen(true); // Open the modal
-      return; // Stop the submission
+      setIsModalOpen(true);
+      return;
     }
+    // Trigger the mutation
     mutation.mutate(data);
   };
 
+  // --- Conditional Rendering for Loading and Error states ---
   if (isUserLoading || challengeCreationFee === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <p className="text-lg">Loading challenge data...</p>
+        <p className="text-lg text-slate-600">Loading challenge data...</p>
       </div>
     );
   }
@@ -180,40 +207,48 @@ export default function CreateChallenge() {
     );
   }
 
+  // --- Main Component Render ---
   return (
     <>
-      {/* --- 4. Render the modal component --- */}
       <MessageModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Insufficient Balance"
-        message={`You need ${challengeCreationFee} JP to create a challenge, but you only have ${user?.jpBalance} JP.`}
+        isOpen={isModalOpen || mutation.isError}
+        onClose={() => {
+          setIsModalOpen(false);
+          mutation.reset(); // Reset mutation state when modal is closed
+        }}
+        title={mutation.isError ? "Challenge Creation Failed" : "Insufficient Balance"}
+        message={
+          mutation.isError
+            ? mutation.error?.message || "An unexpected error occurred."
+            : `You need ${challengeCreationFee} JP to create a challenge, but you only have ${user?.jpBalance} JP.`
+        }
       />
 
-      <div className="min-h-screen w-full ">
-        <div className="w-full max-w-4xl mx-auto">
+      <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 to-purple-50 py-12">
+        <div className="w-full max-w-4xl mx-auto px-4">
+          {/* Header Section */}
           <div className="text-center mb-10">
             <div className="flex justify-end gap-4 mb-4">
-              <div className="px-4 py-2 bg-blue-100 text-blue-800 font-bold rounded-lg shadow">
+              <div className="px-4 py-2 bg-blue-100 text-blue-800 font-bold rounded-lg shadow-md">
                 Creation Fee: {challengeCreationFee} JP
               </div>
-              <div className="px-4 py-2 bg-purple-100 text-purple-800 font-bold rounded-lg shadow">
+              <div className="px-4 py-2 bg-purple-100 text-purple-800 font-bold rounded-lg shadow-md">
                 Your JP Balance: {user?.jpBalance ?? "N/A"}
               </div>
             </div>
-            <h1 className="text-4xl font-bold text-slate-800">
+            <h1 className="text-4xl font-extrabold text-slate-800">
               Create Your Challenge
             </h1>
-            <p className="text-slate-500 mt-2">
+            <p className="text-slate-500 mt-2 text-lg">
               Craft your unique challenge and inspire others!
             </p>
           </div>
 
+          {/* Form Element */}
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="bg-white p-8 rounded-2xl shadow-lg space-y-6"
+            className="bg-white p-8 rounded-2xl shadow-xl space-y-6 border border-slate-100"
           >
-            {/* The rest of your form JSX remains the same... */}
             {/* Title, Cost, Reward */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -226,7 +261,7 @@ export default function CreateChallenge() {
                 <input
                   id="title"
                   placeholder="e.g., 30-Day Fitness"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("title")}
                 />
                 {errors.title && (
@@ -246,7 +281,7 @@ export default function CreateChallenge() {
                   id="cost"
                   type="number"
                   placeholder="50"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("cost", { valueAsNumber: true })}
                 />
                 {errors.cost && (
@@ -266,7 +301,7 @@ export default function CreateChallenge() {
                   id="reward"
                   type="number"
                   placeholder="50"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("reward", { valueAsNumber: true })}
                 />
                 {errors.reward && (
@@ -288,7 +323,7 @@ export default function CreateChallenge() {
               <textarea
                 id="description"
                 placeholder="Explain the goals, rules, and what this challenge is about."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                 rows={4}
                 {...register("description")}
               />
@@ -313,6 +348,7 @@ export default function CreateChallenge() {
                   <input
                     id="startDate"
                     type="date"
+                    min={today}
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     {...register("startDate")}
                   />
@@ -334,8 +370,9 @@ export default function CreateChallenge() {
                   <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                   <input
                     id="endDate"
+                     min={today}
                     type="date"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                     {...register("endDate")}
                   />
                 </div>
@@ -393,7 +430,7 @@ export default function CreateChallenge() {
                   id="penalty"
                   type="number"
                   placeholder="0"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                   {...register("penalty", { valueAsNumber: true })}
                 />
                 {errors.penalty && (
@@ -404,7 +441,7 @@ export default function CreateChallenge() {
               </div>
             </div>
 
-            {/* Tasks */}
+            {/* Tasks Section */}
             <div className="space-y-4 pt-4 border-t border-slate-200">
               <h3 className="font-semibold text-slate-800">Challenge Tasks</h3>
               {fields.map((field, index) => (
@@ -416,7 +453,7 @@ export default function CreateChallenge() {
                   <input
                     id={`task-${index}`}
                     placeholder={`Task #${index + 1}`}
-                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
                     {...register(`tasks.${index}.description`)}
                   />
                   {fields.length > 1 && (
@@ -430,6 +467,7 @@ export default function CreateChallenge() {
                   )}
                 </div>
               ))}
+              {/* Display task-related errors */}
               {errors.tasks?.root && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.tasks.root.message}
@@ -478,5 +516,5 @@ export default function CreateChallenge() {
         </div>
       </div>
     </>
-  );
+  )
 }

@@ -11,8 +11,11 @@ export interface UserPresenceProps {
 
 
 export default function useUserPresence({ userId }: UserPresenceProps) {
-
   useEffect(() => {
+    if (!userId) {
+      console.warn("User id not provided ")
+      return;
+    }
     const presenceChannel = supabaseClient.channel("user-presence", {
       config: {
         presence: {

@@ -36,7 +36,7 @@ export default function Page() {
   
   // 2. Add a handler for the new card
   const handleViewUpcoming = () => {
-    router.push("challenge/upcoming");
+    router.push("challenge/upcoming-challenges");
   };
     useOnlineUserLeaderBoard()
   return (

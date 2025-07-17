@@ -79,7 +79,7 @@ export default function ChallengeManagementPage() {
     const fetchChallengeDetails = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/challenge/${slug}`);
+        const response = await fetch(`/api/challenge/my-challenge/${slug}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch challenge: ${response.statusText}`);
         }
