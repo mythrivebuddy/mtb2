@@ -24,7 +24,7 @@ const MessageModal = ({
   message: string;
 }) => {
   if (!isOpen) return null;
-
+   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md m-4 p-6 text-center transform transition-all">
@@ -60,6 +60,7 @@ const fetchUser = async (): Promise<UserData> => {
   console.log("user from the create challenge page : ", data);
   return data.user;
 };
+   const today = new Date().toISOString().split("T")[0];
 
 export default function CreateChallenge() {
   const router = useRouter();
@@ -308,6 +309,7 @@ export default function CreateChallenge() {
                   <input
                     id="startDate"
                     type="date"
+                    min={today}
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     {...register("startDate")}
                   />
@@ -329,6 +331,7 @@ export default function CreateChallenge() {
                   <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                   <input
                     id="endDate"
+                     min={today}
                     type="date"
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     {...register("endDate")}
