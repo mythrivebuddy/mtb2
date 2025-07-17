@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { getJpAmountForActivity } from "@/lib/utils/jpAmount"; 
+import { ActivityType } from "@prisma/client";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { List, PlusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function Page() {
   const router = useRouter();
+
+  const [fee, setFee] = useState<number | null>(null);
+
+  useEffect(() => {
+    const loadFee = async () => {
+      const amount = await getJpAmountForActivity("CHALLENGE_CREATION_FEE" as ActivityType);
+      setFee(amount);
+    };
+
+    loadFee();
+  }, []); 
 
   const handleCreateChallenge = () => {
     router.push("challenge/create-challenge");
@@ -13,9 +28,9 @@ export default function Page() {
   const handleChallengeRecord = () => {
     router.push("challenge/my-challenges");
   };
-
+  useOnlineUserLeaderBoard()
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-200 p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <h1 className="mb-10 text-center text-5xl font-extrabold text-indigo-900 drop-shadow-lg">
           Challenges Hub
@@ -30,6 +45,12 @@ export default function Page() {
             <h2 className="text-2xl font-semibold text-indigo-800">
               Create New Challenge
             </h2>
+            <div className="font-semibold text-indigo-800">
+              Challenge Creation fee:{" "}
+              <span className="text-yellow-500">
+                {fee === null ? "Loading..." : `${fee} JP`}
+              </span>
+            </div>
           </button>
 
           <button

@@ -1,7 +1,6 @@
 import { ActivityType, TransactionType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-
 // * this seed script is meant for production as well
 async function main() {
   const activities = [
@@ -103,24 +102,25 @@ async function main() {
     },
     {
       activity: ActivityType.STREAK_7_DAYS,
-      jpAmount: 100,           // reward for 7-day streak
+      jpAmount: 100, // reward for 7-day streak
       transactionType: TransactionType.CREDIT,
     },
     {
       activity: ActivityType.STREAK_21_DAYS,
-      jpAmount: 300,           // reward for 21-day streak
+      jpAmount: 300, // reward for 21-day streak
       transactionType: TransactionType.CREDIT,
     },
     {
       activity: ActivityType.STREAK_45_DAYS,
-      jpAmount: 700,           // reward for 45-day streak
+      jpAmount: 700, // reward for 45-day streak
       transactionType: TransactionType.CREDIT,
     },
     {
       activity: ActivityType.STREAK_90_DAYS,
-      jpAmount: 1500,          // reward for 90-day streak
+      jpAmount: 1500, // reward for 90-day streak
       transactionType: TransactionType.CREDIT,
-    }, {
+    },
+    {
       activity: ActivityType.MIRACLE_STREAK_REWARD_7_DAYS,
       jpAmount: 750,
       transactionType: TransactionType.CREDIT,
@@ -160,17 +160,23 @@ async function main() {
       jpAmount: 4000,
       transactionType: TransactionType.CREDIT,
     },
-   
+
     {
       activity: ActivityType.DAILY_BLOOM_CREATION_REWARD,
       jpAmount: 10,
-      transactionType: TransactionType.CREDIT
+      transactionType: TransactionType.CREDIT,
     },
     {
       activity: ActivityType.DAILY_BLOOM_COMPLETION_REWARD,
       jpAmount: 20,
-      transactionType: TransactionType.CREDIT
-    }
+      transactionType: TransactionType.CREDIT,
+    },
+
+    {
+      activity: ActivityType.CHALLENGE_CREATION_FEE,
+      jpAmount: 200,
+      transactionType: TransactionType.DEBIT,
+    },
   ];
 
   for (const activity of activities) {

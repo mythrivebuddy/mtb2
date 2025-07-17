@@ -86,7 +86,7 @@ export function UpdateActivityJPForm({
       <InputWithLabel
         label="New JP Amount"
         type="number"
-        min="0"
+        // min="0"
         {...form.register("jpAmount")}
         error={form.formState.errors.jpAmount}
       />

@@ -95,3 +95,4 @@ export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
   const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
   return Math.ceil(activityData.jpAmount * (1 - discount / 100));
 }
+
