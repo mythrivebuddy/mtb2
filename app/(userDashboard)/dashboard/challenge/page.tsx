@@ -38,7 +38,7 @@ export default function Page() {
   const handleViewUpcoming = () => {
     router.push("challenge/upcoming");
   };
-
+    useOnlineUserLeaderBoard()
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-5xl"> {/* Increased max-width for 3 cards */}
