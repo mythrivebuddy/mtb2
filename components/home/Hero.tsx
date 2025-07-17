@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import SignInForm from "../auth/SignInForm";
+
 import CardGrid from "../CardDesign";
 import { useSession } from "next-auth/react";
 
@@ -41,7 +41,7 @@ export default function Hero() {
         </div>
       </div>
 
-      {session ? <CardGrid /> : <SignInForm />}
+       <CardGrid /> 
     </motion.div>
   );
 }
