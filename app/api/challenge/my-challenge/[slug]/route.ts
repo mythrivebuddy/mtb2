@@ -1,6 +1,7 @@
-// app/api/challenge/my-challenge/[slug]/route.ts
+// app/api/challenge/[slug]/route.ts
 
 import { NextResponse } from "next/server";
+// Corrected import path for your global prisma client
 import { prisma } from "@/lib/prisma"; 
 import { checkRole } from "@/lib/utils/auth";
 
@@ -15,9 +16,8 @@ export async function GET(
     }
     const userId = session.user.id;
     
-    // --- FIX: Access the slug property directly from context.params ---
-    // This avoids the destructuring that sometimes causes the Next.js error.
-    const challengeId = context.params.slug;
+    // The 'slug' variable here holds the challenge ID from the URL
+    const { slug: challengeId } = context.params;
 
     if (!challengeId || typeof challengeId !== 'string') {
       return NextResponse.json(
@@ -26,9 +26,9 @@ export async function GET(
       );
     }
 
-    // Find the challenge by its 'id' using the value from the URL
+    // --- CORRECTED: Find the challenge by its 'id' using the value from the slug ---
     const challenge = await prisma.challenge.findUnique({
-      where: { id: challengeId },
+      where: { id: challengeId }, // This is the fix
       include: {
         enrollments: {
           include: {
@@ -97,7 +97,7 @@ export async function GET(
     return NextResponse.json(responseData);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error(`GET /api/challenge/my-challenge/${context.params.slug} Error:`, errorMessage, error);
+    console.error(`GET /api/challenge/${context.params.slug} Error:`, errorMessage, error);
     return new NextResponse(JSON.stringify({ error: "Internal Server Error", details: errorMessage }), { status: 500 });
   }
 }

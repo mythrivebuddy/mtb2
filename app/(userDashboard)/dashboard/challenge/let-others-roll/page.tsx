@@ -128,9 +128,12 @@ export default function LetOthersRoll() {
           </button>
         </div>
         <p className="text-center mt-10 text-2xl font-bold text-slate-800 drop-shadow-md">
+          
           Let’s Expand the Fun!!
+        
         </p>
       </div>
     </div>
   );
 }
+
