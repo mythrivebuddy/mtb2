@@ -78,7 +78,7 @@ export default function LetOthersRoll() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen  flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl">
         <h1 className="text-4xl font-extrabold text-slate-800 text-center mb-8 drop-shadow-md">
           Invite Others to Join!
@@ -121,7 +121,7 @@ export default function LetOthersRoll() {
             </button>
           </div>
           <button
-            onClick={() => router.push("/dashboard/challenge/join-challenge")}
+            onClick={() => router.push("/dashboard/challenge/my-challenges")}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all w-full mt-6 font-semibold shadow-md"
           >
             Proceed to Join
