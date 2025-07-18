@@ -1,3 +1,4 @@
+// File: ./app/(userDashboard)/dashboard/challenge/upcoming-challenges/[id]/ChallengeDetailView.tsx
 "use client";
 
 import { useState } from "react";
@@ -17,7 +18,7 @@ type ChallengeWithTasksAndCount = Challenge & {
 interface ChallengeDetailViewProps {
   challenge: ChallengeWithTasksAndCount;
   isInitiallyEnrolled: boolean;
-  isUserLoggedIn: boolean;
+  // Removed isUserLoggedIn as it was unused
 }
 
 // A helper function to format dates
@@ -29,7 +30,7 @@ const formatDate = (dateString: string | Date) => {
   });
 };
 
-// NEW: Helper function to calculate the total duration of the challenge
+// Helper function to calculate the total duration of the challenge
 const getChallengeDuration = (startDateString: string | Date, endDateString: string | Date): string => {
     const startDate = new Date(startDateString);
     const endDate = new Date(endDateString);
@@ -49,7 +50,7 @@ const getChallengeDuration = (startDateString: string | Date, endDateString: str
 };
 
 
-export default function ChallengeDetailView({ challenge, isInitiallyEnrolled, isUserLoggedIn }: ChallengeDetailViewProps) {
+export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: ChallengeDetailViewProps) {
   const router = useRouter();
   const [isEnrolled, setIsEnrolled] = useState(isInitiallyEnrolled);
   const [isLoading, setIsLoading] = useState(false);
@@ -158,7 +159,6 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled, is
                     <div className="text-sm text-slate-500">Challenge Duration</div>
                     <div className="font-semibold text-slate-700 flex items-center gap-2">
                         <span>{formatDate(challenge.startDate)} to {formatDate(challenge.endDate)}</span>
-                        {/* THIS IS THE NEWLY ADDED PART */}
                         <span className="text-blue-600 font-medium">
                             {getChallengeDuration(challenge.startDate, challenge.endDate)}
                         </span>

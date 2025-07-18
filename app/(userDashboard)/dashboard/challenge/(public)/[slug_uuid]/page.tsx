@@ -6,10 +6,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
-import { Calendar, Check, Users, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
 // --- LOGIN/SIGNUP PROMPT MODAL ---
-// Is modal ko update kar diya hai taaki yeh aapke existing pages use kare
+// This modal has been updated to use your existing pages.
 const LoginPromptModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
   const router = useRouter();
   const params = useParams();
@@ -17,7 +17,7 @@ const LoginPromptModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
 
   if (!isOpen) return null;
 
-  // Login ke baad waapis aane ke liye callback URL
+  // Callback URL to return after login
   const callbackUrl = encodeURIComponent(`/dashboard/challenge/${slug_uuid}`);
 
   return (
@@ -50,7 +50,7 @@ const LoginPromptModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () =>
 
 
 // --- PUBLIC CHALLENGE PAGE COMPONENT ---
-// Interface same rahegi
+// The interface will remain the same.
 interface ChallengeDetails {
   id: string;
   title: string;
@@ -68,7 +68,7 @@ interface ChallengeDetails {
 export default function ChallengeSharePage() {
   const params = useParams();
   const slug_uuid = params.slug_uuid as string;
-  const { data: session, status: authStatus } = useSession();
+  const { status: authStatus } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [challenge, setChallenge] = useState<ChallengeDetails | null>(null);
@@ -76,14 +76,15 @@ export default function ChallengeSharePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Data fetching logic same rahega
+    // Data fetching logic will remain the same.
     if (!slug_uuid) return;
     const fetchChallengeData = async () => {
       setIsLoading(true);
       try {
         const response = await axios.get(`/api/challenge/${slug_uuid}`);
         setChallenge(response.data.challenge);
-      } catch (err) {
+      } catch (e:unknown) {
+        console.log(e)
         setError("Failed to load challenge.");
       } finally {
         setIsLoading(false);
@@ -95,26 +96,26 @@ export default function ChallengeSharePage() {
   const handleJoinChallenge = () => {
     if (authStatus === 'authenticated') {
       alert(`Joining challenge: ${challenge?.title}`);
-      // Yahan aap API call karke user ko enroll kar sakte hain
+      // You can make an API call here to enroll the user.
     } else {
-      // Agar logged in nahi hai, to modal open karo
+      // If not logged in, open the modal.
       setIsModalOpen(true);
     }
   };
 
-  // Loading aur Error UI same rahega
+  // Loading and Error UI will remain the same.
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p>Loading...</p></div>;
   if (error) return <div className="min-h-screen flex items-center justify-center"><p>{error}</p></div>;
   if (!challenge) return <div className="min-h-screen flex items-center justify-center"><p>Challenge not found.</p></div>;
 
   return (
     <>
-      {/* Ab yeh naya LoginPromptModal use karega */}
+      {/* This will now use the new LoginPromptModal */}
       <LoginPromptModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       
       <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-2xl bg-white p-8 rounded-2xl shadow-lg space-y-6">
-          {/* Baaki ka page design bilkul same rahega */}
+          {/* The rest of the page design will be exactly the same. */}
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold text-slate-800">{challenge.title}</h1>
             <div className="text-right">
