@@ -79,7 +79,6 @@ const fetchUser = async (): Promise<UserData> => {
 
 // --- Helper function to format a Date object to YYYY-MM-DD string ---
 const formatDate = (date: Date) => {
-  // Check if the date is valid before trying to format it
   if (!(date instanceof Date) || isNaN(date.getTime())) {
     return ''; // Return empty string for invalid dates
   }
@@ -132,7 +131,6 @@ export default function CreateChallenge() {
       reward: 50, 
       penalty: 0,
       startDate: defaultStartDate,
-      // --- YEH FIX HAI: End date ko blank rakho ---
       endDate: undefined,
     }, 
   }); 
@@ -242,7 +240,6 @@ export default function CreateChallenge() {
             onSubmit={handleSubmit(onSubmit)} 
             className="bg-white p-8 rounded-2xl shadow-xl space-y-6 border border-slate-100" 
           > 
-            {/* Baaki ka form same rahega */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6"> 
               <div> 
                 <label 
@@ -347,13 +344,10 @@ export default function CreateChallenge() {
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500" 
                         value={formatDate(field.value)}
                         onChange={(e) => {
-                          const date = e.target.value ? new Date(e.target.value) : null;
-                          if (date) {
-                            const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-                            field.onChange(utcDate);
-                          } else {
-                            field.onChange(null);
-                          }
+                          const dateString = e.target.value;
+                          // --- YEH FINAL FIX HAI: Timezone issue ko handle karo ---
+                          // Hum date string ko seedha UTC date object banayenge
+                          field.onChange(dateString ? new Date(`${dateString}T00:00:00.000Z`) : null);
                         }}
                       /> 
                     </div> 
@@ -385,13 +379,9 @@ export default function CreateChallenge() {
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all" 
                         value={formatDate(field.value)}
                         onChange={(e) => {
-                          const date = e.target.value ? new Date(e.target.value) : null;
-                          if (date) {
-                            const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-                            field.onChange(utcDate);
-                          } else {
-                            field.onChange(null);
-                          }
+                          const dateString = e.target.value;
+                          // --- YEH FINAL FIX HAI: Timezone issue ko handle karo ---
+                          field.onChange(dateString ? new Date(`${dateString}T00:00:00.000Z`) : null);
                         }}
                       /> 
                     </div> 
@@ -405,7 +395,6 @@ export default function CreateChallenge() {
               </div> 
             </div> 
 
-            {/* Baaki ka form same rahega */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start"> 
               <div> 
                 <label className="block text-sm font-medium text-slate-700 mb-2"> 
