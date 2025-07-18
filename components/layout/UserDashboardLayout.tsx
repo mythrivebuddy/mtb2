@@ -15,23 +15,27 @@ import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
 
-  // --- YEH FINAL FIX HAI ---
-  // Hum sabhi private challenge pages ki ek list banayenge.
-  // Isse hum exactly bata sakte hain ki kaun se pages par layout dikhana hai.
-  const privateChallengeRoutes = [
-    '/dashboard/challenge', // Main "Upcoming Challenges" page
-    '/dashboard/challenge/upcoming-challenges', // Agar alag se page hai to
+  // --- YEH FINAL, ROBUST LOGIC HAI ---
+  // Hum sabhi private challenge pages ke "prefixes" (shuruaat ke hisse) ki list banayenge.
+  const privateChallengePrefixes = [
     '/dashboard/challenge/my-challenges',
     '/dashboard/challenge/create-challenge',
     '/dashboard/challenge/join-challenge',
-    '/dashboard/challenge/let-others-roll'
+    '/dashboard/challenge/let-others-roll',
+    '/dashboard/challenge/upcoming-challenges'
   ];
 
+  // Check karo ki kya current path kisi private prefix se start hota hai.
+  // .some() function list ke har item ke liye check karega.
+  const isPrivateSubPage = privateChallengePrefixes.some(prefix => pathname.startsWith(prefix));
+  
+  // Also, check if it's the main challenge page itself, which is also private.
+  const isMainChallengePage = pathname === '/dashboard/challenge';
+
   // Page public tabhi hai jab woh /dashboard/challenge/ se start ho,
-  // lekin woh humari private list mein na ho.
+  // lekin woh na to main page ho aur na hi koi private sub-page.
   const isPublicChallengePage = 
-    pathname.startsWith('/dashboard/challenge/') && 
-    !privateChallengeRoutes.includes(pathname);
+    pathname.startsWith('/dashboard/challenge/') && !isMainChallengePage && !isPrivateSubPage;
 
   // --- CONDITIONAL DATA FETCHING ---
   const { data: user, error } = useQuery<User>({
@@ -62,7 +66,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   // --- PRIVATE DASHBOARD LAYOUT RENDER ---
-  // Yeh layout ab "Upcoming Challenges" page par bhi sahi se dikhega.
+  // Yeh layout ab sabhi private pages (my-challenges ke andar waale bhi) par sahi se dikhega.
   return (
     <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
       <div className="fixed top-0 left-0 w-64 z-20 m-3">
