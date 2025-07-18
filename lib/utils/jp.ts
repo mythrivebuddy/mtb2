@@ -1,6 +1,8 @@
+// lib/utils/jp.ts
+
 // function to add jp according to the plan and activity
 
-import { Activity, ActivityType, Prisma } from "@prisma/client";
+import { Activity, ActivityType, Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createJPEarnedNotification } from "./notifications";
 
@@ -36,7 +38,6 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
         jpTransaction: { increment: jpToAdd },
         transaction: {
           create: {
-            //!may need user ID here -- may be
             activityId: activityData.id!,
             jpAmount: jpToAdd,
           },
@@ -50,9 +51,17 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
   }
 }
 
-export async function deductJp(user: UserWithPlan, activity: ActivityType) {
+// --- MODIFIED FUNCTION ---
+// Added an optional 'prismaClient' parameter to support transactions.
+export async function deductJp(
+  user: UserWithPlan,
+  activity: ActivityType,
+  prismaClient:
+    | Prisma.TransactionClient
+    | PrismaClient = prisma /* Default to global prisma instance */
+) {
   try {
-    const activityData = await prisma.activity.findUnique({
+    const activityData = await prismaClient.activity.findUnique({
       where: { activity: activity },
     });
     if (!activityData) {
@@ -61,14 +70,17 @@ export async function deductJp(user: UserWithPlan, activity: ActivityType) {
 
     const isActive = isPlanActive(user);
     const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
-    const jpToDeduct = Math.ceil(activityData.jpAmount! * (1 - discount / 100));
-    console.log("jpToDeduct", jpToDeduct);
+    const jpToDeduct = Math.ceil(
+      activityData.jpAmount! * (1 - discount / 100)
+    );
 
     if (user.jpBalance < jpToDeduct) {
+      // This specific error message will be caught in the API route.
       throw new Error("Insufficient JP balance");
     }
 
-    await prisma.user.update({
+    // Use the passed prismaClient for the update operation.
+    await prismaClient.user.update({
       where: { id: user.id },
       data: {
         jpSpent: { increment: jpToDeduct },
@@ -76,7 +88,6 @@ export async function deductJp(user: UserWithPlan, activity: ActivityType) {
         jpTransaction: { increment: jpToDeduct },
         transaction: {
           create: {
-            //!may need user ID here -- may be
             activityId: activityData.id!,
             jpAmount: jpToDeduct,
           },
@@ -95,4 +106,3 @@ export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
   const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
   return Math.ceil(activityData.jpAmount * (1 - discount / 100));
 }
-
