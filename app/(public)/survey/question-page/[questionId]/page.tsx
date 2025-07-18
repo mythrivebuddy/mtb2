@@ -1,8 +1,11 @@
+"use client"
 import AppLayout from "@/components/layout/AppLayout";
 import QuestionPageComponent from "@/components/survey/QuestionPage";
+import { useParams } from "next/navigation";
 
-export default async function QuestionPage({params}: {params: {questionId: string}}) {
-    const { questionId } = await params;
+export default function QuestionPage() {
+    const params = useParams();
+    const questionId = params.questionId as string;
   return (
     <AppLayout>
       <QuestionPageComponent questionId={questionId} />

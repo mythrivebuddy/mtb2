@@ -12,7 +12,7 @@ export const POST = async(request:NextRequest) => {
             data:{isFirstTimeSurvey:false}
         });
         return NextResponse.json({success:true},{status:200});
-  } catch (error) {
-       return NextResponse.json({error:"Error marking user first survey "}, {status:500});
+  } catch (error:unknown) {
+       return NextResponse.json({error:`Error marking user first survey ${error}` }, {status:500});
   }
 }

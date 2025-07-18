@@ -23,10 +23,14 @@ export default function SurveyLandingPage() {
   const router = useRouter();
   const session = useSession();
 
-  const handleStartSurvey = () =>{
-    session.data?.user ? router.push("/survey/first-time-survey") : router.push("/signin");
+const handleStartSurvey = () => {
+  if (session?.data?.user) {
+    router.push("/survey/first-time-survey");
+  } else {
+    router.push("/signin");
   }
-     
+};
+
 
   const topics = [
     { icon: <Mail className="w-5 h-5" />, label: "Newsletters & Content Strategy" },
