@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation"; // if using query param
-// OR use `params` from route file if using dynamic route like /question-page/[questionId]
+import { useRouter, useSearchParams } from "next/navigation"; 
+
 
 const questions = [
   {
@@ -36,8 +36,7 @@ const questions = [
       "None",
     ],
   },
-  {
-  },
+
     {
     question: "What hidimba challenges are you facing with your current marketing strategy?",
     options: [
@@ -48,7 +47,7 @@ const questions = [
       "Other",
     ],
   },
-   {
+  {
     question: "What hidimba challenges are you facing with your current marketing strategy?",
     options: [
       "Lack of budget",
@@ -58,7 +57,18 @@ const questions = [
       "Other",
     ],
   },
+  {
+    question: "What hidimba challenges are you facing with your current marketing strategy?",
+    options: [
+      "Lack of budget",
+      "Limited reach",
+      "Inconsistent messaging",
+      "Low engagement",
+      "Other",
+    ],
+  }
 ];
+
 
 
 export default function QuestionPageComponent({ questionId }: { questionId: string }) {
