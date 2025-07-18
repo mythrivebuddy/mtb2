@@ -1,14 +1,18 @@
-// app/api/challenge/[slug]/route.ts
+// File: app/api/challenge/my-challenge/[slug]/route.ts
 
 import { NextResponse } from "next/server";
-// Corrected import path for your global prisma client
 import { prisma } from "@/lib/prisma"; 
 import { checkRole } from "@/lib/utils/auth";
 
+// --- YEH FINAL FIX HAI ---
+// Function signature ko update kar diya hai taaki 'params' seedha destructure ho
 export async function GET(
   request: Request,
-  context: { params: { slug: string } }
+  { params }: { params: { slug: string } }
 ) {
+  // 'slug' ko pehle hi nikaal lein taaki catch block mein use kar sakein
+  const challengeId = params.slug;
+
   try {
     const session = await checkRole("USER");
     if (!session?.user?.id) {
@@ -16,9 +20,6 @@ export async function GET(
     }
     const userId = session.user.id;
     
-    // The 'slug' variable here holds the challenge ID from the URL
-    const { slug: challengeId } = context.params;
-
     if (!challengeId || typeof challengeId !== 'string') {
       return NextResponse.json(
         { error: "A valid challenge ID is required." },
@@ -26,9 +27,9 @@ export async function GET(
       );
     }
 
-    // --- CORRECTED: Find the challenge by its 'id' using the value from the slug ---
+    // Find the challenge by its 'id' using the value from the URL
     const challenge = await prisma.challenge.findUnique({
-      where: { id: challengeId }, // This is the fix
+      where: { id: challengeId },
       include: {
         enrollments: {
           include: {
@@ -97,7 +98,8 @@ export async function GET(
     return NextResponse.json(responseData);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error(`GET /api/challenge/${context.params.slug} Error:`, errorMessage, error);
+    // console.error log ko bhi update kar diya hai
+    console.error(`GET /api/challenge/my-challenge/${challengeId} Error:`, errorMessage, error);
     return new NextResponse(JSON.stringify({ error: "Internal Server Error", details: errorMessage }), { status: 500 });
   }
 }
