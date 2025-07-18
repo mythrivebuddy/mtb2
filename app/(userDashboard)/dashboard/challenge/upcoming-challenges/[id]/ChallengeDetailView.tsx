@@ -1,9 +1,10 @@
+// File: ./app/(userDashboard)/dashboard/challenge/upcoming-challenges/[id]/ChallengeDetailView.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import {  Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle } from "lucide-react";
+import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert } from "lucide-react";
 import type { Challenge, ChallengeTask } from "@prisma/client";
 
 // Define the shape of the props this component expects
@@ -17,7 +18,7 @@ type ChallengeWithTasksAndCount = Challenge & {
 interface ChallengeDetailViewProps {
   challenge: ChallengeWithTasksAndCount;
   isInitiallyEnrolled: boolean;
-  isUserLoggedIn: boolean;
+  // Removed isUserLoggedIn as it was unused
 }
 
 // A helper function to format dates
@@ -29,28 +30,44 @@ const formatDate = (dateString: string | Date) => {
   });
 };
 
-export default function ChallengeDetailView({ challenge, isInitiallyEnrolled, isUserLoggedIn }: ChallengeDetailViewProps) {
+// Helper function to calculate the total duration of the challenge
+const getChallengeDuration = (startDateString: string | Date, endDateString: string | Date): string => {
+    const startDate = new Date(startDateString);
+    const endDate = new Date(endDateString);
+    
+    // Set hours to 0 to ensure we are only comparing dates
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    
+    // Calculate the number of days and add 1 to be inclusive
+    const days = Math.round(timeDiff / (1000 * 60 * 60 * 24)) + 1;
+
+    if (days <= 0) return "";
+    if (days === 1) return `(${days} day)`;
+    return `(${days} days)`;
+};
+
+
+export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: ChallengeDetailViewProps) {
   const router = useRouter();
   const [isEnrolled, setIsEnrolled] = useState(isInitiallyEnrolled);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // State for our new success modal
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
 
+
   const handleEnroll = async () => {
+    // Logic for enrolling (remains the same)
     setIsLoading(true);
     setError(null);
-
     try {
-      // Make an API call to enroll the user
       await axios.post("/api/challenge/enroll", {
         challengeId: challenge.id,
       });
-      // On success, update the state to show the user is enrolled
       setIsEnrolled(true);
-      // Open the success modal instead of redirecting immediately
-      setIsEnrollSuccessModalOpen(true);
+      setIsEnrollSuccessModalOpen(true); // Open success modal
     } catch (err) {
       const errorMessage =
         axios.isAxiosError(err) && err.response?.data?.error
@@ -61,14 +78,12 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled, is
       setIsLoading(false);
     }
   };
-  
-  // This function will be called from the success modal's button
+
   const handleCloseModalAndRedirect = () => {
     setIsEnrollSuccessModalOpen(false);
-    // Redirect to the My Challenges page. 
-    // To land on the "Joined" tab, the My Challenges page would need to handle a query param.
     router.push("/dashboard/challenge/my-challenges");
   };
+
 
   const statusColors = {
     ACTIVE: "bg-blue-100 text-blue-800",
@@ -95,33 +110,62 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled, is
                   </span>
                 </div>
               </div>
-              <div className="text-right flex-shrink-0">
-                <div className="text-lg font-bold text-purple-600">{challenge.reward} JP</div>
-                <div className="text-sm text-slate-500">Reward</div>
-              </div>
             </div>
             
             {/* --- Description --- */}
-            <p className="text-slate-600 text-lg mb-6">{challenge.description}</p>
+            <p className="text-slate-600 text-lg mb-8">{challenge.description}</p>
             
-            {/* --- Stats --- */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 text-center">
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <Calendar className="w-6 h-6 mx-auto text-blue-500 mb-1" />
-                <div className="text-sm text-slate-500">Starts On</div>
-                <div className="font-semibold text-slate-700">{formatDate(challenge.startDate)}</div>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <Calendar className="w-6 h-6 mx-auto text-red-500 mb-1" />
-                <div className="text-sm text-slate-500">Ends On</div>
-                <div className="font-semibold text-slate-700">{formatDate(challenge.endDate)}</div>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-lg">
-                <Users className="w-6 h-6 mx-auto text-green-500 mb-1" />
-                <div className="text-sm text-slate-500">Participants</div>
-                <div className="font-semibold text-slate-700">{challenge._count.enrollments}</div>
-              </div>
+            {/* --- Stats Grid --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                {/* Cost */}
+                <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                    <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
+                    <div>
+                        <div className="text-sm text-slate-500">Joining Cost</div>
+                        <div className="font-semibold text-slate-700">{challenge.cost > 0 ? `${challenge.cost} JP` : 'Free'}</div>
+                    </div>
+                </div>
+                {/* Reward */}
+                <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                    <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
+                    <div>
+                        <div className="text-sm text-slate-500">Reward</div>
+                        <div className="font-semibold text-slate-700">{challenge.reward} JP</div>
+                    </div>
+                </div>
+                {/* Penalty */}
+                {challenge.penalty > 0 && (
+                    <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                        <ShieldAlert className="w-6 h-6 text-red-500 mr-3 flex-shrink-0" />
+                        <div>
+                            <div className="text-sm text-slate-500">Penalty</div>
+                            <div className="font-semibold text-slate-700">{challenge.penalty} JP</div>
+                        </div>
+                    </div>
+                )}
+                {/* Participants */}
+                 <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                    <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
+                    <div>
+                        <div className="text-sm text-slate-500">Participants</div>
+                        <div className="font-semibold text-slate-700">{challenge._count.enrollments}</div>
+                    </div>
+                </div>
             </div>
+            {/* Duration */}
+            <div className="flex items-center p-4 bg-slate-50 rounded-lg mb-8">
+                <Calendar className="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" />
+                <div>
+                    <div className="text-sm text-slate-500">Challenge Duration</div>
+                    <div className="font-semibold text-slate-700 flex items-center gap-2">
+                        <span>{formatDate(challenge.startDate)} to {formatDate(challenge.endDate)}</span>
+                        <span className="text-blue-600 font-medium">
+                            {getChallengeDuration(challenge.startDate, challenge.endDate)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
 
             {/* --- Tasks Section --- */}
             <div className="border-t border-slate-200 pt-6 mb-8">
