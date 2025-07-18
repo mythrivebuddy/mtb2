@@ -34,9 +34,12 @@ export const authConfig: AuthOptions = {
             include: {
               plan: true, // For JP assignment later
               blockedUsers: true, // To retrieve block details if needed
+              
             },
+    
           });
-
+            
+            
           if (!user) {
             throw new Error("No user found");
           }
@@ -92,6 +95,7 @@ export const authConfig: AuthOptions = {
             email: user.email,
             role: user.role,
             rememberMe: credentials.rememberMe === "true", // Convert checkbox value to boolean
+            isFirstTimeSurvey:user.isFirstTimeSurvey  ?? false
           };
         } catch (error) {
           console.log("error", error);
@@ -151,6 +155,7 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
               authMethod: AuthMethod.GOOGLE,
               isEmailVerified: true,
+              isFirstTimeSurvey:true
             },
             include: {
               plan: true, //its include for jp assignment only
@@ -229,6 +234,7 @@ export const authConfig: AuthOptions = {
 
         token.maxAge = user.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE;
         // Math.floor(Date.now() / 1000) +
+         token.isFirstTimeSurvey = user.isFirstTimeSurvey ?? false;
       }
       // console.log("token", token); //?dev
       return token;
@@ -240,6 +246,7 @@ export const authConfig: AuthOptions = {
         session.user.role = token.role; // Attach role to session
         session.user.id = token.id;
         session.user.rememberMe = token.rememberMe;
+            session.user.isFirstTimeSurvey = token.isFirstTimeSurvey ?? false; 
         // session.expires = new Date(
         //   Date.now() +
         //     (token.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE) * 1000

@@ -19,10 +19,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useSession } from "next-auth/react";
 
 
-
-
-
-
 export default function SurveyLandingPage() {
   const router = useRouter();
   const session = useSession();

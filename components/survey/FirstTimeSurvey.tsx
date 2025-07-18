@@ -2,7 +2,9 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Link from "next/link";
+import { useSession } from "next-auth/react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const topics = [
   {
@@ -53,11 +55,33 @@ const topics = [
 ];
 
 export default function FirstTimeSurvey() {
+  const session = useSession();
+  const router = useRouter();
+  console.log("sesion ",session);
+  
+  const user = session.data?.user
+  const userId = user?.id
+  const handleMarkFirstSurveyAsFalse = async() => {
+    try {
+      if (user?.isFirstTimeSurvey === false) {
+          router.push("/survey/question-page/1")
+          return;
+      }
+    const {data} = await axios.post("/api/survey/mark-is-first-survey",{userId});
+     if (data.success) {
+        router.push("/survey/question-page/1")
+     }
+    } catch (error) {
+      console.log(error);
+      
+    }
+  }
+  
   return (
     <div className="min-h-screen bg-white py-24 px-6 md:px-12 max-w-7xl mx-auto">
       {/* Welcome Title */}
       <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-        Welcome to SoloRise, Amelia!
+        Welcome to SoloRise, {session?.data?.user?.name}
       </h1>
 
       {/* Description */}
@@ -81,7 +105,7 @@ export default function FirstTimeSurvey() {
 
       {/* Topics Grid */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-        {topics.map((topic, index) => (
+        {topics.map((topic,index) => (
           <Card
             key={index}
             className="flex flex-col bg-gray-50 shadow-sm hover:shadow-md transition-all"
@@ -104,12 +128,15 @@ export default function FirstTimeSurvey() {
       {/* Start Button */}
       <div className="mt-11 flex justify-center items-center">
         <Button
+         onClick={handleMarkFirstSurveyAsFalse }
           size="lg"
           className=" flex items-center justify-center px-6 rounded-full text-lg bg-blue-600 hover:bg-blue-700 text-white"
         >
-          <Link href="/survey/question-page/1" >
-            Start Survey
-          </Link>
+          
+          {
+            session?.data?.user.isFirstTimeSurvey ? "Start survey":"Continue where you left off"
+          }
+    
         </Button>
       </div>
     </div>
