@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Users, Award, Calendar, Loader2 } from "lucide-react";
-import axios from "axios"; // 1. Import axios
+import { Search, Users, Award, Calendar, Loader2, Coins } from "lucide-react"; // 1. Import Coins icon
+import axios from "axios";
 
-// Define a type for the challenge data we expect from the API.
+// 2. Add the 'cost' property to the type definition
 type ChallengeWithCount = {
   id: string;
   title: string;
   description: string | null;
   reward: number;
+  cost: number; // Added cost property
   startDate: string;
   _count: {
     enrollments: number;
@@ -26,18 +27,16 @@ const formatDate = (dateString: string) => {
   });
 };
 
-// NEW: Helper function to calculate days remaining
+// Helper function to calculate days remaining
 const getDaysRemaining = (startDateString: string): string => {
   const now = new Date();
   const startDate = new Date(startDateString);
 
-  // Set hours to 0 to compare dates only
   now.setHours(0, 0, 0, 0);
   startDate.setHours(0, 0, 0, 0);
 
   const timeDiff = startDate.getTime() - now.getTime();
 
-  // Don't show if it has already passed
   if (timeDiff < 0) {
     return "";
   }
@@ -147,18 +146,22 @@ export default function UpcomingChallengesPage() {
                   
                   {/* --- Stats --- */}
                   <div className="space-y-3 text-sm">
+                    {/* 3. Added the cost display */}
+                    <div className="flex items-center text-slate-700">
+                      <Coins className="w-4 h-4 mr-2 text-green-500" />
+                      <span className="font-semibold">{challenge.cost > 0 ? `Cost of Joining : ${challenge.cost} JP ` : 'Free to Join'}</span>
+                    </div>
                     <div className="flex items-center text-slate-700">
                       <Award className="w-4 h-4 mr-2 text-yellow-500" />
                       <span className="font-semibold">{challenge.reward} JP Reward</span>
                     </div>
-                    {/* THIS IS THE UPDATED SECTION FOR THE DATE */}
                     <div className="flex items-center text-slate-700 gap-2">
                       <Calendar className="w-4 h-4 text-blue-500" />
                       <span className="font-semibold">Starts: {formatDate(challenge.startDate)}</span>
                       <span className="text-blue-600 font-medium">{getDaysRemaining(challenge.startDate)}</span>
                     </div>
                     <div className="flex items-center text-slate-700">
-                      <Users className="w-4 h-4 mr-2 text-green-500" />
+                      <Users className="w-4 h-4 mr-2 text-slate-500" />
                       <span className="font-semibold">{challenge._count.enrollments} Participants</span>
                     </div>
                   </div>
@@ -167,7 +170,7 @@ export default function UpcomingChallengesPage() {
                 {/* --- Action Button --- */}
                 <div className="p-6 bg-gray-50">
                   <button
-                    onClick={() => router.push(`upcoming-challenges/${challenge.id}`)}
+                    onClick={() => router.push(`/dashboard/challenge/upcoming-challenges/${challenge.id}`)}
                     className="w-full py-3 px-4 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300"
                   >
                     View Details

@@ -1,3 +1,5 @@
+// File: app/api/challenges/enroll/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
@@ -22,9 +24,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Find the challenge in the database to perform checks
+    // 3. Find the challenge and its template tasks to perform checks
     const challengeToJoin = await prisma.challenge.findUnique({
       where: { id: challengeId },
+      include: {
+        // We need the template tasks to create copies for the new user
+        templateTasks: true,
+      },
     });
 
     // 4. Perform validation checks
@@ -55,34 +61,46 @@ export async function POST(request: Request) {
     if (existingEnrollment) {
         return NextResponse.json(
             { error: "You are already enrolled in this challenge." },
-            { status: 409 } // 409 Conflict is a good status code for this
+            { status: 409 } // 409 Conflict
         );
     }
 
-    // 5. If all checks pass, create the new enrollment record
-    const newEnrollment = await prisma.challengeEnrollment.create({
-      data: {
-        userId: userId,
-        challengeId: challengeId,
-        // The status, joinedAt, and streak fields will use their default values
-      },
+    // 5. Use a transaction to ensure both enrollment and task creation succeed or fail together
+    await prisma.$transaction(async (tx) => {
+      // Step A: Create the enrollment record for the user.
+      // Step B: Simultaneously create a personal copy of each task for that user.
+      await tx.challengeEnrollment.create({
+        data: {
+          userId: userId,
+          challengeId: challengeId,
+          status: "IN_PROGRESS", // Explicitly set status
+          
+          // This nested 'create' is the key fix. It creates a UserChallengeTask
+          // for each template task associated with the challenge.
+          userTasks: {
+            create: challengeToJoin.templateTasks.map(templateTask => ({
+              description: templateTask.description,
+              templateTaskId: templateTask.id,
+            }))
+          }
+        }
+      });
     });
 
     // 6. Return a success response
     return NextResponse.json(
       {
         message: "Successfully enrolled in the challenge!",
-        enrollment: newEnrollment,
       },
       { status: 201 }
     );
     
   } catch (error) {
     console.error("Failed to enroll in challenge:", error);
-    // This will catch potential database errors, like the unique constraint failing
     return NextResponse.json(
       { error: "An internal server error occurred." },
       { status: 500 }
     );
   }
 }
+  
