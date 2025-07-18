@@ -19,7 +19,7 @@ export async function GET(
   { params }: { params: { slug_uuid: string } }
 ) {
   try {
-    const { slug_uuid } = params;
+    const { slug_uuid } = await params;
 
     if (!slug_uuid) {
       return NextResponse.json(

@@ -22,5 +22,8 @@ export const activityDisplayMap: Record<string, string> = {
 
   DAILY_BLOOM_CREATION_REWARD: "Daily Bloom Task Creation",
   DAILY_BLOOM_COMPLETION_REWARD: "Daily Bloom Completion",
+
+  // SUMIRAN BHAWSAR
+  CHALLENGE_CREATION_FEE: "Challenge creation"
 };
 
