@@ -1,3 +1,5 @@
+// File: app/(userDashboard)/dashboard/challenge/let-others-roll/page.tsx
+
 "use client";
 
 import { LinkIcon } from "lucide-react";
@@ -27,7 +29,6 @@ export default function LetOthersRoll() {
     const uuid = searchParams.get("uuid");
 
     // Get the base URL from the environment variable.
-    // This makes your code ready for deployment.
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     if (!slug || !uuid) {
@@ -38,7 +39,6 @@ export default function LetOthersRoll() {
     }
 
     // --- CONSTRUCT THE FRONTEND URL ---
-    // This creates the public link like: http://localhost:3000/dashboard/challenge/slug-uuid
     const newShareableLink = `${baseUrl}/dashboard/challenge/${slug}-${uuid}`;
     setShareableLink(newShareableLink);
 
@@ -49,9 +49,6 @@ export default function LetOthersRoll() {
         setError(null);
         
         // --- CALL THE BACKEND API URL ---
-        // Using a relative path is the best practice.
-        // It automatically becomes http://localhost:3000/api/challenge/... on your machine
-        // and https://your-live-site.com/api/challenge/... when deployed.
         const response = await axios.get(`/api/challenge/${slug}-${uuid}`);
         
         if (response.data && response.data.success) {
@@ -59,9 +56,14 @@ export default function LetOthersRoll() {
         } else {
           setError(response.data.message || "Failed to load challenge details.");
         }
-      } catch (err: any) {
+      } catch (err) { // Changed: Removed ': any'
         console.error("Error fetching challenge details:", err);
-        setError(err.response?.data?.message || "An error occurred.");
+        // Added: Type check for Axios error
+        if (axios.isAxiosError(err)) {
+          setError(err.response?.data?.message || "An error occurred fetching the data.");
+        } else {
+          setError("An unexpected error occurred.");
+        }
       } finally {
         setIsLoading(false);
       }

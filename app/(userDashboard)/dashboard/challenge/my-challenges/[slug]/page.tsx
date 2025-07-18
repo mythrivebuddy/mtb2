@@ -1,9 +1,11 @@
+// File: app/(userDashboard)/dashboard/challenge/my-challenges/[slug]/page.tsx
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle, Flame, Target, Users, Calendar, ChevronLeft, Loader2 } from 'lucide-react';
-import Image from 'next/image'; // 1. Import the Next.js Image component
+import Image from 'next/image';
 
 // --- TYPE DEFINITIONS for our fetched data ---
 interface Task {
@@ -31,7 +33,7 @@ interface ChallengeDetails {
 }
 
 // --- HELPER COMPONENTS (can be moved to their own files) ---
-const StatCard = ({ icon, label, value, colorClass }) => (
+const StatCard = ({ icon, label, value, colorClass }: { icon: React.ReactNode, label: string, value: string | number, colorClass: string }) => (
   <div className="bg-white p-4 rounded-xl shadow-md flex items-center space-x-4">
     <div className={`p-3 rounded-full ${colorClass}`}>{icon}</div>
     <div>
@@ -41,7 +43,7 @@ const StatCard = ({ icon, label, value, colorClass }) => (
   </div>
 );
 
-const TaskItem = ({ task, onToggle }) => (
+const TaskItem = ({ task, onToggle }: { task: Task, onToggle: (taskId: string, newStatus: boolean) => void }) => (
   <div
     onClick={() => onToggle(task.id, !task.completed)}
     className={`flex items-center p-4 rounded-lg cursor-pointer transition-all duration-200 ${
@@ -111,9 +113,9 @@ export default function ChallengeManagementPage() {
     // TODO: Create this API endpoint to persist the change.
     // Example:
     // await fetch(`/api/challenge/tasks/${taskId}`, {
-    //     method: 'PATCH',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ isCompleted: newStatus })
+    //   method: 'PATCH',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ isCompleted: newStatus })
     // });
     console.log(`Task ${taskId} toggled to ${newStatus}. API call to persist this is needed.`);
   };
@@ -166,7 +168,7 @@ export default function ChallengeManagementPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white p-6 rounded-2xl shadow">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">Today's Activities</h2>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Today&apos;s Activities</h2>
               {isEnrolled ? (
                 <div className="space-y-3">
                     {challenge.dailyTasks.length > 0 ? (
@@ -177,7 +179,7 @@ export default function ChallengeManagementPage() {
                 </div>
               ) : (
                 <div className="text-center py-10">
-                    <p className="text-gray-600 mb-4">You haven't joined this challenge yet.</p>
+                    <p className="text-gray-600 mb-4">You haven&apos;t joined this challenge yet.</p>
                     <button 
                         onClick={handleJoinChallenge}
                         className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -204,7 +206,6 @@ export default function ChallengeManagementPage() {
               {challenge.leaderboard.map((player, index) => (
                 <li key={player.id} className="flex items-center">
                   <span className="text-lg font-bold text-gray-400 w-8">{index + 1}</span>
-                  {/* 2. Replace <img> with <Image> and add required props */}
                   <Image
                     src={player.avatar}
                     alt={player.name}

@@ -1,8 +1,12 @@
+// File: ./app/api/challenge/upcoming/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client"; // 1. Import Prisma types
 import { checkRole } from "@/lib/utils/auth";
 
-export async function GET(request: Request) {
+// 2. Prefix 'request' with '_' to mark it as unused
+export async function GET() {
   try {
     // 1. Get the current user's session to identify them.
     const session = await checkRole("USER").catch(() => null);
@@ -11,7 +15,8 @@ export async function GET(request: Request) {
     const now = new Date();
 
     // 2. Build the base query for public, upcoming challenges.
-    const whereClause: any = {
+    // 3. Use the specific 'Prisma.ChallengeWhereInput' type instead of 'any'
+    const whereClause: Prisma.ChallengeWhereInput = {
       mode: "PUBLIC",
       status: "UPCOMING",
       startDate: {
@@ -65,4 +70,3 @@ export async function GET(request: Request) {
     );
   }
 }
-  
