@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   ArrowRight,
-  CircleCheckBig,
   Mail,
   DollarSign,
   Settings,
@@ -17,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useSession } from "next-auth/react";
 
 
 
@@ -25,13 +25,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SurveyLandingPage() {
   const router = useRouter();
+  const session = useSession();
 
-  const handleStartSurvey = () => router.push("/survey/first-time-survey");
+  const handleStartSurvey = () =>{
+    session.data?.user ? router.push("/survey/first-time-survey") : router.push("/signin");
+  }
+     
 
   const topics = [
     { icon: <Mail className="w-5 h-5" />, label: "Newsletters & Content Strategy" },
     { icon: <DollarSign className="w-5 h-5" />, label: "Pricing & Offers" },
-    //{ icon: <Funnel className="w-5 h-5" />, label: "Lead Generation & Sales" },
     { icon: <Settings className="w-5 h-5" />, label: "Tools, Systems & Platforms" },
     { icon: <AlarmClock className="w-5 h-5" />, label: "Time Management & Burnout" },
     { icon: <Users className="w-5 h-5" />, label: "Niche Positioning & Ideal Clients" },
@@ -110,7 +113,7 @@ export default function SurveyLandingPage() {
               "Answer what you want, skip what you don't",
               "Return anytime to continue (your answers are saved)",
               "Help us reach 10,000 faster — share with solopreneurs you trust",
-            ].map((item, idx) => (
+            ]?.map((item, idx) => (
               <div key={idx} className="flex items-start gap-3">
                 <Checkbox id={`task-${idx}`} />
                 <label htmlFor={`task-${idx}`} className="text-sm text-gray-700">

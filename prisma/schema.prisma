@@ -43,6 +43,7 @@ model User {
   subscriptionStatus            String?
   bio                           String?
   isOnline                      Boolean?             @default(false)
+  isFirstTimeSurvey             Boolean?             @default(true)
   alignedActions                AlignedAction[]
 
   blockedUsers                  BlockedUsers[]
