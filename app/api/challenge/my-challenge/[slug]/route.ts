@@ -1,7 +1,7 @@
 // File: app/api/challenge/my-challenge/[slug]/route.ts
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; 
+import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
 // --- YEH FINAL FIX HAI ---
@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   // 'slug' ko pehle hi nikaal lein taaki catch block mein use kar sakein
-  const challengeId = params.slug;
+  const challengeId = await params.slug;
 
   try {
     const session = await checkRole("USER");
@@ -19,8 +19,8 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
     const userId = session.user.id;
-    
-    if (!challengeId || typeof challengeId !== 'string') {
+
+    if (!challengeId || typeof challengeId !== "string") {
       return NextResponse.json(
         { error: "A valid challenge ID is required." },
         { status: 400 }
@@ -97,9 +97,17 @@ export async function GET(
 
     return NextResponse.json(responseData);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
     // console.error log ko bhi update kar diya hai
-    console.error(`GET /api/challenge/my-challenge/${challengeId} Error:`, errorMessage, error);
-    return new NextResponse(JSON.stringify({ error: "Internal Server Error", details: errorMessage }), { status: 500 });
+    console.error(
+      `GET /api/challenge/my-challenge/${challengeId} Error:`,
+      errorMessage,
+      error
+    );
+    return new NextResponse(
+      JSON.stringify({ error: "Internal Server Error", details: errorMessage }),
+      { status: 500 }
+    );
   }
 }
