@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect } from "react";
-import { Bell, Gift, Sparkles, Coins, CheckCircle2 } from "lucide-react";
+import { Bell, Gift, Sparkles, Coins, CheckCircle2, HandCoins } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import axios from "axios";
 import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
@@ -36,6 +36,7 @@ export default function NotificationsPage()  {
     switch (type) {
       case "JP_EARNED":
         return <Coins className="w-5 h-5 text-yellow-500" />;
+      case "JP_SPEND" : return <HandCoins className="w-5 h-5 text-red-500" />
       case "PROSPERITY_APPLIED":
       case "SPOTLIGHT_APPROVED":
       case "SPOTLIGHT_ACTIVE":

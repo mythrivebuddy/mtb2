@@ -25,6 +25,9 @@ export async function assignJp(user: UserWithPlan, activity: ActivityType) {
     const activityData = await prisma.activity.findUnique({
       where: { activity },
     });
+
+    console.log("activity data from assignJP : ",activityData);
+    
     if (!activityData) {
       throw new Error(`Activity ${activity} not found`);
     }
@@ -67,6 +70,9 @@ export async function deductJp(
     const activityData = await prismaClient.activity.findUnique({
       where: { activity: activity },
     });
+
+    console.log("activity data from deduct jp : ", activityData);
+    
     if (!activityData) {
       throw new Error(`Activity ${activity} not found`);
     }
