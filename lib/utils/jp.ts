@@ -4,7 +4,10 @@
 
 import { Activity, ActivityType, Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { createJPEarnedNotification } from "./notifications";
+import {
+  createJPEarnedNotification,
+  createJpSpentNotification,
+} from "./notifications";
 
 type UserWithPlan = Prisma.UserGetPayload<{
   include: { plan: true };
@@ -70,9 +73,7 @@ export async function deductJp(
 
     const isActive = isPlanActive(user);
     const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
-    const jpToDeduct = Math.ceil(
-      activityData.jpAmount! * (1 - discount / 100)
-    );
+    const jpToDeduct = Math.ceil(activityData.jpAmount! * (1 - discount / 100));
 
     if (user.jpBalance < jpToDeduct) {
       // This specific error message will be caught in the API route.
@@ -94,6 +95,7 @@ export async function deductJp(
         },
       },
     });
+    await createJpSpentNotification(user.id, jpToDeduct, activityData.activity);
   } catch (error) {
     console.error(error);
     throw error;
