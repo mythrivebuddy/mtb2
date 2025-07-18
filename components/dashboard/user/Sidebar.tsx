@@ -22,6 +22,7 @@ import {
   Droplet,
   Flower,
   Swords,
+  MessageSquareShare,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -178,6 +179,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 />
               </NavSection>
               <NavSection title="Features">
+                 <NavItem
+                  href="/survey"
+                  icon={<MessageSquareShare size={20} />}
+                  label="Survey"
+                  onLinkClick={toggleSidebar}
+                />
                 <NavItem
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
