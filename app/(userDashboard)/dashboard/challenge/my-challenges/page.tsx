@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 // Define a type for our challenge data to match the API response
 type Challenge = {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
   reward: number;
   penalty?: number;
@@ -134,7 +134,7 @@ export default function MyChallenges() {
                   <div className="flex-1">
                     <div className="flex items-center gap-x-3 mb-1">
                       <h2 className="text-xl font-semibold text-slate-800">
-                        {challenge.name}
+                        {challenge.title}
                       </h2>
                       <div
                         className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
@@ -196,7 +196,7 @@ export default function MyChallenges() {
               Challenge Completed!
             </h2>
             <p className="text-slate-500 mb-4">
-              Great job on completing the &quot;{selectedChallenge.name}&quot;
+              Great job on completing the &quot;{selectedChallenge.title}&quot;
               challenge.
             </p>
             <p className="text-lg font-semibold text-purple-600 mb-6">

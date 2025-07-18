@@ -26,6 +26,32 @@ const formatDate = (dateString: string) => {
   });
 };
 
+// NEW: Helper function to calculate days remaining
+const getDaysRemaining = (startDateString: string): string => {
+  const now = new Date();
+  const startDate = new Date(startDateString);
+
+  // Set hours to 0 to compare dates only
+  now.setHours(0, 0, 0, 0);
+  startDate.setHours(0, 0, 0, 0);
+
+  const timeDiff = startDate.getTime() - now.getTime();
+
+  // Don't show if it has already passed
+  if (timeDiff < 0) {
+    return "";
+  }
+
+  const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+  if (daysDiff === 0) {
+    return "(Starts today)";
+  }
+  if (daysDiff === 1) {
+    return "(in 1 day)";
+  }
+  return `(in ${daysDiff} days)`;
+};
 
 
 export default function UpcomingChallengesPage() {
@@ -39,14 +65,9 @@ export default function UpcomingChallengesPage() {
   useEffect(() => {
     const fetchChallenges = async () => {
       try {
-        // 2. Use axios.get to make the API request.
-        // The user specified the route is 'challenge/upcoming'.
         const response = await axios.get("/api/challenge/upcoming");
-        
-        // 3. With axios, the response data is directly available on the `data` property.
         setChallenges(response.data);
       } catch (err) {
-        // 4. axios automatically throws an error for non-2xx status codes.
         if (axios.isAxiosError(err)) {
           setError(err.response?.data?.error || "Failed to fetch challenges from the server.");
         } else {
@@ -58,7 +79,7 @@ export default function UpcomingChallengesPage() {
     };
 
     fetchChallenges();
-  }, []); // The empty dependency array ensures this runs only once.
+  }, []);
 
   const filteredChallenges = challenges.filter((challenge) =>
     challenge.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -130,9 +151,11 @@ export default function UpcomingChallengesPage() {
                       <Award className="w-4 h-4 mr-2 text-yellow-500" />
                       <span className="font-semibold">{challenge.reward} JP Reward</span>
                     </div>
-                    <div className="flex items-center text-slate-700">
-                      <Calendar className="w-4 h-4 mr-2 text-blue-500" />
+                    {/* THIS IS THE UPDATED SECTION FOR THE DATE */}
+                    <div className="flex items-center text-slate-700 gap-2">
+                      <Calendar className="w-4 h-4 text-blue-500" />
                       <span className="font-semibold">Starts: {formatDate(challenge.startDate)}</span>
+                      <span className="text-blue-600 font-medium">{getDaysRemaining(challenge.startDate)}</span>
                     </div>
                     <div className="flex items-center text-slate-700">
                       <Users className="w-4 h-4 mr-2 text-green-500" />

@@ -81,7 +81,7 @@ export default function LetOthersRoll() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen  flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl">
         <h1 className="text-4xl font-extrabold text-slate-800 text-center mb-8 drop-shadow-md">
           Invite Others to Join!
