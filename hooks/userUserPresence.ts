@@ -52,13 +52,15 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
         cleanUpPresence();
       } else if (document.visibilityState === "visible") {
         await presenceChannel.track({ userId });
-      }
-    };
+      }                                                                                       
+    }; 
+
 
     window.addEventListener("beforeunload", beforeUnloadHandler);
     document.addEventListener("visibilitychange", visibilityHandler);
+      
+    return () => {  
 
-    return () => {
       cleanUpPresence();
       window.removeEventListener("beforeunload", beforeUnloadHandler);
       document.removeEventListener("visibilitychange", visibilityHandler);
@@ -66,3 +68,4 @@ export default function useUserPresence({ userId }: UserPresenceProps) {
     };
   }, [userId]);
 }
+ 
