@@ -1,7 +1,7 @@
 // app/api/challenge/my-challenge/[slug]/route.ts
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; 
+import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
 export async function GET(
@@ -14,12 +14,12 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
     const userId = session.user.id;
-    
+
     // --- FIX: Access the slug property directly from context.params ---
     // This avoids the destructuring that sometimes causes the Next.js error.
     const challengeId = context.params.slug;
 
-    if (!challengeId || typeof challengeId !== 'string') {
+    if (!challengeId || typeof challengeId !== "string") {
       return NextResponse.json(
         { error: "A valid challenge ID is required." },
         { status: 400 }
@@ -96,8 +96,16 @@ export async function GET(
 
     return NextResponse.json(responseData);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
-    console.error(`GET /api/challenge/my-challenge/${context.params.slug} Error:`, errorMessage, error);
-    return new NextResponse(JSON.stringify({ error: "Internal Server Error", details: errorMessage }), { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(
+      `GET /api/challenge/my-challenge Error:`,
+      errorMessage,
+      error
+    );
+    return new NextResponse(
+      JSON.stringify({ error: "Internal Server Error", details: errorMessage }),
+      { status: 500 }
+    );
   }
 }
