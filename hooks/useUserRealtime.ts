@@ -16,7 +16,7 @@ export default function useAdminPresence(queryKey: QueryKey) {
         presence: {
           key: "admin",
         },
-      },
+      }, 
     });
     const updatePresence = () => {
       const presence = presenceChannel.presenceState();
