@@ -642,6 +642,9 @@ enum NotificationType {
   BUDDY_LENS_REJECTED
   BUDDY_LENS_REVIEWED
   BUDDY_LENS_COMPLETED
+
+    // sumiran 
+  JP_SPEND
 }
 
 enum BreathWorkType {
