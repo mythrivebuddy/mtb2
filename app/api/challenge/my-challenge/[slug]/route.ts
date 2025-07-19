@@ -1,17 +1,10 @@
-// File: app/api/challenge/my-challenge/[slug]/route.ts
-
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
-// --- YEH FINAL FIX HAI ---
-// Function signature ko update kar diya hai taaki 'params' seedha destructure ho
-export async function GET(
-  request: Request,
-  { params }: { params: { slug: string } }
-) {
-  // 'slug' ko pehle hi nikaal lein taaki catch block mein use kar sakein
-  const challengeId = await params.slug;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, context: any) {
+  const challengeId = context.params.slug;
 
   try {
     const session = await checkRole("USER");
@@ -27,86 +20,106 @@ export async function GET(
       );
     }
 
-    // Find the challenge by its 'id' using the value from the URL
+    // --- THIS IS THE FIX ---
+    // First, find the user's enrollment to get the ID
+    const enrollmentForReset = await prisma.challengeEnrollment.findUnique({
+        where: { userId_challengeId: { userId, challengeId } },
+        select: { id: true }
+    });
+
+    if (enrollmentForReset) {
+        // Now, run the daily reset logic for this specific enrollment
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+
+        await prisma.userChallengeTask.updateMany({
+            where: {
+                enrollmentId: enrollmentForReset.id,
+                isCompleted: true,
+                lastCompletedAt: {
+                    lt: today, // less than the start of today
+                },
+            },
+            data: {
+                isCompleted: false,
+            },
+        });
+    }
+    // --- END OF FIX ---
+
+
+    // The rest of the function now fetches the newly updated data
     const challenge = await prisma.challenge.findUnique({
       where: { id: challengeId },
       include: {
         enrollments: {
           include: {
-            user: {
-              select: { id: true, name: true, image: true },
-            },
+            user: { select: { id: true, name: true, image: true } },
           },
-          orderBy: {
-            currentStreak: "desc",
-          },
+          orderBy: { currentStreak: 'desc' },
         },
       },
     });
 
     if (!challenge) {
-      return new NextResponse("Challenge not found", { status: 404 });
+      return NextResponse.json({ error: "Challenge not found." }, { status: 404 });
     }
 
-    // Fetch the current user's specific enrollment details and tasks
     const userEnrollment = await prisma.challengeEnrollment.findUnique({
       where: {
-        userId_challengeId: {
-          userId: userId,
-          challengeId: challenge.id,
-        },
+        userId_challengeId: { userId, challengeId },
       },
       include: {
-        userTasks: {
-          orderBy: {
-            id: "asc",
-          },
-        },
+        userTasks: { orderBy: { description: 'asc' } },
       },
     });
 
-    // Fetch the user's total JP balance
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { jpBalance: true },
-    });
+    if (!userEnrollment) {
+      return NextResponse.json({ error: "You are not enrolled in this challenge." }, { status: 403 });
+    }
 
-    // Format the data for the frontend
+    const now = new Date();
+    let effectiveStatus = challenge.status;
+    if (effectiveStatus === "UPCOMING" && challenge.startDate <= now) {
+      effectiveStatus = "ACTIVE";
+    }
+    if (effectiveStatus !== "COMPLETED" && challenge.endDate < now) {
+      effectiveStatus = "COMPLETED";
+    }
+
     const responseData = {
       title: challenge.title,
-      status: challenge.status,
+      description: challenge.description,
+      status: effectiveStatus,
+      reward: challenge.reward,
+      penalty: challenge.penalty,
+      participantCount: challenge.enrollments.length,
+      currentStreak: userEnrollment.currentStreak,
+      longestStreak: userEnrollment.longestStreak,
       startDate: challenge.startDate.toISOString(),
       endDate: challenge.endDate.toISOString(),
-      streak: userEnrollment?.currentStreak ?? 0,
-      points: user?.jpBalance ?? 0,
-      dailyTasks:
-        userEnrollment?.userTasks.map((task) => ({
-          id: task.id,
-          description: task.description,
-          completed: task.isCompleted,
-        })) ?? [],
+      dailyTasks: userEnrollment.userTasks.map(task => ({
+        id: task.id,
+        description: task.description,
+        completed: task.isCompleted,
+      })),
       leaderboard: challenge.enrollments.map((enrollment) => ({
         id: enrollment.user.id,
-        name: enrollment.user.name,
+        name: enrollment.user.name ?? "Anonymous",
         score: enrollment.currentStreak,
         avatar:
           enrollment.user.image ||
-          `https://placehold.co/40x40/7c3aed/ffffff?text=${enrollment.user.name.charAt(0)}`,
+          `https://ui-avatars.com/api/?name=${(enrollment.user.name || 'A').charAt(0)}&background=7c3aed&color=ffffff`,
       })),
     };
 
     return NextResponse.json(responseData);
+
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
-    // console.error log ko bhi update kar diya hai
-    console.error(
-      `GET /api/challenge/my-challenge/${challengeId} Error:`,
-      errorMessage,
-      error
-    );
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    console.error(`GET /api/challenge/my-challenge/${challengeId} Error:`, errorMessage);
     return new NextResponse(
-      JSON.stringify({ error: "Internal Server Error", details: errorMessage }),
+      JSON.stringify({ error: "Internal Server Error" }),
       { status: 500 }
     );
   }
