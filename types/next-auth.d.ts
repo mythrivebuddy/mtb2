@@ -10,12 +10,14 @@ declare module "next-auth" {
       role: string;
       id: string;
       rememberMe: boolean;
+      isFirstTimeSurvey: boolean;
     } & DefaultSession["user"];
   }
   interface User {
     id: string;
     role: string;
     rememberMe: boolean;
+    isFirstTimeSurvey: boolean;
   }
 }
 
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     rememberMe: boolean;
+    isFirstTimeSurvey: boolean;
   }
 }
