@@ -16,7 +16,7 @@ const prisma = new PrismaClient();
  */
 export async function GET(
   request: Request,
-  { params }: { params: { slug_uuid: string } }
+  { params }: { params: Promise<{ slug_uuid: string }> }
 ) {
   try {
     const { slug_uuid } = await params;

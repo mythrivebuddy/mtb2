@@ -5,44 +5,43 @@ import { useEffect, useState } from "react";
 
 export default function useOnlineUserLeaderBoard() {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
-  const session = useSession();
-  const userId = session?.data?.user?.id;
-  console.log("User id ", userId);
-  console.log("presecne of leadeborad called !!");
+  const { data: session, status } = useSession(); // Get session data and status
+  const userId = session?.user?.id;
 
+  // The main logic is now inside useEffect, which only runs on the client.
   useEffect(() => {
-    if (!userId) {
-      console.warn("No user id provided in leaderboard online");
+    // This check is now more robust. It waits for an authenticated session.
+    if (status !== 'authenticated' || !userId) {
       return;
     }
+
     const presenceChannel = supabaseClient.channel("user-presence", {
       config: {
         presence: {
-          key: userId,
+          key: userId, 
         },
       },
     });
 
     const updatePresence = () => {
       const presence = presenceChannel.presenceState();
-
       const users = Object.keys(presence).map((id) => ({ userId: id }));
       setOnlineUsers(users);
-      console.log("users in leaderboard online ", users);
     };
 
     presenceChannel
       .on("presence", { event: "join" }, updatePresence)
       .on("presence", { event: "leave" }, updatePresence)
       .on("presence", { event: "sync" }, updatePresence)
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          presenceChannel.track({ observer: true }); // observer tracks self
+          await presenceChannel.track({ observer: true });
           updatePresence();
         }
       });
-    const cleanUpPresence = () => {
-      presenceChannel.untrack();
+
+    const cleanUpPresence = async () => {
+      await presenceChannel.untrack();
     };
 
     const beforeUnloadHandler = () => {
@@ -51,22 +50,23 @@ export default function useOnlineUserLeaderBoard() {
 
     const visibilityHandler = async () => {
       if (document.visibilityState === "hidden") {
-        cleanUpPresence();
+        await cleanUpPresence();
       } else if (document.visibilityState === "visible") {
-        await presenceChannel.track({ observer:true});
+        await presenceChannel.track({ observer: true });
       }
     };
 
     window.addEventListener("beforeunload", beforeUnloadHandler);
     document.addEventListener("visibilitychange", visibilityHandler);
 
+    // Cleanup function
     return () => {
       cleanUpPresence();
       window.removeEventListener("beforeunload", beforeUnloadHandler);
       document.removeEventListener("visibilitychange", visibilityHandler);
       supabaseClient.removeChannel(presenceChannel);
     };
-  }, []);
+  }, [userId, status]); // ✅ FIXED: Added userId and status to the dependency array.
 
   return onlineUsers;
 }

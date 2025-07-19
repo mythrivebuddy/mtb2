@@ -1,4 +1,3 @@
-// File: ./app/(userDashboard)/dashboard/challenge/upcoming-challenges/[id]/ChallengeDetailView.tsx
 "use client";
 
 import { useState } from "react";
