@@ -1,30 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// import { getJpAmountForActivity } from "@/lib/utils/jpAmount"; // Assuming this is a Server Action
 import { ActivityType } from "@prisma/client";
-// 1. Add the new icon to the import
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { List, PlusCircle, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 
-// Placeholder for the server action function
-
-
 export default function Page() {
   const router = useRouter();
-
   const [fee, setFee] = useState<number | null>(null);
 
   useEffect(() => {
     const loadFee = async () => {
-      const amount = await getJpAmountForActivity("CHALLENGE_CREATION_FEE" as ActivityType);
+      const amount = await getJpAmountForActivity(
+        "CHALLENGE_CREATION_FEE" as ActivityType
+      );
       setFee(amount);
     };
 
     loadFee();
-  }, []); 
+  }, []);
 
   const handleCreateChallenge = () => {
     router.push("challenge/create-challenge");
@@ -33,27 +29,30 @@ export default function Page() {
   const handleChallengeRecord = () => {
     router.push("challenge/my-challenges");
   };
-  
-  // 2. Add a handler for the new card
+
   const handleViewUpcoming = () => {
     router.push("challenge/upcoming-challenges");
   };
-    useOnlineUserLeaderBoard()
+
+  useOnlineUserLeaderBoard();
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-5xl"> {/* Increased max-width for 3 cards */}
-        <h1 className="mb-10 text-center text-5xl font-extrabold text-indigo-900 drop-shadow-lg">
+      <div className="w-full max-w-5xl">
+        {/* Responsive heading: smaller on mobile, larger on desktop */}
+        <h1 className="mb-8 text-center text-4xl font-extrabold text-indigo-900 drop-shadow-lg md:mb-10 md:text-5xl">
           Challenges Hub
         </h1>
 
-        {/* 3. Change grid to support 3 columns on medium screens and up */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Responsive grid: 1 column on mobile, 3 on desktop, with adjusted gap */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
           <button
             onClick={handleCreateChallenge}
-            className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-6 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl"
+            className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-4 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl md:p-6"
           >
-            <PlusCircle className="mb-4 h-12 w-12 text-indigo-600" />
-            <h2 className="text-2xl font-semibold text-indigo-800">
+            <PlusCircle className="mb-3 h-10 w-10 text-indigo-600 md:mb-4 md:h-12 md:w-12" />
+            {/* Responsive text for card heading */}
+            <h2 className="text-xl font-semibold text-indigo-800 md:text-2xl">
               Create Challenge
             </h2>
             <div className="font-semibold text-indigo-800">
@@ -66,27 +65,27 @@ export default function Page() {
 
           <button
             onClick={handleChallengeRecord}
-            className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-6 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl"
+            className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-4 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl md:p-6"
           >
-            <List className="mb-4 h-12 w-12 text-indigo-600" />
-            <h2 className="text-2xl font-semibold text-indigo-800">
+            <List className="mb-3 h-10 w-10 text-indigo-600 md:mb-4 md:h-12 md:w-12" />
+            <h2 className="text-xl font-semibold text-indigo-800 md:text-2xl">
               My Challenges
             </h2>
           </button>
 
-          {/* 4. Add the new card for upcoming challenges */}
           <button
             onClick={handleViewUpcoming}
-            className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-6 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl"
+            className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-4 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl md:p-6"
           >
-            <Globe className="mb-4 h-12 w-12 text-indigo-600" />
-            <h2 className="text-2xl font-semibold text-indigo-800">
+            <Globe className="mb-3 h-10 w-10 text-indigo-600 md:mb-4 md:h-12 md:w-12" />
+            <h2 className="text-xl font-semibold text-indigo-800 md:text-2xl">
               Upcoming Challenges
             </h2>
           </button>
         </div>
 
-        <p className="mt-10 text-center text-2xl font-bold text-indigo-900 drop-shadow-md">
+        {/* Responsive bottom text */}
+        <p className="mt-8 text-center text-lg font-bold text-indigo-900 drop-shadow-md md:mt-10 md:text-2xl">
           Ready to Kick Off? Let’s Dive In!!
         </p>
       </div>
