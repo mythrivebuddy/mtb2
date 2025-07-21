@@ -42,7 +42,7 @@ async function getChallengeData(challengeId: string, userId?: string) {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function ChallengeDetailPage(props: any) {
-  const id = props.params.id;
+  const id = await props.params.id;
 
   const session = await checkRole("USER");
   const userId = session?.user?.id;

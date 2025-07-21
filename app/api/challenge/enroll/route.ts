@@ -3,20 +3,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { deductJp, assignJp } from "@/lib/utils/jp"; // Make sure assignJp is imported
+import { ActivityType } from "@prisma/client";
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate the user and get their ID
+    // 1. Authenticate the user (the "joiner")
     const session = await checkRole("USER");
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const userId = session.user.id;
+    const joinerId = session.user.id;
 
-    // 2. Get the challengeId from the request body
-    const body = await request.json();
-    const { challengeId } = body;
-
+    // 2. Get challengeId from the request body
+    const { challengeId } = await request.json();
     if (!challengeId) {
       return NextResponse.json(
         { error: "Challenge ID is required." },
@@ -24,83 +24,118 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Find the challenge and its template tasks to perform checks
-    const challengeToJoin = await prisma.challenge.findUnique({
-      where: { id: challengeId },
-      include: {
-        // We need the template tasks to create copies for the new user
-        templateTasks: true,
-      },
-    });
+    // 3. Fetch both the user and the challenge concurrently
+    const [joiner, challengeToJoin] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: joinerId },
+        include: { plan: true },
+      }),
+      prisma.challenge.findUnique({
+        where: { id: challengeId },
+        include: { templateTasks: true },
+      }),
+    ]);
 
     // 4. Perform validation checks
+    if (!joiner) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
     if (!challengeToJoin) {
       return NextResponse.json(
         { error: "Challenge not found." },
         { status: 404 }
       );
     }
-
-    if (challengeToJoin.status !== "UPCOMING") {
+    if (challengeToJoin.creatorId === joinerId) {
       return NextResponse.json(
-        { error: "This challenge is not open for enrollment." },
+        { error: "You cannot join a challenge you created." },
         { status: 400 }
       );
     }
-    
-    // Check if the user is already enrolled
     const existingEnrollment = await prisma.challengeEnrollment.findUnique({
-        where: {
-            userId_challengeId: {
-                userId: userId,
-                challengeId: challengeId,
-            }
-        }
+      where: { userId_challengeId: { userId: joinerId, challengeId } },
     });
-
     if (existingEnrollment) {
-        return NextResponse.json(
-            { error: "You are already enrolled in this challenge." },
-            { status: 409 } // 409 Conflict
-        );
+      return NextResponse.json(
+        { error: "You are already enrolled in this challenge." },
+        { status: 409 } // 409 Conflict
+      );
     }
 
-    // 5. Use a transaction to ensure both enrollment and task creation succeed or fail together
+    // 5. Use a transaction for the entire enrollment and fee transfer process
     await prisma.$transaction(async (tx) => {
-      // Step A: Create the enrollment record for the user.
-      // Step B: Simultaneously create a personal copy of each task for that user.
+      const joiningFee = challengeToJoin.cost;
+
+      // Only perform the JP transfer if the challenge has a cost
+      if (joiningFee > 0) {
+        // Fetch the creator's user object INSIDE the transaction
+        const creator = await tx.user.findUnique({
+          where: { id: challengeToJoin.creatorId },
+          include: { plan: true }, // Include plan for consistent function signature
+        });
+
+        if (!creator) {
+          // This will cause the transaction to roll back
+          throw new Error("Challenge creator could not be found.");
+        }
+
+        // Step A: Deduct the dynamic fee from the joiner's account
+        await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
+          amount: joiningFee,
+        });
+
+        // Step B: Assign the same fee to the creator's account
+        await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
+          amount: joiningFee,
+        });
+      }
+
+      // Step C: Create the enrollment record and personal task copies for the joiner
       await tx.challengeEnrollment.create({
         data: {
-          userId: userId,
+          userId: joinerId,
           challengeId: challengeId,
-          status: "IN_PROGRESS", // Explicitly set status
-          
-          // This nested 'create' is the key fix. It creates a UserChallengeTask
-          // for each template task associated with the challenge.
+          status: "IN_PROGRESS",
           userTasks: {
-            create: challengeToJoin.templateTasks.map(templateTask => ({
+            create: challengeToJoin.templateTasks.map((templateTask) => ({
               description: templateTask.description,
               templateTaskId: templateTask.id,
-            }))
-          }
-        }
+            })),
+          },
+        },
       });
     });
 
     // 6. Return a success response
     return NextResponse.json(
-      {
-        message: "Successfully enrolled in the challenge!",
-      },
+      { message: "Successfully enrolled in the challenge!" },
       { status: 201 }
     );
-    
-  } catch (error) {
-    console.error("Failed to enroll in challenge:", error);
+  } catch (error: unknown) {
+    // Type-safe error handling
+    if (error instanceof Error) {
+      console.error("Failed to enroll in challenge:", error.message);
+
+      // Check for specific, known error messages to provide better client feedback
+      if (error.message.includes("Insufficient JP balance")) {
+        return NextResponse.json(
+          { error: "You do not have enough JP to join this challenge." },
+          { status: 400 } // Bad Request
+        );
+      }
+
+      // For other known errors, return the specific message
+      return NextResponse.json(
+        { error: error.message },
+        { status: 500 } // Internal Server Error for other cases
+      );
+    }
+
+    // Fallback for non-Error objects that might be thrown
+    console.error("An unknown error occurred:", error);
     return NextResponse.json(
-      { error: "An internal server error occurred." },
+      { error: "An unexpected internal server error occurred." },
       { status: 500 }
     );
   }
 }
-  

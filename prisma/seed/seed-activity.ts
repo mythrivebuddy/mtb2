@@ -171,11 +171,21 @@ async function main() {
       jpAmount: 20,
       transactionType: TransactionType.CREDIT,
     },
-
     {
       activity: ActivityType.CHALLENGE_CREATION_FEE,
       jpAmount: 200,
       transactionType: TransactionType.DEBIT,
+    },
+    // SUMIRAN BHAWSAR new changes
+    {
+      activity: ActivityType.CHALLENGE_JOINING_FEE,
+      jpAmount: 0,
+      transactionType: TransactionType.DEBIT,
+    },
+    {
+      activity: ActivityType.CHALLENGE_FEE_EARNED,
+      jpAmount: 0, // The actual amount is dynamic, based on the challenge cost
+      transactionType: TransactionType.CREDIT,
     },
   ];
 

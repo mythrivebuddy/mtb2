@@ -156,7 +156,7 @@ export async function createJpSpentNotification(
   return createNotification(
     userId,
     NotificationType.JP_SPEND,
-    "JP Spend",
+    "JP Spent",
     `You spend ${amount} JP for ${activityDisplayMap[activity]}`,
     { amount, activity }
   );
