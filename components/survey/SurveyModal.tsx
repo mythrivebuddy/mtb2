@@ -1,6 +1,5 @@
 'use client';
 
-
 import Image from 'next/image';
 import {
   Card,
@@ -8,10 +7,6 @@ import {
 } from '@/components/ui/card';
 
 export default function SurveyModal() {
-  
-
-
-
   return (
     <div className="my-16 flex justify-center items-center z-50">
       <Card className="flex flex-col md:flex-row w-full max-w-4xl rounded-xl overflow-hidden shadow-lg">
@@ -28,7 +23,7 @@ export default function SurveyModal() {
         {/* Right Side Text */}
         <CardContent className="w-full md:w-1/2 p-6 space-y-4">
           <h2 className="text-2xl font-bold">
-            Thank you 🙏 You've completed your session.
+            Thank you — You&apos;ve completed your session.
           </h2>
 
           <p className="text-gray-600">
@@ -40,11 +35,10 @@ export default function SurveyModal() {
           </p>
 
           <p className="text-gray-500 text-sm">
-            You're one of 10,000+ solopreneurs building the future.
+            You&apos;re one of 10,000+ solopreneurs building the future.
           </p>
 
           <button
-            
             className="w-full bg-blue-600 text-white py-2 px-4 rounded-full hover:bg-blue-700 transition"
           >
             Share the survey with your solopreneur circle

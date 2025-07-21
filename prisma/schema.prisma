@@ -733,6 +733,7 @@ model UserChallengeTask {
 
   // The boolean flag to track completion for this specific user's task.
   isCompleted   Boolean  @default(false)
+  lastCompletedAt DateTime? @map("last_completed_at")
 
   // Link to the user's overall enrollment in the challenge.
   enrollmentId  String
@@ -752,6 +753,7 @@ model ChallengeEnrollment {
   status      EnrollmentStatus  @default(IN_PROGRESS)
   currentStreak  Int               @default(0)
   longestStreak  Int               @default(0)
+  lastStreakUpdate DateTime? @map("last_streak_update")
 
   userId      String
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
