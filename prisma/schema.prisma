@@ -587,6 +587,7 @@ enum ActivityType {
   CHALLENGE_CREATION_FEE
   // new 
   CHALLENGE_JOINING_FEE
+  CHALLENGE_FEE_EARNED
 }
 
 enum TransactionType {
