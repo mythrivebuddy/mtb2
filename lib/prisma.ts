@@ -8,6 +8,8 @@
 
 // if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
+// hello
+
 import { PrismaClient } from "@prisma/client";
 
 declare global {
