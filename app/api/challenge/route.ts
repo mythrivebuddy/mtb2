@@ -1,14 +1,11 @@
 // app/api/challenge/route.ts
 
+import { prisma } from "@/lib/prisma"; // ✅ IMPORT THE SINGLETON INSTANCE
 import { checkRole } from "@/lib/utils/auth";
 import { deductJp } from "@/lib/utils/jp";
 import { challengeSchema } from "@/schema/zodSchema";
-import { ActivityType, PrismaClient } from "@prisma/client";
+import { ActivityType } from "@prisma/client";
 import { NextResponse } from "next/server";
-
-// Using the global prisma instance is better practice if you have one.
-// import { prisma } from "@/lib/utils/prisma";
-const prisma = new PrismaClient();
 
 // A helper function to generate a URL-friendly slug from the title
 function generateSlug(title: string): string {
@@ -20,23 +17,20 @@ function generateSlug(title: string): string {
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate the user and get their session
     const session = await checkRole("USER");
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Fetch the full user object to get their plan and balance for JP deduction
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: { plan: true }, // Include plan details for accurate JP calculation
+      include: { plan: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
-    // 3. Parse and validate the request body
     const body = await request.json();
     const validationResult = challengeSchema.safeParse(body);
 
@@ -45,7 +39,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMessages }, { status: 400 });
     }
 
-    // Destructure the validated data
     const {
       title,
       description,
@@ -55,15 +48,15 @@ export async function POST(request: Request) {
       penalty,
       startDate,
       endDate,
-      tasks, // This is an array of task objects, e.g., [{ description: "Read a book" }]
+      tasks,
     } = validationResult.data;
 
-    // 4. Use a Prisma transaction to ensure atomicity (all or nothing)
+    // ✅ APPLY THE TIMEOUT FIX HERE
     const newChallenge = await prisma.$transaction(async (tx) => {
       // Step A: Deduct JP for challenge creation.
       await deductJp(user, ActivityType.CHALLENGE_CREATION_FEE, tx);
 
-      // Step B: If JP deduction is successful, create the challenge.
+      // Step B: Create the challenge.
       const challenge = await tx.challenge.create({
         data: {
           title,
@@ -76,32 +69,24 @@ export async function POST(request: Request) {
           startDate,
           endDate,
           status: "UPCOMING",
-          creator: {
-            connect: { id: user.id },
-          },
-          // Use the 'templateTasks' relation to create shared task templates
+          creator: { connect: { id: user.id } },
           templateTasks: {
             create: tasks.map((task) => ({ description: task.description })),
           },
         },
-        // We must include the created template tasks to use them in the next step
-        include: {
-          templateTasks: true,
-        },
+        include: { templateTasks: true },
       });
 
       if (!challenge) {
         throw new Error("Failed to create challenge in database.");
       }
 
-      // --- NEW: Step C: Automatically enroll the creator in their own challenge ---
+      // Step C & D: Enroll creator and create their tasks
       await tx.challengeEnrollment.create({
         data: {
           challengeId: challenge.id,
           userId: user.id,
           status: "IN_PROGRESS",
-          // --- NEW: Step D: Create the user-specific tasks for the creator ---
-          // This creates a personal copy of each task for the user who just created the challenge.
           userTasks: {
             create: challenge.templateTasks.map(templateTask => ({
               description: templateTask.description,
@@ -112,9 +97,12 @@ export async function POST(request: Request) {
       });
 
       return challenge;
+    }, {
+      // Set timeouts to handle Vercel's network latency
+      maxWait: 10000, // Wait up to 10s for a DB connection
+      timeout: 20000, // Allow the transaction 20s to complete
     });
 
-    // 5. Send a successful response
     return NextResponse.json(
       {
         message: "Challenge created and you have been enrolled!",
@@ -123,7 +111,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: unknown) {
-    // Type-safe error handling
     if (error instanceof Error) {
       if (error.message === "Insufficient JP balance") {
         return NextResponse.json(
