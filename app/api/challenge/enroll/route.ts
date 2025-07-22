@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { deductJp, assignJp } from "@/lib/utils/jp"; // Make sure assignJp is imported
+import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 
 export async function POST(request: Request) {
@@ -63,48 +63,50 @@ export async function POST(request: Request) {
     }
 
     // 5. Use a transaction for the entire enrollment and fee transfer process
-    await prisma.$transaction(async (tx) => {
-      const joiningFee = challengeToJoin.cost;
+    await prisma.$transaction(
+      async (tx) => {
+        const joiningFee = challengeToJoin.cost;
 
-      // Only perform the JP transfer if the challenge has a cost
-      if (joiningFee > 0) {
-        // Fetch the creator's user object INSIDE the transaction
-        const creator = await tx.user.findUnique({
-          where: { id: challengeToJoin.creatorId },
-          include: { plan: true }, // Include plan for consistent function signature
-        });
+        if (joiningFee > 0) {
+          const creator = await tx.user.findUnique({
+            where: { id: challengeToJoin.creatorId },
+            include: { plan: true },
+          });
 
-        if (!creator) {
-          // This will cause the transaction to roll back
-          throw new Error("Challenge creator could not be found.");
+          if (!creator) {
+            throw new Error("Challenge creator could not be found.");
+          }
+
+          await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
+            amount: joiningFee,
+          });
+
+          await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
+            amount: joiningFee,
+          });
         }
 
-        // Step A: Deduct the dynamic fee from the joiner's account
-        await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
-          amount: joiningFee,
-        });
-
-        // Step B: Assign the same fee to the creator's account
-        await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
-          amount: joiningFee,
-        });
-      }
-
-      // Step C: Create the enrollment record and personal task copies for the joiner
-      await tx.challengeEnrollment.create({
-        data: {
-          userId: joinerId,
-          challengeId: challengeId,
-          status: "IN_PROGRESS",
-          userTasks: {
-            create: challengeToJoin.templateTasks.map((templateTask) => ({
-              description: templateTask.description,
-              templateTaskId: templateTask.id,
-            })),
+        await tx.challengeEnrollment.create({
+          data: {
+            userId: joinerId,
+            challengeId: challengeId,
+            status: "IN_PROGRESS",
+            userTasks: {
+              create: challengeToJoin.templateTasks.map((templateTask) => ({
+                description: templateTask.description,
+                templateTaskId: templateTask.id,
+              })),
+            },
           },
-        },
-      });
-    });
+        });
+      },
+      {
+        // ✅ THIS IS THE FIX
+        // Add a timeout to handle the network latency on Vercel
+        maxWait: 10000, // Wait up to 10s for a DB connection
+        timeout: 20000, // Allow the transaction 20s to complete
+      }
+    );
 
     // 6. Return a success response
     return NextResponse.json(
@@ -112,26 +114,19 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: unknown) {
-    // Type-safe error handling
     if (error instanceof Error) {
       console.error("Failed to enroll in challenge:", error.message);
 
-      // Check for specific, known error messages to provide better client feedback
       if (error.message.includes("Insufficient JP balance")) {
         return NextResponse.json(
           { error: "You do not have enough JP to join this challenge." },
-          { status: 400 } // Bad Request
+          { status: 400 }
         );
       }
 
-      // For other known errors, return the specific message
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 } // Internal Server Error for other cases
-      );
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Fallback for non-Error objects that might be thrown
     console.error("An unknown error occurred:", error);
     return NextResponse.json(
       { error: "An unexpected internal server error occurred." },
