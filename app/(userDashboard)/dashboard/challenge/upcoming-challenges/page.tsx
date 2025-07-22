@@ -140,8 +140,10 @@ export default function UpcomingChallengesPage() {
                   <h2 className="text-2xl font-bold text-slate-800 mb-2">
                     {challenge.title}
                   </h2>
-                  <p className="text-slate-600 mb-6 h-20 overflow-hidden">
-                    {challenge.description || "No description provided."}
+                  <p className="text-slate-600 mb-6 h-20 overflow-hidden break-words">
+                   {challenge.description
+                            ? (challenge.description.length > 30 ? `${challenge.description.slice(0, 30)}...` : challenge.description)
+                            : "No description provided."}
                   </p>
                   
                   {/* --- Stats --- */}
