@@ -56,34 +56,40 @@ export async function POST(request: Request) {
         { status: 409 }
       );
 
-    // 5. Fast transaction to create enrollment and handle fees
-    const newEnrollment = await prisma.$transaction(async (tx) => {
-      if (challengeToJoin.cost > 0) {
-        const creator = await tx.user.findUnique({
-          where: { id: challengeToJoin.creatorId },
-          include: { plan: true },
-        });
-        if (!creator) throw new Error("Challenge creator could not be found.");
-        await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
-          amount: challengeToJoin.cost,
-        });
-        await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
-          amount: challengeToJoin.cost,
-        });
-      }
+    // 5. Transaction to create enrollment and handle fees
+    const newEnrollment = await prisma.$transaction(
+      async (tx) => {
+        if (challengeToJoin.cost > 0) {
+          const creator = await tx.user.findUnique({
+            where: { id: challengeToJoin.creatorId },
+            include: { plan: true },
+          });
+          if (!creator)
+            throw new Error("Challenge creator could not be found.");
+          await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
+            amount: challengeToJoin.cost,
+          });
+          await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
+            amount: challengeToJoin.cost,
+          });
+        }
 
-      return tx.challengeEnrollment.create({
-        data: {
-          userId: joinerId,
-          challengeId: challengeId,
-          status: "IN_PROGRESS",
-        },
-      });
-    });
+        return tx.challengeEnrollment.create({
+          data: {
+            userId: joinerId,
+            challengeId: challengeId,
+            status: "IN_PROGRESS",
+          },
+        });
+      },
+      // ✅ THE FIX: Add this options object to increase the timeout
+      {
+        timeout: 15000, // Set timeout to 15 seconds (15000 ms)
+      }
+    );
 
     // 6. "Fire-and-Forget" the background job
     fetch(
-      // ✅ THE FIX: Changed "challenges" to "challenge" to match your folder path
       `${process.env.NEXT_PUBLIC_BASE_URL}/api/challenge/process-enrollment`,
       {
         method: "POST",
@@ -92,7 +98,7 @@ export async function POST(request: Request) {
       }
     );
 
-    // 7. Respond immediately with the correctly shaped object
+    // 7. Respond immediately
     const enrollmentForFrontend = {
       ...newEnrollment,
       userTasks: [],
