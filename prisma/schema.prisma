@@ -690,7 +690,7 @@ enum EnrollmentStatus {
 
 model Challenge {
   id              String          @id @default(cuid())
-  slug            String          @unique
+  slug            String          
   title           String
   description     String?
   mode            ChallengeMode   @default(PUBLIC)

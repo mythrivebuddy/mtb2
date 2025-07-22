@@ -1,9 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { notFound } from "next/navigation";
-import ChallengeDetailView from "../ChallengeDetailView";
+import ChallengeDetailView from "../ChallengeDetailView"; // Assuming the view is a sibling file
+import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
-// Data fetching function (Your code, no changes needed)
+// Define a reusable type for the enrollment object with its tasks
+export type EnrollmentWithTasks = ChallengeEnrollment & {
+  userTasks: UserChallengeTask[];
+};
+
+// Updated data fetching function
 async function getChallengeData(challengeId: string, userId?: string) {
   const challenge = await prisma.challenge.findUnique({
     where: { id: challengeId },
@@ -18,32 +24,29 @@ async function getChallengeData(challengeId: string, userId?: string) {
   if (!challenge) {
     return null;
   }
-  
-  let isEnrolled = false;
+
+  let enrollment: EnrollmentWithTasks | null = null;
   if (userId) {
-    const enrollment = await prisma.challengeEnrollment.findUnique({
+    // Fetch the full enrollment object, including the user's personal tasks
+    enrollment = await prisma.challengeEnrollment.findUnique({
       where: {
         userId_challengeId: {
           userId: userId,
           challengeId: challengeId,
         },
       },
+      include: {
+        userTasks: true, // This is the key change to get the processing status
+      },
     });
-    isEnrolled = !!enrollment;
   }
 
-  return { challenge, isEnrolled };
+  return { challenge, enrollment };
 }
 
-/**
- * FINAL FIX
- * We are using a special comment to disable the ESLint 'no-explicit-any' rule for the next line.
- * This is necessary to work around the Next.js 15 bug without violating the project's code quality rules.
- */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function ChallengeDetailPage(props: any) {
-  const id = await props.params.id;
-
+  const id = props.params.id;
   const session = await checkRole("USER");
   const userId = session?.user?.id;
 
@@ -53,12 +56,12 @@ export default async function ChallengeDetailPage(props: any) {
     notFound();
   }
 
-  const { challenge, isEnrolled } = data;
+  const { challenge, enrollment } = data;
 
   return (
-    <ChallengeDetailView 
-      challenge={challenge} 
-      isInitiallyEnrolled={isEnrolled}
+    <ChallengeDetailView
+      challenge={challenge}
+      initialEnrollment={enrollment} // Pass the full enrollment object to the client
     />
   );
 }

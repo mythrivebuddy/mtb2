@@ -1,72 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert } from "lucide-react";
-import type { Challenge, ChallengeTask } from "@prisma/client";
+import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
 // Define the shape of the props this component expects
 type ChallengeWithTasksAndCount = Challenge & {
   templateTasks: ChallengeTask[];
-  _count: {
-    enrollments: number;
-  };
+  _count: { enrollments: number };
+};
+
+type EnrollmentWithTasks = ChallengeEnrollment & {
+  userTasks: UserChallengeTask[];
 };
 
 interface ChallengeDetailViewProps {
   challenge: ChallengeWithTasksAndCount;
-  isInitiallyEnrolled: boolean;
-  // Removed isUserLoggedIn as it was unused
+  initialEnrollment: EnrollmentWithTasks | null;
 }
 
-// A helper function to format dates
-const formatDate = (dateString: string | Date) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-// Helper function to calculate the total duration of the challenge
+const formatDate = (dateString: string | Date) => new Date(dateString).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 const getChallengeDuration = (startDateString: string | Date, endDateString: string | Date): string => {
     const startDate = new Date(startDateString);
     const endDate = new Date(endDateString);
-    
-    // Set hours to 0 to ensure we are only comparing dates
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
-
     const timeDiff = endDate.getTime() - startDate.getTime();
-    
-    // Calculate the number of days and add 1 to be inclusive
     const days = Math.round(timeDiff / (1000 * 60 * 60 * 24)) + 1;
-
     if (days <= 0) return "";
     if (days === 1) return `(${days} day)`;
     return `(${days} days)`;
 };
 
-
-export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: ChallengeDetailViewProps) {
+export default function ChallengeDetailView({ challenge, initialEnrollment }: ChallengeDetailViewProps) {
   const router = useRouter();
-  const [isEnrolled, setIsEnrolled] = useState(isInitiallyEnrolled);
-  const [isLoading, setIsLoading] = useState(false);
+  const [enrollment, setEnrollment] = useState(initialEnrollment);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (enrollment && enrollment.userTasks.length === 0) {
+      setIsPolling(true);
+      const poll = setInterval(async () => {
+        try {
+          const response = await axios.get(`/api/challenge/enrollments/${challenge.id}`);
+          const updatedEnrollment: EnrollmentWithTasks = response.data.enrollment;
+          if (updatedEnrollment?.userTasks.length > 0) {
+            setEnrollment(updatedEnrollment);
+            setIsPolling(false);
+            setIsEnrollSuccessModalOpen(true);
+            clearInterval(poll);
+          }
+        } catch (err) {
+          console.error("Polling failed:", err);
+          setError("Could not confirm enrollment status. Please refresh the page.");
+          setIsPolling(false);
+          clearInterval(poll);
+        }
+      }, 3000);
+      return () => clearInterval(poll);
+    }
+  }, [enrollment, challenge.id]);
 
   const handleEnroll = async () => {
-    // Logic for enrolling (remains the same)
-    setIsLoading(true);
+    setIsEnrolling(true);
     setError(null);
     try {
-      await axios.post("/api/challenge/enroll", {
+      const response = await axios.post("/api/challenge/enroll", {
         challengeId: challenge.id,
       });
-      setIsEnrolled(true);
-      setIsEnrollSuccessModalOpen(true); // Open success modal
+      setEnrollment(response.data.enrollment);
     } catch (err) {
       const errorMessage =
         axios.isAxiosError(err) && err.response?.data?.error
@@ -74,7 +81,7 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: 
           : "An unexpected error occurred.";
       setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      setIsEnrolling(false);
     }
   };
 
@@ -82,7 +89,6 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: 
     setIsEnrollSuccessModalOpen(false);
     router.push("/dashboard/challenge/my-challenges");
   };
-
 
   const statusColors = {
     ACTIVE: "bg-blue-100 text-blue-800",
@@ -93,63 +99,53 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: 
 
   return (
     <>
-      <div className="min-h-screen ">
+      <div className="min-h-screen">
         <div className="w-full max-w-3xl mx-auto py-12 px-4">
           <div className="bg-white p-8 rounded-2xl shadow-lg">
-            {/* --- Header Section --- */}
+            {/* Header Section */}
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h1 className="text-4xl font-bold text-slate-800">{challenge.title}</h1>
                 <div className="flex items-center gap-x-3 my-4">
-                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusColors[challenge.status] || 'bg-gray-100'}`}>
-                    {challenge.status}
-                  </span>
-                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${challenge.mode === 'PUBLIC' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-800'}`}>
-                    {challenge.mode}
-                  </span>
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusColors[challenge.status] || 'bg-gray-100'}`}>{challenge.status}</span>
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${challenge.mode === 'PUBLIC' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-800'}`}>{challenge.mode}</span>
                 </div>
               </div>
             </div>
-            
-            {/* --- Description --- */}
+            {/* Description */}
             <p className="text-slate-600 text-lg mb-8">{challenge.description}</p>
-            
-            {/* --- Stats Grid --- */}
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                {/* Cost */}
+              <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                  <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
+                  <div>
+                      <div className="text-sm text-slate-500">Joining Cost</div>
+                      <div className="font-semibold text-slate-700">{challenge.cost > 0 ? `${challenge.cost} JP` : 'Free'}</div>
+                  </div>
+              </div>
+              <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                  <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
+                  <div>
+                      <div className="text-sm text-slate-500">Reward</div>
+                      <div className="font-semibold text-slate-700">{challenge.reward} JP</div>
+                  </div>
+              </div>
+              {challenge.penalty > 0 && (
                 <div className="flex items-center p-4 bg-slate-50 rounded-lg">
-                    <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
+                    <ShieldAlert className="w-6 h-6 text-red-500 mr-3 flex-shrink-0" />
                     <div>
-                        <div className="text-sm text-slate-500">Joining Cost</div>
-                        <div className="font-semibold text-slate-700">{challenge.cost > 0 ? `${challenge.cost} JP` : 'Free'}</div>
+                        <div className="text-sm text-slate-500">Penalty</div>
+                        <div className="font-semibold text-slate-700">{challenge.penalty} JP</div>
                     </div>
                 </div>
-                {/* Reward */}
-                <div className="flex items-center p-4 bg-slate-50 rounded-lg">
-                    <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
-                    <div>
-                        <div className="text-sm text-slate-500">Reward</div>
-                        <div className="font-semibold text-slate-700">{challenge.reward} JP</div>
-                    </div>
-                </div>
-                {/* Penalty */}
-                {challenge.penalty > 0 && (
-                    <div className="flex items-center p-4 bg-slate-50 rounded-lg">
-                        <ShieldAlert className="w-6 h-6 text-red-500 mr-3 flex-shrink-0" />
-                        <div>
-                            <div className="text-sm text-slate-500">Penalty</div>
-                            <div className="font-semibold text-slate-700">{challenge.penalty} JP</div>
-                        </div>
-                    </div>
-                )}
-                {/* Participants */}
-                 <div className="flex items-center p-4 bg-slate-50 rounded-lg">
-                    <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
-                    <div>
-                        <div className="text-sm text-slate-500">Participants</div>
-                        <div className="font-semibold text-slate-700">{challenge._count.enrollments}</div>
-                    </div>
-                </div>
+              )}
+              <div className="flex items-center p-4 bg-slate-50 rounded-lg">
+                  <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
+                  <div>
+                      <div className="text-sm text-slate-500">Participants</div>
+                      <div className="font-semibold text-slate-700">{challenge._count.enrollments}</div>
+                  </div>
+              </div>
             </div>
             {/* Duration */}
             <div className="flex items-center p-4 bg-slate-50 rounded-lg mb-8">
@@ -158,15 +154,11 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: 
                     <div className="text-sm text-slate-500">Challenge Duration</div>
                     <div className="font-semibold text-slate-700 flex items-center gap-2">
                         <span>{formatDate(challenge.startDate)} to {formatDate(challenge.endDate)}</span>
-                        <span className="text-blue-600 font-medium">
-                            {getChallengeDuration(challenge.startDate, challenge.endDate)}
-                        </span>
+                        <span className="text-blue-600 font-medium">{getChallengeDuration(challenge.startDate, challenge.endDate)}</span>
                     </div>
                 </div>
             </div>
-
-
-            {/* --- Tasks Section --- */}
+            {/* Tasks Section */}
             <div className="border-t border-slate-200 pt-6 mb-8">
               <h2 className="text-2xl font-semibold text-slate-700 mb-4">Tasks to Complete</h2>
               <ul className="space-y-3">
@@ -178,14 +170,11 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: 
                     </li>
                   ))
                 ) : (
-                  <li className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-slate-500">
-                    No tasks have been added to this challenge yet.
-                  </li>
+                  <li className="p-4 bg-slate-50 rounded-lg border border-slate-200 text-slate-500">No tasks have been added to this challenge yet.</li>
                 )}
               </ul>
             </div>
-            
-            {/* --- Action Button Section --- */}
+            {/* Action Button Section */}
             <div className="pt-6 border-t border-slate-200">
               {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4 flex items-center">
@@ -193,49 +182,41 @@ export default function ChallengeDetailView({ challenge, isInitiallyEnrolled }: 
                   <span>{error}</span>
                 </div>
               )}
-              {isEnrolled ? (
-                <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg flex items-center justify-center">
-                  <PartyPopper className="w-6 h-6 mr-2" />
-                  <span className="font-semibold text-lg">You have joined this challenge!</span>
-                </div>
-              ) : (
-                <button
-                  onClick={handleEnroll}
-                  disabled={isLoading}
-                  className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Enrolling...
-                    </>
-                  ) : (
-                    "Join Challenge"
-                  )}
-                </button>
-              )}
+              {(() => {
+                if (enrollment && enrollment.userTasks.length > 0) {
+                  return (
+                    <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg flex items-center justify-center">
+                      <PartyPopper className="w-6 h-6 mr-2" />
+                      <span className="font-semibold text-lg">You have joined this challenge!</span>
+                    </div>
+                  );
+                }
+                if (isPolling || (enrollment && enrollment.userTasks.length === 0)) {
+                  return (
+                    <div className="text-center p-4 bg-blue-100 text-blue-800 rounded-lg flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                      <span className="font-semibold text-lg">Preparing your tasks...</span>
+                    </div>
+                  );
+                }
+                return (
+                  <button onClick={handleEnroll} disabled={isEnrolling} className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                    {isEnrolling ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Enrolling...</>) : ("Join Challenge")}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </div>
       </div>
-
-      {/* --- Enrollment Success Modal --- */}
+      {/* Enrollment Success Modal */}
       {isEnrollSuccessModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
             <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              Successfully Joined!
-            </h2>
-            <p className="text-slate-500 mb-6">
-              You are now enrolled in the &quot;{challenge.title}&quot; challenge. Good luck!
-            </p>
-            <button
-              onClick={handleCloseModalAndRedirect}
-              className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all"
-            >
-              View My Challenges
-            </button>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Successfully Joined!</h2>
+            <p className="text-slate-500 mb-6">You are now enrolled in the &quot;{challenge.title}&quot; challenge. Good luck!</p>
+            <button onClick={handleCloseModalAndRedirect} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all">View My Challenges</button>
           </div>
         </div>
       )}
