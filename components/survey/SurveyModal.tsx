@@ -16,7 +16,6 @@ export default function SurveyModal() {
 
   const handleShare = (platform: string) => {
     const shareText = `Join this survey 👇 ${shareLink}`;
-
     const platforms = {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(shareText)}`,
       telegram: `https://t.me/share/url?url=${encodeURIComponent(shareLink)}&text=${encodeURIComponent(shareText)}`,
@@ -39,13 +38,13 @@ export default function SurveyModal() {
             src="/image2.png"
             alt="Illustration"
             fill
-            className="object-fit"
+            className="object-cover"
             priority
           />
         </div>
 
         {/* Content */}
-        <CardContent className="w-full p-6 space-y-4">
+        <CardContent className="w-full p-6 space-y-6">
           <h2 className="text-2xl font-bold">
             Thank you — You&apos;ve completed your session.
           </h2>
@@ -63,57 +62,60 @@ export default function SurveyModal() {
             You&apos;re one of 10,000+ solopreneurs building the future.
           </p>
 
-          <p className="w-full text-center bg-blue-600 text-white py-2 px-4 rounded-full hover:bg-blue-700 transition">
+          <h3 className="w-full text-center text-lg font-medium bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-full shadow-md">
             Share the survey with your solopreneur circle
-          </p>
+          </h3>
 
-          <div className="flex justify-center flex-wrap gap-4 text-blue-600 text-sm pt-2">
+          <div className="flex justify-center flex-wrap gap-4 pt-2">
             {/* WhatsApp */}
             <Button
               variant="outline"
               onClick={() => handleShare("whatsapp")}
-              className="flex items-center space-x-2 bg-[#198340] hover:bg-[#258649] hover:text-white text-white"
+              className="flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg bg-gradient-to-r from-[#128C7E] to-[#075E54] text-white hover:text-white transition-all hover:-translate-y-1"
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884" />
+              <svg
+                className="w-9 h-9 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                fill="currentColor"
+              >
+                <path d="M256 0C114.84 0 0 114.836 0 256c0 45.252 11.828 89.25 34.293 127.582L0 512l132.473-34.078C171.035 500.813 212.418 512 256 512c141.162 0 256-114.836 256-256S397.162 0 256 0zm0 472c-40.125 0-79.18-10.695-113.383-30.973l-7.645-4.59-78.347 20.192 21.028-76.915-4.949-7.879C53.363 334.894 40 296.32 40 256c0-119.103 96.897-216 216-216s216 96.897 216 216-96.897 216-216 216zm121.715-150.3c-6.719-3.359-39.656-19.531-45.793-21.746-6.156-2.234-10.641-3.328-15.125 3.328-4.484 6.656-17.297 21.746-21.203 26.234-3.906 4.484-7.812 5.031-14.531 1.672-6.719-3.344-28.359-10.453-54.027-33.297-19.961-17.797-33.437-39.805-37.344-46.453-3.891-6.656-.43-10.25 2.938-13.609 3.016-3 6.719-7.812 10.078-11.719 3.359-3.906 4.484-6.656 6.719-11.109 2.219-4.453 1.109-8.359-.547-11.719-1.656-3.359-14.688-35.625-20.109-48.703-5.313-12.875-10.734-11.109-14.531-11.328-3.75-.219-8.078-.266-12.406-.266s-11.328 1.609-17.203 8.328C109.312 177.187 96 194.64 96 225.25c0 30.594 21.953 60.234 24.984 64.328 3.016 4.078 43.141 66.016 104.836 91.375 14.656 6.078 26.078 9.703 34.984 12.391 14.703 4.688 28.078 4.031 38.672 2.438 11.781-1.781 39.656-16.219 45.188-31.922 5.531-15.688 5.531-29.156 3.891-31.953-1.625-2.813-6.141-4.453-12.84-7.812z" />
               </svg>
-              <span>WhatsApp</span>
+              <span className="text-lg font-semibold">WhatsApp</span>
             </Button>
 
             {/* LinkedIn */}
             <Button
               variant="outline"
               onClick={() => handleShare("linkedin")}
-              className="flex items-center space-x-2 bg-[#17719e] hover:bg-[#266381] hover:text-white text-white"
+              className="flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg bg-gradient-to-r from-[#004182] to-[#002D64] text-white hover:text-white transition-all hover:-translate-y-1"
             >
               <svg
+                className="w-9 h-9 text-white"
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="currentColor"
                 viewBox="0 0 24 24"
+                fill="currentColor"
               >
                 <path d="M4.98 3.5C4.98 4.88 3.88 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1 4.98 2.12 4.98 3.5zM0 8h5v16H0V8zm7.5 0h4.7v2.3h.1c.7-1.3 2.3-2.7 4.8-2.7 5.1 0 6 3.3 6 7.6V24h-5v-7.6c0-1.8 0-4.1-2.5-4.1s-2.9 2-2.9 4v7.7h-5V8z" />
               </svg>
-              <span>LinkedIn</span>
+              <span className="text-lg font-semibold">LinkedIn</span>
             </Button>
 
             {/* Telegram */}
             <Button
               variant="outline"
               onClick={() => handleShare("telegram")}
-              className="flex items-center space-x-2 bg-[#0088cc] hover:bg-[#0088cc]/90 text-white hover:text-white"
+              className="flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg bg-gradient-to-r from-[#005f9e] to-[#003f66] text-white hover:text-white transition-all hover:-translate-y-1"
             >
               <svg
+                className="w-9 h-9 text-white"
                 xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="currentColor"
                 viewBox="0 0 24 24"
+                fill="currentColor"
               >
                 <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.563 8.994l-1.83 8.59c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.566-4.458c.534-.196 1.006.128.832.941z" />
               </svg>
-              <span>Telegram</span>
+              <span className="text-lg font-semibold">Telegram</span>
             </Button>
           </div>
         </CardContent>

@@ -111,11 +111,13 @@ export default function FirstTimeSurvey() {
             className="flex flex-col bg-gray-50 shadow-sm hover:shadow-md transition-all"
           >
             <CardContent className="p-4 flex flex-col gap-2">
+              <div className="w-full h-48">
               <img
                 src={topic.image}
                 alt={topic.title}
                 className="w-full h-full rounded-md object-cover"
-              />
+                />
+                </div>
               <h3 className="text-base font-semibold text-gray-900">
                 {topic.title}
               </h3>

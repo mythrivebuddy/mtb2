@@ -24,7 +24,7 @@ export default function SurveyLandingPage() {
 
   const handleStartSurvey = () => {
     if (session?.data?.user) {
-      router.push("/survey/first-time-survey");
+      router.push("/survey/take-survey");
     } else {
       router.push("/signin");
     }
