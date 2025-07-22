@@ -57,8 +57,6 @@ const topics = [
 export default function FirstTimeSurvey() {
   const session = useSession();
   const router = useRouter();
-  console.log("sesion ",session);
-  
   const user = session.data?.user
   const userId = user?.id
   const handleMarkFirstSurveyAsFalse = async() => {
@@ -103,6 +101,10 @@ export default function FirstTimeSurvey() {
         </div>
       </div>
 
+        {/* Dummy Data Badge */}
+        <div className="inline-block mb-6 px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-full font-medium">
+          Showing dummy data
+        </div>
       {/* Topics Grid */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
         {topics.map((topic,index) => (
@@ -111,11 +113,13 @@ export default function FirstTimeSurvey() {
             className="flex flex-col bg-gray-50 shadow-sm hover:shadow-md transition-all"
           >
             <CardContent className="p-4 flex flex-col gap-2">
+              <div className="w-full h-48">
               <img
                 src={topic.image}
                 alt={topic.title}
                 className="w-full h-full rounded-md object-cover"
-              />
+                />
+                </div>
               <h3 className="text-base font-semibold text-gray-900">
                 {topic.title}
               </h3>
