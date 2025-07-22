@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Tag } from "lucide-react";
 
 const questions = [
   {
@@ -38,14 +39,20 @@ const questions = [
       "None",
     ],
   },
+];
 
+// Darker gradient styles for better white text contrast
+const darkGradients = [
+  "bg-gradient-to-r from-gray-800 via-indigo-900 to-gray-900",
+  "bg-gradient-to-r from-purple-900 via-violet-700 to-blue-900",
+  "bg-gradient-to-r from-slate-800 via-zinc-700 to-neutral-900",
 ];
 
 export default function QuestionPageComponent({ questionId }: { questionId: string }) {
   const router = useRouter();
   const index = parseInt(questionId);
-
   const [selectedOption, setSelectedOption] = useState("");
+  const [showDialog, setShowDialog] = useState(true);
 
   useEffect(() => {
     if (!isNaN(index)) {
@@ -55,7 +62,6 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
 
   const handleNextQuestion = () => {
     const nextIndex = index + 1;
-
     if (nextIndex <= questions.length) {
       localStorage.setItem("currentQuestionIndex", nextIndex.toString());
       router.push(`/survey/thank-you-timer-page`);
@@ -69,7 +75,7 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
     setSelectedOption(option);
   };
 
-  const currentQuestion = questions[index-1];
+  const currentQuestion = questions[index - 1];
 
   if (!currentQuestion) {
     return (
@@ -79,52 +85,80 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
     );
   }
 
+  const gradientClass = darkGradients[(index - 1) % darkGradients.length];
+
   return (
-    <div className="min-h-screen bg-white py-12 px-6 max-w-3xl mx-auto">
-      <div className="mb-8">
-        <p className="text-sm uppercase tracking-wide text-gray-500 font-semibold mb-2">
-          {currentQuestion.category}
-        </p>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          {currentQuestion.question}
-        </h2>
+    <div className="relative min-h-screen bg-white overflow-hidden">
+      {/* Blurred background */}
+      <div
+        className={`transition-opacity duration-300 ${
+          showDialog ? "opacity-20 blur-sm pointer-events-none" : "opacity-100"
+        } px-6 py-12 max-w-3xl mx-auto`}
+      >
+        <div className="text-center text-gray-400">Loading...</div>
+      </div>
 
-        <div className="space-y-4">
-          {currentQuestion?.options?.map((option, index) => (
-            <div key={index} className="flex items-center">
-              <input
-                type="radio"
-                id={`option-${index}`}
-                name="question-options"
-                value={option}
-                checked={selectedOption === option}
-                onChange={() => handleOptionChange(option)}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <label htmlFor={`option-${index}`} className="ml-2 text-gray-700 text-lg">
-                {option}
-              </label>
+      {/* Modal Dialog */}
+      {showDialog && (
+        <div className="fixed inset-0 z-50 px-3 sm:px-4 md:px-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl px-6 py-8">
+            {/* 🎨 Category Badge */}
+            <div
+              className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-sm font-medium text-white shadow-sm mb-4 ${gradientClass}`}
+            >
+              <Tag size={16} />
+              <span>Category: {currentQuestion.category}</span>
             </div>
-          ))}
+
+            {/* Question */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              {currentQuestion.question}
+            </h2>
+
+            {/* Options */}
+            <div className="space-y-4">
+              {currentQuestion.options.map((option, idx) => (
+                <div key={idx} className="flex items-center">
+                  <input
+                    type="radio"
+                    id={`option-${idx}`}
+                    name="question-options"
+                    value={option}
+                    checked={selectedOption === option}
+                    onChange={() => handleOptionChange(option)}
+                    className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <label htmlFor={`option-${idx}`} className="ml-2 text-gray-700 text-lg">
+                    {option}
+                  </label>
+                </div>
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowDialog(false);
+                  handleNextQuestion();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded-lg text-lg disabled:opacity-50"
+                disabled={!selectedOption}
+              >
+                Next
+              </button>
+            </div>
+
+            {/* Footer Info */}
+            <div className="mt-6 text-sm text-gray-500">
+              <p>
+                Every answer helps us (and you) get clearer! You can answer 3 questions per login with a
+                4-hour gap between sessions. There’s a 15-second pause between each question.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex justify-end">
-        <button
-          onClick={handleNextQuestion}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-lg"
-          disabled={!selectedOption}
-        >
-          Next
-        </button>
-      </div>
-
-      <div className="mt-6 text-sm text-gray-500">
-        <p>
-          Every answer helps us (and you) get clearer! You can answer 3 questions per login with a
-          4-hour gap between sessions. There’s a 15-second pause between each question.
-        </p>
-      </div>
+      )}
     </div>
   );
 }
