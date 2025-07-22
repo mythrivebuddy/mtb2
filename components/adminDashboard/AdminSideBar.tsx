@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/tw";
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
 import { NavItemProps } from "@/types/client/nav";
-
+import { ExcelImport } from "./ExcelImport"; // This component needs to be created in the same folder
 
 const NavItem = ({ href, label, badge }: NavItemProps) => {
   const pathname = usePathname();
@@ -73,30 +73,32 @@ const Sidebar = () => {
         )}
       </button>
 
-      {/* Overlay for Mobile phone  */}
+      {/* Overlay for Mobile phone */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={toggleSidebar}
         ></div>
       )}
-{/* dasasd */}
+
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static top-0 left-0 h-full bg-white shadow-sm rounded-3xl overflow-y-auto transition-transform duration-300 z-50",
+          "fixed lg:static top-0 left-0 h-full bg-white shadow-sm rounded-3xl overflow-y-auto transition-transform duration-300 z-50 flex flex-col",
           "w-64 lg:w-64",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Menu Section */}
-        <div className="flex flex-col pl-5 py-6">
-          <div className="flex flex-col gap-8 mt-10">
-              {/* Sequence and names of options in changed    :- lucky */}
+        <div className="flex flex-col pl-5 py-6 h-full">
+          <div className="flex flex-col gap-8 mt-10 flex-grow">
             <NavSection title="Menu">
               <NavItem href="/admin/dashboard" label="Dashboard" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
+              {/* === ADDED NEW ITEMS HERE === */}
+              <NavItem href="/admin/categories" label="Category Management" />
+              <NavItem href="/admin/questions" label="Question Management" />
+              {/* ============================ */}
               <NavItem href="/admin/spotlight" label="Spotlight Management" />
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
@@ -108,9 +110,15 @@ const Sidebar = () => {
                 label="Product Management"
               />
             </NavSection>
-
-         
           </div>
+
+          {/* === ADDED IMPORT SECTION HERE === */}
+          <div className="px-4 mt-auto pb-4">
+             <NavSection title="Data Import">
+                <ExcelImport />
+             </NavSection>
+          </div>
+          {/* =============================== */}
         </div>
       </aside>
     </>
