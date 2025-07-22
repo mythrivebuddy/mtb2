@@ -98,7 +98,7 @@ export default function Navbar() {
         <div className="absolute top-full left-0 right-0 bg-white mt-2 p-4 rounded-lg shadow-lg md:hidden z-50">
           <div className="flex flex-col space-y-4">
             {session && <NavLink href="/dashboard">Dashboard</NavLink>}
-            
+            <NavLink href="/survey">Survey</NavLink>
             <NavLink href="/blog">Blog</NavLink>
             <NavLink href="/contact">Contact Us</NavLink>
             <NavLink href="/about-us">About Us</NavLink>
