@@ -42,7 +42,7 @@ export default function SurveyCompleteComponent() {
 
     if (nextIndex >= 3) {
       localStorage.setItem("currentQuestionIndex", nextIndex.toString());
-      router.push(`/survey/question-page/${nextIndex}`);
+      router.push(`/survey/question-page/${nextIndex !==1 ? nextIndex-1 :nextIndex}`);
     } else {
       localStorage.removeItem("currentQuestionIndex");
       router.push(`/survey/thank-you-session-complete-page`);

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation"; 
-
+import { useRouter } from "next/navigation";
 
 const questions = [
   {
+    category: "Goals & Planning",
     question: "What are your primary business goals for the next quarter?",
     options: [
       "Increase customer acquisition",
@@ -17,6 +17,7 @@ const questions = [
     ],
   },
   {
+    category: "Marketing Challenges",
     question: "What challenges are you facing with your current marketing strategy?",
     options: [
       "Lack of budget",
@@ -27,6 +28,7 @@ const questions = [
     ],
   },
   {
+    category: "Tools & Platforms",
     question: "What tools are you currently using to manage your business?",
     options: [
       "CRM software",
@@ -37,39 +39,7 @@ const questions = [
     ],
   },
 
-    {
-    question: "What hidimba challenges are you facing with your current marketing strategy?",
-    options: [
-      "Lack of budget",
-      "Limited reach",
-      "Inconsistent messaging",
-      "Low engagement",
-      "Other",
-    ],
-  },
-  {
-    question: "What hidimba challenges are you facing with your current marketing strategy?",
-    options: [
-      "Lack of budget",
-      "Limited reach",
-      "Inconsistent messaging",
-      "Low engagement",
-      "Other",
-    ],
-  },
-  {
-    question: "What hidimba challenges are you facing with your current marketing strategy?",
-    options: [
-      "Lack of budget",
-      "Limited reach",
-      "Inconsistent messaging",
-      "Low engagement",
-      "Other",
-    ],
-  }
 ];
-
-
 
 export default function QuestionPageComponent({ questionId }: { questionId: string }) {
   const router = useRouter();
@@ -86,7 +56,7 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
   const handleNextQuestion = () => {
     const nextIndex = index + 1;
 
-    if (nextIndex < questions.length) {
+    if (nextIndex <= questions.length) {
       localStorage.setItem("currentQuestionIndex", nextIndex.toString());
       router.push(`/survey/thank-you-timer-page`);
     } else {
@@ -99,7 +69,7 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
     setSelectedOption(option);
   };
 
-  const currentQuestion = questions[index];
+  const currentQuestion = questions[index-1];
 
   if (!currentQuestion) {
     return (
@@ -112,6 +82,9 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
   return (
     <div className="min-h-screen bg-white py-12 px-6 max-w-3xl mx-auto">
       <div className="mb-8">
+        <p className="text-sm uppercase tracking-wide text-gray-500 font-semibold mb-2">
+          {currentQuestion.category}
+        </p>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           {currentQuestion.question}
         </h2>
