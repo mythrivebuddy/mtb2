@@ -171,12 +171,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Dashboard"
                   onLinkClick={toggleSidebar}
                 />
-                <NavItem
+                {/* <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                   onLinkClick={toggleSidebar}
-                />
+                /> */}
               </NavSection>
               <NavSection title="Features">
                  <NavItem
