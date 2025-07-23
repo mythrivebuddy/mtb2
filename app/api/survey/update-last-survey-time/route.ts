@@ -9,27 +9,15 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    const updatedUser = await prisma.user.update({
+    await prisma.user.update({
       where: { id: userId },
-      data: {
-        lastSurveyTime: new Date(),
-      },
-      select: {
-        lastSurveyTime: true, // Only return what you need
-      },
+      data: { lastSurveyTime: new Date() },
     });
 
+    return NextResponse.json({ success: true, message: "Survey time updated" }, { status: 200 });
+  } catch (error) {
     return NextResponse.json(
-      {
-        message: "lastSurveyTime updated to now",
-        success: true,
-        lastSurveyTime: updatedUser.lastSurveyTime,
-      },
-      { status: 200 }
-    );
-  } catch (error: unknown) {
-    return NextResponse.json(
-      { error: `Error marking user last survey time ${error}` },
+      { error: `Failed to update lastSurveyTime: ${error}` },
       { status: 500 }
     );
   }
