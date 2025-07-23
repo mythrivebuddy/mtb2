@@ -44,6 +44,7 @@ model User {
   bio                           String?
   isOnline                      Boolean?             @default(false)
   isFirstTimeSurvey             Boolean?             @default(true)
+  lastSurveyTime                DateTime?
   alignedActions                AlignedAction[]
 
   blockedUsers                  BlockedUsers[]
