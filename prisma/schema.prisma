@@ -592,6 +592,7 @@ enum ActivityType {
 
   // sumiran new 
   CHALLENGE_PENALTY 
+  CHALLENGE_REWARD 
 }
 
 enum TransactionType {
