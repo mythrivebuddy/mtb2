@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Home,
-  LayoutList,
+  // LayoutList,
   User,
   HelpCircle,
   Phone,
@@ -171,12 +171,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Dashboard"
                   onLinkClick={toggleSidebar}
                 />
-                <NavItem
+                {/* <NavItem
                   href="/dashboard/leaderboard"
                   icon={<LayoutList size={20} />}
                   label="Leaderboard"
                   onLinkClick={toggleSidebar}
-                />
+                /> */}
               </NavSection>
               <NavSection title="Features">
                  <NavItem
