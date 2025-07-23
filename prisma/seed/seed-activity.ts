@@ -192,6 +192,11 @@ async function main() {
       jpAmount: 0,
       transactionType: TransactionType.DEBIT
     },
+    {
+      activity: ActivityType.CHALLENGE_REWARD,
+      jpAmount: 0,
+      transactionType: TransactionType.CREDIT
+    }
   ];
 
   for (const activity of activities) {

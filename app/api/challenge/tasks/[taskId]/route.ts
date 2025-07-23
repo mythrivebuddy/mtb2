@@ -1,10 +1,28 @@
+// File: app/api/challenges/tasks/[taskId]/route.ts
+
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { deductJp, assignJp } from "@/lib/utils/jp";
+import { ActivityType, EnrollmentStatus } from "@prisma/client";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function PATCH(request: NextRequest, context: any) {
-  const userChallengeTaskId = context.params.taskId;
+// Define a type for the data used to update an enrollment
+type EnrollmentUpdateData = {
+  currentStreak: number;
+  longestStreak: number;
+  lastStreakUpdate: Date;
+  status?: EnrollmentStatus;
+};
+
+// PATCH handler
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { taskId: string } }
+) {
+  // const userChallengeTaskId = params.taskId;
+  const {taskId} = await params;
+
+  const userChallengeTaskId = taskId;
 
   try {
     const session = await checkRole("USER");
@@ -23,123 +41,130 @@ export async function PATCH(request: NextRequest, context: any) {
 
     let allTasksWereCompletedToday = false;
 
-    // --- Start of Transaction ---
-    await prisma.$transaction(
-      async (tx) => {
-        // Find the task and include its parent challenge's status
-        const taskToUpdate = await tx.userChallengeTask.findFirst({
-          where: {
-            id: userChallengeTaskId,
-            enrollment: { userId: userId },
-          },
-          include: {
-            enrollment: {
-              include: {
-                challenge: {
-                  select: { status: true },
-                },
-              },
+    await prisma.$transaction(async (tx) => {
+      const taskToUpdate = await tx.userChallengeTask.findFirst({
+        where: {
+          id: userChallengeTaskId,
+          enrollment: { userId },
+        },
+        include: {
+          enrollment: {
+            include: {
+              challenge: true,
+              user: { include: { plan: true } },
             },
           },
-        });
+        },
+      });
 
-        if (!taskToUpdate) {
-          throw new Error(
-            "Task not found or you do not have permission to update it."
-          );
-        }
-
-        const challengeStatus = taskToUpdate.enrollment.challenge.status;
-        if (challengeStatus !== "ACTIVE") {
-          throw new Error(
-            "This challenge is not active. Tasks can only be updated for active challenges."
-          );
-        }
-
-        const { enrollmentId } = taskToUpdate;
-
-        // Daily Reset Logic
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
-
-        await tx.userChallengeTask.updateMany({
-          where: {
-            enrollmentId: enrollmentId,
-            isCompleted: true,
-            lastCompletedAt: { lt: today },
-          },
-          data: { isCompleted: false },
-        });
-
-        // Update the specific task that the user clicked on
-        await tx.userChallengeTask.update({
-          where: { id: userChallengeTaskId },
-          data: {
-            isCompleted: isCompleted,
-            lastCompletedAt: isCompleted ? new Date() : undefined,
-          },
-        });
-
-        // Streak Calculation Logic
-        if (isCompleted) {
-          const allTasks = await tx.userChallengeTask.findMany({
-            where: { enrollmentId: enrollmentId },
-          });
-
-          const allTasksCompleted = allTasks.every((task) => task.isCompleted);
-
-          if (allTasksCompleted) {
-            const enrollment = await tx.challengeEnrollment.findUnique({
-              where: { id: enrollmentId },
-            });
-
-            if (enrollment) {
-              const now = new Date();
-              const lastUpdate = enrollment.lastStreakUpdate
-                ? new Date(enrollment.lastStreakUpdate)
-                : null;
-
-              if (
-                !lastUpdate ||
-                lastUpdate.toDateString() !== now.toDateString()
-              ) {
-                allTasksWereCompletedToday = true;
-                let newStreak = enrollment.currentStreak;
-
-                const yesterday = new Date(now);
-                yesterday.setDate(now.getDate() - 1);
-
-                if (
-                  lastUpdate &&
-                  lastUpdate.toDateString() === yesterday.toDateString()
-                ) {
-                  newStreak++;
-                } else {
-                  newStreak = 1;
-                }
-
-                await tx.challengeEnrollment.update({
-                  where: { id: enrollmentId },
-                  data: {
-                    currentStreak: newStreak,
-                    longestStreak: Math.max(
-                      enrollment.longestStreak,
-                      newStreak
-                    ),
-                    lastStreakUpdate: now,
-                  },
-                });
-              }
-            }
-          }
-        }
-      },
-      {
-        // ✅ THE FIX: Add a timeout for Vercel's network latency
-        maxWait: 10000,
-        timeout: 20000,
+      if (!taskToUpdate) {
+        throw new Error(
+          "Task not found or you do not have permission to update it."
+        );
       }
-    ); // --- End of Transaction ---
+
+      const { enrollment } = taskToUpdate;
+      const { challenge } = enrollment;
+
+      if (challenge.status !== "ACTIVE") {
+        throw new Error(
+          "This challenge is not active. Tasks can only be updated for active challenges."
+        );
+      }
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+
+      const lastUpdate = enrollment.lastStreakUpdate
+        ? new Date(enrollment.lastStreakUpdate)
+        : null;
+      const lastUpdateDate = lastUpdate
+        ? new Date(
+            lastUpdate.getFullYear(),
+            lastUpdate.getMonth(),
+            lastUpdate.getDate()
+          )
+        : null;
+
+      if (
+        enrollment.currentStreak > 0 &&
+        lastUpdateDate &&
+        lastUpdateDate < yesterday
+      ) {
+        if (challenge.penalty > 0) {
+          await deductJp(
+            enrollment.user,
+            ActivityType.CHALLENGE_PENALTY,
+            tx,
+            { amount: challenge.penalty }
+          );
+        }
+
+        await tx.challengeEnrollment.update({
+          where: { id: enrollment.id },
+          data: { currentStreak: 0 },
+        });
+
+        enrollment.currentStreak = 0;
+      }
+
+      await tx.userChallengeTask.update({
+        where: { id: userChallengeTaskId },
+        data: {
+          isCompleted,
+          lastCompletedAt: isCompleted ? new Date() : undefined,
+        },
+      });
+
+      if (isCompleted) {
+        const allTasks = await tx.userChallengeTask.findMany({
+          where: { enrollmentId: enrollment.id },
+        });
+
+        const allTasksCompleted = allTasks.every((task) => task.isCompleted);
+
+        if (allTasksCompleted) {
+          allTasksWereCompletedToday = true;
+          let newStreak = enrollment.currentStreak;
+
+          if (
+            lastUpdateDate &&
+            lastUpdateDate.getTime() === yesterday.getTime()
+          ) {
+            newStreak++;
+          } else {
+            newStreak = 1;
+          }
+
+          const dataToUpdate: EnrollmentUpdateData = {
+            currentStreak: newStreak,
+            longestStreak: Math.max(enrollment.longestStreak, newStreak),
+            lastStreakUpdate: now,
+          };
+
+          const durationMs =
+            challenge.endDate.getTime() - challenge.startDate.getTime();
+          const challengeDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+
+          if (newStreak === challengeDays && challenge.reward > 0) {
+            await assignJp(
+              enrollment.user,
+              ActivityType.CHALLENGE_REWARD,
+              tx,
+              { amount: challenge.reward }
+            );
+            dataToUpdate.status = "COMPLETED";
+          }
+
+          await tx.challengeEnrollment.update({
+            where: { id: enrollment.id },
+            data: dataToUpdate,
+          });
+        }
+      }
+    });
 
     return NextResponse.json({
       message: "Task updated successfully.",
@@ -150,9 +175,13 @@ export async function PATCH(request: NextRequest, context: any) {
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Failed to update task:", errorMessage);
 
-    if (errorMessage.includes("This challenge is not active")) {
+    if (
+      errorMessage.includes("not active") ||
+      errorMessage.includes("Insufficient JP balance")
+    ) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
+
     return NextResponse.json(
       { error: "An internal server error occurred." },
       { status: 500 }
