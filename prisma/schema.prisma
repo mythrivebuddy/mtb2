@@ -589,6 +589,9 @@ enum ActivityType {
   // new 
   CHALLENGE_JOINING_FEE
   CHALLENGE_FEE_EARNED
+
+  // sumiran new 
+  CHALLENGE_PENALTY 
 }
 
 enum TransactionType {
