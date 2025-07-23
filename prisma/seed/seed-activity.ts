@@ -187,6 +187,11 @@ async function main() {
       jpAmount: 0, // The actual amount is dynamic, based on the challenge cost
       transactionType: TransactionType.CREDIT,
     },
+    {
+      activity: ActivityType.CHALLENGE_PENALTY,
+      jpAmount: 0,
+      transactionType: TransactionType.DEBIT
+    },
   ];
 
   for (const activity of activities) {
