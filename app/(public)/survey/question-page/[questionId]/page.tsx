@@ -1,3 +1,5 @@
+// src/app/survey/question-page/[questionId]/page.tsx
+
 "use client";
 
 import AppLayout from "@/components/layout/AppLayout";
@@ -13,7 +15,7 @@ export default function QuestionPage() {
   const router = useRouter();
   const params = useParams();
   const questionId = params.questionId as string;
-  // const index = parseInt(questionId)
+
   const [allowed, setAllowed] = useState(false);
   const [checked, setChecked] = useState(false);
 
@@ -24,19 +26,15 @@ export default function QuestionPage() {
 
       try {
         const response = await axios.post("/api/survey/validate-survey-access", { userId });
-
         if (response.data.success) {
           setAllowed(true);
         } else {
-          const remainingMs = response.data.remainingMs || 0;
-          const minutesLeft = Math.ceil(remainingMs / 60000);
-          const hours = Math.floor(minutesLeft / 60);
-          const minutes = minutesLeft % 60;
-            await axios.post("/api/survey/update-last-survey-time", { userId });
-          toast.error(`Please wait ${hours}h ${minutes}m before continuing the survey.`);
-          router.push("/survey");
+          // This block should NOT exist. The API already denied access.
+          // Don't show a success-based error message here.
+          // Let the catch block handle the error toast.
         }
       } catch (err) {
+        // The validation API returns a 403 status on cooldown, so we handle it here.
         const error = err as AxiosError<{ remainingMs?: number }>;
         const remainingMs = error.response?.data?.remainingMs ?? 0;
         const minutesLeft = Math.ceil(remainingMs / 60000);
@@ -44,6 +42,10 @@ export default function QuestionPage() {
         const minutes = minutesLeft % 60;
 
         toast.error(`Please wait ${hours}h ${minutes}m before continuing the survey.`);
+        
+        // ❌ REMOVE THIS LINE. Do not update the time when access is denied.
+        // await axios.post("/api/survey/update-last-survey-time", { userId });
+
         router.push("/survey");
       } finally {
         setChecked(true);
@@ -55,7 +57,7 @@ export default function QuestionPage() {
     }
   }, [status, session, router]);
 
-  if (!checked || !allowed) return null;
+  if (!checked || !allowed) return null; // Or show a loading spinner
 
   return (
     <AppLayout>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // 👈 1. Import useCallback
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Clock } from "lucide-react";
 
 interface Topic {
   title: string;
@@ -38,16 +39,15 @@ export default function FirstTimeSurvey() {
 
   const [canStart, setCanStart] = useState(true);
   const [cooldownMessage, setCooldownMessage] = useState("");
+  const [showCooldownModal, setShowCooldownModal] = useState(false);
 
   useEffect(() => {
     const checkCooldown = async () => {
       if (!userId) return;
 
       try {
-        const { data } = await axios.post("/api/survey/validate-survey-access", { userId });
-        if (data.success) {
-          setCanStart(true);
-        }
+        await axios.post("/api/survey/validate-survey-access", { userId });
+        setCanStart(true);
       } catch (err) {
         const error = err as AxiosError<ValidateErrorData>;
         const remainingMs = error.response?.data?.remainingMs || 0;
@@ -61,44 +61,35 @@ export default function FirstTimeSurvey() {
     };
 
     checkCooldown();
+    // 👇 2. The dependency array should ONLY include values the effect actually uses.
   }, [userId]);
 
-  const handleStartSurvey = async () => {
+  // 👇 3. Wrap the function in useCallback and list its own dependencies
+  const handleStartSurvey = useCallback(async () => {
+
+    console.log("hello check first time survey ");
+    
     if (!userId) return;
 
-    try {
-      if (user?.isFirstTimeSurvey === true) {
-        const { data } = await axios.post("/api/survey/mark-is-first-survey", { userId });
-        if (!data.success) {
-          toast("Could not mark first-time survey status.");
-          return;
+    if (canStart) {
+      try {
+        if (user?.isFirstTimeSurvey === true) {
+          const { data } = await axios.post("/api/survey/mark-is-first-survey", { userId });
+          if (!data.success) {
+            toast.error("Could not update survey status.");
+            return;
+          }
+          await update();
         }
-      }
-
-      // ✅ Update last survey time
-      // const { data: updateData } = await axios.post("/api/survey/update-last-survey-time", { userId });
-      // if (!updateData.success) {
-      //   toast("There was a problem starting the survey. Please try again.");
-      //   return;
-      // }
-
-      await update();
-      router.push("/survey/question-page/1");
-    } catch (err) {
-      const error = err as AxiosError<ValidateErrorData>;
-      if (error.response?.status === 403) {
-        const remainingMs = error.response?.data?.remainingMs || 0;
-        const minutesLeft = Math.ceil(remainingMs / 60000);
-        const hours = Math.floor(minutesLeft / 60);
-        const minutes = minutesLeft % 60;
-
-        toast.error(`Please wait ${hours}h ${minutes}m before starting a new survey.`);
-      } else {
-        toast.error("Unexpected error occurred. Please try again.");
+        router.push("/survey/question-page/1");
+      } catch (err) {
+        toast.error("An unexpected error occurred. Please try again.");
         console.error("Survey start error:", err);
       }
+    } else {
+      setShowCooldownModal(true);
     }
-  };
+  }, [canStart, userId, user, router, update]); // Dependencies of handleStartSurvey
 
   return (
     <div className="min-h-screen bg-white py-24 px-6 md:px-12 max-w-7xl mx-auto">
@@ -144,12 +135,36 @@ export default function FirstTimeSurvey() {
         <Button
           onClick={handleStartSurvey}
           size="lg"
-          title={!canStart ? cooldownMessage : ""}
           className="flex items-center justify-center px-6 rounded-full text-lg bg-blue-600 hover:bg-blue-700 text-white"
         >
           {user?.isFirstTimeSurvey ? "Start survey" : "Continue where you left off"}
         </Button>
       </div>
+
+      {showCooldownModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-xl shadow-xl p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
+              <Clock className="h-6 w-6 text-blue-600" />
+            </div>
+            <h3 className="mt-4 text-xl font-semibold text-gray-900">
+              Session Cooldown
+            </h3>
+            <p className="mt-2 text-gray-600">
+              To ensure thoughtful responses, we have a waiting period between survey sessions.
+            </p>
+            <p className="mt-4 text-lg font-medium text-blue-700">
+              {cooldownMessage}
+            </p>
+            <Button
+              onClick={() => setShowCooldownModal(false)}
+              className="mt-6 w-full rounded-full bg-blue-600 hover:bg-blue-700"
+            >
+              Got it
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
