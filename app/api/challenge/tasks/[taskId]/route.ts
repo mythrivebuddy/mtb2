@@ -15,12 +15,13 @@ type EnrollmentUpdateData = {
 };
 
 // This function handles PATCH requests to update a specific task's completion status.
-// e.g., PATCH /api/challenges/tasks/some-task-id
+// The second argument is destructured directly to get params. This is the correct, type-safe pattern.
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { taskId: string } } // <-- CORRECTED: Destructure params directly
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
-  const userChallengeTaskId = params.taskId; // <-- CORRECTED: Access taskId from params
+  // const userChallengeTaskId = params.taskId;
+  const userChallengeTaskId = (await params).taskId;
 
   try {
     const session = await checkRole("USER");
