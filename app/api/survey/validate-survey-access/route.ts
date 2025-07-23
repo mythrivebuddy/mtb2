@@ -1,41 +1,42 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-export const POST = async (request: NextRequest) => {
+const COOLDOWN_MINUTES = 15;
+
+export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = await request.json();
+    const { userId } = await req.json();
+
     if (!userId) {
-      return NextResponse.json({ error: "User ID required" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Missing userId" }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { lastSurveyTime: true },
-    });
+    const user = await prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
     }
 
-    const now = Date.now();
-    const last = user.lastSurveyTime?.getTime() ?? 0;
-    const cooldownMs = 15* 60 * 1000;
+    const { lastSurveyTime } = user;
 
-    if (now - last < cooldownMs) {
-      const remaining = cooldownMs - (now - last);
-      return NextResponse.json({
-        success: false,
-        message: `Cooldown not expired`,
-        remainingMs: remaining,
-      }, { status: 403 });
+    // ✅ Allow if no previous survey
+    if (!lastSurveyTime) {
+      return NextResponse.json({ success: true }, { status: 200 });
+    }
+
+    const now = new Date();
+    const nextAllowedTime = new Date(lastSurveyTime.getTime() + COOLDOWN_MINUTES * 60000);
+
+    if (now < nextAllowedTime) {
+      const remainingMs = nextAllowedTime.getTime() - now.getTime();
+      return NextResponse.json(
+        { success: false, remainingMs },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
-
-  } catch (error) {
-    return NextResponse.json(
-      { error: `Server error validating access: ${error}` },
-      { status: 500 }
-    );
+  } catch (error:unknown) {
+    return NextResponse.json({ success: false, error: `Internal Server Error ${error}` }, { status: 500 });
   }
 };
