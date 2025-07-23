@@ -272,9 +272,18 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   items     Item[]
-  
+  questions Question[]
 }
 
+model Question {
+  id          String   @id @default(cuid())
+  name        String
+  options     String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+}
 
 model Order {
   id          String      @id @default(cuid())

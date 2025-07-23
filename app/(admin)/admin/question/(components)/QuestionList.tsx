@@ -1,8 +1,12 @@
 "use client";
-import type { Question, Category } from "@prisma/client";
+import type { Category } from "@/types/types";
+// Import Question from the correct module where it is defined
+// Update the import path below to the correct relative path where Question is defined
+// import type { QuestionWithCategory } from "@/types/types";
+import { Question } from "@prisma/client";
 
 // The question object from the server will include the category
-type QuestionWithCategory = Question & { category: Category };
+type QuestionWithCategory = Question & { category: Category; options: string[]; questionText: string };
 
 export function QuestionList({ questions }: { questions: QuestionWithCategory[] }) {
     const handleDelete = async (id: string) => {
@@ -25,7 +29,7 @@ export function QuestionList({ questions }: { questions: QuestionWithCategory[] 
                 {questions.length > 0 ? (
                     questions.map((q) => (
                         <div key={q.id} className="p-4 border rounded-md bg-gray-50">
-                            <p className="font-semibold text-gray-800">{q.text}</p>
+                            <p className="font-semibold text-gray-800">{q.questionText}</p>
                             <p className="text-sm text-gray-500 my-1">
                                 Category: <span className="font-medium">{q.category.name}</span>
                             </p>
@@ -49,7 +53,7 @@ export function QuestionList({ questions }: { questions: QuestionWithCategory[] 
                 ) : (
                     <p className="text-gray-500 text-center py-4">No questions found. Add one to get started!</p>
                 )}
-            </ul>
+            </div>
         </div>
     );
 }

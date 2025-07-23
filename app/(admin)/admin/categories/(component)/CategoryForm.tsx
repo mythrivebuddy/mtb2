@@ -1,12 +1,14 @@
 "use client";
 
 import { useForm, SubmitHandler } from "react-hook-form";
+import { useRouter } from "next/navigation"; // 1. Import useRouter
 
 type Inputs = {
   name: string;
 };
 
 export function CategoryForm() {
+  const router = useRouter(); // 2. Initialize the router
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
@@ -18,7 +20,10 @@ export function CategoryForm() {
         });
         alert(`Category "${data.name}" was added successfully!`);
         reset();
-        window.location.reload(); // Reloads the page to show the new category in the list
+        
+        // 3. Replace window.location.reload() with router.refresh()
+        router.refresh(); 
+        
     } catch (error) {
         alert("Failed to add the category. Please try again.");
         console.error("Error adding category:", error);

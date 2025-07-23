@@ -1,5 +1,8 @@
-
 "use client";
+
+import Image from "next/image";
+
+
 
 import { ColumnDef } from "@tanstack/react-table";
 import { LeaderboardUser } from "@/types/client/leaderboard";
@@ -40,9 +43,11 @@ export const getLeaderboardColumns = (
           className={`flex items-center relative gap-3`}
         >
           {user.image ? (
-            <img
+            <Image
               src={user.image}
               alt={user.name}
+              width={40}
+              height={40}
               className="w-10 h-10 rounded object-cover"
               referrerPolicy="no-referrer"
             />

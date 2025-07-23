@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils/tw";
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
 import { NavItemProps } from "@/types/client/nav";
-import { ExcelImport } from "./ExcelImport"; // This component needs to be created in the same folder
 
 const NavItem = ({ href, label, badge }: NavItemProps) => {
   const pathname = usePathname();
@@ -95,9 +94,8 @@ const Sidebar = () => {
               <NavItem href="/admin/dashboard" label="Dashboard" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
-              {/* === ADDED NEW ITEMS HERE === */}
-              <NavItem href="/admin/categories" label="Category Management" />
-              <NavItem href="/admin/questions" label="Question Management" />
+              {/* === REPLACED WITH SURVEY MANAGEMENT === */}
+              <NavItem href="/admin/survey-management" label="Survey Management" />
               {/* ============================ */}
               <NavItem href="/admin/spotlight" label="Spotlight Management" />
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
@@ -112,13 +110,7 @@ const Sidebar = () => {
             </NavSection>
           </div>
 
-          {/* === ADDED IMPORT SECTION HERE === */}
-          <div className="px-4 mt-auto pb-4">
-             <NavSection title="Data Import">
-                <ExcelImport />
-             </NavSection>
-          </div>
-          {/* =============================== */}
+          
         </div>
       </aside>
     </>
