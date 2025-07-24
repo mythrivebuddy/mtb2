@@ -14,7 +14,7 @@ export default async function QuestionsPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  console.log("hello")
+console.log("Fetched questions:");
 
   const questions = questionsRaw.map(q => ({
     ...q,
