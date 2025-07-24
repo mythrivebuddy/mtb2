@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { QuestionForm } from "./(components)/QuestionForm";
 import { QuestionList } from "./(components)/QuestionList";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";                                                        
+ 
 
-// Use Prisma's type for strict typing
 type QuestionWithRelations = Prisma.QuestionGetPayload<{
   include: { category: true }
 }>;
