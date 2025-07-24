@@ -14,6 +14,8 @@ export default async function QuestionsPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  console.log("hello")
+
   const questions = questionsRaw.map(q => ({
     ...q,
     questionText: q.name, // Use 'name' as the question text
