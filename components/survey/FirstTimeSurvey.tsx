@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+
+
 import { useEffect, useState, useCallback } from "react"; // 👈 1. Import useCallback
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -118,9 +121,11 @@ export default function FirstTimeSurvey() {
           <Card key={index} className="flex flex-col bg-gray-50 shadow-sm hover:shadow-md transition-all">
             <CardContent className="p-4 flex flex-col gap-2">
               <div className="w-full h-48">
-                <img
+                <Image
                   src={topic.image}
                   alt={topic.title}
+                  width={192}
+                  height={192}
                   className="w-full h-full rounded-md object-cover"
                 />
               </div>
