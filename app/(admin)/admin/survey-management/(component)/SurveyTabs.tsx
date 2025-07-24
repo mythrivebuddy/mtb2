@@ -13,7 +13,7 @@ type Tab = "categories" | "questions" | "import";
 
 export function SurveyTabs({ categories, questions }: { categories: CategoryWithQuestions[], questions: QuestionWithCategory[] }) {
   const [activeTab, setActiveTab] = useState<Tab>("categories");
-
+ 
   // Use SWR to fetch questions for instant UI update
   const { data: swrQuestions, mutate } = useSWR("/api/survey/question/list", fetcher, {
     fallbackData: questions
