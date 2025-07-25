@@ -97,7 +97,7 @@ export async function POST(request: Request) {
 
     // 6. "Fire-and-Forget" the background job
     fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/challenge/process-enrollment`,
+      `${process.env.NEXT_PUBLIC_TEST_URL}/api/challenge/process-enrollment`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
