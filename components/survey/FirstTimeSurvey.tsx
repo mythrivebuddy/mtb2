@@ -91,7 +91,9 @@ export default function FirstTimeSurvey() {
       try {
         
           const { data } = await axios.post("/api/survey/mark-is-first-survey", { userId });
-          await update();
+         if (data.success) {
+           await update();
+         }
             // router.refresh();
           if (!data.success) {
             toast("Could not update survey status.");
