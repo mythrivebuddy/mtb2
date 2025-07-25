@@ -1,17 +1,25 @@
+// File: app/api/challenge/enroll/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkRole } from "@/lib/utils/auth";
+import { getServerSession } from "next-auth"; // 1. Import getServerSession
+import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config"; // 2. Import your authConfig
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate the user
-    const session = await checkRole("USER");
+    // 3. Authenticate the user safely
+    // This will get the session if it exists, or return null if not. It will NOT throw an error.
+    const session = await getServerSession(authConfig);
+
     if (!session?.user?.id) {
+      // This check now works correctly to protect the route.
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const joinerId = session.user.id;
+
+    // --- The rest of your code remains exactly the same, as it is well-written ---
 
     // 2. Get challengeId from the request body
     const { challengeId } = await request.json();
@@ -82,9 +90,8 @@ export async function POST(request: Request) {
           },
         });
       },
-      // ✅ THE FIX: Add this options object to increase the timeout
       {
-        timeout: 15000, // Set timeout to 15 seconds (15000 ms)
+        timeout: 15000,
       }
     );
 

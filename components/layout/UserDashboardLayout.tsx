@@ -22,7 +22,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     '/dashboard/challenge/create-challenge',
     '/dashboard/challenge/join-challenge',
     '/dashboard/challenge/let-others-roll',
-    '/dashboard/challenge/upcoming-challenges'
+
   ];
 
   // Check karo ki kya current path kisi private prefix se start hota hai.

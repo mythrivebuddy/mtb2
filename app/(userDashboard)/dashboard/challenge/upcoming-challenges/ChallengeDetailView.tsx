@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react"; // --- NEW ---
 import axios from "axios";
-import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert } from "lucide-react";
+import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert, X } from "lucide-react"; // --- NEW ---
 import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
 // Define the shape of the props this component expects
@@ -36,11 +37,13 @@ const getChallengeDuration = (startDateString: string | Date, endDateString: str
 
 export default function ChallengeDetailView({ challenge, initialEnrollment }: ChallengeDetailViewProps) {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession(); // --- NEW ---
   const [enrollment, setEnrollment] = useState(initialEnrollment);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // --- NEW ---
 
   useEffect(() => {
     if (enrollment && enrollment.userTasks.length === 0) {
@@ -82,6 +85,17 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
       setError(errorMessage);
     } finally {
       setIsEnrolling(false);
+    }
+  };
+  
+  // --- NEW ---
+  const handleJoinClick = () => {
+    if (sessionStatus === 'loading') return;
+
+    if (sessionStatus === 'authenticated') {
+      handleEnroll();
+    } else {
+      setIsAuthModalOpen(true);
     }
   };
 
@@ -200,7 +214,8 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
                   );
                 }
                 return (
-                  <button onClick={handleEnroll} disabled={isEnrolling} className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
+                  // --- UPDATED ---
+                  <button onClick={handleJoinClick} disabled={isEnrolling || sessionStatus === 'loading'} className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
                     {isEnrolling ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Enrolling...</>) : ("Join Challenge")}
                   </button>
                 );
@@ -209,7 +224,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
           </div>
         </div>
       </div>
-      {/* Enrollment Success Modal */}
+      {/* Enrollment Success Modal (Original) */}
       {isEnrollSuccessModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
@@ -217,6 +232,22 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
             <h2 className="text-2xl font-bold text-slate-800 mb-2">Successfully Joined!</h2>
             <p className="text-slate-500 mb-6">You are now enrolled in the &quot;{challenge.title}&quot; challenge. Good luck!</p>
             <button onClick={handleCloseModalAndRedirect} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all">View My Challenges</button>
+          </div>
+        </div>
+      )}
+      {/* --- NEW --- */}
+      {isAuthModalOpen && (
+        <div onClick={() => setIsAuthModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+          <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+              <X size={24} />
+            </button>
+            <h2 className="text-center text-2xl font-bold text-slate-800 mb-2">Please Login to Continue</h2>
+            <p className="text-center text-slate-500 mb-6">You need an account to join this challenge.</p>
+            <div className="flex flex-col space-y-4">
+              <button onClick={() => router.push('/signin')} className="w-full rounded-lg bg-indigo-600 py-3 text-base font-semibold text-white shadow-md hover:bg-indigo-700">Login</button>
+              <button onClick={() => router.push('/signup')} className="w-full rounded-lg bg-gray-200 py-3 text-base font-semibold text-slate-800 shadow-md hover:bg-gray-300">Create an Account</button>
+            </div>
           </div>
         </div>
       )}
