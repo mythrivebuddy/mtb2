@@ -99,11 +99,18 @@ export default function SurveyLandingPage() {
           </ul>
 
           <Button
-            onClick={handleStartSurvey}
+            // onClick={handleStartSurvey}
             className="w-full sm:w-fit h-fit px-6 py-2 sm:py-4 bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm rounded-full shadow-sm text-left whitespace-normal break-words"
           >
             Start Answering Now — (It’s free, takes 2 minutes to begin)
           </Button>
+          <Button
+              onClick={handleStartSurvey}
+              className="w-full sm:w-fit px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
+            >
+              Start the Survey
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
 
           <Card>
             <CardContent className="space-y-4 pt-6">
@@ -224,13 +231,7 @@ export default function SurveyLandingPage() {
               Start answering now. Be one of the first 10,000 solopreneurs to
               shape the future of how we work, sell, and thrive.
             </p>
-            <Button
-              onClick={handleStartSurvey}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full"
-            >
-              Start the Survey
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            
           </div>
 
           <div className="text-sm text-gray-500 mt-6">
