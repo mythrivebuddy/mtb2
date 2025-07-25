@@ -28,5 +28,7 @@ export const activityDisplayMap: Record<string, string> = {
 
   // new SUMIRAN BHAWSAR
   CHALLENGE_JOINING_FEE: "Challenge Joining",
-  CHALLENGE_FEE_EARNED: "Someone is join your challenge"
+  CHALLENGE_FEE_EARNED: "Someone is join your challenge",
+  CHALLENGE_PENALTY: "The task is not completed, a penalty has been deducted.",
+  CHALLENGE_REWARD: "You have completed the entire challenge."
 };

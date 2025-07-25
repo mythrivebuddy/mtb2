@@ -9,48 +9,46 @@ datasource db {
 }
 
 model User {
-  id                            String               @id @default(uuid())
-  email                         String               @unique
+  id                            String                @id @default(uuid())
+  email                         String                @unique
   password                      String?
   name                          String
-  createdAt                     DateTime             @default(now())
-  updatedAt                     DateTime             @updatedAt
+  createdAt                     DateTime              @default(now())
+  updatedAt                     DateTime              @updatedAt
   role                          Role
   image                         String?
-  jpEarned                      Int                  @default(0)
-  jpSpent                       Int                  @default(0)
-  authMethod                    AuthMethod           @default(CREDENTIALS)
+  jpEarned                      Int                   @default(0)
+  jpSpent                       Int                   @default(0)
+  authMethod                    AuthMethod            @default(CREDENTIALS)
   planEnd                       DateTime?
   planId                        String?
   planStart                     DateTime?
-  jpBalance                     Int                  @default(0)
-  jpTransaction                 Int                  @default(0)
-  isBlocked                     Boolean?             @default(false)
+  jpBalance                     Int                   @default(0)
+  jpTransaction                 Int                   @default(0)
+  isBlocked                     Boolean?              @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
-  isEmailVerified               Boolean              @default(false)
+  isEmailVerified               Boolean               @default(false)
   achievements                  String?
   goals                         String?
   keyOfferings                  String?
-  referralCode                  String?              @unique
+  referralCode                  String?               @unique
   referredById                  String?
   socialHandles                 Json?
   website                       String?
-  membership                    String               @default("FREE")
+  membership                    String                @default("FREE")
   subscriptionEnd               DateTime?
-  subscriptionId                String?              @unique
+  subscriptionId                String?               @unique
   subscriptionStart             DateTime?
   subscriptionStatus            String?
   bio                           String?
-  isOnline                      Boolean?             @default(false)
-  isFirstTimeSurvey             Boolean?             @default(true)
+  isOnline                      Boolean?              @default(false)
+  isFirstTimeSurvey             Boolean?              @default(true)
+  lastSurveyTime                DateTime?
   alignedActions                AlignedAction[]
-
   blockedUsers                  BlockedUsers[]
-
-
-  buddyLensRequests             BuddyLensRequest[]   @relation("BuddyLensRequests")
-  BuddyLensReviewer             BuddyLensRequest[]   @relation("BuddyLensReviewer")
+  buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
+  BuddyLensReviewer             BuddyLensRequest[]    @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
   cart                          Cart[]
   invoice                       Invoice[]
@@ -62,30 +60,25 @@ model User {
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
-  referralsReceived             Referral[]           @relation("Referred")
-  referralsMade                 Referral[]           @relation("Referrer")
+  referralsReceived             Referral[]            @relation("Referred")
+  referralsMade                 Referral[]            @relation("Referrer")
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
-
-  todos                          Todo[] 
-  createdChallenges Challenge[]  @relation("CreatedChallenges")
-  enrollments       ChallengeEnrollment[]
-
+  todos                         Todo[]
   transaction                   Transaction[]
-  plan                          Plan?                @relation(fields: [planId], references: [id])
-  referredBy                    User?                @relation("UserReferrer", fields: [referredById], references: [id])
-  referrals                     User[]               @relation("UserReferrer")
-
+  plan                          Plan?                 @relation(fields: [planId], references: [id])
+  referredBy                    User?                 @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals                     User[]                @relation("UserReferrer")
   userBusinessProfile           UserBusinessProfile[]
-
-  userNotifications             UserNotification[]   @relation("UserNotifications")
+  userNotifications             UserNotification[]    @relation("UserNotifications")
   userStreak                    UserStreak?
   wishlists                     Wishlist[]
-  buddyLensReviews              BuddyLensRequest[]   @relation("BuddyLensReviews")
+  enrollments                   ChallengeEnrollment[]
+  createdChallenges             Challenge[]           @relation("CreatedChallenges")
+  buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
 
   @@index([name])
-  
 }
 
 model Transaction {
@@ -266,11 +259,22 @@ model Item {
 }
 
 model Category {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   items     Item[]
+  questions Question[]
+}
+
+model Question {
+  id         String   @id @default(cuid())
+  name       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  categoryId String
+  options    String[]
+  category   Category @relation(fields: [categoryId], references: [id])
 }
 
 model Order {
@@ -538,6 +542,67 @@ model Todo {
   @@index([userId])
 }
 
+model Challenge {
+  id            String                @id @default(cuid())
+  slug          String
+  title         String
+  description   String?
+  mode          ChallengeMode         @default(PUBLIC)
+  cost          Float                 @default(0)
+  reward        Float                 @default(0)
+  penalty       Float                 @default(0)
+  startDate     DateTime
+  endDate       DateTime
+  status        ChallengeStatus       @default(UPCOMING)
+  createdAt     DateTime              @default(now())
+  creatorId     String
+  enrollments   ChallengeEnrollment[]
+  templateTasks ChallengeTask[]
+  creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@map("challenges")
+}
+
+model ChallengeTask {
+  id                String              @id @default(cuid())
+  description       String
+  challengeId       String
+  challenge         Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userTaskInstances UserChallengeTask[]
+
+  @@map("challenge_tasks")
+}
+
+model UserChallengeTask {
+  id              String              @id @default(cuid())
+  description     String
+  isCompleted     Boolean             @default(false)
+  enrollmentId    String
+  templateTaskId  String
+  lastCompletedAt DateTime?           @map("last_completed_at")
+  enrollment      ChallengeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  templateTask    ChallengeTask       @relation(fields: [templateTaskId], references: [id], onDelete: Cascade)
+
+  @@map("user_challenge_tasks")
+}
+
+model ChallengeEnrollment {
+  id               String              @id @default(cuid())
+  joinedAt         DateTime            @default(now())
+  status           EnrollmentStatus    @default(IN_PROGRESS)
+  userId           String
+  challengeId      String
+  currentStreak    Int                 @default(0)
+  longestStreak    Int                 @default(0)
+  lastStreakUpdate DateTime?           @map("last_streak_update")
+  challenge        Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userTasks        UserChallengeTask[]
+
+  @@unique([userId, challengeId])
+  @@map("challenge_enrollments")
+}
+
 enum Role {
   ADMIN
   USER
@@ -582,12 +647,11 @@ enum ActivityType {
   BUDDY_LENS_REVIEW
   DAILY_BLOOM_CREATION_REWARD
   DAILY_BLOOM_COMPLETION_REWARD
-
-  // add challenge creation fee activity  
   CHALLENGE_CREATION_FEE
-  // new 
   CHALLENGE_JOINING_FEE
   CHALLENGE_FEE_EARNED
+  CHALLENGE_PENALTY
+  CHALLENGE_REWARD
 }
 
 enum TransactionType {
@@ -646,8 +710,6 @@ enum NotificationType {
   BUDDY_LENS_REJECTED
   BUDDY_LENS_REVIEWED
   BUDDY_LENS_COMPLETED
-
-    // sumiran 
   JP_SPEND
 }
 
@@ -667,7 +729,6 @@ enum Frequency {
   Monthly
 }
 
-
 enum ChallengeMode {
   PUBLIC
   PERSONAL
@@ -677,95 +738,10 @@ enum ChallengeStatus {
   UPCOMING
   ACTIVE
   COMPLETED
-  
 }
 
 enum EnrollmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
-}
-
-
-
-model Challenge {
-  id              String          @id @default(cuid())
-  slug            String          
-  title           String
-  description     String?
-  mode            ChallengeMode   @default(PUBLIC)
-  cost            Float           @default(0)
-  reward          Float           @default(0)
-  penalty         Float           @default(0)
-  startDate       DateTime
-  endDate         DateTime
-  status          ChallengeStatus @default(UPCOMING)
-  createdAt       DateTime        @default(now())
-
-  creatorId       String
-  creator         User            @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
-
-  // These are the "template" tasks for the challenge.
-  templateTasks   ChallengeTask[]
-  enrollments     ChallengeEnrollment[]
-
-  @@map("challenges")
-}
-
-// This model acts as a TEMPLATE for tasks in a challenge.
-// It is NOT the user's individual task.
-model ChallengeTask {
-  id            String    @id @default(cuid())
-  description   String
-
-  challengeId   String
-  challenge     Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-
-  // Relation to all the individual user task instances created from this template
-  userTaskInstances UserChallengeTask[]
-
-  @@map("challenge_tasks")
-}
-
-// This is the new model representing an INDIVIDUAL user's copy of a task.
-model UserChallengeTask {
-  id            String   @id @default(cuid())
-  description   String   // Copied from the ChallengeTask template for convenience
-
-  // The boolean flag to track completion for this specific user's task.
-  isCompleted   Boolean  @default(false)
-  lastCompletedAt DateTime? @map("last_completed_at")
-
-  // Link to the user's overall enrollment in the challenge.
-  enrollmentId  String
-  enrollment    ChallengeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-
-  // Link back to the original template task.
-  templateTaskId String
-  templateTask   ChallengeTask @relation(fields: [templateTaskId], references: [id], onDelete: Cascade)
-
-  @@map("user_challenge_tasks")
-}
-
-
-model ChallengeEnrollment {
-  id          String            @id @default(cuid())
-  joinedAt    DateTime          @default(now())
-  status      EnrollmentStatus  @default(IN_PROGRESS)
-  currentStreak  Int               @default(0)
-  longestStreak  Int               @default(0)
-  lastStreakUpdate DateTime? @map("last_streak_update")
-
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  challengeId String
-  challenge   Challenge         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-
-  // Each enrollment now has its own list of individual tasks.
-  // Your application logic must create these when a user enrolls.
-  userTasks   UserChallengeTask[]
-
-  @@unique([userId, challengeId])
-  @@map("challenge_enrollments")
 }

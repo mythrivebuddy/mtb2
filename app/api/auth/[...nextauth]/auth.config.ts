@@ -34,12 +34,9 @@ export const authConfig: AuthOptions = {
             include: {
               plan: true, // For JP assignment later
               blockedUsers: true, // To retrieve block details if needed
-              
             },
-    
           });
-            
-            
+
           if (!user) {
             throw new Error("No user found");
           }
@@ -95,7 +92,8 @@ export const authConfig: AuthOptions = {
             email: user.email,
             role: user.role,
             rememberMe: credentials.rememberMe === "true", // Convert checkbox value to boolean
-            isFirstTimeSurvey:user.isFirstTimeSurvey  ?? false
+            isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
+            lastSurveyTime: user.lastSurveyTime ?? null,
           };
         } catch (error) {
           console.log("error", error);
@@ -130,11 +128,12 @@ export const authConfig: AuthOptions = {
         }
 
         if (!dbUser) {
-          const role = user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
+          const role =
+            user.email === process.env.ADMIN_EMAIL ? "ADMIN" : "USER";
 
           // Get referral code from cookies
           const cookieStore = await cookies();
-          const referralCode = cookieStore.get('referralCode')?.value;
+          const referralCode = cookieStore.get("referralCode")?.value;
           console.log("referralCode", referralCode);
           let referredById = null;
 
@@ -155,7 +154,8 @@ export const authConfig: AuthOptions = {
               image: user.image ? user.image : "",
               authMethod: AuthMethod.GOOGLE,
               isEmailVerified: true,
-              isFirstTimeSurvey:true
+              isFirstTimeSurvey: true,
+              // lastSurveyTime:null
             },
             include: {
               plan: true, //its include for jp assignment only
@@ -182,7 +182,7 @@ export const authConfig: AuthOptions = {
             }
 
             // Clear the referral cookie
-            cookieStore.delete('referralCode');
+            cookieStore.delete("referralCode");
           }
 
           // Assign signup reward
@@ -191,6 +191,7 @@ export const authConfig: AuthOptions = {
           // console.log("user created info", createdUser);
           user.role = createdUser.role;
           user.id = createdUser.id;
+          
         } else {
           if (dbUser.authMethod === AuthMethod.CREDENTIALS) {
             throw new Error(
@@ -234,7 +235,8 @@ export const authConfig: AuthOptions = {
 
         token.maxAge = user.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE;
         // Math.floor(Date.now() / 1000) +
-         token.isFirstTimeSurvey = user.isFirstTimeSurvey ?? false;
+        token.isFirstTimeSurvey = user.isFirstTimeSurvey ?? false;
+        token.lastSurveyTime = user.lastSurveyTime ?? null; // ✅ correct field name
       }
       // console.log("token", token); //?dev
       return token;
@@ -246,7 +248,8 @@ export const authConfig: AuthOptions = {
         session.user.role = token.role; // Attach role to session
         session.user.id = token.id;
         session.user.rememberMe = token.rememberMe;
-            session.user.isFirstTimeSurvey = token.isFirstTimeSurvey ?? false; 
+        session.user.isFirstTimeSurvey = token.isFirstTimeSurvey ?? false;
+        session.user.lastSurveyTime = token.lastSurveyTime ?? null;
         // session.expires = new Date(
         //   Date.now() +
         //     (token.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE) * 1000

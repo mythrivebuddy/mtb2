@@ -16,11 +16,11 @@ export default function Dashboard() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-4 mb-8">
-          <button className="px-3 py-1 bg-gray-100 rounded flex items-center">Niche <ChevronDown /></button>
-          <button className="px-3 py-1 bg-gray-100 rounded flex items-center">Revenue Bracket<ChevronDown /></button>
-          <button className="px-3 py-1 bg-gray-100 rounded flex items-center">Experience Level<ChevronDown /></button>
-          <button className="px-3 py-1 bg-gray-100 rounded flex items-center">Location<ChevronDown /></button>
+        <div className="grid grid-cols-2 md:grid-cols-4  gap-4 mb-8">
+          <button className="px-3 h-[3rem] bg-gray-200 rounded flex justify-between items-center">Niche <ChevronDown size={18}/></button>
+          <button className="px-3 h-[3rem] bg-gray-200 rounded flex justify-between items-center">Revenue Bracket<ChevronDown size={18}/></button>
+          <button className="px-1 sm:px-3 h-[3rem] bg-gray-200 rounded flex justify-between items-center">Experience Level<ChevronDown size={18}/></button>
+          <button className="px-3 h-[3rem] bg-gray-200 rounded flex justify-between items-center">Location<ChevronDown size={18}/></button>
         </div>
 
         {/* Chart Section */}

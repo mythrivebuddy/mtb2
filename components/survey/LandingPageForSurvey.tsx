@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -56,9 +57,11 @@ export default function SurveyLandingPage() {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         {/* Image */}
         <div className="w-full lg:w-1/2">
-          <img
+          <Image
             src="/surveyImage.png"
             alt="Survey Graphic"
+            width={800}
+            height={600}
             className="rounded-lg w-full object-cover"
           />
         </div>

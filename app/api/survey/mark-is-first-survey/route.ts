@@ -1,23 +1,37 @@
-import { prisma } from "@/lib/prisma";
+// /app/api/survey/mark-is-first-survey/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-export const POST = async (request: NextRequest) => {
+export const POST = async (req: NextRequest) => {
   try {
-    const { userId } = await request.json();
+    const { userId } = await req.json();
+
     if (!userId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
-    await prisma.user?.update({
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isFirstTimeSurvey: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.isFirstTimeSurvey === false) {
+      return NextResponse.json({ success: true, message: "Already marked" }, { status: 200 });
+    }
+
+    await prisma.user.update({
       where: { id: userId },
       data: { isFirstTimeSurvey: false },
     });
-    return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error: unknown) {
+
+    return NextResponse.json({ success: true, message: "Marked first survey as complete" }, { status: 200 });
+  } catch (error) {
     return NextResponse.json(
-      { error: `Error marking user first survey ${error}` },
+      { error: `Failed to update first-time survey: ${error}` },
       { status: 500 }
     );
   }

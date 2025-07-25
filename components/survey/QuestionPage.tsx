@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tag } from "lucide-react";
+import { useSession } from "next-auth/react"; // 👈 1. Import useSession
+import axios from "axios"; // 👈 2. Import axios
+import { toast } from "sonner"; // 👈 3. Import toast for user feedback
 
 const questions = [
   {
@@ -41,7 +44,6 @@ const questions = [
   },
 ];
 
-// Darker gradient styles for better white text contrast
 const darkGradients = [
   "bg-gradient-to-r from-gray-800 via-indigo-900 to-gray-900",
   "bg-gradient-to-r from-purple-900 via-violet-700 to-blue-900",
@@ -50,6 +52,7 @@ const darkGradients = [
 
 export default function QuestionPageComponent({ questionId }: { questionId: string }) {
   const router = useRouter();
+  const { data: session } = useSession(); // 👈 4. Get session data to access the user
   const index = parseInt(questionId);
   const [selectedOption, setSelectedOption] = useState("");
   const [showDialog, setShowDialog] = useState(true);
@@ -60,14 +63,32 @@ export default function QuestionPageComponent({ questionId }: { questionId: stri
     }
   }, [index]);
 
-  const handleNextQuestion = () => {
+  // 👇 5. Make the function async to handle the API call
+  const handleNextQuestion = async () => {
+    const userId = session?.user?.id;
     const nextIndex = index + 1;
+
     if (nextIndex <= questions.length) {
+      // This logic correctly handles moving between questions
       localStorage.setItem("currentQuestionIndex", nextIndex.toString());
       router.push(`/survey/thank-you-timer-page`);
     } else {
-      localStorage.removeItem("currentQuestionIndex");
-      router.push(`/survey/thank-you-session-complete-page`);
+      // ✅ This block now handles the final question submission and API call
+      if (!userId) {
+        toast.error("You must be logged in to complete the survey.");
+        return;
+      }
+      try {
+        // 🚀 Call the API to update the timestamp and start the cooldown
+        await axios.post("/api/survey/update-last-survey-time", { userId });
+
+        // On success, proceed to the completion page
+        localStorage.removeItem("currentQuestionIndex");
+        router.push(`/survey/thank-you-session-complete-page`);
+      } catch (error) {
+        toast.error("Could not complete the session. Please try again.");
+        console.error("Failed to update survey time:", error);
+      }
     }
   };
 
