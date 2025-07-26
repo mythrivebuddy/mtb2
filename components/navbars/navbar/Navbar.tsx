@@ -34,6 +34,8 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
           {session && <NavLink href="/dashboard">Dashboard</NavLink>}
+ 
+          <NavLink href="/dashboard/challenge/upcoming-challenges">Challange</NavLink>
            <NavLink href="/survey">Survey</NavLink>
           <NavLink href="/blog">Blog</NavLink>
           <NavLink href="/contact">Contact Us</NavLink>
