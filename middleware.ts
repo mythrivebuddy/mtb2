@@ -1,4 +1,5 @@
 // File: middleware.ts (in your project's root folder)
+// THIS IS THE CORRECTED VERSION
 
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
@@ -22,22 +23,12 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
 
-        // Public Route Logic
-        if (path.startsWith('/dashboard/challenge/')) {
-          const isSpecificDashboardPage =
-            path.startsWith('/dashboard/challenge/create-challenge') ||
-            path.startsWith('/dashboard/challenge/join-challenge') ||
-            path.startsWith('/dashboard/challenge/let-others-roll') ||
-            path.startsWith('/dashboard/challenge/my-challenges');
-          
-          if (!isSpecificDashboardPage) {
-            // Yeh dynamic page hai, sabke liye public access allow karo.
-            return true; 
-          }
+        // If the page is public, always allow access.
+        if (isPublicChallengePage(path)) {
+          return true;
         }
-        
-        // Protected Route Logic
-        // Baaki sabhi pages ke liye, user ka logged in hona zaroori hai.
+
+        // For all other pages, require a login.
         return !!token;
       },
     },
@@ -47,6 +38,29 @@ export default withAuth(
   }
 );
 
+/**
+ * Helper function to determine if a path is a public challenge page.
+ * This logic now perfectly matches your updated UserDashboardLayout component.
+ */
+function isPublicChallengePage(path: string): boolean {
+  // Define all private prefixes under /dashboard/challenge/
+  const privateChallengePrefixes = [
+    '/dashboard/challenge/my-challenges',
+    '/dashboard/challenge/create-challenge',
+    '/dashboard/challenge/join-challenge',
+    '/dashboard/challenge/let-others-roll',
+    // The '/upcoming-challenges' line has been REMOVED from this list
+  ];
+
+  const isMainChallengePage = path === '/dashboard/challenge';
+  const isPrivateSubPage = privateChallengePrefixes.some(prefix => path.startsWith(prefix));
+
+  // A page is public if it's under /dashboard/challenge/ and NOT in the private list.
+  return path.startsWith('/dashboard/challenge/') && !isMainChallengePage && !isPrivateSubPage;
+}
+
+
+// This config does not change.
 export const config = {
   matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*"],
 };
