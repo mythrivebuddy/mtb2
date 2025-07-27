@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ActivityType } from "@prisma/client";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
-import { List, PlusCircle, Globe, X, CloudCog } from "lucide-react";
+import { List, PlusCircle, Globe, X } from "lucide-react";
 
 export default function Page() {
   const router = useRouter();
