@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const questions = await prisma.question.findMany({
-      include: { category: true },
+      //include: { category: true },
       orderBy: { createdAt: 'desc' }
     });
     return NextResponse.json(questions);

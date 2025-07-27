@@ -42,9 +42,9 @@ export type CategoryWithQuestions = {
 
 
 // Question with parent category
-export type QuestionWithCategory = Prisma.QuestionGetPayload<{
-  include: { category: true }
-}>;
+// export type QuestionWithCategory = Prisma.QuestionGetPayload<{
+//   include: { category: true }
+// }>;
 
 // Full user (omit password)
 type FullUser = Prisma.UserGetPayload<{
