@@ -26,6 +26,8 @@ export default function Page() {
     loadFee();
   }, []);
 
+  console.log("check");
+
   // 3. --- Updated Click Handlers with Auth Check ---
 
   const handleCreateChallenge = () => {
