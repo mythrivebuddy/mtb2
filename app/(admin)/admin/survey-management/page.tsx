@@ -4,7 +4,8 @@ import { SurveyTabs } from "./(component)/SurveyTabs";
 
 // This Server Component fetches all the data needed for the child components
 export default async function SurveyManagementPage() {
-  const categories = await prisma.category.findMany({
+
+  const data = await prisma.category.findMany({
     orderBy: { name: 'asc' },
     include: { questions: true }
   });
@@ -22,7 +23,7 @@ export default async function SurveyManagementPage() {
       </p>
       
       {/* The main client component that will handle the tabbed interface */}
-      <SurveyTabs categories={categories} questions={questions} />
+      <SurveyTabs data={data} questions={questions} />
     </div>
   );
 }

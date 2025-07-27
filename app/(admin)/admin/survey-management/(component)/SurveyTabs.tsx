@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
-import { CategoryManager } from "./CategoryManager";
-import { QuestionManager } from "./QuestionManager";
-import { ImportManager } from "./ImportManager";
+import React, { useState, useEffect } from "react"; // 1. Import useEffect
+// import { CategoryManager } from "./CategoryManager";
+// import { QuestionManager } from "./QuestionManager";
+// import { ImportManager } from "./ImportManager";
 import { CategoryWithQuestions, QuestionWithCategory } from "@/types/types";
 import useSWR from "swr";
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils/tw";
 
 type Tab = "categories" | "questions" | "import";
 
-export function SurveyTabs({ categories, questions }: { categories: CategoryWithQuestions[], questions: QuestionWithCategory[] }) {
+export function SurveyTabs({ data, questions }: { data: CategoryWithQuestions[], questions: QuestionWithCategory[] }) {
   const [activeTab, setActiveTab] = useState<Tab>("categories");
  
   // Use SWR to fetch questions for instant UI update
@@ -19,17 +19,17 @@ export function SurveyTabs({ categories, questions }: { categories: CategoryWith
     fallbackData: questions
   });
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "questions":
-        return <QuestionManager questions={swrQuestions || []} categories={categories} mutateQuestions={mutate} />;
-      case "import":
-        return <ImportManager />;
-      case "categories":
-      default:
-        return <CategoryManager categories={categories} />;
-    }
-  };
+  // const renderContent = () => {
+  //   switch (activeTab) {
+  //     case "questions":
+  //       return <QuestionManager questions={swrQuestions || []} categories={categories} mutateQuestions={mutate} />;
+  //     case "import":
+  //       return <ImportManager />;
+  //     case "categories":
+  //     default:
+  //       return <CategoryManager categories={categories} />;
+  //   }
+  // };
 
   const TabButton = ({ tab, label }: { tab: Tab, label: string }) => (
     <button
@@ -53,7 +53,7 @@ export function SurveyTabs({ categories, questions }: { categories: CategoryWith
         <TabButton tab="import" label="Import from Excel" />
       </div>
       <div>
-        {renderContent()}
+        {/* {renderContent()} */}
       </div>
     </div>
   );

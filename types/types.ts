@@ -4,6 +4,7 @@ export interface Project {
   id: string;
   title: string;
   description: string;
+
   image: string;
   tags: string[];
   author: {
@@ -13,32 +14,50 @@ export interface Project {
   postedDate: string;
 }
 
-// This is your existing simple Category type, which can be used for basic UI elements.
+// Simple category
 export interface Category {
   id: string;
   name: string;
   isActive?: boolean;
 }
 
-// === ADDED NEW TYPES BASED ON PRISMA SCHEMA ===
+// === PRISMA-BASED TYPES ===
 
-// Use this type when you fetch a Category and want to include all its Questions.
-export type CategoryWithQuestions = Prisma.CategoryGetPayload<{
-  include: { questions: true }
-}>;
+export type CategoryWithQuestions = {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  image?: string; // <-- Add this line
+  questions: {
+    id: string;
+    name: string;
+    createdAt: Date;
+    updatedAt: Date;
+    options: string[];
+    categoryId: string;
+    isMultiSelect: boolean;
+  }[];
+};
 
-// Use this type when you fetch a Question and want to include its parent Category.
+
+// Question with parent category
 export type QuestionWithCategory = Prisma.QuestionGetPayload<{
   include: { category: true }
 }>;
 
-// ===============================================
-
-export type User = Prisma.UserGetPayload<{ 
-  include: { 
-    userBusinessProfile: true, 
-    spotlight: true, 
-    transaction: true 
-  }, 
-  omit: { password: true } 
+// Full user (omit password)
+type FullUser = Prisma.UserGetPayload<{
+  include: {
+    userBusinessProfile: true;
+    spotlight: true;
+    transaction: true;
+  };
 }>;
+
+export type User = Omit<FullUser, "password">;
+
+export interface LightCategory {
+  id: string;
+  name: string;
+}
