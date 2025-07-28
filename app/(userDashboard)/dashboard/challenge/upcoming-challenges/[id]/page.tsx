@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import ChallengeDetailView from "../ChallengeDetailView";
 import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
-// Define a reusable type for the enrollment object with its tasks
+
 export type EnrollmentWithTasks = ChallengeEnrollment & {
   userTasks: UserChallengeTask[];
 };
@@ -70,7 +70,7 @@ export default async function ChallengeDetailPage(props: any) {
   }
 
   const { challenge, enrollment } = data;
-
+  // changes we have to add
   // Pass the data to the view.
   // For logged-out users, enrollment will correctly be null.
   return (
