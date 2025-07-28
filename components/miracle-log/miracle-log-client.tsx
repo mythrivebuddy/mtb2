@@ -185,11 +185,10 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
                 <CardDescription>
                   Record your daily miracles and positive moments
                 </CardDescription>
-              </div>
-              <div className="flex flex-col items-end mt-2 text-sm ">
                 <div className="flex items-center gap-1 font-semibold text-orange-500 animate-pulse">
                   🔥 {streak.count === 0 ? 'Day 0' : `${streak.count} day streak`}
                 </div>
+                 <div className="flex flex-col items-end mt-2 text-sm ">
                 <div className=" text-muted-foreground mt-1 ">
                   {streak.count === 0 ? (
                     <span>Your streak is broken. Start again to build your streak!</span>
@@ -200,6 +199,8 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
                   )}
                 </div>
               </div>
+              </div>
+             
             </div>
           </CardHeader>
 
