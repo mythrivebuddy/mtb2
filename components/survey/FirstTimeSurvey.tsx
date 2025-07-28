@@ -11,6 +11,7 @@ import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface Topic {
   title: string;
@@ -38,6 +39,8 @@ export default function FirstTimeSurvey() {
   const { data: session, update } = useSession();
   const router = useRouter();
   const user = session?.user;
+  console.log("users in ",user);
+  
   const userId = user?.id;
 
   const [canStart, setCanStart] = useState(true);
@@ -67,6 +70,16 @@ export default function FirstTimeSurvey() {
     // 👇 2. The dependency array should ONLY include values the effect actually uses.
   }, [userId]);
 
+  const {data} =  useQuery({
+    queryKey: ["survey-completion-stats"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/survey/how-many-user-do-survey");
+      return data;
+    },
+  })
+  console.log(data);
+  
+
   // 👇 3. Wrap the function in useCallback and list its own dependencies
   const handleStartSurvey = useCallback(async () => {
 
@@ -76,13 +89,17 @@ export default function FirstTimeSurvey() {
 
     if (canStart) {
       try {
-        if (user?.isFirstTimeSurvey === true) {
+        
           const { data } = await axios.post("/api/survey/mark-is-first-survey", { userId });
+         if (data.success) {
+           await update();
+         }
+            // router.refresh();
           if (!data.success) {
-            toast.error("Could not update survey status.");
+            toast("Could not update survey status.");
+            
             return;
-          }
-          await update();
+          
         }
         router.push("/survey/question-page/1");
       } catch (err) {
@@ -106,9 +123,17 @@ export default function FirstTimeSurvey() {
       </p>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="w-full sm:w-[75%]">
+        <div className="w-full flex flex-col sm:w-[75%]">
           <label className="text-sm font-medium text-gray-600 mb-1 block">Survey Completion</label>
-          <p className="text-xs text-gray-500 mt-1">500 of 10,000 solopreneurs have completed the survey</p>
+              <Button
+          onClick={handleStartSurvey}
+          className="flex w-fit items-center justify-center px-3 py-2 rounded-md text-lg bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          {user?.isFirstTimeSurvey ? "Start survey" : "Continue where you left off"}
+        </Button>
+          <div>
+          <p className="text-xs text-gray-500 mt-1">{data?.userCount} of 10,000 solopreneurs have completed the survey</p>
+          </div>
         </div>
       </div>
 
@@ -137,13 +162,7 @@ export default function FirstTimeSurvey() {
       </div>
 
       <div className="mt-11 flex justify-center items-center">
-        <Button
-          onClick={handleStartSurvey}
-          size="lg"
-          className="flex items-center justify-center px-6 rounded-full text-lg bg-blue-600 hover:bg-blue-700 text-white"
-        >
-          {user?.isFirstTimeSurvey ? "Start survey" : "Continue where you left off"}
-        </Button>
+    
       </div>
 
       {showCooldownModal && (
