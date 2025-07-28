@@ -1,16 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
+import { checkRole } from "@/lib/utils/auth";
 import { notFound } from "next/navigation";
-import ChallengeDetailView from "../ChallengeDetailView";
+import ChallengeDetailView from "../ChallengeDetailView"; // Assuming the view is a sibling file
 import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
-// Reusable type for enrollment object
+// Define a reusable type for the enrollment object with its tasks
 export type EnrollmentWithTasks = ChallengeEnrollment & {
   userTasks: UserChallengeTask[];
 };
 
-// Data fetching function
+// Updated data fetching function
 async function getChallengeData(challengeId: string, userId?: string) {
   const challenge = await prisma.challenge.findUnique({
     where: { id: challengeId },
@@ -28,6 +27,7 @@ async function getChallengeData(challengeId: string, userId?: string) {
 
   let enrollment: EnrollmentWithTasks | null = null;
   if (userId) {
+    // Fetch the full enrollment object, including the user's personal tasks
     enrollment = await prisma.challengeEnrollment.findUnique({
       where: {
         userId_challengeId: {
@@ -36,7 +36,7 @@ async function getChallengeData(challengeId: string, userId?: string) {
         },
       },
       include: {
-        userTasks: true,
+        userTasks: true, // This is the key change to get the processing status
       },
     });
   }
@@ -44,21 +44,12 @@ async function getChallengeData(challengeId: string, userId?: string) {
   return { challenge, enrollment };
 }
 
-// Define the props interface for type safety
-interface PageProps {
-  params: { id: string };
-}
-
-// Use the new signature for the page component
-export default async function ChallengeDetailPage({ params }: PageProps) {
-  // Safely get the id from the destructured params
-  const { id } = params;
-
-  // Get the session safely without causing an error for visitors
-  const session = await getServerSession(authConfig);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default async function ChallengeDetailPage(props: any) {
+  const id = props.params.id;
+  const session = await checkRole("USER");
   const userId = session?.user?.id;
 
-  // Fetch data using the id and optional userId
   const data = await getChallengeData(id, userId);
 
   if (!data) {
@@ -70,7 +61,7 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
   return (
     <ChallengeDetailView
       challenge={challenge}
-      initialEnrollment={enrollment}
+      initialEnrollment={enrollment} // Pass the full enrollment object to the client
     />
   );
 }

@@ -11,7 +11,7 @@ import { List, PlusCircle, Globe, X } from "lucide-react";
 
 export default function Page() {
   const router = useRouter();
-  const { data: session, status } = useSession(); // 2. Get session status
+  const { status } = useSession(); // 2. Get session status
   const [isModalOpen, setIsModalOpen] = useState(false); // State to control the modal
   const [fee, setFee] = useState<number | null>(null);
 
