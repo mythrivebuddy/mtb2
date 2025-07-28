@@ -55,7 +55,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   // The layout will now render for ALL pages.
   // The `if (isPublicChallengePage)` block that hid the layout is the only thing that was removed.
   return (
-    <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
+    <div className="w-full min-h-screen flex bg-dashboard max-w-full overflow-hidden">
       <div className="fixed top-0 left-0 w-64 z-20 m-3">
         {/* Your Sidebar must be able to handle `user` being undefined for public visitors */}
         <Sidebar user={user} />

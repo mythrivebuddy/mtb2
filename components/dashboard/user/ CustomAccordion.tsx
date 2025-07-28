@@ -108,7 +108,7 @@ const allAccordionData = [
 
 export default function AccordionWrapper() {
   const pathname = usePathname();
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // Default open for visual flow
+  const [openIndex, setOpenIndex] = useState<number | null>(null); // Default open for visual flow
 
   let selectedType = '';
   if (pathname.includes('miracle-log')) selectedType = 'miracle_log';
