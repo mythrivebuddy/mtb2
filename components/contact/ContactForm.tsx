@@ -200,8 +200,8 @@ function ContactFormContent() {
             Subject
           </label>
 
-          <div className="flex items-center gap-x-6">
-            <div className="flex items-center gap-2">
+          <div className="flex max-sm:flex-col max-sm:items-center sm:justify-center gap-x-6">
+            <div className="flex  items-center gap-2 w-full">
               <input
                 type="radio"
                 id="general"
@@ -214,7 +214,7 @@ function ContactFormContent() {
               </label>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full" >
               <input
                 type="radio"
                 id="feature"
@@ -227,7 +227,7 @@ function ContactFormContent() {
               </label>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full">
               <input
                 type="radio"
                 id="bug"
