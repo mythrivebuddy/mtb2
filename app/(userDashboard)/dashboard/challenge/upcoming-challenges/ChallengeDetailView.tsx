@@ -37,7 +37,7 @@ const getChallengeDuration = (startDateString: string | Date, endDateString: str
 
 export default function ChallengeDetailView({ challenge, initialEnrollment }: ChallengeDetailViewProps) {
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession(); // --- NEW ---
+  const { status: sessionStatus } = useSession(); // --- NEW ---
   const [enrollment, setEnrollment] = useState(initialEnrollment);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
