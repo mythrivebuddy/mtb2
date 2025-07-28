@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react"; // --- NEW ---
+import { useSession } from "next-auth/react";
 import axios from "axios";
-import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert, X } from "lucide-react"; // --- NEW ---
+import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert, X } from "lucide-react";
 import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
 // Define the shape of the props this component expects
@@ -37,13 +37,13 @@ const getChallengeDuration = (startDateString: string | Date, endDateString: str
 
 export default function ChallengeDetailView({ challenge, initialEnrollment }: ChallengeDetailViewProps) {
   const router = useRouter();
-  const { status: sessionStatus } = useSession(); // --- NEW ---
+  const { status: sessionStatus } = useSession();
   const [enrollment, setEnrollment] = useState(initialEnrollment);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false); // --- NEW ---
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (enrollment && enrollment.userTasks.length === 0) {
@@ -87,8 +87,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
       setIsEnrolling(false);
     }
   };
-  
-  // --- NEW ---
+
   const handleJoinClick = () => {
     if (sessionStatus === 'loading') return;
 
@@ -102,6 +101,12 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
   const handleCloseModalAndRedirect = () => {
     setIsEnrollSuccessModalOpen(false);
     router.push("/dashboard/challenge/my-challenges");
+  };
+
+  const handleAuthRedirect = (path: string) => {
+    const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
+    router.push(`${path}?redirect=${encodeURIComponent(redirectPath)}`);
+    setIsAuthModalOpen(false);
   };
 
   const statusColors = {
@@ -214,7 +219,6 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
                   );
                 }
                 return (
-                  // --- UPDATED ---
                   <button onClick={handleJoinClick} disabled={isEnrolling || sessionStatus === 'loading'} className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed">
                     {isEnrolling ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Enrolling...</>) : ("Join Challenge")}
                   </button>
@@ -235,7 +239,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
           </div>
         </div>
       )}
-      {/* --- NEW --- */}
+      {/* Auth Modal */}
       {isAuthModalOpen && (
         <div onClick={() => setIsAuthModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
           <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
@@ -245,8 +249,8 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
             <h2 className="text-center text-2xl font-bold text-slate-800 mb-2">Please Login to Continue</h2>
             <p className="text-center text-slate-500 mb-6">You need an account to join this challenge.</p>
             <div className="flex flex-col space-y-4">
-              <button onClick={() => router.push('/signin')} className="w-full rounded-lg bg-indigo-600 py-3 text-base font-semibold text-white shadow-md hover:bg-indigo-700">Login</button>
-              <button onClick={() => router.push('/signup')} className="w-full rounded-lg bg-gray-200 py-3 text-base font-semibold text-slate-800 shadow-md hover:bg-gray-300">Create an Account</button>
+              <button onClick={() => handleAuthRedirect('/signin')} className="w-full rounded-lg bg-indigo-600 py-3 text-base font-semibold text-white shadow-md hover:bg-indigo-700">Login</button>
+              <button onClick={() => handleAuthRedirect('/signup')} className="w-full rounded-lg bg-gray-200 py-3 text-base font-semibold text-slate-800 shadow-md hover:bg-gray-300">Create an Account</button>
             </div>
           </div>
         </div>
