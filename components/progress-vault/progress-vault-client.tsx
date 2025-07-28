@@ -180,8 +180,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
                 <CardDescription>
                   Record your daily progress
                 </CardDescription>
-              </div>
-              <div className="flex flex-col items-end mt-2 text-sm">
+                    <div className="flex flex-col items-start mt-2 text-sm">
                 <div className="flex items-center gap-1 font-semibold text-orange-500 animate-pulse">
                   🔥 {streak.count} day streak
                 </div>
@@ -189,6 +188,8 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
                   Keep it up! Consistency builds progress ✨
                 </div>
               </div>
+              </div>
+          
             </div>
           </CardHeader>
           <CardContent>
