@@ -96,7 +96,9 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
     } else {
       // If user is not authenticated, redirect to sign-in page with a redirect query
       const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
-      router.push(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
+      // router.push(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
+      router.push(`/signin?redirect=${(redirectPath)}`);
+
     }
   };
 

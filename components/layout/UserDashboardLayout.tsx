@@ -55,7 +55,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isLoggedIn = !!user;
 
   return (
-    <div className="w-full min-h-screen max-w-full overflow-hidden">
+    <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
       {/* Conditionally render the Sidebar for logged-in users */}
       {isLoggedIn && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">
