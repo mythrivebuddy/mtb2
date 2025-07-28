@@ -22,11 +22,17 @@ import {
   Droplet,
   Flower,
   Swords,
-  MessageSquareShare,
+ // MessageSquareShare,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from "@/utils/getInitials";
+import { SearchUser } from "@/types/client/nav";
+import { useQuery } from "@tanstack/react-query";
+import { fetchUsers } from "./Topbar";
 
 
 // Reusable navigation item component
@@ -40,6 +46,7 @@ type NavItemProps = {
 const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
+ 
 
   const content = (
     <>
@@ -94,6 +101,14 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
   const [isOpen, setIsOpen] = useState(false);
+   const [searchTerm, setSearchTerm] = useState("");
+     const [showDropdown, setShowDropdown] = useState(false);
+
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["users", searchTerm],
+    queryFn: () => fetchUsers(searchTerm),
+    enabled: searchTerm.length > 0,
+  });
   // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
 
   
@@ -103,8 +118,9 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   return (
     <>
       {/* Hamburger Menu Button for Mobile */}
+      <div className="flex gap-4 justify-around w-full">
       <button
-        className="lg:hidden fixed top-2 left-4 z-50 p-2 bg-white rounded-md shadow-md"
+        className="lg:hidden p-2 bg-white rounded-md shadow-md"
         onClick={toggleSidebar}
       >
         {isOpen ? (
@@ -124,6 +140,52 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           <Menu size={24} />
         )}
       </button>
+      <div className="relative lg:hidden  w-full ">
+            <div className="absolute inset-y-0 w-full left-0 flex items-center pl-3 pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
+            </div>
+            <input
+              type="search"
+              className="bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
+              placeholder="Search Anything Here..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            />
+            {showDropdown && searchTerm && (
+              <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
+                {isLoading ? (
+                  <div className="p-2 text-sm text-slate-500">Loading...</div>
+                ) : users?.length === 0 ? (
+                  <div className="p-2 text-sm text-slate-500">
+                    No users found
+                  </div>
+                ) : (
+                  users?.map((user: SearchUser) => (
+                    <Link
+                      key={user.id}
+                      href={`/profile/${user.id}`}
+                      className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
+                      target="_blank"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.image || undefined} />
+                        <AvatarFallback>
+                          <p className="text-sm">{getInitials(user.name)}</p>
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm">{user.name}</span>
+                    </Link>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+          </div>
 
       {/* Overlay for Mobile */}
       {isOpen && (
@@ -179,12 +241,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 /> */}
               </NavSection>
               <NavSection title="Features">
-                 <NavItem
+                 {/* <NavItem
                   href="/survey"
                   icon={<MessageSquareShare size={20} />}
                   label="Survey"
                   onLinkClick={toggleSidebar}
-                />
+                /> */}
                 <NavItem
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
