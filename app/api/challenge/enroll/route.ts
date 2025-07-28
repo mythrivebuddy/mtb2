@@ -1,27 +1,22 @@
-// File: app/api/challenge/enroll/route.ts
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth"; // 1. Import getServerSession
-import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config"; // 2. Import your authConfig
+import { getServerSession } from "next-auth";
+import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
+import axios from "axios"; // your axios instance
+import { getAxiosErrorMessage } from "@/utils/ax"; // error handler
 
 export async function POST(request: Request) {
   try {
-    // 3. Authenticate the user safely
-    // This will get the session if it exists, or return null if not. It will NOT throw an error.
     const session = await getServerSession(authConfig);
-
     if (!session?.user?.id) {
-      // This check now works correctly to protect the route.
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
     const joinerId = session.user.id;
 
-    // --- The rest of your code remains exactly the same, as it is well-written ---
-
-    // 2. Get challengeId from the request body
+    // Step 1: Parse body
     const { challengeId } = await request.json();
     if (!challengeId) {
       return NextResponse.json(
@@ -30,93 +25,120 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Fetch user and challenge data
+    // Step 2: Early check for duplicate enrollment
+    const existingEnrollment = await prisma.challengeEnrollment.findUnique({
+      where: { userId_challengeId: { userId: joinerId, challengeId } },
+    });
+    if (existingEnrollment) {
+      return NextResponse.json(
+        { error: "You are already enrolled in this challenge." },
+        { status: 409 }
+      );
+    }
+
+    // Step 3: Fetch user and challenge (include plan)
     const [joiner, challengeToJoin] = await Promise.all([
       prisma.user.findUnique({
         where: { id: joinerId },
-        include: { plan: true },
+        include: { plan: true }, // ✅ Required for deductJp
       }),
       prisma.challenge.findUnique({
         where: { id: challengeId },
       }),
     ]);
 
-    // 4. Perform validation checks
-    if (!joiner)
+    if (!joiner) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
-    if (!challengeToJoin)
+    }
+
+    if (!challengeToJoin) {
       return NextResponse.json(
         { error: "Challenge not found." },
         { status: 404 }
       );
-    if (challengeToJoin.creatorId === joinerId)
+    }
+
+    if (challengeToJoin.creatorId === joinerId) {
       return NextResponse.json(
         { error: "You cannot join a challenge you created." },
         { status: 400 }
       );
+    }
 
-    const existingEnrollment = await prisma.challengeEnrollment.findUnique({
-      where: { userId_challengeId: { userId: joinerId, challengeId } },
-    });
-    if (existingEnrollment)
+    // ✨ OPTIMIZATION: Fetch the creator *before* the transaction begins.
+    const creator =
+      challengeToJoin.cost > 0
+        ? await prisma.user.findUnique({
+            where: { id: challengeToJoin.creatorId },
+            include: { plan: true }, // ✅ Required for assignJp
+          })
+        : null;
+
+    if (challengeToJoin.cost > 0 && !creator) {
+      // If there's a cost but the creator wasn't found, throw an error.
       return NextResponse.json(
-        { error: "You are already enrolled in this challenge." },
-        { status: 409 }
+        { error: "Challenge creator could not be found." },
+        { status: 404 }
       );
+    }
 
-    // 5. Transaction to create enrollment and handle fees
+    // Step 4: Create enrollment with JP deduction in a more efficient transaction
     const newEnrollment = await prisma.$transaction(
       async (tx) => {
-        if (challengeToJoin.cost > 0) {
-          const creator = await tx.user.findUnique({
-            where: { id: challengeToJoin.creatorId },
-            include: { plan: true },
-          });
-          if (!creator)
-            throw new Error("Challenge creator could not be found.");
-          await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
-            amount: challengeToJoin.cost,
-          });
-          await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
-            amount: challengeToJoin.cost,
-          });
+        if (challengeToJoin.cost > 0 && creator) {
+          // Process JP deduction and assignment in parallel
+          await Promise.all([
+            deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
+              amount: challengeToJoin.cost,
+            }),
+            assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
+              amount: challengeToJoin.cost,
+            }),
+          ]);
         }
 
         return tx.challengeEnrollment.create({
           data: {
             userId: joinerId,
-            challengeId: challengeId,
+            challengeId,
             status: "IN_PROGRESS",
           },
         });
       },
-      {
-        timeout: 15000,
-      }
+      { timeout: 15000 }
     );
 
-    // 6. "Fire-and-Forget" the background job
-    fetch(
-      `${process.env.NEXT_PUBLIC_TEST_URL}/api/challenge/process-enrollment`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enrollmentId: newEnrollment.id }),
-      }
-    );
+    // Step 5: Fire background job (non-blocking)
+    setTimeout(() => {
+      axios
+        .post(
+          `${process.env.NEXT_PUBLIC_TEST_URL}/api/challenge/process-enrollment`,
+          {
+            enrollmentId: newEnrollment.id,
+          }
+        )
+        .catch((err) => {
+          console.error(
+            "Failed to trigger background processing:",
+            getAxiosErrorMessage(err)
+          );
+        });
+    }, 0);
 
-    // 7. Respond immediately
-    const enrollmentForFrontend = {
-      ...newEnrollment,
-      userTasks: [],
-    };
+    // Step 6: Respond to client
     return NextResponse.json(
-      { message: "Enrollment successful!", enrollment: enrollmentForFrontend },
+      {
+        message: "Enrollment successful!",
+        enrollment: {
+          ...newEnrollment,
+          userTasks: [],
+        },
+      },
       { status: 201 }
     );
   } catch (error) {
     if (error instanceof Error) {
-      console.error("Failed to enroll in challenge:", error.message);
+      console.error("Enrollment error:", error.message);
       if (error.message.includes("Insufficient JP balance")) {
         return NextResponse.json(
           { error: "You do not have enough JP to join this challenge." },
@@ -125,7 +147,8 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    console.error("An unknown error occurred:", error);
+
+    console.error("Unknown error during enrollment:", error);
     return NextResponse.json(
       { error: "An unexpected internal server error occurred." },
       { status: 500 }
