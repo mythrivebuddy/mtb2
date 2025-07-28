@@ -22,14 +22,14 @@ interface DataTableProps<TData> {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  isLoading?: boolean; // Add this prop
-  rowCount?: number; // Add this prop
+  isLoading?: boolean;
+  rowCount?: number;
 }
 
 export function TransactionDataTable<TData>({
   columns,
   data,
-  isLoading = false, // Add this prop
+  isLoading = false,
   rowCount = 5,
 }: DataTableProps<TData>) {
   const table = useReactTable({
@@ -40,48 +40,44 @@ export function TransactionDataTable<TData>({
 
   return (
     <div className="mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            // Show loading rows
-            <SkeletonListTable columns={columns} rowCount={rowCount} />
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+      <div className="w-full overflow-x-auto">
+        <Table className="min-w-full">
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      {/* <div className="p-4">
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-        //   isLoading={isLoading}
-        />
-      </div> */}
+            ))}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <SkeletonListTable columns={columns} rowCount={rowCount} />
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
