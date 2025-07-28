@@ -109,7 +109,7 @@ export default function FirstTimeSurvey() {
     } else {
       setShowCooldownModal(true);
     }
-  }, [canStart, userId, user, router, update]); // Dependencies of handleStartSurvey
+  }, [canStart, userId,  router, update]); // Dependencies of handleStartSurvey
 
   return (
     <div className="min-h-screen bg-white py-24 px-6 md:px-12 max-w-7xl mx-auto">

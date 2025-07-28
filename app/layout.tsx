@@ -4,7 +4,7 @@ import Provider from "@/providers/Provider";
 
 const inter = Inter({ subsets: ["latin"] });
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";// ! added by aaisha
-
+import { Toaster } from "@/components/ui/sonner"; // Import Toaster component
 export const metadata = {
   title: "My Thrive Buddy",
   description: "MTB with PWA",
@@ -47,6 +47,8 @@ export default function RootLayout({
             {children}
           </Provider>
         </div>
+
+        <Toaster />
 
         {/* PWA Service Worker Registration Script - NEW ADDITION */}
         <script

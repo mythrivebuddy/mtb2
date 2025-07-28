@@ -1,70 +1,126 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Upload, File, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import * as XLSX from "xlsx";
+
+type ExcelRow = {
+  Category?: string;
+  Question?: string;
+  Options?: string;
+  MultiSelect?: string | boolean;
+};
 
 export function ExcelImport() {
   const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      if (
+        selectedFile.type !==
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      ) {
+        toast.error("Invalid file type. Please upload an .xlsx file.");
+        return;
+      }
+      setFile(selectedFile);
     }
   };
+const handleImport = async () => {
+  if (!file) {
+    toast.warning("Please select a file to import.");
+    return;
+  }
 
-  const handleUpload = async () => {
-    if (!file) {
-      alert("Please select a file first.");
-      return;
-    }
-    setIsUploading(true);
+  setIsImporting(true);
+  toast.info("Reading file...");
 
-    const formData = new FormData();
-    formData.append("file", file);
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: "array" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
 
-    try {
-      const response = await fetch("/api/import", {
-        method: "POST",
-        body: formData,
-      });
+    const jsonData = XLSX.utils.sheet_to_json<ExcelRow>(worksheet, { defval: "" });
 
-      const result = await response.json();
+    const categoriesSet = new Set<string>();
+    const questions = jsonData.map((row: ExcelRow) => {
+      const categoryName = row.Category?.trim();
+      categoriesSet.add(categoryName || "");
 
-      if (response.ok) {
-        alert("Import successful! The page will now reload to show the new data.");
-        window.location.reload();
-      } else {
-        alert(`Import failed: ${result.message}`);
-      }
-    } catch (error) {
-      console.error("Import error:", error);
-      alert("An unexpected error occurred during the import process.");
-    } finally {
-      setIsUploading(false);
-      setFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
+      return {
+        text: row.Question?.trim(),
+        options: row.Options?.trim(),
+        isMultiSelect:
+          row.MultiSelect === "TRUE" || row.MultiSelect === true,
+        categoryName,
+      };
+    });
+
+    const categories = Array.from(categoriesSet).map((name) => ({ name }));
+
+    // ✅ Save to localStorage
+    localStorage.setItem("imported_categories", JSON.stringify(categories));
+    localStorage.setItem("imported_questions", JSON.stringify(questions));
+
+    toast.success("Data saved to local storage ✅");
+    setFile(null); // reset
+  } catch (err: unknown) {
+    console.error("Import error:", err);
+    toast.error("Failed to import Excel file.");
+  }
+
+  setIsImporting(false);
+};
+
 
   return (
-    <div className="space-y-3">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        accept=".xlsx, .xls"
-        className="block w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-      />
-      <button
-        onClick={handleUpload}
-        disabled={!file || isUploading}
-        className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+    <div className="flex flex-col gap-4">
+      {/* Upload area */}
+      <label
+        htmlFor="excel-upload"
+        className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 p-8 text-center transition-colors hover:bg-muted/50"
       >
-        {isUploading ? "Uploading..." : "Upload & Import"}
-      </button>
+        <Upload className="h-10 w-10 text-muted-foreground/80" />
+        <p className="font-semibold text-foreground">Click to upload file</p>
+        <p className="text-xs text-muted-foreground">
+          or drag and drop (.xlsx)
+        </p>
+      </label>
+      <input
+        id="excel-upload"
+        type="file"
+        className="hidden"
+        onChange={handleFileChange}
+        accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      />
+
+      {/* File preview */}
+      {file && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-3">
+          <div className="flex items-center gap-3">
+            <File className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm font-medium">{file.name}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setFile(null)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Import button */}
+      <Button onClick={handleImport} disabled={!file || isImporting}>
+        {isImporting ? "Importing..." : "Import Data"}
+      </Button>
     </div>
   );
 }
