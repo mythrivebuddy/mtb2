@@ -28,9 +28,8 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isPublicChallengePage = 
     pathname.startsWith('/dashboard/challenge/') && !isMainChallengePage && !isPrivateSubPage;
 
-  // --- CONDITIONAL DATA FETCHING (Preserved) ---
-  // This is the key: we only fetch user data for private pages.
-  // For public pages, `enabled` is false, and the `user` object will be `undefined`.
+  // --- CONDITIONAL DATA FETCHING ---
+  // For public pages, enabled is false, and the user object will be undefined.
   const { data: user, error } = useQuery<User>({
     queryKey: ["userInfo"],
     queryFn: async () => {
@@ -41,34 +40,41 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     enabled: !isPublicChallengePage, 
   });
 
-  // --- HOOKS (Preserved) ---
+  // --- HOOKS ---
   useUserPresence({ userId: user?.id } as UserPresenceProps);
   useOnlineUserLeaderBoard();
   
-  // --- ERROR HANDLING (Preserved & Improved) ---
+  // --- ERROR HANDLING ---
   // We only treat an error as critical on private pages.
   if (error && !isPublicChallengePage) {
     console.error("Failed to fetch user data:", error);
     return <div>Error loading user data. Please refresh the page.</div>;
   }
 
-  // The layout will now render for ALL pages.
-  // The `if (isPublicChallengePage)` block that hid the layout is the only thing that was removed.
+  // Determine if the user is logged in based on the presence of the user object.
+  const isLoggedIn = !!user;
+
   return (
-    <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
-      {/* <div className="fixed top-0 left-0 w-64 z-20 m-3">
-        <Sidebar user={user} />
-      </div> */}
-       {user && (
+    <div className="w-full min-h-screen max-w-full overflow-hidden">
+      {/* Conditionally render the Sidebar for logged-in users */}
+      {isLoggedIn && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">
           <Sidebar user={user} />
         </div>
       )}
-      <div className="flex-1 flex flex-col ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20 !h-full">
- {user && (
-        <div className="md:mx-10 mx-5">
-          <TopBar user={user} />
-        </div> )}
+      
+      {/* The main content wrapper's classes are now conditional */}
+      <div 
+        className={`flex-1 flex flex-col !h-full transition-all duration-300 ${
+          isLoggedIn ? 'ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20' : ''
+        }`}
+      >
+        {/* Conditionally render the TopBar for logged-in users */}
+        {isLoggedIn && (
+          <div className="md:mx-10 mx-5">
+            <TopBar user={user} />
+          </div> 
+        )}
         <main className="flex-1 overflow-auto md:pt-4 px-4 sm:px-6 lg:px-7 bg-transparent">
           {children}
         </main>

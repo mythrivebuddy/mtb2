@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert, X } from "lucide-react";
+import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert } from "lucide-react";
 import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
+import AppLayout from "@/components/layout/AppLayout";
 
 // Define the shape of the props this component expects
 type ChallengeWithTasksAndCount = Challenge & {
@@ -43,7 +44,6 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (enrollment && enrollment.userTasks.length === 0) {
@@ -94,19 +94,15 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
     if (sessionStatus === 'authenticated') {
       handleEnroll();
     } else {
-      setIsAuthModalOpen(true);
+      // If user is not authenticated, redirect to sign-in page with a redirect query
+      const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
+      router.push(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
     }
   };
 
   const handleCloseModalAndRedirect = () => {
     setIsEnrollSuccessModalOpen(false);
     router.push("/dashboard/challenge/my-challenges");
-  };
-
-  const handleAuthRedirect = (path: string) => {
-    const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
-    router.push(`${path}?redirect=${encodeURIComponent(redirectPath)}`);
-    setIsAuthModalOpen(false);
   };
 
   const statusColors = {
@@ -118,7 +114,8 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
 
   return (
     <>
-      <div className="min-h-screen">
+    <AppLayout>
+      <div className="min-h-screen bg-gray-100 m-10 rounded-3xl">
         <div className="w-full max-w-3xl mx-auto py-12 px-4">
           <div className="bg-white p-8 rounded-2xl shadow-lg">
             {/* Header Section */}
@@ -228,7 +225,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
           </div>
         </div>
       </div>
-      {/* Enrollment Success Modal (Original) */}
+      {/* Enrollment Success Modal */}
       {isEnrollSuccessModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
@@ -239,22 +236,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
           </div>
         </div>
       )}
-      {/* Auth Modal */}
-      {isAuthModalOpen && (
-        <div onClick={() => setIsAuthModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
-          <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
-            <button onClick={() => setIsAuthModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-              <X size={24} />
-            </button>
-            <h2 className="text-center text-2xl font-bold text-slate-800 mb-2">Please Login to Continue</h2>
-            <p className="text-center text-slate-500 mb-6">You need an account to join this challenge.</p>
-            <div className="flex flex-col space-y-4">
-              <button onClick={() => handleAuthRedirect('/signin')} className="w-full rounded-lg bg-indigo-600 py-3 text-base font-semibold text-white shadow-md hover:bg-indigo-700">Login</button>
-              <button onClick={() => handleAuthRedirect('/signup')} className="w-full rounded-lg bg-gray-200 py-3 text-base font-semibold text-slate-800 shadow-md hover:bg-gray-300">Create an Account</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </AppLayout>
     </>
   );
 }
