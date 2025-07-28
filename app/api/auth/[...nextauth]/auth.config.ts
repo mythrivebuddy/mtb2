@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
 // const DEFAULT_MAX_AGE = 1 * 60;
@@ -258,6 +259,21 @@ export const authConfig: AuthOptions = {
       }
       // console.log("sessiondata", session); //?dev
       return session;
+    },
+    // Updated redirect callback with debugging
+    async redirect({ url, baseUrl }) {
+      console.log("Redirect URL:", url); // Debug the incoming URL
+      try {
+        const redirectPath = new URL(url, baseUrl).searchParams.get("callbackUrl") || "/dashboard";
+        console.log("Parsed callbackUrl:", redirectPath); // Debug the parsed value
+        const finalPath = redirectPath.includes('/upcoming-challenges') && !redirectPath.endsWith('/join')
+          ? `${redirectPath}/join`
+          : redirectPath;
+        return finalPath.startsWith(baseUrl) ? finalPath : baseUrl + finalPath;
+      } catch (error) {
+        console.error("Redirect error:", error);
+        return baseUrl + "/dashboard"; // Fallback to dashboard on error
+      }
     },
   },
   session: {

@@ -13,10 +13,17 @@ import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
 import { Loader2 } from "lucide-react";
+import Cookies from "js-cookie";
+import { useSession } from "next-auth/react";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const errorFromUrl = searchParams.get("error");
+  const redirectUrl = searchParams.get("redirect");
+  const { data: session, status } = useSession();
+
   const {
     register,
     handleSubmit,
@@ -24,14 +31,16 @@ function SignInFormContent() {
   } = useForm<SigninFormType>({
     resolver: zodResolver(signinSchema),
   });
-  const searchParams = useSearchParams();
-  const errorFromUrl = searchParams.get("error");
 
-  // If error comes from query parameters, show it via toast.
   useEffect(() => {
-    console.log(errorFromUrl); //?dev
+    if (redirectUrl) {
+      Cookies.set("redirectAfterAuth", redirectUrl, { expires: 1 }); // Expires in 1 day
+      console.log("Stored redirectAfterAuth in cookies:", redirectUrl); // Debug
+    }
+  }, [redirectUrl]);
+
+  useEffect(() => {
     if (errorFromUrl === "account-exists-with-credentials") {
-      console.log("here");
       setTimeout(() => {
         toast.error(
           "An account with this email already exists. Please sign in with your password."
@@ -45,6 +54,24 @@ function SignInFormContent() {
     }
   }, [errorFromUrl, router]);
 
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      const redirectPath = Cookies.get("redirectAfterAuth");
+      console.log("Client Redirect Path from cookies:", redirectPath); // Debug
+      if (redirectPath && redirectPath.includes('/upcoming-challenges')) {
+        const joinUrl = redirectPath.endsWith('/join') ? redirectPath : `${redirectPath}/join`;
+        router.push(joinUrl);
+      } else if (redirectPath) {
+        router.push(redirectPath);
+      } else if (session.user?.role === "ADMIN") {
+        router.push("/admin/dashboard");
+      } else {
+        router.push("/dashboard");
+      }
+      Cookies.remove("redirectAfterAuth");
+    }
+  }, [status, session, router]);
+
   const onSubmit = async (data: SigninFormType) => {
     try {
       setIsLoading(true);
@@ -55,9 +82,15 @@ function SignInFormContent() {
         rememberMe: data.rememberMe,
       });
 
-      // When response is successful, redirect and toast success.
       if (response?.ok) {
-        router.push("/dashboard");
+        const redirectPath = Cookies.get("redirectAfterAuth") || "/dashboard";
+        if (redirectPath.includes('/upcoming-challenges')) {
+          const joinUrl = redirectPath.endsWith('/join') ? redirectPath : `${redirectPath}/join`;
+          router.push(joinUrl);
+        } else {
+          router.push(redirectPath);
+        }
+        Cookies.remove("redirectAfterAuth");
         toast.success("Signin successful");
         return;
       }
@@ -66,13 +99,8 @@ function SignInFormContent() {
 
       if (errorMessage) {
         if (errorMessage.toLowerCase().includes("blocked")) {
-          toast.error(
-            <div>
-              <p>{errorMessage}</p>
-            </div>
-          );
+          toast.error(<div><p>{errorMessage}</p></div>);
         } else if (errorMessage.toLowerCase().includes("not verified")) {
-          // If email is not verified.
           toast.error(errorMessage);
         } else {
           toast.error(errorMessage);
@@ -92,26 +120,37 @@ function SignInFormContent() {
 
   const handleGoogleLogin = async () => {
     try {
+      setIsLoading(true);
+      const redirectPath = redirectUrl || "/dashboard";
+      Cookies.set("redirectAfterAuth", redirectPath, { expires: 1 });
+      console.log("Setting redirectAfterAuth for Google login:", redirectPath); // Debug
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: "/dashboard",
+        callbackUrl: redirectPath,
       });
+
       if (result?.ok) {
-        router.push("/dashboard");
         toast.success("Signed in successfully");
-        return;
-      }
-      if (result?.error) {
+        const redirectPathFromCookie = Cookies.get("redirectAfterAuth");
+        if (redirectPathFromCookie && redirectPathFromCookie.includes('/upcoming-challenges')) {
+          const joinUrl = redirectPathFromCookie.endsWith('/join') ? redirectPathFromCookie : `${redirectPathFromCookie}/join`;
+          router.push(joinUrl);
+        } else if (redirectPathFromCookie) {
+          router.push(redirectPathFromCookie);
+        } else {
+          router.push("/dashboard");
+        }
+        Cookies.remove("redirectAfterAuth");
+      } else if (result?.error) {
         toast.error("Google Sign in failed. Please try again later.");
       }
     } catch (error) {
-      console.error("Error signing in", error);
+      console.error("Error signing in with Google:", error);
       toast.error(
-        getAxiosErrorMessage(
-          error,
-          "Google Sign in failed. Please try again later."
-        )
+        getAxiosErrorMessage(error, "Google Sign in failed. Please try again later.")
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -192,6 +231,7 @@ function SignInFormContent() {
             variant="outline"
             className="w-full h-12 text-[16px] flex items-center justify-center space-x-2"
             onClick={handleGoogleLogin}
+            disabled={isLoading}
           >
             <GoogleIcon />
             <span>Sign in with Google</span>
