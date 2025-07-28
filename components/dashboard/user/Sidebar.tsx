@@ -241,12 +241,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 /> */}
               </NavSection>
               <NavSection title="Features">
-                 <NavItem
+                 {/* <NavItem
                   href="/survey"
                   icon={<MessageSquareShare size={20} />}
                   label="Survey"
                   onLinkClick={toggleSidebar}
-                />
+                /> */}
                 <NavItem
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
