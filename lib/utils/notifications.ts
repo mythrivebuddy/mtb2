@@ -147,6 +147,21 @@ export async function createJPEarnedNotification(
   );
 }
 
+// return notification for create jp spent notification
+export async function createJpSpentNotification(
+  userId: string,
+  amount: number,
+  activity: string
+) {
+  return createNotification(
+    userId,
+    NotificationType.JP_SPEND,
+    "JP Spent",
+    `You spend ${amount} JP for ${activityDisplayMap[activity]}`,
+    { amount, activity }
+  );
+}
+
 export async function createProsperityAppliedNotification(userId: string) {
   return createNotification(
     userId,
@@ -378,14 +393,14 @@ export async function createBuddyLensReviewedNotification(
 export async function createBuddyLensReviewerCompletedNotification(
   userId: string,
   domain: string,
-  jpAmount: number,
+  jpAmount: number
   // reviewId: string
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_COMPLETED,
     "BuddyLens Review Reward",
-    `You have earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`,
+    `You have earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`
     // { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount }
   );
 }

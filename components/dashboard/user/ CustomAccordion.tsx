@@ -16,7 +16,7 @@ const allAccordionData = [
         <p className="mb-4">
           Establish a clear plan for your day, turning your ambitions into a sequence of concrete actions you can tackle one by one.
          </p>
-        <ul className="list-disc pl-5 space-y-2">
+        <ul className="list-disc pl-1 space-y-2">
          <li>Makes big goals less intimidating by breaking them into manageable daily steps.</li>
           <li>Frees up your mental energy by capturing priorities, so you can focus on execution.</li>
           <li>Creates a positive feedback loop of success that builds confidence and momentum.</li>
@@ -108,7 +108,7 @@ const allAccordionData = [
 
 export default function AccordionWrapper() {
   const pathname = usePathname();
-  const [openIndex, setOpenIndex] = useState<number | null>(0); // Default open for visual flow
+  const [openIndex, setOpenIndex] = useState<number | null>(null); // Default open for visual flow
 
   let selectedType = '';
   if (pathname.includes('miracle-log')) selectedType = 'miracle_log';
@@ -121,11 +121,11 @@ export default function AccordionWrapper() {
   const filteredData = allAccordionData.filter((item) => item.type === selectedType);
 
   if (filteredData.length === 0) {
-    return <p className="text-left mt-6 text-gray-500">No content available for this section.</p>;
+    return <p className="text-center mt-6 text-gray-500">No content available for this section.</p>;
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="  p-6 max-w-4xl">
       {filteredData.map((item, index) => {
         const isOpen = openIndex === index;
         return (

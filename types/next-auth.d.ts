@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import NextAuth, { DefaultSession } from "next-auth";
+import { DefaultSession } from "next-auth";
 
 declare module "next-auth" {
   /**
@@ -11,12 +10,16 @@ declare module "next-auth" {
       role: string;
       id: string;
       rememberMe: boolean;
+      isFirstTimeSurvey: boolean;
+      lastSurveyTime: Date | null;
     } & DefaultSession["user"];
   }
   interface User {
     id: string;
     role: string;
     rememberMe: boolean;
+    isFirstTimeSurvey: boolean;
+    lastSurveyTime: Date | null;
   }
 }
 
@@ -27,5 +30,7 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     rememberMe: boolean;
+    isFirstTimeSurvey: boolean;
+     lastSurveyTime: Date | null;
   }
 }

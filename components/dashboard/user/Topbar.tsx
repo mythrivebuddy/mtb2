@@ -43,7 +43,7 @@ const TopBarBadge = ({
 };
 
 
-const fetchUsers = async (searchTerm: string) => {
+export const fetchUsers = async (searchTerm: string) => {
   const { data } = await axios.get(`/api/user/search?q=${searchTerm}`);
   return data.users;
 };
@@ -109,13 +109,13 @@ export default function   TopBar({ user }: { user?: UserType }) {
 
   return (
     <header className=" bg-transparent flex items-center justify-between">
-      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-8 w-full items-start sm:items-center mb-5">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-12 w-full   mb-5">
         <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center">
-          <h1 className="text-xl sm:text-2xl font-normal text-slate-800 md:block hidden">
+          <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
             {pageTitle}
           </h1>
 
-          <div className="relative w-full sm:w-80 md:w-96">
+          <div className="relative hidden lg:flex  w-full sm:w-80 md:w-96">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
             </div>
@@ -163,7 +163,7 @@ export default function   TopBar({ user }: { user?: UserType }) {
         </div>
 
         {/* //! Streak added by aaisha */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 ">
           {/* <StreakDisplay /> */}
 
           <TopBarBadge>

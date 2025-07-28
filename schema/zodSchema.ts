@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ChallengeMode } from "@prisma/client";
 
 const PASS_LENGTH = 8;
 
@@ -40,49 +41,6 @@ export const miracleLogSchema = z.object({
 });
 
 
-
-// export const dailyBloomSchema = z.object({
-//     title: z
-//       .string()
-//       .min(1, "Title is required")
-//       .max(50, "Title cannot exceed 50 characters"),
-//     description: z
-//       .string()
-//       .max(120, "Description cannot exceed 120 characters")
-//       .optional(), // Making description optional
-//     dueDate: z.preprocess((arg) => {
-//         if (typeof arg === 'string' && arg.length > 0) {
-//           const date = new Date(arg);
-//           // Return undefined for invalid date strings to let Zod handle the error
-//           return isNaN(date.getTime()) ? undefined : date;
-//         }
-//         if (arg instanceof Date) {
-//           return arg;
-//         }
-//         return undefined; // Treat null, undefined, or empty string as undefined
-//       }, 
-//       z.date()
-//         .optional()
-//         .nullable()
-//     ),
-//     frequency: z.enum(["Daily", "Weekly", "Monthly"]).optional().nullable(),
-//     isCompleted: z.boolean().default(false),
-//     taskAddJP: z.boolean().default(false),
-//     taskCompleteJP: z.boolean().default(false),
-//   }).superRefine((data, ctx) => {
-//     // If both fields are missing, add an error.
-//     if (!data.dueDate && !data.frequency) {
-//       ctx.addIssue({
-//         code: z.ZodIssueCode.custom,
-//         message: "Please select either a Due Date or a Frequency.",
-//         // Apply the error message to one of the fields so it can be displayed.
-//         path: ["dueDate"], 
-//       });
-//     }
-//   });
-
-
-
 export const dailyBloomSchema = z
   .object({
     title: z
@@ -117,12 +75,49 @@ export const dailyBloomSchema = z
     if (!isOneSelected) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please select either a Due Date or a Frequency, but not both.",
+        message:
+          "Please select either a Due Date or a Frequency, but not both.",
         path: ["dueDate"],
       });
     }
   });
 
+
+export const challengeSchema = z
+  .object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
+    mode: z.nativeEnum(ChallengeMode),
+    cost: z.number(),
+    reward: z.number(),
+    penalty: z.number(),
+
+    startDate: z.coerce.date().refine(
+      (date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return date > today;
+      },
+      {
+        message: "Start date must be in the future.",
+      }
+    ),
+
+    endDate: z.coerce.date(),
+
+    tasks: z
+      .array(
+        z.object({
+          description: z.string().min(1, "Task description is required"),
+        })
+      )
+      .min(1, "At least 1 task is required")
+      .max(3, "No more than 3 tasks are allowed"),
+  })
+  .refine((data) => data.endDate > data.startDate, {
+    message: "End date must be after the start date.",
+    path: ["endDate"],
+  });
 
 // Miracle Log Schema
 export const progressvaultSchema = z.object({
@@ -219,7 +214,8 @@ export const magicBoxSettingsSchema = z
 
 export const activitySchema = z.object({
   activityId: z.string().min(1, "Activity is required"),
-  jpAmount: z.string().min(1, "JP amount is required"),
+  // jpAmount: z.string().min(1, "JP amount is required"),
+  jpAmount: z.string(),
 });
 
 export const contactFormSchems = z.object({
@@ -247,3 +243,4 @@ export type Step4FormType = z.infer<typeof step4Schema>;
 export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
+export type challengeSchemaFormType = z.infer<typeof challengeSchema>;

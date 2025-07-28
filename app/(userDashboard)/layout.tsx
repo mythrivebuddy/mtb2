@@ -1,27 +1,37 @@
-"use client"; // This directive is crucial for using React Hooks in App Router layouts
-
+"use client"
 import UserDashboardLayout from "@/components/layout/UserDashboardLayout";
-// Ensure the import path and named export are correct for your hook
-import useUserPresence, { UserPresenceProps } from "@/hooks/userUserPresence";
-import { useSession } from "next-auth/react";
-import React from "react"; // Explicitly import React if not implicitly available or for clarity
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import { useSession } from "next-auth/react"; // Import useSession here
+import React from "react"; 
 
-export default function Layout({ // Capitalized 'Layout' is common for components, though 'layout' works for file-based layouts.
+export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // ✅ FIXED: Removed 'status' from the destructuring as it was not being used.
-  const { data: session } = useSession();
+  // Get the session directly in the layout
+  const { status } = useSession();
 
-  // The 'id' from session?.user can be string, null, or undefined.
-  // We ensure the type passed to useUserPresence is compatible.
-  const userId: string | null | undefined = session?.user?.id;
+  // Conditionally render a component that uses the hook
+  // This prevents the hook from running during the build or when logged out.
+  if (status === 'authenticated') {
+    return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+  }
 
-  // Pass the object that matches UserPresenceProps.
-  // The 'as UserPresenceProps' cast can often be removed if types align,
-  // but keeping it here doesn't hurt if it helps TypeScript infer correctly.
-  useUserPresence({ userId } as UserPresenceProps);
+  // For loading or unauthenticated states, render a simpler layout
+  // without the user-dependent hook.
+  return <UserDashboardLayout>{children}</UserDashboardLayout>;
+}
+
+
+/**
+ * A new component to contain the logic that should only run
+ * when a user is authenticated.
+ */
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  // THE FIX: The hook is now only called inside this component,
+  // which is only rendered when the session status is 'authenticated'.
+  useOnlineUserLeaderBoard();
 
   return <UserDashboardLayout>{children}</UserDashboardLayout>;
 }
