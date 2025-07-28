@@ -123,35 +123,30 @@ export default function DailyBloomClient() {
   }, [addData, reset]);
 
   // Replaced useQuery with useInfiniteQuery for "Load More" functionality
-  const {
-    data,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery<{
-    data: DailyBloom[];
-    totalCount: number;
-  }>({
-    queryKey: ["dailyBloom", frequencyFilter, statusFilter],
-    queryFn: async ({ pageParam = 1 }) => {
-      const res = await axios.get(
-        `/api/user/daily-bloom?frequency=${frequencyFilter}&status=${statusFilter}&page=${pageParam}&limit=${itemsPerPage}`
-      );
-      return res.data;
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => {
-      const totalFetched = allPages.reduce(
-        (acc, page) => acc + page.data.length,
-        0
-      );
-      if (totalFetched < lastPage.totalCount) {
-        return allPages.length + 1;
-      }
-      return undefined;
-    },
-  });
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery<{
+      data: DailyBloom[];
+      totalCount: number;
+    }>({
+      queryKey: ["dailyBloom", frequencyFilter, statusFilter],
+      queryFn: async ({ pageParam = 1 }) => {
+        const res = await axios.get(
+          `/api/user/daily-bloom?frequency=${frequencyFilter}&status=${statusFilter}&page=${pageParam}&limit=${itemsPerPage}`
+        );
+        return res.data;
+      },
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        const totalFetched = allPages.reduce(
+          (acc, page) => acc + page.data.length,
+          0
+        );
+        if (totalFetched < lastPage.totalCount) {
+          return allPages.length + 1;
+        }
+        return undefined;
+      },
+    });
 
   // Flatten the pages array to get a single list of blooms
   const dailyBloom = data?.pages.flatMap((page) => page.data) || [];
@@ -192,7 +187,10 @@ export default function DailyBloomClient() {
       queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(error, "Failed to update task.");
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to update task."
+      );
       toast.error(errorMessage);
     },
   });
@@ -208,7 +206,10 @@ export default function DailyBloomClient() {
       queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(error, "Failed to delete task.");
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to delete task."
+      );
       toast.error(errorMessage);
     },
   });
@@ -255,17 +256,19 @@ export default function DailyBloomClient() {
       },
       {
         onSuccess: () => {
-          toast.success(`Task marked as ${isCompleted ? "complete" : "pending"}.`);
+          toast.success(
+            `Task marked as ${isCompleted ? "complete" : "pending"}.`
+          );
         },
       }
     );
   };
 
   return (
-    <div className="px-[1rem] max-w-4xl">
+    <div>
       <CustomAccordion />
-      <div >
-        <Card className="mb-8">
+      <div className="container mx-auto p-3 max-w-4xl">
+        <Card className="mb-8  ">
           <CardHeader>
             <div className="space-y-3">
               <CardTitle>Daily Blooms</CardTitle>
@@ -312,7 +315,9 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={statusFilter === "Pending" ? "secondary" : "ghost"}
+                        variant={
+                          statusFilter === "Pending" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setStatusFilter("Pending")}
@@ -344,7 +349,9 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={frequencyFilter === "All" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "All" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("All")}
@@ -392,9 +399,7 @@ export default function DailyBloomClient() {
             <CardContent>
               {dailyBloom.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-muted-foreground">
-                    No blooms Available.
-                  </p>
+                  <p className="text-muted-foreground">No blooms Available.</p>
                 </div>
               ) : (
                 <>
@@ -419,7 +424,10 @@ export default function DailyBloomClient() {
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(bloom, e.target.checked)
+                                  handleUpdateCompletion(
+                                    bloom,
+                                    e.target.checked
+                                  )
                                 }
                                 className="w-4 h-4 rounded-md cursor-pointer"
                               />
@@ -447,8 +455,8 @@ export default function DailyBloomClient() {
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                  "en-IN"
-                                )
+                                    "en-IN"
+                                  )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -486,28 +494,36 @@ export default function DailyBloomClient() {
                       <Card key={bloom.id}>
                         <CardHeader>
                           <div className="flex items-start justify-between gap-4">
-                            <CardTitle>{bloom.title}</CardTitle>
+                            <CardTitle>
+                              {bloom.title.length > 10
+                                ? `${bloom.title.slice(0, 10)}...`
+                                : bloom.title}
+                            </CardTitle>
+
                             <div className="flex flex-col items-center flex-shrink-0">
                               <Input
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(bloom, e.target.checked)
+                                  handleUpdateCompletion(
+                                    bloom,
+                                    e.target.checked
+                                  )
                                 }
                                 className="w-5 h-5 rounded-md cursor-pointer"
                               />
-                              <Label className="text-xs text-muted-foreground mt-1">
-                                Achieve
-                              </Label>
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm">
                           {bloom.description && (
                             <p className="text-muted-foreground">
-                              {bloom.description}
+                              {bloom.description.length > 10
+                                ? `${bloom.description.slice(0, 10)}...`
+                                : bloom.description}
                             </p>
                           )}
+
                           <div className="flex items-center">
                             <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
                             <span>Frequency: {bloom.frequency || "-"}</span>
@@ -518,8 +534,8 @@ export default function DailyBloomClient() {
                               Due:{" "}
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                  "en-IN"
-                                )
+                                    "en-IN"
+                                  )
                                 : "-"}
                             </span>
                           </div>
@@ -554,25 +570,25 @@ export default function DailyBloomClient() {
               )}
             </CardContent>
             {/* Replaced pagination buttons with a "Load More" button */}
-                      <CardFooter className="p-4">
-            {hasNextPage && (
-              <Button
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-                variant="secondary"
-                className="w-full font-semibold text-muted-foreground transition-colors hover:bg-muted/80"
-              >
-                {isFetchingNextPage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading More...
-                  </>
-                ) : (
-                  "Load More"
-                )}
-              </Button>
-            )}
-          </CardFooter>
+            <CardFooter className="p-4">
+              {hasNextPage && (
+                <Button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  variant="secondary"
+                  className="w-full font-semibold text-muted-foreground transition-colors hover:bg-muted/80"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading More...
+                    </>
+                  ) : (
+                    "Load More"
+                  )}
+                </Button>
+              )}
+            </CardFooter>
           </Card>
         )}
 
@@ -590,7 +606,9 @@ export default function DailyBloomClient() {
                   <Label htmlFor="title-add">Title</Label>
                   <Input id="title-add" {...register("title")} />
                   {errors.title && (
-                    <p className="text-red-500 text-sm">{errors.title.message}</p>
+                    <p className="text-red-500 text-sm">
+                      {errors.title.message}
+                    </p>
                   )}
                 </div>
                 <div className="grid w-full items-center gap-1.5">
@@ -620,7 +638,9 @@ export default function DailyBloomClient() {
                       Due Date
                     </Button>
                     {errors.dueDate && (
-                      <p className="text-red-500 text-sm">{errors.dueDate.message}</p>
+                      <p className="text-red-500 text-sm">
+                        {errors.dueDate.message}
+                      </p>
                     )}
                     <Button
                       type="button"
@@ -654,13 +674,16 @@ export default function DailyBloomClient() {
                           type="date"
                           min={today}
                           value={
-                            field.value && !isNaN(new Date(field.value).getTime())
+                            field.value &&
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
                           onChange={(e) =>
                             field.onChange(
-                              e.target.value ? new Date(e.target.value) : undefined
+                              e.target.value
+                                ? new Date(e.target.value)
+                                : undefined
                             )
                           }
                         />
@@ -680,7 +703,6 @@ export default function DailyBloomClient() {
                       const { value, ...restOfField } = field;
                       return (
                         <div className="grid w-full items-center gap-1.5">
-
                           <Label htmlFor="frequency-select">Frequency</Label>
                           <select
                             id="frequency-select"
@@ -697,7 +719,6 @@ export default function DailyBloomClient() {
                               {errors.frequency.message}
                             </p>
                           )}
-
                         </div>
                       );
                     }}
@@ -763,11 +784,14 @@ export default function DailyBloomClient() {
                         Due Date
                       </p>
                       <p className="text-base">
-                        {new Date(viewData.dueDate).toLocaleDateString("en-IN", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {new Date(viewData.dueDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }
+                        )}
                       </p>
                     </div>
                   </div>
@@ -807,7 +831,9 @@ export default function DailyBloomClient() {
                   <Label htmlFor="title-edit">Title</Label>
                   <Input id="title-edit" {...register("title")} />
                   {errors.title && (
-                    <p className="text-sm text-red-500">{errors.title.message}</p>
+                    <p className="text-sm text-red-500">
+                      {errors.title.message}
+                    </p>
                   )}
                 </div>
                 <div className="grid w-full items-center gap-1.5">
@@ -831,7 +857,7 @@ export default function DailyBloomClient() {
                           type="date"
                           value={
                             field.value &&
-                              !isNaN(new Date(field.value).getTime())
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -859,8 +885,9 @@ export default function DailyBloomClient() {
                       const { value, ...restOfField } = field;
                       return (
                         <div className="grid w-full items-center gap-1.5">
-
-                          <Label htmlFor="frequency-edit-select">Frequency</Label>
+                          <Label htmlFor="frequency-edit-select">
+                            Frequency
+                          </Label>
                           <select
                             id="frequency-edit-select"
                             {...restOfField}
@@ -876,7 +903,6 @@ export default function DailyBloomClient() {
                               {errors.frequency.message}
                             </p>
                           )}
-
                         </div>
                       );
                     }}

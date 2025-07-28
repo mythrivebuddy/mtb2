@@ -24,7 +24,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
   imagePreview,
 }) => (
   <form onSubmit={onSubmit}>
-    <div className="flex  flex-col gap-2 justify-between items-center mb-6">
+    <div className="flex flex-col sm:flex-row gap-2 justify-between items-center mb-6">
       <h2 className="text-xl sm:text-2xl text-nowrap font-bold text-gray-800">
         Edit Business Profile
       </h2>

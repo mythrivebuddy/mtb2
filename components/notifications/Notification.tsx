@@ -53,7 +53,7 @@ export default function NotificationsPage()  {
   }
 
   return (
-    <div className="p-6">
+    <div className="px-4 py-6">
       {/* Push Notification Settings */}
       <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
         <h2 className="text-lg font-medium mb-3">Notification Settings</h2>
