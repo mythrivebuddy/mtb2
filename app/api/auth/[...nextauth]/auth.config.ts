@@ -193,21 +193,6 @@ export const authConfig: AuthOptions = {
       }
       return session;
     },
-    // Updated redirect callback with debugging
-    async redirect({ url, baseUrl }) {
-      console.log("Redirect URL:", url); // Debug the incoming URL
-      try {
-        const redirectPath = new URL(url, baseUrl).searchParams.get("callbackUrl") || "/dashboard";
-        console.log("Parsed callbackUrl:", redirectPath); // Debug the parsed value
-        const finalPath = redirectPath.includes('/upcoming-challenges') && !redirectPath.endsWith('/join')
-          ? `${redirectPath}/join`
-          : redirectPath;
-        return finalPath.startsWith(baseUrl) ? finalPath : baseUrl + finalPath;
-      } catch (error) {
-        console.error("Redirect error:", error);
-        return baseUrl + "/dashboard"; // Fallback to dashboard on error
-      }
-    },
   },
   session: {
     strategy: "jwt",

@@ -4,33 +4,27 @@ import SignInForm from "@/components/auth/SignInForm";
 import AppLayout from "@/components/layout/AppLayout";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-import Cookies from "js-cookie";
+import { useRouter } from "next/navigation";
 
 const SignInPageContent = () => {
   const { data: session } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
 
   useEffect(() => {
     if (!session) return;
-    const finalRedirect = redirectUrl && redirectUrl.includes('/challenge') 
-      ? redirectUrl 
-      : session?.user?.role === "ADMIN" 
-        ? redirectUrl || "/admin/dashboard"
-        : redirectUrl || "/dashboard";
-    router.push(finalRedirect);
-  }, [session, router, redirectUrl]);
-
-  useEffect(() => {
-    if (redirectUrl) {
-      Cookies.set("redirectAfterAuth", redirectUrl, { expires: 1 });
+    if (session?.user?.role === "ADMIN") {
+      router.push("/admin/dashboard");
+    } else {
+      router.push("/dashboard");
     }
-  }, [redirectUrl]);
+  }, [session, router]);
 
   return (
     <AppLayout>
+      {/* <main className="min-h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] py-4 sm:py-6 md:py-8 px-4">
+      <div className="max-w-[1280px] mx-auto">
+        <div className="bg-white/90 backdrop-blur-sm rounded-[32px] p-4 sm:p-6 md:p-8"> */}
+      {/* <Navbar /> */}
       <div className="mt-8 max-w-md mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#1E2875] mb-2">
@@ -40,6 +34,9 @@ const SignInPageContent = () => {
         </div>
         <SignInForm />
       </div>
+      {/* </div>
+      </div>
+    </main> */}
     </AppLayout>
   );
 };

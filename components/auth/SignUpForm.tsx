@@ -17,7 +17,6 @@ import GoogleIcon from "../icons/GoogleIcon";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,10 +24,8 @@ export default function SignUpForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
 
   const referralCodeFromURL = searchParams.get("ref");
-  const redirectUrl = searchParams.get("redirect");
 
   const {
     register,
@@ -39,35 +36,15 @@ export default function SignUpForm() {
     resolver: zodResolver(signupSchema),
   });
 
+  // ✅ Store referral code in cookie if present
   useEffect(() => {
     if (referralCodeFromURL) {
       setValue("referralCode", referralCodeFromURL);
       Cookies.set("referralCode", referralCodeFromURL, { expires: 7 });
     }
-    if (redirectUrl) {
-      Cookies.set("redirectAfterAuth", redirectUrl, { expires: 1 }); // Expires in 1 day
-      console.log("Stored redirectAfterAuth in cookies:", redirectUrl); // Debug
-    }
-  }, [referralCodeFromURL, redirectUrl, setValue]);
+  }, [referralCodeFromURL, setValue]);
 
-  useEffect(() => {
-    if (status === "authenticated" && session) {
-      const redirectPath = Cookies.get("redirectAfterAuth");
-      console.log("Client Redirect Path from cookies:", redirectPath); // Debug
-      if (redirectPath && redirectPath.includes('/upcoming-challenges')) {
-        const joinUrl = redirectPath.endsWith('/join') ? redirectPath : `${redirectPath}/join`;
-        router.push(joinUrl);
-      } else if (redirectPath) {
-        router.push(redirectPath);
-      } else if (session.user?.role === "ADMIN") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
-      Cookies.remove("redirectAfterAuth");
-    }
-  }, [status, session, router]);
-
+  // ✅ React Query mutation for signup
   const signupMutation = useMutation({
     mutationFn: async (data: SignupFormType) => {
       const res = await axios.post("/api/auth/signup", data);
@@ -86,21 +63,14 @@ export default function SignUpForm() {
 
           if (referralRes.status >= 200 && referralRes.status < 300) {
             toast.success("Referral processed successfully!");
-            Cookies.remove("referralCode");
+            Cookies.remove("referralCode"); // remove after processing
           }
         } catch (refErr) {
           toast.error(getAxiosErrorMessage(refErr, "Referral failed"));
         }
       }
 
-      const redirectPath = Cookies.get("redirectAfterAuth") || "/signin";
-      if (redirectPath.includes('/upcoming-challenges')) {
-        const joinUrl = redirectPath.endsWith('/join') ? redirectPath : `${redirectPath}/join`;
-        router.push(joinUrl);
-      } else {
-        router.push(redirectPath);
-      }
-      Cookies.remove("redirectAfterAuth");
+      router.push("/signin");
     },
     onError: (err) => {
       toast.error(getAxiosErrorMessage(err, "Signup failed"));
@@ -114,41 +84,38 @@ export default function SignUpForm() {
     });
   };
 
+  
   const handleGoogleLogin = async () => {
     try {
-      setIsLoading(true);
-      const redirectPath = redirectUrl || "/dashboard";
-      Cookies.set("redirectAfterAuth", redirectPath, { expires: 1 });
-      console.log("Setting redirectAfterAuth for Google login:", redirectPath); // Debug
+      // Get referral code from URL or cookies
+      // const referralCode = searchParams.get('ref');
+      
       const result = await signIn("google", {
         redirect: false,
-        callbackUrl: redirectPath,
+        callbackUrl: "/dashboard",
+        // state: "gggggggggg",
       });
-
+      
       if (result?.ok) {
+        console.log("herer in okay");
+        router.push("/dashboard");
         toast.success("Signed in successfully");
-        const redirectPathFromCookie = Cookies.get("redirectAfterAuth");
-        if (redirectPathFromCookie && redirectPathFromCookie.includes('/upcoming-challenges')) {
-          const joinUrl = redirectPathFromCookie.endsWith('/join') ? redirectPathFromCookie : `${redirectPathFromCookie}/join`;
-          router.push(joinUrl);
-        } else if (redirectPathFromCookie) {
-          router.push(redirectPathFromCookie);
-        } else {
-          router.push("/dashboard");
-        }
-        Cookies.remove("redirectAfterAuth");
-      } else if (result?.error) {
+        return;
+      }
+      if (result?.error) {
         toast.error("Google Sign in failed. Please try again later.");
       }
     } catch (error) {
-      console.error("Error signing in with Google:", error);
+      console.error("Error signing in", error);
       toast.error(
-        getAxiosErrorMessage(error, "Google Sign in failed. Please try again later.")
+        getAxiosErrorMessage(
+          error,
+          "Google Sign in failed. Please try again later."
+        )
       );
-    } finally {
-      setIsLoading(false);
     }
   };
+
 
   return (
     <div className="space-y-4">
@@ -225,7 +192,6 @@ export default function SignUpForm() {
         variant="outline"
         className="w-full h-12 flex items-center justify-center space-x-2"
         onClick={handleGoogleLogin}
-        disabled={isLoading}
       >
         <GoogleIcon />
         <span>Sign in with Google</span>
