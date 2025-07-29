@@ -33,6 +33,7 @@ interface UserData {
   name: string;
   email: string;
   image: string | null;
+  bio: string | null; // This line is added
   keyOfferings: string | null;
   achievements: string | null;
   missionStatement: string | null;
@@ -54,13 +55,16 @@ interface UserData {
   jpTransaction: number;
 }
 
+
 async function fetchUser(userId: string): Promise<UserData> {
-  const res = await fetch(`/api/user/${userId}`);
+
+  const res = await fetch(`/api/profile/${userId}`); 
   if (!res.ok) {
     throw new Error("Failed to fetch user data");
   }
   return res.json();
 }
+
 
 function maskEmail(email: string): string {
   const [localPart, domain] = email.split("@"); // Split email into local and domain parts
@@ -149,6 +153,13 @@ export default function UserDetailsPage() {
                 <CardTitle className="md:text-3xl text-xl font-bold">
                   {userData.name}
                 </CardTitle>
+
+                 {/* ✅ --- FIX 2: Render the Bio if it exists --- */}
+                {userData.bio && (
+                  <p className="text-gray-700 mt-1">{userData.bio}</p>
+                )}
+
+
                 <p className="text-gray-600 mt-1">
                   {maskEmail(userData.email)}
                 </p>
