@@ -58,7 +58,7 @@ export default function DashboardPage() {
       enabled: !!session?.user?.id,
     });
 
-  console.log(spotlights);
+ 
 
   if (
     spotlightLoading ||

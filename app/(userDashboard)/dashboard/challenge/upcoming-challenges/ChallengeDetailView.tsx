@@ -100,7 +100,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
         handleEnroll();
         } else {
         const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
-        router.push(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
+        router.push(`/signin?redirect=${(redirectPath)}`);
         }
     };
 

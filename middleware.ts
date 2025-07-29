@@ -1,21 +1,42 @@
 // File: middleware.ts (in your project's root folder)
-// THIS IS THE CORRECTED VERSION
-
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const isAdmin = token?.role === "ADMIN";
     const path = req.nextUrl.pathname;
+    const searchParams = req.nextUrl.searchParams;
+    const redirect = searchParams.get('redirect') || null;
+    const redirectUrl = redirect && redirect.startsWith('/') ? `${req.nextUrl.origin}${redirect}` : null;
 
-    if (path.startsWith("/dashboard") && isAdmin) {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    console.log('Middleware triggered:', { path, token: !!token, redirect, redirectUrl });
+
+    // Handle authenticated users accessing /signin
+    if (token && path === '/signin' && redirectUrl) {
+      console.log('Redirecting authenticated user from /signin to:', redirectUrl);
+      return NextResponse.redirect(new URL(redirectUrl, req.url));
     }
-    if (path.startsWith("/admin") && !isAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+
+    // Redirect admins accessing /dashboard to /admin/dashboard
+    if (token && path.startsWith('/dashboard') && token.role === 'ADMIN') {
+      console.log('Redirecting admin to /admin/dashboard');
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
+
+    // Redirect non-admins accessing /admin to /dashboard
+    if (token && path.startsWith('/admin') && token.role !== 'ADMIN') {
+      console.log('Redirecting non-admin to /dashboard');
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    // Explicitly allow /dashboard/challenge/... for non-admins
+    if (token && path.startsWith('/dashboard/challenge/') && token.role !== 'ADMIN') {
+      console.log('Allowing non-admin access to:', path);
+      return NextResponse.next();
+    }
+
+    console.log('Middleware proceeding with NextResponse.next() for path:', path);
     return NextResponse.next();
   },
   {
@@ -23,44 +44,38 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
 
-        // If the page is public, always allow access.
+        console.log('Authorized callback:', { path, token: !!token });
+
+        // Allow public challenge pages
         if (isPublicChallengePage(path)) {
+          console.log('Public challenge page allowed:', path);
           return true;
         }
 
-        // For all other pages, require a login.
+        // Require authentication for all other pages
         return !!token;
       },
     },
     pages: {
-      signIn: "/signin",
+      signIn: '/signin',
     },
   }
 );
 
-/**
- * Helper function to determine if a path is a public challenge page.
- * This logic now perfectly matches your updated UserDashboardLayout component.
- */
 function isPublicChallengePage(path: string): boolean {
-  // Define all private prefixes under /dashboard/challenge/
   const privateChallengePrefixes = [
     '/dashboard/challenge/my-challenges',
     '/dashboard/challenge/create-challenge',
     '/dashboard/challenge/join-challenge',
     '/dashboard/challenge/let-others-roll',
-    // The '/upcoming-challenges' line has been REMOVED from this list
   ];
 
   const isMainChallengePage = path === '/dashboard/challenge';
-  const isPrivateSubPage = privateChallengePrefixes.some(prefix => path.startsWith(prefix));
+  const isPrivateSubPage = privateChallengePrefixes.some((prefix) => path.startsWith(prefix));
 
-  // A page is public if it's under /dashboard/challenge/ and NOT in the private list.
   return path.startsWith('/dashboard/challenge/') && !isMainChallengePage && !isPrivateSubPage;
 }
 
-
-// This config does not change.
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*"],
+  matcher: ['/dashboard/:path*', '/leaderboard', '/admin/:path*', '/signin'],
 };
