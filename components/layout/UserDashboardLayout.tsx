@@ -43,7 +43,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   // The user is considered logged in if the session is authenticated.
   const isLoggedIn = sessionStatus === "authenticated" && !!user;
-// session to check logged in or not
+// session to check logged in or 
   return (
     <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
       {/* Conditionally render the Sidebar for logged-in users */}
