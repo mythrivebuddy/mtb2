@@ -30,7 +30,6 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import PageSkeleton from "../PageSkeleton";
 import { DailyBloomFormType } from "@/schema/zodSchema";
 import HoverDetails from "./HoverDetails"; // ✅ NEW: Import HoverDetails component
