@@ -90,7 +90,7 @@ export default function UpcomingChallengesPage() {
 
   // 3. Extract the page content into a constant
   const pageContent = (
-    <div className="min-h-screen p-4 mx-4 sm:p-6 lg:p-8 bg-gray-50 rounded-2xl mt-10">
+    <div className="min-h-screen p-4 mx-4 sm:p-6 lg:p-8 rounded-2xl mt-10">
       <div className="max-w-7xl mx-auto">
         {/* --- Header Section --- */}
         <div className="text-center mb-12">
