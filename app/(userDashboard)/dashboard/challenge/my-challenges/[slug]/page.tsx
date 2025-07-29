@@ -57,13 +57,13 @@ const StatCard = ({
   value: string | number;
   colorClass: string;
 }) => (
-  <div className="bg-white p-4 rounded-xl shadow-md flex items-center space-x-4">
+  <div className="bg-white px-2 py-4 rounded-xl shadow-md flex items-center space-x-4">
     {" "}
-    <div className={`p-3 rounded-full ${colorClass}`}>{icon}</div>{" "}
+    <div className={`p-3 max-sm:h-10 flex items-center justify-center max-sm:w-10 rounded-full ${colorClass}`}>{icon}</div>{" "}
     <div>
       {" "}
       <p className="text-sm text-gray-500">{label}</p>{" "}
-      <p className="text-2xl font-bold text-gray-800">{value}</p>{" "}
+      <p className="text-lg sm:text-2xl font-bold text-gray-800">{value}</p>{" "}
     </div>{" "}
   </div>
 );
@@ -215,7 +215,7 @@ export default function ChallengeManagementPage() {
                 {challenge.status}{" "}
               </span>
             </div>
-            <h1 className="text-4xl font-extrabold text-gray-900 mt-4">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mt-4">
               {" "}
               {challenge.title}{" "}
             </h1>

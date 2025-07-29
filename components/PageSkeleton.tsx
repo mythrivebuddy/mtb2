@@ -50,7 +50,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for dashboard
   if (type === "dashboard") {
     return (
-      <div className="animate-pulse py-6">
+      <div className="animate-pulse px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Dashboard Content Skeleton */}
           <div className="flex-1">
