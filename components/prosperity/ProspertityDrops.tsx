@@ -54,7 +54,7 @@ const ProsperityPage = () => {
   return (
     <>
       <CustomAccordion />
-      <div className="container mx-auto px-0 space-y-6">
+      <div className="container mx-auto px-4 space-y-6">
         {/* Description Section */}
         <Card>
           <CardHeader>
