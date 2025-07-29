@@ -3,7 +3,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react"; // 1. Import useSession
 import { Loader2 } from "lucide-react";
 
