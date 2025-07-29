@@ -58,7 +58,7 @@ export default function DashboardPage() {
       enabled: !!session?.user?.id,
     });
 
-  console.log(spotlights);
+ 
 
   if (
     spotlightLoading ||
@@ -88,7 +88,7 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="py-6">
+    <div className="py-6 px-4">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Main Dashboard Content */}
         <div className="flex-1">

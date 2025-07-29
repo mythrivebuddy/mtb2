@@ -1,6 +1,6 @@
 // app/api/challenge/route.ts
 
-import { prisma } from "@/lib/prisma"; // ✅ IMPORT THE SINGLETON INSTANCE
+import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { deductJp } from "@/lib/utils/jp";
 import { challengeSchema } from "@/schema/zodSchema";
@@ -22,14 +22,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    const userId = session.user.id; // Store user ID for clarity
+
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       include: { plan: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
+
+    // ✨ --- NEW MANUAL CHECK STARTS HERE --- ✨
+    // Manually verify the user's challenge limit before starting a transaction.
+    // This provides a guaranteed check that works in all environments (local & production).
+    const challengeCount = await prisma.challenge.count({
+      where: { creatorId: userId },
+    });
+
+    if (challengeCount >= user.challenge_limit) {
+      return NextResponse.json(
+        { error: "You have reached your challenge creation limit." },
+        { status: 403 } // 403 Forbidden
+      );
+    }
+    // ✨ --- NEW MANUAL CHECK ENDS HERE --- ✨
 
     const body = await request.json();
     const validationResult = challengeSchema.safeParse(body);
@@ -51,12 +68,16 @@ export async function POST(request: Request) {
       tasks,
     } = validationResult.data;
 
-    // ✅ APPLY THE TIMEOUT FIX HERE
     const newChallenge = await prisma.$transaction(async (tx) => {
-      // Step A: Deduct JP for challenge creation.
+      // Step A: Set the user context for the RLS policy (defense-in-depth).
+      await tx.$executeRawUnsafe(
+        `SELECT set_config('request.jwt.claims', '{"sub": "${userId}", "role": "authenticated"}', true);`
+      );
+
+      // Step B: Deduct JP for challenge creation.
       await deductJp(user, ActivityType.CHALLENGE_CREATION_FEE, tx);
 
-      // Step B: Create the challenge.
+      // Step C: Create the challenge.
       const challenge = await tx.challenge.create({
         data: {
           title,
@@ -69,7 +90,7 @@ export async function POST(request: Request) {
           startDate,
           endDate,
           status: "UPCOMING",
-          creator: { connect: { id: user.id } },
+          creator: { connect: { id: userId } },
           templateTasks: {
             create: tasks.map((task) => ({ description: task.description })),
           },
@@ -81,26 +102,25 @@ export async function POST(request: Request) {
         throw new Error("Failed to create challenge in database.");
       }
 
-      // Step C & D: Enroll creator and create their tasks
+      // Step D & E: Enroll creator and create their tasks
       await tx.challengeEnrollment.create({
         data: {
           challengeId: challenge.id,
-          userId: user.id,
+          userId: userId,
           status: "IN_PROGRESS",
           userTasks: {
-            create: challenge.templateTasks.map(templateTask => ({
+            create: challenge.templateTasks.map((templateTask) => ({
               description: templateTask.description,
               templateTaskId: templateTask.id,
-            }))
-          }
-        }
+            })),
+          },
+        },
       });
 
       return challenge;
     }, {
-      // Set timeouts to handle Vercel's network latency
-      maxWait: 10000, // Wait up to 10s for a DB connection
-      timeout: 20000, // Allow the transaction 20s to complete
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     return NextResponse.json(
@@ -112,6 +132,12 @@ export async function POST(request: Request) {
     );
   } catch (error: unknown) {
     if (error instanceof Error) {
+      if (error.message.includes("new row violates row-level security policy")) {
+        return NextResponse.json(
+          { error: "You have reached Free Membership Limit." },
+          { status: 403 }
+        );
+      }
       if (error.message === "Insufficient JP balance") {
         return NextResponse.json(
           { error: "You do not have enough JP to create this challenge." },
