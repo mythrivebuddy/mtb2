@@ -118,74 +118,75 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   return (
     <>
       {/* Hamburger Menu Button for Mobile */}
-      <div className="flex gap-4 justify-around w-full">
-      <button
-        className="lg:hidden p-2 bg-white rounded-md shadow-md"
-        onClick={toggleSidebar}
+     <div className="flex items-center pt-1 gap-4 justify-between w-screen ">
+  <button
+    className="lg:hidden p-2 bg-white rounded-md shadow-md"
+    onClick={toggleSidebar}
+  >
+    {isOpen ? (
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        {isOpen ? (
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <path d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    ) : (
+      <Menu size={24} />
+    )}
+  </button>
+
+  {/* 🛠️ WRAP THE SEARCH BAR IN A FLEX-GROW DIV */}
+ <div className="relative flex-1 pr-12 lg:hidden">
+
+  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+    <Search className="h-4 w-4 text-slate-400" />
+  </div>
+  <input
+    type="search"
+    className=" max-md:w-full bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
+    placeholder="Search Anything Here..."
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      setShowDropdown(true);
+    }}
+    onFocus={() => setShowDropdown(true)}
+    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+  />
+  {showDropdown && searchTerm && (
+    <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
+      {isLoading ? (
+        <div className="p-2 text-sm text-slate-500">Loading...</div>
+      ) : users?.length === 0 ? (
+        <div className="p-2 text-sm text-slate-500">No users found</div>
+      ) : (
+        users?.map((user: SearchUser) => (
+          <Link
+            key={user.id}
+            href={`/profile/${user.id}`}
+            className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
+            target="_blank"
           >
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        ) : (
-          <Menu size={24} />
-        )}
-      </button>
-      <div className="relative lg:hidden  w-full ">
-            <div className="absolute inset-y-0 w-full left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
-            </div>
-            <input
-              type="search"
-              className="bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
-              placeholder="Search Anything Here..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setShowDropdown(true);
-              }}
-              onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-            />
-            {showDropdown && searchTerm && (
-              <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
-                {isLoading ? (
-                  <div className="p-2 text-sm text-slate-500">Loading...</div>
-                ) : users?.length === 0 ? (
-                  <div className="p-2 text-sm text-slate-500">
-                    No users found
-                  </div>
-                ) : (
-                  users?.map((user: SearchUser) => (
-                    <Link
-                      key={user.id}
-                      href={`/profile/${user.id}`}
-                      className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
-                      target="_blank"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.image || undefined} />
-                        <AvatarFallback>
-                          <p className="text-sm">{getInitials(user.name)}</p>
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{user.name}</span>
-                    </Link>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-          </div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.image || undefined} />
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            </Avatar>
+            <span className="text-sm">{user.name}</span>
+          </Link>
+        ))
+      )}
+    </div>
+  )}
+</div>
+
+</div>
+
 
       {/* Overlay for Mobile */}
       {isOpen && (

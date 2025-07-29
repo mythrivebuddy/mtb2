@@ -241,9 +241,9 @@ export default function MyProfile() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-3xl mx-auto px-4 py-6">
       <Card className="rounded-2xl shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row gap-2 items-center justify-between">
           <CardTitle className="text-2xl">My Profile</CardTitle>
           {!isEditMode ? (
             <Button

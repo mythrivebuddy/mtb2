@@ -83,7 +83,7 @@ export default function SpotlightPage() {
   return (
     <>
       <CustomAccordion />
-      <div className="container mx-auto px-0 py-8">
+      <div className="container mx-auto px-4 py-8">
         {/* <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1> */}
 
         <Card className="p-6 mb-8">

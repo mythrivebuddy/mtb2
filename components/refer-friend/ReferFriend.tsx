@@ -128,7 +128,7 @@ export default function ReferFriendPage() {
     <div className="container mx-auto px-4 py-8">
       
       <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold">Refer a Friend</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1>
         
         <Card>
           <CardHeader>

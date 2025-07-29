@@ -58,7 +58,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
       {/* Conditionally render the Sidebar for logged-in users */}
       {isLoggedIn && (
-        <div className="fixed top-0 left-0 w-64 z-20 m-3">
+        <div className="fixed max-sm:px-[1rem] top-0 left-0 w-64 z-20 m-3">
           <Sidebar user={user} />
         </div>
       )}
@@ -71,7 +71,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       >
         {/* Conditionally render the TopBar for logged-in users */}
         {isLoggedIn && (
-          <div className="md:mx-10 mx-5">
+          <div className="md:mx-10 px-4">
             <TopBar user={user} />
           </div> 
         )}

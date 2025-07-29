@@ -262,9 +262,9 @@ export default function DailyBloomClient() {
   };
 
   return (
-    <>
+    <div className="px-[1rem] max-w-4xl">
       <CustomAccordion />
-      <div className="container mx-auto p-3 max-w-4xl">
+      <div >
         <Card className="mb-8">
           <CardHeader>
             <div className="space-y-3">
@@ -932,6 +932,6 @@ export default function DailyBloomClient() {
           </DialogContent>
         </Dialog>
       </div>
-    </>
+    </div>
   );
 }
