@@ -27,7 +27,7 @@ export default function LetOthersRollClient() {
     const slug = searchParams.get("slug");
     const uuid = searchParams.get("uuid");
 
-    const baseUrl = process.env.NEXT_PUBLIC_TEST_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     if (!slug || !uuid) {
       setError("Challenge details are missing from the URL.");
