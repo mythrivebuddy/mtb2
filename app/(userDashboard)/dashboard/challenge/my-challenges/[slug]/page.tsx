@@ -13,7 +13,7 @@ import {
   Award,
   ShieldAlert,
   PartyPopper,
-  AlertTriangle, // Import icon for the error modal
+  CalendarX, // Import icon for the error modal
 } from "lucide-react";
 import Image from "next/image";
 import axios from "axios";
@@ -359,22 +359,34 @@ export default function ChallengeManagementPage() {
 
       {/* --- NEW: Error Modal --- */}
       {isErrorModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
-            <AlertTriangle className="w-20 h-20 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              Update Failed
-            </h2>
-            <p className="text-slate-500 mb-6">{errorMessage}</p>
-            <button
-              onClick={() => setIsErrorModalOpen(false)}
-              className="w-full bg-slate-200 text-slate-800 p-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
-            >
-              Acknowledge
-            </button>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+      {/* Icon changed to 'CalendarX' to represent an unavailable time period.
+        Color changed from red to amber for a less alarming "warning" feel.
+        (Remember to import CalendarX from 'lucide-react')
+      */}
+      <CalendarX className="w-20 h-20 text-amber-500 mx-auto mb-4" />
+
+      {/* Title is now specific and informative */}
+      <h2 className="text-2xl font-bold text-slate-800 mb-2">
+        Challenge Not Active
+      </h2>
+
+      {/* The message explains the situation clearly */}
+      <p className="text-slate-500 mb-6">
+        {errorMessage || "This challenge is currently inactive or has ended. You can no longer submit tasks for it."}
+      </p>
+
+      {/* Button has friendlier text and a more definitive style */}
+      <button
+        onClick={() => setIsErrorModalOpen(false)}
+        className="w-full bg-slate-800 text-white p-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors"
+      >
+        Got It
+      </button>
+    </div>
+  </div>
+)}
     </>
   );
 }
