@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     setTimeout(() => {
       axios
         .post(
-          `${process.env.NEXT_PUBLIC_TEST_URL}/api/challenge/process-enrollment`,
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/challenge/process-enrollment`,
           {
             enrollmentId: newEnrollment.id,
           }
