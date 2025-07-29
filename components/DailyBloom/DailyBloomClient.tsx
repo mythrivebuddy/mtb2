@@ -262,9 +262,9 @@ export default function DailyBloomClient() {
   };
 
   return (
-    <>
+    <div className="px-[1rem] max-w-4xl">
       <CustomAccordion />
-      <div className="container mx-auto p-3 max-w-4xl">
+      <div >
         <Card className="mb-8">
           <CardHeader>
             <div className="space-y-3">
@@ -680,6 +680,7 @@ export default function DailyBloomClient() {
                       const { value, ...restOfField } = field;
                       return (
                         <div className="grid w-full items-center gap-1.5">
+
                           <Label htmlFor="frequency-select">Frequency</Label>
                           <select
                             id="frequency-select"
@@ -696,6 +697,7 @@ export default function DailyBloomClient() {
                               {errors.frequency.message}
                             </p>
                           )}
+
                         </div>
                       );
                     }}
@@ -857,6 +859,7 @@ export default function DailyBloomClient() {
                       const { value, ...restOfField } = field;
                       return (
                         <div className="grid w-full items-center gap-1.5">
+
                           <Label htmlFor="frequency-edit-select">Frequency</Label>
                           <select
                             id="frequency-edit-select"
@@ -873,6 +876,7 @@ export default function DailyBloomClient() {
                               {errors.frequency.message}
                             </p>
                           )}
+
                         </div>
                       );
                     }}
@@ -928,6 +932,6 @@ export default function DailyBloomClient() {
           </DialogContent>
         </Dialog>
       </div>
-    </>
+    </div>
   );
 }

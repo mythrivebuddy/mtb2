@@ -186,8 +186,8 @@ const BusinessProfile = () => {
   }
 
   return (
-    <div className="flex-1 md:p-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">
+    <div className="flex-1 px-4 md:py-8">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-800">
         Business Profile
       </h1>
       <CompletionBar percentage={profile?.completionPercentage ?? 0} />

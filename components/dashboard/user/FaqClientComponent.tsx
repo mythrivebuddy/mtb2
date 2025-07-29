@@ -28,7 +28,7 @@ const FaqClientComponent = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-center mb-10 text-gray-900">
+      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-10 text-gray-900">
         Frequently Asked Questions
       </h1>
 
@@ -65,7 +65,7 @@ const FaqClientComponent = () => {
                   onClick={() => toggleFaq(faq.id)}
                   className="w-full flex justify-between items-center p-4 text-left"
                 >
-                  <span className="text-lg font-medium text-gray-900">{faq.question}</span>
+                  <span className=" font-medium text-gray-900">{faq.question}</span>
                   {isOpen ? (
                     <ChevronUp className="text-gray-500" />
                   ) : (
