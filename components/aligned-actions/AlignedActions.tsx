@@ -103,7 +103,7 @@ export default function AlignedActionsPage() {
       )}
 
       {showWizard && (
-        <div className="mb-8">
+        <div className="mb-8 ">
           <Card>
             <CardHeader>
               <CardTitle>Create 1% Start actions</CardTitle>

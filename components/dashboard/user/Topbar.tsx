@@ -108,8 +108,8 @@ export default function   TopBar({ user }: { user?: UserType }) {
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
   return (
-    <header className="bg-transparent px-4 flex items-center justify-between">
-      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-12 w-full   mb-5">
+    <header className="bg-transparent px-3 flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-12 w-full mb-5">
         <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center">
           <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
             {pageTitle}
