@@ -27,10 +27,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
+  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import PageSkeleton from "../PageSkeleton";
 import { DailyBloomFormType } from "@/schema/zodSchema";
 import HoverDetails from "./HoverDetails"; // ✅ NEW: Import HoverDetails component
@@ -46,8 +45,12 @@ interface OverdueProps {
   onUpdateCompletion: (bloom: DailyBloom, isCompleted: boolean) => void;
 }
 
-export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }: OverdueProps) {
-  
+export default function Overdue({
+  onView,
+  onEdit,
+  onDelete,
+  onUpdateCompletion,
+}: OverdueProps) {
   // ✅ NEW: State to track the hovered item ID
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
 
@@ -55,9 +58,9 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
     queryKey: ["overdueDailyBlooms"],
     queryFn: async () => {
       const res = await axios.get("/api/user/daily-bloom/overdue");
-      return res.data.data; 
+      return res.data.data;
     },
-    refetchOnWindowFocus: false, 
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {
@@ -67,7 +70,6 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
   if (!overdueBlooms || overdueBlooms.length === 0) {
     return null;
   }
-  
 
   return (
     <Card className="mb-8 border-destructive/30 bg-destructive/5">
@@ -102,40 +104,59 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
                     <Input
                       type="checkbox"
                       checked={bloom.isCompleted}
-                      onChange={(e) => onUpdateCompletion(bloom, e.target.checked)}
+                      onChange={(e) =>
+                        onUpdateCompletion(bloom, e.target.checked)
+                      }
                       className="w-4 h-4 rounded-md cursor-pointer"
                     />
                   </TableCell>
 
-                  <TableCell 
+                  <TableCell
                     className="font-medium relative"
                     onMouseEnter={() => setHoveredBloomId(bloom.id)}
                     onMouseLeave={() => setHoveredBloomId(null)}
                   >
-                    <div className="break-words"> {bloom.title.length > 30
-                            ? `${bloom.title.slice(0, 30)}...`
-                            : bloom.title}</div>
+                    <div className="break-words">
+                      {" "}
+                      {bloom.title.length > 30
+                        ? `${bloom.title.slice(0, 30)}...`
+                        : bloom.title}
+                    </div>
                     {hoveredBloomId === bloom.id && (
-                       <div 
-                         className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl"
-                       >
-                         <HoverDetails bloom={bloom} />
-                       </div>
+                      <div className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl">
+                        <HoverDetails bloom={bloom} />
+                      </div>
                     )}
                   </TableCell>
-                  
+
                   <TableCell className="font-semibold text-destructive">
-                    {bloom.dueDate ? new Date(bloom.dueDate).toLocaleDateString("en-IN") : "—"}
+                    {bloom.dueDate
+                      ? new Date(bloom.dueDate).toLocaleDateString("en-IN")
+                      : "—"}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{bloom.frequency || "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {bloom.frequency || "—"}
+                  </TableCell>
                   <TableCell className="flex items-center justify-center space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => onView(bloom)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onView(bloom)}
+                    >
                       <EyeIcon className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onEdit(bloom)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEdit(bloom)}
+                    >
                       <Pencil className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDelete(bloom.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(bloom.id)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </TableCell>
@@ -150,38 +171,70 @@ export default function Overdue({ onView, onEdit, onDelete, onUpdateCompletion }
         <div className="md:hidden space-y-4">
           {overdueBlooms.map((bloom: DailyBloom) => (
             <Card key={bloom.id} className="bg-background/50">
-                <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                        <CardTitle className="break-all">{bloom.title}</CardTitle>
-                        <div className="flex flex-col items-center flex-shrink-0">
-                            <Input
-                                type="checkbox"
-                                checked={bloom.isCompleted}
-                                onChange={(e) => onUpdateCompletion(bloom, e.target.checked)}
-                                className="w-5 h-5 rounded-md cursor-pointer"
-                            />
-                            <Label className="text-xs text-muted-foreground mt-1">Achieve</Label>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                    {bloom.description && (
-                        <p className="text-muted-foreground break-all">{bloom.description}</p>
-                    )}
-                    <div className="flex items-center">
-                        <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <span>Frequency: {bloom.frequency || "-"}</span>
-                    </div>
-                    <div className="flex items-center text-destructive font-medium">
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        <span>Due: {bloom.dueDate ? new Date(bloom.dueDate).toLocaleDateString("en-IN") : "-"}</span>
-                    </div>
-                </CardContent>
-                <CardFooter className="flex justify-end space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => onView(bloom)}>View</Button>
-                    <Button variant="outline" size="sm" onClick={() => onEdit(bloom)}>Edit</Button>
-                    <Button variant="destructive" size="sm" onClick={() => onDelete(bloom.id)}>Delete</Button>
-                </CardFooter>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <CardTitle className="break-all text-sm">
+                    {bloom.title.length > 10
+                      ? `${bloom.title.slice(0, 10)}...`
+                      : bloom.title}
+                  </CardTitle>
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <Input
+                      type="checkbox"
+                      checked={bloom.isCompleted}
+                      onChange={(e) =>
+                        onUpdateCompletion(bloom, e.target.checked)
+                      }
+                      className="w-5 h-5 rounded-md cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-3 text-sm">
+                {bloom.description && (
+                  <p className="text-muted-foreground break-all">
+                    {bloom.description}
+                  </p>
+                )}
+                <div className="flex items-center">
+                  <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <span>Frequency: {bloom.frequency || "-"}</span>
+                </div>
+                <div className="flex items-center text-destructive font-medium">
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  <span>
+                    Due:{" "}
+                    {bloom.dueDate
+                      ? new Date(bloom.dueDate).toLocaleDateString("en-IN")
+                      : "-"}
+                  </span>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onView(bloom)}
+                >
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(bloom)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onDelete(bloom.id)}
+                >
+                  Delete
+                </Button>
+              </CardFooter>
             </Card>
           ))}
         </div>
