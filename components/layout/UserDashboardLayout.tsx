@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react"; // 1. Import useSession
 import { Loader2 } from "lucide-react";
-
 import TopBar from "../dashboard/user/Topbar";
 import Sidebar from "../dashboard/user/Sidebar";
 import { User } from "@/types/types";
@@ -44,7 +43,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   // The user is considered logged in if the session is authenticated.
   const isLoggedIn = sessionStatus === "authenticated" && !!user;
-
+// session to check logged in or not
   return (
     <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
       {/* Conditionally render the Sidebar for logged-in users */}
