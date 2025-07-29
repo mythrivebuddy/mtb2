@@ -119,7 +119,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
 
   // 1. Extract the main page content into a constant to avoid code duplication.
   const pageContent = (
-    <div className="min-h-screen bg-gray-100 m-10 rounded-3xl">
+    <div className="min-h-screen bg-gray-100 max-sm:mx-4 sm:mx-10 mt-10 rounded-3xl">
       <div className="w-full max-w-3xl mx-auto py-12 px-4">
         <div className="bg-white p-8 rounded-2xl shadow-lg">
           {/* Header Section */}
