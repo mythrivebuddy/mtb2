@@ -680,6 +680,7 @@ export default function DailyBloomClient() {
                       const { value, ...restOfField } = field;
                       return (
                         <div className="grid w-full items-center gap-1.5">
+
                           <Label htmlFor="frequency-select">Frequency</Label>
                           <select
                             id="frequency-select"
@@ -696,6 +697,7 @@ export default function DailyBloomClient() {
                               {errors.frequency.message}
                             </p>
                           )}
+
                         </div>
                       );
                     }}
@@ -857,6 +859,7 @@ export default function DailyBloomClient() {
                       const { value, ...restOfField } = field;
                       return (
                         <div className="grid w-full items-center gap-1.5">
+
                           <Label htmlFor="frequency-edit-select">Frequency</Label>
                           <select
                             id="frequency-edit-select"
@@ -873,6 +876,7 @@ export default function DailyBloomClient() {
                               {errors.frequency.message}
                             </p>
                           )}
+
                         </div>
                       );
                     }}
