@@ -1,17 +1,15 @@
-
 "use client";
 
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { format } from "date-fns";
-import { Loader2, Info, X } from "lucide-react";
+import { Loader2, Info, X, Check, Star } from "lucide-react";
 import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import PageSkeleton from "../PageSkeleton";
 import { PaymentModalProps, Plan, SubscriptionData } from "@/types/client/subscription";
-
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
@@ -27,38 +25,38 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto px-4 sm:px-6">
-      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-sm sm:max-w-md md:max-w-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg sm:text-xl font-semibold">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 overflow-y-auto px-4 sm:px-6 transition-opacity duration-300">
+      <div className="bg-white rounded-xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md md:max-w-lg shadow-2xl transform transition-all duration-300 scale-100">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
             Complete Your Subscription
           </h2>
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
             aria-label="Close"
           >
-            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-6">
           <p className="text-gray-600 text-sm sm:text-base">
             You are subscribing to the{" "}
-            <span className="font-medium">{plan.name}</span>
+            <span className="font-semibold text-gray-800">{plan.name}</span>
           </p>
-          <div className="text-base sm:text-lg font-bold mt-2">
+          <div className="text-lg sm:text-xl font-bold mt-3 text-gray-900">
             <span>Total: ${price}</span>
             {isSubscription && (
-              <span> /{plan.name.includes("Monthly") ? "month" : "year"}</span>
+              <span className="text-gray-600"> /{plan.name.includes("Monthly") ? "month" : "year"}</span>
             )}
           </div>
         </div>
 
         {isProcessing && (
-          <div className="flex justify-center items-center my-4 py-2 bg-gray-50 rounded-md">
-            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2 text-blue-500" />
+          <div className="flex justify-center items-center my-4 py-3 bg-gray-100 rounded-lg">
+            <Loader2 className="w-5 h-5 animate-spin mr-3 text-blue-600" />
             <span className="text-gray-700 text-sm sm:text-base">
               Processing payment...
             </span>
@@ -185,56 +183,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   );
 };
 
-interface PlanCardProps {
-  name: string;
-  price: string;
-  period: string;
-  discount?: string;
-  onSubscribe: () => void;
-  isLoading: boolean;
-  isCurrentPlan?: boolean;
-  disabled?: boolean;
-}
-
-const PlanCard: React.FC<PlanCardProps> = ({
-  name,
-  price,
-  period,
-  discount,
-  onSubscribe,
-  isLoading,
-  isCurrentPlan,
-  disabled = false,
-}) => (
-  <div className="bg-[#F1F3FF] border border-gray-200 rounded-lg overflow-hidden flex flex-col h-full">
-    <div className="p-4 sm:p-6 text-center flex-grow">
-      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{name}</h2>
-      <p className="text-base sm:text-xl text-gray-600 mt-2">
-        ${price} {period}
-        {discount && ` (${discount})`}
-      </p>
-    </div>
-    <div className="px-4 sm:px-6 pb-4 sm:pb-6 mt-auto">
-      <button
-        onClick={onSubscribe}
-        disabled={isLoading || disabled || isCurrentPlan}
-        className={`w-full md:w-48 py-2 sm:py-3 px-4 rounded-md text-base sm:text-lg font-medium transition-colors mx-auto block ${isCurrentPlan || disabled
-            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-            : name === "Monthly Plan"
-              ? "bg-[#151E46] hover:bg-[#1a2a5e] text-white"
-              : "bg-[#111c40] hover:bg-[#1a2a5e] text-white"
-          }`}
-      >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-        ) : (
-          "Subscribe"
-        )}
-      </button>
-    </div>
-  </div>
-);
-
 interface CurrentPlanStatusProps {
   currentPlan: Plan;
   planStart: string | null;
@@ -249,25 +197,27 @@ const CurrentPlanStatus: React.FC<CurrentPlanStatusProps> = ({
   const planEndDate = planEnd ? new Date(planEnd) : null;
 
   return (
-    <div className="bg-[#EDF2FF] rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 flex items-start">
-      <Info className="text-blue-500 mr-2 sm:mr-3 mt-1 flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
-      <div>
-        <h3 className="text-sm sm:text-base font-medium">
-          Your Current Subscription
-        </h3>
-        <p className="text-xs sm:text-sm text-gray-600">
-          You are currently subscribed to the{" "}
-          <span className="font-medium">{currentPlan.name}</span>
-          {planStart && (
-            <span> since {format(new Date(planStart), "MMMM d, yyyy")}</span>
-          )}
-          {planEndDate && (
-            <span> until {format(planEndDate, "MMMM d, yyyy")}</span>
-          )}
-          {!planEndDate && currentPlan.name.startsWith("Lifetime Plan") && (
-            <span> with no expiration</span>
-          )}
-        </p>
+    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 mb-8 shadow-sm">
+      <div className="flex items-start">
+        <Info className="text-blue-600 mr-3 mt-1 flex-shrink-0 w-5 h-5" />
+        <div>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+            Your Current Subscription
+          </h3>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
+            You are currently subscribed to the{" "}
+            <span className="font-semibold text-gray-800">{currentPlan.name}</span>
+            {planStart && (
+              <span> since {format(new Date(planStart), "MMMM d, yyyy")}</span>
+            )}
+            {planEndDate && (
+              <span> until {format(planEndDate, "MMMM d, yyyy")}</span>
+            )}
+            {!planEndDate && currentPlan.name.startsWith("Lifetime Plan") && (
+              <span> with no expiration</span>
+            )}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -372,7 +322,6 @@ const SubscriptionPage: React.FC = () => {
     return <PageSkeleton type="subscription" />;
   }
 
-  const hasLifetimePlan = data?.currentPlan?.name.startsWith("Lifetime Plan");
   const hasActivePlan = data?.hasActiveSubscription && data?.currentPlan;
 
   const availableTiers = (data?.lifetimeTiers || [])
@@ -398,43 +347,25 @@ const SubscriptionPage: React.FC = () => {
 
     return false;
   };
-
-  const taglines = [
-    "Early Bird Gets The Best Deal!",
-    "Still Early — Save Big!",
-    "Almost Half Gone – Act Fast!",
-    "Last Few Spots Left!",
-    "Final Chance At This Offer!",
-  ];
+ 
 
   const currentTierIndex = availableTiers.findIndex(
     (tier) => tier.planId === data?.currentLifetimePlan.planId
   );
-  const currentTier = availableTiers[currentTierIndex];
-  const upperLimit = currentTier
-    ? currentTier.userRange.split("-")[1].trim()
-    : "50";
-  const spotsClaimed = data?.lifetimePlanUsers || 0;
+
 
   return (
-    <div className="w-full min-h-screen bg-dashboard max-w-full overflow-x-hidden py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center">
-            {hasActivePlan
-              ? hasLifetimePlan
-                ? "You Have Lifetime Access"
-                : "Upgrade Your Plan"
-              : "Unlock Unlimited JoyPearls"}
-            <span className="ml-2">🚀</span>
+        <div className="text-center mb-12 lg:mb-16">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+            {hasActivePlan ? "Your Subscription" : "Choose Your Perfect Plan"}
           </h1>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             {hasActivePlan
-              ? hasLifetimePlan
-                ? "You have unlimited access to all premium features with your Lifetime plan."
-                : "Choose an upgrade option below to get more value and features."
-              : "Choose the membership that suits you best and start enjoying unlimited JoyPearls to unlock all premium features."}
+              ? "Manage your current subscription with ease"
+              : "Start for free or unlock premium features with our plans"}
           </p>
         </div>
 
@@ -446,168 +377,247 @@ const SubscriptionPage: React.FC = () => {
           />
         )}
 
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
+          {/* Free Plan Card */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
+            <div className="flex-grow">
+              <h2 className="text-2xl font-bold text-gray-900 text-center">Free Plan</h2>
+              <p className="text-center text-gray-600 text-lg mt-2">$0 forever</p>
+              <div className="mt-6">
+                <ul className="space-y-3">
+                  {[
+                    "5 JoyPearls/day",
+                    "Community Support",
+                    "Basic Features",
+                  ].map((feature) => (
+                    <li key={feature} className="flex items-center text-sm text-gray-600">
+                      <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (!hasActivePlan) {
+                  toast.info("You are now on the Free plan");
+                } else {
+                  toast.info("You are already on the Free plan");
+                }
+              }}
+              className={`w-full mt-6 py-3 px-4 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                hasActivePlan
+                  ? "bg-gray-200 text-gray-600 cursor-default"
+                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+              }`}
+            >
+              {hasActivePlan ? "Subscribed" : "Get Free Plan"}
+            </button>
+          </div>
+
+          {/* Monthly Plan Card */}
           {monthlyPlan && (
-            <PlanCard
-              name="Monthly Plan"
-              price={monthlyPlan.price}
-              period="per month"
-              onSubscribe={() =>
-                handleSubscribe(
-                  monthlyPlan.id,
-                  monthlyPlan.price,
-                  monthlyPlan,
-                  monthlyPlan.paypalPlanId,
-                  true
-                )
-              }
-              isLoading={isSubscribing}
-              isCurrentPlan={
-                !!(hasActivePlan && data.currentPlan?.name === "Monthly Plan")
-              }
-              disabled={getDisabledStatus("Monthly Plan")}
-            />
+            <div className="bg-white  border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
+              <div className="flex-grow">
+                <h2 className="text-xl font-bold text-gray-900 text-center">Monthly</h2>
+                <p className="text-center text-gray-600 text-lg mt-2">${monthlyPlan.price}/mo</p>
+                <div className="mt-6">
+                  <ul className="space-y-3">
+                    {[
+                      "Unlimited JoyPearls",
+                      "Premium Support",
+                      "All Features",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-center text-sm text-gray-600">
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  handleSubscribe(
+                    monthlyPlan.id,
+                    monthlyPlan.price,
+                    monthlyPlan,
+                    monthlyPlan.paypalPlanId,
+                    true
+                  )
+                }
+                disabled={isSubscribing || getDisabledStatus("Monthly Plan")}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200"
+              >
+                {isSubscribing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Subscribe"}
+              </button>
+            </div>
           )}
+
+          {/* Yearly Plan Card */}
           {yearlyPlan && (
-            <PlanCard
-              name="Yearly Plan"
-              price={yearlyPlan.price}
-              period="per year"
-              discount={
-                yearlyPlan.discountPercent
-                  ? `Save ${yearlyPlan.discountPercent}%`
-                  : undefined
-              }
-              onSubscribe={() =>
-                handleSubscribe(
-                  yearlyPlan.id,
-                  yearlyPlan.price,
-                  yearlyPlan,
-                  yearlyPlan.paypalPlanId,
-                  true
-                )
-              }
-              isLoading={isSubscribing}
-              isCurrentPlan={
-                !!(hasActivePlan && data.currentPlan?.name === "Yearly Plan")
-              }
-              disabled={getDisabledStatus("Yearly Plan")}
-            />
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
+              <div className="flex-grow">
+                <h2 className="text-xl font-bold text-gray-900 text-center">Yearly</h2>
+                <p className="text-center text-gray-600 text-lg mt-2">${yearlyPlan.price}/yr</p>
+                {yearlyPlan.discountPercent && (
+                  <p className="text-green-600 text-sm text-center mt-2">Save {yearlyPlan.discountPercent}%</p>
+                )}
+                <div className="mt-6">
+                  <ul className="space-y-3">
+                    {[
+                      "Unlimited JoyPearls",
+                      "Premium Support",
+                      "All Features",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-center text-sm text-gray-600">
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  handleSubscribe(
+                    yearlyPlan.id,
+                    yearlyPlan.price,
+                    yearlyPlan,
+                    yearlyPlan.paypalPlanId,
+                    true
+                  )
+                }
+                disabled={isSubscribing || getDisabledStatus("Yearly Plan")}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200"
+              >
+                {isSubscribing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Subscribe"}
+              </button>
+            </div>
           )}
+
+          {/* Lifetime Plan Card (Highlighted) */}
           {lifetimeStandardPlan && (
-            <PlanCard
-              name="Lifetime Plan"
-              price={lifetimeStandardPlan.price}
-              period="One-time payment"
-              onSubscribe={() =>
-                handleSubscribe(
-                  lifetimeStandardPlan.id,
-                  lifetimeStandardPlan.price,
-                  lifetimeStandardPlan,
-                  lifetimeStandardPlan.paypalPlanId,
-                  false
-                )
-              }
-              isLoading={isSubscribing}
-              isCurrentPlan={
-                !!(
-                  hasActivePlan &&
-                  data.currentPlan?.name === "Lifetime Plan Standard"
-                )
-              }
-              disabled={getDisabledStatus("Lifetime Plan Standard")}
-            />
+            <div className="bg-gradient-to-b from-indigo-50 to-white border-2 border-indigo-500 rounded-xl shadow-2xl p-6 flex flex-col transition-all duration-300 hover:shadow-3xl relative">
+              <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-bl-lg rounded-tr-lg flex items-center">
+                <Star className="w-4 h-4 mr-1" />
+                Recommended
+              </div>
+              <div className="flex-grow">
+                <h2 className="text-xl font-bold text-gray-900 text-center">Lifetime</h2>
+                <p className="text-center text-gray-600 text-lg mt-2">${lifetimeStandardPlan.price}</p>
+                <div className="mt-6">
+                  <ul className="space-y-3">
+                    {[
+                      "Unlimited JoyPearls",
+                      "Premium Support",
+                      "All Features",
+                    ].map((feature) => (
+                      <li key={feature} className="flex items-center text-sm text-gray-600">
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <button
+                onClick={() =>
+                  handleSubscribe(
+                    lifetimeStandardPlan.id,
+                    lifetimeStandardPlan.price,
+                    lifetimeStandardPlan,
+                    lifetimeStandardPlan.paypalPlanId,
+                    false
+                  )
+                }
+                disabled={isSubscribing || getDisabledStatus("Lifetime Plan Standard")}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200"
+              >
+                {isSubscribing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Subscribe"}
+              </button>
+            </div>
           )}
         </div>
 
-        {/* Banner and Table Section */}
-        {data?.limitedOfferAvailable && (
-          <div className="bg-[#111c40] text-white rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 relative">
-            <div className="mb-6 sm:mb-8">
-              <button className="w-full sm:w-auto mx-auto block bg-slate-200 text-[#111c40] hover:bg-gray-100 py-2 sm:py-3 px-4 sm:px-6 rounded-md text-base sm:text-lg font-semibold transition-colors absolute -top-3 left-1/2 transform -translate-x-1/2">
-                Invest Once, Thrive Forever — Grab Your Lifetime Plan Now!
-              </button>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 mt-8 sm:mt-12">
-              {/* Pricing Table */}
-              <div className="col-span-1 lg:col-span-3">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead>
-                      <tr className="border-b border-gray-700">
-                        <th className="py-2 sm:py-3 text-left text-sm sm:text-base">
-                          Range
-                        </th>
-                        <th className="py-2 sm:py-3 text-left text-sm sm:text-base">
-                          Price
-                        </th>
-                        <th className="py-2 sm:py-3 text-left text-sm sm:text-base">
-                          Tagline
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availableTiers.map((tier, index) => (
-                        <tr
-                          key={tier.tier}
-                          className={
-                            index !== currentTierIndex ? "text-gray-400" : ""
-                          }
-                        >
-                          <td className="py-2 sm:py-3 text-sm sm:text-base">
-                            {tier.userRange}
-                          </td>
-                          <td className="py-2 sm:py-3 text-sm sm:text-base">
-                            ${tier.price}
-                          </td>
-                          <td className="py-2 sm:py-3 text-sm sm:text-base">
-                            {taglines[index]}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              {/* Limited Offer Box */}
-              <div className="col-span-1 bg-white text-[#111c40] rounded-lg p-4 sm:p-6">
-                <div className="text-center">
-                  <h3 className="text-2xl sm:text-3xl font-bold mb-2">
-                    Limited Offer
-                  </h3>
-                  <p className="text-[#ff7f7f] font-medium mb-4 text-sm sm:text-base">
-                    {taglines[currentTierIndex]}
-                  </p>
-                  <div className="text-4xl sm:text-5xl font-bold mb-4 sm:mb-6">
-                    {spotsClaimed}/{upperLimit}
-                  </div>
-                  <button
-                    onClick={() =>
-                      handleSubscribe(
-                        data.currentLifetimePlan.planId,
-                        data.currentLifetimePlan.price,
-                        data.plans.find(
-                          (p) => p.id === data.currentLifetimePlan.planId
-                        )!,
-                        data.currentLifetimePlan.paypalPlanId,
-                        false
-                      )
-                    }
-                    disabled={isSubscribing}
-                    className="w-full bg-[#ff7f7f] hover:bg-[#ff6666] text-white py-2 sm:py-3 px-4 rounded-md text-base sm:text-lg font-medium transition-colors"
-                  >
-                    {isSubscribing ? (
-                      <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                    ) : (
-                      `Claim Spot for $${data.currentLifetimePlan.price}`
-                    )}
-                  </button>
-                </div>
-              </div>
+        {/* Lifetime Plan Pricing Table */}
+        <div className="mt-12 bg-gradient-to-r from-indigo-800 to-blue-900 text-white rounded-xl p-8 shadow-xl">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-extrabold">Invest Once, Thrive Forever</h2>
+            <p className="text-lg mt-2">Grab Your Lifetime Plan Now!</p>
+            <div className="inline-flex items-center bg-indigo-500 text-white text-sm font-semibold px-3 py-1 mt-3 rounded-full">
+              <Star className="w-4 h-4 mr-1" />
+              Recommended
             </div>
           </div>
-        )}
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Pricing Table */}
+            <div className="flex-1 overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-indigo-400">
+                    <th className="py-4 text-left font-semibold text-indigo-100">Range</th>
+                    <th className="py-4 text-left font-semibold text-indigo-100">Price</th>
+                    <th className="py-4 text-left font-semibold text-indigo-100">Tagline</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { range: "1-10", price: "$499", tagline: "Early Bird Gets The Best Deal!" },
+                    { range: "11-20", price: "$699", tagline: "Still Early — Save Big!" },
+                    { range: "21-30", price: "$999", tagline: "Almost Half Gone – Act Fast!" },
+                    { range: "31-40", price: "$1399", tagline: "Last Few Spots Left!" },
+                    { range: "41-50", price: "$1899", tagline: "Final Chance At This Offer!" },
+                    { range: "Standard", price: "$2999", tagline: "" },
+                  ].map((item, index) => (
+                    <tr
+                      key={index}
+                      className={`${
+                        index === currentTierIndex ? "text-white" : "text-indigo-300"
+                      } hover:bg-indigo-700/30 transition-colors duration-200`}
+                    >
+                      <td className="py-4">{item.range}</td>
+                      <td className="py-4">{item.price}</td>
+                      <td className="py-4">{item.tagline}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Limited Offer Box */}
+            <div className="lg:w-[250px] bg-white text-indigo-900 rounded-lg p-6 flex flex-col items-center justify-center shadow-inner">
+              <h3 className="text-xl font-bold mb-3">Limited Offer</h3>
+              <p className="text-red-500 font-semibold mb-4 text-center">
+                Early Bird Gets The Best Deal!
+              </p>
+              <div className="text-2xl font-bold mb-4">0/10</div>
+              <button
+                onClick={() => {
+                  if (data?.currentLifetimePlan && data?.plans) {
+                    handleSubscribe(
+                      data.currentLifetimePlan.planId,
+                      "499",
+                      data.plans.find((p) => p.id === data.currentLifetimePlan.planId) ??
+                        data.plans[0],
+                      data.currentLifetimePlan.paypalPlanId,
+                      false
+                    );
+                  }
+                }}
+                disabled={isSubscribing || !data?.currentLifetimePlan || !data?.plans}
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md transition-all duration-200"
+              >
+                {isSubscribing ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "Claim Spot for $499"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
 
         {selectedPlan && (
           <PaymentModal
@@ -632,4 +642,3 @@ const SubscriptionPage: React.FC = () => {
 };
 
 export default SubscriptionPage;
-
