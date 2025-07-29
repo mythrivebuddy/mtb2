@@ -25,13 +25,15 @@ function SignInFormContent() {
     resolver: zodResolver(signinSchema),
   });
   const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
+  console.log("redirect", redirect)
   const errorFromUrl = searchParams.get("error");
 
   // If error comes from query parameters, show it via toast.
   useEffect(() => {
-    console.log(errorFromUrl); //?dev
+   
     if (errorFromUrl === "account-exists-with-credentials") {
-      console.log("here");
+      
       setTimeout(() => {
         toast.error(
           "An account with this email already exists. Please sign in with your password."
@@ -45,75 +47,103 @@ function SignInFormContent() {
     }
   }, [errorFromUrl, router]);
 
-  const onSubmit = async (data: SigninFormType) => {
-    try {
-      setIsLoading(true);
-      const response = await signIn("credentials", {
-        redirect: false,
-        email: data.email,
-        password: data.password,
-        rememberMe: data.rememberMe,
-      });
+const onSubmit = async (data: SigninFormType) => {
+  try {
+    setIsLoading(true);
+    const targetUrl = redirect; // Use redirect directly (already has fallback)
+    console.log("Target URL before signIn:", targetUrl);
 
-      // When response is successful, redirect and toast success.
-      if (response?.ok) {
-        router.push("/dashboard");
-        toast.success("Signin successful");
-        return;
-      }
+    const response = await signIn("credentials", {
+      redirect: false, // Prevent server-side redirect
+      email: data.email,
+      password: data.password,
+      rememberMe: data.rememberMe,
+      callbackUrl: targetUrl, // Pass redirect URL to next-auth
+    });
 
-      const errorMessage = response?.error;
+    console.log("signIn response:", response);
 
-      if (errorMessage) {
-        if (errorMessage.toLowerCase().includes("blocked")) {
-          toast.error(
-            <div>
-              <p>{errorMessage}</p>
-            </div>
-          );
-        } else if (errorMessage.toLowerCase().includes("not verified")) {
-          // If email is not verified.
-          toast.error(errorMessage);
-        } else {
-          toast.error(errorMessage);
-        }
-      } else {
-        toast.error("Failed to login");
-      }
-    } catch (error) {
-      console.error("Signin error:", error);
-      toast.error(
-        getAxiosErrorMessage(error, "Sign in failed. Please try again later.")
-      );
-    } finally {
-      setIsLoading(false);
+    if (response?.ok) {
+      console.log("Attempting redirect to:", targetUrl);
+      await router.push(targetUrl); // Use await to ensure navigation
+      console.log("Redirect executed for credentials");
+      toast.success("Signin successful");
+      return;
     }
-  };
+    // ... rest of the function ...
+  } catch (error) {
+    console.error("Signin error:", error);
+    toast.error(
+      getAxiosErrorMessage(error, "Sign in failed. Please try again later.")
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await signIn("google", {
-        redirect: false,
-        callbackUrl: "/dashboard",
-      });
-      if (result?.ok) {
-        router.push("/dashboard");
-        toast.success("Signed in successfully");
-        return;
-      }
-      if (result?.error) {
-        toast.error("Google Sign in failed. Please try again later.");
-      }
-    } catch (error) {
-      console.error("Error signing in", error);
-      toast.error(
-        getAxiosErrorMessage(
-          error,
-          "Google Sign in failed. Please try again later."
-        )
-      );
+const handleGoogleLogin = async () => {
+  try {
+    const targetUrl = redirect; // Use redirect directly (already has fallback)
+    console.log("Target URL for Google signIn:", targetUrl);
+
+    const result = await signIn("google", {
+      redirect: false, // Prevent server-side redirect
+      callbackUrl: targetUrl, // Pass redirect URL to next-auth
+    });
+
+    console.log("Google signIn response:", result);
+
+    if (result?.ok) {
+      console.log("Attempting Google redirect to:", targetUrl);
+      await router.push(targetUrl); // Use await to ensure navigation
+      console.log("Redirect executed for Google");
+      toast.success("Signed in successfully");
+      return;
     }
-  };
+    // ... rest of the function ...
+  } catch (error) {
+    console.error("Error signing in with Google:", error);
+    toast.error(
+      getAxiosErrorMessage(
+        error,
+        "Google Sign in failed. Please try again later."
+      )
+    );
+  }
+};
+  // const handleGoogleLogin = async () => {
+  //   try {
+  //     const result = await signIn("google", {
+  //       redirect: false,
+  //       callbackUrl: "/dashboard",
+  //     });
+  //     if (result?.ok) {
+  //        if(redirect) {
+  //         console.log("inner condotion")
+  //          router.push(`${redirect}`)
+  //           toast.success("Signin successful");
+  //           return;
+  //       }
+  //       router.push("/dashboard");
+  //       toast.success("Signed in successfully");
+  //       return;
+  //     }
+  //     if (result?.error) {
+  //       toast.error("Google Sign in failed. Please try again later.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error signing in", error);
+  //     toast.error(
+  //       getAxiosErrorMessage(
+  //         error,
+  //         "Google Sign in failed. Please try again later."
+  //       )
+  //     );
+  //   }
+  // };
+
+ 
+
 
   return (
     <>

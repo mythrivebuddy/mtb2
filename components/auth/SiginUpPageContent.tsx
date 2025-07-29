@@ -15,6 +15,7 @@ const SiginUpPageContent = () => {
     if (session?.user?.role === "ADMIN") {
       router.push("/admin/dashboard");
     } else {
+      console.log("first")
       router.push("/dashboard");
     }
   }, [session, router]);
