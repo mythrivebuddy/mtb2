@@ -59,7 +59,7 @@ const FaqClientComponent = () => {
             return (
               <Card
                 key={faq.id}
-                className="transition-all duration-300 ease-in-out border border-muted bg-white shadow-sm hover:shadow-md"
+                className="transition-all px-4 duration-300 ease-in-out border border-muted bg-white shadow-sm hover:shadow-md"
               >
                 <button
                   onClick={() => toggleFaq(faq.id)}
@@ -77,7 +77,7 @@ const FaqClientComponent = () => {
                     isOpen ? 'max-h-[300px] opacity-100 pb-4' : 'max-h-0 opacity-0'
                   }`}
                 >
-                  <CardContent className="p-0 text-gray-700 text-sm">
+                  <CardContent className="px-4 py-0 text-gray-700 text-sm">
                     {/* {faq.answer} */}
 
                     <div
