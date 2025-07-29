@@ -118,7 +118,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   return (
     <>
       {/* Hamburger Menu Button for Mobile */}
-     <div className="flex items-center pt-1 gap-4 justify-between w-screen ">
+     <div className="flex items-center pt-1 px-4 gap-4 justify-between w-screen ">
   <button
     className="lg:hidden p-2 bg-white rounded-md shadow-md"
     onClick={toggleSidebar}

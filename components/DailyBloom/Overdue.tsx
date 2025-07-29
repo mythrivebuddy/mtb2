@@ -174,9 +174,9 @@ export default function Overdue({
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <CardTitle className="break-all text-sm">
-                    {bloom.title.length > 10
+                    {bloom.title && (bloom.title.length > 10
                       ? `${bloom.title.slice(0, 10)}...`
-                      : bloom.title}
+                      : bloom.title)}
                   </CardTitle>
                   <div className="flex flex-col items-center flex-shrink-0">
                     <Input
@@ -194,7 +194,9 @@ export default function Overdue({
               <CardContent className="space-y-3 text-sm">
                 {bloom.description && (
                   <p className="text-muted-foreground break-all">
-                    {bloom.description}
+                    {bloom.description && (bloom.description.length > 10
+                      ? `${bloom.description.slice(0, 10)}...`
+                      : bloom.description)}
                   </p>
                 )}
                 <div className="flex items-center">

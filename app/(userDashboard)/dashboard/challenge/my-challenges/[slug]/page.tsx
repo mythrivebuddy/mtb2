@@ -198,7 +198,7 @@ export default function ChallengeManagementPage() {
   return (
     <>
       <div className="min-h-screen font-sans ">
-        <header className="bg-white p-3 rounded-2xl shadow mb-8">
+        <header className="bg-white mx-4 p-3 rounded-2xl shadow mb-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <button
