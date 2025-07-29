@@ -93,7 +93,7 @@ const BlogHero: React.FC = () => {
         </button>
         <div
           ref={scrollRef}
-          className="no-scrollbar flex overflow-x-auto whitespace-nowrap space-x-3 py-2 px-10"
+          className="no-scrollbar flex overflow-x-auto whitespace-nowrap  py-2 px-4"
         >
           {catLoading ? (
             <Skeleton className="h-8 w-24" />
