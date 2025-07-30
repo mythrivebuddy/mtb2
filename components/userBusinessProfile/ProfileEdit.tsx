@@ -213,6 +213,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
           />
         </div>
       </div>
+
+       {/* --- MODIFIED SECTION --- */}
       <div className="bg-white/80 p-6 rounded-2xl shadow-sm">
         <h2 className="text-2xl font-semibold mb-4">Spotlight Information</h2>
         <div className="flex flex-col gap-4">
@@ -221,15 +223,13 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="featuredWorkTitle"
               className="block font-medium mb-1"
             >
-              <span className="text-red-500">* </span>Title (You want to be
-              displayed on Spotlight)
+              Title (You want to be displayed on Spotlight):{" "}
+              <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <input
               id="featuredWorkTitle"
               type="text"
-              {...register("featuredWorkTitle", {
-                required: "Work title is required",
-              })}
+              {...register("featuredWorkTitle")}
               className={commonClassName}
             />
             {errors.featuredWorkTitle && (
@@ -243,13 +243,12 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="featuredWorkDesc"
               className="block font-medium mb-1"
             >
-              <span className="text-red-500">* </span> Description
+              Description:{" "}
+              <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <textarea
               id="featuredWorkDesc"
-              {...register("featuredWorkDesc", {
-                required: "Work description is required",
-              })}
+              {...register("featuredWorkDesc")}
               className={commonClassName}
               rows={3}
             />
@@ -264,8 +263,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="featuredWorkImage"
               className="block font-medium mb-1"
             >
-              <span className="text-red-500">* </span> Image to be displayed in
-              Spotlight
+              Image to be displayed in Spotlight:{" "}
+              <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <input
               id="featuredWorkImage"
@@ -291,8 +290,8 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               htmlFor="priorityContactLink"
               className="block font-medium mb-1"
             >
-              <span className="text-red-500">* </span> Contact Link (Where you
-              like users to visit)
+              Contact Link (Where you like users to visit):{" "}
+              <span className="text-sm text-gray-500">(Optional)</span>
             </label>
             <div className="flex items-center">
               <span className="inline-flex items-center p-2 rounded-l-lg border border-r-0 border-gray-300 bg-gray-100 text-gray-500 text-md">
@@ -301,9 +300,7 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
               <input
                 id="priorityContactLink"
                 type="text"
-                {...register("priorityContactLink", {
-                  required: "Work contact link is required",
-                })}
+                {...register("priorityContactLink")}
                 className={`${commonClassName} rounded-l-none`}
               />
             </div>

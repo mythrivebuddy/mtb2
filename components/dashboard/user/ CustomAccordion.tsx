@@ -125,7 +125,7 @@ export default function AccordionWrapper() {
   }
 
   return (
-    <div className="max-md:px-4 mx-auto max-w-4xl">
+    <div className="max-lg:px-4 mx-auto max-w-4xl">
       {filteredData.map((item, index) => {
         const isOpen = openIndex === index;
         return (
