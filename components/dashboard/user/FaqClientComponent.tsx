@@ -28,7 +28,7 @@ const FaqClientComponent = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-center mb-10 text-gray-900">
+      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center mb-10 text-gray-900">
         Frequently Asked Questions
       </h1>
 
@@ -59,13 +59,13 @@ const FaqClientComponent = () => {
             return (
               <Card
                 key={faq.id}
-                className="transition-all duration-300 ease-in-out border border-muted bg-white shadow-sm hover:shadow-md"
+                className="transition-all px-4 duration-300 ease-in-out border border-muted bg-white shadow-sm hover:shadow-md"
               >
                 <button
                   onClick={() => toggleFaq(faq.id)}
                   className="w-full flex justify-between items-center p-4 text-left"
                 >
-                  <span className="text-lg font-medium text-gray-900">{faq.question}</span>
+                  <span className=" font-medium text-gray-900">{faq.question}</span>
                   {isOpen ? (
                     <ChevronUp className="text-gray-500" />
                   ) : (
@@ -77,7 +77,7 @@ const FaqClientComponent = () => {
                     isOpen ? 'max-h-[300px] opacity-100 pb-4' : 'max-h-0 opacity-0'
                   }`}
                 >
-                  <CardContent className="p-0 text-gray-700 text-sm">
+                  <CardContent className="px-4 py-0 text-gray-700 text-sm">
                     {/* {faq.answer} */}
 
                     <div

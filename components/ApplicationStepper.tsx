@@ -48,10 +48,10 @@ export function ApplicationStepper({
       )}
     >
       <div className="md:px-12 px-5 py-7 w-full">
-        <div className="flex w-full justify-between gap-6 relative">
+        <div className="flex max-sm:flex-col w-full justify-between gap-6 relative">
           {/* Connecting line */}
           <div
-            className="bg-gray-200 h-[2px] absolute top-[18%] left-0 right-0"
+            className="bg-gray-200 max-sm:hidden h-[2px] absolute top-[18%] left-0 right-0"
             style={{
               width: `calc(100% - ${margins.left}px - ${margins.right}px)`,
               marginLeft: `${margins.left}px`,

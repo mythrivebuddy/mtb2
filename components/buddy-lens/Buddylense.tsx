@@ -17,43 +17,59 @@ export default function BuddyLensDashboard() {
   >("my-requests");
 
   if (!userId) {
-    return <PageSkeleton type="buddylens" />
-      ;
+    return <PageSkeleton type="buddylens" />;
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto px-4 py-6">
       <Card className="rounded-2xl shadow-lg p-6 space-y-6">
-        {/* <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-semibold">Buddy Lens</h2>
-          <NotificationBell />
-        </div> */}
         <Tabs
           value={tabValue}
           onValueChange={(value) =>
             setTabValue(
               value as
-              | "my-requests"
-              | "available request"
-              | "reviewed"
-              | "my-claims"
+                | "my-requests"
+                | "available request"
+                | "reviewed"
+                | "my-claims"
             )
           }
           className="w-full"
         >
-          <TabsList className="mb-4  grid w-full grid-cols-3">
-            <TabsTrigger value="my-requests">My Request(s)</TabsTrigger>
-            <TabsTrigger value="my-claims">My Claim(s)</TabsTrigger>
-            <TabsTrigger value="available request">
+          <TabsList className="mb-4 grid w-full grid-cols-3 gap-2 bg-gray-100 p-1 rounded-xl">
+            <TabsTrigger
+              value="my-requests"
+              className="w-full py-2 rounded-lg bg-blue-500 text-white font-medium transition-all 
+                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600"
+            >
+              My Request(s)
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="my-claims"
+              className="w-full py-2 rounded-lg bg-blue-500 text-white font-medium transition-all 
+                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600"
+            >
+              My Claim(s)
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="available request"
+              className="w-full py-2 rounded-lg bg-blue-500 text-white font-medium transition-all 
+                data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:border data-[state=active]:border-blue-600"
+            >
               Available Request(s)
             </TabsTrigger>
           </TabsList>
+
           <TabsContent value="my-requests">
             <MyRequests userId={userId} />
           </TabsContent>
+
           <TabsContent value="my-claims">
             <MyClaims userId={userId} />
           </TabsContent>
+
           <TabsContent value="available request">
             <AvailableRequest userId={userId} />
           </TabsContent>

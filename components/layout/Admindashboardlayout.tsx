@@ -1,12 +1,17 @@
-"use client";
+'use client';
 
-import React from "react";
-import { useSession, signOut } from "next-auth/react";
-import AdminSideBar from "@/components/adminDashboard/AdminSideBar";
-import { BellIcon, LogOut } from "lucide-react";
+import React from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import AdminSideBar from '@/components/adminDashboard/AdminSideBar';
+import { BellIcon, LogOut } from 'lucide-react';
+import { Toaster } from 'sonner';
 
 const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
+
+  if (session.status === 'loading') {
+    return <div className="p-8 text-center">Loading...</div>;
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-dashboard px-4 sm:px-6 lg:px-7 py-7">
@@ -42,6 +47,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Page Content */}
         <main className="flex-1 overflow-auto px-4 sm:px-6 lg:px-7 bg-transparent pt-4">
           {children}
+          <Toaster richColors position="top-right" />
         </main>
       </div>
     </div>

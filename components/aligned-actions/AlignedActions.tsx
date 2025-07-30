@@ -75,7 +75,7 @@ export default function AlignedActionsPage() {
   return (
     <>
     <CustomAccordion/>
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
           {/* <h1 className="text-3xl font-bold">1% Start</h1> */}
@@ -103,7 +103,7 @@ export default function AlignedActionsPage() {
       )}
 
       {showWizard && (
-        <div className="mb-8">
+        <div className="mb-8 ">
           <Card>
             <CardHeader>
               <CardTitle>Create 1% Start actions</CardTitle>

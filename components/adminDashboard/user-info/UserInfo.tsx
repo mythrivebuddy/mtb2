@@ -62,7 +62,10 @@ export default function UserInfoContent() {
   
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["users", filter, searchTerm, page],
-    queryFn: () => fetchUsers(filter, searchTerm, page, pageSize),
+      queryFn: async () => {
+    return await fetchUsers(filter, searchTerm, page, pageSize);
+  },
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -99,8 +102,10 @@ export default function UserInfoContent() {
   };
 
   const users = data?.users || [];
-  const totalUsers = data?.total || 0;
-  const totalPages = Math.ceil(totalUsers / pageSize);
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total);
+  // console.log("totalPages of users",totalUsers/pageSize);
+  
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
 
@@ -148,7 +153,7 @@ export default function UserInfoContent() {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
                       {user.name.slice(0, 2).toUpperCase()}
-                      {user.isOnline && onlineUserIds.has(user?.id) && (
+                      { onlineUserIds.has(user?.id) && (
                         <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
                       )}
                     </div>

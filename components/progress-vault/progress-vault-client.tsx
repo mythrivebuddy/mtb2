@@ -40,6 +40,7 @@ import { startOfDay, endOfDay } from "date-fns";
 import CustomAccordion from '@/components/dashboard/user/ CustomAccordion';
 import PageSkeleton from "../PageSkeleton";
 import { ProgressVault, ProgressVaultClientProps } from "@/types/client/progress-vault";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 
 export default function ProgressVaultClient({ initialLogs, initialStreak }: ProgressVaultClientProps) {
@@ -50,7 +51,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
   const [todayEntriesCount, setTodayEntriesCount] = useState(0);
 
   const queryClient = useQueryClient();
-
+  useOnlineUserLeaderBoard()
   const {
     handleSubmit,
     register,
@@ -170,7 +171,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
   return (
     <>
       <CustomAccordion />
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto px-4 py-6 max-w-4xl">
         <Card className="mb-8">
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -179,8 +180,7 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
                 <CardDescription>
                   Record your daily progress
                 </CardDescription>
-              </div>
-              <div className="flex flex-col items-end mt-2 text-sm">
+                    <div className="flex flex-col items-start mt-2 text-sm">
                 <div className="flex items-center gap-1 font-semibold text-orange-500 animate-pulse">
                   🔥 {streak.count} day streak
                 </div>
@@ -188,6 +188,8 @@ export default function ProgressVaultClient({ initialLogs, initialStreak }: Prog
                   Keep it up! Consistency builds progress ✨
                 </div>
               </div>
+              </div>
+          
             </div>
           </CardHeader>
           <CardContent>

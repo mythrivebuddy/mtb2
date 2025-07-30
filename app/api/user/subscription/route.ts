@@ -221,6 +221,7 @@ export async function POST(req: NextRequest) {
         planId: planRecord.id,
         planStart: now,
         planEnd,
+        challenge_limit: 5,    //added this
       },
       include: { plan: true },
     });

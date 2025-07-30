@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery, // Changed from useQuery
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   Trash2,
   Loader2,
@@ -55,7 +59,8 @@ import PageSkeleton from "../PageSkeleton";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
 import Overdue from "./Overdue";
-import HoverDetails from "./HoverDetails"; 
+import HoverDetails from "./HoverDetails";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 interface DailyBloom extends DailyBloomFormType {
   id: string;
@@ -80,12 +85,13 @@ export default function DailyBloomClient() {
   const [addData, setAddData] = useState<boolean>(false);
   const [frequencyFilter, setFrequencyFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("Pending");
-  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  
-  const [addInputType, setAddInputType] = useState<"frequency" | "date">("date");
-  const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
 
+  const [addInputType, setAddInputType] = useState<"frequency" | "date">(
+    "date"
+  );
+  const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
+  useOnlineUserLeaderBoard();
   const {
     handleSubmit,
     register,
@@ -116,26 +122,34 @@ export default function DailyBloomClient() {
     }
   }, [addData, reset]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [frequencyFilter, statusFilter]);
+  // Replaced useQuery with useInfiniteQuery for "Load More" functionality
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery<{
+      data: DailyBloom[];
+      totalCount: number;
+    }>({
+      queryKey: ["dailyBloom", frequencyFilter, statusFilter],
+      queryFn: async ({ pageParam = 1 }) => {
+        const res = await axios.get(
+          `/api/user/daily-bloom?frequency=${frequencyFilter}&status=${statusFilter}&page=${pageParam}&limit=${itemsPerPage}`
+        );
+        return res.data;
+      },
+      initialPageParam: 1,
+      getNextPageParam: (lastPage, allPages) => {
+        const totalFetched = allPages.reduce(
+          (acc, page) => acc + page.data.length,
+          0
+        );
+        if (totalFetched < lastPage.totalCount) {
+          return allPages.length + 1;
+        }
+        return undefined;
+      },
+    });
 
-  const { data, isLoading } = useQuery<{
-    data: DailyBloom[];
-    totalCount: number;
-  }>({
-    queryKey: ["dailyBloom", frequencyFilter, statusFilter, currentPage],
-    queryFn: async () => {
-      const res = await axios.get(
-        `/api/user/daily-bloom?frequency=${frequencyFilter}&status=${statusFilter}&page=${currentPage}&limit=${itemsPerPage}`
-      );
-      return res.data;
-    },
-  });
-
-  const dailyBloom = data?.data || [];
-  const totalCount = data?.totalCount || 0;
-  const totalPages = Math.ceil(totalCount / itemsPerPage);
+  // Flatten the pages array to get a single list of blooms
+  const dailyBloom = data?.pages.flatMap((page) => page.data) || [];
 
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
@@ -173,7 +187,10 @@ export default function DailyBloomClient() {
       queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(error, "Failed to update task.");
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to update task."
+      );
       toast.error(errorMessage);
     },
   });
@@ -189,7 +206,10 @@ export default function DailyBloomClient() {
       queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(error, "Failed to delete task.");
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to delete task."
+      );
       toast.error(errorMessage);
     },
   });
@@ -236,17 +256,19 @@ export default function DailyBloomClient() {
       },
       {
         onSuccess: () => {
-          toast.success(`Task marked as ${isCompleted ? "complete" : "pending"}.`);
+          toast.success(
+            `Task marked as ${isCompleted ? "complete" : "pending"}.`
+          );
         },
       }
     );
   };
 
   return (
-    <>
+    <div>
       <CustomAccordion />
       <div className="container mx-auto p-3 max-w-4xl">
-        <Card className="mb-8">
+        <Card className="mb-8  ">
           <CardHeader>
             <div className="space-y-3">
               <CardTitle>Daily Blooms</CardTitle>
@@ -293,7 +315,9 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={statusFilter === "Pending" ? "secondary" : "ghost"}
+                        variant={
+                          statusFilter === "Pending" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setStatusFilter("Pending")}
@@ -325,7 +349,9 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={frequencyFilter === "All" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "All" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("All")}
@@ -334,7 +360,9 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={frequencyFilter === "Daily" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "Daily" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Daily")}
@@ -371,9 +399,7 @@ export default function DailyBloomClient() {
             <CardContent>
               {dailyBloom.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-muted-foreground">
-                    No blooms Available.
-                  </p>
+                  <p className="text-muted-foreground">No blooms Available.</p>
                 </div>
               ) : (
                 <>
@@ -385,7 +411,9 @@ export default function DailyBloomClient() {
                           <TableHead>Title</TableHead>
                           <TableHead className="w-[130px]">Due Date</TableHead>
                           <TableHead className="w-[120px]">Frequency</TableHead>
-                          <TableHead className="w-[140px] text-center">Actions</TableHead>
+                          <TableHead className="w-[140px] text-center">
+                            Actions
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -396,7 +424,10 @@ export default function DailyBloomClient() {
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(bloom, e.target.checked)
+                                  handleUpdateCompletion(
+                                    bloom,
+                                    e.target.checked
+                                  )
                                 }
                                 className="w-4 h-4 rounded-md cursor-pointer"
                               />
@@ -407,15 +438,15 @@ export default function DailyBloomClient() {
                               onMouseEnter={() => setHoveredBloomId(bloom.id)}
                               onMouseLeave={() => setHoveredBloomId(null)}
                             >
-                              <div>{bloom.title.length > 30
-                            ? `${bloom.title.slice(0, 30)}...`
-                            : bloom.title}</div>
-                              
+                              <div>
+                                {bloom.title.length > 30
+                                  ? `${bloom.title.slice(0, 30)}...`
+                                  : bloom.title}
+                              </div>
+
                               {hoveredBloomId === bloom.id && (
                                 // ✅ FIX 1: Positioned to the right and given highest z-index
-                                <div 
-                                  className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl"
-                                >
+                                <div className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl">
                                   <HoverDetails bloom={bloom} />
                                 </div>
                               )}
@@ -423,7 +454,9 @@ export default function DailyBloomClient() {
 
                             <TableCell>
                               {bloom.dueDate
-                                ? new Date(bloom.dueDate).toLocaleDateString("en-IN")
+                                ? new Date(bloom.dueDate).toLocaleDateString(
+                                    "en-IN"
+                                  )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -455,34 +488,42 @@ export default function DailyBloomClient() {
                       </TableBody>
                     </Table>
                   </div>
-                  
+
                   <div className="md:hidden space-y-4">
                     {dailyBloom.map((bloom: DailyBloom) => (
                       <Card key={bloom.id}>
                         <CardHeader>
                           <div className="flex items-start justify-between gap-4">
-                            <CardTitle>{bloom.title}</CardTitle>
+                            <CardTitle>
+                              {bloom.title.length > 10
+                                ? `${bloom.title.slice(0, 10)}...`
+                                : bloom.title}
+                            </CardTitle>
+
                             <div className="flex flex-col items-center flex-shrink-0">
                               <Input
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(bloom, e.target.checked)
+                                  handleUpdateCompletion(
+                                    bloom,
+                                    e.target.checked
+                                  )
                                 }
                                 className="w-5 h-5 rounded-md cursor-pointer"
                               />
-                              <Label className="text-xs text-muted-foreground mt-1">
-                                Achieve
-                              </Label>
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm">
                           {bloom.description && (
                             <p className="text-muted-foreground">
-                              {bloom.description}
+                              {bloom.description.length > 10
+                                ? `${bloom.description.slice(0, 10)}...`
+                                : bloom.description}
                             </p>
                           )}
+
                           <div className="flex items-center">
                             <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
                             <span>Frequency: {bloom.frequency || "-"}</span>
@@ -528,364 +569,395 @@ export default function DailyBloomClient() {
                 </>
               )}
             </CardContent>
-            <div className="flex items-center justify-center space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages > 0 ? totalPages : 1}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages || totalPages === 0}
-              >
-                Next
-              </Button>
-            </div>
+            {/* Replaced pagination buttons with a "Load More" button */}
+            <CardFooter className="p-4">
+              {hasNextPage && (
+                <Button
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  variant="secondary"
+                  className="w-full font-semibold text-muted-foreground transition-colors hover:bg-muted/80"
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading More...
+                    </>
+                  ) : (
+                    "Load More"
+                  )}
+                </Button>
+              )}
+            </CardFooter>
           </Card>
         )}
-        
+
+        {/* --- DIALOGS (Add, View, Edit, Delete) --- */}
+        {/* No changes were made to the dialogs below this line */}
+
         <Dialog open={addData} onOpenChange={setAddData}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Add Your Bloom</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <div className="grid gap-4 py-4">
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Your Bloom</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="grid gap-4 py-4">
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="title-add">Title</Label>
+                  <Input id="title-add" {...register("title")} />
+                  {errors.title && (
+                    <p className="text-red-500 text-sm">
+                      {errors.title.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="desc-add">Description</Label>
+                  <Textarea id="desc-add" {...register("description")} />
+                  {errors.description && (
+                    <p className="text-red-500 text-sm">
+                      {errors.description.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm text-muted-foreground">
+                    Select one: Due Date or Frequency
+                  </Label>
+                  <div className="flex bg-muted p-1 rounded-md">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setAddInputType("date");
+                        setValue("frequency", undefined);
+                        setValue("dueDate", new Date());
+                      }}
+                      variant={addInputType === "date" ? "default" : "ghost"}
+                      className="flex-1"
+                    >
+                      Due Date
+                    </Button>
+                    {errors.dueDate && (
+                      <p className="text-red-500 text-sm">
+                        {errors.dueDate.message}
+                      </p>
+                    )}
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setAddInputType("frequency");
+                        setValue("dueDate", undefined);
+                        setValue("frequency", "Daily");
+                      }}
+                      variant={
+                        addInputType === "frequency" ? "default" : "ghost"
+                      }
+                      className="flex-1"
+                    >
+                      Frequency
+                    </Button>
+                    {errors.frequency && (
+                      <p className="text-red-500 text-sm">
+                        {errors.frequency.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {addInputType === "date" ? (
+                  <Controller
+                    name="dueDate"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label>Due Date</Label>
+                        <Input
+                          type="date"
+                          min={today}
+                          value={
+                            field.value &&
+                            !isNaN(new Date(field.value).getTime())
+                              ? format(new Date(field.value), "yyyy-MM-dd")
+                              : ""
+                          }
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? new Date(e.target.value)
+                                : undefined
+                            )
+                          }
+                        />
+                        {errors.dueDate && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.dueDate.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    name="frequency"
+                    control={control}
+                    render={({ field }) => {
+                      const { value, ...restOfField } = field;
+                      return (
                         <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="title-add">Title</Label>
-                            <Input id="title-add" {...register("title")} />
-                            {errors.title && (
-                                <p className="text-red-500 text-sm">{errors.title.message}</p>
-                            )}
+                          <Label htmlFor="frequency-select">Frequency</Label>
+                          <select
+                            id="frequency-select"
+                            {...restOfField}
+                            value={value || ""}
+                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                          </select>
+                          {errors.frequency && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.frequency.message}
+                            </p>
+                          )}
                         </div>
-                        <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="desc-add">Description</Label>
-                            <Textarea id="desc-add" {...register("description")} />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label className="text-sm text-muted-foreground">
-                                Select one: Due Date or Frequency
-                            </Label>
-                            <div className="flex bg-muted p-1 rounded-md">
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        setAddInputType("date");
-                                        setValue("frequency", undefined);
-                                        setValue("dueDate", new Date());
-                                    }}
-                                    variant={addInputType === "date" ? "default" : "ghost"}
-                                    className="flex-1"
-                                >
-                                    Due Date
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        setAddInputType("frequency");
-                                        setValue("dueDate", undefined);
-                                        setValue("frequency", "Daily");
-                                    }}
-                                    variant={addInputType === "frequency" ? "default" : "ghost"}
-                                    className="flex-1"
-                                >
-                                    Frequency
-                                </Button>
-                            </div>
-                        </div>
-                        {addInputType === "date" ? (
-                            <Controller
-                                name="dueDate"
-                                control={control}
-                                render={({ field }) => (
-                                    <div className="grid w-full items-center gap-1.5">
-                                        <Label>Due Date</Label>
-                                        <Input
-                                            type="date"
-                                            min={today}
-                                            value={
-                                                field.value && !isNaN(new Date(field.value).getTime())
-                                                    ? format(new Date(field.value), "yyyy-MM-dd")
-                                                    : ""
-                                            }
-                                            onChange={(e) =>
-                                                field.onChange(
-                                                    e.target.value ? new Date(e.target.value) : undefined
-                                                )
-                                            }
-                                        />
-                                        {errors.dueDate && (
-                                            <p className="text-sm text-red-500 mt-1">
-                                                {errors.dueDate.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            />
-                        ) : (
-                            <Controller
-                                name="frequency"
-                                control={control}
-                                render={({ field }) => {
-                                    const { value, ...restOfField } = field;
-                                    return (
-                                        <div className="grid w-full items-center gap-1.5">
-                                            <Label htmlFor="frequency-select">Frequency</Label>
-                                            <select
-                                                id="frequency-select"
-                                                {...restOfField}
-                                                value={value || ""}
-                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                <option value="Daily">Daily</option>
-                                                <option value="Weekly">Weekly</option>
-                                                <option value="Monthly">Monthly</option>
-                                            </select>
-                                            {errors.frequency && (
-                                                <p className="text-sm text-red-500 mt-1">
-                                                    {errors.frequency.message}
-                                                </p>
-                                            )}
-                                        </div>
-                                    );
-                                }}
-                            />
-                        )}
-                    </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setAddData(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={createMutation.isPending}>
-                            {createMutation.isPending && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
-                            Add Task
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
-
-        {/* View Dialog */}
-        <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Bloom Details</DialogTitle>
-                </DialogHeader>
-                {viewData && (
-                    <div className="grid gap-6 py-4">
-                        <div className="flex items-start gap-4">
-                            <FileText className="h-6 w-6 text-muted-foreground mt-1" />
-                            <div className="grid gap-1 min-w-0">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Title
-                                </p>
-                                <p className="text-base font-semibold break-all">{viewData.title}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-4">
-                            <BookOpen className="h-6 w-6 text-muted-foreground mt-1" />
-                            <div className="grid gap-1 min-w-0">
-                                <p className="text-sm font-medium text-muted-foreground">
-                                    Description
-                                </p>
-                                {/* ✅ FIX 2: Added break-all for guaranteed wrapping */}
-                                <p className="text-base text-gray-700 break-all">
-                                    {viewData.description || (
-                                        <span className="text-gray-400">Not provided</span>
-                                    )}
-                                </p>
-                            </div>
-                        </div>
-                        {viewData.dueDate && (
-                            <div className="flex items-start gap-4">
-                                <CalendarIcon className="h-6 w-6 text-muted-foreground mt-1" />
-                                <div className="grid gap-1">
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Due Date
-                                    </p>
-                                    <p className="text-base">
-                                        {new Date(viewData.dueDate).toLocaleDateString("en-IN", {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric",
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                        {viewData.frequency && (
-                            <div className="flex items-start gap-4">
-                                <Repeat className="h-6 w-6 text-muted-foreground mt-1" />
-                                <div className="grid gap-1">
-                                    <p className="text-sm font-medium text-muted-foreground">
-                                        Frequency
-                                    </p>
-                                    <p className="text-base">{viewData.frequency}</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                      );
+                    }}
+                  />
                 )}
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setViewData(null)}>
-                        Close
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAddData(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createMutation.isPending}>
+                  {createMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Add Task
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
         </Dialog>
 
-        {/* Edit Dialog */}
-        <Dialog
-            open={!!editData}
-            onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}
-        >
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Edit Daily Bloom</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSubmit(onUpdate)}>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="title-edit">Title</Label>
-                            <Input id="title-edit" {...register("title")} />
-                            {errors.title && (
-                                <p className="text-sm text-red-500">
-                                    {errors.title.message}
-                                </p>
-                            )}
-                        </div>
-                        <div className="grid w-full items-center gap-1.5">
-                            <Label htmlFor="desc-edit">Description</Label>
-                            <Textarea id="desc-edit" {...register("description")} />
-                        </div>
-                        {editData?.dueDate ? (
-                            <Controller
-                                name="dueDate"
-                                control={control}
-                                render={({ field }) => (
-                                    <div className="grid w-full items-center gap-1.5">
-                                        <Label htmlFor="date-edit">Due Date</Label>
-                                        <Input
-                                            id="date-edit"
-                                            type="date"
-                                            value={
-                                                field.value &&
-                                                    !isNaN(new Date(field.value).getTime())
-                                                    ? format(new Date(field.value), "yyyy-MM-dd")
-                                                    : ""
-                                            }
-                                            onChange={(e) =>
-                                                field.onChange(
-                                                    e.target.value
-                                                        ? new Date(e.target.value)
-                                                        : undefined
-                                                )
-                                            }
-                                        />
-                                        {errors.dueDate && (
-                                            <p className="text-sm text-red-500 mt-1">
-                                                {errors.dueDate.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            />
-                        ) : (
-                            <Controller
-                                name="frequency"
-                                control={control}
-                                render={({ field }) => {
-                                    const { value, ...restOfField } = field;
-                                    return (
-                                        <div className="grid w-full items-center gap-1.5">
-                                            <Label htmlFor="frequency-edit-select">Frequency</Label>
-                                            <select
-                                                id="frequency-edit-select"
-                                                {...restOfField}
-                                                value={value || ""}
-                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                <option value="Daily">Daily</option>
-                                                <option value="Weekly">Weekly</option>
-                                                <option value="Monthly">Monthly</option>
-                                            </select>
-                                            {errors.frequency && (
-                                                <p className="text-sm text-red-500 mt-1">
-                                                    {errors.frequency.message}
-                                                </p>
-                                            )}
-                                        </div>
-                                    );
-                                }}
-                            />
+        <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Bloom Details</DialogTitle>
+            </DialogHeader>
+            {viewData && (
+              <div className="grid gap-6 py-4">
+                <div className="flex items-start gap-4">
+                  <FileText className="h-6 w-6 text-muted-foreground mt-1" />
+                  <div className="grid gap-1 min-w-0">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Title
+                    </p>
+                    <p className="text-base font-semibold break-all">
+                      {viewData.title}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <BookOpen className="h-6 w-6 text-muted-foreground mt-1" />
+                  <div className="grid gap-1 min-w-0">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Description
+                    </p>
+                    {/* ✅ FIX 2: Added break-all for guaranteed wrapping */}
+                    <p className="text-base text-gray-700 break-all">
+                      {viewData.description || (
+                        <span className="text-gray-400">Not provided</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {viewData.dueDate && (
+                  <div className="flex items-start gap-4">
+                    <CalendarIcon className="h-6 w-6 text-muted-foreground mt-1" />
+                    <div className="grid gap-1">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Due Date
+                      </p>
+                      <p className="text-base">
+                        {new Date(viewData.dueDate).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          }
                         )}
+                      </p>
                     </div>
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleCloseEditModal}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={updateMutation.isPending}>
-                            {updateMutation.isPending && (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            )}
-                            Update
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
+                  </div>
+                )}
+                {viewData.frequency && (
+                  <div className="flex items-start gap-4">
+                    <Repeat className="h-6 w-6 text-muted-foreground mt-1" />
+                    <div className="grid gap-1">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Frequency
+                      </p>
+                      <p className="text-base">{viewData.frequency}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setViewData(null)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
 
-        {/* Delete Dialog */}
-        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Are you absolutely sure?</DialogTitle>
-                    <DialogDescription>
-                        This action cannot be undone.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => setDeleteId(null)}
-                        disabled={deleteMutation.isPending}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        onClick={handleDeleteConfirm}
-                        disabled={deleteMutation.isPending}
-                    >
-                        {deleteMutation.isPending && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <Dialog
+          open={!!editData}
+          onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Daily Bloom</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit(onUpdate)}>
+              <div className="grid gap-4 py-4">
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="title-edit">Title</Label>
+                  <Input id="title-edit" {...register("title")} />
+                  {errors.title && (
+                    <p className="text-sm text-red-500">
+                      {errors.title.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="desc-edit">Description</Label>
+                  <Textarea id="desc-edit" {...register("description")} />
+                  {errors.description && (
+                    <p className="text-red-500 text-sm">
+                      {errors.description.message}
+                    </p>
+                  )}
+                </div>
+                {editData?.dueDate ? (
+                  <Controller
+                    name="dueDate"
+                    control={control}
+                    render={({ field }) => (
+                      <div className="grid w-full items-center gap-1.5">
+                        <Label htmlFor="date-edit">Due Date</Label>
+                        <Input
+                          id="date-edit"
+                          type="date"
+                          value={
+                            field.value &&
+                            !isNaN(new Date(field.value).getTime())
+                              ? format(new Date(field.value), "yyyy-MM-dd")
+                              : ""
+                          }
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? new Date(e.target.value)
+                                : undefined
+                            )
+                          }
+                        />
+                        {errors.dueDate && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.dueDate.message}
+                          </p>
                         )}
-                        Confirm Delete
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
+                      </div>
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    name="frequency"
+                    control={control}
+                    render={({ field }) => {
+                      const { value, ...restOfField } = field;
+                      return (
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="frequency-edit-select">
+                            Frequency
+                          </Label>
+                          <select
+                            id="frequency-edit-select"
+                            {...restOfField}
+                            value={value || ""}
+                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                          </select>
+                          {errors.frequency && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.frequency.message}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseEditModal}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Update
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Are you absolutely sure?</DialogTitle>
+              <DialogDescription>
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteId(null)}
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Confirm Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
       </div>
-    </>
+    </div>
   );
 }

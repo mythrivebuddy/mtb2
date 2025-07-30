@@ -4,7 +4,12 @@ import Provider from "@/providers/Provider";
 
 const inter = Inter({ subsets: ["latin"] });
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";// ! added by aaisha
-
+import { Toaster } from "@/components/ui/sonner"; // Import Toaster component
+export const metadata = {
+  title: "My Thrive Buddy",
+  description: "MTB with PWA",
+  themeColor: "#F1F9FF",
+};
 
 export default function RootLayout({
   children,
@@ -14,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Google Analytics Tag */}
+        <link rel="manifest" href="/manifest.json" />
+        {/* <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <meta name="theme-color" content="#000000" /> */}
         <script
           async
           src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
@@ -40,6 +47,27 @@ export default function RootLayout({
             {children}
           </Provider>
         </div>
+
+        <Toaster />
+
+        {/* PWA Service Worker Registration Script - NEW ADDITION */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/service-worker.js')
+                    .then((registration) => {
+                      console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch((error) => {
+                      console.error('Service Worker registration failed:', error);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

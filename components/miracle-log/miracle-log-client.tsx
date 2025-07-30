@@ -37,6 +37,7 @@ import { startOfDay, endOfDay } from "date-fns"; // Added for daily limit check
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { MiracleLog, MiracleLogClientProps } from "@/types/client/mericle-lo";
+import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 
 export default function MiracleLogClient({ }: MiracleLogClientProps) {
@@ -60,6 +61,8 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
       content: "",
     },
   });
+
+  useOnlineUserLeaderBoard()
 
   useEffect(() => {
     console.log("error", errors);
@@ -173,7 +176,7 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
   return (
     <>
       <CustomAccordion />
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="px-4 py-6 max-w-4xl">
         <Card className="mb-8">
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -182,11 +185,10 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
                 <CardDescription>
                   Record your daily miracles and positive moments
                 </CardDescription>
-              </div>
-              <div className="flex flex-col items-end mt-2 text-sm ">
                 <div className="flex items-center gap-1 font-semibold text-orange-500 animate-pulse">
                   🔥 {streak.count === 0 ? 'Day 0' : `${streak.count} day streak`}
                 </div>
+                 <div className="flex flex-col items-end mt-2 text-sm ">
                 <div className=" text-muted-foreground mt-1 ">
                   {streak.count === 0 ? (
                     <span>Your streak is broken. Start again to build your streak!</span>
@@ -197,6 +199,8 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
                   )}
                 </div>
               </div>
+              </div>
+             
             </div>
           </CardHeader>
 

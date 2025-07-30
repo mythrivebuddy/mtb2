@@ -1,35 +1,81 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+// File: middleware.ts (in your project's root folder)
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const isAdmin = token?.role === "ADMIN";
     const path = req.nextUrl.pathname;
+    const searchParams = req.nextUrl.searchParams;
+    const redirect = searchParams.get('redirect') || null;
+    const redirectUrl = redirect && redirect.startsWith('/') ? `${req.nextUrl.origin}${redirect}` : null;
 
+    console.log('Middleware triggered:', { path, token: !!token, redirect, redirectUrl });
 
-    // Redirect non-admin users from /admin
-    if (path.startsWith("/dashboard") && isAdmin) {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    // Handle authenticated users accessing /signin
+    if (token && path === '/signin' && redirectUrl) {
+      console.log('Redirecting authenticated user from /signin to:', redirectUrl);
+      return NextResponse.redirect(new URL(redirectUrl, req.url));
     }
-    if (path.startsWith("/admin") && !isAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+
+    // Redirect admins accessing /dashboard to /admin/dashboard
+    if (token && path.startsWith('/dashboard') && token.role === 'ADMIN') {
+      console.log('Redirecting admin to /admin/dashboard');
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
 
-    // Allow authenticated users to continue to the requested route
+    // Redirect non-admins accessing /admin to /dashboard
+    if (token && path.startsWith('/admin') && token.role !== 'ADMIN') {
+      console.log('Redirecting non-admin to /dashboard');
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    // Explicitly allow /dashboard/challenge/... for non-admins
+    if (token && path.startsWith('/dashboard/challenge/') && token.role !== 'ADMIN') {
+      console.log('Allowing non-admin access to:', path);
+      return NextResponse.next();
+    }
+
+    console.log('Middleware proceeding with NextResponse.next() for path:', path);
     return NextResponse.next();
   },
   {
-    pages: {
-      signIn: "/signin", // Redirect unauthenticated users to sign-in page
-    },
     callbacks: {
-      authorized: ({ token }) => Boolean(token),
+      authorized: ({ token, req }) => {
+        const path = req.nextUrl.pathname;
+
+        console.log('Authorized callback:', { path, token: !!token });
+
+        // Allow public challenge pages
+        if (isPublicChallengePage(path)) {
+          console.log('Public challenge page allowed:', path);
+          return true;
+        }
+
+        // Require authentication for all other pages
+        return !!token;
+      },
+    },
+    pages: {
+      signIn: '/signin',
     },
   }
 );
 
-// Specify the routes that should be protected by this middleware
+function isPublicChallengePage(path: string): boolean {
+  const privateChallengePrefixes = [
+    '/dashboard/challenge/my-challenges',
+    '/dashboard/challenge/create-challenge',
+    '/dashboard/challenge/join-challenge',
+    '/dashboard/challenge/let-others-roll',
+  ];
+
+  const isMainChallengePage = path === '/dashboard/challenge';
+  const isPrivateSubPage = privateChallengePrefixes.some((prefix) => path.startsWith(prefix));
+
+  return path.startsWith('/dashboard/challenge/') && !isMainChallengePage && !isPrivateSubPage;
+}
+
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*"], // Protect specific pages
+  matcher: ['/dashboard/:path*', '/leaderboard', '/admin/:path*', '/signin'],
 };

@@ -176,7 +176,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
     // No box data yet
     if (!boxData) {
       return (
-        <div className="flex flex-col items-center justify-center p-8">
+        <div className="flex flex-col items-center justify-center p-8 ">
           <Gift className="h-16 w-16 text-yellow-500 mb-4" />
           <p className="text-xl font-semibold mb-2">Your Magic Box</p>
           <p className="text-gray-600 mb-6">
@@ -271,10 +271,10 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
                 }`}
               >
                 <div
-                  className="flex  items-center  cursor-pointer min-w-0 gap-2"
+                  className="flex max-sm:flex-col justify-center sm:items-center cursor-pointer min-w-0 gap-2"
                   onClick={() => setSelectedUser(user.id)}
                 >
-                  <Avatar className="h-10 w-10 mr-3">
+                  <Avatar className="h-10  w-10 mr-3">
                     <AvatarImage src={user.image || undefined} />
                     <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                   </Avatar>
@@ -285,11 +285,11 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
 
                 <a
                   href={`/profile/${user.id}`}
-                  className="text-sm flex items-center  text-blue-600 hover:text-blue-800"
+                  className="text-sm flex items-center max-sm:mt-6   text-blue-600 hover:text-blue-800"
                   onClick={(e) => e.stopPropagation()}
                   target="_blank"
                 >
-                  <ExternalLink className="h-3 w-3 mr-1" />
+                  <ExternalLink className="h-3 w-3" />
                   profile
                 </a>
               </div>
@@ -320,8 +320,8 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-md md:max-w-xl">
+      <Dialog  open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-xs sm:max-w-md md:max-w-xl rounded-md ">
           <DialogHeader>
             <DialogTitle className="text-center">Magic Box</DialogTitle>
           </DialogHeader>

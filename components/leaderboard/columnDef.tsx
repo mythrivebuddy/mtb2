@@ -1,5 +1,9 @@
 "use client";
 
+import Image from "next/image";
+
+
+
 import { ColumnDef } from "@tanstack/react-table";
 import { LeaderboardUser } from "@/types/client/leaderboard";
 import { OnlineUser } from "@/types/client/user-info";
@@ -36,12 +40,14 @@ export const getLeaderboardColumns = (
         <Link
           href={`/profile/${user.id}`}
           target="_blank"
-          className={`flex items-center relative gap-3`}
+          className={`flex items-center relative gap-8`}
         >
           {user.image ? (
-            <img
+            <Image
               src={user.image}
               alt={user.name}
+              width={40}
+              height={40}
               className="w-10 h-10 rounded object-cover"
               referrerPolicy="no-referrer"
             />
@@ -51,7 +57,7 @@ export const getLeaderboardColumns = (
             </div>
           )}
 
-         <p className="hover:underline">
+         <p className="hover:underline w-fit max-sm:text-md text-nowrap mr-4">
           {user.name}
           </p> 
 
@@ -64,28 +70,37 @@ export const getLeaderboardColumns = (
   },
   {
     accessorKey: "jpEarned",
-    header: "JP Earned",
+      header: () => (
+    <div className="uppercase text-nowrap">
+      JP Earned
+    </div>),
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.jpEarned}</div>
+      <div className="font-medium w-fit text-nowrap">{row.original.jpEarned}</div>
     ),
   },
   {
     accessorKey: "jpSpent",
-    header: "JP Spent",
+    header:()=>(
+      <div className="uppercase text-nowrap">JP Spent</div>
+    ),
     cell: ({ row }) => (
       <div className="font-medium">{row.original.jpSpent}</div>
     ),
   },
   {
     accessorKey: "jpTransaction",
-    header: "JP Transaction",
+    header:()=>(
+      <div className="uppercase text-nowrap">JP Transaction</div>
+    ),
     cell: ({ row }) => (
       <div className="font-medium">{row.original.jpTransaction}</div>
     ),
   },
   {
     accessorKey: "jpBalance",
-    header: "JP Balance",
+     header:()=>(
+      <div className="uppercase text-nowrap">JP Balance</div>
+    ),
     cell: ({ row }) => (
       <div className="font-bold">{row.original.jpBalance}</div>
     ),

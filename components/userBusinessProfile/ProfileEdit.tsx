@@ -24,23 +24,24 @@ const ProfileEdit: React.FC<ProfileEditProps> = ({
   imagePreview,
 }) => (
   <form onSubmit={onSubmit}>
-    <div className="flex justify-between items-center mb-6">
-      <h1 className="text-3xl font-bold text-gray-800">
+    <div className="flex flex-col sm:flex-row gap-2 justify-between items-center mb-6">
+      <h2 className="text-xl sm:text-2xl text-nowrap font-bold text-gray-800">
         Edit Business Profile
-      </h1>
-      <div className="space-x-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
-        >
-          Cancel
-        </button>
+      </h2>
+      <div className="flex  gap-8">
+       
         <button
           type="submit"
           className="px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600"
         >
           Save Changes
+        </button>
+         <button
+          type="button"
+          onClick={onCancel}
+          className="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400"
+        >
+          Cancel
         </button>
       </div>
     </div>
