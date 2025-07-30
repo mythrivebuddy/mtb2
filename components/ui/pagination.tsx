@@ -34,7 +34,7 @@ export function Pagination({
       range.push(totalPages);
     }
 
-    console.log("range", range); //?dev
+   
 
     // Add dots where needed
     let l = 0;
@@ -54,7 +54,6 @@ export function Pagination({
 
     return rangeWithDots;
   };
-  console.log("getVisiblePages()", getVisiblePages()); //?dev
 
   return (
     <div className="flex items-center justify-center gap-2 mt-4">
