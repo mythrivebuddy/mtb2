@@ -24,7 +24,6 @@ export default function useAdminPresence(queryKey: QueryKey) {
       // Remove admin-tracker from the list
       // const filtered = users.filter((u) => u.userId !== "admin");
       setOnlineUsers(users);
-      console.log("Admin sees ",onlineUsers,users);
       
       queryClient.invalidateQueries({queryKey})
     };
