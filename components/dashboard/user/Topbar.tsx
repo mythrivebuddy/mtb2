@@ -1,28 +1,28 @@
 "use client";
 
-import {
-  Search,
-} from "lucide-react";
-import { Badge, BadgeProps } from "@/components/ui/badge";
 import React, { useState, useEffect } from "react";
-import { User as UserType } from "@/types/types";
+import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from "@/utils/getInitials";
-import Image from "next/image";
-import { NotificationIcon } from "@/components/icons/NotificationIcons";
-import Link from "next/link";
-import { Gift } from "lucide-react";
-import MagicBoxModal from "@/components/modals/MagicBoxModal";
+import { Search, Gift } from "lucide-react";
+
+import { User as UserType } from "@/types/types";
+import { SearchUser } from "@/types/client/nav";
+import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
 import { cn } from "@/lib/utils/tw";
 import { formatJP } from "@/lib/utils/formatJP";
-import UserProfileDropdown from "./UserProfileDropDown";
-import { StreakDisplay } from "@/components/userStreak/StreakDisplay"; 
-import { SearchUser } from "@/types/client/nav";
+import { getInitials } from "@/utils/getInitials";
 
+import { Badge, BadgeProps } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationIcon } from "@/components/icons/NotificationIcons";
+import { StreakDisplay } from "@/components/userStreak/StreakDisplay";
+import MagicBoxModal from "@/components/modals/MagicBoxModal";
+import UserProfileDropdown from "./UserProfileDropDown";
+
+// Helper component for consistent badge styling
 const TopBarBadge = ({
   children,
   className,
@@ -42,68 +42,64 @@ const TopBarBadge = ({
   );
 };
 
-
-export const fetchUsers = async (searchTerm: string) => {
+// API function to fetch users based on search term
+export const fetchUsers = async (searchTerm: string): Promise<SearchUser[]> => {
   const { data } = await axios.get(`/api/user/search?q=${searchTerm}`);
   return data.users;
 };
 
-export default function   TopBar({ user }: { user?: UserType }) {
+
+// The main TopBar component
+export default function TopBar({ user }: { user?: UserType }) {
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(user?.image || null);
 
-  // Listen for profile updates from other components
+  // Listen for profile updates from other components to update avatar in real-time
   useEffect(() => {
     const handleProfileUpdate = (event: CustomEvent) => {
       if (event.detail?.profilePicture) {
         setLocalProfilePicture(event.detail.profilePicture);
       }
     };
-
     window.addEventListener('profileUpdated', handleProfileUpdate as EventListener);
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener);
     };
   }, []);
 
+  // React Query hook for user search
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
     queryFn: () => fetchUsers(searchTerm),
-    enabled: searchTerm.length > 0,
+    enabled: searchTerm.length > 0, // Only fetch when there's a search term
   });
 
-
-
+  // React Query hook for Magic Box status
   const { data: hasUnopenedBox } = useQuery({
     queryKey: ["magicBoxStatus"],
     queryFn: async () => {
       const { data } = await axios.get("/api/user/magic-box");
-      return (
-        data.magicBox && (!data.magicBox.isOpened || !data.magicBox.isRedeemed)
-      );
+      return data.magicBox && (!data.magicBox.isOpened || !data.magicBox.isRedeemed);
     },
     enabled: !!user?.id,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 2, // 2 minutes
   });
 
-  // Replace the unread notifications count query to use the unread API
+  // React Query hook for unread notifications count
   const { data: unreadNotificationsCount } = useQuery<number>({
     queryKey: ["unreadNotificationsCount"],
     queryFn: async () => {
-      const { data } = await axios.get<{ unreadCount: number }>(
-        "/api/user/notifications/unread"
-      );
-
+      const { data } = await axios.get<{ unreadCount: number }>("/api/user/notifications/unread");
       return data.unreadCount;
     },
     enabled: !!user?.id,
     staleTime: 1000 * 60, // 1 minute
   });
 
-  // Get the last segment of the pathname and remove query params
+  // Determine the page title from the current route
   const currentRoute = pathname.split("/").pop()?.split("?")[0] || "dashboard";
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
@@ -115,9 +111,10 @@ export default function   TopBar({ user }: { user?: UserType }) {
             {pageTitle}
           </h1>
 
-          <div className="relative hidden lg:flex  w-full sm:w-80 md:w-96">
+          {/* Search Bar and Dropdown Container */}
+          <div className="relative hidden lg:flex w-full sm:w-80 md:w-96">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="h-4 w-4 text-slate-400 focus:outline-none" />
+              <Search className="h-4 w-4 text-slate-400" />
             </div>
             <input
               type="search"
@@ -131,21 +128,23 @@ export default function   TopBar({ user }: { user?: UserType }) {
               onFocus={() => setShowDropdown(true)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             />
+
+            {/* --- CORRECTED SEARCH DROPDOWN --- */}
             {showDropdown && searchTerm && (
-              <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
+              <div className="absolute top-full left-0 right-0 z-10 mt-2 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
                 {isLoading ? (
                   <div className="p-2 text-sm text-slate-500">Loading...</div>
-                ) : users?.length === 0 ? (
-                  <div className="p-2 text-sm text-slate-500">
-                    No users found
-                  </div>
+                ) : !users?.length ? ( // More robust check
+                  <div className="p-2 text-sm text-slate-500">No users found</div>
                 ) : (
-                  users?.map((user: SearchUser) => (
+                  users.map((user: SearchUser) => (
                     <Link
                       key={user.id}
                       href={`/profile/${user.id}`}
                       className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
                       target="_blank"
+                      rel="noopener noreferrer" // Security fix
+                      onMouseDown={(e) => e.preventDefault()} // Race condition fix
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.image || undefined} />
@@ -162,19 +161,12 @@ export default function   TopBar({ user }: { user?: UserType }) {
           </div>
         </div>
 
-        {/* //! Streak added by aaisha */}
-        <div className="flex gap-3 ">
-          {/* <StreakDisplay /> */}
-
+        {/* User Stats and Actions Section */}
+        <div className="flex justify-center items-center gap-3">
           <TopBarBadge>
-              <div className="relative">
-                <StreakDisplay />
-               
-              </div>
-            </TopBarBadge>
-        </div>
+            <StreakDisplay />
+          </TopBarBadge>
 
-        <div className="flex gap-3">
           <TopBarBadge>
             <Image
               src="/Pearls.png"
@@ -189,7 +181,6 @@ export default function   TopBar({ user }: { user?: UserType }) {
             </span>
           </TopBarBadge>
 
-          {/* Notifications */}
           <Link href="/dashboard/notifications">
             <TopBarBadge className="cursor-pointer">
               <div className="relative">
@@ -214,6 +205,7 @@ export default function   TopBar({ user }: { user?: UserType }) {
               )}
             </div>
           </TopBarBadge>
+
           <UserProfileDropdown
             userName={user?.name}
             profilePicture={localProfilePicture}
