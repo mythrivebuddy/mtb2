@@ -4,20 +4,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Check,
-  Flame,
-  Target,
-  Users,
-  Calendar,
+  
   ChevronLeft,
   Loader2,
-  Award,
-  ShieldAlert,
+  
   PartyPopper,
   CalendarX,
   Share2, // --- NEW: Import Share icon
   Copy,   // --- NEW: Import Copy icon
 } from "lucide-react";
-import Image from "next/image";
+
 import axios from "axios";
 
 // --- TYPE DEFINITIONS (no changes) ---
