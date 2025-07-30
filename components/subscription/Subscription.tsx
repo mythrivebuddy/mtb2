@@ -426,7 +426,7 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "Unlimited JoyPearls",
+                      "25% Extra JoyPearls",
                       "Premium Support",
                       "All Features",
                     ].map((feature) => (
@@ -468,7 +468,7 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "Unlimited JoyPearls",
+                      "25% Extra JoyPearls",
                       "Premium Support",
                       "All Features",
                     ].map((feature) => (
@@ -511,7 +511,7 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "Unlimited JoyPearls",
+                      "25% Extra JoyPearls",
                       "Premium Support",
                       "All Features",
                     ].map((feature) => (
