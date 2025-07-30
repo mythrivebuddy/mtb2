@@ -62,7 +62,10 @@ export default function UserInfoContent() {
   
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["users", filter, searchTerm, page],
-    queryFn: () => fetchUsers(filter, searchTerm, page, pageSize),
+      queryFn: async () => {
+    return await fetchUsers(filter, searchTerm, page, pageSize);
+  },
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -99,8 +102,10 @@ export default function UserInfoContent() {
   };
 
   const users = data?.users || [];
-  const totalUsers = data?.total || 0;
-  const totalPages = Math.ceil(totalUsers / pageSize);
+  const total = data?.total || 0;
+  const totalPages = Math.ceil(total);
+  // console.log("totalPages of users",totalUsers/pageSize);
+  
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
 

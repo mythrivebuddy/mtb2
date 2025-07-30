@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { profileSchema } from "@/schema/zodSchema";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
 import { prisma } from "@/lib/prisma";
+//import { authOptions } from "@/lib/auth";
+
 
 export async function POST(req: NextRequest) {
   try {
