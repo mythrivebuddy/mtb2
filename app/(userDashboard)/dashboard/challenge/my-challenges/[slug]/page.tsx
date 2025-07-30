@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter  } from "next/navigation";
 import {
   Check,
   Flame,
@@ -12,6 +12,7 @@ import {
   Loader2,
   Award,
   ShieldAlert,
+  CalendarDays,
   PartyPopper,
   CalendarX, // Import icon for the error modal
 } from "lucide-react";
@@ -94,6 +95,15 @@ const LoadingSpinner = () => (
     <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />{" "}
   </div>
 );
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
 // --- MAIN PAGE COMPONENT ---
 export default function ChallengeManagementPage() {
@@ -208,16 +218,17 @@ export default function ChallengeManagementPage() {
                 {" "}
                 <ChevronLeft className="w-5 h-5 mr-2" /> Back{" "}
               </button>
-              <span
-                className={`px-3 py-1 text-sm font-semibold rounded-full ${challenge.status === "ACTIVE" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
-              >
-                {" "}
-                {challenge.status}{" "}
-              </span>
+               <div className="flex items-center gap-2 text-sm text-slate-500">
+                                    <CalendarDays className="w-4 h-4" />
+                                    <span>{formatDate(challenge.startDate)}</span>
+                                    <span className="text-slate-300">→</span>
+                                    <span>{formatDate(challenge.endDate)}</span>
+                                  </div>
+              
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mt-4">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mt-4"> 
               {" "}
-              {challenge.title}{" "}
+              {challenge.title}{" "} 
             </h1>
           </div>
         </header>
