@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Eye, Loader2, Info } from "lucide-react"; // Added Info icon
+import { Pencil, Trash2, Eye, Loader2, Info } from "lucide-react";
 import { miracleLogSchema, type MiracleLogFormType } from "@/schema/zodSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,19 +33,18 @@ import {
 } from "@/components/ui/card";
 import axios from "axios";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { startOfDay, endOfDay } from "date-fns"; // Added for daily limit check
+import { startOfDay, endOfDay } from "date-fns";
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { MiracleLog, MiracleLogClientProps } from "@/types/client/mericle-lo";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
-
 
 export default function MiracleLogClient({ }: MiracleLogClientProps) {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);
   const [viewLog, setViewLog] = useState<MiracleLog | null>(null);
   const [deleteLog, setDeleteLog] = useState<MiracleLog | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
-  const [todayEntriesCount, setTodayEntriesCount] = useState(0); // State for daily entries count
+  const [todayEntriesCount, setTodayEntriesCount] = useState(0);
 
   const queryClient = useQueryClient();
 
@@ -62,7 +61,7 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
     },
   });
 
-  useOnlineUserLeaderBoard()
+  useOnlineUserLeaderBoard();
 
   useEffect(() => {
     console.log("error", errors);
@@ -77,7 +76,6 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
   });
 
   const { data: streak = { count: 0 } } = useQuery({
-    // Simplified streak type
     queryKey: ["streak", "MIRACLE_LOG"],
     queryFn: async () => {
       const res = await axios.get("/api/streak?type=MIRACLE_LOG");
@@ -85,7 +83,6 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
     },
   });
 
-  // Count today's entries for Miracle Log
   useEffect(() => {
     if (logs.length > 0) {
       const today = new Date();
@@ -104,13 +101,13 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
   const createMutation = useMutation({
     mutationFn: async (content: string) => {
       const res = await axios.post("/api/user/miracle-log", { content });
-      await axios.post("/api/streak", { type: "MIRACLE_LOG" }); // Add streak update
+      await axios.post("/api/streak", { type: "MIRACLE_LOG" });
       return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["miracleLogs"] });
       queryClient.invalidateQueries({ queryKey: ["userInfo"] });
-      queryClient.invalidateQueries({ queryKey: ["streak", "MIRACLE_LOG"] }); // Invalidate streak
+      queryClient.invalidateQueries({ queryKey: ["streak", "MIRACLE_LOG"] });
       reset();
       toast.success("Log created successfully");
     },
@@ -174,10 +171,10 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6">
       <CustomAccordion />
-      <div className="px-4 py-6 max-w-4xl">
-        <Card className="mb-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
           <CardHeader>
             <div className="flex justify-between items-center">
               <div className="space-y-3">
@@ -188,19 +185,18 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
                 <div className="flex items-center gap-1 font-semibold text-orange-500 animate-pulse">
                   🔥 {streak.count === 0 ? 'Day 0' : `${streak.count} day streak`}
                 </div>
-                 <div className="flex flex-col items-end mt-2 text-sm ">
-                <div className=" text-muted-foreground mt-1 ">
-                  {streak.count === 0 ? (
-                    <span>Your streak is broken. Start again to build your streak!</span>
-                  ) : streak.count >= 90 ? (
-                    <span>You have completed the 90-day streak! No more rewards, but keep logging for your growth ✨</span>
-                  ) : (
-                    <span>Keep it up Consistency builds miracles ✨</span>
-                  )}
+                <div className="flex flex-col items-end mt-2 text-sm">
+                  <div className="text-muted-foreground mt-1">
+                    {streak.count === 0 ? (
+                      <span>Your streak is broken. Start again to build your streak!</span>
+                    ) : streak.count >= 90 ? (
+                      <span>You have completed the 90-day streak! No more rewards, but keep logging for your growth ✨</span>
+                    ) : (
+                      <span>Keep it up! Consistency builds miracles ✨</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              </div>
-             
             </div>
           </CardHeader>
 
@@ -277,7 +273,7 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
         {isLoading ? (
           <PageSkeleton type="miracle-log" />
         ) : logs.length === 0 ? (
-          <Card>
+          <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
             <CardContent className="py-10 text-center">
               <p className="text-muted-foreground">
                 No miracle logs yet. Start by adding your first entry above!
@@ -285,7 +281,7 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
             <CardHeader>
               <CardTitle>Your Miracle Logs</CardTitle>
               <CardDescription>
@@ -377,7 +373,6 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
             </CardContent>
           </Card>
         )}
-        {/* View Dialog */}
         <Dialog open={!!viewLog} onOpenChange={() => setViewLog(null)}>
           <DialogContent>
             <DialogHeader>
@@ -410,7 +405,6 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
         <Dialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
           <DialogContent>
             <DialogHeader>
@@ -447,7 +441,6 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        {/* Update Dialog */}
         <Dialog
           open={updateDialogOpen}
           onOpenChange={() => {
@@ -497,6 +490,6 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
           </DialogContent>
         </Dialog>
       </div>
-    </>
+    </div>
   );
 }
