@@ -63,7 +63,7 @@ export async function GET(request: Request) {
       },
       orderBy: { createdAt:"desc" },
     });
-
+    
     const totalUsers = await prisma.user.count({ where: whereClause });
     const total = Math.ceil(totalUsers / pageSize);
 
