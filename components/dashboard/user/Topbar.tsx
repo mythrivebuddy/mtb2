@@ -32,7 +32,7 @@ const TopBarBadge = ({
     <Badge
       variant="outline"
       className={cn(
-        "bg-white rounded-md h-8 sm:h-10 flex items-center justify-center px-2 sm:px-3 border border-[#4B65A2]",
+        "bg-white rounded-md h-8 sm:h-10 flex items-center  justify-center px-1 sm:px-3 border border-[#4B65A2]",
         className
       )}
       {...props}
@@ -104,8 +104,8 @@ export default function TopBar({ user }: { user?: UserType }) {
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
   return (
-    <header className="bg-transparent px-3 flex items-center justify-between">
-      <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-12 w-full mb-5">
+    <header className="bg-transparent px-2 flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:justify-between gap-4 sm:gap-12 w-full mb-5">
         <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center">
           <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
             {pageTitle}
@@ -162,7 +162,7 @@ export default function TopBar({ user }: { user?: UserType }) {
         </div>
 
         {/* User Stats and Actions Section */}
-        <div className="flex justify-center items-center gap-3">
+        <div className="flex justify-start md:justify-center items-center px-1 gap-3">
           <TopBarBadge>
             <StreakDisplay />
           </TopBarBadge>
@@ -175,8 +175,8 @@ export default function TopBar({ user }: { user?: UserType }) {
               height={12}
               className="rounded-xl mr-1"
             />
-            <span className="font-medium text-sm sm:text-base">JP</span>
-            <span className="font-bold text-blue-500 ml-1 text-sm sm:text-base">
+            <span className="font-medium text-xs sm:text-base">JP</span>
+            <span className="font-bold text-blue-500 ml-1 text-xs sm:text-base">
               {formatJP(user?.jpBalance || 0)}
             </span>
           </TopBarBadge>

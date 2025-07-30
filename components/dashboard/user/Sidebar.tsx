@@ -149,7 +149,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   </div>
   <input
     type="search"
-    className=" max-md:w-full bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
+    className="max-xl:w-full bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
     placeholder="Search Anything Here..."
     value={searchTerm}
     onChange={(e) => {

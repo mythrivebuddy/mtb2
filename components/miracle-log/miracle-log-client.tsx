@@ -176,7 +176,7 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
   return (
     <>
       <CustomAccordion />
-      <div className="px-4 py-6 max-w-4xl">
+      <div className="max-md:px-4 py-6 mx-auto max-w-4xl">
         <Card className="mb-8">
           <CardHeader>
             <div className="flex justify-between items-center">
