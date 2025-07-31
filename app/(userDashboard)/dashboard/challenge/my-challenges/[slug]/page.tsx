@@ -14,7 +14,7 @@ import {
   ShieldAlert,
   PartyPopper,
   CalendarX,
-  Share2, // Added Share2 icon
+  Share2,
 } from "lucide-react";
 import Image from "next/image";
 import axios from "axios";
@@ -103,10 +103,10 @@ export default function ChallengeManagementPage() {
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false); // Added state for share modal
-  const [copied, setCopied] = useState(false); // Added state for copy feedback
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || typeof window !== "undefined" ? window.location.origin : ""; // Modified to handle server-side rendering
-  const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`; // Shareable link
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || typeof window !== "undefined" ? window.location.origin : "";
+  const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
 
   const fetchChallengeDetails = useCallback(async () => {
     if (!slug) return;
@@ -173,8 +173,24 @@ export default function ChallengeManagementPage() {
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableLink).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  // Share functions for different platforms
+  const handleShareWhatsApp = () => {
+    const text = encodeURIComponent(`Join my challenge: ${challenge?.title}! ${shareableLink}`);
+    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+  };
+
+  const handleShareLinkedIn = () => {
+    const text = encodeURIComponent(`Check out this challenge I'm participating in: ${challenge?.title}! ${shareableLink}`);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareableLink)}&title=${text}`, "_blank");
+  };
+
+  const handleShareX = () => {
+    const text = encodeURIComponent(`Join me in this challenge: ${challenge?.title}! ${shareableLink}`);
+    window.open(`https://x.com/intent/tweet?text=${text}`, "_blank");
   };
 
   if (loading) {
@@ -383,6 +399,26 @@ export default function ChallengeManagementPage() {
             </p>
             <div className="bg-gray-100 p-2 rounded-lg mb-4 break-all">
               <p className="text-sm text-gray-700">{shareableLink}</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              <button
+                onClick={handleShareWhatsApp}
+                className="bg-green-500 text-white p-2 rounded-lg font-semibold hover:bg-green-600 transition-all"
+              >
+                WhatsApp
+              </button>
+              <button
+                onClick={handleShareLinkedIn}
+                className="bg-blue-700 text-white p-2 rounded-lg font-semibold hover:bg-blue-800 transition-all"
+              >
+                LinkedIn
+              </button>
+              <button
+                onClick={handleShareX}
+                className="bg-black text-white p-2 rounded-lg font-semibold hover:bg-gray-800 transition-all"
+              >
+                X
+              </button>
             </div>
             <button
               onClick={handleCopyLink}
