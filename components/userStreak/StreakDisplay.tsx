@@ -7,6 +7,7 @@ export function StreakDisplay() {
     queryKey: ['streak'],
     queryFn: async () => {
       const res = await axios.get(`/api/login-streak/userStreak`);
+      console.log("streak:", res.data);
       return res.data;
     }
   });
@@ -20,11 +21,11 @@ export function StreakDisplay() {
   if (streakCount <= 0) return null;
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="text-xl">🔥</div>
+    <div className="flex items-center gap-1 sm:gap-2">
+      <div className="text-md sm:text-xl">🔥</div>
       <div>
-        <div className="font-bold text-md">
-          {streakCount} Day{streakCount !== 1 ? 's' : ''} Streak
+        <div className="font-bold max-sm:text-[0.57rem] sm:text-nowrap sm:text-md">
+          {streakCount} Day{streakCount !== 1 ? 's' : ''}  Streak
         </div>
       </div>
     </div>

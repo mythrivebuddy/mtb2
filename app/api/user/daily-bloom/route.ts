@@ -1,11 +1,40 @@
-import { checkRole } from "@/lib/utils/auth";
+import { getServerSession } from "next-auth/next";
+import { AuthOptions } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType, Prisma } from "@prisma/client";
 import { DailyBloomFormType } from "@/schema/zodSchema";
 
-
+// --- Define authOptions directly in this file ---
+const authOptions: AuthOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    }),
+    // Add other providers here if you have them
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
+  },
+  session: {
+    strategy: "jwt",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
 
 const nextDateUTC = (
   startDate: Date,
@@ -31,13 +60,12 @@ const nextDateUTC = (
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await checkRole("USER");
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // --- Recurring Task Logic ---
     const nowForRecurrence = new Date();
     const completedRecurringTasks = await prisma.todo.findMany({
       where: {
@@ -54,17 +82,14 @@ export async function GET(request: NextRequest) {
           task.updatedAt,
           task.frequency as "Daily" | "Weekly" | "Monthly"
         );
-        
+
         if (newDate <= nowForRecurrence) {
           updatePromises.push(
             prisma.todo.update({
               where: { id: task.id },
-              // --- THE DEFINITIVE FIX ---
-              // When a recurring task resets, we set isCompleted to false
-              // AND we explicitly set its dueDate to null.
-              data: { 
+              data: {
                 isCompleted: false,
-                dueDate: null 
+                dueDate: null,
               },
             })
           );
@@ -74,9 +99,7 @@ export async function GET(request: NextRequest) {
     if (updatePromises.length > 0) {
       await prisma.$transaction(updatePromises);
     }
-    // --- End of Recurring Task Logic ---
 
-    // The rest of your GET request logic remains the same...
     const { searchParams } = request.nextUrl;
     const frequency = searchParams.get("frequency");
     const status = searchParams.get("status");
@@ -102,7 +125,10 @@ export async function GET(request: NextRequest) {
       if (frequency && frequency !== "All") {
         whereConditions.push(Prisma.sql`"frequency" = ${frequency}`);
       }
-      const whereSql = Prisma.sql`WHERE ${Prisma.join(whereConditions, " AND ")}`;
+      const whereSql = Prisma.sql`WHERE ${Prisma.join(
+        whereConditions,
+        " AND "
+      )}`;
 
       const blooms = await prisma.$queryRaw`
         SELECT * FROM "Todo"
@@ -156,11 +182,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
-// The POST function remains completely unchanged.
 export async function POST(req: NextRequest) {
   try {
-    const session = await checkRole("USER");
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -217,10 +241,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      message: "Daily Bloom created successfully",
-      newBloom,
-    });
+    return NextResponse.json(
+      {
+        message: "Daily Bloom created successfully",
+        newBloom,
+      },
+      { status: 201 }
+    );
   } catch (err: unknown) {
     console.error("Error creating Todo:", err);
 

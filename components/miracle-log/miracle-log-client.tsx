@@ -171,9 +171,9 @@ export default function MiracleLogClient({ }: MiracleLogClientProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6">
+    <div className="min-h-screen xl:mx-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 ">
       <CustomAccordion />
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto max-lg:px-4 space-y-8">
         <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
           <CardHeader>
             <div className="flex justify-between items-center">

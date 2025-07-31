@@ -1,18 +1,20 @@
-// This is the complete, updated code for your single page file.
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react"; // 1. Import useSession to check login status
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ActivityType } from "@prisma/client";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { List, PlusCircle, Globe, X } from "lucide-react";
+import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
+
 
 export default function Page() {
   const router = useRouter();
-  const { status } = useSession(); // 2. Get session status
-  const [isModalOpen, setIsModalOpen] = useState(false); // State to control the modal
+  const { status } = useSession();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [fee, setFee] = useState<number | null>(null);
 
   useEffect(() => {
@@ -26,15 +28,11 @@ export default function Page() {
     loadFee();
   }, []);
 
-  console.log("check");
-
-  // 3. --- Updated Click Handlers with Auth Check ---
-
   const handleCreateChallenge = () => {
     if (status === "authenticated") {
       router.push("challenge/create-challenge");
     } else {
-      setIsModalOpen(true); // Open modal if not logged in
+      setIsModalOpen(true);
     }
   };
 
@@ -42,29 +40,30 @@ export default function Page() {
     if (status === "authenticated") {
       router.push("challenge/my-challenges");
     } else {
-      setIsModalOpen(true); // Open modal if not logged in
+      setIsModalOpen(true);
     }
   };
 
-  // This one remains public, so no check is needed.
   const handleViewUpcoming = () => {
     router.push("challenge/upcoming-challenges");
   };
 
   useOnlineUserLeaderBoard();
 
-  console.log("Rendering Challenges Hub Page");
-
   return (
     <>
-      <div className="flex min-h-screen items-center justify-center p-4">
+    
+      <CustomAccordion />
+          
+      
+      
+      <div className="flex min-h-screen items-start justify-center p-4 pt-12 md:pt-16">
         <div className="w-full max-w-5xl">
-          <h1 className="mb-8 text-center text-4xl font-extrabold text-indigo-900 drop-shadow-lg md:mb-10 md:text-5xl">
+          <h1 className="mb-10 text-center text-4xl font-extrabold text-indigo-900 drop-shadow-lg md:text-5xl">
             Challenges Hub
           </h1>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
-            {/* "Create Challenge" Button - Now requires login */}
             <button
               onClick={handleCreateChallenge}
               className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-4 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl md:p-6"
@@ -81,7 +80,6 @@ export default function Page() {
               </div>
             </button>
 
-            {/* "My Challenges" Button - Now requires login */}
             <button
               onClick={handleChallengeRecord}
               className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-4 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl md:p-6"
@@ -92,7 +90,6 @@ export default function Page() {
               </h2>
             </button>
 
-            {/* "Upcoming Challenges" Button - Public */}
             <button
               onClick={handleViewUpcoming}
               className="flex h-40 flex-col items-center justify-center rounded-xl bg-white p-4 text-center shadow-2xl transition-transform hover:scale-105 hover:bg-indigo-50 hover:shadow-xl md:p-6"
@@ -104,14 +101,13 @@ export default function Page() {
             </button>
           </div>
 
-          <p className="mt-8 text-center text-lg font-bold text-indigo-900 drop-shadow-md md:mt-10 md:text-2xl">
+          <p className="mt-12 text-center text-lg font-bold text-indigo-900 drop-shadow-md md:text-2xl">
             Ready to Kick Off? Let’s Dive In!!
           </p>
         </div>
       </div>
 
-      {/* 4. --- Authentication Modal JSX --- */}
-      {/* This modal will only appear when isModalOpen is true */}
+      {/* Authentication Modal JSX */}
       {isModalOpen && (
         <div
           onClick={() => setIsModalOpen(false)}
