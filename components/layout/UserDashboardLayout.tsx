@@ -56,7 +56,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
       {/* The main content wrapper's classes are now conditional */}
       <div
         className={`flex-1 flex flex-col !h-full transition-all duration-300 ${
-          isLoggedIn ? "ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-20" : ""
+          isLoggedIn ? "ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-16" : ""
         }`}
       >
         {/* Conditionally render the TopBar for logged-in users */}
@@ -65,7 +65,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
             <TopBar user={user} />
           </div>
         )}
-        <main className="flex-1 overflow-auto md:pt-4 px-4 sm:px-6 lg:px-7 bg-transparent">
+        <main className="flex-1 overflow-auto lg:pt-4 px-4 bg-transparent">
           {children}
         </main>
       </div>

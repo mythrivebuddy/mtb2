@@ -387,9 +387,14 @@ const SubscriptionPage: React.FC = () => {
               <div className="mt-6">
                 <ul className="space-y-3">
                   {[
-                    "5 JoyPearls/day",
-                    "Community Support",
-                    "Basic Features",
+                    "Host 1 Challenge Per Month" ,
+                    "No Listing on “Challenges” page", 
+                    "Listing on “Solopreneurs of the Day”* page", 
+                    "No Listing on “Webinars” page (coming soon)", 
+                    "Earn JoyPearls on every activity", 
+                    "List 1 Product on the store (Zero commission on sales)",
+                    "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges", 
+                    "Redeem JoyPearls for Spotlights with other members"
                   ].map((feature) => (
                     <li key={feature} className="flex items-center text-sm text-gray-600">
                       <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -426,9 +431,13 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "25% Extra JoyPearls",
-                      "Premium Support",
-                      "All Features",
+                      "Host 5 Challenges per Month",
+"Listing on “Challenges” page", 
+"Listing on “Solopreneurs of the Day” page", 
+"Listing on “Webinars” page", 
+"Earn 25% Extra JoyPearls on every activity", 
+"List upto 5 products on the store (Zero commission on sales)", 
+"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges"
                     ].map((feature) => (
                       <li key={feature} className="flex items-center text-sm text-gray-600">
                         <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -468,9 +477,13 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "25% Extra JoyPearls",
-                      "Premium Support",
-                      "All Features",
+                       "Host 5 Challenges per Month",
+"Listing on “Challenges” page", 
+ "Listing on “Solopreneurs of the Day” page", 
+"Listing on “Webinars” page", 
+"Earn 25% Extra JoyPearls on every activity", 
+"List upto 5 products on the store (Zero commission on sales)", 
+"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges"
                     ].map((feature) => (
                       <li key={feature} className="flex items-center text-sm text-gray-600">
                         <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -511,9 +524,13 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "25% Extra JoyPearls",
-                      "Premium Support",
-                      "All Features",
+                        "Host 5 Challenges per Month",
+"Listing on “Challenges” page", 
+ "Listing on “Solopreneurs of the Day” page", 
+"Listing on “Webinars” page", 
+"Earn 25% Extra JoyPearls on every activity", 
+"List upto 5 products on the store (Zero commission on sales)", 
+"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
                     ].map((feature) => (
                       <li key={feature} className="flex items-center text-sm text-gray-600">
                         <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
