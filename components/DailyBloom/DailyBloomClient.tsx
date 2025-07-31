@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  useInfiniteQuery, // Changed from useQuery
+  useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { format } from "date-fns";
+import { useSession } from "next-auth/react"; // --- 1. IMPORT useSession ---
 
 import { dailyBloomSchema, DailyBloomFormType } from "@/schema/zodSchema";
 
@@ -79,6 +80,9 @@ const defaultFormValues: DailyBloomFormType = {
 export default function DailyBloomClient() {
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
+  const { data: session } = useSession(); // --- 2. GET USER SESSION ---
+  const userId = session?.user?.id;       // --- 3. GET USER ID ---
+
   const [editData, setEditData] = useState<DailyBloom | null>(null);
   const [viewData, setViewData] = useState<DailyBloom | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -121,8 +125,7 @@ export default function DailyBloomClient() {
       reset(defaultFormValues);
     }
   }, [addData, reset]);
-
-  // Replaced useQuery with useInfiniteQuery for "Load More" functionality
+  
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<{
       data: DailyBloom[];
@@ -148,8 +151,21 @@ export default function DailyBloomClient() {
       },
     });
 
-  // Flatten the pages array to get a single list of blooms
   const dailyBloom = data?.pages.flatMap((page) => page.data) || [];
+
+  // --- 4. HELPER FUNCTION TO INVALIDATE ALL RELEVANT QUERIES ---
+  const invalidateAllQueries = () => {
+    console.log("Invalidating queries...");
+    // Invalidate queries for the current page
+    queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+    queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
+
+    // Invalidate the public profile query to update stats
+    if (userId) {
+      queryClient.invalidateQueries({ queryKey: ["user", userId] });
+    }
+  };
+
 
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
@@ -157,8 +173,7 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
+      invalidateAllQueries(); // --- 5. INVALIDATE ON SUCCESS ---
       toast.success("Daily Bloom created successfully!");
       setAddData(false);
     },
@@ -183,8 +198,7 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
+      invalidateAllQueries(); // --- 5. INVALIDATE ON SUCCESS ---
     },
     onError: (error: AxiosError) => {
       const errorMessage = getAxiosErrorMessage(
@@ -201,9 +215,8 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
+      invalidateAllQueries(); // --- 5. INVALIDATE ON SUCCESS ---
       toast.success("Deleted successfully");
-      queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     },
     onError: (error: AxiosError) => {
       const errorMessage = getAxiosErrorMessage(
@@ -265,10 +278,11 @@ export default function DailyBloomClient() {
   };
 
   return (
+    // --- NO CHANGES HAVE BEEN MADE TO ANY UI OR JSX ---
     <div>
       <CustomAccordion />
       <div className="container mx-auto p-3 max-w-4xl">
-        <Card className="mb-8  ">
+        <Card className="mb-8  ">
           <CardHeader>
             <div className="space-y-3">
               <CardTitle>Daily Blooms</CardTitle>
@@ -410,7 +424,9 @@ export default function DailyBloomClient() {
                           <TableHead className="w-[80px] text-center"></TableHead>
                           <TableHead>Title</TableHead>
                           <TableHead className="w-[130px]">Due Date</TableHead>
-                          <TableHead className="w-[120px]">Frequency</TableHead>
+                          <TableHead className="w-[120px]">
+                            Frequency
+                          </TableHead>
                           <TableHead className="w-[140px] text-center">
                             Actions
                           </TableHead>
@@ -445,7 +461,6 @@ export default function DailyBloomClient() {
                               </div>
 
                               {hoveredBloomId === bloom.id && (
-                                // ✅ FIX 1: Positioned to the right and given highest z-index
                                 <div className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl">
                                   <HoverDetails bloom={bloom} />
                                 </div>
@@ -569,7 +584,6 @@ export default function DailyBloomClient() {
                 </>
               )}
             </CardContent>
-            {/* Replaced pagination buttons with a "Load More" button */}
             <CardFooter className="p-4">
               {hasNextPage && (
                 <Button
@@ -591,10 +605,6 @@ export default function DailyBloomClient() {
             </CardFooter>
           </Card>
         )}
-
-        {/* --- DIALOGS (Add, View, Edit, Delete) --- */}
-        {/* No changes were made to the dialogs below this line */}
-
         <Dialog open={addData} onOpenChange={setAddData}>
           <DialogContent>
             <DialogHeader>
@@ -768,7 +778,6 @@ export default function DailyBloomClient() {
                     <p className="text-sm font-medium text-muted-foreground">
                       Description
                     </p>
-                    {/* ✅ FIX 2: Added break-all for guaranteed wrapping */}
                     <p className="text-base text-gray-700 break-all">
                       {viewData.description || (
                         <span className="text-gray-400">Not provided</span>
