@@ -10,9 +10,13 @@ import PushNotificationToggle from "@/components/notifications/PushNotificationT
 import PageSkeleton from "../PageSkeleton";
 import Link from "next/link";
 import { Notification } from "@/types/client/notifcation";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 
 export default function NotificationsPage()  {
+  const session = useSession();
+ 
   // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -21,14 +25,23 @@ export default function NotificationsPage()  {
       return data as Notification[];
     },
   });
-
   const queryClient = useQueryClient();
+   useEffect(() => {
+    (async()=>{
+      try {
+        await axios.post("/api/push/test", {userId:session?.data?.user.id});
+        toast("Push notifications enabled! Check your browser settings to allow notifications.")
+      } catch (error) {
+        console.error("Error in NotificationsPage useEffect:", error);
+      }
 
-  useEffect(() => {
-    if (!isLoading) {
+    })()
+       if (!isLoading) {
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     }
-  }, [queryClient, isLoading]);
+   }, [session,queryClient,isLoading]); 
+
+ 
 
   console.log(notifications);
 

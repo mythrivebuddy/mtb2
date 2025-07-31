@@ -1,4 +1,3 @@
-
 /**
  * Hook for managing push notification subscriptions
  */
@@ -33,7 +32,7 @@ export default function usePushNotifications() {
       console.log("Push notifications are supported"); //?dev
       setIsPushSupported(true);
 
-      console.log("registreations", navigator.serviceWorker.getRegistrations()); //?dev
+      console.log("registrations", navigator.serviceWorker.getRegistrations()); //?dev
 
       // Register service worker
       navigator.serviceWorker
@@ -106,8 +105,19 @@ export default function usePushNotifications() {
       });
       console.log("Subscription sent to server successfully"); //?dev
 
+      // 🔥 CRUCIAL: Send a test notification immediately after subscribing
+      try {
+        console.log("Sending test notification..."); //?dev
+        await axios.post("/api/push/test");
+        console.log("Test notification sent successfully"); //?dev
+        toast.success("Push Notifications enabled and test sent!");
+      } catch (testError) {
+        console.error("Failed to send test notification:", testError); //?dev
+        // Don't throw here - subscription still worked
+        toast.success("Push Notifications enabled (test failed to send)");
+      }
+
       setIsSubscribed(true);
-      toast.success("Push Notifications enabled");
     } catch (err: any) {
       console.error("Failed to subscribe to push notifications:", err); //?dev
       toast.error("Failed to enable notifications", {
@@ -159,12 +169,29 @@ export default function usePushNotifications() {
     }
   };
 
+  // Optional: Send test notification manually (for debugging)
+  const sendTestNotification = async () => {
+    try {
+      setIsLoading(true);
+      console.log("Manually sending test notification..."); //?dev
+      await axios.post("/api/push/test");
+      console.log("Manual test notification sent successfully"); //?dev
+      toast.success("Test notification sent!");
+    } catch (error) {
+      console.error("Failed to send manual test notification:", error); //?dev
+      toast.error("Failed to send test notification");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isPushSupported,
     isSubscribed,
     isLoading,
     subscribe,
     unsubscribe,
+    sendTestNotification, // Optional: for manual testing
   };
 }
 
