@@ -10,6 +10,7 @@ import {
   Loader2,
   Gift,
   CalendarDays,
+  ArrowLeft, // ✨ Icon for the back button
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -85,6 +86,19 @@ export default function MyChallenges() {
   return (
     <div className="min-h-screen w-full ">
       <div className="w-full max-w-4xl mx-auto py-12 px-4">
+        {/* ✨ START: Added Back Button ✨ */}
+        <div className="mb-8">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex items-center gap-2 rounded-lg px-4 py-2 font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          >
+            <ArrowLeft size={20} />
+            <span>Back to Challenge Hub</span>
+          </button>
+        </div>
+        {/* ✨ END: Added Back Button ✨ */}
+
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-slate-800">My Challenges</h1>
           <p className="text-slate-500 mt-2">
