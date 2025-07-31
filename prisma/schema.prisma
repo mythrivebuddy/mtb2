@@ -43,8 +43,6 @@ model User {
   subscriptionStatus            String?
   bio                           String?
   isOnline                      Boolean?              @default(false)
-   publicProfile           PublicProfile?
-
   isFirstTimeSurvey             Boolean?              @default(true)
   lastSurveyTime                DateTime?
   alignedActions                AlignedAction[]
@@ -606,16 +604,6 @@ model ChallengeEnrollment {
 
   @@unique([userId, challengeId])
   @@map("challenge_enrollments")
-}
-
-model PublicProfile {
-  id                    String  @id @default(cuid())
-  userId                String  @unique
-  totalBloomsCreated    Int     @default(0)
-  totalBloomsCompleted  Int     @default(0)
-  // Add any other public-facing fields you need here
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
