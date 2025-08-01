@@ -27,15 +27,7 @@ export default function NotificationsPage()  {
   });
   const queryClient = useQueryClient();
    useEffect(() => {
-    (async()=>{
-      try {
-        await axios.post("/api/push/test", {userId:session?.data?.user.id});
-        toast("Push notifications enabled! Check your browser settings to allow notifications.")
-      } catch (error) {
-        console.error("Error in NotificationsPage useEffect:", error);
-      }
-
-    })()
+ 
        if (!isLoading) {
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     }

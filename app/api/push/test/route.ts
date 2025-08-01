@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const unreadNotifications = await prisma.notification.findMany({
       where: {
         userId: user.id,
-        // isRead: false,
+        isRead: false,
       },
       select: { id: true, title: true, message: true, type: true, metadata: true },
       orderBy: { createdAt: 'desc' },

@@ -15,6 +15,8 @@ import {
 import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 
 
@@ -24,7 +26,20 @@ export default function DashboardPage() {
   
   useOnlineUserLeaderBoard()
 
+ 
+    useEffect(()=>{
+         (async()=>{
+      try {
+       const {data} = await axios.post("/api/push/test", {userId:session?.user.id});
+       if (data.success) {
+         toast("Send",data.success)
+       }
+      } catch (error) {
+        console.error("Error in NotificationsPage useEffect:", error);
+      }
 
+    })()
+  },[])
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
