@@ -86,33 +86,33 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
               isSubscription
                 ? undefined
                 : (_, actions) => {
-                  console.log(paypalPlanId);
-                  return actions.order.create({
-                    intent: "CAPTURE",
-                    purchase_units: [
-                      {
-                        amount: {
-                          value: price,
-                          currency_code: "USD",
+                    console.log(paypalPlanId);
+                    return actions.order.create({
+                      intent: "CAPTURE",
+                      purchase_units: [
+                        {
+                          amount: {
+                            value: price,
+                            currency_code: "USD",
+                          },
+                          description: `Subscription to ${plan.name}`,
                         },
-                        description: `Subscription to ${plan.name}`,
+                      ],
+                      application_context: {
+                        shipping_preference: "NO_SHIPPING",
                       },
-                    ],
-                    application_context: {
-                      shipping_preference: "NO_SHIPPING",
-                    },
-                  });
-                }
+                    });
+                  }
             }
             createSubscription={
               isSubscription
                 ? (_, actions) => {
-                  console.log(paypalPlanId);
-                  return actions.subscription.create({
-                    plan_id: paypalPlanId,
-                    custom_id: `SUB-${plan.id}-${Date.now()}`,
-                  });
-                }
+                    console.log(paypalPlanId);
+                    return actions.subscription.create({
+                      plan_id: paypalPlanId,
+                      custom_id: `SUB-${plan.id}-${Date.now()}`,
+                    });
+                  }
                 : undefined
             }
             onApprove={async (data, actions) => {
@@ -347,16 +347,58 @@ const SubscriptionPage: React.FC = () => {
 
     return false;
   };
- 
-
+  
   const currentTierIndex = availableTiers.findIndex(
     (tier) => tier.planId === data?.currentLifetimePlan.planId
   );
 
-
   return (
-    <div className="w-full min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full min-h-screen  py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Added Intro Section */}
+        <div className="text-center mb-16 px-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            MyThriveBuddy.com Isn’t Just a Platform — It’s a Growth Ecosystem.
+          </h2>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
+            Most platforms give you tools to run your business.
+            <br />
+            MyThriveBuddy gives you Growth Tools and Growth Buddies.
+          </p>
+          <p className="text-xl font-bold text-gray-800 mt-8 mb-3">
+            What if...
+          </p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Thousands of like-hearted solopreneurs were cheering for you,
+            spotlighting your work, and even sending business your way?
+          </p>
+          <p className="text-xl font-bold text-gray-800 mt-8 mb-3">
+            Imagine this:
+          </p>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            You’re not endlessly churning out content.
+            <br />
+            You’re not spamming Zoom links in dozens of WhatsApp groups.
+            <br />
+            And yet — your next client still finds you.
+          </p>
+          <p className="text-lg text-gray-700 mt-6 max-w-3xl mx-auto">
+            That’s the power of <strong>Growth Buddies</strong>.
+          </p>
+          <p className="text-lg text-gray-600 mt-4 max-w-3xl mx-auto">
+            Solopreneurs and members joining your challenges, spotlighting your
+            services, redeeming their JoyPearls with you, and celebrating your
+            wins — even when you’re offline.
+          </p>
+          <p className="text-lg text-gray-600 mt-6 max-w-3xl mx-auto">
+            Here, you’re not marketing alone.
+            <br />
+            <strong>
+              You’re part of an ecosystem where everyone grows together.
+            </strong>
+          </p>
+        </div>
+
         {/* Header Section */}
         <div className="text-center mb-12 lg:mb-16">
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
@@ -387,9 +429,14 @@ const SubscriptionPage: React.FC = () => {
               <div className="mt-6">
                 <ul className="space-y-3">
                   {[
-                    "5 JoyPearls/day",
-                    "Community Support",
-                    "Basic Features",
+                    "Host 1 Challenge Per Month" ,
+                    "No Listing on “Challenges” page", 
+                    "Listing on “Solopreneurs of the Day” page", 
+                    "No Listing on “Webinars” page (coming soon)", 
+                    "Earn JoyPearls on every activity", 
+                    "List 1 Product on the store (Zero commission on sales)",
+                    "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges", 
+                    "Redeem JoyPearls for Spotlights with other members"
                   ].map((feature) => (
                     <li key={feature} className="flex items-center text-sm text-gray-600">
                       <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -426,9 +473,13 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "Unlimited JoyPearls",
-                      "Premium Support",
-                      "All Features",
+                      "Host 5 Challenges per Month",
+"Listing on “Challenges” page", 
+"Listing on “Solopreneurs of the Day” page", 
+"Listing on “Webinars” page", 
+"Earn 25% Extra JoyPearls on every activity", 
+"List upto 5 products on the store (Zero commission on sales)", 
+"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges"
                     ].map((feature) => (
                       <li key={feature} className="flex items-center text-sm text-gray-600">
                         <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -468,9 +519,13 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "Unlimited JoyPearls",
-                      "Premium Support",
-                      "All Features",
+                        "Host 5 Challenges per Month",
+"Listing on “Challenges” page", 
+ "Listing on “Solopreneurs of the Day” page", 
+"Listing on “Webinars” page", 
+"Earn 25% Extra JoyPearls on every activity", 
+"List upto 5 products on the store (Zero commission on sales)", 
+"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges"
                     ].map((feature) => (
                       <li key={feature} className="flex items-center text-sm text-gray-600">
                         <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -511,9 +566,13 @@ const SubscriptionPage: React.FC = () => {
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                      "Unlimited JoyPearls",
-                      "Premium Support",
-                      "All Features",
+                        "Host 5 Challenges per Month",
+"Listing on “Challenges” page", 
+ "Listing on “Solopreneurs of the Day” page", 
+"Listing on “Webinars” page", 
+"Earn 25% Extra JoyPearls on every activity", 
+"List upto 5 products on the store (Zero commission on sales)", 
+"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
                     ].map((feature) => (
                       <li key={feature} className="flex items-center text-sm text-gray-600">
                         <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
@@ -541,6 +600,9 @@ const SubscriptionPage: React.FC = () => {
             </div>
           )}
         </div>
+        
+        {/* Added "Features Coming soon" line */}
+        <p className="text-center text-gray-500 italic mt-4">*Features Coming soon</p>
 
         {/* Lifetime Plan Pricing Table */}
         <div className="mt-12 bg-gradient-to-r from-indigo-800 to-blue-900 text-white rounded-xl p-8 shadow-xl">
