@@ -166,7 +166,7 @@ export async function sendPushNotification(
   title: string,
   body: string,
   icon = "/logo.png",
-  data: Record<string, any> = {}
+  data: Record<string, unknown> = {}
 ) {
   try {
     const payload = JSON.stringify({
@@ -185,7 +185,11 @@ export async function sendPushNotification(
     return await webpush.sendNotification(subscription, payload);
   } catch (error) {
     console.error("Error sending push notification:", error);
-    if (error instanceof Error && (error as any).statusCode === 410) {
+    if (
+      error instanceof Error &&
+      typeof (error as any).statusCode === "number" &&
+      (error as any).statusCode === 410
+    ) {
       // Subscription expired or invalid; delete from DB
       throw new Error("Subscription expired");
     }
@@ -197,7 +201,7 @@ export async function sendPushNotificationToUser(
   userId: string,
   title: string,
   body: string,
-  data: Record<string, any> = {}
+  data: Record<string, unknown> = {}
 ) {
   // Fetch all user's push subscriptions saved in DB
   const subscriptions = await prisma.pushSubscription.findMany({

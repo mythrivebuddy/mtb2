@@ -1,9 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const session = await getServerSession();
   if (!session?.user?.email)
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

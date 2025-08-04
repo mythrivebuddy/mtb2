@@ -11,7 +11,7 @@ import PageSkeleton from "../PageSkeleton";
 import Link from "next/link";
 import { Notification } from "@/types/client/notifcation";
 import { useSession } from "next-auth/react";
-import { toast } from "sonner";
+
 
 
 export default function NotificationsPage()  {
