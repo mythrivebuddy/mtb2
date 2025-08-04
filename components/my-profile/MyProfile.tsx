@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UploadCloud, Loader2, Pencil, Eye } from "lucide-react"; // Import Eye icon
+import { UploadCloud, Loader2, Pencil, Eye } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,8 +17,8 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { getInitials } from "@/utils/getInitials";
 import PageSkeleton from "../PageSkeleton";
 import { ProfileResponse } from "@/types/client/my-profile";
-import Link from "next/link"; // Import Link from Next.js
-import { useSession } from "next-auth/react"; // Import useSession
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function MyProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -57,8 +57,17 @@ export default function MyProfile() {
           if (axiosError.response?.status === 404) {
             setHasProfile(false);
           }
-          throw error;
+          throw error; // Re-throw error for react-query to handle
         }
+      },
+      retry: (failureCount, error) => {
+        // Do not retry on 404 errors
+        const axiosError = error as AxiosError;
+        if (axiosError.response?.status === 404) {
+          return false;
+        }
+        // Default retry behavior for other errors
+        return failureCount < 3;
       },
     });
 
@@ -104,10 +113,8 @@ export default function MyProfile() {
       setIsEditMode(false);
       setHasProfile(true);
 
-      // Invalidate and refetch the userProfile query
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
 
-      // Dispatch a custom event to notify other components
       window.dispatchEvent(
         new CustomEvent("profileUpdated", {
           detail: {
@@ -143,14 +150,12 @@ export default function MyProfile() {
   const onSubmit = (formData: ProfileFormType) => {
     const submitData = new FormData();
 
-    // Add form fields to FormData
     Object.entries(formData).forEach(([key, value]) => {
       if (value) {
         submitData.append(key, value);
       }
     });
 
-    // Add profile image if there's a new one
     if (newProfileImage) {
       submitData.append("profilePicture", newProfileImage);
     }
@@ -166,50 +171,136 @@ export default function MyProfile() {
     return <PageSkeleton type="my-profile" />;
   }
 
-  // --- Create Profile View (No changes needed here) ---
+  // --- Create Profile View (Now also mobile responsive) ---
   if (hasProfile === false) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
-        {/* ... existing code for creating a profile ... */}
+      <div className="max-w-3xl mx-auto p-4 sm:p-6">
+        <Card className="rounded-2xl shadow-md">
+          <CardHeader>
+            <CardTitle className="text-2xl">Create Your Profile</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+              {/* Responsive Avatar Upload Section */}
+              <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+                <Avatar
+                  className="h-24 w-24 cursor-pointer"
+                  onClick={handleImageClick}
+                >
+                  {profileImage ? (
+                    <AvatarImage src={profileImage} alt="Profile Preview" />
+                  ) : (
+                     <AvatarFallback>
+                        <UploadCloud size={32} />
+                     </AvatarFallback>
+                  )}
+                </Avatar>
+                <div>
+                  <Label className="flex items-center justify-center sm:justify-start gap-2 cursor-pointer font-semibold text-blue-600 hover:underline" onClick={handleImageClick}>
+                    <UploadCloud size={20} /> Upload Profile Picture
+                  </Label>
+                  <Input
+                    type="file"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    accept="image/*"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Click the icon or text to upload an image.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  {...register("name")}
+                  placeholder="Enter your name"
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="bio">Bio / About Me</Label>
+                <Input
+                  id="bio"
+                  {...register("bio")}
+                  placeholder="Write a short intro about yourself..."
+                />
+                {errors.bio && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.bio.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end mt-4">
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto"
+                  disabled={saveProfileMutation.isPending}
+                >
+                  {saveProfileMutation.isPending ? (
+                    <>
+                      <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Profile"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
   
-  // --- View/Edit Profile View (Changes are here) ---
+  // --- View/Edit Profile View (With Mobile Enhancements) ---
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
+    <div className="max-w-3xl mx-auto p-4 sm:p-6">
       <Card className="rounded-2xl shadow-md">
-        <CardHeader className="flex flex-row gap-2 items-center justify-between">
+        {/* Responsive Card Header */}
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-2xl">My Profile</CardTitle>
-          <div className="flex items-center gap-2">
+          {/* Responsive Button Group */}
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {!isEditMode ? (
               <>
                 {session?.user?.id && (
                   <Link href={`/profile/${session.user.id}`} target="_blank" passHref>
-                    <Button variant="outline" className="flex items-center gap-2">
+                    <Button variant="outline" className="flex w-full items-center justify-center gap-2">
                       <Eye size={16} />
                       View Profile
                     </Button>
                   </Link>
                 )}
-                <Button onClick={toggleEditMode} className="flex items-center gap-2">
+                <Button onClick={toggleEditMode} className="flex w-full items-center justify-center gap-2">
                   <Pencil size={16} />
                   Edit Profile
                 </Button>
               </>
             ) : (
-              <Button variant="outline" onClick={toggleEditMode} className="flex items-center gap-2">
+              <Button variant="outline" onClick={toggleEditMode} className="flex w-full items-center justify-center gap-2">
                 Cancel
               </Button>
             )}
           </div>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-6">
+        <CardContent className="flex flex-col gap-6 pt-2">
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-            <div className="flex items-center gap-4">
+            {/* Responsive Avatar Section */}
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
               <Avatar
-                className={`h-16 w-16 ${isEditMode ? "cursor-pointer" : ""}`}
+                className={`h-24 w-24 ${isEditMode ? "cursor-pointer ring-2 ring-offset-2 ring-primary" : ""}`}
                 onClick={handleImageClick}
               >
                 {profileImage ? (
@@ -221,30 +312,31 @@ export default function MyProfile() {
               </Avatar>
               {isEditMode && (
                 <div>
-                  <Label className="flex items-center gap-2 cursor-pointer" onClick={handleImageClick}>
-                    <UploadCloud size={20} /> Upload Profile Picture
+                  <Label className="flex items-center justify-center sm:justify-start gap-2 cursor-pointer font-semibold text-blue-600 hover:underline" onClick={handleImageClick}>
+                    <UploadCloud size={20} /> Upload New Picture
                   </Label>
                   <Input
                     type="file"
-                    className="mt-2 hidden"
+                    className="hidden"
                     ref={fileInputRef}
                     onChange={handleImageChange}
                     accept="image/*"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Click on the avatar to change your profile picture
+                    Click on the avatar or text to change your profile picture.
                   </p>
                 </div>
               )}
             </div>
 
             <div>
-              <Label>Name</Label>
+              <Label htmlFor="name-display">Name</Label>
               <Input
+                id="name-display"
                 {...register("name")}
                 placeholder="Enter your name"
                 disabled={!isEditMode}
-                className={!isEditMode ? "bg-muted" : ""}
+                className={!isEditMode ? "bg-muted border-none" : ""}
               />
               {errors.name && (
                 <p className="text-sm text-red-500 mt-1">
@@ -254,12 +346,13 @@ export default function MyProfile() {
             </div>
 
             <div>
-              <Label>Bio / About Me</Label>
+              <Label htmlFor="bio-display">Bio / About Me</Label>
               <Input
+                id="bio-display"
                 {...register("bio")}
                 placeholder="Write a short intro..."
                 disabled={!isEditMode}
-                className={!isEditMode ? "bg-muted" : ""}
+                className={!isEditMode ? "bg-muted border-none" : ""}
               />
               {errors.bio && (
                 <p className="text-sm text-red-500 mt-1">
@@ -269,10 +362,10 @@ export default function MyProfile() {
             </div>
 
             {isEditMode && (
-              <div className="flex flex-col md:flex-row gap-4 mt-6">
+              <div className="flex flex-col gap-4 mt-6 sm:flex-row sm:justify-end">
                 <Button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2"
+                  className="w-full flex items-center justify-center gap-2 sm:w-auto"
                   disabled={saveProfileMutation.isPending}
                 >
                   {saveProfileMutation.isPending ? (

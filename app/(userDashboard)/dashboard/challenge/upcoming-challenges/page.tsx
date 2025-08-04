@@ -163,18 +163,19 @@ export default function UpcomingChallengesPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex items-center gap-2 rounded-lg px-4 py-2 font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
-          >
-            <ArrowLeft size={20} />
-            <span>Back to Challenge Hub</span>
-          </button>
+  type="button"
+  onClick={() => router.back()}
+  className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
+>
+  <ArrowLeft size={18} />
+  <span className="font-medium">Back</span>
+</button>
+
         </div>
 
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-900">
-            Upcoming Challenges
+            Challenges
           </h1>
           <p className="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">
             Your personal challenges and new ones to discover, all in one place.
