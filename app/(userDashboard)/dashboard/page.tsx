@@ -15,31 +15,13 @@ import {
 import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
-import { useEffect } from "react";
-import { toast } from "sonner";
-
 
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
 
-  
-  useOnlineUserLeaderBoard()
+  useOnlineUserLeaderBoard();
 
- 
-    useEffect(()=>{
-         (async()=>{
-      try {
-       const {data} = await axios.post("/api/push/test", {userId:session?.user.id});
-       if (data.success) {
-         toast("Send",data.success)
-       }
-      } catch (error) {
-        console.error("Error in NotificationsPage useEffect:", error);
-      }
-
-    })()
-  },[])
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
@@ -73,8 +55,6 @@ export default function DashboardPage() {
       enabled: !!session?.user?.id,
     });
 
- 
-
   if (
     spotlightLoading ||
     status === "loading" ||
@@ -100,7 +80,6 @@ export default function DashboardPage() {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
   console.log("currentProsperity", currentProsperity);
-
 
   return (
     <div className="py-6 px-4">
