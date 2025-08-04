@@ -1,18 +1,25 @@
 "use client";
 
+
+// This file is responsible for displaying the user's challenges, both hosted and joined.
+
+
+
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   Users,
-  CheckCircle,
-  XCircle,
+  
   Loader2,
   Gift,
   CalendarDays,
-  ArrowLeft, // ✨ Icon for the back button
+  ArrowLeft,
+  Trash2,
+  Edit,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 // Define a type for our challenge data to match the API response
 type Challenge = {
@@ -29,11 +36,17 @@ type Challenge = {
   enrollmentStatus?: "IN_PROGRESS" | "COMPLETED" | "FAILED";
 };
 
-// This data-fetching function remains UNCHANGED.
+// This function for fetching the list remains unchanged.
 const fetchMyChallenges = async (
   type: "hosted" | "joined"
 ): Promise<Challenge[]> => {
   const { data } = await axios.get(`/api/challenge/my-challenge?type=${type}`);
+  return data;
+};
+
+// Updated to call the correct API route that matches your folder structure.
+const deleteChallenge = async (challengeId: string) => {
+  const { data } = await axios.delete(`/api/challenge/my-challenge/${challengeId}`);
   return data;
 };
 
@@ -49,14 +62,11 @@ const formatDate = (dateString: string) => {
 
 export default function MyChallenges() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"hosted" | "joined">("hosted");
-  const [isCompletedModalOpen, setIsCompletedModalOpen] = useState(false);
-  const [isFailedModalOpen, setIsFailedModalOpen] = useState(false);
-  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(
-    null
-  );
 
-  // All React Query and state logic remains UNCHANGED.
+  
+ 
   const {
     data: challenges,
     isLoading,
@@ -66,15 +76,40 @@ export default function MyChallenges() {
     queryFn: () => fetchMyChallenges(activeTab),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteChallenge,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myChallenges", activeTab] });
+      toast.success("Challenge Deleted", {
+        description: "The challenge has been successfully deleted.",
+      });
+    },
+    onError: (error) => {
+        const apiError = error as { response?: { data?: { error?: string } } };
+        const errorMessage = apiError?.response?.data?.error || "Failed to delete the challenge. Please try again.";
+        toast.error("Error", {
+            description: errorMessage,
+        });
+    },
+  });
+
   const handleCardClick = (challengeId: string) => {
     router.push(`/dashboard/challenge/my-challenges/${challengeId}`);
   };
 
-  const closeModal = () => {
-    setIsCompletedModalOpen(false);
-    setIsFailedModalOpen(false);
-    setSelectedChallenge(null);
+  const handleEditClick = (e: React.MouseEvent, challengeId: string) => {
+    e.stopPropagation();
+    // ✨ Added logging to help debug the ID being passed to the edit page.
+    console.log("Navigating to edit page with Challenge ID:", challengeId);
+    router.push(`/dashboard/challenge/edit/${challengeId}`);
   };
+
+  const handleDeleteClick = (e: React.MouseEvent, challengeId: string) => {
+    e.stopPropagation();
+    deleteMutation.mutate(challengeId);
+  };
+
+ 
 
   const statusColors = {
     ACTIVE: "bg-blue-100 text-blue-800",
@@ -84,9 +119,8 @@ export default function MyChallenges() {
   };
 
   return (
-    <div className="min-h-screen w-full ">
+    <div className="min-h-screen w-full">
       <div className="w-full max-w-4xl mx-auto py-12 px-4">
-        {/* ✨ START: Added Back Button ✨ */}
         <div className="mb-8">
           <button
             type="button"
@@ -97,7 +131,6 @@ export default function MyChallenges() {
             <span>Back to Challenge Hub</span>
           </button>
         </div>
-        {/* ✨ END: Added Back Button ✨ */}
 
         <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-slate-800">My Challenges</h1>
@@ -106,7 +139,6 @@ export default function MyChallenges() {
           </p>
         </div>
 
-        {/* --- Tab Buttons (No changes) --- */}
         <div className="flex justify-center mb-8">
           <div className="bg-slate-200 p-1 rounded-xl flex">
             <button
@@ -132,7 +164,6 @@ export default function MyChallenges() {
           </div>
         </div>
 
-        {/* --- Loading and Error States (No changes) --- */}
         {isLoading && (
           <div className="text-center py-10">
             <Loader2 className="w-8 h-8 mx-auto animate-spin text-slate-500" />
@@ -145,25 +176,20 @@ export default function MyChallenges() {
           </div>
         )}
 
-        {/* --- Content Display --- */}
         {!isLoading && !isError && (
           <div className="space-y-6">
             {challenges && challenges.length > 0 ? (
               challenges.map((challenge) => (
-                // --- START OF NEW CARD DESIGN ---
                 <div
                   key={challenge.id}
                   onClick={() => handleCardClick(challenge.id)}
                   className="bg-white rounded-xl shadow-md border border-slate-200/80 transition-all duration-300 cursor-pointer group hover:shadow-xl hover:border-purple-400/50 hover:-translate-y-1"
                 >
                   <div className="p-5 sm:p-6">
-                    {/* Card Header */}
                     <div className="mb-4">
-                      {/* THIS IS THE UPDATED TITLE ELEMENT */}
                       <h2 className="text-2xl font-extrabold text-slate-900 group-hover:text-purple-700 transition-colors mb-2">
                         {challenge.title}
                       </h2>
-                      {/* Badges are now below the title */}
                       <div className="flex items-center gap-2">
                         <div
                           className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
@@ -184,13 +210,11 @@ export default function MyChallenges() {
                       </div>
                     </div>
 
-                    {/* Card Description */}
                     <p className="text-sm text-slate-600 line-clamp-2 mb-4">
                       {challenge.description ||
                         "No description provided for this challenge."}
                     </p>
 
-                    {/* Card Info (Dates) */}
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                       <CalendarDays className="w-4 h-4" />
                       <span>{formatDate(challenge.startDate)}</span>
@@ -199,19 +223,42 @@ export default function MyChallenges() {
                     </div>
                   </div>
 
-                  {/* Card Footer */}
                   <div className="bg-slate-50/70 p-4 sm:px-6 rounded-b-xl border-t border-slate-200/80 flex justify-between items-center">
                     <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
                       <Users className="w-4 h-4 text-slate-500" />
                       <span>{challenge.participants} Participants</span>
                     </div>
-                    <div className="flex items-center gap-2 text-purple-700 font-bold text-lg">
-                      <Gift className="w-5 h-5" />
-                      <span>{challenge.reward} JP</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-purple-700 font-bold text-lg">
+                        <Gift className="w-5 h-5" />
+                        <span>{challenge.reward} JP</span>
+                      </div>
+                      {activeTab === "hosted" && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => handleEditClick(e, challenge.id)}
+                            className="p-2 rounded-full text-slate-600 hover:bg-slate-200 transition-colors"
+                            title="Edit Challenge"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteClick(e, challenge.id)}
+                            className="p-2 rounded-full text-red-600 hover:bg-red-100 transition-colors"
+                            title="Delete Challenge"
+                            disabled={deleteMutation.isPending}
+                          >
+                            {deleteMutation.isPending ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-                // --- END OF NEW CARD DESIGN ---
               ))
             ) : (
               <div className="text-center py-10 bg-white rounded-lg shadow-sm">
@@ -223,54 +270,6 @@ export default function MyChallenges() {
           </div>
         )}
       </div>
-
-      {/* --- Modals (No changes) --- */}
-      {isCompletedModalOpen && selectedChallenge && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
-            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              Challenge Completed!
-            </h2>
-            <p className="text-slate-500 mb-4">
-              Great job on completing the &quot;{selectedChallenge.title}&quot;
-              challenge.
-            </p>
-            <p className="text-lg font-semibold text-purple-600 mb-6">
-              You&apos;ve earned {selectedChallenge.reward} JP!
-            </p>
-            <button
-              onClick={closeModal}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white p-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all"
-            >
-              Close & Celebrate
-            </button>
-          </div>
-        </div>
-      )}
-
-      {isFailedModalOpen && selectedChallenge && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
-            <XCircle className="w-20 h-20 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              Challenge Failed
-            </h2>
-            <p className="text-slate-500 mb-4">
-              Don&apos;t give up! Every attempt is a step forward.
-            </p>
-            <p className="text-lg font-semibold text-red-600 mb-6">
-              Penalty: {selectedChallenge.penalty} JP deducted.
-            </p>
-            <button
-              onClick={closeModal}
-              className="w-full bg-slate-200 text-slate-800 p-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
-            >
-              Acknowledge & Try Again
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

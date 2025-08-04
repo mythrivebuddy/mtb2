@@ -1,8 +1,10 @@
-"use client"
+"use client";
+
 import UserDashboardLayout from "@/components/layout/UserDashboardLayout";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
-import { useSession } from "next-auth/react"; // Import useSession here
-import React from "react"; 
+import { useSession } from "next-auth/react";
+import { Toaster } from "sonner"; // ✨ Added for toast notifications
+import React from "react";
 
 export default function Layout({
   children,
@@ -14,18 +16,22 @@ export default function Layout({
 
   // Conditionally render a component that uses the hook
   // This prevents the hook from running during the build or when logged out.
-  if (status === 'authenticated') {
+  if (status === "authenticated") {
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
   }
 
   // For loading or unauthenticated states, render a simpler layout
   // without the user-dependent hook.
-  return <UserDashboardLayout>{children}</UserDashboardLayout>;
+  return (
+    <>
+      <UserDashboardLayout>{children}</UserDashboardLayout>
+      <Toaster richColors /> {/* ✨ Added Toaster for unauthenticated state */}
+    </>
+  );
 }
 
-
 /**
- * A new component to contain the logic that should only run
+ * A component to contain the logic that should only run
  * when a user is authenticated.
  */
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -33,5 +39,10 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   // which is only rendered when the session status is 'authenticated'.
   useOnlineUserLeaderBoard();
 
-  return <UserDashboardLayout>{children}</UserDashboardLayout>;
+  return (
+    <>
+      <UserDashboardLayout>{children}</UserDashboardLayout>
+      <Toaster richColors /> {/* ✨ Added Toaster for authenticated state */}
+    </>
+  );
 }

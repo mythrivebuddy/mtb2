@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -18,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import AppLayout from "@/components/layout/AppLayout";
 
-// --- TYPE DEFINITIONS ---
+
 
 type Challenge = {
   id: string;
@@ -50,7 +51,6 @@ const fetchMyChallenges = async () => {
     axios.get(`/api/challenge/my-challenge?type=hosted`),
     axios.get(`/api/challenge/my-challenge?type=joined`),
   ]);
-  // ✨ FIX: Replaced 'any' with 'Challenge'
   const hostedChallenges = hostedRes.data.map((c: Challenge) => ({
     ...c,
     isHosted: true,
@@ -90,6 +90,9 @@ export default function UpcomingChallengesPage() {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<
+    Challenge["status"] | "ALL"
+  >("ALL");
 
   const { data: myChallengesData, isLoading: isLoadingMy } = useQuery<
     Challenge[]
@@ -106,7 +109,6 @@ export default function UpcomingChallengesPage() {
     });
 
   const myChallenges: Challenge[] =
-    // ✨ FIX: Replaced 'any' with 'Challenge'
     myChallengesData?.map((c: Challenge) => ({
       ...c,
       cardType: "myChallenge",
@@ -116,19 +118,23 @@ export default function UpcomingChallengesPage() {
 
   const upcomingChallenges: Challenge[] =
     upcomingChallengesData
-      // ✨ FIX: Replaced 'any' with 'Challenge'
       ?.filter((c: Challenge) => !myChallengeIds.has(c.id))
-      // ✨ FIX: Replaced 'any' with 'Challenge'
       .map((c: Challenge) => ({
         ...c,
         cardType: "upcomingChallenge",
+        status: "UPCOMING",
       })) || [];
 
   const allChallenges = [...myChallenges, ...upcomingChallenges];
 
-  const filteredChallenges = allChallenges.filter((challenge) =>
-    challenge.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredChallenges = allChallenges
+    .filter((challenge) => {
+      if (selectedStatus === "ALL") return true;
+      return challenge.status === selectedStatus;
+    })
+    .filter((challenge) =>
+      challenge.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   const statusColors = {
     ACTIVE: "bg-blue-100 text-blue-800",
@@ -144,6 +150,13 @@ export default function UpcomingChallengesPage() {
       </div>
     );
   }
+
+  const filterOptions: (Challenge["status"] | "ALL")[] = [
+    "ALL",
+    "ACTIVE",
+    "UPCOMING",
+    "COMPLETED",
+  ];
 
   const pageContent = (
     <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
@@ -168,7 +181,7 @@ export default function UpcomingChallengesPage() {
           </p>
         </div>
 
-        <div className="mb-10 max-w-2xl mx-auto">
+        <div className="mb-8 max-w-2xl mx-auto">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -179,6 +192,26 @@ export default function UpcomingChallengesPage() {
               className="w-full pl-12 pr-4 py-3 text-lg bg-white border border-slate-300 rounded-full shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
             />
           </div>
+        </div>
+
+        <div className="mb-10 flex flex-wrap justify-center gap-3">
+          {filterOptions.map((status) => {
+            if (!status) return null;
+            const isActive = selectedStatus === status;
+            return (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={`px-5 py-2 text-sm font-semibold rounded-full transition-all duration-200 ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-lg"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {status.charAt(0) + status.slice(1).toLowerCase()}
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex justify-center">
@@ -207,15 +240,15 @@ export default function UpcomingChallengesPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 mb-4">
-                        <div
-                          className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
-                            statusColors[
-                              challenge.status as keyof typeof statusColors
-                            ]
-                          }`}
-                        >
-                          {challenge.status}
-                        </div>
+                        {challenge.status && (
+                          <div
+                            className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
+                              statusColors[challenge.status]
+                            }`}
+                          >
+                            {challenge.status}
+                          </div>
+                        )}
                         <div
                           className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
                             challenge.mode === "PUBLIC"
@@ -318,8 +351,7 @@ export default function UpcomingChallengesPage() {
                 No Challenges Found
               </h3>
               <p className="mt-2 text-slate-500">
-                Try adjusting your search or check back later for new
-                challenges!
+                Try adjusting your search or filters.
               </p>
             </div>
           )}
