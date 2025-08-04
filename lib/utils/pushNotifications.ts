@@ -151,6 +151,15 @@ webpush.setVapidDetails(
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "",
   process.env.VAPID_PRIVATE_KEY || ""
 );
+function hasStatusCode(error: unknown): error is { statusCode: number } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    typeof (error as Record<string, unknown>).statusCode === "number"
+  );
+}
+
 
 export type PushSubscription = {
   endpoint: string;
@@ -183,18 +192,17 @@ export async function sendPushNotification(
     });
 
     return await webpush.sendNotification(subscription, payload);
-  } catch (error) {
-    console.error("Error sending push notification:", error);
-    if (
-      error instanceof Error &&
-      typeof (error as any).statusCode === "number" &&
-      (error as any).statusCode === 410
-    ) {
-      // Subscription expired or invalid; delete from DB
-      throw new Error("Subscription expired");
-    }
-    throw error;
+  } catch (error: unknown) {
+  console.error("Error sending push notification:", error);
+
+  if (error instanceof Error && hasStatusCode(error) && error.statusCode === 410) {
+    // Subscription expired or invalid; delete from DB
+    throw new Error("Subscription expired");
   }
+
+  throw error;
+}
+
 }
 
 export async function sendPushNotificationToUser(
