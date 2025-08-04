@@ -40,7 +40,7 @@
 //   console.log("[SW] Received push event!", event);
 //   // Extract notification details
 //   const { title, ...options } = data.notification;
-  
+
 //   // Enhanced options for promoting banner-style display
 //   const enhancedOptions = {
 //     ...options,
@@ -93,18 +93,18 @@ self.addEventListener("push", function (event) {
     // Try to parse the push payload
     if (event.data) {
       data = event.data.json();
-      
+
       // Extract notification details properly
       if (data && data.notification) {
         title = data.notification.title || "Notification";
         body = data.notification.body || "You have a new notification";
-        
+
         // Enhanced options for better notification display
         options = {
           body: body,
           icon: data.notification.icon || "/logo.png",
           badge: "/logo.png",
-          requireInteraction: true, 
+          requireInteraction: true,
           silent: false,
           vibrate: [200, 100, 200],
           timestamp: Date.now(),
@@ -138,7 +138,7 @@ self.addEventListener("push", function (event) {
 // Handle notification click
 self.addEventListener("notificationclick", function (event) {
   console.log("[SW] Notification clicked"); // Use console.log, not log
-  
+
   // Close the notification
   event.notification.close();
 
