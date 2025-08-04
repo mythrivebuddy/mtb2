@@ -714,6 +714,7 @@ enum NotificationType {
   BUDDY_LENS_REVIEWED
   BUDDY_LENS_COMPLETED
   JP_SPEND
+  DAILY_BLOOM_REMINDER
 }
 
 enum BreathWorkType {
