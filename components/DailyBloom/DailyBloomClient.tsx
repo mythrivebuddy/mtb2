@@ -81,7 +81,7 @@ export default function DailyBloomClient() {
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
   const { data: session } = useSession(); // --- 2. GET USER SESSION ---
-  const userId = session?.user?.id;       // --- 3. GET USER ID ---
+  const userId = session?.user?.id; // --- 3. GET USER ID ---
 
   const [editData, setEditData] = useState<DailyBloom | null>(null);
   const [viewData, setViewData] = useState<DailyBloom | null>(null);
@@ -125,7 +125,7 @@ export default function DailyBloomClient() {
       reset(defaultFormValues);
     }
   }, [addData, reset]);
-  
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<{
       data: DailyBloom[];
@@ -165,7 +165,6 @@ export default function DailyBloomClient() {
       queryClient.invalidateQueries({ queryKey: ["user", userId] });
     }
   };
-
 
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
@@ -424,9 +423,7 @@ export default function DailyBloomClient() {
                           <TableHead className="w-[80px] text-center"></TableHead>
                           <TableHead>Title</TableHead>
                           <TableHead className="w-[130px]">Due Date</TableHead>
-                          <TableHead className="w-[120px]">
-                            Frequency
-                          </TableHead>
+                          <TableHead className="w-[120px]">Frequency</TableHead>
                           <TableHead className="w-[140px] text-center">
                             Actions
                           </TableHead>
@@ -506,13 +503,12 @@ export default function DailyBloomClient() {
 
                   <div className="md:hidden space-y-4">
                     {dailyBloom.map((bloom: DailyBloom) => (
+                      // here
                       <Card key={bloom.id}>
                         <CardHeader>
-                          <div className="flex items-start justify-between gap-4">
-                            <CardTitle>
-                              {bloom.title.length > 10
-                                ? `${bloom.title.slice(0, 10)}...`
-                                : bloom.title}
+                          <div className="flex items-center justify-between gap-4">
+                            <CardTitle className="text-md sm:text-lg max-w-[300px]  break-all break-words">
+                              {bloom.title}
                             </CardTitle>
 
                             <div className="flex flex-col items-center flex-shrink-0">
@@ -525,37 +521,37 @@ export default function DailyBloomClient() {
                                     e.target.checked
                                   )
                                 }
-                                className="w-5 h-5 rounded-md cursor-pointer"
+                                className="w-4 h-4 sm:w-5 sm:h-5 rounded-md cursor-pointer"
                               />
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm">
                           {bloom.description && (
-                            <p className="text-muted-foreground">
-                              {bloom.description.length > 10
-                                ? `${bloom.description.slice(0, 10)}...`
-                                : bloom.description}
+                            <p className="text-muted-foreground text-xs sm:text-sm ">
+                              {bloom.description}
                             </p>
                           )}
 
-                          <div className="flex items-center">
-                            <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
-                            <span>Frequency: {bloom.frequency || "-"}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                            <span>
-                              Due:{" "}
-                              {bloom.dueDate
-                                ? new Date(bloom.dueDate).toLocaleDateString(
-                                    "en-IN"
-                                  )
-                                : "-"}
-                            </span>
-                          </div>
+                          {bloom.frequency && (
+                            <div className="flex items-center">
+                              <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
+                              <span>Frequency - {bloom.frequency} </span>
+                            </div>
+                          )}
+                          {bloom.dueDate && (
+                            <div className="flex items-center">
+                              <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                              <span>
+                                Due:{" "}
+                                {new Date(bloom.dueDate).toLocaleDateString(
+                                      "en-IN"
+                                    )}
+                              </span>
+                            </div>
+                          )}
                         </CardContent>
-                        <CardFooter className="flex justify-end space-x-2">
+                        <CardFooter className="flex gap-3">
                           <Button
                             variant="outline"
                             size="sm"
