@@ -1,7 +1,7 @@
 "use client";
 
 
-
+// This file is responsible for displaying the user's challenges, both hosted and joined.
 
 
 
