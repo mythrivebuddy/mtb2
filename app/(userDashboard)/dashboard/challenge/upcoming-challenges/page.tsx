@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -18,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import AppLayout from "@/components/layout/AppLayout";
 
-// --- TYPE DEFINITIONS ---
+
 
 type Challenge = {
   id: string;
