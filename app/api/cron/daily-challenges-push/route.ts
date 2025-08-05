@@ -4,15 +4,12 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  // const url = new URL(req.url);
-  // const forceTest = url.searchParams.get("test") === "true";
 
   if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-
     const subscribedUsers = await prisma.pushSubscription.findMany({
       select: { userId: true },
       distinct: ["userId"],
@@ -30,7 +27,6 @@ export async function POST(req: NextRequest) {
           where: {
             userId,
             status: "COMPLETED",
-          
           },
         });
 
@@ -53,18 +49,21 @@ export async function POST(req: NextRequest) {
 
     const results = await Promise.allSettled(
       eligibleUsers.map(({ userId, completedCount, inProgressCount }) => {
-        const parts = [];
+        const parts: string[] = [];
 
         if (completedCount > 0)
-          parts.push(`✅ ${completedCount} completed`);
+          parts.push(`✅ ${completedCount} completed challenge${completedCount > 1 ? "s" : ""}`);
 
         if (inProgressCount > 0)
-          parts.push(`📌 ${inProgressCount} in progress`);
+          parts.push(`📌 ${inProgressCount} challenges  in progress`);
+
+        const challengeLabel =
+          completedCount + inProgressCount > 1 ? "challenges" : "challenge";
 
         const body =
           parts.length > 0
-            ? `You have: ${parts.join(", ")} Daily Challenge${completedCount + inProgressCount > 1 ? "s" : ""}`
-            : "Keep going on your Daily Challenges!";
+            ? `You're making great progress! 💪 ${parts.join(" and ")} in your daily ${challengeLabel}. Keep it up! 🌟`
+            : "Don't forget to keep up your streak! Start a challenge today and stay on track. 🚀";
 
         return sendPushNotificationToUser(
           userId,
