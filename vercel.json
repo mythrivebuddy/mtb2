@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/daily-blooms-push",
       "schedule": "30 3 * * *" 
-    },
-    {
-      "path": "/api/cron/daily-challenges-push",
-      "schedule": "30 11 * * *"
     }
   ]
 }
