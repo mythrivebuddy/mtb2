@@ -12,12 +12,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     const subscribedUsers = await prisma.pushSubscription.findMany({
       select: { userId: true },
