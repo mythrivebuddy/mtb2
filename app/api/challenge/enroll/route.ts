@@ -6,6 +6,7 @@ import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import axios from "axios"; // your axios instance
 import { getAxiosErrorMessage } from "@/utils/ax"; // error handler
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 export async function POST(request: Request) {
   try {
@@ -96,6 +97,14 @@ export async function POST(request: Request) {
             }),
           ]);
         }
+        console.log("notification sent to", challengeToJoin.creatorId);
+
+        sendPushNotificationToUser(
+          challengeToJoin.creatorId,
+          "New challenger alert 🚀",
+          `${session.user.name} joined "${challengeToJoin.title}"!`,
+          { url: "/dashboard/challenge/my-challenges" }
+        );
 
         return tx.challengeEnrollment.create({
           data: {

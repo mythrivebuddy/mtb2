@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
           parts.push(`✅ ${completedCount} completed challenge${completedCount > 1 ? "s" : ""}`);
 
         if (inProgressCount > 0)
-          parts.push(`📌 ${inProgressCount} in progress`);
+          parts.push(`📌 ${inProgressCount} challenges  in progress`);
 
         const challengeLabel =
           completedCount + inProgressCount > 1 ? "challenges" : "challenge";
