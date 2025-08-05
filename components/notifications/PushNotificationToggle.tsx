@@ -22,8 +22,7 @@ export default function PushNotificationToggle({
   variant = "default",
 }: PushNotificationToggleProps) {
   // Get push notification state and functions from the hook
-  const { isPushSupported, isSubscribed, isLoading, subscribe, unsubscribe } =
-    usePushNotifications();
+  const { isPushSupported, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
   const [processing, setProcessing] = useState(false);
 
   // Don't render anything if push notifications aren't supported
