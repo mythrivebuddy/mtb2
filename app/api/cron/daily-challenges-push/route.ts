@@ -4,7 +4,7 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  const url = new URL(req.url);
+  // const url = new URL(req.url);
   // const forceTest = url.searchParams.get("test") === "true";
 
   if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
