@@ -1,13 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import {NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
-export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-
-  if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET() {
 
   try {
     const subscribedUsers = await prisma.pushSubscription.findMany({
