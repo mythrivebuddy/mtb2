@@ -56,14 +56,14 @@ export async function POST(req: NextRequest) {
         const parts = [];
 
         if (completedCount > 0)
-          parts.push(`✅ ${completedCount} completed`);
+          parts.push(`✅ ${completedCount} completed challenges`);
 
         if (inProgressCount > 0)
-          parts.push(`📌 ${inProgressCount} in progress`);
+          parts.push(`📌 ${inProgressCount} challenges in progress`);
 
         const body =
           parts.length > 0
-            ? `You have: ${parts.join(", ")} Daily Challenge${completedCount + inProgressCount > 1 ? "s" : ""}`
+            ? `You have: ${parts.join(", ")}  in Daily Challenge${completedCount + inProgressCount > 1 ? "s" : ""}`
             : "Keep going on your Daily Challenges!";
 
         return sendPushNotificationToUser(
