@@ -23,50 +23,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import axios from "axios";
+import { useMutation } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
 
-// Define your enum values here
+// ✅ Define your enum values
 const notificationTypes = [
-  "DAILY_CHALLENGE_NOTIFICATION",
-  "DAILY_BLOOMS_PUSH_NOTIFICATION",
+  "DAILY_CHALLENGE_PUSH_NOTIFICATION",
+  "DAILY_BLOOM_PUSH_NOTIFICATION",
 ] as const;
 
+// ✅ Zod schema
 const formSchema = z.object({
   type: z.enum(notificationTypes, {
     errorMap: () => ({ message: "Please select a type" }),
   }),
   title: z.string().min(1, "Title is required"),
-  body: z.string().min(1, "Body is required"),
+  message: z.string().min(1, "Message is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type ApiResponse = { message: string };
 
 export const NotificationManagementComponent = () => {
+  // ✅ Mutation with correct types
+  const mutation = useMutation<ApiResponse, Error, FormValues>({
+    mutationFn: async (values) => {
+      const res = await axios.post("/api/admin/notification", values);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Notification template saved!");
+      form.reset(); // Optional: Reset form on success
+    },
+    onError: (error) => {
+      toast.error("Failed to save template");
+      console.error(error);
+    },
+  });
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: undefined,
       title: "",
-      body: "",
+      message: "",
     },
   });
 
-  const onSubmit = async (
-  //  values: FormValues
-  ) => {
-    try {
-    //   const res = await fetch("/api/admin/notification-template", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(values),
-    //   });
-
-    //   if (!res.ok) throw new Error("Failed to save template");
-      toast.success("Notification template saved!");
-    } catch (err) {
-      toast.error("Failed to save template");
-      console.error(err);
-    }
+  const onSubmit = (values: FormValues) => {
+    mutation.mutate(values);
   };
+
+  const isLoading = mutation.status === "pending";
+
 
   return (
     <div className="max-w-xl mx-auto mt-10 px-4">
@@ -127,16 +137,16 @@ export const NotificationManagementComponent = () => {
                 )}
               />
 
-              {/* Body Textarea */}
+              {/* Message Textarea */}
               <FormField
                 control={form.control}
-                name="body"
+                name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Body</FormLabel>
+                    <FormLabel>Message</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Enter notification body text"
+                        placeholder="Enter notification message text"
                         className="min-h-[100px] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-md transition"
                         {...field}
                       />
@@ -149,9 +159,17 @@ export const NotificationManagementComponent = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
+                disabled={isLoading}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
-                Save Template
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </span>
+                ) : (
+                  "Save Template"
+                )}
               </Button>
             </form>
           </Form>
