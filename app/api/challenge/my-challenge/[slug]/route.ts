@@ -1,12 +1,10 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-// import { Challenge } from "@prisma/client";
 
 /**
- * Handles GET requests to fetch the data for a single challenge,
- * specifically for populating the edit form.
- * It verifies that the user is the creator of the challenge.
+ * MODIFIED: Handles GET requests to fetch the detailed data for a single challenge,
+ * including the current user's enrollment status and streaks.
  */
 export async function GET(
   request: NextRequest,
@@ -15,6 +13,7 @@ export async function GET(
   const { slug: challengeId } = context.params;
 
   try {
+    // 1. Authenticate the user and get their ID
     const session = await checkRole("USER");
     if (!session?.user?.id) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -28,10 +27,23 @@ export async function GET(
       );
     }
 
-    // Fetch the challenge and verify ownership.
-    const challenge = await prisma.challenge.findUnique({
-      where: { id: challengeId },
-    });
+    // 2. Fetch core challenge details, user's enrollment, and participant count in parallel
+    const [challenge, enrollment, participantCount] = await Promise.all([
+      prisma.challenge.findUnique({
+        where: { id: challengeId },
+      }),
+      prisma.challengeEnrollment.findUnique({
+        where: {
+          userId_challengeId: {
+            userId: userId,
+            challengeId: challengeId,
+          },
+        },
+      }),
+      prisma.challengeEnrollment.count({
+        where: { challengeId: challengeId },
+      }),
+    ]);
 
     if (!challenge) {
       return NextResponse.json(
@@ -40,23 +52,18 @@ export async function GET(
       );
     }
 
-    // Ensure only the creator can fetch the data for editing.
-    if (challenge.creatorId !== userId) {
-      return NextResponse.json(
-        { error: "Forbidden: You can only edit challenges you created." },
-        { status: 403 }
-      );
-    }
-    
-    // Manually serialize the challenge object to handle Date fields.
-    const serializableChallenge = {
+    // 3. Combine all data into a single, serializable response object
+    const responseData = {
       ...challenge,
       startDate: challenge.startDate.toISOString(),
       endDate: challenge.endDate.toISOString(),
       createdAt: challenge.createdAt.toISOString(),
+      currentStreak: enrollment?.currentStreak ?? 0, // Default to 0 if user is not enrolled
+      longestStreak: enrollment?.longestStreak ?? 0, // Default to 0 if user is not enrolled
+      participantCount: participantCount,
     };
 
-    return NextResponse.json(serializableChallenge);
+    return NextResponse.json(responseData);
 
   } catch (error) {
     const errorMessage =
@@ -139,6 +146,7 @@ export async function DELETE(
 
 /**
  * Handles PATCH requests to update an existing challenge.
+ * (This function remains unchanged)
  */
 export async function PATCH(
   request: NextRequest,
@@ -180,8 +188,6 @@ export async function PATCH(
       );
     }
 
-    // --- FIX for PRISMA ERROR ---
-    // Destructure the body to only include fields that exist in the Challenge model.
     const {
         title,
         description,
@@ -192,7 +198,6 @@ export async function PATCH(
         mode
     } = body;
 
-    // Create a new data object with correct types for Prisma.
     const updateData = {
       title,
       description,
@@ -208,7 +213,6 @@ export async function PATCH(
       data: updateData,
     });
 
-    // Also serialize the response here to prevent errors after updating.
     const serializableUpdatedChallenge = {
         ...updatedChallenge,
         startDate: updatedChallenge.startDate.toISOString(),
