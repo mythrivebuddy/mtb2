@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -14,12 +13,12 @@ import {
   Gift,
   CalendarDays,
   ArrowLeft,
+  PlusCircle,
+  Plus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import AppLayout from "@/components/layout/AppLayout";
-
-
 
 type Challenge = {
   id: string;
@@ -40,7 +39,6 @@ type Challenge = {
 };
 
 // --- API FETCHING FUNCTIONS ---
-
 const fetchUpcomingChallenges = async () => {
   const { data } = await axios.get("/api/challenge/upcoming");
   return data;
@@ -59,7 +57,6 @@ const fetchMyChallenges = async () => {
 };
 
 // --- HELPER FUNCTIONS ---
-
 const formatDate = (dateString: string) => {
   if (!dateString) return "N/A";
   return new Date(dateString).toLocaleDateString("en-US", {
@@ -84,8 +81,50 @@ const getDaysRemaining = (startDateString: string): string => {
   return `(in ${daysDiff} days)`;
 };
 
-// --- MAIN COMPONENT ---
 
+// --- UPDATED COMPONENT: Create Challenge Button ---
+const CreateChallengeButton = () => {
+  const router = useRouter();
+  const { status: sessionStatus } = useSession();
+  const isAuthenticated = sessionStatus === "authenticated";
+
+  const handleClick = () => {
+    if (isAuthenticated) {
+      router.push("/dashboard/challenge/create");
+    } else {
+      signIn();
+    }
+  };
+
+  const tooltipText = isAuthenticated
+    ? "Create a new challenge"
+    : "Sign in to create a challenge";
+
+  return (
+    // 'group' enables hover for the tooltip. 'relative' contains the tooltip.
+    // REMOVED fixed positioning to place it in the normal document flow.
+    <div className="group relative">
+      <button
+        onClick={handleClick}
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform duration-300 hover:scale-110 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+        aria-label={tooltipText}
+      >
+        <Plus size={28} />
+      </button>
+      {/* Tooltip message - position adjusted for left alignment */}
+      <div
+        className="absolute left-0 top-full mt-2 w-max origin-top-left scale-95 transform rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100"
+        role="tooltip"
+      >
+        {tooltipText}
+      </div>
+    </div>
+  );
+};
+// --- END COMPONENT ---
+
+
+// --- MAIN COMPONENT ---
 export default function UpcomingChallengesPage() {
   const router = useRouter();
   const { status: sessionStatus } = useSession();
@@ -162,14 +201,12 @@ export default function UpcomingChallengesPage() {
     <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <button
-  type="button"
-  onClick={() => router.back()}
-  className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
->
-  <ArrowLeft size={18} />
-  <span className="font-medium">Back</span>
-</button>
+          
+          
+          {/* --- MOVED: The create button is now placed below the back button --- */}
+          <div className="mt-4">
+            <CreateChallengeButton />
+          </div>
 
         </div>
 

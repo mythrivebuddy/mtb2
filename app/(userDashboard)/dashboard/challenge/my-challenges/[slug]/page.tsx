@@ -335,7 +335,7 @@ const socialLinks = [
                 Your Daily Tasks
               </h2>
               <div className="space-y-3">
-                {challenge.dailyTasks.length > 0 ? (
+                {challenge.dailyTasks?.length > 0 ? (
                   challenge.dailyTasks.map((task) => (
                     <TaskItem
                       key={task.id}
@@ -355,7 +355,7 @@ const socialLinks = [
                 <Users className="w-6 h-6 mr-3 text-indigo-500" /> Leaderboard
               </h2>
               <ul className="space-y-4">
-                {challenge.leaderboard.map((player, index) => (
+                {challenge.leaderboard?.map((player, index) => (
                   <li key={player.id} className="flex items-center">
                     <span className="text-lg font-bold text-gray-400 w-8">
                       {index + 1}
