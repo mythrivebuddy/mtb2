@@ -55,7 +55,7 @@ export default function UserInfoContent() {
   const [reason, setReason] = useState("");
 
   const [page, setPage] = useState(1);
-  const pageSize = 6;
+  const pageSize = 50;
 
   const queryClient = useQueryClient();
 

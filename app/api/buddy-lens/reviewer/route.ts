@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
 
         // Email to requester
         if (request.requester.email) {
-          const reviewUrl = `${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/dashboard/buddy-lens/reviewer/${request.id}`;
+          const reviewUrl = `${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}`;
           const subject = "Joy Pearls Deducted for Reviewed Request";
           const htmlContent = `
             <p>Hello ${request.requester.name || "User"},</p>
@@ -314,7 +314,7 @@ export async function POST(req: NextRequest) {
           const htmlContent = `
             <p>Hello ${request.reviewer.name || "Reviewer"},</p>
             <p>Thank you for reviewing the BuddyLens request in ${request.domain}. You have earned ${jpCost} Joy Pearls.</p>
-            <p><a href="${process.env.NEXT_PUBLIC_URL || "http://localhost:3000"}/dashboard/buddy-lens/reviewer/${request.id}">View Review</a></p>
+            <p><a href="${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}">View Review</a></p>
           `;
           await sendEmail(
             request.reviewer.email,
@@ -495,7 +495,7 @@ export async function PUT(req: NextRequest) {
 
         if (updatedRequest.requester.email) {
           const baseUrl =
-            process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+            process.env.NEXT_URL;
           const reviewUrl = `${baseUrl}/dashboard/buddy-lens/requester?requestId=${review.requestId}`;
           const subject = "BuddyLens Request Reviewed";
           const htmlContent = `
@@ -608,7 +608,7 @@ export async function PATCH(req: NextRequest) {
       return errorResponse("Reviewer not found", 404);
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_URL;
     const approvalUrl = `${baseUrl}/dashboard/buddy-lens/approve?requestId=${requestId}&reviewerId=${reviewerId}`;
 
     // Prepare email content for requester to approve or reject claim request

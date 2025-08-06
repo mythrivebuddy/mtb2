@@ -10,9 +10,13 @@ import PushNotificationToggle from "@/components/notifications/PushNotificationT
 import PageSkeleton from "../PageSkeleton";
 import Link from "next/link";
 import { Notification } from "@/types/client/notifcation";
+import { useSession } from "next-auth/react";
+
 
 
 export default function NotificationsPage()  {
+  const session = useSession();
+ 
   // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -21,14 +25,15 @@ export default function NotificationsPage()  {
       return data as Notification[];
     },
   });
-
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!isLoading) {
+   useEffect(() => {
+ 
+       if (!isLoading) {
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     }
-  }, [queryClient, isLoading]);
+   }, [session,queryClient,isLoading]); 
+
+ 
 
   console.log(notifications);
 

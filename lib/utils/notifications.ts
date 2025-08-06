@@ -2,6 +2,7 @@ import { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { activityDisplayMap } from "../constants/activityNames";
 
+
 // Helper function to create a notification
 export async function createNotification(
   userId: string,
@@ -11,9 +12,10 @@ export async function createNotification(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: any
 ) {
-  return prisma.notification.create({
+  return await prisma.notification.create({
     data: { userId, type, title, message, metadata },
   });
+   
 }
 
 // Returns notification data for JP earned
