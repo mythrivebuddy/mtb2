@@ -67,7 +67,7 @@ const formatDate = (date: string) =>
 // --- Main Component ---
 export default function ChallengePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searchVisible, setSearchVisible] = useState(false);
@@ -138,6 +138,15 @@ export default function ChallengePage() {
       setSearchVisible(false);
     }
   };
+  
+  // --- FIX: Define the filter options with a specific type ---
+  const filterOptions: (Challenge["status"] | "ALL" | "HOSTED")[] = [
+    "ALL",
+    "ACTIVE",
+    "UPCOMING",
+    "COMPLETED",
+    "HOSTED",
+  ];
 
   return (
     <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
@@ -204,10 +213,11 @@ export default function ChallengePage() {
 
       {/* Filters */}
       <div className="flex flex-wrap justify-center gap-2 mb-10">
-        {["ALL", "ACTIVE", "UPCOMING", "COMPLETED", "HOSTED"].map((status) => (
+        {/* --- FIX: Map over the typed array and remove "as any" --- */}
+        {filterOptions.map((status) => (
           <button
             key={status}
-            onClick={() => setSelectedStatus(status as any)}
+            onClick={() => setSelectedStatus(status)}
             className={cn(
               "px-5 py-2 text-sm font-semibold rounded-full transition",
               selectedStatus === status

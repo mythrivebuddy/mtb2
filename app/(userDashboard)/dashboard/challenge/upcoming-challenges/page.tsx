@@ -12,8 +12,6 @@ import {
   Coins,
   Gift,
   CalendarDays,
-  ArrowLeft,
-  PlusCircle,
   Plus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -101,19 +99,17 @@ const CreateChallengeButton = () => {
     : "Sign in to create a challenge";
 
   return (
-    // 'group' enables hover for the tooltip. 'relative' contains the tooltip.
-    // REMOVED fixed positioning to place it in the normal document flow.
     <div className="group relative">
+      {/* --- FIX: Updated button style to fit next to the search bar --- */}
       <button
         onClick={handleClick}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform duration-300 hover:scale-110 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300"
+        className="flex-shrink-0 p-3 rounded-full bg-indigo-600 text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
         aria-label={tooltipText}
       >
-        <Plus size={28} />
+        <Plus size={24} />
       </button>
-      {/* Tooltip message - position adjusted for left alignment */}
       <div
-        className="absolute left-0 top-full mt-2 w-max origin-top-left scale-95 transform rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100"
+        className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-max origin-top scale-95 transform rounded-md bg-slate-800 px-3 py-2 text-sm font-semibold text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100"
         role="tooltip"
       >
         {tooltipText}
@@ -200,17 +196,9 @@ export default function UpcomingChallengesPage() {
   const pageContent = (
     <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          
-          
-          {/* --- MOVED: The create button is now placed below the back button --- */}
-          <div className="mt-4">
-            <CreateChallengeButton />
-          </div>
+        {/* --- REMOVED old button location --- */}
 
-        </div>
-
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-extrabold text-indigo-900">
             Challenges
           </h1>
@@ -218,9 +206,10 @@ export default function UpcomingChallengesPage() {
             Your personal challenges and new ones to discover, all in one place.
           </p>
         </div>
-
-        <div className="mb-8 max-w-2xl mx-auto">
-          <div className="relative">
+        
+        {/* --- FIX: New container for Search Bar and Create Button --- */}
+        <div className="mb-8 max-w-2xl mx-auto flex items-center gap-4">
+          <div className="relative flex-grow">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
@@ -230,7 +219,9 @@ export default function UpcomingChallengesPage() {
               className="w-full pl-12 pr-4 py-3 text-lg bg-white border border-slate-300 rounded-full shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
             />
           </div>
+          <CreateChallengeButton />
         </div>
+
 
         <div className="mb-10 flex flex-wrap justify-center gap-3">
           {filterOptions.map((status) => {
