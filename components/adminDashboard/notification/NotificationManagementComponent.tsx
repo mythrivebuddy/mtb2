@@ -50,7 +50,9 @@ export const NotificationManagementComponent = () => {
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (
+  //  values: FormValues
+  ) => {
     try {
     //   const res = await fetch("/api/admin/notification-template", {
     //     method: "POST",
