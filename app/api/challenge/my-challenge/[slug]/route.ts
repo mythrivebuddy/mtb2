@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+// import { Challenge } from "@prisma/client";
 
 /**
  * Handles GET requests to fetch the data for a single challenge,

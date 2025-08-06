@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   PartyPopper,
   CalendarX,
+  CalendarDays,
   Share2,
   Link2 as CopyIcon,
   X as CloseIcon,
@@ -92,6 +93,14 @@ const LoadingSpinner = () => (
     <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
   </div>
 );
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
 // --- MAIN PAGE COMPONENT ---
 export default function ChallengeManagementPage() {
@@ -131,8 +140,8 @@ export default function ChallengeManagementPage() {
     fetchChallengeDetails();
   }, [fetchChallengeDetails]);
 
-  const handleToggleTask = async (taskId: string, newStatus: boolean) => {
-    const originalTasks = challenge?.dailyTasks;
+  const handleToggleTask = async (taskId: string, newStatus: boolean) => { 
+    const originalTasks = challenge?.dailyTasks; 
 
     setChallenge((prev) => {
       if (!prev) return null;
@@ -258,12 +267,15 @@ const socialLinks = [
                   <Share2 className="w-4 h-4" />
                   <span>Share</span>
                 </button>
-                <span
-                  className={`px-3 py-1 text-sm font-semibold rounded-full ${challenge.status === "ACTIVE" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}
-                >
-                  {challenge.status}
-                </span>
+                 <div className="flex items-center gap-2 text-sm text-slate-500">
+                      <CalendarDays className="w-4 h-4" />
+                      <span>{formatDate(challenge.startDate)}</span>
+                      <span className="text-slate-300">→</span>
+                      <span>{formatDate(challenge.endDate)}</span>
+                    </div>
+
               </div>
+
             </div>
             <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mt-4">
               {challenge.title}
@@ -303,7 +315,7 @@ const socialLinks = [
               label="Penalty"
               value={`${challenge.penalty} JP`}
               colorClass="bg-gray-500"
-            />
+            /> 
             <StatCard
               icon={<Users className="w-6 h-6 text-white" />}
               label="Participants"

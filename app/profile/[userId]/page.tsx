@@ -186,7 +186,7 @@ export default function UserDetailsPage() {
             <CardHeader className="pt-28">
               <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                 <div className="space-y-3">
-                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text pb-2text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
                     {userData.name}
                   </h1>
                   {userData.bio && (

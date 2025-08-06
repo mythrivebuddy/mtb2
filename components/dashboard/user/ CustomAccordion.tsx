@@ -145,7 +145,7 @@ const allAccordionData = [
   },
 ];
 
-export default function AccordionWrapper() {
+export default function CustomAccordion() {
   const pathname = usePathname();
   const [openIndex, setOpenIndex] = useState<number | null>(null); // Default open for visual flow
 
