@@ -12,6 +12,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Step 1: Get notification template
+    const template = await prisma.notificationSettings.findUnique({
+      where: { notification_type: "DAILY_BLOOM_PUSH_NOTIFICATION" },
+    });
+
+    if (!template) {
+      return NextResponse.json(
+        { error: "Notification template not found" },
+        { status: 404 }
+      );
+    }
+
+    const { title, message } = template;
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
@@ -19,7 +33,7 @@ export async function POST(req: NextRequest) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Step 1: Get all users with active push subscriptions
+    // Step 2: Get all users with active push subscriptions
     const subscribedUsers = await prisma.pushSubscription.findMany({
       select: { userId: true },
       distinct: ["userId"],
@@ -27,8 +41,8 @@ export async function POST(req: NextRequest) {
 
     const eligibleUsersWithCounts: { userId: string; count: number }[] = [];
     console.log("Subscribed users found:", subscribedUsers.length);
-    
-    // Step 2: For each user, count their completed Daily Blooms
+
+    // Step 3: Count completed Daily Blooms
     await Promise.all(
       subscribedUsers.map(async ({ userId }) => {
         const todos = await prisma.todo.findMany({
@@ -36,7 +50,7 @@ export async function POST(req: NextRequest) {
             userId,
             isCompleted: true,
             ...(forceTest
-              ? {} // Include all dates
+              ? {}
               : {
                   updatedAt: {
                     gte: yesterday,
@@ -55,16 +69,20 @@ export async function POST(req: NextRequest) {
 
     console.log("Eligible users with counts:", eligibleUsersWithCounts);
 
-    // Step 3: Send personalized notifications
+    // Step 4: Send personalized notifications using template
     const results = await Promise.allSettled(
-      eligibleUsersWithCounts.map(({ userId, count }) =>
-        sendPushNotificationToUser(
+      eligibleUsersWithCounts.map(({ userId, count }) => {
+        // Interpolate count in message
+        const interpolatedTitle = title.replace("{{count}}", count.toString());
+        const interpolatedMessage = message.replace("{{count}}", count.toString());
+
+        return sendPushNotificationToUser(
           userId,
-          `🌱 You completed ${count} Daily Bloom${count > 1 ? "s" : ""} yesterday!`,
-          "Tap to reflect on what you accomplished.",
+          interpolatedTitle,
+          interpolatedMessage,
           { url: "/dashboard/daily-bloom" }
-        )
-      )
+        );
+      })
     );
 
     return NextResponse.json({
