@@ -51,7 +51,7 @@ export async function GET() {
     const results = await Promise.allSettled(
       eligibleUsers.map(({ userId }) =>
         sendPushNotificationToUser(userId, title, message, {
-          url: "/dashboard/daily-challenge-push",
+          url: "/dashboard/challenge/upcoming-challenges",
         })
       )
     );
