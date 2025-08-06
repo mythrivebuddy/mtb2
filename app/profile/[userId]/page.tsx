@@ -160,6 +160,13 @@ export default function UserDetailsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
       <div className="max-w-5xl mx-auto">
+        {/* --- BACK TO HOME BUTTON --- */}
+        <div className="mb-4">
+            <Button variant="outline" onClick={() => router.push('/')} className="flex items-center gap-2 bg-white/50 hover:bg-white/90">
+                <ArrowLeft size={16} />
+                Back to Home
+            </Button>
+        </div>
         <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-48 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
@@ -179,7 +186,7 @@ export default function UserDetailsPage() {
             <CardHeader className="pt-28">
               <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                 <div className="space-y-3">
-                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text pb-2text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
                     {userData.name}
                   </h1>
                   {userData.bio && (
@@ -189,7 +196,7 @@ export default function UserDetailsPage() {
                     {maskEmail(userData.email)}
                   </p>
                 </div>
-                {/* --- RESTORED SHARE PROFILE BUTTON --- */}
+                {/* --- SHARE PROFILE BUTTON --- */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center gap-2 px-5 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">

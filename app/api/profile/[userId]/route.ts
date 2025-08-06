@@ -1,37 +1,69 @@
-// File: app/api/user/[userId]/route.ts
 
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { EnrollmentStatus } from "@prisma/client";
 
 export async function GET(
   req: Request,
   { params }: { params: { userId: string } }
 ) {
   try {
-    const { userId } = await params;
+    const { userId } = params;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        userBusinessProfile: true,
-      },
-    });
+    if (!userId) {
+        return NextResponse.json({ error: "User ID is required" }, { status: 400 }); 
+    }
+
+    // Fetch the primary user data and the aggregate counts concurrently for efficiency.
+    const [user, dailyBloomsAdded, dailyBloomsCompleted, miracleLogsCreated, challengesCreated, challengesJoined, challengesCompleted] = await Promise.all([
+      // Fetch user and their business profile
+      prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          userBusinessProfile: true,
+        },
+      }),
+      // --- START OF ADDED LOGIC ---
+      // Count all todos for this user
+      prisma.todo.count({
+        where: { userId: userId },
+      }),
+      // Count only completed todos for this user
+      prisma.todo.count({
+        where: { userId: userId, isCompleted: true },
+      }),
+      // Count all miracle logs for this user
+      prisma.miracleLog.count({
+        where: { userId: userId },
+      }),
+      // Count all challenges created by this user
+      prisma.challenge.count({
+        where: { creatorId: userId },
+      }),
+      // Count all challenges this user has joined
+      prisma.challengeEnrollment.count({
+        where: { userId: userId },
+      }),
+      // Count all challenges this user has completed
+      prisma.challengeEnrollment.count({
+        where: { userId: userId, status: EnrollmentStatus.COMPLETED },
+      }),
+      // --- END OF ADDED LOGIC ---
+    ]);
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     const profile = user.userBusinessProfile?.[0];
 
+    // Combine the original user data with the new, freshly calculated stats
     const response = {
+      // Original user and profile data
       name: user.name,
       email: user.email,
       image: user.image,
-     
-
-      bio: user.bio || null, // This retrieves the bio saved from the "My Profile" page
-    
+      bio: user.bio || null,
       businessInfo: profile?.businessInfo || null,
       keyOfferings: profile?.keyOfferings || null,
       achievements: profile?.achievements || null,
@@ -45,14 +77,27 @@ export async function GET(
       jpSpent: user.jpSpent,
       jpBalance: user.jpBalance,
       jpTransaction: user.jpTransaction,
+
+      // --- ADDED STATS ---
+      // These values are now calculated live from the database
+      dailyBloomsAdded: dailyBloomsAdded,
+      dailyBloomsCompleted: dailyBloomsCompleted,
+      miracleLogsCreated: miracleLogsCreated,
+      challengesCreated: challengesCreated,
+      challengesJoined: challengesJoined,
+      challengesCompleted: challengesCompleted,
     };
 
     return NextResponse.json(response);
+
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error("Error fetching user profile:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
+
+// Optional but recommended: To prevent aggressive caching on platforms like Vercel
+export const dynamic = "force-dynamic";

@@ -1,10 +1,11 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+// import { Challenge } from "@prisma/client";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(request: NextRequest, context: any) {
-  const challengeId = context.params.slug;
+  const challengeId = context?.params?.slug; 
 
   try {
     const session = await checkRole("USER");

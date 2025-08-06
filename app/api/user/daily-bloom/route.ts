@@ -58,11 +58,11 @@ const nextDateUTC = (
   return nextDate;
 };
 
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
+    if (!session?.user?.id || session.user.id !== params.userId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
@@ -107,6 +107,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "8", 10);
     const skip = (page - 1) * limit;
 
+    // Fetch counts
+    const totalAdded = await prisma.todo.count({ where: { userId: params.userId } });
+    const totalCompleted = await prisma.todo.count({ where: { userId: params.userId, isCompleted: true } });
+    console.log(`Profile API - User ${params.userId}: Total Added: ${totalAdded}, Total Completed: ${totalCompleted}`);
     if (status === "Pending") {
       const now = new Date();
       const startOfTodayUTC = new Date(
@@ -151,7 +155,8 @@ export async function GET(request: NextRequest) {
       `;
       const totalCount = Number(countResult[0].count);
 
-      return NextResponse.json({ data: blooms, totalCount });
+      return NextResponse.json({ data: blooms, totalCount ,dailyBloomsAdded: totalAdded, 
+        dailyBloomsCompleted: totalCompleted  }); 
     } else {
       const whereClause: Prisma.TodoWhereInput = { userId: session.user.id };
       if (status === "Completed") {
@@ -171,9 +176,11 @@ export async function GET(request: NextRequest) {
         prisma.todo.count({ where: whereClause }),
       ]);
 
-      return NextResponse.json({ data: blooms, totalCount });
+      return NextResponse.json({ data: blooms, totalCount ,dailyBloomsAdded: totalAdded, 
+        dailyBloomsCompleted: totalCompleted });
     }
   } catch (e) {
+    console.error("API Error:", e);
     console.error(e);
     return NextResponse.json(
       { message: "Failed to fetch blooms" },
@@ -250,6 +257,73 @@ export async function POST(req: NextRequest) {
     );
   } catch (err: unknown) {
     console.error("Error creating Todo:", err);
+
+    const errorMessage =
+      typeof err === "object" &&
+      err !== null &&
+      "message" in err &&
+      typeof err.message === "string"
+        ? err.message
+        : "Unknown error";
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { id?: string } }) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = params;
+    if (!id) {
+      return NextResponse.json({ message: "Task ID is required" }, { status: 400 });
+    }
+
+    const requestBody: Partial<DailyBloomFormType> = await req.json();
+    const { isCompleted, taskCompleteJP } = requestBody;
+
+    const updatedBloom = await prisma.todo.update({
+      where: { id, userId: session.user.id },
+      data: {
+        isCompleted: isCompleted ?? false,
+        taskCompleteJP: taskCompleteJP ?? false,
+      },
+    });
+
+    if (!updatedBloom) {
+      return NextResponse.json({ error: "Task not found or update failed" }, { status: 404 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { plan: true },
+    });
+
+    if (user && isCompleted) {
+      try {
+        await assignJp(user, ActivityType.DAILY_BLOOM_COMPLETION_REWARD);
+        await prisma.todo.update({
+          where: { id },
+          data: { taskCompleteJP: true },
+        });
+      } catch (error) {
+        console.error(`Error while assigning JP when daily bloom is completed:`, error);
+      }
+    }
+
+    return NextResponse.json(
+      {
+        message: "Daily Bloom updated successfully",
+        updatedBloom,
+      },
+      { status: 200 }
+    );
+  } catch (err: unknown) {
+    console.error("Error updating Todo:", err);
 
     const errorMessage =
       typeof err === "object" &&
