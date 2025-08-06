@@ -215,8 +215,7 @@ export async function sendPushNotificationToUser(
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId },
   });
-  console.log("Subscriptions found:", subscriptions);
-   console.log(`🔔 Attempting to send push notification to user: ${userId}`);
+
   
   if (subscriptions.length === 0) {
     console.log("No push subscriptions for user", userId);

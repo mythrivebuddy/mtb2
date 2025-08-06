@@ -97,6 +97,7 @@ const Sidebar = () => {
               {/* === REPLACED WITH SURVEY MANAGEMENT === */}
               <NavItem href="/admin/survey-management" label="Survey Management" />
               {/* ============================ */}
+              <NavItem href="/admin/notification-management" label="Notification Management" />
               <NavItem href="/admin/spotlight" label="Spotlight Management" />
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
