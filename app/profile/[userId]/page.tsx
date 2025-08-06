@@ -171,7 +171,7 @@ export default function UserDetailsPage() {
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-48 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
-          <div className="relative px-8 pb-8">
+          <div className="relative px-8 pb-20">
             <div className="absolute -top-24 left-8">
               <Avatar className="h-48 w-48 border-6 border-white shadow-xl rounded-full transform hover:scale-105 transition-transform duration-300">
                 <AvatarImage src={userData.image || undefined} />
@@ -183,20 +183,7 @@ export default function UserDetailsPage() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            <CardHeader className="pt-28">
-              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-                <div className="space-y-3">
-                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text pb-2text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                    {userData.name}
-                  </h1>
-                  {userData.bio && (
-                    <p className="text-gray-600">{userData.bio}</p>
-                  )}
-                  <p className="text-gray-500 text-sm font-medium">
-                    {maskEmail(userData.email)}
-                  </p>
-                </div>
-                {/* --- SHARE PROFILE BUTTON --- */}
+            <div className="absolute top-2 mt-12 right-4 pr-10"> 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center gap-2 px-5 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
@@ -269,7 +256,22 @@ export default function UserDetailsPage() {
                       </a>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu></div>
+            <CardHeader className="pt-28">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div className="space-y-3">
+                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text pb-2text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                    {userData.name}
+                  </h1>
+                  {userData.bio && (
+                    <p className="text-gray-600">{userData.bio}</p>
+                  )}
+                  <p className="text-gray-500 text-sm font-medium">
+                    {maskEmail(userData.email)}
+                  </p>
+                </div>
+                {/* --- SHARE PROFILE BUTTON --- */}
+             
               </div>
             </CardHeader>
             <CardContent className="space-y-12">
