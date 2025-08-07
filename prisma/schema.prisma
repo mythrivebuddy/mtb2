@@ -603,7 +603,7 @@ model ChallengeEnrollment {
 
 model NotificationSettings {
   id                String           @id @default(uuid())
-  notification_type NotificationType
+  notification_type NotificationType @unique
   title             String
   message           String
   createdAt         DateTime         @default(now())

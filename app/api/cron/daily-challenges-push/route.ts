@@ -1,10 +1,24 @@
-import {NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 export async function GET() {
-
   try {
+    // 1. Fetch the notification template by type
+    const template = await prisma.notificationSettings.findUnique({
+      where: { notification_type: "DAILY_CHALLENGE_PUSH_NOTIFICATION" },
+    });
+
+    if (!template) {
+      return NextResponse.json(
+        { error: "Notification template not found" },
+        { status: 404 }
+      );
+    }
+
+    const { title, message } = template;
+
+    // 2. Fetch subscribed users
     const subscribedUsers = await prisma.pushSubscription.findMany({
       select: { userId: true },
       distinct: ["userId"],
@@ -16,57 +30,30 @@ export async function GET() {
       inProgressCount: number;
     }[] = [];
 
+    // 3. Determine eligible users
     await Promise.all(
       subscribedUsers.map(async ({ userId }) => {
         const completed = await prisma.challengeEnrollment.count({
-          where: {
-            userId,
-            status: "COMPLETED",
-          },
+          where: { userId, status: "COMPLETED" },
         });
 
         const inProgress = await prisma.challengeEnrollment.count({
-          where: {
-            userId,
-            status: "IN_PROGRESS",
-          },
+          where: { userId, status: "IN_PROGRESS" },
         });
 
         if (completed > 0 || inProgress > 0) {
-          eligibleUsers.push({
-            userId,
-            completedCount: completed,
-            inProgressCount: inProgress,
-          });
+          eligibleUsers.push({ userId, completedCount: completed, inProgressCount: inProgress });
         }
       })
     );
 
+    // 4. Send notifications using fetched template
     const results = await Promise.allSettled(
-      eligibleUsers.map(({ userId, completedCount, inProgressCount }) => {
-        const parts: string[] = [];
-
-        if (completedCount > 0)
-          parts.push(`✅ ${completedCount} completed challenge${completedCount > 1 ? "s" : ""}`);
-
-        if (inProgressCount > 0)
-          parts.push(`📌 ${inProgressCount} challenges  in progress`);
-
-        const challengeLabel =
-          completedCount + inProgressCount > 1 ? "challenges" : "challenge";
-
-        const body =
-          parts.length > 0
-            ? `You're making great progress! 💪 ${parts.join(" and ")} in your daily ${challengeLabel}. Keep it up! 🌟`
-            : "Don't forget to keep up your streak! Start a challenge today and stay on track. 🚀";
-
-        return sendPushNotificationToUser(
-          userId,
-          "🌿 Your Daily Challenge Update",
-          body,
-          { url: "/dashboard/daily-challenge-push" }
-        );
-      })
+      eligibleUsers.map(({ userId }) =>
+        sendPushNotificationToUser(userId, title, message, {
+          url: "/dashboard/challenge/upcoming-challenges",
+        })
+      )
     );
 
     return NextResponse.json({
@@ -77,6 +64,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Daily Challenge Push Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
