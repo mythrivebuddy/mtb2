@@ -43,6 +43,12 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
+// --- START OF MODIFICATION 1: Update the UserData interface ---
+interface ChallengeTitle {
+  id: string;
+  title: string;
+}
+
 interface UserData {
   name: string;
   email: string;
@@ -73,7 +79,11 @@ interface UserData {
   challengesCreated?: number;
   challengesJoined?: number;
   challengesCompleted?: number;
+  // Add the new arrays to the interface
+  createdChallenges?: ChallengeTitle[];
+  joinedChallenges?: ChallengeTitle[];
 }
+// --- END OF MODIFICATION 1 ---
 
 async function fetchUser(userId: string): Promise<UserData> {
   const res = await fetch(`/api/profile/${userId}`);
@@ -183,7 +193,7 @@ export default function UserDetailsPage() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            <div className="absolute top-2 mt-12 right-4 pr-10"> 
+            <div className="absolute    top-2 mt-12 right-4 pr-10"> 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center gap-2 px-5 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
@@ -270,8 +280,6 @@ export default function UserDetailsPage() {
                     {maskEmail(userData.email)}
                   </p>
                 </div>
-                {/* --- SHARE PROFILE BUTTON --- */}
-             
               </div>
             </CardHeader>
             <CardContent className="space-y-12">
@@ -457,6 +465,7 @@ export default function UserDetailsPage() {
                   </HoverCardContent>
                 </HoverCard>
 
+                {/* --- START OF MODIFICATION 2: Update the Challenges HoverCard --- */}
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-red-50 to-orange-50 hover:shadow-xl transition-all duration-300">
@@ -468,7 +477,8 @@ export default function UserDetailsPage() {
                     </div>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
-                    <div className="flex justify-between space-x-4">
+                    <div className="space-y-4">
+                      {/* --- Original Stats Section --- */}
                       <div className="space-y-2">
                         <h4 className="text-sm font-semibold">
                           Challenges Status
@@ -476,7 +486,7 @@ export default function UserDetailsPage() {
                         <p className="text-sm">
                           Created:{" "}
                           <span className="font-bold text-red-700">
-                            {userData.challengesCreated ?? 0}  
+                            {userData.challengesCreated ?? 0}
                           </span>
                         </p>
                         <p className="text-sm">
@@ -489,13 +499,46 @@ export default function UserDetailsPage() {
                           Completed:{" "}
                           <span className="font-bold text-red-700">
                             {userData.challengesCompleted ?? 0}
-                             
                           </span>
                         </p>
                       </div>
+
+                      {/* --- New Created Challenges List --- */}
+                      {(userData.createdChallenges?.length ?? 0) > 0 && (
+                        <div className="border-t pt-3 space-y-2">
+                          <h5 className="text-sm font-semibold text-gray-600">
+                            Recently Created:
+                          </h5>
+                          <ul className="list-disc list-inside space-y-1">
+                            {userData.createdChallenges?.map((challenge) => (
+                              <li key={challenge.id} className="text-xs text-gray-500 truncate">
+                                {challenge.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* --- New Joined Challenges List --- */}
+                      {(userData.joinedChallenges?.length ?? 0) > 0 && (
+                        <div className="border-t pt-3 space-y-2">
+                          <h5 className="text-sm font-semibold text-gray-600">
+                            Recently Joined:
+                          </h5>
+                          <ul className="list-disc list-inside space-y-1">
+                            {userData.joinedChallenges?.map((challenge) => (
+                              <li key={challenge.id} className="text-xs text-gray-500 truncate">
+                                {challenge.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </HoverCardContent>
                 </HoverCard>
+                {/* --- END OF MODIFICATION 2 --- */}
+
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
