@@ -476,7 +476,7 @@ export default function UserDetailsPage() {
                         <p className="text-sm">
                           Created:{" "}
                           <span className="font-bold text-red-700">
-                            {userData.challengesCreated ?? 0}
+                            {userData.challengesCreated ?? 0}  
                           </span>
                         </p>
                         <p className="text-sm">
@@ -489,6 +489,7 @@ export default function UserDetailsPage() {
                           Completed:{" "}
                           <span className="font-bold text-red-700">
                             {userData.challengesCompleted ?? 0}
+                             
                           </span>
                         </p>
                       </div>
