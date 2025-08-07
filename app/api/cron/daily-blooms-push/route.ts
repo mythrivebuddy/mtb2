@@ -13,14 +13,8 @@ export async function GET(req: NextRequest) {
       where: { notification_type: "DAILY_BLOOM_PUSH_NOTIFICATION" },
     });
 
-    if (!template) {
-      return NextResponse.json(
-        { error: "Notification template not found" },
-        { status: 404 }
-      );
-    }
-
-    const { title, message } = template;
+    const title = template?.title ?? "Daily Challenge Reminder";
+    const message = template?.message ?? "Don't forget to check your daily challenges!";
 
     // Define time window
     const yesterday = new Date();
@@ -42,7 +36,6 @@ export async function GET(req: NextRequest) {
       distinct: ["userId"],
     });
 
-    console.log("Subscribed users found:", subscribedUsers.length);
 
     if (subscribedUsers.length === 0) {
       return NextResponse.json({

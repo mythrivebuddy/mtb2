@@ -82,7 +82,9 @@ export async function checkAndRotateSpotlight() {
   console.log("is expired", activeSpotlight.expiresAt! < new Date());
 
   // Check if the active spotlight is expired
-  if (activeSpotlight.expiresAt! < new Date()) {
+  
+  
+  if (activeSpotlight.expzziresAt! < new Date()) {
     console.log("condition is indeed true");
     // await prisma.$transaction([
     await prisma.spotlight.update({

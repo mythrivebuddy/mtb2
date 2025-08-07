@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { title } from "process";
 
 export async function GET() {
   try {
@@ -9,14 +10,9 @@ export async function GET() {
       where: { notification_type: "DAILY_CHALLENGE_PUSH_NOTIFICATION" },
     });
 
-    if (!template) {
-      return NextResponse.json(
-        { error: "Notification template not found" },
-        { status: 404 }
-      );
-    }
+    const title = template?.title ?? "Daily Challenge Reminder";
+    const message = template?.message ?? "Don't forget to check your daily challenges!";
 
-    const { title, message } = template;
 
     // 2. Fetch subscribed users
     const subscribedUsers = await prisma.pushSubscription.findMany({

@@ -4,6 +4,6 @@
       "path": "/api/cron/spotlight",
       "schedule": "0 0 * * *" 
     }
-   
+  
   ]
 }
