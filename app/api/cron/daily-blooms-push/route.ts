@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Send notifications
     const results = await Promise.allSettled(
-      eligibleUsersWithCounts.map(({ userId, count }) => {
+      eligibleUsersWithCounts.map(({ userId }) => {
         // Optional: interpolate {{count}} in message if needed
         // const interpolatedTitle = title.replace("{{count}}", count.toString());
         // const interpolatedMessage = message.replace("{{count}}", count.toString());
