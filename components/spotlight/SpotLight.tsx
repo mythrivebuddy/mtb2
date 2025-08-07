@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { Prisma } from "@prisma/client";
+import { ActivityType, Prisma } from "@prisma/client";
 import axios from "axios";
 import ConfirmAction from "@/components/ConfirmAction";
 import { toast } from "sonner";
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
+import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 
 export default function SpotlightPage() {
   const [isChecked, setIsChecked] = useState(false);
+  const [jpAmount, setJpAmount] = useState<number | null>(null);
 
   const { data: session } = useSession();
   const queryClient = useQueryClient();
@@ -56,7 +58,12 @@ export default function SpotlightPage() {
       toast.error(getAxiosErrorMessage(error));
     },
   });
-
+  useEffect(()=>{
+    (async()=>{
+      const amount = await getJpAmountForActivity(ActivityType.SPOTLIGHT)
+      setJpAmount(amount);
+    })();
+  },[])
   const getStatusMessage = () => {
     if (!spotlights) return null;
     const currentSpotlight = spotlights.find((spotlight) =>
@@ -138,7 +145,7 @@ export default function SpotlightPage() {
             <h3 className="text-xl font-semibold mb-4"> Requirements:</h3>
             <ul className="list-disc pl-6 text-gray-600 mb-8">
               <li className="mb-2">
-                You must have 5,000 JP tokens to apply (lower amounts for
+                You must have {jpAmount} JP tokens to apply (lower amounts for
                 premium plan members).
               </li>
               <li className="mb-2">
