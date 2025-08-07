@@ -68,7 +68,7 @@ export default function NotificationsPage()  {
             label="Browser Push Notifications"
           />
           <p className="text-sm text-gray-500 mt-1">
-            Receive notifications even when you&aposre not actively using the
+            Receive notifications even when you are not actively using the
             site
           </p>
         </div>
