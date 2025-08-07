@@ -58,18 +58,22 @@ const nextDateUTC = (
   return nextDate;
 };
 
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+export async function GET(request: NextRequest) { // Removed the incorrect {params} argument
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id || session.user.id !== params.userId) {
+    // CORRECTED SECURITY CHECK:
+    // Only check if a user is logged in. The rest of the function will use the session ID,
+    // which is secure by default.
+    if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // This part is for resetting recurring tasks and is correct.
     const nowForRecurrence = new Date();
     const completedRecurringTasks = await prisma.todo.findMany({
       where: {
-        userId: session.user.id,
+        userId: session.user.id, // Uses the correct session ID
         isCompleted: true,
         frequency: { in: ["Daily", "Weekly", "Monthly"] },
       },
@@ -107,10 +111,12 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     const limit = parseInt(searchParams.get("limit") || "8", 10);
     const skip = (page - 1) * limit;
 
-    // Fetch counts
-    const totalAdded = await prisma.todo.count({ where: { userId: params.userId } });
-    const totalCompleted = await prisma.todo.count({ where: { userId: params.userId, isCompleted: true } });
-    console.log(`Profile API - User ${params.userId}: Total Added: ${totalAdded}, Total Completed: ${totalCompleted}`);
+    // CORRECTED COUNT QUERIES:
+    // These now use the logged-in user's ID from the session, not from params.
+    const totalAdded = await prisma.todo.count({ where: { userId: session.user.id } });
+    const totalCompleted = await prisma.todo.count({ where: { userId: session.user.id, isCompleted: true } });
+    
+    // The rest of your logic for filtering and fetching is correct
     if (status === "Pending") {
       const now = new Date();
       const startOfTodayUTC = new Date(
@@ -119,7 +125,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       const startOfTomorrowUTC = new Date(startOfTodayUTC);
       startOfTomorrowUTC.setUTCDate(startOfTomorrowUTC.getUTCDate() + 1);
 
-      const userId = session.user.id;
+      const userId = session.user.id; // Correctly using session ID here
 
       const whereConditions = [
         Prisma.sql`"userId" = ${userId}`,
@@ -155,9 +161,9 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       `;
       const totalCount = Number(countResult[0].count);
 
-      return NextResponse.json({ data: blooms, totalCount ,dailyBloomsAdded: totalAdded, 
-        dailyBloomsCompleted: totalCompleted  }); 
-    } else {
+      return NextResponse.json({ data: blooms, totalCount, dailyBloomsAdded: totalAdded, dailyBloomsCompleted: totalCompleted });
+
+    } else { // This handles the "Completed" status
       const whereClause: Prisma.TodoWhereInput = { userId: session.user.id };
       if (status === "Completed") {
         whereClause.isCompleted = true;
@@ -176,18 +182,17 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         prisma.todo.count({ where: whereClause }),
       ]);
 
-      return NextResponse.json({ data: blooms, totalCount ,dailyBloomsAdded: totalAdded, 
-        dailyBloomsCompleted: totalCompleted });
+      return NextResponse.json({ data: blooms, totalCount, dailyBloomsAdded: totalAdded, dailyBloomsCompleted: totalCompleted });
     }
   } catch (e) {
-    console.error("API Error:", e);
-    console.error(e);
+    console.error("API Error in GET /api/user/daily-bloom:", e);
     return NextResponse.json(
       { message: "Failed to fetch blooms" },
       { status: 500 }
     );
   }
 }
+
 
 export async function POST(req: NextRequest) {
   try {
