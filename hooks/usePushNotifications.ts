@@ -12,6 +12,7 @@ export default function usePushNotifications() {
   const { status } = useSession();
 
   useEffect(() => {
+
     setIsLoading(true);
 
     if (status !== "authenticated") {
@@ -41,7 +42,51 @@ export default function usePushNotifications() {
       setIsPushSupported(false);
       setIsLoading(false);
     }
+  
   }, [status]);
+
+//   useEffect(() => {
+//   setIsLoading(true);
+
+//   if (status !== "authenticated") {
+//     setIsLoading(false);
+//     return;
+//   }
+
+//   if ("serviceWorker" in navigator && "PushManager" in window) {
+//     setIsPushSupported(true);
+
+//     navigator.serviceWorker
+//       .register("/service-worker.js")
+//       .then(async (registration) => {
+//         setSwRegistration(registration);
+//         const subscription = await registration.pushManager.getSubscription();
+//         setIsSubscribed(!!subscription);
+//         setIsLoading(false);
+
+//         // 🚀 Auto prompt for permission only once
+//         const prompted = localStorage.getItem("pushPrompted");
+//         if (!subscription && prompted !== "true") {
+//           const permission = await Notification.requestPermission();
+//           localStorage.setItem("pushPrompted", "true");
+
+//           if (permission === "granted") {
+//             // Auto-subscribe
+//             await subscribe();
+//           }
+//         }
+//       })
+//       .catch((err) => {
+//         console.error("Service Worker registration failed:", err);
+//         setIsLoading(false);
+//         toast.error("Failed to set up notifications");
+//       });
+//   } else {
+//     setIsPushSupported(false);
+//     setIsLoading(false);
+//   }
+// }, [status]);
+
 
   const subscribe = async () => {
     try {
