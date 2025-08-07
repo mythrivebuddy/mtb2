@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
-import { title } from "process";
+
 
 export async function GET() {
   try {
