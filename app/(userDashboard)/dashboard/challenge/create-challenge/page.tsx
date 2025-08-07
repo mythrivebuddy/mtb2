@@ -13,7 +13,7 @@ import {
   X,
   Calendar as CalendarIcon,
   AlertTriangle,
-  
+  ArrowLeft, // ✨ Icon for the back button
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -104,7 +104,7 @@ const formatDateForInput = (date: Date | null | undefined): string => {
   return date.toISOString().split("T")[0];
 };
 
-export default function CreateChallenge({ }: CreateChallengeProps) {
+export default function CreateChallenge({ onSuccess }: CreateChallengeProps) {
   const router = useRouter();
   const [modalContent, setModalContent] = useState<{
     title: string;
