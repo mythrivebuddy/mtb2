@@ -4,7 +4,7 @@ import { checkRole } from "@/lib/utils/auth";
 
 /**
  * MODIFIED: Handles GET requests to fetch the detailed data for a single challenge,
- * including the current user's enrollment status and streaks.
+ * including the current user's enrollment status, streaks, AND their daily tasks.
  */
 export async function GET(
   request: NextRequest,
@@ -27,11 +27,13 @@ export async function GET(
       );
     }
 
-    // 2. Fetch core challenge details, user's enrollment, and participant count in parallel
-    const [challenge, enrollment, participantCount] = await Promise.all([
+    // 2. Fetch core challenge details, user's enrollment (with tasks), and participant count
+    const [challenge, enrollment, participantCount, leaderboard] = await Promise.all([
       prisma.challenge.findUnique({
         where: { id: challengeId },
       }),
+      // --- MODIFICATION START ---
+      // We now include the userTasks associated with this enrollment
       prisma.challengeEnrollment.findUnique({
         where: {
           userId_challengeId: {
@@ -39,10 +41,37 @@ export async function GET(
             challengeId: challengeId,
           },
         },
+        include: {
+          userTasks: { // <-- This is the key addition!
+            select: {
+                id: true,
+                description: true,
+                isCompleted: true,
+            }
+          },
+        },
       }),
+      // --- MODIFICATION END ---
       prisma.challengeEnrollment.count({
         where: { challengeId: challengeId },
       }),
+      // Also fetch leaderboard data
+      prisma.challengeEnrollment.findMany({
+        where: { challengeId: challengeId },
+        orderBy: {
+            currentStreak: 'desc'
+        },
+        take: 10, // Top 10 users
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                }
+            }
+        }
+      })
     ]);
 
     if (!challenge) {
@@ -51,6 +80,15 @@ export async function GET(
         { status: 404 }
       );
     }
+    
+    // Format leaderboard data
+    const formattedLeaderboard = leaderboard.map(entry => ({
+        id: entry.user.id,
+        name: entry.user.name || 'Anonymous',
+        avatar: entry.user.image || '/default-avatar.png', // Provide a fallback avatar
+        score: entry.currentStreak,
+    }));
+
 
     // 3. Combine all data into a single, serializable response object
     const responseData = {
@@ -58,9 +96,18 @@ export async function GET(
       startDate: challenge.startDate.toISOString(),
       endDate: challenge.endDate.toISOString(),
       createdAt: challenge.createdAt.toISOString(),
-      currentStreak: enrollment?.currentStreak ?? 0, // Default to 0 if user is not enrolled
-      longestStreak: enrollment?.longestStreak ?? 0, // Default to 0 if user is not enrolled
+      currentStreak: enrollment?.currentStreak ?? 0,
+      longestStreak: enrollment?.longestStreak ?? 0,
       participantCount: participantCount,
+      // --- MODIFICATION ---
+      // Add the user's tasks to the response, mapping to the format the frontend expects.
+      // If the user isn't enrolled, this defaults to an empty array.
+      dailyTasks: (enrollment?.userTasks || []).map(task => ({
+        id: task.id,
+        description: task.description,
+        completed: task.isCompleted
+      })),
+      leaderboard: formattedLeaderboard, // Add leaderboard to the response
     };
 
     return NextResponse.json(responseData);
@@ -69,7 +116,7 @@ export async function GET(
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-      `GET /api/challenge/my-challenge/${challengeId} Error:`,
+     " GET /api/challenge/my-challenge/${challengeId} Error:",
       errorMessage
     );
     return new NextResponse(
@@ -133,7 +180,7 @@ export async function DELETE(
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-      `DELETE /api/challenge/my-challenge/${challengeId} Error:`,
+      "DELETE /api/challenge/my-challenge/${challengeId} Error:",
       errorMessage,
       error
     );
@@ -228,7 +275,7 @@ export async function PATCH(
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-      `PATCH /api/challenge/my-challenge/${challengeId} Error:`,
+    "  PATCH /api/challenge/my-challenge/${challengeId} Error:",
       errorMessage,
       error
     );

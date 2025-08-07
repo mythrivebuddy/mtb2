@@ -68,6 +68,33 @@ const formatDate = (date: string) =>
     year: "numeric",
   });
 
+// ⭐️ NEW: Helper to get start date status for tags
+const getStartDateInfo = (startDate: string): string | null => {
+  const now = new Date();
+  const start = new Date(startDate);
+
+  // Reset time part to compare dates only
+  now.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+
+  // Don't show a tag for challenges that have already started
+  if (start < now) {
+    return null;
+  }
+
+  const diffTime = start.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return "Starting Today";
+  }
+  if (diffDays === 1) {
+    return "Starts in 1 day";
+  }
+  return `Starts in ${diffDays} days`;
+};
+
+
 // --- Main Component ---
 export default function ChallengePage() {
   const router = useRouter();
@@ -75,7 +102,6 @@ export default function ChallengePage() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searchVisible, setSearchVisible] = useState(false);
-  // State for multi-select filters, initialized to 'ALL'
   const [selectedFilters, setSelectedFilters] = useState<FilterStatus[]>(['ALL']);
   const [isDefaultFilterSet, setIsDefaultFilterSet] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -109,15 +135,12 @@ export default function ChallengePage() {
       })) || [];
   const all = [...(myChallenges || []), ...availableChallenges];
 
-  // Effect to set default filters based on user status and participation
   useEffect(() => {
-    // Exit if defaults are already set, or if we are waiting for auth status or myChallenges data
     if (isDefaultFilterSet || authStatus === 'loading' || (authStatus === 'authenticated' && !myChallenges)) {
       return;
     }
 
     if (authStatus === 'unauthenticated') {
-      // Not logged in: default to Upcoming
       setSelectedFilters(['UPCOMING']);
       setIsDefaultFilterSet(true);
     } else if (authStatus === 'authenticated' && myChallenges) {
@@ -125,13 +148,10 @@ export default function ChallengePage() {
       const hasJoined = myChallenges.some((c) => !c.isHosted);
 
       if (hasHosted) {
-        // Hosted/Logged In: default to Hosted and Active
         setSelectedFilters(['HOSTED', 'ACTIVE']);
       } else if (hasJoined) {
-        // Logged in and joined: default to Active and Joined
         setSelectedFilters(['ACTIVE', 'JOINED']);
       } else {
-        // Logged in but not joined/hosted: default to Upcoming
         setSelectedFilters(['UPCOMING']);
       }
       setIsDefaultFilterSet(true);
@@ -145,53 +165,40 @@ export default function ChallengePage() {
     }
   }, [searchVisible]);
 
-  // Handler for multi-select filter clicks
   const handleFilterClick = (filter: FilterStatus) => {
-    // Prevent changing filters until the default is set
     if (!isDefaultFilterSet) return;
 
     setSelectedFilters((prev) => {
-      // If 'ALL' is clicked, it becomes the only selection.
       if (filter === 'ALL') {
         return ['ALL'];
       }
-
-      // Start with a new array, removing 'ALL' if it was there before.
-      let newFilters = prev.includes('ALL') ? [] : [...prev];
-
+      const newFilters = prev.includes('ALL') ? [] : [...prev];
       const index = newFilters.indexOf(filter);
       if (index > -1) {
-        // If the filter exists, remove it.
         newFilters.splice(index, 1);
       } else {
-        // Otherwise, add it.
         newFilters.push(filter);
       }
-
-      // If no filters are left after removal, default back to 'ALL'.
       if (newFilters.length === 0) {
         return ['ALL'];
       }
-
       return newFilters;
     });
   };
 
   const filtered = all
     .filter((c) => {
-      // If 'ALL' is selected or no filters are chosen, show all challenges.
       if (selectedFilters.includes('ALL')) {
         return true;
       }
-      // Check if the challenge matches ANY of the selected filters.
       return selectedFilters.some(filter => {
         if (filter === 'HOSTED') return c.isHosted === true;
         if (filter === 'JOINED') return c.isHosted === false && c.cardType === 'myChallenge';
-        // Handles 'ACTIVE', 'UPCOMING', 'COMPLETED' by matching the challenge status.
         return c.status === filter;
       });
     })
-    .filter((c) => c.title.toLowerCase().includes(searchTerm.toLowerCase()));
+    .filter((c) => c.title.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
   const handleCreateClick = () => {
     if (authStatus === "authenticated") {
@@ -309,83 +316,94 @@ export default function ChallengePage() {
         <p className="text-center text-slate-500">No challenges found for the selected filters.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((c) => (
-            <div
-              key={c.id}
-              onClick={() =>
-                router.push(
-                  `/dashboard/challenge/${
-                    c.cardType === "myChallenge"
-                      ? "my-challenges"
-                      : "upcoming-challenges"
-                  }/${c.id}`
-                )
-              }
-              className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1"
-            >
-              
-              {/* Hosted Ribbon */}
-              {c.isHosted && (
-                <div 
-                  className="absolute top-4 -right-9 transform rotate-45 bg-teal-500 text-center text-white text-sm font-semibold py-1 w-32"
-                  aria-label="Hosted Challenge"
-                >
-                  Hosted
-                </div>
-              )}
-
-              {/* Status & Type Ribbons */}
-              {c.status === 'COMPLETED' ? (
+          {filtered.map((c) => {
+            const startDateInfo = getStartDateInfo(c.startDate); // Call helper once
+            return (
+              <div
+                key={c.id}
+                onClick={() =>
+                  router.push(
+                    `/dashboard/challenge/${
+                      c.cardType === "myChallenge"
+                        ? "my-challenges"
+                        : "upcoming-challenges"
+                    }/${c.id}`
+                  )
+                }
+                className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1"
+              >
+                
+                {/* Hosted Ribbon */}
+                {c.isHosted && (
                   <div 
-                  className="absolute top-4 -right-9 transform rotate-45 bg-slate-500 text-center text-white text-sm font-semibold py-1 w-32"
-                  aria-label="Completed Challenge"
-                >
-                  Completed
-                </div>
-              ) : c.cardType === 'myChallenge' && !c.isHosted ? (
-                <div 
-                  className="absolute top-4 -right-9 transform rotate-45 bg-indigo-500 text-center text-white text-sm font-semibold py-1 w-32"
-                  aria-label="Joined Challenge"
-                >
-                  Joined
-                </div>
-              ) : c.cardType === 'upcoming' ? (
+                    className="absolute top-4 -right-9 transform rotate-45 bg-teal-500 text-center text-white text-sm font-semibold py-1 w-32"
+                    aria-label="Hosted Challenge"
+                  >
+                    Hosted
+                  </div>
+                )}
+
+                {/* Status & Type Ribbons */}
+                {c.status === 'COMPLETED' ? (
+                    <div 
+                    className="absolute top-4 -right-9 transform rotate-45 bg-slate-500 text-center text-white text-sm font-semibold py-1 w-32"
+                    aria-label="Completed Challenge"
+                  >
+                    Completed
+                  </div>
+                ) : c.cardType === 'myChallenge' && !c.isHosted ? (
                   <div 
-                  className="absolute top-4 -right-9 transform rotate-45 bg-sky-500 text-center text-white text-sm font-semibold py-1 w-32"
-                  aria-label="Upcoming Challenge"
-                >
-                  Upcoming
-                </div>
-              ) : null}
+                    className="absolute top-4 -right-9 transform rotate-45 bg-indigo-500 text-center text-white text-sm font-semibold py-1 w-32"
+                    aria-label="Joined Challenge"
+                  >
+                    Joined
+                  </div>
+                ) : c.cardType === 'upcoming' ? (
+                    <div 
+                    className="absolute top-4 -right-9 transform rotate-45 bg-sky-500 text-center text-white text-sm font-semibold py-1 w-32"
+                    aria-label="Upcoming Challenge"
+                  >
+                    Upcoming
+                  </div>
+                ) : null}
 
-
-              <div className="mb-2 pt-4">
-                <h3 className="text-xl font-bold text-indigo-800 truncate">{c.title}</h3>
-              </div>
-              
-              <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                {c.description || "No description available."}
-              </p>
-              
-              <div className="flex items-center gap-2 mb-2">
-                <CalendarDays className="w-4 h-4" />
-                <span className="text-sm">{formatDate(c.startDate)}</span>
-                <span className="text-slate-300">→</span>
-                <span className="text-sm">{formatDate(c.endDate)}</span>
-              </div>
-
-              <div className="flex justify-between mt-auto pt-4 border-t">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Users className="w-4 h-4" />
-                  <span>{c._count?.enrollments ?? 0} Joined</span>
+                <div className="mb-2 pt-4">
+                  <h3 className="text-xl font-bold text-indigo-800 truncate">{c.title}</h3>
                 </div>
-                <div className="flex items-center gap-2 text-purple-700 font-bold">
-                  <Gift className="w-4 h-4" />
-                  <span>{c.reward} JP</span>
+                
+                <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                  {c.description || "No description available."}
+                </p>
+
+                {/* ⭐️ NEW: Dynamic start date tag */}
+                {startDateInfo && (
+                  <div className="mb-4">
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full animate-fade-in">
+                      {startDateInfo}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex items-center gap-2 mb-2">
+                  <CalendarDays className="w-4 h-4" />
+                  <span className="text-sm">{formatDate(c.startDate)}</span>
+                  <span className="text-slate-300">→</span>
+                  <span className="text-sm">{formatDate(c.endDate)}</span>
+                </div>
+
+                <div className="flex justify-between mt-auto pt-4 border-t">
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <Users className="w-4 h-4" />
+                    <span>{c._count?.enrollments ?? 0} Joined</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-purple-700 font-bold">
+                    <Gift className="w-4 h-4" />
+                    <span>{c.reward} JP</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
