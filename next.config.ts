@@ -114,12 +114,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
-      // ** Start of added code **
       {
         protocol: "https",
         hostname: "ui-avatars.com",
       },
-      // ** End of added code **
+      {
+        protocol: "https",
+        hostname: "rukminim2.flixcart.com", // ✅ Added this to fix your error
+      },
     ],
   },
   experimental: {
