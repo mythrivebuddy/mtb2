@@ -7,6 +7,8 @@ import { assignJp } from "@/lib/utils/jp";
 import { sign } from "jsonwebtoken";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import axios from "axios";
+//import { addUserToBrevoList } from "@/lib/brevo";
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +74,17 @@ export async function POST(request: NextRequest) {
 
     //  * assign JP as signup reward
     assignJp(user, ActivityType.SIGNUP);
+
+    console.log("📬 Sending to Brevo...");
+
+    // ✅ Add user to Brevo email list
+// await addUserToBrevoList({
+  
+//   email,
+//   firstName: name.split(" ")[0], // optional: get first name
+//   lastName: name.split(" ").slice(1).join(" ") || "", // optional: get last name
+// });
+
 
     return NextResponse.json({
       message:

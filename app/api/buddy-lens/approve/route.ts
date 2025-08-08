@@ -306,8 +306,8 @@ export async function PATCH(req: NextRequest) {
     if (!reviewer) {
       return errorResponse("Reviewer not found", 404);
     }
-
-    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+    
+    const baseUrl = process.env.NEXT_URL;
     let emailResult: {
       success: boolean;
       messageId?: string;

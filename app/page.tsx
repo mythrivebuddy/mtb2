@@ -46,6 +46,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col">
             <SpotlightCard />
+            
           </div>
         </div>
       </AppLayout>

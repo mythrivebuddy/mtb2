@@ -72,26 +72,39 @@ export async function checkAndRotateSpotlight() {
   const activeSpotlight = await prisma.spotlight.findFirst({
     where: { status: SpotlightStatus.ACTIVE },
   });
-  console.log("active spolight", activeSpotlight); //?dev
 
   if (!activeSpotlight) {
-    // If no active spotlight, activate one
+    // If no active spotlight, try to activate one
     await activateNextSpotlight();
     return;
   }
-  console.log("is expired", activeSpotlight.expiresAt! < new Date());
 
-  // Check if the active spotlight is expired
-  if (activeSpotlight.expiresAt! < new Date()) {
-    console.log("condition is indeed true");
-    // await prisma.$transaction([
-    await prisma.spotlight.update({
-      where: { id: activeSpotlight.id },
-      data: { status: SpotlightStatus.EXPIRED },
+  const isExpired = activeSpotlight.expiresAt! < new Date();
+
+  if (isExpired) {
+    // Check if we have a next spotlight waiting
+    const nextSpotlight = await prisma.spotlight.findFirst({
+      where: { status: SpotlightStatus.APPROVED },
+      orderBy: { appliedAt: "asc" },
     });
-    // ]);
 
-    // Activate next in queue
-    activateNextSpotlight();
+    if (nextSpotlight) {
+      // Expire current and activate next
+      await prisma.spotlight.update({
+        where: { id: activeSpotlight.id },
+        data: { status: SpotlightStatus.EXPIRED },
+      });
+      await activateNextSpotlight();
+    } else {
+      // No new spotlight — extend current one
+      await prisma.spotlight.update({
+        where: { id: activeSpotlight.id },
+        data: {
+          expiresAt: new Date(Date.now() + SPOTLIGHT_EXPIREY_MS),
+        },
+      });
+      
+    }
   }
 }
+

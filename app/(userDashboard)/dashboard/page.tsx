@@ -15,15 +15,13 @@ import {
 import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
-
+import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
 
-  
-  useOnlineUserLeaderBoard()
-
+  useOnlineUserLeaderBoard();
 
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
@@ -58,8 +56,6 @@ export default function DashboardPage() {
       enabled: !!session?.user?.id,
     });
 
- 
-
   if (
     spotlightLoading ||
     status === "loading" ||
@@ -85,7 +81,6 @@ export default function DashboardPage() {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
   console.log("currentProsperity", currentProsperity);
-
 
   return (
     <div className="py-6 px-4">
@@ -131,6 +126,7 @@ export default function DashboardPage() {
           <RightPanel />
         </div>
       </div>
+      <FirstVisitNotificationPopup/>
     </div>
   );
 }
