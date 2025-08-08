@@ -7,12 +7,13 @@ export default function FirstVisitNotificationPopup() {
   const {
     showFirstVisitPopup,
     handleFirstVisitAllow,
+    setShowFirstVisitPopup,
     handleFirstVisitLater,
     isLoading,
   } = usePushNotifications();
   
   return (
-    <Dialog open={showFirstVisitPopup} onOpenChange={() => {}}>
+    <Dialog open={showFirstVisitPopup} onOpenChange={(isOpen) => setShowFirstVisitPopup(isOpen)}>
       <DialogContent
         className="
            max-sm:max-w-xs sm:max-w-sm 
