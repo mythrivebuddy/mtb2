@@ -15,6 +15,7 @@ import {
 import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 
 
 export default function DashboardPage() {
@@ -125,6 +126,7 @@ export default function DashboardPage() {
           <RightPanel />
         </div>
       </div>
+      <FirstVisitNotificationPopup/>
     </div>
   );
 }
