@@ -24,59 +24,109 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import axios from "axios";
-import { useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
-// ✅ Define your enum values
+// Enum values
 const notificationTypes = [
   "DAILY_CHALLENGE_PUSH_NOTIFICATION",
   "DAILY_BLOOM_PUSH_NOTIFICATION",
 ] as const;
 
-// ✅ Zod schema
+const placeholderValue = "__placeholder__";
+
+// Schema
 const formSchema = z.object({
-  type: z.enum(notificationTypes, {
-    errorMap: () => ({ message: "Please select a type" }),
-  }),
+  type: z.union([
+    z.literal(placeholderValue),
+    z.enum(notificationTypes, {
+      errorMap: () => ({ message: "Please select a type" }),
+    }),
+  ]),
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  type: typeof placeholderValue | typeof notificationTypes[number];
+  title: string;
+  message: string;
+};
 type ApiResponse = { message: string };
 
 export const NotificationManagementComponent = () => {
-  // ✅ Mutation with correct types
-  const mutation = useMutation<ApiResponse, Error, FormValues>({
-    mutationFn: async (values) => {
-      const res = await axios.post("/api/admin/notification", values);
-      return res.data;
-    },
-    onSuccess: (data) => {
-      toast.success(data.message || "Notification template saved!");
-      form.reset(); // Optional: Reset form on success
-    },
-    onError: (error) => {
-      toast.error("Failed to save template");
-      console.error(error);
-    },
-  });
+  const queryClient = useQueryClient();
+  const [selectedType, setSelectedType] =
+    useState<FormValues["type"]>(placeholderValue);
 
+  // Form setup
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: undefined,
+      type: placeholderValue,
       title: "",
       message: "",
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    mutation.mutate(values);
+  // Fetch all templates once on page load
+  const { data: allTemplates = []} = useQuery({
+    queryKey: ["notificationTemplates"],
+    queryFn: async () => {
+      const res = await axios.get("/api/admin/notification"); // <-- no type param
+      return res.data.data;
+    },
+    staleTime: Infinity, // cache until manually invalidated
+  });
+
+  // Update form fields when type changes
+  useEffect(() => {
+    if (!selectedType || selectedType === placeholderValue) {
+      form.setValue("title", "");
+      form.setValue("message", "");
+      return;
+    }
+
+    const template = allTemplates.find(
+      (t: { notification_type?: string; }) => (t as { notification_type?: string }).notification_type === selectedType
+    );
+
+    form.setValue("title", template?.title || "");
+    form.setValue("message", template?.message || "");
+  }, [selectedType, allTemplates, form]);
+
+  // Save template
+  const mutation = useMutation<ApiResponse, Error, FormValues>({
+    mutationFn: async (values) => {
+      const res = await axios.post("/api/admin/notification", values);
+      return res.data;
+    },
+    onSuccess: async (data) => {
+      toast.success(data.message || "Notification template saved!");
+      await queryClient.invalidateQueries({
+        queryKey: ["notificationTemplates"],
+      });
+      form.reset({
+        type: placeholderValue,
+        title: "",
+        message: "",
+      });
+      setSelectedType(placeholderValue);
+    },
+    onError: () => {
+      toast.error("Failed to save template");
+    },
+  });
+
+  const onSubmit = (values: FormValues & { type: string }) => {
+    if (values.type === placeholderValue) {
+      form.setError("type", { message: "Please select a type" });
+      return;
+    }
+    mutation.mutate(values as FormValues);
   };
 
   const isLoading = mutation.status === "pending";
-
 
   return (
     <div className="max-w-xl mx-auto mt-10 px-4">
@@ -89,7 +139,7 @@ export const NotificationManagementComponent = () => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Notification Type Dropdown */}
+              {/* Notification Type */}
               <FormField
                 control={form.control}
                 name="type"
@@ -98,13 +148,19 @@ export const NotificationManagementComponent = () => {
                     <FormLabel>Notification Type</FormLabel>
                     <FormControl>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedType(value as FormValues["type"]);
+                        }}
                         value={field.value}
                       >
-                        <SelectTrigger className="focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-md transition">
-                          <SelectValue placeholder="Select notification type" />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Please select any type" />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem disabled value={placeholderValue}>
+                            Please select any type
+                          </SelectItem>
                           {notificationTypes.map((type) => (
                             <SelectItem key={type} value={type}>
                               {type.replaceAll("_", " ")}
@@ -118,7 +174,7 @@ export const NotificationManagementComponent = () => {
                 )}
               />
 
-              {/* Title Input */}
+              {/* Title */}
               <FormField
                 control={form.control}
                 name="title"
@@ -129,7 +185,6 @@ export const NotificationManagementComponent = () => {
                       <Input
                         placeholder="Enter notification title"
                         {...field}
-                        className="focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-md transition"
                       />
                     </FormControl>
                     <FormMessage />
@@ -137,7 +192,7 @@ export const NotificationManagementComponent = () => {
                 )}
               />
 
-              {/* Message Textarea */}
+              {/* Message */}
               <FormField
                 control={form.control}
                 name="message"
@@ -147,7 +202,7 @@ export const NotificationManagementComponent = () => {
                     <FormControl>
                       <Textarea
                         placeholder="Enter notification message text"
-                        className="min-h-[100px] focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-md transition"
+                        className="min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
@@ -156,20 +211,9 @@ export const NotificationManagementComponent = () => {
                 )}
               />
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700"
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
-                  </span>
-                ) : (
-                  "Save Template"
-                )}
+              {/* Submit */}
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Loading..." : "Save Template"}
               </Button>
             </form>
           </Form>
