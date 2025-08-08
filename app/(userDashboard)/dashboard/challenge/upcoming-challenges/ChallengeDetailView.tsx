@@ -105,7 +105,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
 
   const handleCloseModalAndRedirect = () => {
       setIsEnrollSuccessModalOpen(false);
-      router.push("/dashboard/challenge/my-challenges");
+      router.push("/dashboard/challenge");
   };
 
   const statusColors = {

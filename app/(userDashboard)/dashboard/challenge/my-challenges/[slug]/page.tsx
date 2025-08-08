@@ -306,7 +306,7 @@ export default function ChallengeManagementPage() {
 
   return (
     <>
-      <div className="min-h-screen font-sans bg-gray-50">
+      <div className="min-h-screen font-sans ">
         <header className="bg-white m-4 p-4 sm:p-6 rounded-2xl shadow-sm">
           <div className="max-w-7xl mx-auto">
             {/* Top row: Back and Share buttons */}
