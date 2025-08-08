@@ -1,18 +1,23 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 export default function usePushNotifications() {
-  const [isPushSupported, setIsPushSupported] = useState<boolean>(false);
-  const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [swRegistration, setSwRegistration] =
-    useState<ServiceWorkerRegistration | null>(null);
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+
+  // First visit popup state
+  const [showFirstVisitPopup, setShowFirstVisitPopup] = useState(false);
+
   const { status } = useSession();
 
+  // Initial setup
   useEffect(() => {
-
     setIsLoading(true);
 
     if (status !== "authenticated") {
@@ -20,6 +25,13 @@ export default function usePushNotifications() {
       return;
     }
 
+    // Show popup if first visit (after auth)
+    const hasAsked = localStorage.getItem("notif_permission_asked");
+    if (!hasAsked) {
+      setShowFirstVisitPopup(true);
+    }
+
+    // Check push support
     if ("serviceWorker" in navigator && "PushManager" in window) {
       setIsPushSupported(true);
 
@@ -42,52 +54,9 @@ export default function usePushNotifications() {
       setIsPushSupported(false);
       setIsLoading(false);
     }
-  
   }, [status]);
 
-//   useEffect(() => {
-//   setIsLoading(true);
-
-//   if (status !== "authenticated") {
-//     setIsLoading(false);
-//     return;
-//   }
-
-//   if ("serviceWorker" in navigator && "PushManager" in window) {
-//     setIsPushSupported(true);
-
-//     navigator.serviceWorker
-//       .register("/service-worker.js")
-//       .then(async (registration) => {
-//         setSwRegistration(registration);
-//         const subscription = await registration.pushManager.getSubscription();
-//         setIsSubscribed(!!subscription);
-//         setIsLoading(false);
-
-//         // 🚀 Auto prompt for permission only once
-//         const prompted = localStorage.getItem("pushPrompted");
-//         if (!subscription && prompted !== "true") {
-//           const permission = await Notification.requestPermission();
-//           localStorage.setItem("pushPrompted", "true");
-
-//           if (permission === "granted") {
-//             // Auto-subscribe
-//             await subscribe();
-//           }
-//         }
-//       })
-//       .catch((err) => {
-//         console.error("Service Worker registration failed:", err);
-//         setIsLoading(false);
-//         toast.error("Failed to set up notifications");
-//       });
-//   } else {
-//     setIsPushSupported(false);
-//     setIsLoading(false);
-//   }
-// }, [status]);
-
-
+  // Subscribe to push notifications
   const subscribe = async () => {
     try {
       setIsLoading(true);
@@ -97,7 +66,10 @@ export default function usePushNotifications() {
       }
 
       const permission = await Notification.requestPermission();
+      console.log("permission", permission);
+
       if (permission !== "granted") {
+        toast.error(permission)
         throw new Error("Notification permission denied");
       }
 
@@ -108,7 +80,7 @@ export default function usePushNotifications() {
 
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
 
-      // ✅ Force unsubscribe from any existing subscription
+      // Force unsubscribe if already subscribed
       const existingSubscription = await swRegistration.pushManager.getSubscription();
       if (existingSubscription) {
         console.log("Unsubscribing existing push subscription...");
@@ -121,13 +93,13 @@ export default function usePushNotifications() {
         applicationServerKey,
       });
 
-      // Send to backend
+      // Send subscription to backend
       await axios.post("/api/push/subscribe", {
         subscription,
         userAgent: navigator.userAgent,
       });
 
-      // Optionally send test notification
+      // Optional: send test notification
       try {
         await axios.post("/api/push/test");
         toast.success("Push Notifications enabled and test sent!");
@@ -147,6 +119,7 @@ export default function usePushNotifications() {
     }
   };
 
+  // Unsubscribe from push notifications
   const unsubscribe = async () => {
     try {
       setIsLoading(true);
@@ -178,6 +151,7 @@ export default function usePushNotifications() {
     }
   };
 
+  // Send test notification
   const sendTestNotification = async () => {
     try {
       setIsLoading(true);
@@ -191,6 +165,19 @@ export default function usePushNotifications() {
     }
   };
 
+  // Popup "Allow" action
+  const handleFirstVisitAllow = async () => {
+    localStorage.setItem("notif_permission_asked", "true");
+    setShowFirstVisitPopup(false);
+    await subscribe();
+  };
+
+  // Popup "Later" action
+  const handleFirstVisitLater = () => {
+    localStorage.setItem("notif_permission_asked", "true");
+    setShowFirstVisitPopup(false);
+  };
+
   return {
     isPushSupported,
     isSubscribed,
@@ -198,9 +185,13 @@ export default function usePushNotifications() {
     subscribe,
     unsubscribe,
     sendTestNotification,
+    showFirstVisitPopup,
+    handleFirstVisitAllow,
+    handleFirstVisitLater,
   };
 }
 
+// Helper function to convert VAPID key
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
