@@ -70,7 +70,7 @@ export const NotificationManagementComponent = () => {
   });
 
   // Fetch all templates once on page load
-  const { data: allTemplates = [], isFetching } = useQuery({
+  const { data: allTemplates = []} = useQuery({
     queryKey: ["notificationTemplates"],
     queryFn: async () => {
       const res = await axios.get("/api/admin/notification"); // <-- no type param
@@ -88,7 +88,7 @@ export const NotificationManagementComponent = () => {
     }
 
     const template = allTemplates.find(
-      (t: any) => t.notification_type === selectedType
+      (t: { notification_type?: string; }) => (t as { notification_type?: string }).notification_type === selectedType
     );
 
     form.setValue("title", template?.title || "");
