@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { NotificationType } from "@prisma/client"
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -37,3 +38,27 @@ export const POST = async (req: NextRequest) => {
     )
   }
 }
+
+export const GET = async (req: NextRequest) => {
+  try {
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get("type");
+
+    if (type) {
+      const template = await prisma.notificationSettings.findUnique({
+        where: { notification_type: type as NotificationType },
+      });
+      return NextResponse.json({ data: template || null }, { status: 200 });
+    }
+
+    // If no type param → fetch all
+    const templates = await prisma.notificationSettings.findMany();
+    return NextResponse.json({ data: templates }, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching notification(s):", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+};
