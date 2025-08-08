@@ -186,6 +186,7 @@ export default function usePushNotifications() {
     unsubscribe,
     sendTestNotification,
     showFirstVisitPopup,
+    setShowFirstVisitPopup,
     handleFirstVisitAllow,
     handleFirstVisitLater,
   };
