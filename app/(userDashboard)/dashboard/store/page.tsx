@@ -21,7 +21,6 @@ import { Category } from "@/types/client/manage-store-product";
 import { Item, WishlistItem } from "@/types/client/store";
 import Image from "next/image";
 
-
 const fetchCategories = async (): Promise<Category[]> => {
   const res = await axios.get("/api/user/store/items/get-categories");
   return res.data.categories;
@@ -98,14 +97,12 @@ const StorePage: React.FC = () => {
         "/api/user/store/items/cart/add-cart-items",
         { itemId }
       );
-      console.log("response", response);
       return response.data;
     },
     onSuccess: () => {
       toast.success("Item added to cart");
     },
     onError: (error) => {
-      console.log("error", error);
       toast.error(
         getAxiosErrorMessage(error, "Something went wrong! Please try again.")
       );
@@ -158,28 +155,30 @@ const StorePage: React.FC = () => {
             </Link>
           </div>
 
-            <Carousel
-              className="w-full mx-auto mb-6"
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              autoplay={true} 
-            >
-              <CarouselContent>
-                {bannerImages.map((url, index) => (
-                  <CarouselItem key={index} className="basis-full">
-                    <Image
-                      src={url}
-                      alt={`Banner ${index + 1}`}
-                      className="w-full h-[200px] object-cover rounded-lg shadow-lg"
-                    />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious />
-              <CarouselNext />
-            </Carousel>
+          <Carousel
+            className="w-full mx-auto mb-6"
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            autoplay={true}
+          >
+            <CarouselContent>
+              {bannerImages.map((url, index) => (
+                <CarouselItem key={index} className="basis-full">
+                  <Image
+                    src={url}
+                    alt={`Banner ${index + 1}`}
+                    width={1620}
+                    height={270}
+                    className="w-full h-[200px] object-cover rounded-lg shadow-lg"
+                  />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
 
           <div className="flex flex-wrap gap-2 justify-center mb-6">
             <button
@@ -225,6 +224,8 @@ const StorePage: React.FC = () => {
                     <Image
                       src={item.imageUrl}
                       alt={item.name}
+                      width={300}
+                      height={300}
                       className="w-full h-full object-cover rounded-lg"
                     />
                   </div>

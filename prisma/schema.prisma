@@ -77,7 +77,7 @@ model User {
   enrollments                   ChallengeEnrollment[]
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
-  challenge_limit            Int                   @default(1)
+  challenge_limit               Int                   @default(1)
 
   @@index([name])
 }
@@ -204,8 +204,6 @@ model Question {
   updatedAt  DateTime @updatedAt
 }
 
-
-
 model SpotlightActivity {
   id          String                @id @default(cuid())
   type        SpotlightActivityType
@@ -270,15 +268,12 @@ model Item {
 }
 
 model Category {
-  id        String     @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   items     Item[]
-  
 }
-
-
 
 model Order {
   id          String      @id @default(cuid())
@@ -606,6 +601,15 @@ model ChallengeEnrollment {
   @@map("challenge_enrollments")
 }
 
+model NotificationSettings {
+  id                String           @id @default(uuid())
+  notification_type NotificationType @unique
+  title             String
+  message           String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
 enum Role {
   ADMIN
   USER
@@ -714,6 +718,9 @@ enum NotificationType {
   BUDDY_LENS_REVIEWED
   BUDDY_LENS_COMPLETED
   JP_SPEND
+  DAILY_BLOOM_REMINDER
+  DAILY_BLOOM_PUSH_NOTIFICATION
+  DAILY_CHALLENGE_PUSH_NOTIFICATION
 }
 
 enum BreathWorkType {

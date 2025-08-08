@@ -58,7 +58,7 @@ export const authConfig: AuthOptions = {
           if (!credentials?.password) throw new Error("Password is required");
 
           const isValid = await bcrypt.compare(credentials.password, user.password!);
-          if (!isValid) throw new Error("Password is incorrect");
+          if (!isValid) throw new Error("Invalid credentials");
 
           assignJp(user, ActivityType.DAILY_LOGIN);
 

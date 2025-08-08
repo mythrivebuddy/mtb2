@@ -43,6 +43,12 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
+// --- START OF MODIFICATION 1: Update the UserData interface ---
+interface ChallengeTitle {
+  id: string;
+  title: string;
+}
+
 interface UserData {
   name: string;
   email: string;
@@ -73,7 +79,11 @@ interface UserData {
   challengesCreated?: number;
   challengesJoined?: number;
   challengesCompleted?: number;
+  // Add the new arrays to the interface
+  createdChallenges?: ChallengeTitle[];
+  joinedChallenges?: ChallengeTitle[];
 }
+// --- END OF MODIFICATION 1 ---
 
 async function fetchUser(userId: string): Promise<UserData> {
   const res = await fetch(`/api/profile/${userId}`);
@@ -160,11 +170,18 @@ export default function UserDetailsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
       <div className="max-w-5xl mx-auto">
+        {/* --- BACK TO HOME BUTTON --- */}
+        <div className="mb-4">
+            <Button variant="outline" onClick={() => router.push('/')} className="flex items-center gap-2 bg-white/50 hover:bg-white/90">
+                <ArrowLeft size={16} />
+                Back to Home
+            </Button>
+        </div>
         <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-48 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
-          <div className="relative px-8 pb-8">
+          <div className="relative px-8 pb-20">
             <div className="absolute -top-24 left-8">
               <Avatar className="h-48 w-48 border-6 border-white shadow-xl rounded-full transform hover:scale-105 transition-transform duration-300">
                 <AvatarImage src={userData.image || undefined} />
@@ -176,20 +193,7 @@ export default function UserDetailsPage() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            <CardHeader className="pt-28">
-              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-                <div className="space-y-3">
-                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                    {userData.name}
-                  </h1>
-                  {userData.bio && (
-                    <p className="text-gray-600">{userData.bio}</p>
-                  )}
-                  <p className="text-gray-500 text-sm font-medium">
-                    {maskEmail(userData.email)}
-                  </p>
-                </div>
-                {/* --- RESTORED SHARE PROFILE BUTTON --- */}
+            <div className="absolute    top-2 mt-12 right-4 pr-10"> 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center gap-2 px-5 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
@@ -262,7 +266,20 @@ export default function UserDetailsPage() {
                       </a>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </DropdownMenu></div>
+            <CardHeader className="pt-28">
+              <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+                <div className="space-y-3">
+                  <h1 className="text-5xl font-bold text-gray-800 tracking-tight bg-clip-text pb-2text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                    {userData.name}
+                  </h1>
+                  {userData.bio && (
+                    <p className="text-gray-600">{userData.bio}</p>
+                  )}
+                  <p className="text-gray-500 text-sm font-medium">
+                    {maskEmail(userData.email)}
+                  </p>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-12">
@@ -448,6 +465,7 @@ export default function UserDetailsPage() {
                   </HoverCardContent>
                 </HoverCard>
 
+                {/* --- START OF MODIFICATION 2: Update the Challenges HoverCard --- */}
                 <HoverCard>
                   <HoverCardTrigger asChild>
                     <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-red-50 to-orange-50 hover:shadow-xl transition-all duration-300">
@@ -459,7 +477,8 @@ export default function UserDetailsPage() {
                     </div>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-80">
-                    <div className="flex justify-between space-x-4">
+                    <div className="space-y-4">
+                      {/* --- Original Stats Section --- */}
                       <div className="space-y-2">
                         <h4 className="text-sm font-semibold">
                           Challenges Status
@@ -483,9 +502,43 @@ export default function UserDetailsPage() {
                           </span>
                         </p>
                       </div>
+
+                      {/* --- New Created Challenges List --- */}
+                      {(userData.createdChallenges?.length ?? 0) > 0 && (
+                        <div className="border-t pt-3 space-y-2">
+                          <h5 className="text-sm font-semibold text-gray-600">
+                            Recently Created:
+                          </h5>
+                          <ul className="list-disc list-inside space-y-1">
+                            {userData.createdChallenges?.map((challenge) => (
+                              <li key={challenge.id} className="text-xs text-gray-500 truncate">
+                                {challenge.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* --- New Joined Challenges List --- */}
+                      {(userData.joinedChallenges?.length ?? 0) > 0 && (
+                        <div className="border-t pt-3 space-y-2">
+                          <h5 className="text-sm font-semibold text-gray-600">
+                            Recently Joined:
+                          </h5>
+                          <ul className="list-disc list-inside space-y-1">
+                            {userData.joinedChallenges?.map((challenge) => (
+                              <li key={challenge.id} className="text-xs text-gray-500 truncate">
+                                {challenge.title}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </HoverCardContent>
                 </HoverCard>
+                {/* --- END OF MODIFICATION 2 --- */}
+
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">

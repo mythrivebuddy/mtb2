@@ -42,7 +42,8 @@ export default function FirstTimeSurvey() {
   console.log("users in ",user);
   
   const userId = user?.id;
-
+  console.log("user ",user);
+  
   const [canStart, setCanStart] = useState(true);
   const [cooldownMessage, setCooldownMessage] = useState("");
   const [showCooldownModal, setShowCooldownModal] = useState(false);

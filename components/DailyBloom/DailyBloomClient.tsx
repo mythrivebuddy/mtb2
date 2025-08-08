@@ -8,7 +8,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import {
+import { 
   Trash2,
   Loader2,
   EyeIcon,
@@ -22,8 +22,7 @@ import {
 } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { format } from "date-fns";
-import { useSession } from "next-auth/react"; // --- 1. IMPORT useSession ---
-
+import { useSession } from "next-auth/react";
 import { dailyBloomSchema, DailyBloomFormType } from "@/schema/zodSchema";
 
 import { Button } from "@/components/ui/button";
@@ -55,13 +54,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { toast } from "sonner";
 import Overdue from "./Overdue";
 import HoverDetails from "./HoverDetails";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import CustomAccordion from "../dashboard/user/ CustomAccordion";
 
 interface DailyBloom extends DailyBloomFormType {
   id: string;
@@ -81,7 +80,7 @@ export default function DailyBloomClient() {
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
   const { data: session } = useSession(); // --- 2. GET USER SESSION ---
-  const userId = session?.user?.id;       // --- 3. GET USER ID ---
+  const userId = session?.user?.id; // --- 3. GET USER ID ---
 
   const [editData, setEditData] = useState<DailyBloom | null>(null);
   const [viewData, setViewData] = useState<DailyBloom | null>(null);
@@ -125,7 +124,7 @@ export default function DailyBloomClient() {
       reset(defaultFormValues);
     }
   }, [addData, reset]);
-  
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<{
       data: DailyBloom[];
@@ -153,19 +152,21 @@ export default function DailyBloomClient() {
 
   const dailyBloom = data?.pages.flatMap((page) => page.data) || [];
 
-  // --- 4. HELPER FUNCTION TO INVALIDATE ALL RELEVANT QUERIES ---
   const invalidateAllQueries = () => {
-    console.log("Invalidating queries...");
-    // Invalidate queries for the current page
+    console.log("Starting query invalidation at:", new Date().toISOString());
+  if (!userId) {
+    console.log("userId is undefined, skipping invalidation");
+    return;
+  }
+    console.log("Invalidating queries for dailyBloom, overdueDailyBlooms, and user data...");
+    console.log("Invalidating queries..."); 
     queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
     queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
-
-    // Invalidate the public profile query to update stats
+    queryClient.invalidateQueries({ queryKey: ["user", userId] });
     if (userId) {
       queryClient.invalidateQueries({ queryKey: ["user", userId] });
     }
   };
-
 
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
@@ -173,7 +174,8 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      invalidateAllQueries(); // --- 5. INVALIDATE ON SUCCESS ---
+      console.log("Daily Bloom created successfully 2");
+      invalidateAllQueries();
       toast.success("Daily Bloom created successfully!");
       setAddData(false);
     },
@@ -198,13 +200,12 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      invalidateAllQueries(); // --- 5. INVALIDATE ON SUCCESS ---
+      console.log("Daily Bloom updated successfully");
+      toast.success("Daily Bloom updated successfully!");
+      invalidateAllQueries();
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(
-        error,
-        "Failed to update task."
-      );
+      const errorMessage = getAxiosErrorMessage(error, "Failed to update task.");
       toast.error(errorMessage);
     },
   });
@@ -215,14 +216,11 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      invalidateAllQueries(); // --- 5. INVALIDATE ON SUCCESS ---
+      invalidateAllQueries();
       toast.success("Deleted successfully");
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(
-        error,
-        "Failed to delete task."
-      );
+      const errorMessage = getAxiosErrorMessage(error, "Failed to delete task.");
       toast.error(errorMessage);
     },
   });
@@ -230,7 +228,7 @@ export default function DailyBloomClient() {
   const onSubmit = (formData: DailyBloomFormType) => {
     const dataToSubmit =
       addInputType === "date"
-        ? { ...formData, frequency: undefined }
+        ? { ...formData, frequency: undefined ,  }
         : { ...formData, dueDate: undefined };
     createMutation.mutate(dataToSubmit);
   };
@@ -269,20 +267,17 @@ export default function DailyBloomClient() {
       },
       {
         onSuccess: () => {
-          toast.success(
-            `Task marked as ${isCompleted ? "complete" : "pending"}.`
-          );
+          toast.success(`Task marked as ${isCompleted ? "complete" : "pending"}.`);
         },
       }
     );
   };
 
   return (
-    // --- NO CHANGES HAVE BEEN MADE TO ANY UI OR JSX ---
     <div>
       <CustomAccordion />
       <div className="container mx-auto p-3 max-w-4xl">
-        <Card className="mb-8  ">
+        <Card className="mb-8">
           <CardHeader>
             <div className="space-y-3">
               <CardTitle>Daily Blooms</CardTitle>
@@ -329,9 +324,7 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={
-                          statusFilter === "Pending" ? "secondary" : "ghost"
-                        }
+                        variant={statusFilter === "Pending" ? "secondary" : "ghost"}
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setStatusFilter("Pending")}
@@ -340,9 +333,7 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          statusFilter === "Completed" ? "secondary" : "ghost"
-                        }
+                        variant={statusFilter === "Completed" ? "secondary" : "ghost"}
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setStatusFilter("Completed")}
@@ -363,9 +354,7 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={
-                          frequencyFilter === "All" ? "secondary" : "ghost"
-                        }
+                        variant={frequencyFilter === "All" ? "secondary" : "ghost"}
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("All")}
@@ -374,9 +363,7 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          frequencyFilter === "Daily" ? "secondary" : "ghost"
-                        }
+                        variant={frequencyFilter === "Daily" ? "secondary" : "ghost"}
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Daily")}
@@ -385,9 +372,7 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          frequencyFilter === "Weekly" ? "secondary" : "ghost"
-                        }
+                        variant={frequencyFilter === "Weekly" ? "secondary" : "ghost"}
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Weekly")}
@@ -396,9 +381,7 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          frequencyFilter === "Monthly" ? "secondary" : "ghost"
-                        }
+                        variant={frequencyFilter === "Monthly" ? "secondary" : "ghost"}
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Monthly")}
@@ -424,9 +407,7 @@ export default function DailyBloomClient() {
                           <TableHead className="w-[80px] text-center"></TableHead>
                           <TableHead>Title</TableHead>
                           <TableHead className="w-[130px]">Due Date</TableHead>
-                          <TableHead className="w-[120px]">
-                            Frequency
-                          </TableHead>
+                          <TableHead className="w-[120px]">Frequency</TableHead>
                           <TableHead className="w-[140px] text-center">
                             Actions
                           </TableHead>
@@ -506,13 +487,12 @@ export default function DailyBloomClient() {
 
                   <div className="md:hidden space-y-4">
                     {dailyBloom.map((bloom: DailyBloom) => (
+                      // here
                       <Card key={bloom.id}>
                         <CardHeader>
-                          <div className="flex items-start justify-between gap-4">
-                            <CardTitle>
-                              {bloom.title.length > 10
-                                ? `${bloom.title.slice(0, 10)}...`
-                                : bloom.title}
+                          <div className="flex items-center justify-between gap-4">
+                            <CardTitle className="text-md sm:text-lg max-w-[300px]  break-all break-words">
+                              {bloom.title}
                             </CardTitle>
 
                             <div className="flex flex-col items-center flex-shrink-0">
@@ -525,37 +505,37 @@ export default function DailyBloomClient() {
                                     e.target.checked
                                   )
                                 }
-                                className="w-5 h-5 rounded-md cursor-pointer"
+                                className="w-4 h-4 sm:w-5 sm:h-5 rounded-md cursor-pointer"
                               />
                             </div>
                           </div>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm">
                           {bloom.description && (
-                            <p className="text-muted-foreground">
-                              {bloom.description.length > 10
-                                ? `${bloom.description.slice(0, 10)}...`
-                                : bloom.description}
+                            <p className="text-muted-foreground text-xs sm:text-sm ">
+                              {bloom.description}
                             </p>
                           )}
 
-                          <div className="flex items-center">
-                            <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
-                            <span>Frequency: {bloom.frequency || "-"}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                            <span>
-                              Due:{" "}
-                              {bloom.dueDate
-                                ? new Date(bloom.dueDate).toLocaleDateString(
-                                    "en-IN"
-                                  )
-                                : "-"}
-                            </span>
-                          </div>
+                          {bloom.frequency && (
+                            <div className="flex items-center">
+                              <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
+                              <span>Frequency - {bloom.frequency} </span>
+                            </div>
+                          )}
+                          {bloom.dueDate && (
+                            <div className="flex items-center">
+                              <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                              <span>
+                                Due:{" "}
+                                {new Date(bloom.dueDate).toLocaleDateString(
+                                      "en-IN"
+                                    )}
+                              </span>
+                            </div>
+                          )}
                         </CardContent>
-                        <CardFooter className="flex justify-end space-x-2">
+                        <CardFooter className="flex gap-3">
                           <Button
                             variant="outline"
                             size="sm"
