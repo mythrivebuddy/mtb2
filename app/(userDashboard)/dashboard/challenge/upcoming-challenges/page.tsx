@@ -153,7 +153,7 @@ export default function UpcomingChallengesPage() {
       .map((c: Challenge) => ({
         ...c,
         cardType: "upcomingChallenge",
-        status: "UPCOMING",
+       // status: "UPCOMING",
       })) || [];
 
   const allChallenges = [...myChallenges, ...upcomingChallenges];

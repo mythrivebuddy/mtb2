@@ -2,68 +2,65 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client"; // 1. Import Prisma types
+import type { Prisma } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
 
-// 2. Prefix 'request' with '_' to mark it as unused
 export async function GET() {
   try {
-    // 1. Get the current user's session to identify them.
     const session = await checkRole("USER").catch(() => null);
     const userId = session?.user?.id;
-
     const now = new Date();
 
-    // 2. Build the base query for public, upcoming challenges.
-    // 3. Use the specific 'Prisma.ChallengeWhereInput' type instead of 'any'
+    // --- CHANGE #1: Simplify the main query ---
+    // We only filter for PUBLIC challenges now.
+    // The specific status (upcoming, active, etc.) will be calculated later.
     const whereClause: Prisma.ChallengeWhereInput = {
       mode: "PUBLIC",
-      status: "UPCOMING",
-      startDate: {
-        gt: now, // gt = "greater than"
-      },
     };
 
-    // 3. If a user is logged in, add conditions to filter out their challenges.
+    // This part remains the same: If a user is logged in,
+    // we still filter out challenges they've created or joined.
     if (userId) {
       whereClause.AND = [
-        // Condition A: The user is NOT the creator of the challenge.
-        {
-          creatorId: {
-            not: userId,
-          },
-        },
-        // Condition B: The user has NO existing enrollment for the challenge.
-        {
-          enrollments: {
-            none: {
-              userId: userId,
-            },
-          },
-        },
+        { creatorId: { not: userId } },
+        { enrollments: { none: { userId: userId } } },
       ];
     }
 
-    // 4. Query the database using the final constructed where clause.
-    const upcomingChallenges = await prisma.challenge.findMany({
+    // The database query now fetches ALL public challenges that aren't the user's.
+    const challenges = await prisma.challenge.findMany({
       where: whereClause,
       orderBy: {
         startDate: "asc",
       },
       include: {
         _count: {
-          select: {
-            enrollments: true,
-          },
+          select: { enrollments: true },
         },
       },
     });
 
-    // Return the correctly filtered list of challenges.
-    return NextResponse.json(upcomingChallenges, { status: 200 });
+    // --- CHANGE #2: Dynamically calculate the status for each challenge ---
+    const challengesWithStatus = challenges.map((challenge) => {
+      let status: "UPCOMING" | "ACTIVE" | "COMPLETED" = "COMPLETED";
+
+      if (now < challenge.startDate) {
+        status = "UPCOMING";
+      } else if (now >= challenge.startDate && now <= challenge.endDate) {
+        status = "ACTIVE";
+      }
+      
+      return {
+        ...challenge,
+        status: status, // Add the correct status to the object
+      };
+    });
+
+    // Return the full list of challenges with their correct statuses.
+    return NextResponse.json(challengesWithStatus, { status: 200 });
 
   } catch (error) {
-    console.error("Failed to fetch upcoming challenges:", error);
+    console.error("Failed to fetch challenges:", error);
     return NextResponse.json(
       { error: "An internal server error occurred." },
       { status: 500 }

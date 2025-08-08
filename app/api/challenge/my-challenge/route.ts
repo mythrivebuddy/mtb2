@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
         penalty: challenge.penalty,
         startDate: challenge.startDate.toISOString().split("T")[0],
         endDate: challenge.endDate.toISOString().split("T")[0],
-        participants: challenge._count.enrollments,
+        _count: challenge._count,
         status: challenge.status,
         mode: challenge.mode,
         enrollmentStatus:
