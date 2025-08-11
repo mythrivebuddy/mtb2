@@ -85,7 +85,7 @@ const CreateChallengeButton = () => {
 
   const handleClick = () => {
     if (isAuthenticated) {
-      router.push("/dashboard/challenge/create");
+      router.push("/dashboard/challenge/create-challenge");
     } else {
       signIn();
     }
