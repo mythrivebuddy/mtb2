@@ -1,11 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
-export async function GET(req: NextRequest) {
-
-  const url = new URL(req.url);
-  const forceTest = url.searchParams.get("test") === "true";
+export async function GET() {
+ 
 
   try {
     // Step 1: Get notification template
