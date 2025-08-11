@@ -27,7 +27,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import {
@@ -37,7 +37,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import TikTokIcon from "@/components/icons/TiktokIcon";
-// --- START OF MODIFICATION 1: Update imports from HoverCard to Dialog ---
 import {
   Dialog,
   DialogContent,
@@ -45,6 +44,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+
+// --- START OF MODIFICATION 1: Add useMediaQuery hook ---
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const media = window.matchMedia(query);
+    const updateMatches = () => {
+      setMatches(media.matches);
+    };
+
+    updateMatches();
+
+    media.addEventListener("change", updateMatches);
+
+    return () => media.removeEventListener("change", updateMatches);
+  }, [query]);
+
+  return matches;
+}
 // --- END OF MODIFICATION 1 ---
 
 interface ChallengeTitle {
@@ -105,6 +133,10 @@ export default function UserDetailsPage() {
   const { userId } = useParams<{ userId: string }>();
   const router = useRouter();
   const { data: session } = useSession();
+
+  // --- START OF MODIFICATION 2: Initialize media query hook ---
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  // --- END OF MODIFICATION 2 ---
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -169,17 +201,23 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* --- BACK TO HOME BUTTON --- */}
-        <div className="mb-4">
-            <Button variant="outline" onClick={() => router.push('/')} className="flex items-center gap-2 bg-white/50 hover:bg-white/90">
-                <ArrowLeft size={16} />
-                Back to Home
-            </Button>
-        </div>
+    <div className="min-h-screen  bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
+      
+      <div className="max-w-5xl pt-0 mx-auto">
+       
         <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-48 relative">
+          
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-40 relative">
+             <div className="mb-4 ml-[16rem] pt-2    block sm:hidden ">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/")}
+            className="flex items-center gap-2 bg-white/50 hover:bg-white/90"
+          >
+            <ArrowLeft size={16} />
+            
+          </Button>
+        </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
           <div className="relative px-8 pb-20">
@@ -194,7 +232,6 @@ export default function UserDetailsPage() {
                 </AvatarFallback>
               </Avatar>
             </div>
-            {/* --- START OF MODIFICATION 2: Relocate and fix the Share Profile button --- */}
             <CardHeader className="pt-28">
               <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                 <div className="space-y-3">
@@ -285,7 +322,6 @@ export default function UserDetailsPage() {
                 </div>
               </div>
             </CardHeader>
-            {/* --- END OF MODIFICATION 2 --- */}
             <CardContent className="space-y-12">
               <div className="flex flex-wrap items-center gap-6">
                 {userData.website && (
@@ -399,8 +435,8 @@ export default function UserDetailsPage() {
                   {userData.jpEarned} JP
                 </Badge>
                 <Badge className="py-3 md:px-6 text-sm bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex-wrap">
-                  <span className="font-semibold">Spent:</span> {userData.jpSpent}{" "}
-                  JP
+                  <span className="font-semibold">Spent:</span>{" "}
+                  {userData.jpSpent} JP
                 </Badge>
                 <Badge className="py-3 md:px-6 text-sm bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex-wrap">
                   <span className="font-semibold">Transactions:</span>{" "}
@@ -408,138 +444,308 @@ export default function UserDetailsPage() {
                 </Badge>
               </div>
 
-              {/* --- START OF MODIFICATION 3: Replace HoverCards with Dialogs --- */}
+              {/* --- START OF MODIFICATION 3: Implement responsive stats cards --- */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-green-50 to-lime-50 hover:shadow-xl transition-all duration-300">
-                      <Sun className="h-8 w-8 text-green-600 mb-2" />
-                      <h4 className="font-semibold text-lg text-gray-800">
-                        Daily Blooms
+                {/* Daily Blooms Card */}
+                {isDesktop ? (
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-green-50 to-lime-50 hover:shadow-xl transition-all duration-300">
+                        <Sun className="h-8 w-8 text-green-600 mb-2" />
+                        <h4 className="font-semibold text-lg text-gray-800">
+                          Daily Blooms
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          Hover for stats
+                        </p>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <h4 className="font-semibold text-gray-800 mb-2">
+                        Daily Blooms Status
                       </h4>
-                      <p className="text-xs text-gray-500">View stats</p>
-                    </div>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Daily Blooms Status</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 space-y-2">
-                      <p className="text-sm">
-                        Total Added:{" "}
-                        <span className="font-bold text-green-700">
-                          {userData.dailyBloomsAdded ?? 0}
-                        </span>
-                      </p>
-                      <p className="text-sm">
-                        Total Completed:{" "}
-                        <span className="font-bold text-green-700">
-                          {userData.dailyBloomsCompleted ?? 0}
-                        </span>
-                      </p>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-yellow-50 to-amber-50 hover:shadow-xl transition-all duration-300">
-                      <Sparkles className="h-8 w-8 text-yellow-500 mb-2" />
-                      <h4 className="font-semibold text-lg text-gray-800">
-                        Miracle Log
-                      </h4>
-                      <p className="text-xs text-gray-500">View stats</p>
-                    </div>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Miracle Log Status</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4 space-y-2">
-                      <p className="text-sm">
-                        Total Created:{" "}
-                        <span className="font-bold text-amber-700">
-                          {userData.miracleLogsCreated ?? 0}
-                        </span>
-                      </p>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-red-50 to-orange-50 hover:shadow-xl transition-all duration-300">
-                      <Trophy className="h-8 w-8 text-red-500 mb-2" />
-                      <h4 className="font-semibold text-lg text-gray-800">
-                        Challenges
-                      </h4>
-                      <p className="text-xs text-gray-500">View stats</p>
-                    </div>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Challenges Status</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <p className="text-sm">
-                          Created:{" "}
-                          <span className="font-bold text-red-700">
-                            {userData.challengesCreated ?? 0}
+                          Total Added:{" "}
+                          <span className="font-bold text-green-700">
+                            {userData.dailyBloomsAdded ?? 0}
                           </span>
                         </p>
                         <p className="text-sm">
-                          Joined:{" "}
-                          <span className="font-bold text-red-700">
-                            {userData.challengesJoined ?? 0}
-                          </span>
-                        </p>
-                        <p className="text-sm">
-                          Completed:{" "}
-                          <span className="font-bold text-red-700">
-                            {userData.challengesCompleted ?? 0}
+                          Total Completed:{" "}
+                          <span className="font-bold text-green-700">
+                            {userData.dailyBloomsCompleted ?? 0}
                           </span>
                         </p>
                       </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                ) : (
+                  <Dialog >
+                    <DialogTrigger asChild>
+                      <div className="p-4   flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-green-50 to-lime-50 hover:shadow-xl transition-all duration-300">
+                        <Sun className="h-8 w-8 text-green-600 mb-2" />
+                        <h4 className="font-semibold text-lg text-gray-800">
+                          Daily Blooms
+                        </h4>
+                        <p className="text-xs text-gray-500">View stats</p>
+                      </div>
+                    </DialogTrigger>
+                   <DialogContent className="w-[90vw] max-w-lg bg-white rounded-2xl p-6 shadow-xl border">
+    <DialogHeader>
+        <DialogTitle className="text-center text-2xl font-bold text-gray-800 tracking-tight">
+            Daily Blooms Status
+        </DialogTitle>
+    </DialogHeader>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
+        {/* Stat Card for Total Added */}
+        <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-teal-50 rounded-xl border border-green-200/50">
+            <p className="text-sm font-medium text-green-900 mb-2">Total Added</p>
+            <div className="flex items-center gap-2">
+                <span className="text-4xl font-bold text-green-700">
+                    {userData.dailyBloomsAdded ?? 0}
+                </span>
+            </div>
+        </div>
 
-                      {(userData.createdChallenges?.length ?? 0) > 0 && (
-                        <div className="border-t pt-3 space-y-2">
-                          <h5 className="text-sm font-semibold text-gray-600">
-                            Recently Created:
-                          </h5>
-                          <ul className="list-disc list-inside space-y-1">
-                            {userData.createdChallenges?.map((challenge) => (
-                              <li
-                                key={challenge.id}
-                                className="text-xs text-gray-500 truncate"
-                              >
-                                {challenge.title}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+        {/* Stat Card for Total Completed */}
+        <div className="flex flex-col items-center justify-center p-6 bg-gradient-to-br from-lime-50 to-green-50 rounded-xl border border-lime-200/50">
+            <p className="text-sm font-medium text-lime-900 mb-2">Total Completed</p>
+            <div className="flex items-center gap-2">
+                <span className="text-4xl font-bold text-lime-700">
+                    {userData.dailyBloomsCompleted ?? 0}
+                </span>
+            </div>
+        </div>
+    </div>
+</DialogContent>
+                  </Dialog>
+                )}
 
-                      {(userData.joinedChallenges?.length ?? 0) > 0 && (
-                        <div className="border-t pt-3 space-y-2">
-                          <h5 className="text-sm font-semibold text-gray-600">
-                            Recently Joined:
-                          </h5>
-                          <ul className="list-disc list-inside space-y-1">
-                            {userData.joinedChallenges?.map((challenge) => (
-                              <li
-                                key={challenge.id}
-                                className="text-xs text-gray-500 truncate"
-                              >
-                                {challenge.title}
-                              </li>
-                            ))}
-                          </ul>
+                {/* Miracle Log Card */}
+                {isDesktop ? (
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-yellow-50 to-amber-50 hover:shadow-xl transition-all duration-300">
+                        <Sparkles className="h-8 w-8 text-yellow-500 mb-2" />
+                        <h4 className="font-semibold text-lg text-gray-800">
+                          Miracle Log
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          Hover for stats
+                        </p>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <h4 className="font-semibold text-gray-800 mb-2">
+                        Miracle Log Status
+                      </h4>
+                      <div className="py-4 space-y-2">
+                        <p className="text-sm">
+                          Total Created:{" "}
+                          <span className="font-bold text-amber-700">
+                            {userData.miracleLogsCreated ?? 0}
+                          </span>
+                        </p>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                ) : (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-yellow-50 to-amber-50 hover:shadow-xl transition-all duration-300">
+                        <Sparkles className="h-8 w-8 text-yellow-500 mb-2" />
+                        <h4 className="font-semibold text-lg text-gray-800">
+                          Miracle Log
+                        </h4>
+                        <p className="text-xs text-gray-500">View stats</p>
+                      </div>
+                    </DialogTrigger>
+                   <DialogContent className="w-[90vw] max-w-sm bg-white rounded-2xl p-6 shadow-xl border">
+  <DialogHeader>
+    <DialogTitle className="text-center text-2xl font-bold text-gray-800 tracking-tight">
+      Miracle Log Status
+    </DialogTitle>
+  </DialogHeader>
+  <div className="pt-6 flex justify-center">
+    {/* Single Stat Card for Total Created */}
+    <div className="flex flex-col items-center justify-center p-8 w-full max-w-xs bg-gradient-to-br from-yellow-50 to-amber-100 rounded-xl border border-amber-200/50">
+      <p className="text-base font-medium text-amber-900 mb-3">Total Miracles Logged</p>
+      <div className="flex items-center gap-3">
+        {/* The <Sparkles> icon from lucide-react should be used here if available */}
+        <span className="text-5xl font-bold text-amber-700">
+          {userData.miracleLogsCreated ?? 0}
+        </span>
+      </div>
+    </div>
+  </div>
+</DialogContent>
+                  </Dialog>
+                )}
+
+                {/* Challenges Card */}
+                {isDesktop ? (
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-red-50 to-orange-50 hover:shadow-xl transition-all duration-300">
+                        <Trophy className="h-8 w-8 text-red-500 mb-2" />
+                        <h4 className="font-semibold text-lg text-gray-800">
+                          Challenges
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          Hover for stats
+                        </p>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <h4 className="font-semibold text-gray-800 mb-2">
+                        Challenges Status
+                      </h4>
+                      <div className="space-y-4 pt-2">
+                        <div className="space-y-2">
+                          <p className="text-sm">
+                            Created:{" "}
+                            <span className="font-bold text-red-700">
+                              {userData.challengesCreated ?? 0}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            Joined:{" "}
+                            <span className="font-bold text-red-700">
+                              {userData.challengesJoined ?? 0}
+                            </span>
+                          </p>
+                          <p className="text-sm">
+                            Completed:{" "}
+                            <span className="font-bold text-red-700">
+                              {userData.challengesCompleted ?? 0}
+                            </span>
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                        {(userData.createdChallenges?.length ?? 0) > 0 && (
+                          <div className="border-t pt-3 space-y-2">
+                            <h5 className="text-sm font-semibold text-gray-600">
+                              Recently Created:
+                            </h5>
+                            <ul className="list-disc list-inside space-y-1">
+                              {userData.createdChallenges?.map((challenge) => (
+                                <li
+                                  key={challenge.id}
+                                  className="text-xs text-gray-500 truncate"
+                                >
+                                  {challenge.title}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {(userData.joinedChallenges?.length ?? 0) > 0 && (
+                          <div className="border-t pt-3 space-y-2">
+                            <h5 className="text-sm font-semibold text-gray-600">
+                              Recently Joined:
+                            </h5>
+                            <ul className="list-disc list-inside space-y-1">
+                              {userData.joinedChallenges?.map((challenge) => (
+                                <li
+                                  key={challenge.id}
+                                  className="text-xs text-gray-500 truncate"
+                                >
+                                  {challenge.title}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                ) : (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <div className="p-4 flex flex-col items-center justify-center text-center cursor-pointer rounded-lg border bg-gradient-to-r from-red-50 to-orange-50 hover:shadow-xl transition-all duration-300">
+                        <Trophy className="h-8 w-8 text-red-500 mb-2" />
+                        <h4 className="font-semibold text-lg text-gray-800">
+                          Challenges
+                        </h4>
+                        <p className="text-xs text-gray-500">View stats</p>
+                      </div>
+                    </DialogTrigger>
+                   <DialogContent className="w-[90vw] max-w-lg bg-white rounded-2xl p-6 shadow-xl border">
+  <DialogHeader>
+    <DialogTitle className="text-center pb-6 text-2xl font-bold text-gray-800 tracking-tight">
+      Challenges Status
+    </DialogTitle>
+  </DialogHeader>
+  <div className="pt-4 space-y-6">
+    {/* Numerical Stats Grid */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+      
+      <div className="flex  gap-2  items-center justify-center  p-4 bg-red-50 rounded-lg border border-red-100">
+        <p className="text-sm font-medium text-red-800">Created : </p>
+        <span className="text-lg font-bold  text-red-700 ">
+           {userData.challengesCreated ?? 0}
+        </span>  
+      </div> 
+      {/* Joined */}
+      <div className="flex gap-2 items-center justify-center p-4 bg-orange-50 rounded-lg border border-orange-100">
+        <p className="text-sm font-medium text-orange-800">Joined : </p>
+        <span className="text-lg font-bold text-orange-700">
+          {userData.challengesJoined ?? 0}
+        </span>
+      </div> 
+      {/* Completed */}
+      <div className="flex gap-2 justify-center items-center p-4 bg-green-50 rounded-lg border border-green-100">
+        <p className="text-sm font-medium text-green-800">Completed : </p>
+        <span className="text-lg font-bold text-green-700 ">
+          {userData.challengesCompleted ?? 0}
+        </span>
+      </div>
+    </div>
+
+    {/* List Sections */}
+    <div className="space-y-4">
+      {/* Recently Created List */}
+      {(userData.createdChallenges?.length ?? 0) > 0 && (
+        <div className="p-4 bg-gray-50/70 rounded-lg border">
+          <h5 className="mb-2 font-semibold text-gray-700">
+            Recently Created
+          </h5>
+          <ul className="space-y-1.5 pl-1">
+            {userData.createdChallenges?.map((challenge) => (
+              <li key={challenge.id} className="flex items-center gap-2.5">
+                {/* <Trophy className="h-4 w-4 text-gray-400 flex-shrink-0" /> */}
+                <span className="text-sm text-gray-600 truncate">
+                  {challenge.title}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Recently Joined List */}
+      {(userData.joinedChallenges?.length ?? 0) > 0 && (
+        <div className="p-4 bg-gray-50/70 rounded-lg border">
+          <h5 className="mb-2 font-semibold text-gray-700">
+            Recently Joined
+          </h5>
+          <ul className="space-y-1.5 pl-1">
+            {userData.joinedChallenges?.map((challenge) => (
+              <li key={challenge.id} className="flex items-center gap-2.5">
+                {/* <Trophy className="h-4 w-4 text-gray-400 flex-shrink-0" /> */}
+                <span className="text-sm text-gray-600 truncate">
+                  {challenge.title}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+</DialogContent>
+                  </Dialog>
+                )}
               </div>
               {/* --- END OF MODIFICATION 3 --- */}
 
