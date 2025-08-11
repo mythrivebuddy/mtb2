@@ -143,7 +143,7 @@ export default function UserDetailsPage() {
   };
 
   if (isLoading) {
-    return <PageSkeleton type="user-profile" />;
+    return <PageSkeleton type="approve" />;
   }
 
   if (error || !userData) {
