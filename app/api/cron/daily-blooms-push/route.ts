@@ -1,11 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
-export async function GET(req: NextRequest) {
-
-  const url = new URL(req.url);
-  const forceTest = url.searchParams.get("test") === "true";
+export async function GET() {
+ 
 
   try {
     // Step 1: Get notification template
@@ -13,8 +11,8 @@ export async function GET(req: NextRequest) {
       where: { notification_type: "DAILY_BLOOM_PUSH_NOTIFICATION" },
     });
 
-    const title = template?.title ?? "Daily Challenge Reminder";
-    const message = template?.message ?? "Don't forget to check your daily challenges!";
+    const title = template?.title ?? "Daily Blooms Reminder";
+    const message = template?.message ?? "Don't forget to check your daily blooms!";
 
     // Define time window
     const yesterday = new Date();
@@ -23,12 +21,6 @@ export async function GET(req: NextRequest) {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    console.log(
-      forceTest
-        ? "Running in TEST mode (no time filter)"
-        : `Time filter: updatedAt >= ${yesterday.toISOString()} AND < ${today.toISOString()}`
-    );
 
     // Step 2: Get users with active push subscriptions
     const subscribedUsers = await prisma.pushSubscription.findMany({
@@ -55,19 +47,11 @@ export async function GET(req: NextRequest) {
           where: {
             userId,
             isCompleted: false,
-            ...(forceTest
-              ? {}
-              : {
-                  updatedAt: {
-                    gte: yesterday,
-                    lt: today,
-                  },
-                }),
           },
         });
 
         const count = todos.length;
-        console.log(`User ${userId} completed ${count} todos`);
+       
 
         if (count > 0) {
           eligibleUsersWithCounts.push({ userId, count });

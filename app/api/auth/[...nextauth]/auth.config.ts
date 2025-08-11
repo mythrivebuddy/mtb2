@@ -7,6 +7,7 @@ import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
+
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
 
@@ -195,9 +196,11 @@ export const authConfig: AuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
+      console.log(url);
       
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      if (url.startsWith(baseUrl)) return url;
+      
+      // if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // if (url.startsWith(baseUrl)) return url;
       return `${baseUrl}/dashboard`;
     },
   },

@@ -54,7 +54,7 @@ export async function GET() {
       eligibleUsers.map(
         async ({ userId }) =>
           await sendPushNotificationToUser(userId, title, message, {
-            url: "/dashboard/challenge/upcoming-challenges",
+            url: "/dashboard/challenge",
           })
       )
     );

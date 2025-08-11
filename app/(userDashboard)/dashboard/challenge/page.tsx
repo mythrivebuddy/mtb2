@@ -346,7 +346,7 @@ export default function ChallengePage() {
                 {/* Status & Type Ribbons */}
                 {c.status === 'COMPLETED' ? (
                     <div 
-                    className="absolute top-4 -right-9 transform rotate-45 bg-slate-500 text-center text-white text-sm font-semibold py-1 w-32"
+                    className="absolute top-4 -right-9 transform rotate-45 bg-red-600 text-center text-white text-sm font-semibold py-1 w-32"
                     aria-label="Completed Challenge"
                   >
                     Completed
@@ -360,7 +360,7 @@ export default function ChallengePage() {
                   </div>
                 ) : c.cardType === 'upcoming' ? (
                     <div 
-                    className="absolute top-4 -right-9 transform rotate-45 bg-sky-500 text-center text-white text-sm font-semibold py-1 w-32"
+                    className="absolute top-4 -right-9 transform rotate-45 bg-yellow-600 text-center text-white text-sm font-semibold py-1 w-32"
                     aria-label="Upcoming Challenge"
                   >
                     Upcoming
