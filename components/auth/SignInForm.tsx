@@ -12,7 +12,7 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
-import { Eye, EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
