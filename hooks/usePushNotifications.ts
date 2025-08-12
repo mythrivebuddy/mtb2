@@ -66,10 +66,8 @@ export default function usePushNotifications() {
       }
 
       const permission = await Notification.requestPermission();
-      console.log("permission", permission);
 
       if (permission !== "granted") {
-        toast.error(permission)
         throw new Error("Notification permission denied");
       }
 
@@ -102,7 +100,7 @@ export default function usePushNotifications() {
       // Optional: send test notification
       try {
         await axios.post("/api/push/test");
-        toast.success("Push Notifications enabled and test sent!");
+        toast.success("Push Notifications enabled");
       } catch (testError) {
         console.error("Test notification failed:", testError);
         toast.success("Push Notifications enabled (test failed to send)");
