@@ -140,6 +140,7 @@ export default function ChallengePage() {
       return res.data;
     },
   });
+  const categories = category1.concat(category2);
 
   const filtered = useMemo(() => {
     if (!challenges) return [];
@@ -227,26 +228,9 @@ export default function ChallengePage() {
       </p>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 mb-4 justify-center">
-        <div className="flex flex-wrap justify-center gap-2 mb-4">
-          {category1.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => handleFilterClick(filter)}
-              className={cn(
-                "px-5 py-2 text-sm font-semibold rounded-full transition",
-                selectedFilters.includes(filter)
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100"
-              )}
-            >
-              {formatFilterLabel(filter)}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-2 mb-4">
-          {category2.map((filter) => (
+      <div className="flex   items-center gap-2 mb-4 justify-center">
+         <div className="flex flex-wrap justify-center gap-2 mb-4">
+          {categories.map((filter) => (
             <button
               key={filter}
               onClick={() => handleFilterClick(filter)}
