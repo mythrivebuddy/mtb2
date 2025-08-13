@@ -148,7 +148,7 @@ export default function ChallengeManagementPage() {
 
   useEffect(() => {
     fetchChallengeDetails();
-  }, [fetchChallengeDetails]);
+  }, []);
 
   const handleToggleTask = async (taskId: string, newStatus: boolean) => {
     const originalTasks = challenge?.dailyTasks;
@@ -172,7 +172,7 @@ export default function ChallengeManagementPage() {
         setIsCompletionModalOpen(true);
       }
 
-      await fetchChallengeDetails();
+      // await fetchChallengeDetails();
     } catch (error) {
       console.error("Failed to update task:", error);
       const specificError =
