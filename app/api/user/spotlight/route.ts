@@ -184,7 +184,6 @@ export async function GET() {
       "You are not authorized for this action"
     );
     const userId = session.user.id;
-    console.log(userId); //?dev
 
     const spotlightApplications = await prisma.spotlight.findMany({
       where: { userId: userId },
@@ -202,7 +201,7 @@ export async function GET() {
       },
     });
 
-    console.log(spotlightApplications);
+  
 
     if (!spotlightApplications) {
       return NextResponse.json(
