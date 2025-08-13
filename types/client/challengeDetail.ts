@@ -12,7 +12,9 @@ export interface ChallengeDetailsForClient {
   // Dates are strings to ensure they can be passed from server to client.
   startDate: string;
   endDate: string;
-  creator: { name: string };
+  creator: {
+    id: string | undefined; name: string 
+};
   templateTasks: Array<{ id: string; description: string }>;
   _count?: { enrollments: number };
 }
