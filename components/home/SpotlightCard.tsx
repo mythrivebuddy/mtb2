@@ -205,7 +205,7 @@ export default function SpotlightCard() {
                 "Marketing Coordinator"}
             </p>
           </div>
-          <div className="relative md:w-[160px] md:h-[160px] w-[90px] h-[70px]">
+          <div className="relative  md:w-[160px] md:h-[160px] w-[90px] h-[70px]">
             <Image
               src={
                 spotlight?.user?.userBusinessProfile?.[0].featuredWorkImage ||

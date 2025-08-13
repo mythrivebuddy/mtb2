@@ -44,7 +44,7 @@ export default function Home() {
           <div className="flex flex-col justify-between">
             <Hero />
           </div>
-          <div className="flex flex-col">
+          <div className="hidden lg:flex flex-col ">
             <SpotlightCard />
             
           </div>
