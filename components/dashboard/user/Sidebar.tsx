@@ -24,6 +24,8 @@ import {
   Swords,
  // MessageSquareShare,
   Search,
+  BellRing,
+
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -347,6 +349,14 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
                 </ComingSoonWrapper>
+                
+                 <NavItem
+                 href="/dashboard/reminders"
+                 icon={<BellRing />}
+                  label="Reminders"
+                 onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+
               </NavSection>
               {/* Settings Section */}
               <NavSection title="Settings">
