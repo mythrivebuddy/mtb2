@@ -1,13 +1,20 @@
-import { NextResponse} from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-   
-
     const now = new Date();
 
+    // Start of today (no time part)
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Yesterday's date (start of that day)
+    const yesterday = new Date(startOfToday);
+    yesterday.setDate(yesterday.getDate() - 1);
+
     // --- Update statuses before fetching ---
+    // Upcoming → Active if start date is today or earlier
     await prisma.challenge.updateMany({
       where: {
         status: "UPCOMING",
@@ -16,10 +23,11 @@ export async function GET() {
       data: { status: "ACTIVE" },
     });
 
+    // Active → Completed if end date was before today (so today’s are still active)
     await prisma.challenge.updateMany({
       where: {
         status: "ACTIVE",
-        endDate: { lt: now },
+        endDate: { lte: yesterday },
       },
       data: { status: "COMPLETED" },
     });
@@ -33,13 +41,14 @@ export async function GET() {
         creator: {
           select: { id: true, name: true, email: true },
         },
-        enrollments: {    // Required for JOINED filter in the UI
+        enrollments: {
+          // Required for JOINED filter in the UI
           select: { userId: true },
-        }
+        },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { startDate: "asc" },
     });
-    
+
     // --- Format data for client ---
     const processedChallenges = challengesFromDb.map((challenge) => ({
       id: challenge.id,
@@ -55,11 +64,10 @@ export async function GET() {
       creator: challenge.creator,
       creatorName: challenge.creator.name,
       enrollments: challenge.enrollments,
-      _count: challenge._count
+      _count: challenge._count,
     }));
 
     return new NextResponse(JSON.stringify(processedChallenges), { status: 200 });
-
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
