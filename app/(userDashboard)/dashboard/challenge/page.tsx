@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -17,7 +17,6 @@ import { ChallengeDetailsForClient } from "@/types/client/challengeDetail";
 import { cn } from "@/lib/utils/tw";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import CreateChallenge from "./create-challenge/page";
-import { toast } from "sonner";
 import { useClickAway } from "react-use";
 import AppLayout from "@/components/layout/AppLayout";
 
@@ -55,7 +54,7 @@ const getStartDateInfo = (startDate: string): string | null => {
 export default function ChallengePage() {
   const router = useRouter();
   const { status: authStatus, data: session } = useSession();
-  
+
   const category1: FilterStatus[] = ["ALL", "JOINED", "HOSTED"];
   const category2: FilterStatus[] = ["ACTIVE", "UPCOMING", "COMPLETED"];
 
@@ -106,20 +105,27 @@ export default function ChallengePage() {
   const handleFilterClick = (filter: FilterStatus) => {
     setSelectedFilters((prev) => {
       if (category1.includes(filter)) {
-        return [filter, prev.find((f) => category2.includes(f)) || category2[0]];
+        return [
+          filter,
+          prev.find((f) => category2.includes(f)) || category2[0],
+        ];
       }
       if (category2.includes(filter)) {
-        return [prev.find((f) => category1.includes(f)) || category1[0], filter];
+        return [
+          prev.find((f) => category1.includes(f)) || category1[0],
+          filter,
+        ];
       }
       return prev;
     });
   };
 
   const handleCreateClick = () => {
-    if (authStatus === "authenticated") {
+    if (authStatus === "unauthenticated") {
+      signIn();
+    }
+    if (authStatus === "authenticated" && session) {
       setIsModalOpen(true);
-    } else {
-      toast.error("Login to create a challenge.");
     }
   };
 
@@ -230,7 +236,7 @@ export default function ChallengePage() {
 
       {/* Filters */}
       <div className="flex   items-center gap-2 mb-4 justify-center">
-         <div className="flex flex-wrap justify-center gap-2 mb-4">
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
           {categories.map((filter) => (
             <button
               key={filter}
@@ -261,17 +267,25 @@ export default function ChallengePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((c) => {
             const startDateInfo = getStartDateInfo(c.startDate);
+            const isJoined = c?.enrollments?.some(
+              (e) => e.userId === session?.user?.id
+            );
+
             return (
               <div
                 key={c.id}
-                onClick={() =>
-                  router.push(`/dashboard/challenge/my-challenges/${c.id}`)
-                }
+                onClick={() => {
+                  if (isJoined) {
+                    router.push(`/dashboard/challenge/my-challenges/${c.id}`);
+                  } else {
+                    router.push(
+                      `/dashboard/challenge/upcoming-challenges/${c.id}`
+                    );
+                  }
+                }}
                 className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1"
               >
-                {c?.enrollments?.some(
-                  (e) => e.userId === session?.user?.id
-                ) && (
+                {isJoined && (
                   <div
                     className="absolute top-4 -right-9 transform rotate-45 bg-indigo-500 text-center text-white text-sm font-semibold py-1 w-32"
                     aria-label="Joined Challenge"
@@ -279,6 +293,7 @@ export default function ChallengePage() {
                     Joined
                   </div>
                 )}
+
                 <div className="mb-2 pt-4">
                   <h3 className="text-xl font-bold text-indigo-800 truncate">
                     {c.title}
@@ -298,12 +313,14 @@ export default function ChallengePage() {
                     </span>
                   </div>
                 )}
+
                 <div className="flex items-center gap-2 mb-2">
                   <CalendarDays className="w-4 h-4" />
                   <span className="text-sm">{formatDate(c.startDate)}</span>
                   <span className="text-slate-300">→</span>
                   <span className="text-sm">{formatDate(c.endDate)}</span>
                 </div>
+
                 <div className="flex justify-between mt-auto pt-4 border-t">
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <Users className="w-4 h-4" />
@@ -325,7 +342,7 @@ export default function ChallengePage() {
         Ready to Kick Off? Let’s Dive In!!
       </p>
     </div>
-  )
+  );
 
   if (authStatus === "authenticated") {
     return pageContent;
