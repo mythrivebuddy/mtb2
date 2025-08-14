@@ -5,10 +5,12 @@ import { motion } from "framer-motion";
 import CardGrid from "../CardDesign";
 import { useSession } from "next-auth/react";
 import SpotlightCard from "./SpotlightCard";
+import useRedirectDashboard from "@/hooks/use-redirect-dashboard";
 
 export default function Hero() {
   const { data: session } = useSession();
   console.log("session:", session);
+  useRedirectDashboard()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

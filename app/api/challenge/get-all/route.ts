@@ -1,13 +1,9 @@
 import { NextResponse} from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkRole } from "@/lib/utils/auth";
 
 export async function GET() {
   try {
-    const session = await checkRole("USER");
-    if (!session?.user?.id) {
-      return new NextResponse(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
-    }
+   
 
     const now = new Date();
 
