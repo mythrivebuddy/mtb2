@@ -17,7 +17,6 @@ import { ChallengeDetailsForClient } from "@/types/client/challengeDetail";
 import { cn } from "@/lib/utils/tw";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import CreateChallenge from "./create-challenge/page";
-import { toast } from "sonner";
 import { useClickAway } from "react-use";
 import AppLayout from "@/components/layout/AppLayout";
 
