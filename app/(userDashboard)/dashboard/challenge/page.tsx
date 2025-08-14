@@ -149,9 +149,11 @@ export default function ChallengePage() {
   });
   const categories = category1.concat(category2);
 
-  const filtered = useMemo(() => {
-    if (!challenges) return [];
-    return challenges.filter((c) => {
+ const filtered = useMemo(() => {
+  if (!challenges) return [];
+
+  return challenges
+    .filter((c) => {
       const matchesSearch = c.title
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -166,8 +168,18 @@ export default function ChallengePage() {
       const category2Match = selectedFilters.includes(c.status);
 
       return matchesSearch && category1Match && category2Match;
+    })
+    .sort((a, b) => {
+      // Only apply sort if status is COMPLETED
+      if (selectedFilters.includes("COMPLETED")) {
+        return (
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
+      }
+      return 0; // keep original order otherwise
     });
-  }, [challenges, searchTerm, selectedFilters, session?.user?.id]);
+}, [challenges, searchTerm, selectedFilters, session?.user?.id]);
+
 
   const pageContent = (
     <div className="min-h-screen w-full p-4 mt-4 sm:p-6 lg:p-8">
