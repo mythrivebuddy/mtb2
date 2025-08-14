@@ -19,6 +19,7 @@ import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 import CreateChallenge from "./create-challenge/page";
 import { toast } from "sonner";
 import { useClickAway } from "react-use";
+import AppLayout from "@/components/layout/AppLayout";
 
 type Challenge = ChallengeDetailsForClient & {
   isHosted?: boolean;
@@ -54,7 +55,7 @@ const getStartDateInfo = (startDate: string): string | null => {
 export default function ChallengePage() {
   const router = useRouter();
   const { status: authStatus, data: session } = useSession();
-
+  
   const category1: FilterStatus[] = ["ALL", "JOINED", "HOSTED"];
   const category2: FilterStatus[] = ["ACTIVE", "UPCOMING", "COMPLETED"];
 
@@ -162,8 +163,8 @@ export default function ChallengePage() {
     });
   }, [challenges, searchTerm, selectedFilters, session?.user?.id]);
 
-  return (
-    <div className="min-h-screen w-full p-4 sm:p-6 lg:p-8">
+  const pageContent = (
+    <div className="min-h-screen w-full p-4 mt-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex justify-between items-center w-full mb-4">
         <div>
@@ -183,7 +184,7 @@ export default function ChallengePage() {
           </Dialog>
         </div>
         <div className="flex-1 text-center px-4">
-          <h1 className="text-4xl font-extrabold text-indigo-900">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-indigo-900">
             Challenges
           </h1>
         </div>
@@ -324,5 +325,11 @@ export default function ChallengePage() {
         Ready to Kick Off? Let’s Dive In!!
       </p>
     </div>
-  );
+  )
+
+  if (authStatus === "authenticated") {
+    return pageContent;
+  } else {
+    return <AppLayout>{pageContent}</AppLayout>;
+  }
 }
