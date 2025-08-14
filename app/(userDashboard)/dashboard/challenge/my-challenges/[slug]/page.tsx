@@ -152,9 +152,11 @@ export default function ChallengeManagementPage() {
 
   const handleToggleTask = async (taskId: string, newStatus: boolean) => {
     const originalTasks = challenge?.dailyTasks;
-
+   
+    
     setChallenge((prev) => {
       if (!prev) return null;
+
       return {
         ...prev,
         dailyTasks: prev.dailyTasks.map((t) =>
@@ -162,7 +164,7 @@ export default function ChallengeManagementPage() {
         ),
       };
     });
-
+    
     try {
       const response = await axios.patch(`/api/challenge/tasks/${taskId}`, {
         isCompleted: newStatus,
@@ -320,7 +322,7 @@ export default function ChallengeManagementPage() {
               </button>
               <button
                 onClick={() => setIsShareModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-semibold hover:bg-indigo-200 transition-colors"
+                className="flex items-center gap-2  px-3 py-1.5 bg-amber-600  text-white rounded-full text-md font-semibold hover:bg-amber-700 transition-colors"
               >
                 <Share2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Share</span>

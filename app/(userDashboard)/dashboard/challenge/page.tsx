@@ -149,9 +149,11 @@ export default function ChallengePage() {
   });
   const categories = category1.concat(category2);
 
-  const filtered = useMemo(() => {
-    if (!challenges) return [];
-    return challenges.filter((c) => {
+ const filtered = useMemo(() => {
+  if (!challenges) return [];
+
+  return challenges
+    .filter((c) => {
       const matchesSearch = c.title
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -166,8 +168,18 @@ export default function ChallengePage() {
       const category2Match = selectedFilters.includes(c.status);
 
       return matchesSearch && category1Match && category2Match;
+    })
+    .sort((a, b) => {
+      // Only apply sort if status is COMPLETED
+      if (selectedFilters.includes("COMPLETED")) {
+        return (
+          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+        );
+      }
+      return 0; // keep original order otherwise
     });
-  }, [challenges, searchTerm, selectedFilters, session?.user?.id]);
+}, [challenges, searchTerm, selectedFilters, session?.user?.id]);
+
 
   const pageContent = (
     <div className="min-h-screen w-full p-4 mt-4 sm:p-6 lg:p-8">
@@ -237,20 +249,28 @@ export default function ChallengePage() {
       {/* Filters */}
       <div className="flex   items-center gap-2 mb-4 justify-center">
         <div className="flex flex-wrap justify-center gap-2 mb-4">
-          {categories.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => handleFilterClick(filter)}
-              className={cn(
-                "px-5 py-2 text-sm font-semibold rounded-full transition",
-                selectedFilters.includes(filter)
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100"
-              )}
-            >
-              {formatFilterLabel(filter)}
-            </button>
-          ))}
+          {categories.map((filter) => {
+            const isActive = selectedFilters.includes(filter);
+            const isCategory1 = category1.includes(filter);
+            const isCategory2 = category2.includes(filter);
+
+            return (
+              <button
+                key={filter}
+                onClick={() => handleFilterClick(filter)}
+                className={cn(
+                  "px-5 py-2 text-sm font-semibold rounded-full transition",
+                  isActive && isCategory1
+                    ? "bg-blue-800 text-white shadow-md"
+                    : isActive && isCategory2
+                      ? "bg-pink-700 text-white shadow-md"
+                      : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100"
+                )}
+              >
+                {formatFilterLabel(filter)}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -314,7 +334,9 @@ export default function ChallengePage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 mb-2">
+                <div
+                  className={`flex items-center gap-2  mb-2 ${startDateInfo == null && "mt-10"}`}
+                >
                   <CalendarDays className="w-4 h-4" />
                   <span className="text-sm">{formatDate(c.startDate)}</span>
                   <span className="text-slate-300">→</span>
