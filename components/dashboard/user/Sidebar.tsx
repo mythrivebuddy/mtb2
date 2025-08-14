@@ -349,9 +349,10 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
                 </ComingSoonWrapper>
+                
                 <ComingSoonWrapper>
                  <NavItem
-                 href="/dashboard/reminders"
+                // href="/dashboard/reminders"
                  icon={<BellRing />}
                   label="Reminders"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
