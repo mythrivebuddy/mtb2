@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react"; // ✅ NEW: Import useState
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -27,12 +27,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import PageSkeleton from "../PageSkeleton";
 import { DailyBloomFormType } from "@/schema/zodSchema";
-import HoverDetails from "./HoverDetails"; // ✅ NEW: Import HoverDetails component
+import HoverDetails from "./HoverDetails";
 
 interface DailyBloom extends DailyBloomFormType {
   id: string;
@@ -45,14 +44,34 @@ interface OverdueProps {
   onUpdateCompletion: (bloom: DailyBloom, isCompleted: boolean) => void;
 }
 
+// --- START: useMediaQuery Hook ---
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const media = window.matchMedia(query);
+      if (media.matches !== matches) {
+        setMatches(media.matches);
+      }
+      const listener = () => setMatches(media.matches);
+      window.addEventListener("resize", listener);
+      return () => window.removeEventListener("resize", listener);
+    }
+  }, [matches, query]);
+
+  return matches;
+};
+// --- END: useMediaQuery Hook ---
+
 export default function Overdue({
   onView,
   onEdit,
   onDelete,
   onUpdateCompletion,
 }: OverdueProps) {
-  // ✅ NEW: State to track the hovered item ID
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   const { data: overdueBlooms, isLoading } = useQuery<DailyBloom[]>({
     queryKey: ["overdueDailyBlooms"],
@@ -85,8 +104,73 @@ export default function Overdue({
         </div>
       </CardHeader>
       <CardContent className="overflow-visible relative z-0">
-        {/* --- ✅ START: UPDATED DESKTOP TABLE --- */}
-        <div className="hidden md:block">
+        {isMobile ? (
+          // --- MOBILE: Card View ---
+          <div className="space-y-4">
+            {overdueBlooms.map((bloom: DailyBloom) => (
+              <Card key={bloom.id} className="p-4 bg-background/50">
+                <div className="flex flex-col space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <CardTitle className="text-md sm:text-lg max-w-[80%] break-words">
+                      {bloom.title}
+                    </CardTitle>
+                    <Input
+                      type="checkbox"
+                      checked={bloom.isCompleted}
+                      onChange={(e) =>
+                        onUpdateCompletion(bloom, e.target.checked)
+                      }
+                      className="w-5 h-5 rounded-md cursor-pointer flex-shrink-0"
+                    />
+                  </div>
+                  {bloom.description && (
+                    <p className="text-muted-foreground text-xs sm:text-sm">
+                      {bloom.description}
+                    </p>
+                  )}
+                  <div className="flex flex-col space-y-2 text-sm border-t pt-3">
+                    {bloom.frequency && (
+                      <div className="flex items-center">
+                        <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span>Frequency - {bloom.frequency}</span>
+                      </div>
+                    )}
+                    {bloom.dueDate && (
+                      <div className="flex items-center text-destructive font-medium">
+                        <CalendarIcon className="w-4 h-4 mr-2" />
+                        <span>
+                          Due:{" "}
+                          {new Date(bloom.dueDate).toLocaleDateString("en-IN")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 border-t pt-3">
+                    <Button
+                      className="p-2 h-auto bg-sky-100 text-sky-800 hover:bg-sky-200 rounded-md transition-colors"
+                      onClick={() => onView(bloom)}
+                    >
+                      <EyeIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      className="p-2 h-auto bg-amber-100 text-amber-800 hover:bg-amber-200 rounded-md transition-colors"
+                      onClick={() => onEdit(bloom)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      className="p-2 h-auto bg-red-100 text-red-800 hover:bg-red-200 rounded-md transition-colors"
+                      onClick={() => onDelete(bloom.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          // --- DESKTOP: Table View ---
           <Table className="table-fixed w-full">
             <TableHeader>
               <TableRow className="bg-muted/50">
@@ -99,9 +183,7 @@ export default function Overdue({
             </TableHeader>
             <TableBody>
               {overdueBlooms.map((bloom) => (
-                <TableRow key={bloom.id}
-                className="relative"
-                >
+                <TableRow key={bloom.id} className="relative">
                   <TableCell className="text-center">
                     <Input
                       type="checkbox"
@@ -112,14 +194,12 @@ export default function Overdue({
                       className="w-4 h-4 rounded-md cursor-pointer"
                     />
                   </TableCell>
-
                   <TableCell
-                   className="font-medium relative"
+                    className="font-medium relative"
                     onMouseEnter={() => setHoveredBloomId(bloom.id)}
                     onMouseLeave={() => setHoveredBloomId(null)}
                   >
-                    <div className="text-md  max-w-[300px]  break-words">
-                      
+                    <div className="text-md max-w-[300px] break-words">
                       {bloom.title}
                     </div>
                     {hoveredBloomId === bloom.id && (
@@ -128,8 +208,7 @@ export default function Overdue({
                       </div>
                     )}
                   </TableCell>
-
-                  <TableCell className=" font-semibold text-destructive">
+                  <TableCell className="font-semibold text-destructive">
                     {bloom.dueDate
                       ? new Date(bloom.dueDate).toLocaleDateString("en-IN")
                       : "—"}
@@ -150,100 +229,21 @@ export default function Overdue({
                       size="icon"
                       onClick={() => onEdit(bloom)}
                     >
-                      <Pencil className="w-4 h-4" />
+                      <Pencil className=" w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => onDelete(bloom.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className=" w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </div>
-        {/* --- END: UPDATED DESKTOP TABLE --- */}
-
-        {/* Mobile Card View - Unchanged */}
-        <div className="md:hidden space-y-4">
-          {overdueBlooms.map((bloom: DailyBloom) => (
-            <Card key={bloom.id} className="bg-background/50">
-              <CardHeader>
-                <div className="flex items-center justify-between gap-4">
-                  <CardTitle className="break-words text-md">
-                    {bloom.title}
-                  </CardTitle>
-                  <div className="flex flex-col  items-center flex-shrink-0">
-                    <Input
-                      type="checkbox"
-                      checked={bloom.isCompleted}
-                      onChange={(e) =>
-                        onUpdateCompletion(bloom, e.target.checked)
-                      }
-                      className="w-4 h-4 sm:w-5 sm:h-5 rounded-md cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-3 text-xs sm:text-sm">
-                {bloom.description && (
-                  <p className="text-muted-foreground break-words">
-                    {bloom.description}
-                  </p>
-                )}
-                {
-                  bloom.frequency && (
-                     <div className="flex items-center">
-                  <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
-                  <span>Frequency: {bloom.frequency}</span>
-                </div>
-                  )
-                }
-               
-                {
-                  bloom.dueDate && (
-                    <div className="flex items-center text-destructive font-medium">
-                      <CalendarIcon className="w-4 h-4 mr-2" />
-                      <span>
-                        Due:{" "}
-                        {new Date(bloom.dueDate).toLocaleDateString("en-IN")}
-                      </span>
-                    </div>
-                  )
-                }
-                
-              </CardContent>
-
-              <CardFooter className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onView(bloom)}
-                >
-                  View
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEdit(bloom)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => onDelete(bloom.id)}
-                >
-                  Delete
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        )}
       </CardContent>
     </Card>
   );

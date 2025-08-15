@@ -6,6 +6,7 @@ import { checkRole } from "@/lib/utils/auth";
  * MODIFIED: Handles GET requests to fetch the detailed data for a single challenge,
  * including the current user's enrollment status, streaks, AND their daily tasks.
  */
+
 export async function GET(
   request: NextRequest,
   context: { params: { slug: string } }
@@ -13,7 +14,6 @@ export async function GET(
   const { slug: challengeId } = context.params;
 
   try {
-    // 1. Authenticate the user and get their ID
     const session = await checkRole("USER");
     if (!session?.user?.id) {
       return new NextResponse("Unauthorized", { status: 401 });
@@ -27,52 +27,51 @@ export async function GET(
       );
     }
 
-    // 2. Fetch core challenge details, user's enrollment (with tasks), and participant count
-    const [challenge, enrollment, participantCount, leaderboard] = await Promise.all([
-      prisma.challenge.findUnique({
-        where: { id: challengeId },
-      }),
-      // --- MODIFICATION START ---
-      // We now include the userTasks associated with this enrollment
-      prisma.challengeEnrollment.findUnique({
-        where: {
-          userId_challengeId: {
-            userId: userId,
-            challengeId: challengeId,
+    // Get today's date without time
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const [challenge, enrollment, participantCount, leaderboard] =
+      await Promise.all([
+        prisma.challenge.findUnique({
+          where: { id: challengeId },
+        }),
+        prisma.challengeEnrollment.findUnique({
+          where: {
+            userId_challengeId: {
+              userId: userId,
+              challengeId: challengeId,
+            },
           },
-        },
-        include: {
-          userTasks: { // <-- This is the key addition!
-            select: {
+          include: {
+            userTasks: {
+              select: {
                 id: true,
                 description: true,
                 isCompleted: true,
-            }
+                lastCompletedAt: true,
+              },
+            },
           },
-        },
-      }),
-      // --- MODIFICATION END ---
-      prisma.challengeEnrollment.count({
-        where: { challengeId: challengeId },
-      }),
-      // Also fetch leaderboard data
-      prisma.challengeEnrollment.findMany({
-        where: { challengeId: challengeId },
-        orderBy: {
-            currentStreak: 'desc'
-        },
-        take: 10, // Top 10 users
-        include: {
+        }),
+        prisma.challengeEnrollment.count({
+          where: { challengeId: challengeId },
+        }),
+        prisma.challengeEnrollment.findMany({
+          where: { challengeId: challengeId },
+          orderBy: { currentStreak: "desc" },
+          take: 10,
+          include: {
             user: {
-                select: {
-                    id: true,
-                    name: true,
-                    image: true,
-                }
-            }
-        }
-      })
-    ]);
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        }),
+      ]);
 
     if (!challenge) {
       return NextResponse.json(
@@ -80,17 +79,49 @@ export async function GET(
         { status: 404 }
       );
     }
-    
-    // Format leaderboard data
-    const formattedLeaderboard = leaderboard.map(entry => ({
-        id: entry.user.id,
-        name: entry.user.name || 'Anonymous',
-        avatar: entry.user.image || '/default-avatar.png', // Provide a fallback avatar
-        score: entry.currentStreak,
+
+    // Auto-reset outdated completed tasks
+    if (enrollment?.userTasks?.length) {
+      const tasksToReset = enrollment.userTasks.filter((task) => {
+        if (task.isCompleted && task.lastCompletedAt) {
+          const completedDate = new Date(
+            task.lastCompletedAt.getFullYear(),
+            task.lastCompletedAt.getMonth(),
+            task.lastCompletedAt.getDate()
+          );
+          return completedDate < today;
+        }
+        return false;
+      });
+
+      if (tasksToReset.length > 0) {
+        await prisma.userChallengeTask.updateMany({
+          where: {
+            id: { in: tasksToReset.map((t) => t.id) },
+          },
+          data: {
+            isCompleted: false,
+            lastCompletedAt: null,
+          },
+        });
+
+        // Also reset in-memory so the response matches the DB
+        enrollment.userTasks = enrollment.userTasks.map((task) => {
+          if (tasksToReset.some((t) => t.id === task.id)) {
+            return { ...task, isCompleted: false, lastCompletedAt: null };
+          }
+          return task;
+        });
+      }
+    }
+
+    const formattedLeaderboard = leaderboard.map((entry) => ({
+      id: entry.user.id,
+      name: entry.user.name || "Anonymous",
+      avatar: entry.user.image || "/default-avatar.png",
+      score: entry.currentStreak,
     }));
 
-
-    // 3. Combine all data into a single, serializable response object
     const responseData = {
       ...challenge,
       startDate: challenge.startDate.toISOString(),
@@ -98,25 +129,21 @@ export async function GET(
       createdAt: challenge.createdAt.toISOString(),
       currentStreak: enrollment?.currentStreak ?? 0,
       longestStreak: enrollment?.longestStreak ?? 0,
-      participantCount: participantCount,
-      // --- MODIFICATION ---
-      // Add the user's tasks to the response, mapping to the format the frontend expects.
-      // If the user isn't enrolled, this defaults to an empty array.
-      dailyTasks: (enrollment?.userTasks || []).map(task => ({
+      participantCount,
+      dailyTasks: (enrollment?.userTasks || []).map((task) => ({
         id: task.id,
         description: task.description,
-        completed: task.isCompleted
+        completed: task.isCompleted,
       })),
-      leaderboard: formattedLeaderboard, // Add leaderboard to the response
+      leaderboard: formattedLeaderboard,
     };
 
     return NextResponse.json(responseData);
-
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-     " GET /api/challenge/my-challenge/${challengeId} Error:",
+      `GET /api/challenge/my-challenge/${challengeId} Error:`,
       errorMessage
     );
     return new NextResponse(
@@ -125,6 +152,7 @@ export async function GET(
     );
   }
 }
+
 
 /**
  * Handles DELETE requests to remove a challenge.

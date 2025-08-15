@@ -273,67 +273,67 @@ export default function CreateChallenge({ }: CreateChallengeProps) {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8"
           >
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <div>
-                <label
-                  htmlFor="title"
-                  className="mb-1 block text-sm font-medium text-slate-700"
-                >
-                  Challenge Title
-                </label>
-                <input
-                  id="title"
-                  placeholder="e.g., 30-Day Fitness"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  {...register("title")}
-                />
-                {errors.title && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.title.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="cost"
-                  className="mb-1 block text-sm font-medium text-slate-700"
-                >
-                  Cost (JP)
-                </label>
-                <input
-                  id="cost"
-                  type="number"
-                  placeholder="50"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  {...register("cost", { valueAsNumber: true })}
-                />
-                {errors.cost && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.cost.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="reward"
-                  className="mb-1 block text-sm font-medium text-slate-700"
-                >
-                  Reward (JP)
-                </label>
-                <input
-                  id="reward"
-                  type="number"
-                  placeholder="50"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  {...register("reward", { valueAsNumber: true })}
-                />
-                {errors.reward && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.reward.message}
-                  </p>
-                )}
-              </div>
-            </div>
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
+  {/* Title */}
+  <div className="flex-1">
+    <label
+      htmlFor="title"
+      className="mb-1 block text-sm font-medium text-slate-700"
+    >
+      Challenge Title
+    </label>
+    <input
+      id="title"
+      placeholder="e.g., 30-Day Fitness"
+      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      {...register("title")}
+    />
+    {errors.title && (
+      <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>
+    )}
+  </div>
+
+  {/* Cost */}
+  <div>
+    <label
+      htmlFor="cost"
+      className="mb-1 block text-sm font-medium text-slate-700"
+    >
+      Cost (JP)
+    </label>
+    <input
+      id="cost"
+      type="number"
+      placeholder="50"
+      className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      {...register("cost", { valueAsNumber: true })}
+    />
+    {errors.cost && (
+      <p className="mt-1 text-sm text-red-500">{errors.cost.message}</p>
+    )}
+  </div>
+
+  {/* Reward */}
+  <div>
+    <label
+      htmlFor="reward"
+      className="mb-1 block text-sm font-medium text-slate-700"
+    >
+      Reward (JP)
+    </label>
+    <input
+      id="reward"
+      type="number"
+      placeholder="50"
+      className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      {...register("reward", { valueAsNumber: true })}
+    />
+    {errors.reward && (
+      <p className="mt-1 text-sm text-red-500">{errors.reward.message}</p>
+    )}
+  </div>
+</div>
+
 
             <div>
               <label

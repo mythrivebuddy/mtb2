@@ -3,6 +3,7 @@ import Hero from "@/components/home/Hero";
 import SpotlightCard from "@/components/home/SpotlightCard";
 import AppLayout from "@/components/layout/AppLayout";
 
+
 export const metadata: Metadata = {
   title: "MyThriveBuddy - Solopreneurship Made Amazing",
   description:
@@ -35,8 +36,7 @@ export const metadata: Metadata = {
 
 // TODO: add current active spotlight get it with api
 export default function Home() {
-  console.log("Hello ")
-  console.log("check")
+ 
   return (
     <>
       <AppLayout>
@@ -44,7 +44,7 @@ export default function Home() {
           <div className="flex flex-col justify-between">
             <Hero />
           </div>
-          <div className="flex flex-col">
+          <div className="hidden lg:flex flex-col ">
             <SpotlightCard />
             
           </div>

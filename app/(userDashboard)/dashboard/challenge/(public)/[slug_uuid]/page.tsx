@@ -55,6 +55,10 @@ export default async function ChallengeDetailPage({
     ...challengeData,
     startDate: challengeData.startDate.toISOString(),
     endDate: challengeData.endDate.toISOString(),
+    creator: {
+      id: challengeData.creator?.id,
+      name: challengeData.creator?.name,
+    },
   };
 
   return (

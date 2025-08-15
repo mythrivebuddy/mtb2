@@ -12,12 +12,13 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
-import { Loader2 } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState(""); // For backend error
   const router = useRouter();
+   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const {
     register,
@@ -103,12 +104,16 @@ function SignInFormContent() {
       );
     }
   };
+  const handlePasswordToggle = () => {
+    setShowPassword((prev) => !prev);
+  }
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-6 mt-4 sm:mt-8 shadow-sm">
       <div className="space-y-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
+          
             <Input
               type="email"
               placeholder="Email"
@@ -117,8 +122,11 @@ function SignInFormContent() {
                 setValue("email", e.target.value);
                 setLoginError(""); // Clear error on change
               }}
-              className={`h-12 ${errors.email || loginError ? "border-red-500" : ""}`}
-            />
+              className={`h-12  ${errors.email || loginError ? "border-red-500" : ""} relative`}
+              />
+             
+            
+              
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
             )}
@@ -128,8 +136,10 @@ function SignInFormContent() {
           </div>
 
           <div>
+             <div className="relative">
+              
             <Input
-              type="password"
+              type={`${showPassword ? "text" : "password"}`}
               placeholder="Password"
               {...register("password")}
               onChange={(e) => {
@@ -137,7 +147,13 @@ function SignInFormContent() {
                 setLoginError(""); // Clear error on change
               }}
               className={`h-12 ${errors.password || loginError ? "border-red-500" : ""}`}
-            />
+              />
+             <button className="absolute right-2 top-3 cursor-pointer" type="button" onClick={handlePasswordToggle}>
+              {
+                showPassword ? <EyeOffIcon />: <EyeIcon/>
+              }
+              </button>
+              </div>
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}

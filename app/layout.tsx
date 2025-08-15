@@ -1,7 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Provider from "@/providers/Provider";
-
+import { Analytics } from "@vercel/analytics/react"; // Importing Vercel Analytics
 const inter = Inter({ subsets: ["latin"] });
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";// ! added by aaisha
 import { Toaster } from "@/components/ui/sonner"; // Import Toaster component
@@ -45,6 +45,7 @@ export default function RootLayout({
           <Provider>
             <LoginStreakTracker /> {/* //! added by aaisha */}
             {children}
+             <Analytics /> {/* This tracks all pages */}
           </Provider>
         </div>
 
