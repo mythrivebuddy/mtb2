@@ -18,7 +18,7 @@ export const getChallengeData = cache(async (slug_uuid: string) => {
         const challenge = await prisma.challenge.findUnique({
             where: { id: uuid },
             include: {
-                creator: { select: { name: true } },
+                creator: { select: { id:true,name: true } },
                 templateTasks: { select: { id: true, description: true } },
                 _count: { select: { enrollments: true } },
             }

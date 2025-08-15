@@ -47,6 +47,9 @@ export default withAuth(
         console.log('Authorized callback:', { path, token: !!token });
 
         // Allow public challenge pages
+        if (path === '/dashboard/challenge') {
+    return true;
+  }
         if (isPublicChallengePage(path)) {
           console.log('Public challenge page allowed:', path);
           return true;

@@ -35,7 +35,6 @@ export default function NotificationsPage()  {
 
  
 
-  console.log(notifications);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {

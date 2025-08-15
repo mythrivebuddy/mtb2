@@ -204,11 +204,7 @@ export default function UserDetailsPage() {
     <div className="min-h-screen  bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
       
       <div className="max-w-5xl pt-0 mx-auto">
-       
-        <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
-          
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-40 relative">
-             <div className="mb-4 ml-[16rem] pt-2    block sm:hidden ">
+       <div className="mb-4 mr-[16rem] pt-2    block sm:hidden ">
           <Button
             variant="outline"
             onClick={() => router.push("/")}
@@ -218,6 +214,10 @@ export default function UserDetailsPage() {
             
           </Button>
         </div>
+        <Card className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden border border-gray-100">
+          
+          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-40 relative">
+             
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
           </div>
           <div className="relative px-8 pb-20">
@@ -749,9 +749,9 @@ export default function UserDetailsPage() {
               </div>
               {/* --- END OF MODIFICATION 3 --- */}
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-4  md:grid-cols-2 ">
                 {userData.keyOfferings && (
-                  <Card className="bg-white/50 backdrop-blur-md shadow-md rounded-lg border border-gray-100 hover:shadow-lg transition-all duration-300">
+                  <Card className="bg-white/50  backdrop-blur-md shadow-md rounded-lg border border-gray-100 hover:shadow-lg transition-all duration-300">
                     <CardHeader>
                       <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                         <Briefcase className="h-5 w-5 text-blue-600" />
@@ -759,7 +759,7 @@ export default function UserDetailsPage() {
                       </h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-gray-600 break-words leading-relaxed"> 
                         {userData.keyOfferings}
                       </p>
                     </CardContent>
@@ -768,13 +768,13 @@ export default function UserDetailsPage() {
                 {userData.achievements && (
                   <Card className="bg-white/50 backdrop-blur-md shadow-md rounded-lg border border-gray-100 hover:shadow-lg transition-all duration-300">
                     <CardHeader>
-                      <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                      <h3 className="text-xl ;kj font-semibold text-gray-800 flex items-center gap-2">
                         <Award className="h-5 w-5 text-blue-600" />
                         Achievements
                       </h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-gray-600 break-words leading-relaxed">
                         {userData.achievements}
                       </p>
                     </CardContent>
@@ -789,7 +789,7 @@ export default function UserDetailsPage() {
                       </h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-gray-600 break-words leading-relaxed">
                         {userData.missionStatement}
                       </p>
                     </CardContent>
@@ -798,13 +798,13 @@ export default function UserDetailsPage() {
                 {userData.goals && (
                   <Card className="bg-white/50 backdrop-blur-md shadow-md rounded-lg border border-gray-100 hover:shadow-lg transition-all duration-300">
                     <CardHeader>
-                      <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                      <h3 className="text-xl font-semibold text-gray-800  flex items-center gap-2">
                         <Star className="h-5 w-5 text-blue-600" />
                         Goals
                       </h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-gray-600 break-words leading-relaxed">
                         {userData.goals}
                       </p>
                     </CardContent>
@@ -819,7 +819,7 @@ export default function UserDetailsPage() {
                       </h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-gray-600 break-words leading-relaxed">
                         {userData.featuredWorkTitle}
                       </p>
                     </CardContent>
@@ -834,7 +834,7 @@ export default function UserDetailsPage() {
                       </h3>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-gray-600 break-words leading-relaxed">
                         {userData.featuredWorkDesc}
                       </p>
                     </CardContent>

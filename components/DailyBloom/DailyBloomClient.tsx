@@ -8,7 +8,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import { 
+import {
   Trash2,
   Loader2,
   EyeIcon,
@@ -19,6 +19,7 @@ import {
   Pencil,
   PlusCircle,
   ListChecks,
+  AlertTriangle,
 } from "lucide-react";
 import axios, { AxiosError } from "axios";
 import { format } from "date-fns";
@@ -76,11 +77,31 @@ const defaultFormValues: DailyBloomFormType = {
   taskCompleteJP: false,
 };
 
+// --- START: useMediaQuery Hook ---
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const media = window.matchMedia(query);
+      if (media.matches !== matches) {
+        setMatches(media.matches);
+      }
+      const listener = () => setMatches(media.matches);
+      window.addEventListener("resize", listener);
+      return () => window.removeEventListener("resize", listener);
+    }
+  }, [matches, query]);
+
+  return matches;
+};
+// --- END: useMediaQuery Hook ---
+
 export default function DailyBloomClient() {
   const today = new Date().toISOString().split("T")[0];
   const queryClient = useQueryClient();
-  const { data: session } = useSession(); // --- 2. GET USER SESSION ---
-  const userId = session?.user?.id; // --- 3. GET USER ID ---
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
 
   const [editData, setEditData] = useState<DailyBloom | null>(null);
   const [viewData, setViewData] = useState<DailyBloom | null>(null);
@@ -95,6 +116,11 @@ export default function DailyBloomClient() {
   );
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
   useOnlineUserLeaderBoard();
+
+  // --- START: Responsive State ---
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  // --- END: Responsive State ---
+
   const {
     handleSubmit,
     register,
@@ -153,19 +179,12 @@ export default function DailyBloomClient() {
   const dailyBloom = data?.pages.flatMap((page) => page.data) || [];
 
   const invalidateAllQueries = () => {
-    console.log("Starting query invalidation at:", new Date().toISOString());
-  if (!userId) {
-    console.log("userId is undefined, skipping invalidation");
-    return;
-  }
-    console.log("Invalidating queries for dailyBloom, overdueDailyBlooms, and user data...");
-    console.log("Invalidating queries..."); 
+    if (!userId) {
+      return;
+    }
     queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
     queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     queryClient.invalidateQueries({ queryKey: ["user", userId] });
-    if (userId) {
-      queryClient.invalidateQueries({ queryKey: ["user", userId] });
-    }
   };
 
   const createMutation = useMutation({
@@ -174,7 +193,6 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      console.log("Daily Bloom created successfully 2");
       invalidateAllQueries();
       toast.success("Daily Bloom created successfully!");
       setAddData(false);
@@ -200,8 +218,6 @@ export default function DailyBloomClient() {
       return res.data;
     },
     onSuccess: () => {
-      console.log("Daily Bloom updated successfully");
-      toast.success("Daily Bloom updated successfully!");
       invalidateAllQueries();
     },
     onError: (error: AxiosError) => {
@@ -228,7 +244,7 @@ export default function DailyBloomClient() {
   const onSubmit = (formData: DailyBloomFormType) => {
     const dataToSubmit =
       addInputType === "date"
-        ? { ...formData, frequency: undefined ,  }
+        ? { ...formData, frequency: undefined }
         : { ...formData, dueDate: undefined };
     createMutation.mutate(dataToSubmit);
   };
@@ -381,7 +397,9 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={frequencyFilter === "Monthly" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "Monthly" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Monthly")}
@@ -400,7 +418,75 @@ export default function DailyBloomClient() {
                 </div>
               ) : (
                 <>
-                  <div className="hidden md:block">
+                  {isMobile ? (
+                    // --- MOBILE: Card View ---
+                    <div className="space-y-4">
+                      {dailyBloom.map((bloom: DailyBloom) => (
+                        <Card key={bloom.id} className="p-4">
+                          <div className="flex flex-col space-y-3">
+                            <div className="flex items-start justify-between gap-4">
+                              <CardTitle className="text-md sm:text-lg max-w-[80%] break-words">
+                                {bloom.title}
+                              </CardTitle>
+                              <Input
+                                type="checkbox"
+                                checked={bloom.isCompleted}
+                                onChange={(e) =>
+                                  handleUpdateCompletion(bloom, e.target.checked)
+                                }
+                                className="w-5 h-5 rounded-md cursor-pointer flex-shrink-0"
+                              />
+                            </div>
+                            {bloom.description && (
+                              <p className="text-muted-foreground text-xs sm:text-sm">
+                                {bloom.description}
+                              </p>
+                            )}
+                            <div className="flex flex-col space-y-2 text-sm border-t pt-3">
+                              {bloom.frequency && (
+                                <div className="flex items-center">
+                                  <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
+                                  <span>Frequency - {bloom.frequency}</span>
+                                </div>
+                              )}
+                              {bloom.dueDate && (
+                                <div className="flex items-center">
+                                  <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                                  <span>
+                                    Due:{" "}
+                                    {new Date(bloom.dueDate).toLocaleDateString(
+                                      "en-IN"
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2 border-t pt-3">
+                              <Button
+                                className="p-2 h-auto bg-sky-100 text-sky-800 hover:bg-sky-200 rounded-md transition-colors"
+                                onClick={() => setViewData(bloom)}
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                className="p-2 h-auto bg-amber-100 text-amber-800 hover:bg-amber-200 rounded-md transition-colors"
+                                onClick={() => setEditData(bloom)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                className="p-2 h-auto bg-red-100 text-red-800 hover:bg-red-200 rounded-md transition-colors"
+                                onClick={() => setDeleteId(bloom.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    // --- DESKTOP: Table View ---
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted">
@@ -421,15 +507,11 @@ export default function DailyBloomClient() {
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(
-                                    bloom,
-                                    e.target.checked
-                                  )
+                                  handleUpdateCompletion(bloom, e.target.checked)
                                 }
                                 className="w-4 h-4 rounded-md cursor-pointer"
                               />
                             </TableCell>
-
                             <TableCell
                               className="font-medium relative"
                               onMouseEnter={() => setHoveredBloomId(bloom.id)}
@@ -440,14 +522,12 @@ export default function DailyBloomClient() {
                                   ? `${bloom.title.slice(0, 30)}...`
                                   : bloom.title}
                               </div>
-
                               {hoveredBloomId === bloom.id && (
                                 <div className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl">
                                   <HoverDetails bloom={bloom} />
                                 </div>
                               )}
                             </TableCell>
-
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
@@ -483,84 +563,7 @@ export default function DailyBloomClient() {
                         ))}
                       </TableBody>
                     </Table>
-                  </div>
-
-                  <div className="md:hidden space-y-4">
-                    {dailyBloom.map((bloom: DailyBloom) => (
-                      // here
-                      <Card key={bloom.id}>
-                        <CardHeader>
-                          <div className="flex items-center justify-between gap-4">
-                            <CardTitle className="text-md sm:text-lg max-w-[300px]  break-all break-words">
-                              {bloom.title}
-                            </CardTitle>
-
-                            <div className="flex flex-col items-center flex-shrink-0">
-                              <Input
-                                type="checkbox"
-                                checked={bloom.isCompleted}
-                                onChange={(e) =>
-                                  handleUpdateCompletion(
-                                    bloom,
-                                    e.target.checked
-                                  )
-                                }
-                                className="w-4 h-4 sm:w-5 sm:h-5 rounded-md cursor-pointer"
-                              />
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 text-sm">
-                          {bloom.description && (
-                            <p className="text-muted-foreground text-xs sm:text-sm ">
-                              {bloom.description}
-                            </p>
-                          )}
-
-                          {bloom.frequency && (
-                            <div className="flex items-center">
-                              <Repeat className="w-4 h-4 mr-2 text-muted-foreground" />
-                              <span>Frequency - {bloom.frequency} </span>
-                            </div>
-                          )}
-                          {bloom.dueDate && (
-                            <div className="flex items-center">
-                              <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                              <span>
-                                Due:{" "}
-                                {new Date(bloom.dueDate).toLocaleDateString(
-                                      "en-IN"
-                                    )}
-                              </span>
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="flex gap-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setViewData(bloom)}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditData(bloom)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setDeleteId(bloom.id)}
-                          >
-                            Delete
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
+                  )}
                 </>
               )}
             </CardContent>
@@ -586,9 +589,9 @@ export default function DailyBloomClient() {
           </Card>
         )}
         <Dialog open={addData} onOpenChange={setAddData}>
-          <DialogContent>
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle>Add Your Bloom</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-800">Add Your Bloom</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-4 py-4">
@@ -627,11 +630,6 @@ export default function DailyBloomClient() {
                     >
                       Due Date
                     </Button>
-                    {errors.dueDate && (
-                      <p className="text-red-500 text-sm">
-                        {errors.dueDate.message}
-                      </p>
-                    )}
                     <Button
                       type="button"
                       onClick={() => {
@@ -646,11 +644,6 @@ export default function DailyBloomClient() {
                     >
                       Frequency
                     </Button>
-                    {errors.frequency && (
-                      <p className="text-red-500 text-sm">
-                        {errors.frequency.message}
-                      </p>
-                    )}
                   </div>
                 </div>
                 {addInputType === "date" ? (
@@ -715,7 +708,7 @@ export default function DailyBloomClient() {
                   />
                 )}
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -735,9 +728,9 @@ export default function DailyBloomClient() {
         </Dialog>
 
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle>Bloom Details</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-800">Bloom Details</DialogTitle>
             </DialogHeader>
             {viewData && (
               <div className="grid gap-6 py-4">
@@ -798,8 +791,12 @@ export default function DailyBloomClient() {
                 )}
               </div>
             )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setViewData(null)}>
+            <DialogFooter className="mt-6">
+              <Button
+                variant="outline"
+                onClick={() => setViewData(null)}
+                className="w-full"
+              >
                 Close
               </Button>
             </DialogFooter>
@@ -810,9 +807,12 @@ export default function DailyBloomClient() {
           open={!!editData}
           onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}
         >
-          <DialogContent>
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle>Edit Daily Bloom</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-800">Edit Daily Bloom</DialogTitle>
+              <DialogDescription>
+                Make changes to your entry below.
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onUpdate)}>
               <div className="grid gap-4 py-4">
@@ -898,7 +898,7 @@ export default function DailyBloomClient() {
                   />
                 )}
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -918,14 +918,19 @@ export default function DailyBloomClient() {
         </Dialog>
 
         <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Are you absolutely sure?</DialogTitle>
-              <DialogDescription>
-                This action cannot be undone.
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+            <DialogHeader className="text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+              <DialogTitle className="mt-4 text-xl font-semibold text-gray-800">
+                Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-sm text-gray-500">
+                Are you sure you want to delete this bloom? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter>
+            <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
               <Button
                 variant="outline"
                 onClick={() => setDeleteId(null)}

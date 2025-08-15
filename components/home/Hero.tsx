@@ -4,10 +4,13 @@ import { motion } from "framer-motion";
 
 import CardGrid from "../CardDesign";
 import { useSession } from "next-auth/react";
+import SpotlightCard from "./SpotlightCard";
+import useRedirectDashboard from "@/hooks/use-redirect-dashboard";
 
 export default function Hero() {
   const { data: session } = useSession();
   console.log("session:", session);
+  useRedirectDashboard()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -23,6 +26,9 @@ export default function Hero() {
           Made Amazing
         </h1>
       </div>
+      <div className="lg:hidden flex flex-col ">
+                  <SpotlightCard/>
+       </div>
 
       <p className="md:text-[18px] text-[14px] text-[#636363] leading-relaxed max-w-xl">
         Solopreneurship doesn&apos;t have to be lonely. Join the ecosystem built
