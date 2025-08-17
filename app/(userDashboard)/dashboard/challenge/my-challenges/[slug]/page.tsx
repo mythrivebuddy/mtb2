@@ -45,6 +45,7 @@ interface LeaderboardPlayer {
   avatar: string;
 }
 interface ChallengeDetails {
+  creator: {name:string};
   title: string;
   description: string | null;
   status: "UPCOMING" | "ACTIVE" | "COMPLETED";
@@ -380,17 +381,25 @@ export default function ChallengeManagementPage() {
                 <ChevronLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
               </button>
+              <div className="">
+
               <button
                 onClick={() => setIsShareModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-full text-md font-semibold hover:bg-amber-700 transition-colors"
+                className="flex items-center gap-2  px-3 py-1.5 bg-amber-600  text-white rounded-full text-md font-semibold hover:bg-amber-700 transition-colors"
               >
                 <Share2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Share</span>
               </button>
+              
+                </div>
             </div>
+
+            {/* Title */}
             <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
               {challenge.title}
             </h1>
+
+            {/* Date Range */}
             <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">
               <CalendarDays className="w-4 h-4 flex-shrink-0" />
               <div className="flex items-center gap-2 flex-wrap">
