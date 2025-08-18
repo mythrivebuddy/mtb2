@@ -35,6 +35,11 @@ export async function GET(
       await Promise.all([
         prisma.challenge.findUnique({
           where: { id: challengeId },
+          include: {
+            creator: {
+              select: {  name: true},
+            },
+          },
         }),
         prisma.challengeEnrollment.findUnique({
           where: {
@@ -153,7 +158,6 @@ export async function GET(
   }
 }
 
-
 /**
  * Handles DELETE requests to remove a challenge.
  * (This function remains unchanged)
@@ -263,15 +267,8 @@ export async function PATCH(
       );
     }
 
-    const {
-        title,
-        description,
-        reward,
-        penalty,
-        startDate,
-        endDate,
-        mode
-    } = body;
+    const { title, description, reward, penalty, startDate, endDate, mode } =
+      body;
 
     const updateData = {
       title,
@@ -289,21 +286,24 @@ export async function PATCH(
     });
 
     const serializableUpdatedChallenge = {
-        ...updatedChallenge,
-        startDate: updatedChallenge.startDate.toISOString(),
-        endDate: updatedChallenge.endDate.toISOString(),
-        createdAt: updatedChallenge.createdAt.toISOString(),
+      ...updatedChallenge,
+      startDate: updatedChallenge.startDate.toISOString(),
+      endDate: updatedChallenge.endDate.toISOString(),
+      createdAt: updatedChallenge.createdAt.toISOString(),
     };
 
     return NextResponse.json(
-      { message: "Challenge updated successfully", data: serializableUpdatedChallenge },
+      {
+        message: "Challenge updated successfully",
+        data: serializableUpdatedChallenge,
+      },
       { status: 200 }
     );
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-    "  PATCH /api/challenge/my-challenge/${challengeId} Error:",
+      "  PATCH /api/challenge/my-challenge/${challengeId} Error:",
       errorMessage,
       error
     );

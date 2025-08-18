@@ -124,6 +124,7 @@ model Spotlight {
   status              SpotlightStatus     @default(APPLIED)
   defaultDurationDays Int                 @default(1)
   activatedAt         DateTime?
+  seenByAdmin         Boolean             @default(false) 
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities          SpotlightActivity[]
 
