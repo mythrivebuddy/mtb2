@@ -172,7 +172,7 @@ export default function CustomAccordion() {
   }
 
   return (
-    <div className="max-lg:px-4 mx-auto max-w-4xl">
+    <div className={`${pathname.includes("prosperity") || pathname.includes("spotlight") || pathname.includes("aligned-actions") ? "container mx-auto  px-4" : "max-lg:px-4 mx-auto max-w-4xl px-4"}  `}>
       {filteredData.map((item, index) => {
         const isOpen = openIndex === index;
         return (
