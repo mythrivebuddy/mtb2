@@ -155,7 +155,7 @@ export default function CreateChallenge({ }: CreateChallengeProps) {
 
   const { fields, append, remove } = useFieldArray({ name: "tasks", control });
 
-  // ✨ FIX: Replace 'any' with the specific 'ChallengeApiResponse' type
+
   const mutation = useMutation<
     ChallengeApiResponse,
     Error,
