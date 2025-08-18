@@ -146,6 +146,16 @@ const ChallengeCalendar = ({
 }: ChallengeCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
+
+
+
+
+
+
+
+
+  
+
 const normalizeDate = (date: Date): string => {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toDateString();
 };
