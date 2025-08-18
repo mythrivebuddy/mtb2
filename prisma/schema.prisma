@@ -611,6 +611,18 @@ model NotificationSettings {
   updatedAt         DateTime         @updatedAt
 }
 
+model CompletionRecord {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  status      String   // Will store "COMPLETED" or "MISSED"
+  userId      String
+  challengeId String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, challengeId, date])
+  @@map("completion_records")
+}
+
 enum Role {
   ADMIN
   USER

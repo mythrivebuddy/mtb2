@@ -3,10 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
 /**
- * MODIFIED: Handles GET requests to fetch the detailed data for a single challenge,
- * including the current user's enrollment status, streaks, AND their daily tasks.
+ * ✅ MODIFIED: This GET function now fetches and returns the user's completion history.
  */
-
 export async function GET(
   request: NextRequest,
   context: { params: { slug: string } }
@@ -27,17 +25,17 @@ export async function GET(
       );
     }
 
-    // Get today's date without time
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const [challenge, enrollment, participantCount, leaderboard] =
+    // MODIFIED: We fetch completionRecords in a separate query
+    const [challenge, enrollment, participantCount, leaderboard, completionRecords] =
       await Promise.all([
         prisma.challenge.findUnique({
           where: { id: challengeId },
           include: {
             creator: {
-              select: {  name: true},
+              select: { name: true },
             },
           },
         }),
@@ -76,6 +74,16 @@ export async function GET(
             },
           },
         }),
+        // NEW: Add a query for your completion records
+        prisma.completionRecord.findMany({
+            where: {
+                userId: userId,
+                challengeId: challengeId,
+            },
+            orderBy: {
+                date: 'asc'
+            }
+        })
       ]);
 
     if (!challenge) {
@@ -126,6 +134,12 @@ export async function GET(
       avatar: entry.user.image || "/default-avatar.png",
       score: entry.currentStreak,
     }));
+    
+    // NEW: Format the history for the frontend
+    const history = (completionRecords || []).map(comp => ({
+        date: comp.date.toISOString(),
+        status: comp.status === "COMPLETED" ? "COMPLETED" : "MISSED"
+    }));
 
     const responseData = {
       ...challenge,
@@ -141,6 +155,7 @@ export async function GET(
         completed: task.isCompleted,
       })),
       leaderboard: formattedLeaderboard,
+      history: history, // ADD THE HISTORY ARRAY
     };
 
     return NextResponse.json(responseData);
@@ -303,7 +318,7 @@ export async function PATCH(
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-      "  PATCH /api/challenge/my-challenge/${challengeId} Error:",
+      " PATCH /api/challenge/my-challenge/${challengeId} Error:",
       errorMessage,
       error
     );
