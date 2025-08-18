@@ -376,7 +376,13 @@ const completedDays = (challenge.history || []).filter(
                 </button>
               </div>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">{challenge.title}</h1>
+
+            {/* Title */}
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
+              {challenge.title}
+            </h1>
+
+            {/* Date Range */}
             <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">
               <CalendarDays className="w-4 h-4 flex-shrink-0" />
               <div className="flex items-center gap-2 flex-wrap">

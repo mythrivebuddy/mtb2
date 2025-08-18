@@ -74,6 +74,7 @@ export default function SpotlightApplication() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const limit = 6;
+  
 
   const { data: applications, isLoading } = useQuery({
     queryKey: ["spotlightApplications"],
@@ -114,10 +115,12 @@ export default function SpotlightApplication() {
   const currentSpotlight = applications?.spotlightApplications?.find(
     (app: SpotlightApplication) => app.status === "ACTIVE"
   );
-  console.log(currentSpotlight);
+  queryClient.setQueryData(["spotlightUnseenCount"], 0);
 
+    // then trigger refetch from backend
+    queryClient.invalidateQueries({ queryKey: ["spotlightUnseenCount"] })
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
+    <div className="bg-white px-2 sm:px-6 py-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-6">
         Spotlight Management
       </h2>
@@ -125,10 +128,10 @@ export default function SpotlightApplication() {
       <div className="mb-6">
         <h3 className="text-lg font-medium mb-2">Current Spotlight</h3>
         {currentSpotlight ? (
-          <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-6 rounded-lg">
+          <div className="bg-gradient-to-r from-blue-100 to-purple-100 px-2  break-all sm:px-6 py-6 rounded-lg">
             <div className="flex items-start">
               <div className="mr-6">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-pink-100 flex items-center justify-center text-lg font-bold">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-pink-100 flex items-center justify-center text-lg font-bold">
                   {currentSpotlight.user.image ? (
                     <Image
                       src={currentSpotlight.user.image}
@@ -143,10 +146,10 @@ export default function SpotlightApplication() {
                 </div>
               </div>
               <div className="flex-1">
-                <h4 className="text-xl font-semibold">
+                <h4 className=" text-md sm:text-xl font-semibold">
                   {currentSpotlight.user.name}
                 </h4>
-                <p className="text-gray-600">
+                <p className="max-sm:text-xs text-gray-600 ">
                   User Email: {currentSpotlight.user.email}
                 </p>
                 <p className="mt-2 text-gray-700">
