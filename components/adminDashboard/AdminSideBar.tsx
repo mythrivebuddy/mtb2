@@ -6,8 +6,11 @@ import { cn } from "@/lib/utils/tw";
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
 import { NavItemProps } from "@/types/client/nav";
+import { useQuery} from "@tanstack/react-query";
+import axios from "axios";
 
-const NavItem = ({ href, label, badge }: NavItemProps) => {
+
+const NavItem = ({ href, label }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
 
@@ -21,7 +24,6 @@ const NavItem = ({ href, label, badge }: NavItemProps) => {
         )}
       >
         <span className="font-normal text-lg">{label}</span>
-        {badge && <span className="ml-1 text-jp-orange">({badge})</span>}
       </Link>
     </li>
   );
@@ -43,9 +45,25 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 );
 
 const Sidebar = () => {
+const pathname = usePathname();
+
+
+const { data: spotlightUnseenCount } = useQuery({
+  queryKey: ["spotlightUnseenCount"],
+  queryFn: async () => {
+    const { data } = await axios.get("/api/admin/spotlight/unseen-count");
+    return data;
+  },
+});
+console.log(spotlightUnseenCount);
+
+
+
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+  
+  
 
   return (
     <>
@@ -72,7 +90,7 @@ const Sidebar = () => {
         )}
       </button>
 
-      {/* Overlay for Mobile phone */}
+      {/* Overlay for Mobile */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
@@ -94,24 +112,39 @@ const Sidebar = () => {
               <NavItem href="/admin/dashboard" label="Dashboard" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
-              {/* === REPLACED WITH SURVEY MANAGEMENT === */}
               <NavItem href="/admin/survey-management" label="Survey Management" />
-              {/* ============================ */}
               <NavItem href="/admin/notification-management" label="Notification Management" />
-              <NavItem href="/admin/spotlight" label="Spotlight Management" />
+
+              {/* Spotlight with custom badge */}
+                  <li>
+  <Link
+    href="/admin/spotlight"
+    className={cn(
+      "flex items-center justify-between py-2 hover:text-jp-orange relative",
+      pathname === "/admin/spotlight" ? "text-jp-orange" : "text-[#6C7894]"
+    )}
+  >
+     <span className="font-normal text-lg">Spotlight Management</span>
+  
+    <span>
+    {spotlightUnseenCount?.count !== undefined && spotlightUnseenCount?.count > 0 && (
+      <span className="absolute xl:mr-1 right-6 lg:right-8 top-1 px-[0.4rem] py-1 text-[0.5rem] font-semibold bg-red-500 text-white rounded-full">
+    {spotlightUnseenCount?.count} 
+  </span> )} 
+</span>
+
+  
+  </Link>
+</li>
+
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
               <NavItem href="/admin/faq" label="FAQs" />
               <NavItem href="/admin/activity/update-jp" label="JP Management" />
               <NavItem href="/admin/plans" label="Manage Plans" />
-              <NavItem
-                href="/admin/manage-store-product"
-                label="Product Management"
-              />
+              <NavItem href="/admin/manage-store-product" label="Product Management" />
             </NavSection>
           </div>
-
-          
         </div>
       </aside>
     </>
