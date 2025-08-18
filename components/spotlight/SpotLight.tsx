@@ -246,7 +246,6 @@ export default function SpotlightPage() {
                 setIsDialogBoxOpen(false);
                 router.push("/dashboard/business-profile");
               }}
-              className="w-fit"
             >
               Create Business Profile
             </Button>

@@ -395,9 +395,17 @@ export default function ChallengeManagementPage() {
             </div>
 
             {/* Title */}
+            <div className="flex items-center gap-8 justify-between mb-4">
+
             <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
               {challenge.title}
             </h1>
+             <p className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100">
+              {/* <span> */}
+                  Created by : {challenge?.creator?.name} 
+              {/* </span> */}
+                </p>
+            </div>
 
             {/* Date Range */}
             <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">

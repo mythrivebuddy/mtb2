@@ -19,13 +19,17 @@ export async function GET(request: NextRequest) {
         user: true,
       },
       orderBy: {
-        appliedAt: "asc",
+        appliedAt: "desc",
       },
       take: limit,
       skip: skip,
     });
 
     const totalApplications = await prisma.spotlight.count();
+    await prisma.spotlight.updateMany({
+      where: { seenByAdmin: false },
+      data: { seenByAdmin: true },
+    });
 
     return NextResponse.json(
       { spotlightApplications, totalApplications },

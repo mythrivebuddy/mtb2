@@ -6,6 +6,7 @@ import AdminSideBar from '@/components/adminDashboard/AdminSideBar';
 import { BellIcon, LogOut } from 'lucide-react';
 import { Toaster } from 'sonner';
 
+
 const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
 
@@ -16,7 +17,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex min-h-screen w-full bg-dashboard px-4 sm:px-6 lg:px-7 py-7">
       {/* Sidebar */}
-      <AdminSideBar />
+      <AdminSideBar/>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden lg:pl-7 pt-16 lg:pt-0">
