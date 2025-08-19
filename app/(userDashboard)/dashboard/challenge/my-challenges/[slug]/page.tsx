@@ -130,7 +130,7 @@ const formatDate = (dateString: string) => {
   });
 };
 
-// --- UPDATED CALENDAR COMPONENT ---
+// --- UPDATED AND CORRECTED CALENDAR COMPONENT ---
 interface ChallengeCalendarProps {
   history: CompletionRecord[];
   challengeStartDate: string;
@@ -146,81 +146,80 @@ const ChallengeCalendar = ({
 }: ChallengeCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // ✅ Normalizes a date to a 'YYYY-MM-DD' string based on UTC.
+  // This is a reliable key for our history map.
+  const normalizeDateToUTCString = (date: Date): string => {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-
-
-
-
-
-
-
+  // ✅ Create the history map using the UTC normalized date string.
+  const historyMap = new Map(
+    history.map((item) => [
+      normalizeDateToUTCString(new Date(item.date)),
+      item.status,
+    ])
+  );
   
+  // Get the start date of the challenge at midnight UTC for accurate comparison.
+  const challengeStartUTC = new Date(challengeStartDate);
+  challengeStartUTC.setUTCHours(0, 0, 0, 0);
 
-const normalizeDate = (date: Date): string => {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toDateString();
-};
-
-const historyMap = new Map(
-  history.map((item) => [
-    normalizeDate(new Date(item.date)), // ✅ make sure we pass a Date object
-    item.status,
-  ])
-);
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const generateCalendarGrid = () => {
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const firstDayOfMonth = new Date(year, month, 1);
-  const lastDayOfMonth = new Date(year, month + 1, 0);
-  const daysInMonth = lastDayOfMonth.getDate();
-  const startDayIndex = firstDayOfMonth.getDay();
-  const grid = [];
+  const generateCalendarGrid = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayOfMonth = new Date(Date.UTC(year, month, 1));
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startDayIndex = firstDayOfMonth.getUTCDay(); // Use getUTCDay()
+    const grid = [];
 
-  // Fill empty slots before month starts
-  for (let i = 0; i < startDayIndex; i++) {
-    grid.push(<div key={`empty-${i}`} className="w-10 h-10"></div>);
-  }
-
-  // Fill days
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date = new Date(year, month, day);
-    const isToday = date.toDateString() === new Date().toDateString();
-    const isFuture = date > new Date();
-    const normalizedDate = new Date(date.setHours(0, 0, 0, 0));
-    const normalizedStartDate = new Date(
-      new Date(challengeStartDate).setHours(0, 0, 0, 0)
-    );
-
-    const isBeforeChallenge = normalizedDate < normalizedStartDate;
-    const status = historyMap.get(normalizeDate(date));
- // ✅ fixed here
-
-    let dayContent;
-    if (isBeforeChallenge || isFuture) {
-      dayContent = <span className="text-gray-300">{day}</span>;
-    } else if (status === "COMPLETED") {
-      dayContent = <CheckCircle2 className="w-6 h-6 text-green-500" />;
-    } else if (status === "MISSED") {
-      dayContent = <XCircle className="w-6 h-6 text-red-500" />;
-    } else {
-      dayContent = <span className="text-gray-500">{day}</span>;
+    // Fill empty slots
+    for (let i = 0; i < startDayIndex; i++) {
+      grid.push(<div key={`empty-${i}`} className="w-10 h-10"></div>);
     }
 
-    grid.push(
-      <div
-        key={day}
-        className={`w-10 h-10 flex items-center justify-center rounded-full ${
-          isToday ? "bg-indigo-100" : ""
-        }`}
-      >
-        {dayContent}
-      </div>
-    );
-  }
+    // Fill days
+    for (let day = 1; day <= daysInMonth; day++) {
+      // ✅ Create each day's date in UTC.
+      const date = new Date(Date.UTC(year, month, day));
+      const todayUTC = new Date();
+      
+      const isToday = normalizeDateToUTCString(date) === normalizeDateToUTCString(todayUTC);
+      const isFuture = date > todayUTC;
+      const isBeforeChallenge = date < challengeStartUTC;
+      
+      // ✅ Look up the status using the same UTC normalization.
+      const status = historyMap.get(normalizeDateToUTCString(date));
 
-  return grid;
-};
+      let dayContent;
+      if (isBeforeChallenge || isFuture) {
+        dayContent = <span className="text-gray-300">{day}</span>;
+      } else if (status === "COMPLETED") {
+        dayContent = <CheckCircle2 className="w-6 h-6 text-green-500" />;
+      } else if (status === "MISSED") {
+        dayContent = <XCircle className="w-6 h-6 text-red-500" />;
+      } else {
+        dayContent = <span className="text-gray-500">{day}</span>;
+      }
+
+      grid.push(
+        <div
+          key={day}
+          className={`w-10 h-10 flex items-center justify-center rounded-full ${
+            isToday ? "bg-indigo-100" : ""
+          }`}
+        >
+          {dayContent}
+        </div>
+      );
+    }
+    return grid;
+  };
+
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
@@ -255,7 +254,6 @@ const generateCalendarGrid = () => {
     </div>
   );
 };
-
 
 // --- MAIN PAGE COMPONENT ---
 export default function ChallengeManagementPage() {
