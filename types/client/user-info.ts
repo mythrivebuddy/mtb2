@@ -6,6 +6,7 @@ export interface IBlockUserParams {
 
 export interface IPlan {
   name: string;
+  id: string;
 }
 
 export interface IUser {
