@@ -14,10 +14,20 @@ import ConfirmAction from "@/components/ConfirmAction";
 import { toast } from "sonner";
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 export default function SpotlightPage() {
   const [isChecked, setIsChecked] = useState(false);
   const [jpAmount, setJpAmount] = useState<number | null>(null);
+  const [isDialogBoxOpen, setIsDialogBoxOpen] = useState<boolean>(false);
+  const router = useRouter();
 
   const { data: session } = useSession();
   const queryClient = useQueryClient();
@@ -55,15 +65,18 @@ export default function SpotlightPage() {
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     },
     onError: (error) => {
+      if(getAxiosErrorMessage(error).includes("Complete your business profile before applying for spotlight")){
+        setIsDialogBoxOpen(true);
+      }
       toast.error(getAxiosErrorMessage(error));
     },
   });
-  useEffect(()=>{
-    (async()=>{
-      const amount = await getJpAmountForActivity(ActivityType.SPOTLIGHT)
+  useEffect(() => {
+    (async () => {
+      const amount = await getJpAmountForActivity(ActivityType.SPOTLIGHT);
       setJpAmount(amount);
     })();
-  },[])
+  }, []);
   const getStatusMessage = () => {
     if (!spotlights) return null;
     const currentSpotlight = spotlights.find((spotlight) =>
@@ -209,6 +222,36 @@ export default function SpotlightPage() {
             </ConfirmAction>
           </div>
         </Card>
+        <Dialog open={isDialogBoxOpen} onOpenChange={setIsDialogBoxOpen}>
+          <DialogContent className="bg-white text-black rounded-3xl sm:rounded-3xl">
+            <DialogHeader className="text-center">
+              <DialogTitle
+                className="text-2xl font-semibold"
+                style={{ color: "#151E46" }}
+              >
+                Business Profile Required
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-gray-600 ">
+              You need to create a business profile before applying for
+              Spotlight.
+            </p>
+            <DialogFooter>
+
+            <Button variant="outline" onClick={()=>{
+              setIsDialogBoxOpen(false);
+            }}>Cancel</Button>
+            <Button
+              onClick={() => {
+                setIsDialogBoxOpen(false);
+                router.push("/dashboard/business-profile");
+              }}
+            >
+              Create Business Profile
+            </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

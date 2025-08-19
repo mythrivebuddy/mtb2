@@ -124,6 +124,7 @@ model Spotlight {
   status              SpotlightStatus     @default(APPLIED)
   defaultDurationDays Int                 @default(1)
   activatedAt         DateTime?
+  seenByAdmin         Boolean             @default(false) 
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities          SpotlightActivity[]
 
@@ -608,6 +609,18 @@ model NotificationSettings {
   message           String
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+}
+
+model CompletionRecord {
+  id          String   @id @default(cuid())
+  date        DateTime @db.Date
+  status      String   // Will store "COMPLETED" or "MISSED"
+  userId      String
+  challengeId String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, challengeId, date])
+  @@map("completion_records")
 }
 
 enum Role {

@@ -2,11 +2,18 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 
-/**
- * MODIFIED: Handles GET requests to fetch the detailed data for a single challenge,
- * including the current user's enrollment status, streaks, AND their daily tasks.
- */
+// Define a clear type for the task objects to satisfy TypeScript
+type Task = {
+  id: string;
+  description: string;
+  completed: boolean;
+};
 
+/**
+ * Handles GET requests to fetch the detailed data for a single challenge.
+ * It intelligently provides the correct tasks based on whether the user is
+ * an enrolled participant or the challenge creator.
+ */
 export async function GET(
   request: NextRequest,
   context: { params: { slug: string } }
@@ -27,14 +34,19 @@ export async function GET(
       );
     }
 
-    // Get today's date without time
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const [challenge, enrollment, participantCount, leaderboard] =
+    // Fetch all necessary data concurrently for maximum efficiency
+    const [challenge, enrollment, participantCount, leaderboard, completionRecords] =
       await Promise.all([
         prisma.challenge.findUnique({
           where: { id: challengeId },
+          include: {
+            creator: {
+              select: { name: true },
+            },
+          },
         }),
         prisma.challengeEnrollment.findUnique({
           where: {
@@ -71,6 +83,15 @@ export async function GET(
             },
           },
         }),
+        prisma.completionRecord.findMany({
+            where: {
+              userId: userId,
+              challengeId: challengeId,
+            },
+            orderBy: {
+              date: 'asc'
+            }
+        })
       ]);
 
     if (!challenge) {
@@ -80,7 +101,7 @@ export async function GET(
       );
     }
 
-    // Auto-reset outdated completed tasks
+    // This section handles the daily reset of tasks
     if (enrollment?.userTasks?.length) {
       const tasksToReset = enrollment.userTasks.filter((task) => {
         if (task.isCompleted && task.lastCompletedAt) {
@@ -105,7 +126,7 @@ export async function GET(
           },
         });
 
-        // Also reset in-memory so the response matches the DB
+        // Update the in-memory object so the response is immediately consistent
         enrollment.userTasks = enrollment.userTasks.map((task) => {
           if (tasksToReset.some((t) => t.id === task.id)) {
             return { ...task, isCompleted: false, lastCompletedAt: null };
@@ -115,13 +136,45 @@ export async function GET(
       }
     }
 
+    // Declare dailyTasks with the explicit 'Task[]' type to fix TypeScript error
+    let dailyTasks: Task[];
+
+    if (enrollment) {
+      // Case 1: The user IS enrolled. Give them their personal, trackable tasks.
+      dailyTasks = (enrollment.userTasks || []).map((task) => ({
+        id: task.id,
+        description: task.description,
+        completed: task.isCompleted,
+      }));
+    } else if (challenge.creatorId === userId) {
+      // Case 2: User is the creator (but not enrolled). Give them the template tasks.
+      const templateTasks = await prisma.challengeTask.findMany({
+        where: { challengeId: challengeId },
+      });
+      dailyTasks = templateTasks.map((task) => ({
+        id: task.id,
+        description: task.description,
+        completed: false, // Template tasks are not completable
+      }));
+    } else {
+      // Case 3: User is not involved with this challenge. Send no tasks.
+      dailyTasks = [];
+    }
+    
+    // Format leaderboard and history data for the frontend
     const formattedLeaderboard = leaderboard.map((entry) => ({
       id: entry.user.id,
       name: entry.user.name || "Anonymous",
       avatar: entry.user.image || "/default-avatar.png",
       score: entry.currentStreak,
     }));
+    
+    const history = (completionRecords || []).map(comp => ({
+        date: comp.date.toISOString(),
+        status: comp.status
+    }));
 
+    // Assemble the final, complete response payload
     const responseData = {
       ...challenge,
       startDate: challenge.startDate.toISOString(),
@@ -130,12 +183,9 @@ export async function GET(
       currentStreak: enrollment?.currentStreak ?? 0,
       longestStreak: enrollment?.longestStreak ?? 0,
       participantCount,
-      dailyTasks: (enrollment?.userTasks || []).map((task) => ({
-        id: task.id,
-        description: task.description,
-        completed: task.isCompleted,
-      })),
+      dailyTasks: dailyTasks, // This is now correctly typed
       leaderboard: formattedLeaderboard,
+      history: history,
     };
 
     return NextResponse.json(responseData);
@@ -153,10 +203,9 @@ export async function GET(
   }
 }
 
-
 /**
  * Handles DELETE requests to remove a challenge.
- * (This function remains unchanged)
+ * Ensures that only the creator of the challenge can delete it.
  */
 export async function DELETE(
   request: NextRequest,
@@ -208,9 +257,8 @@ export async function DELETE(
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-      "DELETE /api/challenge/my-challenge/${challengeId} Error:",
-      errorMessage,
-      error
+      `DELETE /api/challenge/my-challenge/${challengeId} Error:`,
+      errorMessage
     );
     return NextResponse.json(
       { error: "Internal Server Error", details: errorMessage },
@@ -221,7 +269,7 @@ export async function DELETE(
 
 /**
  * Handles PATCH requests to update an existing challenge.
- * (This function remains unchanged)
+ * Ensures that only the creator of the challenge can edit it.
  */
 export async function PATCH(
   request: NextRequest,
@@ -263,15 +311,8 @@ export async function PATCH(
       );
     }
 
-    const {
-        title,
-        description,
-        reward,
-        penalty,
-        startDate,
-        endDate,
-        mode
-    } = body;
+    const { title, description, reward, penalty, startDate, endDate, mode } =
+      body;
 
     const updateData = {
       title,
@@ -288,24 +329,27 @@ export async function PATCH(
       data: updateData,
     });
 
+    // Serialize date fields for a consistent JSON response
     const serializableUpdatedChallenge = {
-        ...updatedChallenge,
-        startDate: updatedChallenge.startDate.toISOString(),
-        endDate: updatedChallenge.endDate.toISOString(),
-        createdAt: updatedChallenge.createdAt.toISOString(),
+      ...updatedChallenge,
+      startDate: updatedChallenge.startDate.toISOString(),
+      endDate: updatedChallenge.endDate.toISOString(),
+      createdAt: updatedChallenge.createdAt.toISOString(),
     };
 
     return NextResponse.json(
-      { message: "Challenge updated successfully", data: serializableUpdatedChallenge },
+      {
+        message: "Challenge updated successfully",
+        data: serializableUpdatedChallenge,
+      },
       { status: 200 }
     );
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
     console.error(
-    "  PATCH /api/challenge/my-challenge/${challengeId} Error:",
-      errorMessage,
-      error
+      `PATCH /api/challenge/my-challenge/${challengeId} Error:`,
+      errorMessage
     );
     return NextResponse.json(
       { error: "Internal Server Error", details: errorMessage },

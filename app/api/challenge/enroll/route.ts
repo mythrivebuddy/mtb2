@@ -1,11 +1,11 @@
+// File: app/api/enroll/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
-import axios from "axios"; // your axios instance
-import { getAxiosErrorMessage } from "@/utils/ax"; // error handler
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 export async function POST(request: Request) {
@@ -16,9 +16,8 @@ export async function POST(request: Request) {
     }
 
     const joinerId = session.user.id;
-
-    // Step 1: Parse body
     const { challengeId } = await request.json();
+
     if (!challengeId) {
       return NextResponse.json(
         { error: "Challenge ID is required." },
@@ -26,31 +25,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Step 2: Early check for duplicate enrollment
-    const existingEnrollment = await prisma.challengeEnrollment.findUnique({
-      where: { userId_challengeId: { userId: joinerId, challengeId } },
+    // ✅ CORRECTED QUERY: Fetch the challenge and its template tasks separately.
+    const challengeToJoin = await prisma.challenge.findUnique({
+      where: { id: challengeId },
     });
-    if (existingEnrollment) {
-      return NextResponse.json(
-        { error: "You are already enrolled in this challenge." },
-        { status: 409 }
-      );
-    }
-
-    // Step 3: Fetch user and challenge (include plan)
-    const [joiner, challengeToJoin] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: joinerId },
-        include: { plan: true }, // ✅ Required for deductJp
-      }),
-      prisma.challenge.findUnique({
-        where: { id: challengeId },
-      }),
-    ]);
-
-    if (!joiner) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 });
-    }
 
     if (!challengeToJoin) {
       return NextResponse.json(
@@ -58,6 +36,13 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+    
+    // Fetch the template tasks associated with this challenge.
+    // This assumes you have a model named `ChallengeTask` linked to the challenge.
+    const templateTasks = await prisma.challengeTask.findMany({
+        where: { challengeId: challengeId },
+    });
+
 
     if (challengeToJoin.creatorId === joinerId) {
       return NextResponse.json(
@@ -66,28 +51,49 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✨ OPTIMIZATION: Fetch the creator *before* the transaction begins.
+    // Fetch the joiner and check for existing enrollment
+    const [joiner, existingEnrollment] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: joinerId },
+        include: { plan: true }, // Required for deductJp
+      }),
+      prisma.challengeEnrollment.findUnique({
+        where: { userId_challengeId: { userId: joinerId, challengeId } },
+      }),
+    ]);
+
+    if (!joiner) {
+      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+
+    if (existingEnrollment) {
+      return NextResponse.json(
+        { error: "You are already enrolled in this challenge." },
+        { status: 409 }
+      );
+    }
+
+    // Fetch creator only if there's a cost
     const creator =
       challengeToJoin.cost > 0
         ? await prisma.user.findUnique({
             where: { id: challengeToJoin.creatorId },
-            include: { plan: true }, // ✅ Required for assignJp
+            include: { plan: true }, // Required for assignJp
           })
         : null;
 
     if (challengeToJoin.cost > 0 && !creator) {
-      // If there's a cost but the creator wasn't found, throw an error.
       return NextResponse.json(
         { error: "Challenge creator could not be found." },
         { status: 404 }
       );
     }
 
-    // Step 4: Create enrollment with JP deduction in a more efficient transaction
+    // ✅ MODIFIED TRANSACTION: Now creates enrollment AND tasks together.
     const newEnrollment = await prisma.$transaction(
       async (tx) => {
+        // 1. Handle JP cost if applicable
         if (challengeToJoin.cost > 0 && creator) {
-          // Process JP deduction and assignment in parallel
           await Promise.all([
             deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
               amount: challengeToJoin.cost,
@@ -97,8 +103,28 @@ export async function POST(request: Request) {
             }),
           ]);
         }
-        console.log("notification sent to", challengeToJoin.creatorId);
 
+        // 2. Create the enrollment record
+        const enrollment = await tx.challengeEnrollment.create({
+          data: {
+            userId: joinerId,
+            challengeId,
+            status: "IN_PROGRESS",
+          },
+        });
+
+        // 3. ✅ CRITICAL FIX: Create the user's tasks from the template tasks we fetched.
+        if (templateTasks && templateTasks.length > 0) {
+          await tx.userChallengeTask.createMany({
+            data: templateTasks.map((task) => ({
+              description: task.description,
+              enrollmentId: enrollment.id,
+              templateTaskId: task.id, // ✅ ERROR FIX: Added the missing required field.
+            })),
+          });
+        }
+
+        // 4. Send notification
         sendPushNotificationToUser(
           challengeToJoin.creatorId,
           "New challenger alert 🚀",
@@ -106,42 +132,16 @@ export async function POST(request: Request) {
           { url: "/dashboard/challenge/my-challenges" }
         );
 
-        return tx.challengeEnrollment.create({
-          data: {
-            userId: joinerId,
-            challengeId,
-            status: "IN_PROGRESS",
-          },
-        });
+        return enrollment;
       },
       { timeout: 15000 }
     );
 
-    // Step 5: Fire background job (non-blocking)
-    setTimeout(() => {
-      axios
-        .post(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/challenge/process-enrollment`,
-          {
-            enrollmentId: newEnrollment.id,
-          }
-        )
-        .catch((err) => {
-          console.error(
-            "Failed to trigger background processing:",
-            getAxiosErrorMessage(err)
-          );
-        });
-    }, 0);
-
-    // Step 6: Respond to client
+    // Respond to the client
     return NextResponse.json(
       {
         message: "Enrollment successful!",
-        enrollment: {
-          ...newEnrollment,
-          userTasks: [],
-        },
+        enrollmentId: newEnrollment.id,
       },
       { status: 201 }
     );
@@ -156,7 +156,6 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
     console.error("Unknown error during enrollment:", error);
     return NextResponse.json(
       { error: "An unexpected internal server error occurred." },
