@@ -1,29 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Check,
-  Flame,
-  Target,
-  Users,
-  Calendar,
-  ChevronLeft,
-  Loader2,
-  Award,
- 
-  PartyPopper,
-  CalendarX,
-  CalendarDays,
-  Share2,
-  Link2 as CopyIcon,
-  X as CloseIcon,
-  ChevronRight,
-  CheckCircle2,
-  XCircle,
+  Check, Flame, Target, Users, Calendar, ChevronLeft, Loader2, Award,
+  PartyPopper, CalendarX, CalendarDays, Share2, Link2 as CopyIcon,
+  X as CloseIcon, ChevronRight, CheckCircle2, XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // --- TYPE DEFINITIONS ---
 
@@ -94,26 +80,33 @@ const StatCard = ({
 const TaskItem = ({
   task,
   onToggle,
+  isUpdating,
 }: {
   task: Task;
   onToggle: (taskId: string, newStatus: boolean) => void;
+  isUpdating: boolean;
 }) => (
   <div
-    onClick={() => onToggle(task.id, !task.completed)}
-    className={`flex items-center p-4 rounded-lg cursor-pointer transition-all duration-200 ${task.completed
-      ? "bg-green-100 text-gray-500 line-through"
-      : "bg-gray-50 hover:bg-gray-100"
-      }`}
+    onClick={() => !isUpdating && onToggle(task.id, !task.completed)}
+    className={`flex items-center p-4 rounded-lg transition-all duration-200 ${
+      isUpdating ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+    } ${
+      task.completed
+        ? "bg-green-100 text-gray-500 line-through"
+        : "bg-gray-50 hover:bg-gray-100"
+    }`}
   >
     <div
-      className={`w-6 h-6 rounded-full border-2 ${task.completed ? "bg-green-500 border-green-500" : "border-gray-300"
-        } flex items-center justify-center mr-4 flex-shrink-0`}
+      className={`w-6 h-6 rounded-full border-2 ${
+        task.completed ? "bg-green-500 border-green-500" : "border-gray-300"
+      } flex items-center justify-center mr-4 flex-shrink-0`}
     >
       {task.completed && <Check className="w-4 h-4 text-white" />}
     </div>
     <span className="flex-grow">{task.description}</span>
   </div>
 );
+
 
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center min-h-screen">
@@ -146,7 +139,6 @@ const ChallengeCalendar = ({
 }: ChallengeCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Normalizes a date to a 'YYYY-MM-DD' string based on UTC.
   const normalizeDateToUTCString = (date: Date): string => {
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -154,7 +146,6 @@ const ChallengeCalendar = ({
     return `${year}-${month}-${day}`;
   };
 
-  // Create the history map using the UTC normalized date string.
   const historyMap = new Map(
     history.map((item) => [
       normalizeDateToUTCString(new Date(item.date)),
@@ -162,7 +153,6 @@ const ChallengeCalendar = ({
     ])
   );
   
-  // Get the start date of the challenge at midnight UTC for accurate comparison.
   const challengeStartUTC = new Date(challengeStartDate);
   challengeStartUTC.setUTCHours(0, 0, 0, 0);
 
@@ -176,12 +166,10 @@ const ChallengeCalendar = ({
     const startDayIndex = firstDayOfMonth.getUTCDay();
     const grid = [];
 
-    // Fill empty slots for alignment
     for (let i = 0; i < startDayIndex; i++) {
       grid.push(<div key={`empty-${i}`}></div>);
     }
-   
-    // Fill days of the month
+    
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(Date.UTC(year, month, day));
       const todayUTC = new Date();
@@ -220,12 +208,8 @@ const ChallengeCalendar = ({
     return grid;
   };
 
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
+  const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
   return (
     <div
@@ -237,19 +221,13 @@ const ChallengeCalendar = ({
           {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
         </h3>
         <div className="flex items-center gap-1">
-          <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-            <ChevronLeft className="w-5 h-5 text-slate-600" />
-          </button>
-          <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-            <ChevronRight className="w-5 h-5 text-slate-600" />
-          </button>
+          <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"><ChevronLeft className="w-5 h-5 text-slate-600" /></button>
+          <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"><ChevronRight className="w-5 h-5 text-slate-600" /></button>
         </div>
       </div>
       <div className="grid grid-cols-7 text-center">
         {daysOfWeek.map((day) => (
-          <div key={day} className="h-10 flex items-center justify-center text-xs font-medium text-slate-400 uppercase tracking-wider">
-            {day.slice(0, 3)}
-          </div>
+          <div key={day} className="h-10 flex items-center justify-center text-xs font-medium text-slate-400 uppercase tracking-wider">{day.slice(0, 3)}</div>
         ))}
         {generateCalendarGrid()}
       </div>
@@ -262,56 +240,44 @@ export default function ChallengeManagementPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
+  const queryClient = useQueryClient();
 
-  const [challenge, setChallenge] = useState<ChallengeDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [calendarPosition, setCalendarPosition] = useState("top-full mt-2");
+
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const streakCardRef = useRef<HTMLDivElement>(null);
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
-  const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
-
-  const fetchChallengeDetails = useCallback(async () => {
-    if (!slug) return;
-    try {
-      if (!challenge) setLoading(true);
+  
+  const {
+    data: challenge,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<ChallengeDetails, AxiosError<{ error?: string }>>({ // Specify error data shape
+    queryKey: ["getChallengeDetails", slug],
+    queryFn: async () => {
       const response = await axios.get(`/api/challenge/my-challenge/${slug}`);
-
-      setChallenge(response.data);
-    } catch (err) {
-      setError(axios.isAxiosError(err) && err.response?.data?.error ? err.response.data.error : "An unknown error occurred");
-    } finally {
-      setLoading(false);
-    }
-  }, [slug, challenge]);
-
-  useEffect(() => {
-    fetchChallengeDetails();
-  }, [slug, fetchChallengeDetails]);
+      return response.data;
+    },
+    enabled: !!slug,
+  });
 
   const handleCalendarToggle = () => {
     if (!streakCardRef.current) return;
-
     const rect = streakCardRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
     const calendarHeight = 380;
-
     if (spaceBelow < calendarHeight && spaceAbove > calendarHeight) {
       setCalendarPosition("bottom-full mb-2");
     } else {
       setCalendarPosition("top-full mt-2");
     }
-
     setIsCalendarVisible(prev => !prev);
   };
 
@@ -322,33 +288,32 @@ export default function ChallengeManagementPage() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isCalendarVisible]);
 
-
-  const handleToggleTask = async (taskId: string, newStatus: boolean) => {
-    const originalTasks = challenge?.dailyTasks;
-    setChallenge((prev) => {
-      if (!prev) return null;
-      return { ...prev, dailyTasks: prev.dailyTasks.map((t) => t.id === taskId ? { ...t, completed: newStatus } : t), };
-    });
-    try {
-      const response = await axios.patch(`/api/challenge/tasks/${taskId}`, { isCompleted: newStatus, });
-      if (response.data.allTasksCompleted) { setIsCompletionModalOpen(true); }
-      await fetchChallengeDetails();
-    } catch (error) {
-      console.error("Failed to update task:", error);
-      const specificError = axios.isAxiosError(error) && error.response?.data?.error ? error.response.data.error : "Failed to update the task. Please try again.";
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ taskId, isCompleted }: { taskId: string; isCompleted: boolean }) => {
+      return axios.patch(`/api/challenge/tasks/${taskId}`, { isCompleted });
+    },
+    onSuccess: (data) => {
+      if (data.data.allTasksCompleted) {
+        setIsCompletionModalOpen(true);
+      }
+      queryClient.invalidateQueries({ queryKey: ["getChallengeDetails", slug] });
+    },
+    onError: (error: AxiosError<{ error?: string }>) => { // Specify error data shape
+      const specificError = error.response?.data?.error || "Failed to update task.";
       setErrorMessage(specificError);
       setIsErrorModalOpen(true);
-      setChallenge((prev) => {
-        if (!prev) return null;
-        return { ...prev, dailyTasks: originalTasks || [] };
-      });
-    }
+    },
+  });
+
+  const handleToggleTask = (taskId: string, newStatus: boolean) => {
+    updateTaskMutation.mutate({ taskId, isCompleted: newStatus });
   };
+  
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareableLink).then(() => {
@@ -361,15 +326,21 @@ export default function ChallengeManagementPage() {
   const shareUrl = encodeURIComponent(shareableLink);
   const socialLinks = [{ name: "X", onClick: () => window.open(`https://x.com/intent/tweet?url=${shareUrl}&text=${shareText}`), icon: (<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" > <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" /> </svg>), }, { name: "Facebook", onClick: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`), icon: (<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" > <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073Z" /> </svg>), }, { name: "LinkedIn", onClick: () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`), icon: (<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" > <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z" /> </svg>), }, { name: "Telegram", onClick: () => window.open(`https://t.me/share/url?url=${shareUrl}&text=${shareText}`), icon: (<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" > <path d="M.48 11.727c-1.256.49-1.233 1.21.05 1.57l4.38 1.353 1.353 4.38c.36.118 1.08.103 1.57-.05L9.63 17.85l5.523 4.08c1.02.75 1.83.343 2.138-.853l3.96-18.498c.39-1.84-.89-2.52-2.19-1.995L.48 11.727z" /> </svg>), }, { name: "WhatsApp", onClick: () => window.open(`https://api.whatsapp.com/send?text=${shareText}%20${shareUrl}`), icon: (<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" > <path d="M12.04 2.004c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.5 1.36 5.06l-1.43 5.23 5.36-1.42c1.48.82 3.16 1.25 4.88 1.25 5.46 0 9.91-4.45 9.91-9.91 0-5.47-4.45-9.91-9.91-9.91m0 18.26c-1.63 0-3.24-.44-4.65-1.28l-.34-.2-3.44.91.93-3.35-.22-.36c-.92-1.48-1.4-3.2-1.4-5.01 0-4.57 3.71-8.28 8.28-8.28 4.57 0 8.28 3.71 8.28 8.28 0 4.57-3.71 8.28-8.28 8.28m4.51-6.15c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.37-1.94-1.2-.72-.65-1.2-1.45-1.34-1.7-.14-.24 0-.37.11-.48.1-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.29-.74-1.77s-.4-.41-.54-.41-.28-.01-.42-.01c-.14 0-.38.06-.58.3-.2.24-.76.74-.76 1.8 0 1.06.78 2.08.88 2.22.1.14 1.55 2.5 3.76 3.32.53.2 1 .32 1.34.4.45.1.86.08 1.18-.06.38-.16 1.25-1.03 1.42-1.29.17-.26.17-.48.12-.6z" /> </svg>), },];
 
-  if (loading) { return <LoadingSpinner />; }
-  if (error) { return <div className="text-center text-red-500 mt-10 p-4">{error}</div>; }
+  // --- THIS IS THE CORRECTED BLOCK ---
+  if (isLoading) { return <LoadingSpinner />; }
+  if (isError) {
+    // Safely check for the custom error message from your API
+    const errorMessage = 
+      axios.isAxiosError(error) && error.response?.data?.error
+        ? error.response.data.error
+        : error.message;
+    return <div className="text-center text-red-500 mt-10 p-4">Error: {errorMessage}</div>;
+  }
   if (!challenge) { return <div className="text-center text-gray-500 mt-10 p-4">Challenge data not found.</div>; }
 
   const daysLeft = Math.ceil((new Date(challenge.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  //pletedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
-const completedDays = (challenge.history || []).filter(
-  (day) => day.status === "COMPLETED"
-).length;
+  const completedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
+
   return (
     <>
       <div className="min-h-screen font-sans">
@@ -387,13 +358,7 @@ const completedDays = (challenge.history || []).filter(
                 </button>
               </div>
             </div>
-
-            {/* Title */}
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
-              {challenge.title}
-            </h1>
-
-            {/* Date Range */}
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">{challenge.title}</h1>
             <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">
               <CalendarDays className="w-4 h-4 flex-shrink-0" />
               <div className="flex items-center gap-2 flex-wrap">
@@ -412,25 +377,8 @@ const completedDays = (challenge.history || []).filter(
           )}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
             <div className="relative" ref={streakCardRef}>
-              <StatCard
-                icon={<Flame className="w-6 h-6 text-white" />}
-                label="Current Streak"
-                value={`${challenge.currentStreak} Days`}
-                colorClass="bg-orange-500"
-                cornerIcon={
-                  <button onClick={handleCalendarToggle} className="p-1 rounded-full hover:bg-gray-200 transition-colors">
-                    <CalendarDays className="w-4 h-4 text-gray-400" />
-                  </button>
-                }
-              />
-              {isCalendarVisible && (
-                <ChallengeCalendar
-                  history={challenge.history || []}
-                  challengeStartDate={challenge.startDate}
-                  positionClasses={`left-0 lg:left-1/2 lg:-translate-x-1/2 ${calendarPosition}`}
-                  calendarRef={calendarRef}
-                />
-              )}
+              <StatCard icon={<Flame className="w-6 h-6 text-white" />} label="Current Streak" value={`${challenge.currentStreak} Days`} colorClass="bg-orange-500" cornerIcon={<button onClick={handleCalendarToggle} className="p-1 rounded-full hover:bg-gray-200 transition-colors"><CalendarDays className="w-4 h-4 text-gray-400" /></button>} />
+              {isCalendarVisible && <ChallengeCalendar history={challenge.history || []} challengeStartDate={challenge.startDate} positionClasses={`left-0 lg:left-1/2 lg:-translate-x-1/2 ${calendarPosition}`} calendarRef={calendarRef} />}
             </div>
             <StatCard icon={<Target className="w-6 h-6 text-white" />} label="Longest Streak" value={`${challenge.longestStreak} Days`} colorClass="bg-red-500" />
             <StatCard icon={<Award className="w-6 h-6 text-white" />} label="Reward" value={`${challenge.reward} JP`} colorClass="bg-green-500" />
@@ -444,7 +392,7 @@ const completedDays = (challenge.history || []).filter(
               <div className="space-y-3">
                 {challenge.dailyTasks?.length > 0 ? (
                   challenge.dailyTasks.map((task) => (
-                    <TaskItem key={task.id} task={task} onToggle={handleToggleTask} />
+                    <TaskItem key={task.id} task={task} onToggle={handleToggleTask} isUpdating={updateTaskMutation.isPending} />
                   ))
                 ) : (<p className="text-gray-500">No tasks defined for this challenge yet.</p>)}
               </div>
@@ -471,12 +419,7 @@ const completedDays = (challenge.history || []).filter(
       </div>
 
       {/* --- Modals --- */}
-      {isCompletionModalOpen && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white p-6 rounded-xl shadow-2xl transform translate-y-[-10px] transition-all duration-300 bg-gradient-to-br from-white to-gray-50 border border-gray-100">
-          <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" /> <h2 className="text-2xl font-bold text-slate-800 mb-2"> Day Complete! </h2>
-          <p className="text-slate-600 mb-6"> Great job! You&apos;ve completed all your tasks for today. Your streak has been updated. </p>
-          <button onClick={() => setIsCompletionModalOpen(false)} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all" > Keep Going! </button>
-        </div> </div>)}
+      {isCompletionModalOpen && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"> <div className="bg-white p-6 rounded-xl shadow-2xl transform translate-y-[-10px] transition-all duration-300 bg-gradient-to-br from-white to-gray-50 border border-gray-100"> <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" /> <h2 className="text-2xl font-bold text-slate-800 mb-2"> Day Complete! </h2> <p className="text-slate-600 mb-6"> Great job! You&apos;ve completed all your tasks for today. Your streak has been updated. </p> <button onClick={() => setIsCompletionModalOpen(false)} className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all" > Keep Going! </button> </div> </div>)}
       {isErrorModalOpen && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"> <div className="bg-white p-6 rounded-xl shadow-2xl transform translate-y-[-10px] transition-all duration-300 bg-gradient-to-br from-white to-gray-50 border border-gray-100"> <CalendarX className="w-20 h-20 text-amber-500 mx-auto mb-4" /> <h2 className="text-2xl font-bold text-slate-800 mb-2"> Challenge Not Active </h2> <p className="text-slate-600 mb-6"> {errorMessage || "This challenge is currently inactive or has ended. You can no longer submit tasks for it."} </p> <button onClick={() => setIsErrorModalOpen(false)} className="w-full bg-slate-800 text-white p-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors" > Got It </button> </div> </div>)}
       {isShareModalOpen && (<div onClick={() => setIsShareModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" > <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8" > <div className="flex justify-between items-center mb-6"> <h2 className="text-xl font-bold text-slate-800">Share</h2> <button onClick={() => setIsShareModalOpen(false)} className="text-slate-400 hover:text-slate-600" > <CloseIcon size={24} /> </button> </div> <div> <h3 className="text-sm font-semibold text-slate-500 mb-3"> Share link via </h3> <div className="flex items-center justify-start gap-4 text-slate-700 mb-6 flex-wrap"> {socialLinks.map((social) => (<button key={social.name} onClick={social.onClick} aria-label={`Share on ${social.name}`} className="w-12 h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-full transition-colors" > {social.icon} </button>))} </div> <h3 className="text-sm font-semibold text-slate-500 mb-3"> Page direct </h3> <button onClick={handleCopyLink} className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors shadow-sm" > <CopyIcon className="w-5 h-5" /> <span>{copied ? "Copied!" : "Copy link"}</span> </button> </div> </div> </div>)}
     </>
