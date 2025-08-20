@@ -176,6 +176,7 @@ export default function ChallengePage() {
   };
 
   const handleAddTask = () => {
+    if (editFormData.tasks.length >= 3) return;
     setEditFormData(prev => ({ ...prev, tasks: [...prev.tasks, { description: "" }] }));
   };
 
@@ -279,6 +280,7 @@ export default function ChallengePage() {
                           <span>{c.reward} JP</span>
                         </div>
                         <div className="flex items-center gap-1">
+                          {/* --- THIS IS THE CLEANED SECTION --- */}
                           <button onClick={e => { e.stopPropagation(); setChallengeToEdit(c); }} className="p-2 rounded-full hover:bg-gray-100 transition" aria-label="Edit challenge"><Pencil className="w-4 h-4 text-gray-700" /></button>
                           <button onClick={e => { e.stopPropagation(); setChallengeToDelete(c); }} className="p-2 rounded-full hover:bg-red-100 transition" aria-label="Delete challenge"><Trash2 className="w-4 h-4 text-red-600" /></button>
                         </div>
@@ -298,7 +300,7 @@ export default function ChallengePage() {
         <p className="mt-12 text-center text-lg font-bold text-indigo-900 drop-shadow-md md:text-2xl">Ready to Kick Off? Let’s Dive In!!</p>
       </div>
 
-      {/* --- MODIFIED Edit Challenge Dialog --- */}
+      {/* --- Edit Challenge Dialog --- */}
       <Dialog open={!!challengeToEdit} onOpenChange={() => setChallengeToEdit(null)}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -319,21 +321,30 @@ export default function ChallengePage() {
               </div>
               {/* Task Editing Section */}
               <div className="grid grid-cols-4 items-start gap-4">
-                 <Label className="text-right pt-2">Tasks</Label>
-                 <div className="col-span-3 space-y-2">
-                    {editFormData.tasks.map((task, index) => (
-                      <div key={task.id || `new-${index}`} className="flex items-center gap-2">
-                        <Input value={task.description} onChange={e => handleTaskChange(index, e.target.value)} placeholder={`Task #${index + 1}`} required />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => handleDeleteTask(index)}><X className="h-4 w-4" /></Button>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={handleAddTask}>Add Task</Button>
-                 </div>
+                <Label className="text-right pt-2">Tasks</Label>
+                <div className="col-span-3 space-y-2">
+                  {editFormData.tasks.map((task, index) => (
+                    <div key={task.id || `new-${index}`} className="flex items-center gap-2">
+                      <Input value={task.description} onChange={e => handleTaskChange(index, e.target.value)} placeholder={`Task #${index + 1}`} required />
+                      <Button type="button" variant="ghost" size="icon" onClick={() => handleDeleteTask(index)}><X className="h-4 w-4" /></Button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={handleAddTask} disabled={editFormData.tasks.length >= 3}>Add Task</Button>
+                  {editFormData.tasks.length >= 3 && (
+                    <p className="text-xs text-red-500 pt-1">Maximum of 3 tasks reached.</p>
+                  )}
+                </div>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={editChallengeMutation.isPending}>
-                  {editChallengeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
+                  {editChallengeMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
@@ -346,13 +357,25 @@ export default function ChallengePage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
-            <DialogDescription>This will permanently delete the challenge<strong>{challengeToDelete?.title}</strong> This action cannot be undone.</DialogDescription>
+            <DialogDescription>
+              <span>
+                This will permanently delete the challenge{' '}
+                <strong>{challengeToDelete?.title}</strong>. This action cannot be
+                undone.
+              </span>
+            </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setChallengeToDelete(null)}>Cancel</Button>
             <Button variant="destructive" onClick={() => challengeToDelete && deleteChallengeMutation.mutate(challengeToDelete.id)} disabled={deleteChallengeMutation.isPending}>
-              {deleteChallengeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
+              {deleteChallengeMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
