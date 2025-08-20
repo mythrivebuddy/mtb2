@@ -148,3 +148,22 @@ self.addEventListener("notificationclick", function (event) {
   // Open the URL in a browser tab
   event.waitUntil(clients.openWindow(url));
 });
+
+
+// File: public/service-worker.js
+
+// File: public/service-worker.js
+
+self.addEventListener('push', function (event) {
+  const data = event.data.json();
+  console.log('New notification received', data);
+  
+  const options = {
+    body: data.body,
+    icon: data.icon || '/icon-192x192.png', // A default icon for your app
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
