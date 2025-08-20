@@ -130,7 +130,7 @@ const formatDate = (dateString: string) => {
   });
 };
 
-// --- UPDATED AND CORRECTED CALENDAR COMPONENT ---
+// --- UPDATED AND RESTYLED CALENDAR COMPONENT ---
 interface ChallengeCalendarProps {
   history: CompletionRecord[];
   challengeStartDate: string;
@@ -146,16 +146,15 @@ const ChallengeCalendar = ({
 }: ChallengeCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // ✅ Normalizes a date to a 'YYYY-MM-DD' string based on UTC.
-  // This is a reliable key for our history map.
+  // Normalizes a date to a 'YYYY-MM-DD' string based on UTC.
   const normalizeDateToUTCString = (date: Date): string => {
     const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
 
-  // ✅ Create the history map using the UTC normalized date string.
+  // Create the history map using the UTC normalized date string.
   const historyMap = new Map(
     history.map((item) => [
       normalizeDateToUTCString(new Date(item.date)),
@@ -174,44 +173,45 @@ const ChallengeCalendar = ({
     const month = currentDate.getMonth();
     const firstDayOfMonth = new Date(Date.UTC(year, month, 1));
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startDayIndex = firstDayOfMonth.getUTCDay(); // Use getUTCDay()
+    const startDayIndex = firstDayOfMonth.getUTCDay();
     const grid = [];
 
-    // Fill empty slots
+    // Fill empty slots for alignment
     for (let i = 0; i < startDayIndex; i++) {
-      grid.push(<div key={`empty-${i}`} className="w-10 h-10"></div>);
+      grid.push(<div key={`empty-${i}`}></div>);
     }
-
-    // Fill days
+   
+    // Fill days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      // ✅ Create each day's date in UTC.
       const date = new Date(Date.UTC(year, month, day));
       const todayUTC = new Date();
       
       const isToday = normalizeDateToUTCString(date) === normalizeDateToUTCString(todayUTC);
       const isFuture = date > todayUTC;
       const isBeforeChallenge = date < challengeStartUTC;
+      const isSelectable = !isFuture && !isBeforeChallenge;
       
-      // ✅ Look up the status using the same UTC normalization.
       const status = historyMap.get(normalizeDateToUTCString(date));
 
       let dayContent;
-      if (isBeforeChallenge || isFuture) {
-        dayContent = <span className="text-gray-300">{day}</span>;
-      } else if (status === "COMPLETED") {
+      if (status === "COMPLETED") {
         dayContent = <CheckCircle2 className="w-6 h-6 text-green-500" />;
       } else if (status === "MISSED") {
         dayContent = <XCircle className="w-6 h-6 text-red-500" />;
+      } else if (isSelectable || isToday) {
+        dayContent = <span className="text-slate-700">{day}</span>;
       } else {
-        dayContent = <span className="text-gray-500">{day}</span>;
+        dayContent = <span className="text-slate-300">{day}</span>;
       }
 
       grid.push(
         <div
           key={day}
-          className={`w-10 h-10 flex items-center justify-center rounded-full ${
-            isToday ? "bg-indigo-100" : ""
-          }`}
+          className={`
+            aspect-square flex items-center justify-center rounded-lg text-sm transition-colors
+            ${isToday ? "bg-indigo-100 text-indigo-600 font-bold" : ""}
+            ${isSelectable ? "hover:bg-slate-100" : "cursor-default"}
+          `}
         >
           {dayContent}
         </div>
@@ -230,23 +230,25 @@ const ChallengeCalendar = ({
   return (
     <div
       ref={calendarRef as React.RefObject<HTMLDivElement>}
-      className={`absolute ${positionClasses} w-[90vw] max-w-sm sm:w-80 bg-white p-4 rounded-lg shadow-2xl border border-gray-200 z-10`}
+      className={`absolute ${positionClasses} w-80 max-w-[90vw] bg-white p-5 rounded-xl shadow-2xl border border-slate-200 z-50`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <button onClick={handlePrevMonth} className="p-1 rounded-full hover:bg-gray-100">
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
-        </button>
-        <h3 className="font-semibold text-md text-gray-800">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-bold text-slate-800">
           {currentDate.toLocaleString("default", { month: "long", year: "numeric" })}
         </h3>
-        <button onClick={handleNextMonth} className="p-1 rounded-full hover:bg-gray-100">
-          <ChevronRight className="w-5 h-5 text-gray-600" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button onClick={handlePrevMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <ChevronLeft className="w-5 h-5 text-slate-600" />
+          </button>
+          <button onClick={handleNextMonth} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <ChevronRight className="w-5 h-5 text-slate-600" />
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center">
+      <div className="grid grid-cols-7 text-center">
         {daysOfWeek.map((day) => (
-          <div key={day} className="w-10 h-10 flex items-center justify-center text-xs font-medium text-gray-400">
-            {day}
+          <div key={day} className="h-10 flex items-center justify-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+            {day.slice(0, 3)}
           </div>
         ))}
         {generateCalendarGrid()}
@@ -271,7 +273,7 @@ export default function ChallengeManagementPage() {
   const [copied, setCopied] = useState(false);
 
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
-  const [calendarPosition, setCalendarPosition] = useState("bottom-full mb-2");
+  const [calendarPosition, setCalendarPosition] = useState("top-full mt-2");
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const streakCardRef = useRef<HTMLDivElement>(null);
 
@@ -294,19 +296,20 @@ export default function ChallengeManagementPage() {
 
   useEffect(() => {
     fetchChallengeDetails();
-  }, [slug]);
+  }, [slug, fetchChallengeDetails]);
 
   const handleCalendarToggle = () => {
     if (!streakCardRef.current) return;
 
     const rect = streakCardRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const calendarHeight = 350;
+    const calendarHeight = 380;
 
-    if (spaceAbove < calendarHeight) {
-      setCalendarPosition("top-full mt-2");
-    } else {
+    if (spaceBelow < calendarHeight && spaceAbove > calendarHeight) {
       setCalendarPosition("bottom-full mb-2");
+    } else {
+      setCalendarPosition("top-full mt-2");
     }
 
     setIsCalendarVisible(prev => !prev);
@@ -424,7 +427,7 @@ const completedDays = (challenge.history || []).filter(
                 <ChallengeCalendar
                   history={challenge.history || []}
                   challengeStartDate={challenge.startDate}
-                  positionClasses={`left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 ${calendarPosition}`}
+                  positionClasses={`left-0 lg:left-1/2 lg:-translate-x-1/2 ${calendarPosition}`}
                   calendarRef={calendarRef}
                 />
               )}
