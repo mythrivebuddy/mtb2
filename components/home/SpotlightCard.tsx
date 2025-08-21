@@ -177,7 +177,7 @@ export default function SpotlightCard() {
       className="rounded-[32px] md:px-10 px-4 text-white relative overflow-hidden h-full custom-phone-bg"
       style={{
         backgroundImage: `url('/landing-bg.svg')`, // Replace with your image URL or path
-        backgroundSize: "100% 100%", // Adjusts image to cover the container
+        backgroundSize: "cover", // Adjusts image to cover the container
         backgroundPosition: "center", // Centers the image
         backgroundRepeat: "no-repeat", // Prevents image repetition
       }}
