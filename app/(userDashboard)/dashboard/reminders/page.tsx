@@ -312,17 +312,19 @@ export default function RemindersPage() {
       
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto">
-          <header className="flex flex-col items-center sm:flex-row sm:justify-between gap-4 mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center sm:text-left order-2 sm:order-1">Reminders</h1>
-            <div className="w-full sm:w-auto order-1 sm:order-2">
+          <header className="flex flex-col items-center  sm:flex-row gap-48 mb-8">
+            
+            <div className="w-full sm:w-auto order-1  text-left sm:order-1">
                 <button onClick={() => setIsAddModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
                     <PlusCircle size={20} />
                     <span className="sm:hidden">Add New Reminder</span>
-                    <span className="hidden sm:inline">Add Reminder</span>
+                    
                 </button>
             </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center  order-2 sm:order-1">Reminders</h1>
+          
           </header>
-          <p className="text-center sm:text-left text-gray-600 mb-10 text-base sm:text-lg">Set up gentle reminders to stay aligned, hydrated, and focused.</p>
+          <p className="text-center  text-gray-600 mb-10 text-base sm:text-lg">Set up gentle reminders to stay aligned, hydrated, and focused.</p>
           
           {isLoading && <div className="text-center text-gray-500">Loading reminders...</div>}
           {isError && <div className="text-center text-red-500">Failed to load reminders.</div>}
