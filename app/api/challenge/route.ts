@@ -24,29 +24,56 @@ export async function POST(request: Request) {
 
     const userId = session.user.id; // Store user ID for clarity
 
-    const user = await prisma.user.findUnique({
+   const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 });
+    // This condition now checks for both user and user.plan
+    if (!user || !user.plan) { 
+      return NextResponse.json(
+        { error: "User or user plan not found." },
+        { status: 404 }
+      );
     }
 
-    // ✨ --- NEW MANUAL CHECK STARTS HERE --- ✨
-    // Manually verify the user's challenge limit before starting a transaction.
-    // This provides a guaranteed check that works in all environments (local & production).
-    const challengeCount = await prisma.challenge.count({
-      where: { creatorId: userId },
+ 
+
+    // ✨ --- MODIFIED MONTHLY LIMIT LOGIC STARTS HERE --- ✨
+
+    // 1. Determine the user's monthly limit based on their plan
+    let monthlyLimit: number;
+    const planName = user.plan.name.toUpperCase(); // Case-insensitive check
+
+    if (planName === 'FREE') {
+      monthlyLimit = 1;
+    } else {
+      // For any other plan (MONTHLY, YEARLY, LIFETIME, etc.)
+      monthlyLimit = 5;
+    }
+
+    // 2. Calculate the start of the current month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // 3. Count challenges created by the user THIS month
+    const monthlyChallengeCount = await prisma.challenge.count({
+      where: {
+        creatorId: userId,
+        createdAt: {
+          gte: startOfMonth, // gte = "greater than or equal to"
+        },
+      },
     });
 
-    if (challengeCount >= user.challenge_limit) {
+    // 4. Compare the monthly count with the user's plan limit
+    if (monthlyChallengeCount >= monthlyLimit) {
       return NextResponse.json(
-        { error: "You have reached your challenge creation limit." },
+        { error: "You have reached your monthly challenge creation limit." },
         { status: 403 } // 403 Forbidden
       );
     }
-    // ✨ --- NEW MANUAL CHECK ENDS HERE --- ✨
+    // ✨ --- MODIFIED MONTHLY LIMIT LOGIC ENDS HERE --- ✨
 
     const body = await request.json();
     const validationResult = challengeSchema.safeParse(body);
