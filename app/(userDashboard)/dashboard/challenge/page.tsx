@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { motion,AnimatePresence } from "framer-motion";
 
 // --- Types ---
 type Challenge = ChallengeDetailsForClient & {
@@ -225,20 +226,53 @@ export default function ChallengePage() {
             <h1 className="text-2xl sm:text-4xl font-extrabold text-indigo-900">Challenges</h1>
           </div>
           <div>
-            <div className="relative" ref={searchRef}>
-              <button onClick={() => setSearchVisible((p) => !p)} className="p-1 rounded-full hover:bg-gray-100 transition" aria-label="Toggle search">
-                <Search size={24} className="text-gray-600" />
-              </button>
-              {searchVisible && (
-                <div className="absolute right-0 top-10 z-20 bg-white border rounded-lg shadow-lg p-2 w-72 flex items-center gap-2">
-                  <Search size={16} className="text-gray-400" />
-                  <input ref={inputRef} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === "Escape" && setSearchVisible(false)} placeholder="Search challenges..." className="flex-1 text-sm bg-transparent focus:outline-none" />
-                  {searchTerm && (
-                    <button onClick={() => setSearchTerm("")} className="text-gray-400 hover:text-gray-600 text-lg px-1" aria-label="Clear search">×</button>
-                  )}
-                </div>
-              )}
-            </div>
+      <div className="relative max-sm:mt-8 max-sm:mb-8" ref={searchRef}>
+  {/* Search icon button */}
+  <button
+    onClick={() => setSearchVisible((p) => !p)}
+    className="p-1 rounded-full hover:bg-gray-100 transition"
+    aria-label="Toggle search"
+  >
+    <Search size={24} className="text-gray-600" />
+  </button>
+
+  {/* Animated dropdown search field */}
+  <AnimatePresence>
+    {searchVisible && (
+      <motion.div
+        initial={{ opacity: 0, y: -15, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -15, scale: 0.95 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 20
+        }}
+        className="absolute right-0 mt-2 z-20 w-72 bg-white border rounded-lg shadow-lg p-2 flex items-center gap-2 mb-12"
+      >
+        <Search size={16} className="text-gray-400" />
+        <input
+          ref={inputRef}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && setSearchVisible(false)}
+          placeholder="Search challenges..."
+          className="flex-1 text-sm bg-transparent focus:outline-none "
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm("")}
+            className="text-gray-400 hover:text-gray-600 text-lg px-1"
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        )}
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
+
           </div>
         </div>
         <p className="text-center text-lg text-slate-600 max-w-2xl mx-auto mb-10">Your personal challenges and new ones to discover, all in one place.</p>

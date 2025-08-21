@@ -13,7 +13,6 @@ import {
   X,
   Calendar as CalendarIcon,
   AlertTriangle,
- 
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -21,7 +20,15 @@ import axios, { AxiosError } from "axios";
 import { useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
   if (!title) return "";
@@ -36,8 +43,6 @@ const generateSlug = (title: string) => {
 type CreateChallengeProps = {
   onSuccess?: () => void;
 };
-
-
 
 // --- A reusable modal component for displaying messages ---
 const MessageModal = ({
@@ -54,26 +59,30 @@ const MessageModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-      <div className="m-4 w-full max-w-md transform rounded-2xl bg-white p-6 text-center shadow-xl transition-all">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-          <AlertTriangle className="h-8 w-8 text-red-600" />
-        </div>
-        <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
-        <div className="mt-2">
-          <p className="text-md text-slate-600">{message}</p>
-        </div>
-        <div className="mt-6">
-          <button
-            type="button"
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md ">
+        <DialogHeader className="flex flex-col items-center text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+            <AlertTriangle className="h-8 w-8 text-red-600" />
+          </div>
+          <DialogTitle className="text-2xl font-bold text-slate-800">
+            {title}
+          </DialogTitle>
+          <DialogDescription className="text-md text-slate-600 mt-2">
+            {message}
+          </DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter className="flex justify-center">
+          <Button
             onClick={onClose}
-            className="inline-flex w-full justify-center rounded-lg border border-transparent bg-red-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:w-auto sm:text-sm"
+            className="bg-red-600  hover:bg-red-700 w-full sm:w-auto"
           >
             OK
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -104,7 +113,7 @@ const formatDateForInput = (date: Date | null | undefined): string => {
   return date.toISOString().split("T")[0];
 };
 
-export default function CreateChallenge({ }: CreateChallengeProps) {
+export default function CreateChallenge({}: CreateChallengeProps) {
   const router = useRouter();
   const [modalContent, setModalContent] = useState<{
     title: string;
@@ -154,7 +163,6 @@ export default function CreateChallenge({ }: CreateChallengeProps) {
   });
 
   const { fields, append, remove } = useFieldArray({ name: "tasks", control });
-
 
   const mutation = useMutation<
     ChallengeApiResponse,
@@ -230,28 +238,10 @@ export default function CreateChallenge({ }: CreateChallengeProps) {
     );
   }
 
-
   return (
     <>
-      <MessageModal
-        isOpen={!!modalContent}
-        onClose={() => {
-          setModalContent(null);
-          if (mutation.isSuccess) {
-            router.push("/dashboard/challenge");
-          }
-          if (mutation.isError || mutation.isSuccess) {
-            mutation.reset();
-          }
-        }}
-        title={modalContent?.title ?? ""}
-        message={modalContent?.message ?? ""}
-      />
-
       <div className="w-full py-8 md:py-12">
         <div className="mx-auto w-full max-w-4xl px-4">
-         
-
           <div className="mb-8 text-center">
             <div className="mb-4 flex flex-col items-center justify-center gap-2 sm:flex-row sm:justify-end sm:gap-4">
               <div className="rounded-lg bg-blue-100 px-4 py-2 font-bold text-blue-800 shadow-md">
@@ -274,66 +264,71 @@ export default function CreateChallenge({ }: CreateChallengeProps) {
             className="space-y-6 rounded-2xl border border-slate-100 bg-white p-6 shadow-xl md:p-8"
           >
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
-  {/* Title */}
-  <div className="flex-1">
-    <label
-      htmlFor="title"
-      className="mb-1 block text-sm font-medium text-slate-700"
-    >
-      Challenge Title
-    </label>
-    <input
-      id="title"
-      placeholder="e.g., 30-Day Fitness"
-      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-      {...register("title")}
-    />
-    {errors.title && (
-      <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>
-    )}
-  </div>
+              {/* Title */}
+              <div className="flex-1">
+                <label
+                  htmlFor="title"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  Challenge Title
+                </label>
+                <input
+                  id="title"
+                  placeholder="e.g., 30-Day Fitness"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  {...register("title")}
+                />
+                {errors.title && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.title.message}
+                  </p>
+                )}
+              </div>
 
-  {/* Cost */}
-  <div>
-    <label
-      htmlFor="cost"
-      className="mb-1 block text-sm font-medium text-slate-700"
-    >
-      Cost (JP)
-    </label>
-    <input
-      id="cost"
-      type="number"
-      placeholder="50"
-      className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-      {...register("cost", { valueAsNumber: true })}
-    />
-    {errors.cost && (
-      <p className="mt-1 text-sm text-red-500">{errors.cost.message}</p>
-    )}
-  </div>
+              {/* Cost */}
+              <div>
+                <label
+                  htmlFor="cost"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  Cost (JP)
+                </label>
+                <input
+                  id="cost"
+                  type="number"
+                  placeholder="50"
+                  className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  {...register("cost", { valueAsNumber: true })}
+                />
+                {errors.cost && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.cost.message}
+                  </p>
+                )}
+              </div>
 
-  {/* Reward */}
-  <div>
-    <label
-      htmlFor="reward"
-      className="mb-1 block text-sm font-medium text-slate-700"
-    >
-      Reward (JP)
-    </label>
-    <input
-      id="reward"
-      type="number"
-      placeholder="50"
-      className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
-      {...register("reward", { valueAsNumber: true })}
-    />
-    {errors.reward && (
-      <p className="mt-1 text-sm text-red-500">{errors.reward.message}</p>
-    )}
-  </div>
-</div>
-
+              {/* Reward */}
+              <div>
+                <label
+                  htmlFor="reward"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  Reward (JP)
+                </label>
+                <input
+                  id="reward"
+                  type="number"
+                  placeholder="50"
+                  className="w-[6rem] rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  {...register("reward", { valueAsNumber: true })}
+                />
+                {errors.reward && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {errors.reward.message}
+                  </p>
+                )}
+              </div>
+            </div>
 
             <div>
               <label
@@ -552,6 +547,20 @@ export default function CreateChallenge({ }: CreateChallengeProps) {
                 {mutation.isPending ? "Creating..." : "Create Challenge"}
               </button>
             </div>
+            <MessageModal
+              isOpen={!!modalContent}
+              onClose={() => {
+                setModalContent(null);
+                if (mutation.isSuccess) {
+                  router.push("/dashboard/challenge");
+                }
+                if (mutation.isError || mutation.isSuccess) {
+                  mutation.reset();
+                }
+              }}
+              title={modalContent?.title ?? ""}
+              message={modalContent?.message ?? ""}
+            />
           </form>
         </div>
       </div>
