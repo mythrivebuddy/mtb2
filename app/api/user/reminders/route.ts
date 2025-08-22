@@ -63,12 +63,13 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     
+    // The frontend now sends frequency as a number (30 or 60). No conversion is needed.
     const newReminder = await prisma.reminder.create({
       data: {
         userId: session.user.id,
         title: data.title,
         description: data.description,
-        frequency: data.frequency, // Expecting frequency in minutes from the frontend
+        frequency: data.frequency, // Use the number directly
         startTime: data.startTime || null,
         endTime: data.endTime || null,
         image: data.image,
@@ -103,7 +104,7 @@ export async function PUT(req: Request) {
             data: {
                 title: data.title,
                 description: data.description,
-                frequency: data.frequency, // Expecting frequency in minutes from the frontend
+                frequency: data.frequency, // Use the number directly
                 startTime: data.startTime || null,
                 endTime: data.endTime || null,
                 image: data.image,

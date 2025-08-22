@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -25,11 +25,31 @@ interface Reminder {
 
 // A list of high-quality default images for new reminders.
 const defaultImages = [
-  "https://i.pinimg.com/736x/37/7b/cc/377bcc74a4f8dadbaabe20e5039606ba.jpg", // Water
-  "https://i.pinimg.com/736x/de/a6/9b/dea69bbae7f8a1b5dbc5e1e4da111834.jpg", // Posture
-  "https://i.pinimg.com/736x/0b/87/dc/0b87dc9e5bd86847568b0def579d29d1.jpg", // Focus
-  "https://i.pinimg.com/736x/a7/13/cf/a713cf036210305452a5b3a35743a290.jpg", // General
+  "https://i.pinimg.com/736x/37/7b/cc/377bcc74a4f8dadbaabe20e5039606ba.jpg", 
+  "https://i.pinimg.com/736x/de/a6/9b/dea69bbae7f8a1b5dbc5e1e4da111834.jpg", 
+  "https://i.pinimg.com/736x/0b/87/dc/0b87dc9e5bd86847568b0def579d29d1.jpg", 
+  "https://i.pinimg.com/736x/11/80/77/1180778cd46b771c00d92317637e3680.jpg", 
 ];
+
+// --- NEW: Pre-defined templates for new reminders ---
+const reminderTemplates = [
+    {
+        title: "Water",
+        description: "Hydration fuels your focus. Take a sip now!",
+        image: defaultImages[0],
+    },
+    {
+        title: "Posture",
+        description: "Sit up straight! Your future self will thank you.",
+        image: defaultImages[1],
+    },
+    {
+        title: "Focus",
+        description: "Time to take a short break and stretch.",
+        image: defaultImages[2],
+    }
+];
+
 
 // --- API Interaction Functions ---
 const fetchReminders = async (): Promise<Reminder[]> => {
@@ -72,40 +92,31 @@ const ReminderForm = ({
 }) => {
     const [title, setTitle] = useState(initialData.title || "");
     const [description, setDescription] = useState(initialData.description || "");
-    const [freqValue, setFreqValue] = useState(60);
-    const [freqUnit, setFreqUnit] = useState<'mins' | 'hours'>("mins");
+    const [frequency, setFrequency] = useState(initialData.frequency || 30);
     const [startTime, setStartTime] = useState(initialData.startTime || "");
     const [endTime, setEndTime] = useState(initialData.endTime || "");
-    // State to manage the selected image for the reminder
     const [selectedImage, setSelectedImage] = useState(initialData.image || defaultImages[0]);
 
-    useEffect(() => {
-        if (isEditMode && initialData.frequency) {
-            const freq = initialData.frequency;
-            if (freq >= 60 && freq % 60 === 0) {
-                setFreqValue(freq / 60);
-                setFreqUnit('hours');
-            } else {
-                setFreqValue(freq);
-                setFreqUnit('mins');
-            }
-        }
-    }, [initialData, isEditMode]);
-
+    // Handles the save action, validates input, and calls the onSave prop
     const handleSave = () => {
-        if (!title || !freqValue) {
-            toast.error("Please fill in the reminder name and frequency.");
+        if (!title) {
+            toast.error("Please fill in the reminder name.");
             return;
         }
-        const frequencyInMinutes = freqUnit === 'hours' ? freqValue * 60 : freqValue;
         onSave({
             title,
             description: description || null,
-            frequency: frequencyInMinutes,
+            frequency: frequency, // Pass the selected frequency directly
             startTime: startTime || null,
             endTime: endTime || null,
             image: selectedImage,
         });
+    };
+
+    const applyTemplate = (template: typeof reminderTemplates[0]) => {
+        setTitle(template.title + " Reminder");
+        setDescription(template.description);
+        setSelectedImage(template.image);
     };
 
     return (
@@ -113,6 +124,19 @@ const ReminderForm = ({
             <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={24} /></button>
             <h2 className="text-2xl font-bold text-gray-800 mb-6">{isEditMode ? "Edit Reminder" : "Add New Reminder"}</h2>
             <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-2">
+                {!isEditMode && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Start with a template</label>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            {reminderTemplates.map(template => (
+                                <button key={template.title} onClick={() => applyTemplate(template)} className="flex-1 text-left p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                                    <p className="font-semibold text-gray-800">{template.title}</p>
+                                    <p className="text-xs text-gray-500">{template.description.substring(0, 25)}...</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 <div>
                     <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Reminder Name</label>
                     <input id="title" type="text" placeholder="e.g. Water Reminder" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -138,14 +162,10 @@ const ReminderForm = ({
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-gray-600">Every</span>
-                        <input type="number" value={freqValue} onChange={(e) => setFreqValue(parseInt(e.target.value, 10))} className="w-24 rounded-lg border border-gray-300 bg-gray-50 px-3 py-3 text-center focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <select value={freqUnit} onChange={(e) => setFreqUnit(e.target.value as "mins" | "hours")} className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="mins">mins</option>
-                            <option value="hours">hours</option>
-                        </select>
-                    </div>
+                    <select value={frequency} onChange={(e) => setFrequency(parseInt(e.target.value))} className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value={30}>Every 30 minutes</option>
+                        <option value={60}>Every 60 minutes</option>
+                    </select>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Time Range (Optional)</label>
@@ -200,11 +220,9 @@ const ViewReminderModal = ({ reminder, isOpen, onClose, onSnooze, onDone }: { re
 const ReminderCard = ({ reminder, onEditClick, onViewClick }: { reminder: Reminder; onEditClick: (reminder: Reminder) => void; onViewClick: (reminder: Reminder) => void; }) => {
   // Helper to format frequency from minutes to a readable string
   const formatFrequency = (freq: number) => {
-      if (freq >= 60 && freq % 60 === 0) {
-          const hours = freq / 60;
-          return `Every ${hours} ${hours > 1 ? 'hours' : 'hour'}`;
-      }
-      return `Every ${freq} mins`;
+      if (freq === 60) return 'Every 60 minutes';
+      if (freq === 30) return 'Every 30 minutes';
+      return `Every ${freq} mins`; // Fallback for any other values
   };
   
   return (
@@ -312,19 +330,23 @@ export default function RemindersPage() {
       
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
         <div className="max-w-2xl mx-auto">
-          <header className="flex flex-col items-center  sm:flex-row gap-48 mb-8">
-            
-            <div className="w-full sm:w-auto order-1  text-left sm:order-1">
-                <button onClick={() => setIsAddModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
-                    <PlusCircle size={20} />
-                    <span className="sm:hidden">Add New Reminder</span>
-                    
-                </button>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center  order-2 sm:order-1">Reminders</h1>
-          
+          <header className="relative flex flex-col sm:justify-center items-center gap-4 mb-8 py-2">
+              <div className="w-full sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 sm:w-auto">
+                  <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105"
+                  >
+                      <PlusCircle size={20} />
+                      <span className="sm:hidden">Add New Reminder</span>
+                  </button>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center order-first sm:order-none">
+                  Reminders
+              </h1>
           </header>
-          <p className="text-center  text-gray-600 mb-10 text-base sm:text-lg">Set up gentle reminders to stay aligned, hydrated, and focused.</p>
+          <p className="text-center text-gray-600 mb-10 text-base sm:text-lg">
+              Set up gentle reminders to stay aligned, hydrated, and focused.
+          </p>
           
           {isLoading && <div className="text-center text-gray-500">Loading reminders...</div>}
           {isError && <div className="text-center text-red-500">Failed to load reminders.</div>}
