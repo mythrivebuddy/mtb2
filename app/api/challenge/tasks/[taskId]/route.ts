@@ -21,6 +21,11 @@ export async function PATCH(
 ) {
   const userChallengeTaskId = (await params).taskId;
 
+
+
+
+  // Ensure the user is authenticated and has the correct role
+
   try {
     const session = await checkRole("USER");
     if (!session?.user?.id) {

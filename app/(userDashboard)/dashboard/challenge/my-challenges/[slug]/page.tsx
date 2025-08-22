@@ -70,6 +70,8 @@ const StatCard = ({
   </div>
 );
 
+// --- API ROUTE HANDLER ---
+
 const TaskItem = ({ task, onToggle, isUpdating }: { task: Task; onToggle: (taskId: string, newStatus: boolean) => void; isUpdating: boolean; }) => (
   <button
     onClick={() => onToggle(task.id, !task.completed)}
