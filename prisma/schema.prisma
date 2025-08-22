@@ -78,7 +78,7 @@ model User {
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
   challenge_limit               Int                   @default(1)
-  reminders                   Reminder[] // <-- ADD THIS LINE TO THE USER MODEL
+  reminders                     Reminder[] // <-- ADD THIS LINE TO THE USER MODEL
 
   @@index([name])
 }
