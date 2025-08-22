@@ -37,7 +37,7 @@ const AdminDashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 </span>
               </div>
             </div>
-            <div className="hidden lg:block">
+            <div className="block">
               <button onClick={() => signOut()}>
                 <LogOut className="w-5 h-5" />
               </button>
