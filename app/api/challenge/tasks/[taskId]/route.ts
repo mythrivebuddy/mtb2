@@ -21,6 +21,11 @@ export async function PATCH(
 ) {
   const userChallengeTaskId = (await params).taskId;
 
+
+
+
+  // Ensure the user is authenticated and has the correct role
+
   try {
     const session = await checkRole("USER");
     if (!session?.user?.id) {
@@ -28,10 +33,19 @@ export async function PATCH(
     }
     const userId = session.user.id;
 
-    const { isCompleted } = await request.json();
+    // Get completionDate from the client request
+    const { isCompleted, completionDate } = await request.json();
+
+    // Add validation for the new date string
     if (typeof isCompleted !== "boolean") {
       return NextResponse.json(
         { error: "Invalid 'isCompleted' value provided." },
+        { status: 400 }
+      );
+    }
+    if (!completionDate || !/^\d{4}-\d{2}-\d{2}$/.test(completionDate)) {
+      return NextResponse.json(
+        { error: "Invalid or missing 'completionDate'. Expected YYYY-MM-DD." },
         { status: 400 }
       );
     }
@@ -72,22 +86,18 @@ export async function PATCH(
       }
 
       // --- Penalty and Streak Reset Logic ---
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Create a UTC date object from the client's date string. This is the correct date.
+      const now = new Date(); // Keep `now` for the exact timestamp of the update
+      const today = new Date(`${completionDate}T00:00:00.000Z`);
+
       const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
+      yesterday.setUTCDate(today.getUTCDate() - 1);
 
-      const lastUpdate = enrollment.lastStreakUpdate
-        ? new Date(enrollment.lastStreakUpdate)
-        : null;
+      const lastUpdate = enrollment.lastStreakUpdate ? new Date(enrollment.lastStreakUpdate) : null;
+      // Also ensure lastUpdateDate is handled in UTC for accurate comparisons
       const lastUpdateDate = lastUpdate
-        ? new Date(
-            lastUpdate.getFullYear(),
-            lastUpdate.getMonth(),
-            lastUpdate.getDate()
-          )
+        ? new Date(Date.UTC(lastUpdate.getUTCFullYear(), lastUpdate.getUTCMonth(), lastUpdate.getUTCDate()))
         : null;
-
       // Check if the streak was broken (i.e., the last update was before yesterday)
       if (
         enrollment.currentStreak > 0 &&

@@ -70,6 +70,8 @@ const StatCard = ({
   </div>
 );
 
+// --- API ROUTE HANDLER ---
+
 const TaskItem = ({ task, onToggle, isUpdating }: { task: Task; onToggle: (taskId: string, newStatus: boolean) => void; isUpdating: boolean; }) => (
   <button
     onClick={() => onToggle(task.id, !task.completed)}
@@ -119,10 +121,9 @@ const ChallengeCalendar = ({ history, challengeStartDate, positionClasses, calen
   // ✅ DEFINITIVE FIX: Create historyMap using a timezone-safe method
   const historyMap = new Map(
     history.map((item) => {
-      const dateStr = item.date.split('T')[0];
-      const parts = dateStr.split('-').map(Number);
-      const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
-      
+      // By creating a new Date object from the full string, JavaScript correctly
+      // converts the UTC time from the server into the user's local timezone.
+      const localDate = new Date(item.date);
       return [normalizeDateToLocalString(localDate), item.status];
     })
   );
@@ -147,6 +148,7 @@ const ChallengeCalendar = ({ history, challengeStartDate, positionClasses, calen
       const today = new Date();
 
       const isToday = normalizeDateToLocalString(date) === normalizeDateToLocalString(today);
+      today.setHours(0, 0, 0, 0);
       const isFuture = date > today;
       const isBeforeChallenge = date < challengeStartUTC;
       const isSelectable = !isFuture && !isBeforeChallenge;
@@ -266,30 +268,40 @@ export default function ChallengeManagementPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isCalendarVisible]);
 
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, isCompleted }: { taskId: string; isCompleted: boolean }) => {
-      return axios.patch(`/api/challenge/tasks/${taskId}`, { isCompleted });
-    },
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, isCompleted, completionDate }: { taskId: string; isCompleted: boolean; completionDate: string }) => {
+      // Send the user's current date to the server
+      return axios.patch(`/api/challenge/tasks/${taskId}`, { isCompleted, completionDate });
+    },
     onSuccess: (data) => {
       if (data.data.allTasksCompleted) {
         setIsCompletionModalOpen(true);
 
+
+        // ✅ FIX: Correctly handle optimistic update for today's date.
         queryClient.setQueryData(["getChallengeDetails", slug], (oldData: ChallengeDetails | undefined) => {
           if (!oldData) return oldData;
 
           const today = new Date();
           const todayKey = normalizeDateToLocalString(today);
+
+          // Correctly check if today's challenge is already completed by parsing each date properly.
           const alreadyCompleted = oldData.history.some((h) => {
-             const dateStr = h.date.split('T')[0];
-             const parts = dateStr.split('-').map(Number);
-             const localDate = new Date(parts[0], parts[1] - 1, parts[2]);
-             return normalizeDateToLocalString(localDate) === todayKey;
+            const localDate = new Date(h.date);
+            return normalizeDateToLocalString(localDate) === todayKey;
           });
 
           if (!alreadyCompleted) {
+            // Use the full ISO string for the optimistic update. This ensures it
+            // will be parsed correctly by the calendar component's updated logic.
+            const newHistoryEntry = {
+              date: today.toISOString(),
+              status: "COMPLETED",
+            } as CompletionRecord;
+
             return {
               ...oldData,
-              history: [...oldData.history, { date: todayKey, status: "COMPLETED" } as CompletionRecord],
+              history: [...oldData.history, newHistoryEntry],
             };
           }
           return oldData;
@@ -304,9 +316,12 @@ export default function ChallengeManagementPage() {
     },
   });
 
-  const handleToggleTask = (taskId: string, newStatus: boolean) => {
-    updateTaskMutation.mutate({ taskId, isCompleted: newStatus });
-  };
+const handleToggleTask = (taskId: string, newStatus: boolean) => {
+    // Get today's date in 'YYYY-MM-DD' format and send it
+    const today = new Date();
+    const completionDate = normalizeDateToLocalString(today); 
+    updateTaskMutation.mutate({ taskId, isCompleted: newStatus, completionDate });
+  };
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
   const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
