@@ -7,7 +7,6 @@ export function StreakDisplay() {
     queryKey: ['streak'],
     queryFn: async () => {
       const res = await axios.get(`/api/login-streak/userStreak`);
-      console.log("streak:", res.data);
       return res.data;
     }
   });
