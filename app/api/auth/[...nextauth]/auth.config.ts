@@ -7,7 +7,6 @@ import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 
-
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
 const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
 
@@ -172,7 +171,9 @@ export const authConfig: AuthOptions = {
       }
     },
 
-    async jwt({ token, user }) {
+    // MODIFIED JWT CALLBACK
+    async jwt({ token, user, trigger, session }) {
+      // This part runs on initial sign-in
       if (user) {
         token.role = user.role;
         token.id = user.id;
@@ -181,9 +182,17 @@ export const authConfig: AuthOptions = {
         token.isFirstTimeSurvey = user.isFirstTimeSurvey ?? false;
         token.lastSurveyTime = user.lastSurveyTime ?? null;
       }
+
+      // This new part handles profile updates
+      if (trigger === "update" && session) {
+        token.name = session.name;
+        token.picture = session.picture;
+      }
+
       return token;
     },
 
+    // MODIFIED SESSION CALLBACK
     async session({ session, token }) {
       if (session.user) {
         session.user.role = token.role;
@@ -191,14 +200,17 @@ export const authConfig: AuthOptions = {
         session.user.rememberMe = token.rememberMe;
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey ?? false;
         session.user.lastSurveyTime = token.lastSurveyTime ?? null;
+        
+        // Add these lines to reflect profile updates in the session object
+        session.user.name = token.name;
+        session.user.image = token.picture;
       }
       return session;
     },
 
     async redirect({ url, baseUrl }) {
       console.log(url);
-      
-      
+
       // if (url.startsWith("/")) return `${baseUrl}${url}`;
       // if (url.startsWith(baseUrl)) return url;
       return `${baseUrl}/dashboard`;

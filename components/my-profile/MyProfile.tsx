@@ -27,7 +27,7 @@ export default function MyProfile() {
   const [hasProfile, setHasProfile] = useState<boolean | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-  const { data: session } = useSession(); // Get session data
+  const { data: session, update } = useSession(); // Get session data
 
   const {
     register,
@@ -100,21 +100,33 @@ export default function MyProfile() {
       );
       return response.data;
     },
+    // Inside your saveProfileMutation
     onSuccess: (data) => {
       toast.success(
         hasProfile
           ? "Profile updated successfully!"
           : "Profile created successfully!"
       );
+
       if (data.profile.image) {
         setProfileImage(data.profile.image);
         setNewProfileImage(null);
       }
+
       setIsEditMode(false);
       setHasProfile(true);
 
+      // --- ✨ THE FIX IS HERE ✨ ---
+      // Update the NextAuth session with the new data
+      update({
+        name: data.profile.name,
+        picture: data.profile.image, // NextAuth typically uses 'picture' for the image
+      });
+      // ---------------------------
+
       queryClient.invalidateQueries({ queryKey: ["userProfile"] });
 
+      // Your custom event can now also use the updated session data
       window.dispatchEvent(
         new CustomEvent("profileUpdated", {
           detail: {
@@ -190,9 +202,9 @@ export default function MyProfile() {
                   {profileImage ? (
                     <AvatarImage src={profileImage} alt="Profile Preview" />
                   ) : (
-                     <AvatarFallback>
-                        <UploadCloud size={32} />
-                     </AvatarFallback>
+                    <AvatarFallback>
+                      <UploadCloud size={32} />
+                    </AvatarFallback>
                   )}
                 </Avatar>
                 <div>
@@ -262,7 +274,7 @@ export default function MyProfile() {
       </div>
     );
   }
-  
+
   // --- View/Edit Profile View (With Mobile Enhancements) ---
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6">
