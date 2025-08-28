@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import webpush, { SendResult } from "web-push"; // Import SendResult type
+import webpush, { SendResult } from "web-push";
 
 // Configure web-push with your VAPID keys (from your .env file)
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -13,7 +13,6 @@ if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     );
 }
 
-
 export async function GET() {
   console.log("Cron job for reminders started at:", new Date().toISOString());
   try {
@@ -22,6 +21,7 @@ export async function GET() {
     const currentMinute = now.getUTCMinutes();
     const currentTimeInMinutes = currentHour * 60 + currentMinute;
 
+    // Find all active reminders that might be due
     const activeReminders = await prisma.reminder.findMany({
       where: { isActive: true },
       include: {
@@ -37,10 +37,12 @@ export async function GET() {
     const remindersToUpdate = new Map<string, Date>();
 
     for (const reminder of activeReminders) {
+      // Skip if the user has no active push subscriptions
       if (reminder.user.pushSubscriptions.length === 0) {
         continue;
       }
 
+      // Check if the reminder is within its active time range (if specified)
       if (reminder.startTime && reminder.endTime) {
         const start = parseInt(reminder.startTime.split(":")[0]) * 60 + parseInt(reminder.startTime.split(":")[1]);
         const end = parseInt(reminder.endTime.split(":")[0]) * 60 + parseInt(reminder.endTime.split(":")[1]);
@@ -58,7 +60,7 @@ export async function GET() {
           body: reminder.description,
           icon: reminder.image || "/icon-192x192.png",
           data: {
-            url: `/dashboard/reminders`
+            url: `/dashboard/reminders` // Link back to the reminders page
           }
         });
 
@@ -71,7 +73,6 @@ export async function GET() {
               },
               payload
             ).catch(err => {
-                // FIX: Check error type before accessing properties
                 const errorMessage = err instanceof Error ? err.message : String(err);
                 console.error(`Failed to send notification for user ${reminder.userId}, subscription ${sub.id}:`, errorMessage);
             })
