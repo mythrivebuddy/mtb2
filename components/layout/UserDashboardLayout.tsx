@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react"; // 1. Import useSession
@@ -14,7 +14,37 @@ import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   // Use the session hook as the primary source for auth status
   const { status: sessionStatus } = useSession();
+  
+   const { data: announcements } = useQuery({
+    queryKey: ["user-announcement"],
+    queryFn: async () => {
+      const response = await axios.get("/api/user/announcement");
+      return response.data.announcements;
+    },
+    enabled: sessionStatus === "authenticated", // only run if logged in
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
 
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Rotate announcements every 10 seconds
+  useEffect(() => {
+    if (!announcements || announcements.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % announcements.length);
+    }, 10000); // 10s
+
+    return () => clearInterval(interval);
+  }, [announcements]);
+
+  const currentAnnouncement =
+    announcements && announcements.length > 0
+      ? announcements[currentIndex]
+      : null;
   // Fetch detailed user info only when the user is authenticated
   const { data: user } = useQuery<User>({
     queryKey: ["userInfo"],
@@ -63,8 +93,31 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {isLoggedIn && (
           <div className="md:mx-10 mx-5">
             <TopBar user={user} />
+            <div className="px-4 sm:px-2">
+
+             {currentAnnouncement && (
+               <div
+              className="mb-4 px-6 h-[30px] sm:h-[40px] flex justify-center items-center rounded-sm shadow-md text-center"
+              style={{
+                backgroundColor:
+                currentAnnouncement.backgroundColor ?? "#f8f9fa",
+                color: currentAnnouncement.fontColor ?? "#000",
+              }}
+              >
+              <a
+                href={currentAnnouncement.linkUrl ?? "#"}
+                target={currentAnnouncement.openInNewTab ? "_blank" : "_self"}
+                rel="noopener noreferrer"
+                className="inline-block text-xs sm:text-sm font-semibold animate-blinkContinuous"
+              >
+                {currentAnnouncement.title}
+              </a>
+            </div>
+          )}
+          </div>
           </div>
         )}
+         
         <main className="flex-1 overflow-auto lg:pt-4 px-4 bg-transparent">
           {children}
         </main>

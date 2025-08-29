@@ -206,3 +206,17 @@
   border-radius: 1px;
 }
 
+@keyframes blinkContinuous {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.animate-blinkContinuous {
+  animation: blinkContinuous 2s ease-in-out infinite;
+  -webkit-animation: blinkContinuous 2s ease-in-out infinite;
+}
+
+
+.animate-blinkContinuous {
+  animation: blinkContinuous 2s ease-in-out infinite;
+}
