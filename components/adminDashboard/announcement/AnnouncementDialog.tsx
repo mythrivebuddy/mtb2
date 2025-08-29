@@ -43,7 +43,7 @@ export default function AnnouncementDialog({
     handleSubmit,
     control,
     reset,
-    formState: { isSubmitting,errors },
+    formState: { isSubmitting, errors },
     watch,
   } = useForm<AnnouncementFormValues>();
 
@@ -63,9 +63,9 @@ export default function AnnouncementDialog({
         openInNewTab: announcement.openInNewTab ? "new" : "same",
         isActive: announcement.isActive ? "on" : "off",
         audience: announcement.audience,
-        expireAt: announcement.expireAt
-          ? new Date(announcement.expireAt).toISOString().slice(0, 16)
-          : "",
+         expireAt: announcement.expireAt
+        ? new Date(announcement.expireAt).toISOString().split("T")[0] // ✅ YYYY-MM-DD
+        : "",
       });
     } else {
       reset({
@@ -120,6 +120,12 @@ export default function AnnouncementDialog({
       createMutation.mutate(data);
     }
   };
+  const formatInputDate = (dateStr?: string | null) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    // return YYYY-MM-DD
+    return date.toISOString().split("T")[0];
+  };
 
   // Watch form values for preview
   const watchValues = watch();
@@ -139,21 +145,32 @@ export default function AnnouncementDialog({
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" {...register("title", { required: "Title is required"})} />
-                {errors.title && (
-    <p className="text-red-500 text-xs">{errors.title.message}</p>
-  )}
+              <Input
+                id="title"
+                {...register("title", { required: "Title is required" })}
+              />
+              {errors.title && (
+                <p className="text-red-500 text-xs">{errors.title.message}</p>
+              )}
             </div>
 
             {/* Background & Font Color */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Background Color</Label>
-                <Input type="color" className="h-10" {...register("backgroundColor")} />
+                <Input
+                  type="color"
+                  className="h-10"
+                  {...register("backgroundColor")}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Font Color</Label>
-                <Input type="color" className="h-10" {...register("fontColor")} />
+                <Input
+                  type="color"
+                  className="h-10"
+                  {...register("fontColor")}
+                />
               </div>
             </div>
 
@@ -170,7 +187,11 @@ export default function AnnouncementDialog({
                 control={control}
                 name="openInNewTab"
                 render={({ field }) => (
-                  <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="same" id="same" />
                       <Label htmlFor="same">Same Tab</Label>
@@ -191,7 +212,11 @@ export default function AnnouncementDialog({
                 control={control}
                 name="isActive"
                 render={({ field }) => (
-                  <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="on" id="on" />
                       <Label htmlFor="on">On</Label>
@@ -212,7 +237,11 @@ export default function AnnouncementDialog({
                 control={control}
                 name="audience"
                 render={({ field }) => (
-                  <RadioGroup value={field.value} onValueChange={field.onChange} className="flex gap-4">
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="EVERYONE" id="everyone" />
                       <Label htmlFor="everyone">Everyone</Label>
@@ -233,31 +262,55 @@ export default function AnnouncementDialog({
             {/* Expire At */}
             <div className="space-y-2">
               <Label htmlFor="expire">Expire At</Label>
-              <Input id="expire" type="date" {...register("expireAt",{required: "Expiry date is required"})} />
-               {errors.expireAt && (
-    <p className="text-red-500 text-xs">{errors.expireAt.message}</p>
-  )}
+              <Input
+                id="expire"
+                type="date"
+                defaultValue={
+                  announcement ? formatInputDate(announcement.expireAt) : ""
+                }
+                {...register("expireAt", {
+                  required: "Expiry date is required",
+                })}
+              />
+
+              {errors.expireAt && (
+                <p className="text-red-500 text-xs">
+                  {errors.expireAt.message}
+                </p>
+              )}
             </div>
 
             {/* Preview button */}
-            <Button type="button" variant="secondary" onClick={() => setPreviewOpen(true)}>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setPreviewOpen(true)}
+            >
               Preview banner
             </Button>
 
             <DialogFooter className="flex flex-col sm:flex-row gap-2">
               <Button
                 type="submit"
-                disabled={isSubmitting || createMutation.isPending || editMutation.isPending}
+                disabled={
+                  isSubmitting ||
+                  createMutation.isPending ||
+                  editMutation.isPending
+                }
               >
                 {announcement
                   ? editMutation.isPending
                     ? "Updating..."
                     : "Update"
                   : createMutation.isPending
-                  ? "Saving..."
-                  : "Save"}
+                    ? "Saving..."
+                    : "Save"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Cancel
               </Button>
             </DialogFooter>

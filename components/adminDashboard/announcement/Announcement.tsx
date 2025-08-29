@@ -62,7 +62,8 @@ export default function Announcement() {
   const [activeButtonLoading, setActiveButtonLoading] = useState(false);
 
   const queryClient = useQueryClient();
-
+    console.log(editing);
+    
   // ✅ Fetch announcements
   const { data, isLoading, isError } = useQuery<AnnouncementType[]>({
     queryKey: ["announcements"],
