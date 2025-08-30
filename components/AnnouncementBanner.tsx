@@ -37,6 +37,7 @@ export default function AnnouncementBanner(){
     announcements && announcements.length > 0
       ? announcements[currentIndex]
       : null;
+        if (!currentAnnouncement) return null;
     return(
         <div className={` relative mb-4 mt-2 h-[40px] -mx-4 sm:-mx-6 md:-mx-8 text-center overflow-hidden`}>
            <AnimatePresence mode="wait">

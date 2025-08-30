@@ -84,7 +84,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {isLoggedIn && (
           <div className="md:mx-10 mx-5">
             <TopBar user={user} />
-            <div className="px-3 sm:px-2 relative mb-4 mt-2 h-[40px] text-center overflow-hidden">
+            {
+              currentAnnouncement && (
+                   <div className="px-3 sm:px-2 relative mb-4 mt-2 h-[40px] text-center overflow-hidden">
               <AnimatePresence mode="wait">
                 {currentAnnouncement && (
                   <motion.div
@@ -115,6 +117,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 )}
               </AnimatePresence>
             </div>
+              )
+            }
+         
           </div>
         )}
 
