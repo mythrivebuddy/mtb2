@@ -642,6 +642,25 @@ model Reminder {
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
 }
+model Announcement {
+  id              String        @id @default(uuid())
+  title           String
+  backgroundColor String        @map("background_color")
+  fontColor       String        @map("font_color")
+  linkUrl         String?       @map("link_url")
+  openInNewTab    Boolean?      @default(false) @map("open_in_new_tab")
+  isActive        Boolean       @default(true)  @map("is_active")
+  audience        Audience
+  expireAt        DateTime?     @map("expire_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt      @map("updated_at")
+}
+
+enum Audience {
+  EVERYONE
+  PAID
+  FREE
+}
 
 enum Role {
   ADMIN
