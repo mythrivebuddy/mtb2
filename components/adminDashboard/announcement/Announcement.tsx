@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface AnnouncementType {
+export interface AnnouncementType {
   id: string;
   title: string;
   backgroundColor: string;
@@ -62,8 +62,6 @@ export default function Announcement() {
   const [activeButtonLoading, setActiveButtonLoading] = useState(false);
 
   const queryClient = useQueryClient();
-    console.log(editing);
-    
   // ✅ Fetch announcements
   const { data, isLoading, isError } = useQuery<AnnouncementType[]>({
     queryKey: ["announcements"],
@@ -77,7 +75,9 @@ export default function Announcement() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      const { data } = await axios.delete(`/api/admin/announcement/${deleteId}`);
+      const { data } = await axios.delete(
+        `/api/admin/announcement/${deleteId}`
+      );
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["user-announcement"] });
       toast.success(data.message || "Announcement deleted successfully.");
@@ -94,12 +94,17 @@ export default function Announcement() {
     if (isExpired(announcement.expireAt)) return; // expired → cannot toggle
     setActiveButtonLoading(true);
     try {
-      const { data } = await axios.patch(`/api/admin/announcement/${announcement.id}`, {
-        isActive: !announcement.isActive,
-      });
+      const { data } = await axios.patch(
+        `/api/admin/announcement/${announcement.id}`,
+        {
+          isActive: !announcement.isActive,
+        }
+      );
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["user-announcement"] });
-      toast.success(`Announcement turned ${data.announcement.isActive ? "On" : "Off"}`);
+      toast.success(
+        `Announcement turned ${data.announcement.isActive ? "On" : "Off"}`
+      );
     } catch (err) {
       console.error("Toggle failed", err);
       toast.error("Failed to update announcement status.");
@@ -133,11 +138,19 @@ export default function Announcement() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[15%] px-2">Title</TableHead>
-                  <TableHead className="w-[12%] text-center">Background Color</TableHead>
-                  <TableHead className="w-[10%] text-center">Font Color</TableHead>
+                  <TableHead className="w-[12%] text-center">
+                    Background Color
+                  </TableHead>
+                  <TableHead className="w-[10%] text-center">
+                    Font Color
+                  </TableHead>
                   <TableHead className="w-[10%] text-center">Active</TableHead>
-                  <TableHead className="w-[14%] text-center">Audience</TableHead>
-                  <TableHead className="w-[10%] text-center">Expire At</TableHead>
+                  <TableHead className="w-[14%] text-center">
+                    Audience
+                  </TableHead>
+                  <TableHead className="w-[10%] text-center">
+                    Expire At
+                  </TableHead>
                   <TableHead className="text-center w-[15%]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -158,102 +171,128 @@ export default function Announcement() {
                   </TableRow>
                 )}
 
-                {data && data.length > 0 ? (
-                  data.map((announcement) => {
-                    const expired = isExpired(announcement.expireAt);
-                    return (
-                      <TableRow
-                        key={announcement.id}
-                        className={expired ? "bg-red-50" : ""}
-                      >
-                        {/* Title */}
-                        <td className="px-2 align-middle">{announcement.title}</td>
+                {data && data.length > 0
+                  ? [...data] // make a shallow copy so we don’t mutate original
+                      .sort((a, b) => {
+                        const aExpired = isExpired(a.expireAt);
+                        const bExpired = isExpired(b.expireAt);
 
-                        {/* Background Color */}
-                        <td className="align-middle">
-                          <div
-                            className="h-6 w-10 rounded-sm mx-auto"
-                            style={{ backgroundColor: announcement.backgroundColor }}
-                            title={announcement.backgroundColor}
-                          />
-                        </td>
+                        // active first, expired later
+                        if (aExpired && !bExpired) return 1;
+                        if (!aExpired && bExpired) return -1;
 
-                        {/* Font Color */}
-                        <td className="align-middle">
-                          <div
-                            className="h-6 w-10 rounded-sm mx-auto"
-                            style={{ backgroundColor: announcement.fontColor }}
-                            title={announcement.fontColor}
-                          />
-                        </td>
-
-                        {/* Active / Expired */}
-                        <td className="align-middle text-center">
-                          {expired ? (
-                            <span className="px-3 py-1 rounded-full bg-gray-500 text-white text-xs font-medium">
-                              Expired
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleToggleActive(announcement)}
-                              className={`px-3 py-1 rounded-full text-white text-xs font-medium transition-colors ${
-                                announcement.isActive
-                                  ? "bg-green-600 hover:bg-green-700"
-                                  : "bg-red-600 hover:bg-red-700"
-                              }`}
-                              disabled={activeButtonLoading}
-                            >
-                              {announcement.isActive ? "On" : "Off"}
-                            </button>
-                          )}
-                        </td>
-
-                        {/* Audience */}
-                        <td className="align-middle text-center">{announcement.audience}</td>
-
-                        {/* Expire At */}
-                        <td className="align-middle text-center">
-                          {expired ? (
-                            <span className="text-red-600 font-semibold">
-                              {formatDate(announcement.expireAt)} (Expired)
-                            </span>
-                          ) : (
-                            formatDate(announcement.expireAt)
-                          )}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="flex justify-center gap-2 py-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditing(announcement);
-                              setOpen(true);
-                            }}
+                        // optional: keep newest announcements first within each group
+                        return (
+                          new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime()
+                        );
+                      })
+                      .map((announcement) => {
+                        const expired = isExpired(announcement.expireAt);
+                        return (
+                          <TableRow
+                            key={announcement.id}
+                            className={expired ? "bg-red-50" : ""}
                           >
-                            Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => setDeleteId(announcement.id)}
-                          >
-                            Delete
-                          </Button>
+                            {/* Title */}
+                            <td className="px-2 align-middle">
+                              {announcement.title}
+                            </td>
+
+                            {/* Background Color */}
+                            <td className="align-middle">
+                              <div
+                                className="h-6 w-10 rounded-sm mx-auto"
+                                style={{
+                                  backgroundColor: announcement.backgroundColor,
+                                }}
+                                title={announcement.backgroundColor}
+                              />
+                            </td>
+
+                            {/* Font Color */}
+                            <td className="align-middle">
+                              <div
+                                className="h-6 w-10 rounded-sm mx-auto"
+                                style={{
+                                  backgroundColor: announcement.fontColor,
+                                }}
+                                title={announcement.fontColor}
+                              />
+                            </td>
+
+                            {/* Active / Expired */}
+                            <td className="align-middle text-center">
+                              {expired ? (
+                                <span className="px-3 py-1 rounded-full bg-gray-500 text-white text-xs font-medium">
+                                  Expired
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    handleToggleActive(announcement)
+                                  }
+                                  className={`px-3 py-1 rounded-full text-white text-xs font-medium transition-colors ${
+                                    announcement.isActive
+                                      ? "bg-green-600 hover:bg-green-700"
+                                      : "bg-red-600 hover:bg-red-700"
+                                  }`}
+                                  disabled={activeButtonLoading}
+                                >
+                                  {announcement.isActive ? "On" : "Off"}
+                                </button>
+                              )}
+                            </td>
+
+                            {/* Audience */}
+                            <td className="align-middle text-center">
+                              {announcement.audience}
+                            </td>
+
+                            {/* Expire At */}
+                            <td className="align-middle text-center">
+                              {expired ? (
+                                <span className="text-red-600 font-semibold">
+                                  {formatDate(announcement.expireAt)} (Expired)
+                                </span>
+                              ) : (
+                                formatDate(announcement.expireAt)
+                              )}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="flex justify-center gap-2 py-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditing(announcement);
+                                  setOpen(true);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteId(announcement.id)}
+                              >
+                                Delete
+                              </Button>
+                            </td>
+                          </TableRow>
+                        );
+                      })
+                  : !isLoading && (
+                      <TableRow>
+                        <td
+                          colSpan={7}
+                          className="text-gray-500 text-center py-4"
+                        >
+                          No announcements
                         </td>
                       </TableRow>
-                    );
-                  })
-                ) : (
-                  !isLoading && (
-                    <TableRow>
-                      <td colSpan={7} className="text-gray-500 text-center py-4">
-                        No announcements
-                      </td>
-                    </TableRow>
-                  )
-                )}
+                    )}
               </TableBody>
             </Table>
           </div>
@@ -261,19 +300,29 @@ export default function Announcement() {
       </div>
 
       {/* Dialog for Add/Edit */}
-      <AnnouncementDialog open={open} setOpen={setOpen} announcement={editing} />
+      <AnnouncementDialog
+        open={open}
+        setOpen={setOpen}
+        announcement={editing}
+      />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={(val) => !val && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(val) => !val && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. It will permanently delete this announcement.
+              This action cannot be undone. It will permanently delete this
+              announcement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 ease-linear"
               onClick={handleDelete}

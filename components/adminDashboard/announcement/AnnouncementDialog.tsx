@@ -15,11 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useEffect, useState } from "react";
+import { AnnouncementType } from "./Announcement";
 
 interface AnnouncementDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  announcement?: any | null;
+  announcement?: AnnouncementType | null;
 }
 
 interface AnnouncementFormValues {
@@ -103,7 +104,7 @@ export default function AnnouncementDialog({
         openInNewTab: data.openInNewTab === "new",
         isActive: data.isActive === "on",
       };
-      return axios.patch(`/api/admin/announcement/${announcement.id}`, payload);
+      return axios.patch(`/api/admin/announcement/${announcement?.id}`, payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });

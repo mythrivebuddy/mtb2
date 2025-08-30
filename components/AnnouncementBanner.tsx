@@ -47,7 +47,7 @@ export default function AnnouncementBanner(){
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.6, ease: "easeInOut" }}
-                  className={ `h-[30px] sm:h-[40px] flex items-center justify-center shadow-md relative`}
+                  className={ `h-[30px] min-h-fit  sm:h-[40px] flex items-center justify-center shadow-md relative`}
                   style={{
                     backgroundColor:
                       currentAnnouncement.backgroundColor ?? "#f8f9fa",

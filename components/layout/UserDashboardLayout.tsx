@@ -84,7 +84,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {isLoggedIn && (
           <div className="md:mx-10 mx-5">
             <TopBar user={user} />
-            <div className=" sm:px-2 relative mb-4 mt-2 h-[40px] text-center overflow-hidden">
+            <div className="px-3 sm:px-2 relative mb-4 mt-2 h-[40px] text-center overflow-hidden">
               <AnimatePresence mode="wait">
                 {currentAnnouncement && (
                   <motion.div
@@ -93,7 +93,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.6, ease: "easeInOut" }}
-                    className="h-[30px] sm:h-[40px] flex items-center justify-center shadow-sm  rounded-sm"
+                    className="h-[30px]  sm:h-[40px] min-h-fit flex items-center justify-center shadow-sm  rounded-sm"
                     style={{
                       backgroundColor:
                         currentAnnouncement.backgroundColor ?? "#f8f9fa",

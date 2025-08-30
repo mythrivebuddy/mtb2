@@ -1,9 +1,9 @@
 import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { authConfig } from "../../auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 
-export const GET = async (req: NextRequest) => {
+export const GET = async () => {
   try {
     const session = await getServerSession(authConfig);
     if (!session || !session.user) {
@@ -39,9 +39,13 @@ export const GET = async (req: NextRequest) => {
     });
 
     return NextResponse.json({ success: true, announcements }, { status: 200 });
-  } catch (error) {
+  } catch (error:unknown) {
+    const errorMessage =
+      typeof error === "object" && error !== null && "message" in error
+        ? (error as { message?: string }).message
+        : undefined;
     return NextResponse.json(
-      { error: "Internal Server Error to show announcement", sucess: false },
+      { error: errorMessage || "Internal Server Error to show announcement", sucess: false },
       { status: 500 }
     );
   }
