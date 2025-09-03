@@ -15,11 +15,11 @@ interface Reminder {
   description: string | null;
   frequency: number;
   image: string;
-  status: "Active" | "Inactive";
+  isActive: boolean; // Corresponds to the DB `isActive` field
   startTime?: string | null;
   endTime?: string | null;
   createdAt: string;
-  snoozedUntil?: number; // Client-side only property to track snooze UI
+  lastNotifiedAt?: string | null; 
 }
 
 const defaultImages = [
@@ -37,10 +37,11 @@ const reminderTemplates = [
 
 // --- API Interaction Functions ---
 const fetchReminders = async (): Promise<Reminder[]> => {
+    // --- FIX: Removed the incorrect mapping that hardcoded the status ---
     const { data } = await axios.get("/api/user/reminders");
-    return data.map((r: Reminder) => ({...r, status: "Active"}));
+    return data;
 };
-const addReminder = async (newReminder: Omit<Reminder, 'id' | 'status' | 'createdAt'>): Promise<Reminder> => {
+const addReminder = async (newReminder: Omit<Reminder, 'id' | 'isActive' | 'createdAt' | 'lastNotifiedAt'>): Promise<Reminder> => {
     const { data } = await axios.post("/api/user/reminders", newReminder);
     return data;
 };
@@ -58,32 +59,17 @@ const snoozeReminder = async (id: string): Promise<Reminder> => {
 };
 
 // --- Reusable Reminder Form Component ---
-const ReminderForm = ({
-    initialData = {},
-    onSave,
-    onClose,
-    isEditMode = false,
-    onDelete,
-    isSaving = false,
-    isDeleting = false,
-}: {
-    initialData?: Partial<Reminder>;
-    onSave: (data: Omit<Reminder, 'id' | 'status' | 'createdAt'>) => void;
-    onClose: () => void;
-    isEditMode?: boolean;
-    onDelete?: (id: string) => void;
-    isSaving?: boolean;
-    isDeleting?: boolean;
-}) => {
-    const [title, setTitle] = useState(initialData.title || "");
-    const [description, setDescription] = useState(initialData.description || "");
-    const [frequency, setFrequency] = useState(initialData.frequency || 30);
-    const [startTime, setStartTime] = useState(initialData.startTime || "");
-    const [endTime, setEndTime] = useState(initialData.endTime || "");
-    const [selectedImage, setSelectedImage] = useState(initialData.image || defaultImages[0]);
+const ReminderForm = ({ initialData = {}, onSave, onClose, isEditMode = false, onDelete, isSaving = false, isDeleting = false }: { initialData?: Partial<Reminder>; onSave: (data: Omit<Reminder, 'id' | 'isActive' | 'createdAt' | 'lastNotifiedAt'>) => void; onClose: () => void; isEditMode?: boolean; onDelete?: (id: string) => void; isSaving?: boolean; isDeleting?: boolean; }) => {
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [frequency, setFrequency] = useState(30);
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
+    const [selectedImage, setSelectedImage] = useState(defaultImages[0]);
 
+    // --- FIX: Correctly pre-fill state when the edit modal opens ---
     useEffect(() => {
-        if (isEditMode) {
+        if (isEditMode && initialData) {
             setTitle(initialData.title || "");
             setDescription(initialData.description || "");
             setFrequency(initialData.frequency || 30);
@@ -165,7 +151,11 @@ const ReminderForm = ({
             <div className="mt-8 flex justify-between items-center">
                 {isEditMode && onDelete && (<button onClick={() => onDelete(initialData.id!)} disabled={isDeleting} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:bg-red-400">{isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 size={20} />}</button>)}
                 <div className="flex-grow flex justify-end">
-                    <button onClick={handleSave} disabled={isSaving} className="flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400">{isSaving && <Loader2 className="animate-spin" size={20} />} Save Reminder</button>
+                    {/* --- FIX: Added loading state to the Save button --- */}
+                    <button onClick={handleSave} disabled={isSaving} className="flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400">
+                        {isSaving && <Loader2 className="animate-spin" size={20} />}
+                        Save Reminder
+                    </button>
                 </div>
             </div>
         </div>
@@ -196,111 +186,94 @@ const ViewReminderModal = ({ reminder, isOpen, onClose, onSnooze, onDone, isSnoo
 
 // --- Reminder Card Component ---
 const ReminderCard = ({ reminder, onEditClick, onViewClick }: { reminder: Reminder; onEditClick: (reminder: Reminder) => void; onViewClick: (reminder: Reminder) => void; }) => {
-  const [snoozeTimeLeft, setSnoozeTimeLeft] = useState(0);
-
-  useEffect(() => {
-    if (reminder.snoozedUntil && reminder.snoozedUntil > Date.now()) {
-      const updateTimer = () => {
-        const timeLeft = Math.round((reminder.snoozedUntil! - Date.now()) / 1000);
-        setSnoozeTimeLeft(timeLeft > 0 ? timeLeft : 0);
-      };
-      
-      updateTimer();
-      const intervalId = setInterval(updateTimer, 1000);
-      return () => clearInterval(intervalId);
-    } else {
-        setSnoozeTimeLeft(0);
-    }
-  }, [reminder.snoozedUntil]);
-
-  const formatFrequency = (freq: number) => {
-      if (freq === 60) return 'Every 60 minutes';
-      if (freq === 30) return 'Every 30 minutes';
-      return `Every ${freq} mins`;
-  };
+    // --- FIX: Logic to calculate if a reminder is currently snoozed from DB data ---
+    const isSnoozed = reminder.lastNotifiedAt && (new Date(reminder.lastNotifiedAt).getTime() + (15 * 60 * 1000) > Date.now());
+    
+    const formatFrequency = (freq: number) => {
+        if (freq === 60) return 'Every 60 minutes';
+        if (freq === 30) return 'Every 30 minutes';
+        return `Every ${freq} mins`;
+    };
   
-  return (
-    <div onClick={() => onViewClick(reminder)} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-md transition-transform hover:scale-105 cursor-pointer">
-      <div className="flex flex-col">
-        {snoozeTimeLeft > 0 ? (
-            <span className="text-sm font-semibold text-yellow-600">Snoozed for {Math.ceil(snoozeTimeLeft / 60)} mins</span>
-        ) : (
-            <span className="text-sm font-semibold text-green-600">{reminder.status}</span>
-        )}
-        <h3 className="text-lg sm:text-xl font-bold text-gray-800">{reminder.title}</h3>
-        <p className="text-sm sm:text-base text-gray-500 mb-3">{formatFrequency(reminder.frequency)}</p>
-        <button onClick={(e) => { e.stopPropagation(); onEditClick(reminder); }} className="flex items-center gap-2 text-sm font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-lg w-fit"><Edit size={14} /> Edit</button>
-      </div>
-      <img src={reminder.image} alt={reminder.title} className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover flex-shrink-0 ml-4" onError={(e) => { e.currentTarget.src = 'https://placehold.co/150x150/cccccc/ffffff?text=Error'; }} />
-    </div>
-  );
+    return (
+        <div onClick={() => onViewClick(reminder)} className="flex items-center justify-between p-4 bg-white rounded-xl shadow-md transition-transform hover:scale-105 cursor-pointer">
+            <div className="flex flex-col">
+                {isSnoozed ? (
+                    <span className="text-sm font-semibold text-yellow-600">Snoozed</span>
+                ) : (
+                    <span className="text-sm font-semibold text-green-600">{reminder.isActive ? "Active" : "Inactive"}</span>
+                )}
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800">{reminder.title}</h3>
+                <p className="text-sm sm:text-base text-gray-500 mb-3">{formatFrequency(reminder.frequency)}</p>
+                <button onClick={(e) => { e.stopPropagation(); onEditClick(reminder); }} className="flex items-center gap-2 text-sm font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-lg w-fit"><Edit size={14} /> Edit</button>
+            </div>
+            <img src={reminder.image} alt={reminder.title} className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover flex-shrink-0 ml-4" onError={(e) => { e.currentTarget.src = 'https://placehold.co/150x150/cccccc/ffffff?text=Error'; }} />
+        </div>
+    );
 };
 
 // --- Main Page Component ---
 export default function RemindersPage() {
-  const queryClient = useQueryClient();
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [currentReminder, setCurrentReminder] = useState<Reminder | null>(null);
+    const queryClient = useQueryClient();
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [currentReminder, setCurrentReminder] = useState<Reminder | null>(null);
 
-  const { data: fetchedReminders = [], isLoading, isError } = useQuery<Reminder[]>({
-      queryKey: ['reminders'],
-      queryFn: fetchReminders,
-  });
+    const { data: reminders = [], isLoading, isError } = useQuery<Reminder[]>({
+        queryKey: ['reminders'],
+        queryFn: fetchReminders,
+    });
 
-  useEffect(() => {
-    setReminders(fetchedReminders);
-  }, [fetchedReminders]);
+    const addMutation = useMutation({ mutationFn: addReminder, onSuccess: () => { toast.success("Reminder added!"); queryClient.invalidateQueries({ queryKey: ['reminders'] }); handleCloseModals(); }, onError: () => { toast.error("Failed to add reminder."); } });
+    const updateMutation = useMutation({ mutationFn: updateReminder, onSuccess: () => { toast.success("Reminder updated!"); queryClient.invalidateQueries({ queryKey: ['reminders'] }); handleCloseModals(); }, onError: () => { toast.error("Failed to update reminder."); } });
+    const deleteMutation = useMutation({ mutationFn: deleteReminder, onSuccess: () => { toast.success("Reminder deleted!"); queryClient.invalidateQueries({ queryKey: ['reminders'] }); handleCloseModals(); }, onError: () => { toast.error("Failed to delete reminder."); } });
+    
+    // --- FIX: Snooze now refetches data to show persistent state ---
+    const snoozeMutation = useMutation({
+        mutationFn: snoozeReminder,
+        onSuccess: () => {
+            toast.success("Reminder snoozed!");
+            queryClient.invalidateQueries({ queryKey: ['reminders'] });
+            handleCloseModals();
+        },
+        onError: () => { toast.error("Failed to snooze reminder."); }
+    });
 
-  const addMutation = useMutation({ mutationFn: addReminder, onSuccess: () => { toast.success("Reminder added!"); queryClient.invalidateQueries({ queryKey: ['reminders'] }); handleCloseModals(); }, onError: () => { toast.error("Failed to add reminder."); } });
-  const updateMutation = useMutation({ mutationFn: updateReminder, onSuccess: () => { toast.success("Reminder updated!"); queryClient.invalidateQueries({ queryKey: ['reminders'] }); handleCloseModals(); }, onError: () => { toast.error("Failed to update reminder."); } });
-  const deleteMutation = useMutation({ mutationFn: deleteReminder, onSuccess: () => { toast.success("Reminder deleted!"); queryClient.invalidateQueries({ queryKey: ['reminders'] }); handleCloseModals(); }, onError: () => { toast.error("Failed to delete reminder."); } });
-  
-  const snoozeMutation = useMutation({
-      mutationFn: snoozeReminder,
-      onSuccess: (data) => {
-          toast.success("Reminder snoozed!");
-          setReminders(prev => prev.map(r => r.id === data.id ? { ...r, snoozedUntil: Date.now() + 15 * 60 * 1000 } : r));
-          handleCloseModals();
-      },
-      onError: () => { toast.error("Failed to snooze reminder."); }
-  });
+    const handleOpenModal = (reminder: Reminder, type: 'edit' | 'view') => { setCurrentReminder(reminder); if (type === 'edit') setIsEditModalOpen(true); if (type === 'view') setIsViewModalOpen(true); };
+    const handleCloseModals = () => { setCurrentReminder(null); setIsEditModalOpen(false); setIsViewModalOpen(false); setIsAddModalOpen(false); };
+    const handleDone = (id: string) => { console.log(`Reminder ${id} marked as done.`); handleCloseModals(); };
+    const handleSnooze = (id: string) => { snoozeMutation.mutate(id); };
 
-  const handleOpenModal = (reminder: Reminder, type: 'edit' | 'view') => { setCurrentReminder(reminder); if (type === 'edit') setIsEditModalOpen(true); if (type === 'view') setIsViewModalOpen(true); };
-  const handleCloseModals = () => { setCurrentReminder(null); setIsEditModalOpen(false); setIsViewModalOpen(false); setIsAddModalOpen(false); };
-  const handleDone = (id: string) => { console.log(`Reminder ${id} marked as done.`); handleCloseModals(); };
-  const handleSnooze = (id: string) => { snoozeMutation.mutate(id); };
+    return (
+        <>
+            {isAddModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm"><ReminderForm onSave={(data) => addMutation.mutate(data)} onClose={handleCloseModals} isSaving={addMutation.isPending} /></div>)}
+            {isEditModalOpen && currentReminder && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm"><ReminderForm isEditMode={true} initialData={currentReminder} onSave={(data) => updateMutation.mutate({ ...data, id: currentReminder.id })} onDelete={(id) => deleteMutation.mutate(id)} isSaving={updateMutation.isPending} isDeleting={deleteMutation.isPending} onClose={handleCloseModals} /></div>)}
+            <ViewReminderModal isOpen={isViewModalOpen} onClose={handleCloseModals} reminder={currentReminder} onSnooze={handleSnooze} onDone={handleDone} isSnoozing={snoozeMutation.isPending} />
+            
+            <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+                <div className="max-w-2xl mx-auto">
+                    <header className="relative flex flex-col sm:justify-center items-center gap-4 mb-8 py-2">
+                        <div className="w-full sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 sm:w-auto">
+                            <button onClick={() => setIsAddModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
+                                <PlusCircle size={20} /><span className="sm:hidden">Add New Reminder</span>
+                            </button>
+                        </div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center order-first sm:order-none">Reminders</h1>
+                    </header>
+                    <p className="text-center text-gray-600 mb-10 text-base sm:text-lg">Set up gentle reminders to stay aligned, hydrated, and focused.</p>
+                    
+                    {isLoading && <div className="text-center text-gray-500">Loading reminders...</div>}
+                    {isError && <div className="text-center text-red-500">Failed to load reminders.</div>}
 
-  return (
-    <>
-      {isAddModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm"><ReminderForm onSave={(data) => addMutation.mutate(data)} onClose={handleCloseModals} isSaving={addMutation.isPending} /></div>)}
-      {isEditModalOpen && currentReminder && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm"><ReminderForm isEditMode={true} initialData={currentReminder} onSave={(data) => updateMutation.mutate({ ...data, id: currentReminder.id })} onDelete={(id) => deleteMutation.mutate(id)} isSaving={updateMutation.isPending} isDeleting={deleteMutation.isPending} onClose={handleCloseModals} /></div>)}
-      <ViewReminderModal isOpen={isViewModalOpen} onClose={handleCloseModals} reminder={currentReminder} onSnooze={handleSnooze} onDone={handleDone} isSnoozing={snoozeMutation.isPending} />
-      
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-2xl mx-auto">
-          <header className="relative flex flex-col sm:justify-center items-center gap-4 mb-8 py-2">
-              <div className="w-full sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 sm:w-auto">
-                  <button onClick={() => setIsAddModalOpen(true)} className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
-                      <PlusCircle size={20} /><span className="sm:hidden">Add New Reminder</span>
-                  </button>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center order-first sm:order-none">Reminders</h1>
-          </header>
-          <p className="text-center text-gray-600 mb-10 text-base sm:text-lg">Set up gentle reminders to stay aligned, hydrated, and focused.</p>
-          
-          {isLoading && <div className="text-center text-gray-500">Loading reminders...</div>}
-          {isError && <div className="text-center text-red-500">Failed to load reminders.</div>}
-
-          <div className="space-y-6">
-            {!isLoading && !isError && reminders.map((reminder) => (
-              <ReminderCard key={reminder.id} reminder={reminder} onEditClick={(r) => handleOpenModal(r, 'edit')} onViewClick={(r) => handleOpenModal(r, 'view')} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </>
-  );
+                    <div className="space-y-6">
+                        {!isLoading && !isError && reminders.map((reminder) => (
+                            <ReminderCard key={reminder.id} reminder={reminder} onEditClick={(r) => handleOpenModal(r, 'edit')} onViewClick={(r) => handleOpenModal(r, 'view')} />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 }
+

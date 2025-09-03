@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession, AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
-// --- Define authOptions directly in this file, matching your project's pattern ---
+// --- AuthOptions Definition ---
 const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
@@ -14,25 +14,12 @@ const authOptions: AuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string;
-      }
-      return session;
-    },
+    async jwt({ token, user }) { if (user) { token.id = user.id; } return token; },
+    async session({ session, token }) { if (token && session.user) { session.user.id = token.id as string; } return session; },
   },
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
 
 // GET all reminders for the logged-in user
 export async function GET() {
@@ -62,14 +49,21 @@ export async function POST(req: Request) {
 
   try {
     const data = await req.json();
+
+    // --- FIX: Added Server-Side Input Validation ---
+    if (!data.title || data.title.trim() === "") {
+        return NextResponse.json({ error: "Reminder title cannot be empty." }, { status: 400 });
+    }
+    if (![30, 60].includes(data.frequency)) {
+        return NextResponse.json({ error: "Invalid frequency. Must be 30 or 60 minutes." }, { status: 400 });
+    }
     
-    // The frontend now sends frequency as a number (30 or 60). No conversion is needed.
     const newReminder = await prisma.reminder.create({
       data: {
         userId: session.user.id,
         title: data.title,
         description: data.description,
-        frequency: data.frequency, // Use the number directly
+        frequency: data.frequency,
         startTime: data.startTime || null,
         endTime: data.endTime || null,
         image: data.image,
@@ -96,22 +90,35 @@ export async function PUT(req: Request) {
             return NextResponse.json({ error: "Reminder ID is required" }, { status: 400 });
         }
 
-        const updatedReminder = await prisma.reminder.update({
+        // --- FIX: Added Server-Side Input Validation ---
+        if (!data.title || data.title.trim() === "") {
+            return NextResponse.json({ error: "Reminder title cannot be empty." }, { status: 400 });
+        }
+        if (![30, 60].includes(data.frequency)) {
+            return NextResponse.json({ error: "Invalid frequency. Must be 30 or 60 minutes." }, { status: 400 });
+        }
+        
+        // --- FIX: Replaced update with updateMany for compound where clause ---
+        const result = await prisma.reminder.updateMany({
             where: {
                 id: id,
-                userId: session.user.id,
+                userId: session.user.id, // Ensures user can only update their own reminders
             },
             data: {
                 title: data.title,
                 description: data.description,
-                frequency: data.frequency, // Use the number directly
+                frequency: data.frequency,
                 startTime: data.startTime || null,
                 endTime: data.endTime || null,
                 image: data.image,
             },
         });
 
-        return NextResponse.json(updatedReminder);
+        if (result.count === 0) {
+            return NextResponse.json({ error: "Reminder not found or you don't have permission to edit it." }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: "Reminder updated successfully." });
     } catch (error) {
         console.error("Error updating reminder:", error);
         return NextResponse.json({ error: "Failed to update reminder" }, { status: 500 });
@@ -133,12 +140,17 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "Reminder ID is required" }, { status: 400 });
         }
 
-        await prisma.reminder.delete({
+        // --- FIX: Replaced delete with deleteMany for compound where clause ---
+        const result = await prisma.reminder.deleteMany({
             where: {
                 id: id,
-                userId: session.user.id,
+                userId: session.user.id, // Ensures user can only delete their own reminders
             },
         });
+
+        if (result.count === 0) {
+            return NextResponse.json({ error: "Reminder not found or you don't have permission to delete it." }, { status: 404 });
+        }
 
         return NextResponse.json({ message: "Reminder deleted successfully" });
     } catch (error) {
