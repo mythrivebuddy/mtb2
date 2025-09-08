@@ -72,7 +72,7 @@ export default function Navbar() {
         > 
           <svg
             className="w-6 h-6"
-            fill="none"
+            fill="true"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
