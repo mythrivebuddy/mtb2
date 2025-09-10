@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// Custom type for BeforeInstallPromptEvent to satisfy TypeScript error nhi ayga
+// Custom type for BeforeInstallPromptEvent to satisfy TypeScript error nhi chahiye
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
@@ -16,7 +16,7 @@ export default function PWAInstallButton() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsVisible(true); // show the button when prompt is available
+      setIsVisible(true); // show the button when prompt is available 
     };
 
     window.addEventListener("beforeinstallprompt", handler);
