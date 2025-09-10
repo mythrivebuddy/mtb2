@@ -61,10 +61,10 @@ export default function RootLayout({
 
         <Toaster />
 
-        {/* 🚀 PWA Install Button (always visible, floating in corner) */}
+        {/* 🚀 PWA Install Button ye rha (always visible, floating in corner) */}
         <PWAInstallButton />
 
-        {/* 🚀 Service Worker Registration */}
+        {/* 🚀 Service Worker Registration  kiya*/}
         <script
           dangerouslySetInnerHTML={{
             __html: `
