@@ -67,6 +67,7 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <button
+         aria-label="menu"
           className="lg:hidden p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         > 
