@@ -35,7 +35,7 @@ const FaqClientComponent = () => {
       {isLoading && (
         <div className="space-y-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full rounded-md" />
+            <Skeleton key={i} className="h-20 w-full rounded-md"  data-testid="skeleton"/>
           ))}
         </div>
       )}
@@ -73,9 +73,11 @@ const FaqClientComponent = () => {
                   )}
                 </button>
                 <div
+                 data-testid={`faq-answer-${faq.id}`} // ← add here
                   className={`px-4 overflow-hidden transition-all duration-300 ${
-                    isOpen ? 'max-h-[300px] opacity-100 pb-4' : 'max-h-0 opacity-0'
+                    isOpen ? 'max-h-[300px] opacity-100 pb-4 block' : 'max-h-0 opacity-0 hidden'
                   }`}
+                  aria-hidden={!isOpen}
                 >
                   <CardContent className="px-4 py-0 text-gray-700 text-sm">
                     {/* {faq.answer} */}
