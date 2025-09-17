@@ -67,12 +67,13 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <button
+         aria-label="menu"
           className="lg:hidden p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         > 
           <svg
             className="w-6 h-6"
-            fill="none"
+            fill="true"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
