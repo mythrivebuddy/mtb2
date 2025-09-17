@@ -110,10 +110,12 @@ console.log(spotlightUnseenCount);
           <div className="flex flex-col gap-8 mt-10 flex-grow">
             <NavSection title="Menu">
               <NavItem href="/admin/dashboard" label="Dashboard" />
+                  <NavItem href="/admin/announcement" label="Announcement" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
               <NavItem href="/admin/survey-management" label="Survey Management" />
               <NavItem href="/admin/notification-management" label="Notification Management" />
+          
 
               {/* Spotlight with custom badge */}
                   <li>
