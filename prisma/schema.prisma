@@ -45,8 +45,9 @@ model User {
   isOnline                      Boolean?              @default(false)
   isFirstTimeSurvey             Boolean?              @default(true)
   lastSurveyTime                DateTime?
+  challenge_limit               Int                   @default(1)
   alignedActions                AlignedAction[]
-  blockedUsers                  BlockedUsers[]
+  blockedUsers                  BlockedUsers?
   buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
   BuddyLensReviewer             BuddyLensRequest[]    @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
@@ -62,6 +63,7 @@ model User {
   pushSubscriptions             PushSubscription[]
   referralsReceived             Referral[]            @relation("Referred")
   referralsMade                 Referral[]            @relation("Referrer")
+  reminders                     Reminder[]
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
@@ -70,15 +72,13 @@ model User {
   plan                          Plan?                 @relation(fields: [planId], references: [id])
   referredBy                    User?                 @relation("UserReferrer", fields: [referredById], references: [id])
   referrals                     User[]                @relation("UserReferrer")
-  userBusinessProfile           UserBusinessProfile[]
+  userBusinessProfile           UserBusinessProfile?
   userNotifications             UserNotification[]    @relation("UserNotifications")
   userStreak                    UserStreak?
   wishlists                     Wishlist[]
   enrollments                   ChallengeEnrollment[]
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
-  challenge_limit               Int                   @default(1)
-  reminders                     Reminder[] // <-- ADD THIS LINE TO THE USER MODEL
 
   @@index([name])
 }
@@ -125,7 +125,7 @@ model Spotlight {
   status              SpotlightStatus     @default(APPLIED)
   defaultDurationDays Int                 @default(1)
   activatedAt         DateTime?
-  seenByAdmin         Boolean             @default(false) 
+  seenByAdmin         Boolean             @default(false)
   user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   activities          SpotlightActivity[]
 
@@ -537,6 +537,7 @@ model Todo {
   userId         String
   taskAddJP      Boolean    @default(false)
   taskCompleteJP Boolean    @default(false)
+  isFromEvent    Boolean    @default(false)
   user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
@@ -615,7 +616,7 @@ model NotificationSettings {
 model CompletionRecord {
   id          String   @id @default(cuid())
   date        DateTime @db.Date
-  status      String   // Will store "COMPLETED" or "MISSED"
+  status      String
   userId      String
   challengeId String
   createdAt   DateTime @default(now())
@@ -624,13 +625,10 @@ model CompletionRecord {
   @@map("completion_records")
 }
 
-// --- ADD THE NEW REMINDER MODEL HERE ---
-
 model Reminder {
   id             String    @id @default(cuid())
   title          String
   description    String?
-  image          String    // <-- ADD THIS LINE
   frequency      Int
   startTime      String?
   endTime        String?
@@ -639,21 +637,40 @@ model Reminder {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   userId         String
+  image          String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
+
 model Announcement {
-  id              String        @id @default(uuid())
+  id              String    @id @default(uuid())
   title           String
-  backgroundColor String        @map("background_color")
-  fontColor       String        @map("font_color")
-  linkUrl         String?       @map("link_url")
-  openInNewTab    Boolean?      @default(false) @map("open_in_new_tab")
-  isActive        Boolean       @default(true)  @map("is_active")
+  backgroundColor String    @map("background_color")
+  fontColor       String    @map("font_color")
+  linkUrl         String?   @map("link_url")
+  openInNewTab    Boolean?  @default(false) @map("open_in_new_tab")
+  isActive        Boolean   @default(true) @map("is_active")
   audience        Audience
-  expireAt        DateTime?     @map("expire_at")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt      @map("updated_at")
+  expireAt        DateTime? @map("expire_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+}
+
+model Event {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String
+  start       DateTime
+  end         DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String    @db.Uuid
+  description String?
+  isBloom     Boolean   @default(false)
+  isCompleted Boolean   @default(false)
+  isbloom     Boolean?  @default(false)
+  iscompleted Boolean?  @default(false)
+  allDay      Boolean   @default(false)
 }
 
 enum Audience {
