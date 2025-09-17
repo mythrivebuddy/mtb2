@@ -58,7 +58,7 @@ interface EventPayload {
   isCompleted?: boolean;
 }
 
-// v-- ADDED THIS INTERFACE
+// ADDED THIS INTERFACE
 interface EventExtendedProps {
   description?: string;
   isBloom?: boolean;
@@ -118,7 +118,7 @@ const useIsMobile = () => {
 // ---------------- Event Form Component ----------------
 
 const EventForm = ({
-  // ... (This entire component is unchanged)
+  
   currentEvent,
   setCurrentEvent,
   mode,
@@ -326,7 +326,7 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     fetchEvents();
   }, [fetchEvents]);
 
-// --- REALTIME SUBSCRIPTION (NOW SIMPLIFIED AND COMPLETE) ---
+// --- REALTIME SUBSCRIPTION ---
   useEffect(() => {
     // 1. If the client from the context isn't ready, wait.
     //    The provider is already handling authentication.
@@ -1046,6 +1046,84 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
 };
 
 export default DailyBloomCalendar;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
