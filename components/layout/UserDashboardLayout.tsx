@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import TopBar from "../dashboard/user/Topbar";
 import Sidebar from "../dashboard/user/Sidebar";
 import { User } from "@/types/types";
-import useUserPresence, { UserPresenceProps } from "@/hooks/userUserPresence";
+import useUserPresence from "@/hooks/userUserPresence";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
@@ -55,7 +55,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     enabled: sessionStatus === "authenticated",
   });
 
-  useUserPresence({ userId: user?.id } as UserPresenceProps);
+  useUserPresence();
   useOnlineUserLeaderBoard();
 
   if (sessionStatus === "loading") {

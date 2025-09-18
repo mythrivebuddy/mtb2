@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
+  useQuery,
 } from "@tanstack/react-query";
 import {
   Trash2,
@@ -62,10 +63,43 @@ import Overdue from "./Overdue";
 import HoverDetails from "./HoverDetails";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import CustomAccordion from "../dashboard/user/ CustomAccordion";
+import DailyBloomCalendar from "@/components/DailyBloomCalendar";
+
+
+// Add this near your other imports at the top
+import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
+
+// 1. DEFINE A TYPE FOR EVENTS
+interface CalendarEvent {
+  id: string;
+  title: string;
+  start: string; // Keep as strings for FullCalendar
+  end: string;
+}
 
 interface DailyBloom extends DailyBloomFormType {
   id: string;
+  isFromEvent?: boolean; // NEW: true if this bloom was created from a Calendar Event
+  createdAt?: string; // Add this line
+  updatedAt?: string; // Optional property for updatedAt
+  description: string | null; // Ensure description can be null
 }
+// Normalize API responses into this strict type
+export interface ClientDailyBloom {
+  id: string;
+  title: string;
+  description: string | null;
+  isCompleted: boolean;
+  dueDate: string | null;  // always ISO string or null
+  frequency?: "Daily" | "Weekly" | "Monthly" | null;
+  createdAt?: string;
+  updatedAt: string;
+  taskAddJP: boolean;
+  taskCompleteJP: boolean;
+  isFromEvent?: boolean;
+}
+
+
 
 const defaultFormValues: DailyBloomFormType = {
   title: "",
@@ -95,6 +129,8 @@ const useMediaQuery = (query: string) => {
 
   return matches;
 };
+
+
 // --- END: useMediaQuery Hook ---
 
 export default function DailyBloomClient() {
@@ -110,12 +146,41 @@ export default function DailyBloomClient() {
   const [frequencyFilter, setFrequencyFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("Pending");
   const itemsPerPage = 8;
-
   const [addInputType, setAddInputType] = useState<"frequency" | "date">(
     "date"
   );
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
   useOnlineUserLeaderBoard();
+
+  // In DailyBloomClient.tsx
+
+  const handleCreateBloomFromEvent = (payload: {
+    title: string;
+    description?: string;
+    dueDate?: string;
+  }) => {
+    createMutation.mutate({
+      title: payload.title,
+      description: payload.description || "",
+      dueDate: payload.dueDate ? new Date(payload.dueDate) : new Date(),
+      isCompleted: false,
+      isFromEvent: true,
+      // 👇 ADD THESE TWO LINES
+      taskAddJP: false,
+      taskCompleteJP: false,
+    });
+  };
+
+
+  const { data: events } = useQuery<CalendarEvent[]>({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const res = await axios.get("/api/events");
+      return res.data;
+    },
+  });
+
+  // --- END: Event Queries & Mutations ---
 
   // --- START: Responsive State ---
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -176,7 +241,12 @@ export default function DailyBloomClient() {
       },
     });
 
-  const dailyBloom = data?.pages.flatMap((page) => page.data) || [];
+
+
+  const dailyBloom = useMemo(() => {
+    return data?.pages.flatMap((page) => page.data) || [];
+  }, [data]);
+  console.log("Blooms data from API:", dailyBloom); // <-- ADD THIS
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -289,6 +359,48 @@ export default function DailyBloomClient() {
     );
   };
 
+  // Normalize bloom data and assert the correct type for the calendar component
+  const normalizedBlooms = dailyBloom.map(b => ({
+    id: b.id ?? crypto.randomUUID(),
+    title: b.title ?? "",
+    description: b.description ?? null,
+    isCompleted: b.isCompleted ?? false,
+    // This correctly converts the date to a string
+    dueDate: b.dueDate ? new Date(b.dueDate).toISOString() : null,
+    frequency: b.frequency ?? null,
+    createdAt: b.createdAt,
+    updatedAt: b.updatedAt ?? new Date().toISOString(),
+    taskAddJP: b.taskAddJP ?? false,
+    taskCompleteJP: b.taskCompleteJP ?? false,
+    isFromEvent: b.isFromEvent ?? false,
+  })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
+
+  // NEW: A memoized function to combine blooms and events
+  const combinedCalendarItems = useMemo(() => {
+    const bloomEvents = dailyBloom.map(bloom => ({
+      id: `bloom-${bloom.id}`,
+      title: bloom.title,
+      start: bloom.dueDate ? new Date(bloom.dueDate).toISOString() : today,
+      allDay: true,
+      color: bloom.isCompleted ? "#a5d8ff" : "#4dabf7",
+      extendedProps: {
+        isBloom: true,
+        isCompleted: bloom.isCompleted,
+        description: bloom.description || undefined
+      }
+    }));
+
+    const regularEvents = (events || []).map(event => ({
+      ...event,
+      id: `event-${event.id}`,
+      color: "#2ecc71",
+      extendedProps: { isBloom: false }
+    }));
+
+    return [...bloomEvents, ...regularEvents];
+  }, [dailyBloom, events, today]);
+
+
   return (
     <div>
       <CustomAccordion />
@@ -307,6 +419,32 @@ export default function DailyBloomClient() {
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Daily Bloom
             </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Calendar View</CardTitle>
+            <CardDescription>
+              View your blooms and events in a calendar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* 👇 THIS IS THE UPDATED COMPONENT 👇 */}
+            <CardContent>
+              {/* <DailyBloomCalendar
+                blooms={normalizedBlooms} // your normalized Daily Blooms
+                events={calendarItems}
+                onCreateBloomFromEvent={handleCreateBloomFromEvent} // NEW PROP
+              /> */}
+              <DailyBloomCalendar
+                blooms={normalizedBlooms}
+                events={combinedCalendarItems}
+                onCreateBloomFromEvent={handleCreateBloomFromEvent}
+              />
+            </CardContent>
+
+
           </CardContent>
         </Card>
 
@@ -428,6 +566,12 @@ export default function DailyBloomClient() {
                               <CardTitle className="text-md sm:text-lg max-w-[80%] break-words">
                                 {bloom.title}
                               </CardTitle>
+                              {bloom.isFromEvent && (
+                                <span className="text-xs text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded-md self-start">
+                                  From Event
+                                </span>
+                              )}
+
                               <Input
                                 type="checkbox"
                                 checked={bloom.isCompleted}
@@ -517,10 +661,15 @@ export default function DailyBloomClient() {
                               onMouseEnter={() => setHoveredBloomId(bloom.id)}
                               onMouseLeave={() => setHoveredBloomId(null)}
                             >
-                              <div>
-                                {bloom.title.length > 30
-                                  ? `${bloom.title.slice(0, 30)}...`
-                                  : bloom.title}
+                              <div className="flex items-center gap-2">
+                                <span>
+                                  {bloom.title.length > 30 ? `${bloom.title.slice(0, 30)}...` : bloom.title}
+                                </span>
+                                {bloom.isFromEvent && (
+                                  <span className="text-xs text-blue-600 font-medium bg-blue-100 px-1.5 py-0.5 rounded">
+                                    Event
+                                  </span>
+                                )}
                               </div>
                               {hoveredBloomId === bloom.id && (
                                 <div className="absolute z-50 top-0 left-full ml-2 w-80 rounded-lg border bg-background p-4 shadow-xl">
@@ -528,11 +677,12 @@ export default function DailyBloomClient() {
                                 </div>
                               )}
                             </TableCell>
+
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                    "en-IN"
-                                  )
+                                  "en-IN"
+                                )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -658,7 +808,7 @@ export default function DailyBloomClient() {
                           min={today}
                           value={
                             field.value &&
-                            !isNaN(new Date(field.value).getTime())
+                              !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -846,7 +996,7 @@ export default function DailyBloomClient() {
                           type="date"
                           value={
                             field.value &&
-                            !isNaN(new Date(field.value).getTime())
+                              !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }

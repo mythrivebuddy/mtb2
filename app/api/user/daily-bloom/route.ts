@@ -211,6 +211,7 @@ export async function POST(req: NextRequest) {
       isCompleted,
       taskAddJP,
       taskCompleteJP,
+       isFromEvent,
     } = requestBody;
 
     const newBloom = await prisma.todo.create({
@@ -223,6 +224,7 @@ export async function POST(req: NextRequest) {
         taskAddJP: taskAddJP ?? false,
         taskCompleteJP: taskCompleteJP ?? false,
         userId: session.user.id,
+        isFromEvent: isFromEvent ?? false, // <-- 2. Add it to the database call
       },
     });
 

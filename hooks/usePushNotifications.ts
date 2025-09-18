@@ -9,7 +9,8 @@ export default function usePushNotifications() {
   const [isPushSupported, setIsPushSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [swRegistration, setSwRegistration] =
+    useState<ServiceWorkerRegistration | null>(null);
 
   // First visit popup state
   const [showFirstVisitPopup, setShowFirstVisitPopup] = useState(false);
@@ -79,7 +80,8 @@ export default function usePushNotifications() {
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
 
       // Force unsubscribe if already subscribed
-      const existingSubscription = await swRegistration.pushManager.getSubscription();
+      const existingSubscription =
+        await swRegistration.pushManager.getSubscription();
       if (existingSubscription) {
         console.log("Unsubscribing existing push subscription...");
         await existingSubscription.unsubscribe();
@@ -189,9 +191,9 @@ export default function usePushNotifications() {
     handleFirstVisitLater,
   };
 }
-
 // Helper function to convert VAPID key
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  // <-- Change return type
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
@@ -199,5 +201,5 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
-  return outputArray;
+  return outputArray.buffer; // <-- Return the underlying buffer
 }

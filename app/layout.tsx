@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
 import { Toaster } from "@/components/ui/sonner";
 import PWAInstallButton from "@/components/PWAInstallButton"; // <-- NEW Import
+import { SupabaseClientProvider } from "@/components/providers/SupabaseClientProvider"; // Adjust path if needed
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,6 +50,7 @@ export default function RootLayout({
       >
         <div className="h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] overflow-y-auto">
           <Provider>
+            <SupabaseClientProvider>
             <LoginStreakTracker />
             
             {/* Main children */}
@@ -56,6 +58,7 @@ export default function RootLayout({
 
             {/* Analytics */}
             <Analytics />
+            </SupabaseClientProvider>
           </Provider>
         </div>
 
