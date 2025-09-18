@@ -258,6 +258,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   onLinkClick={toggleSidebar}
                 /> */}
                 <NavItem
+                  href="/dashboard/accountability"
+                  icon={<LayoutDashboard size={20} />}
+                  label="Accountability Hub"
+                  onLinkClick={toggleSidebar}
+                />
+                <NavItem
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
                   label="Daily Blooms"
