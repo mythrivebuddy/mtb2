@@ -23,7 +23,7 @@ export default function AccountabilityHubHome() {
   const activeGoals = 18;
 
   // groupId will come from route/query later. Using a fixed id for first iteration
-  const { items, broadcast } = useAccountabilityFeed("demo-group");
+  const { items } = useAccountabilityFeed("demo-group");
 
   return (
     <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8">

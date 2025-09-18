@@ -3,7 +3,7 @@
 import { CalendarClock, CheckCircle2, MessageSquare, PlusCircle } from "lucide-react";
 import { AccountabilityFeedItem } from "@/hooks/useAccountabilityFeed";
 
-const ICONS: Record<AccountabilityFeedItem["icon"], JSX.Element> = {
+const ICONS: Record<AccountabilityFeedItem["icon"], React.ReactNode> = {
   goal: <PlusCircle className="h-4 w-4 text-slate-600" />,
   update: <CalendarClock className="h-4 w-4 text-slate-600" />,
   result: <CheckCircle2 className="h-4 w-4 text-slate-600" />,
