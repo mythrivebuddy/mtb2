@@ -199,16 +199,10 @@ async function main() {
     }
   ];
 
-  for (const activity of activities) {
-    await prisma.activity.upsert({
-      where: { activity: activity.activity },
-      update: {
-        // jpAmount: activity.jpAmount,
-        // transactionType: activity.transactionType,
-      },
-      create: activity,
-    });
-  }
+  await prisma.activity.createMany({
+    data: activities,
+    skipDuplicates: true, // This implements the "create if not exists" logic
+  });
 
   console.log("Seed data for activities inserted successfully");
 }

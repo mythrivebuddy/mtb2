@@ -130,14 +130,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     serverActions: {},
-    excludeFiles: [
-      "**/__tests__/**/*",
-      "**/__mocks__/**/*",
-      "**/*.test.*",
-      "**/*.spec.*",
-      "jest.config.cjs",
-      "jest.setup.cjs",
-    ],
+   
   } as any ,
   transpilePackages: ["@tinymce/tinymce-react"],
 };
