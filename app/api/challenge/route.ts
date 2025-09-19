@@ -16,28 +16,40 @@ function generateSlug(title: string): string {
 }
 
 export async function POST(request: Request) {
+  // LOG 1: Confirms the file is being executed. We already know this works.
+  console.log("\n✅ --- /api/challenge endpoint was successfully reached! --- ✅"); 
   try {
     const session = await checkRole("USER");
     if (!session?.user?.id) {
+      console.log("❌ ERROR: No session or user ID found. User is not authenticated.");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id; // Store user ID for clarity
+    const userId = session.user.id;
+    // LOG 2: Shows the user ID being looked up in the database.
+    console.log(`ℹ️  Searching for user with ID: ${userId}`);
 
-   const user = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { plan: true },
     });
 
-    // This condition now checks for both user and user.plan
-    if (!user || !user.plan) { 
+    // LOG 3: This is the MOST IMPORTANT log. It shows what the database returned.
+    console.log("ℹ️  Database result for user query:", JSON.stringify(user, null, 2));
+
+    // This is the condition causing the 404 error
+    if (!user || !user.plan) {
+      // LOG 4: Confirms that the code is entering this block and sending the 404.
+      console.log("❌ ERROR: Condition failed. User or user.plan is missing. Sending 404 status.");
       return NextResponse.json(
         { error: "User or user plan not found." },
         { status: 404 }
       );
     }
 
- 
+    // LOG 5: If you see this, the user check passed and the error is elsewhere.
+    console.log("✅ User and plan found successfully. Proceeding with logic...");
+
 
     // ✨ --- MODIFIED MONTHLY LIMIT LOGIC STARTS HERE --- ✨
 
