@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import AccountabilityHeader from "@/components/accountability-hub/AccountabilityHeader";
 import {
@@ -8,7 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 
 const members = [
   {
@@ -50,9 +54,16 @@ const members = [
 ];
 
 export default function AccountabilityHubPage() {
+  const router = useRouter();
   return (
-    <section className="mx-auto w-full sm:w-2/3">
-       
+    <section className="mx-auto w-full sm:w-2/3 py-8 px-4">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        <span>Back</span>
+      </button>
       <AccountabilityHeader />
 
       <div className="w-full max-w-8xl mx-auto border rounded-md mt-6">
@@ -86,9 +97,11 @@ export default function AccountabilityHubPage() {
                     }}
                   >
                     <div className="flex items-center gap-2 cursor-pointer">
-                      <img
+                      <Image
                         src={m.avatar}
                         alt={m.name}
+                        width={32}
+                        height={32}
                         className="h-8 w-8 rounded-full"
                       />
                       {m.name}

@@ -1,3 +1,4 @@
+// Home page 2
 "use client";
 
 import { useMemo } from "react";
@@ -8,6 +9,7 @@ import JPCard from "@/components/dashboard/JPCard";
 import ActivityFeed from "@/components/accountability/ActivityFeed";
 import useAccountabilityFeed from "@/hooks/useAccountabilityFeed";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function AccountabilityHubHome() {
   // Mock data for first iteration. Later we will wire with APIs.
@@ -74,7 +76,9 @@ export default function AccountabilityHubHome() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
             <Button>Start New Cycle</Button>
+            <Link href="/dashboard/accountability-hub">
             <Button variant="outline">View Members</Button>
+            </Link>
             {/* Notes action moved to the Notes section below */}
           </CardContent>
         </Card>

@@ -1,7 +1,11 @@
 "use client";
+//member progress page 4
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 export default function MemberPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const name = searchParams.get("name") ?? "Sophia Bennett";
@@ -17,6 +21,13 @@ export default function MemberPage() {
 
   return (
     <section className="mx-4 sm:mx-4  py-4 sm:p-6">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+      >
+        <ArrowLeft className="h-5 w-5" />
+        <span>Back</span>
+      </button>
       {/* Breadcrumb */}
       <p className="text-sm text-gray-500 mb-4">
         Accountability Hub /{" "}
