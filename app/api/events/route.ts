@@ -32,6 +32,9 @@ interface EventBody {
  * GET: Fetch all events for the current user
  */
 export async function GET() {
+  // Add these two lines for debugging
+  console.log("--- DEBUG: /api/events GET handler was reached ---");
+  // throw new Error("This is a test error to see if logs are working.");
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
