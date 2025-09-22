@@ -39,7 +39,7 @@ export async function GET() {
 
   try {
     const { data: events, error } = await supabaseAdmin
-      .from("Event")
+      .from('"Event"')
       .select("*")
       .eq("userId", session.user.id)
       .order("start", { ascending: true });
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const formattedEnd = end ? new Date(end).toISOString() : null;
 
     const { data: newEvent, error } = await supabaseAdmin
-      .from("Event")
+      .from('"Event"')
       .insert({
         title,
         start: formattedStart,
@@ -155,7 +155,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const { data: updatedEvent, error } = await supabaseAdmin
-      .from("Event")
+      .from('"Event"')
       .update({ ...updateData, updatedAt: new Date().toISOString() })
       .eq("id", id)
       .eq("userId", session.user.id)
@@ -207,7 +207,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const { error: deleteError } = await supabaseAdmin
-      .from("Event")
+      .from('"Event"')
       .delete()
       .eq("id", id)
       .eq("userId", session.user.id);
