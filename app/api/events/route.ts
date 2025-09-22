@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
     const formattedEnd = end ? new Date(end).toISOString() : null;
 
     const { data: newEvent, error } = await supabaseAdmin
-      .from("Event")
+      .from('"Event"')
       .insert({
         title,
         start: formattedStart,
