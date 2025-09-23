@@ -65,7 +65,6 @@ import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import CustomAccordion from "../dashboard/user/ CustomAccordion";
 import DailyBloomCalendar from "@/components/DailyBloomCalendar";
 
-
 // Add this near your other imports at the top
 import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
 
@@ -90,7 +89,7 @@ export interface ClientDailyBloom {
   title: string;
   description: string | null;
   isCompleted: boolean;
-  dueDate: string | null;  // always ISO string or null
+  dueDate: string | null; // always ISO string or null
   frequency?: "Daily" | "Weekly" | "Monthly" | null;
   createdAt?: string;
   updatedAt: string;
@@ -98,8 +97,6 @@ export interface ClientDailyBloom {
   taskCompleteJP: boolean;
   isFromEvent?: boolean;
 }
-
-
 
 const defaultFormValues: DailyBloomFormType = {
   title: "",
@@ -129,7 +126,6 @@ const useMediaQuery = (query: string) => {
 
   return matches;
 };
-
 
 // --- END: useMediaQuery Hook ---
 
@@ -170,7 +166,6 @@ export default function DailyBloomClient() {
       taskCompleteJP: false,
     });
   };
-
 
   const { data: events } = useQuery<CalendarEvent[]>({
     queryKey: ["events"],
@@ -241,8 +236,6 @@ export default function DailyBloomClient() {
       },
     });
 
-
-
   const dailyBloom = useMemo(() => {
     return data?.pages.flatMap((page) => page.data) || [];
   }, [data]);
@@ -291,7 +284,10 @@ export default function DailyBloomClient() {
       invalidateAllQueries();
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(error, "Failed to update task.");
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to update task."
+      );
       toast.error(errorMessage);
     },
   });
@@ -306,7 +302,10 @@ export default function DailyBloomClient() {
       toast.success("Deleted successfully");
     },
     onError: (error: AxiosError) => {
-      const errorMessage = getAxiosErrorMessage(error, "Failed to delete task.");
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to delete task."
+      );
       toast.error(errorMessage);
     },
   });
@@ -353,14 +352,16 @@ export default function DailyBloomClient() {
       },
       {
         onSuccess: () => {
-          toast.success(`Task marked as ${isCompleted ? "complete" : "pending"}.`);
+          toast.success(
+            `Task marked as ${isCompleted ? "complete" : "pending"}.`
+          );
         },
       }
     );
   };
 
   // Normalize bloom data and assert the correct type for the calendar component
-  const normalizedBlooms = dailyBloom.map(b => ({
+  const normalizedBlooms = dailyBloom.map((b) => ({
     id: b.id ?? crypto.randomUUID(),
     title: b.title ?? "",
     description: b.description ?? null,
@@ -377,7 +378,7 @@ export default function DailyBloomClient() {
 
   // NEW: A memoized function to combine blooms and events
   const combinedCalendarItems = useMemo(() => {
-    const bloomEvents = dailyBloom.map(bloom => ({
+    const bloomEvents = dailyBloom.map((bloom) => ({
       id: `bloom-${bloom.id}`,
       title: bloom.title,
       start: bloom.dueDate ? new Date(bloom.dueDate).toISOString() : today,
@@ -386,20 +387,21 @@ export default function DailyBloomClient() {
       extendedProps: {
         isBloom: true,
         isCompleted: bloom.isCompleted,
-        description: bloom.description || undefined
-      }
+        description: bloom.description || undefined,
+      },
     }));
 
-    const regularEvents = (events || []).map(event => ({
+    const regularEvents = (events || []).map((event) => ({
       ...event,
       id: `event-${event.id}`,
       color: "#2ecc71",
-      extendedProps: { isBloom: false }
+      extendedProps: { isBloom: false },
     }));
 
     return [...bloomEvents, ...regularEvents];
   }, [dailyBloom, events, today]);
 
+  console.log("events", events);
 
   return (
     <div>
@@ -443,8 +445,6 @@ export default function DailyBloomClient() {
                 onCreateBloomFromEvent={handleCreateBloomFromEvent}
               />
             </CardContent>
-
-
           </CardContent>
         </Card>
 
@@ -478,7 +478,9 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={statusFilter === "Pending" ? "secondary" : "ghost"}
+                        variant={
+                          statusFilter === "Pending" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setStatusFilter("Pending")}
@@ -487,7 +489,9 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={statusFilter === "Completed" ? "secondary" : "ghost"}
+                        variant={
+                          statusFilter === "Completed" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setStatusFilter("Completed")}
@@ -508,7 +512,9 @@ export default function DailyBloomClient() {
                     <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         type="button"
-                        variant={frequencyFilter === "All" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "All" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("All")}
@@ -517,7 +523,9 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={frequencyFilter === "Daily" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "Daily" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Daily")}
@@ -526,7 +534,9 @@ export default function DailyBloomClient() {
                       </Button>
                       <Button
                         type="button"
-                        variant={frequencyFilter === "Weekly" ? "secondary" : "ghost"}
+                        variant={
+                          frequencyFilter === "Weekly" ? "secondary" : "ghost"
+                        }
                         size="sm"
                         className="w-full justify-start"
                         onClick={() => setFrequencyFilter("Weekly")}
@@ -576,7 +586,10 @@ export default function DailyBloomClient() {
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(bloom, e.target.checked)
+                                  handleUpdateCompletion(
+                                    bloom,
+                                    e.target.checked
+                                  )
                                 }
                                 className="w-5 h-5 rounded-md cursor-pointer flex-shrink-0"
                               />
@@ -651,7 +664,10 @@ export default function DailyBloomClient() {
                                 type="checkbox"
                                 checked={bloom.isCompleted}
                                 onChange={(e) =>
-                                  handleUpdateCompletion(bloom, e.target.checked)
+                                  handleUpdateCompletion(
+                                    bloom,
+                                    e.target.checked
+                                  )
                                 }
                                 className="w-4 h-4 rounded-md cursor-pointer"
                               />
@@ -663,7 +679,9 @@ export default function DailyBloomClient() {
                             >
                               <div className="flex items-center gap-2">
                                 <span>
-                                  {bloom.title.length > 30 ? `${bloom.title.slice(0, 30)}...` : bloom.title}
+                                  {bloom.title.length > 30
+                                    ? `${bloom.title.slice(0, 30)}...`
+                                    : bloom.title}
                                 </span>
                                 {bloom.isFromEvent && (
                                   <span className="text-xs text-blue-600 font-medium bg-blue-100 px-1.5 py-0.5 rounded">
@@ -681,8 +699,8 @@ export default function DailyBloomClient() {
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                  "en-IN"
-                                )
+                                    "en-IN"
+                                  )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -741,7 +759,9 @@ export default function DailyBloomClient() {
         <Dialog open={addData} onOpenChange={setAddData}>
           <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">Add Your Bloom</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                Add Your Bloom
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-4 py-4">
@@ -808,7 +828,7 @@ export default function DailyBloomClient() {
                           min={today}
                           value={
                             field.value &&
-                              !isNaN(new Date(field.value).getTime())
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -880,7 +900,9 @@ export default function DailyBloomClient() {
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
           <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">Bloom Details</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                Bloom Details
+              </DialogTitle>
             </DialogHeader>
             {viewData && (
               <div className="grid gap-6 py-4">
@@ -959,7 +981,9 @@ export default function DailyBloomClient() {
         >
           <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">Edit Daily Bloom</DialogTitle>
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                Edit Daily Bloom
+              </DialogTitle>
               <DialogDescription>
                 Make changes to your entry below.
               </DialogDescription>
@@ -996,7 +1020,7 @@ export default function DailyBloomClient() {
                           type="date"
                           value={
                             field.value &&
-                              !isNaN(new Date(field.value).getTime())
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -1077,7 +1101,8 @@ export default function DailyBloomClient() {
                 Confirm Deletion
               </DialogTitle>
               <DialogDescription className="mt-2 text-sm text-gray-500">
-                Are you sure you want to delete this bloom? This action cannot be undone.
+                Are you sure you want to delete this bloom? This action cannot
+                be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
