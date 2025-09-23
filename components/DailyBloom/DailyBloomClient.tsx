@@ -402,6 +402,7 @@ export default function DailyBloomClient() {
   }, [dailyBloom, events, today]);
 
   console.log("events", events);
+  console.log(dailyBloom);
 
   return (
     <div>
