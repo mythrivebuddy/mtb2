@@ -8,8 +8,7 @@ import interactionPlugin, { DateClickArg, EventResizeDoneArg } from "@fullcalend
 import listPlugin from "@fullcalendar/list";
 import { EventContentArg, EventDropArg } from "@fullcalendar/core";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"; // For creating a client instance
-// import { useSession } from "next-auth/react"; // <-- CORRECT: Use NextAuth session hook
+
 import { DailyBloom } from "@/types/client/daily-bloom";
 import {
   Dialog,
@@ -150,7 +149,7 @@ const EventForm = ({
   isEditing: boolean;
 }) => (
   <div className="grid gap-4 py-4 px-1">
-    {/* ... All your form fields remain the same ... */}
+    
     <div className="grid gap-2">
       <Label htmlFor="title">Title</Label>
       <Input
@@ -239,7 +238,7 @@ const EventForm = ({
       <Label htmlFor="all-day">All Day Event</Label>
     </div>
 
-    {/* --- CHECKBOX REMOVED --- */}
+   
 
   </div>
 );
