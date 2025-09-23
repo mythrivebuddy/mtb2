@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // --- 1. YOUR IDs ARE CONFIGURED HERE ---
+ 
   
   // This is the correct user ID from your logs.
   const userIdToUpdate = 'f1cb57c5-b33f-48af-a562-a9c54013edd2'; 
