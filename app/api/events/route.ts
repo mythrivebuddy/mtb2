@@ -86,6 +86,7 @@ export async function GET() {
 }
 
 /** POST: Create a new event */
+/** POST: Create a new event */
 export async function POST(req: NextRequest) {
   console.log("🚀 POST /api/events :: Function called");
   try {
@@ -139,11 +140,26 @@ export async function POST(req: NextRequest) {
 
     console.log("POST /api/events :: Successfully created event:", newEvent);
     return NextResponse.json({ success: true, data: newEvent }, { status: 201 });
-  } catch (error: unknown) {
-    console.error("❌ POST /api/events :: Caught an exception:", getErrorMessage(error));
-    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
+  } catch (error: any) { // Using 'any' for deep debugging
+    console.error("❌ POST /api/events :: Caught an exception:", error);
+    
+    // This will send the FULL, detailed error back to the browser.
+    return NextResponse.json({ 
+        success: false, 
+        message: "A server error occurred. See details.",
+        // The 'details' object will contain the exact database error message.
+        details: {
+            message: error.message,
+            code: error.code,       // e.g., '23505' for unique violation
+            details: error.details, // e.g., 'Key (column)=(value) already exists.'
+            hint: error.hint,
+            stack: error.stack,     // The server's error stack trace
+        }
+    }, { status: 500 });
   }
 }
+
+
 
 /** PATCH: Update an existing event */
 export async function PATCH(req: NextRequest) {
