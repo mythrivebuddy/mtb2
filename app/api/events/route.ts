@@ -86,7 +86,6 @@ export async function GET() {
 }
 
 /** POST: Create a new event */
-/** POST: Create a new event */
 export async function POST(req: NextRequest) {
   console.log("🚀 POST /api/events :: Function called");
   try {
@@ -124,8 +123,8 @@ export async function POST(req: NextRequest) {
         start: formattedStart,
         end: formattedEnd,
         description,
-        isBloom,
-        isCompleted,
+        isbloom: isBloom, // Mapped to lowercase DB column
+        iscompleted: isCompleted, // Mapped to lowercase DB column
         allDay,
         userId: session.user.id,
         updatedAt: new Date().toISOString(),
@@ -140,26 +139,29 @@ export async function POST(req: NextRequest) {
 
     console.log("POST /api/events :: Successfully created event:", newEvent);
     return NextResponse.json({ success: true, data: newEvent }, { status: 201 });
-  } catch (error: any) { // Using 'any' for deep debugging
+  } catch (error: unknown) { // FIXED: Changed to 'unknown' for type safety
     console.error("❌ POST /api/events :: Caught an exception:", error);
     
-    // This will send the FULL, detailed error back to the browser.
+    // Safely extract error details for debugging
+    const responseDetails: { [key: string]: unknown } = {
+        message: 'An unknown error occurred'
+    };
+
+    if (error && typeof error === 'object') {
+        if ('message' in error) responseDetails.message = error.message;
+        if ('code' in error) responseDetails.code = error.code;
+        if ('details' in error) responseDetails.details = error.details;
+        if ('hint' in error) responseDetails.hint = error.hint;
+        if (error instanceof Error && error.stack) responseDetails.stack = error.stack;
+    }
+
     return NextResponse.json({ 
         success: false, 
         message: "A server error occurred. See details.",
-        // The 'details' object will contain the exact database error message.
-        details: {
-            message: error.message,
-            code: error.code,       // e.g., '23505' for unique violation
-            details: error.details, // e.g., 'Key (column)=(value) already exists.'
-            hint: error.hint,
-            stack: error.stack,     // The server's error stack trace
-        }
+        details: responseDetails
     }, { status: 500 });
   }
 }
-
-
 
 /** PATCH: Update an existing event */
 export async function PATCH(req: NextRequest) {
@@ -183,7 +185,6 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ message: "A valid Event ID is required" }, { status: 400 });
     }
     
-    // --- START: Robust Date Validation for PATCH ---
     const finalUpdateData: Partial<EventBody> = { ...updateData };
 
     if (finalUpdateData.start) {
@@ -205,13 +206,23 @@ export async function PATCH(req: NextRequest) {
     } else if (finalUpdateData.end === '' || finalUpdateData.end === null || finalUpdateData.end === undefined) {
         finalUpdateData.end = null;
     }
-    // --- END: Robust Date Validation for PATCH ---
     
-    console.log("PATCH /api/events :: Processed update data:", finalUpdateData);
+    // Remap camelCase keys to lowercase for the database
+    const dbUpdateData: { [key: string]: string | boolean | null | undefined } = { ...finalUpdateData };
+    if (dbUpdateData.hasOwnProperty('isBloom')) {
+        dbUpdateData.isbloom = dbUpdateData.isBloom;
+        delete dbUpdateData.isBloom;
+    }
+    if (dbUpdateData.hasOwnProperty('isCompleted')) {
+        dbUpdateData.iscompleted = dbUpdateData.isCompleted;
+        delete dbUpdateData.isCompleted;
+    }
+
+    console.log("PATCH /api/events :: Processed and mapped update data:", dbUpdateData);
 
     const { data: updatedEvent, error } = await supabaseAdmin
       .from("Event")
-      .update({ ...finalUpdateData, updatedAt: new Date().toISOString() })
+      .update({ ...dbUpdateData, updatedAt: new Date().toISOString() })
       .eq("id", id)
       .eq("userId", session.user.id)
       .select()
@@ -273,3 +284,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
   }
 }
+
