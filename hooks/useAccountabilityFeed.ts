@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export type AccountabilityFeedItem = {
   id: string;
@@ -12,7 +12,7 @@ export type AccountabilityFeedItem = {
 
 export default function useAccountabilityFeed(groupId: string | undefined) {
   const [items, setItems] = useState<AccountabilityFeedItem[]>([]);
-  const channelRef = useRef<ReturnType<typeof supabaseClient.channel> | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const channelName = useMemo(() => (groupId ? `acc-group-${groupId}` : undefined), [groupId]);
 
@@ -29,7 +29,7 @@ export default function useAccountabilityFeed(groupId: string | undefined) {
       })
       .catch(() => {});
 
-    const ch = supabaseClient.channel(channelName, { config: { broadcast: { self: true } } });
+    const ch = supabase.channel(channelName, { config: { broadcast: { self: true } } });
     channelRef.current = ch;
 
     ch.on("broadcast", { event: "feed" }, ({ payload }) => {
@@ -41,7 +41,7 @@ export default function useAccountabilityFeed(groupId: string | undefined) {
 
     return () => {
       isMounted = false;
-      if (channelRef.current) supabaseClient.removeChannel(channelRef.current);
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
     };
   }, [groupId, channelName]);
 
