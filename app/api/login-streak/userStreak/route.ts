@@ -1,23 +1,21 @@
-// app/api/streak/route.ts
+// app/api/login-streak/userStreak/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "../../auth/[...nextauth]/auth.config";
-import { ActivityType } from "@prisma/client";
+import { ActivityType} from "@prisma/client";
 
 const STREAK_MILESTONES = [7, 21, 45, 90];
 
 export async function POST(req: Request) {
   try {
     console.log("➡️ /api/streak POST called");
-    console.log("Headers:", Object.fromEntries(req.headers.entries()));
 
+    // The session type is already augmented globally, so no custom types or casting are needed.
     const session = await getServerSession(authConfig);
-    console.log("🔑 Session:", session);
 
     const userId = session?.user?.id;
     const isLogin = req.headers.get("activity-type") === "login";
-    console.log("📌 Extracted userId:", userId, "isLogin:", isLogin);
 
     if (!userId) {
       console.error("❌ No userId in session");
@@ -27,23 +25,22 @@ export async function POST(req: Request) {
     // Ensure user exists in DB; if missing create from session (safe fallback)
     let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      console.warn(`⚠️ User not found in database for userId: ${userId}. Creating user from session data...`);
+      console.warn(`⚠️ User not found for userId: ${userId}. Creating from session...`);
       const email = session?.user?.email ?? "";
       const name = session?.user?.name ?? "";
       const image = session?.user?.image ?? "";
-      const role = (session?.user as any)?.role ?? "USER";
+      // Safely access the role from the globally typed session user.
+      const role = session?.user?.role ?? "USER";
 
-      // If you have required fields in your User model, add them here.
       try {
         user = await prisma.user.create({
           data: {
-            id: userId, // create with same id coming from session
+            id: userId,
             email,
             name,
             image,
-            role: role as any, // cast to your enum; adjust if needed
-            // Set sensible defaults for fields your model requires:
-            authMethod: "GOOGLE", // or "CREDENTIALS" depending on your flow; adjust if necessary
+            role,
+            authMethod: "GOOGLE",
             isEmailVerified: true,
             isFirstTimeSurvey: true,
           },
@@ -78,7 +75,6 @@ export async function POST(req: Request) {
 
     const lastActive = new Date(streak.lastActiveDay);
     const daysDiff = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
-    console.log("⏱ lastActive:", lastActive, "now:", now, "daysDiff:", daysDiff);
 
     // If already active today
     if (daysDiff === 0) {
@@ -86,7 +82,7 @@ export async function POST(req: Request) {
         console.log("🔄 Already logged in today, incrementing loginCount...");
         streak = await prisma.userStreak.update({
           where: { userId },
-          data: { loginCount: streak.loginCount + 1 },
+          data: { loginCount: { increment: 1 } },
         });
       }
       console.log("✅ Returning streak (already active today):", streak);
@@ -94,14 +90,13 @@ export async function POST(req: Request) {
     }
 
     // Determine new streak
-    let newStreak = 1;
+    const newStreak = daysDiff === 1 ? streak.currentStreak + 1 : 1;
     if (daysDiff === 1) {
-      newStreak = streak.currentStreak + 1;
       console.log(`🔥 Continuing streak to ${newStreak} day(s).`);
     } else {
-      newStreak = 1;
       console.log("⚠️ Missed day(s). Reset streak to 1.");
     }
+
 
     // Update streak record
     streak = await prisma.userStreak.update({
@@ -133,12 +128,8 @@ export async function POST(req: Request) {
         console.warn(`⚠️ No activity config found for key: ${activityKey}`);
       } else {
         console.log("🏷 Found activity:", activity);
-
         const existingReward = await prisma.transaction.findFirst({
-          where: {
-            userId,
-            activityId: activity.id,
-          },
+          where: { userId, activityId: activity.id },
         });
 
         if (existingReward) {
@@ -146,30 +137,30 @@ export async function POST(req: Request) {
         } else {
           console.log(`💎 Awarding ${activity.jpAmount} JP for ${newStreak}-day streak...`);
 
-          await prisma.transaction.create({
-            data: {
-              userId,
-              activityId: activity.id,
-              jpAmount: activity.jpAmount,
-            },
-          });
-
-          await prisma.user.update({
-            where: { id: userId },
-            data: {
-              jpEarned: { increment: activity.jpAmount },
-              jpBalance: { increment: activity.jpAmount },
-            },
-          });
-
-          await prisma.notification.create({
-            data: {
-              userId,
-              type: "JP_EARNED",
-              title: `🔥 ${newStreak}-Day Streak Achieved!`,
-              message: `You earned ${activity.jpAmount} Joy Pearls for your ${newStreak}-day streak! Keep it up!`,
-            },
-          });
+          await prisma.$transaction([
+            prisma.transaction.create({
+              data: {
+                userId,
+                activityId: activity.id,
+                jpAmount: activity.jpAmount,
+              },
+            }),
+            prisma.user.update({
+              where: { id: userId },
+              data: {
+                jpEarned: { increment: activity.jpAmount },
+                jpBalance: { increment: activity.jpAmount },
+              },
+            }),
+            prisma.notification.create({
+              data: {
+                userId,
+                type: "JP_EARNED",
+                title: `🔥 ${newStreak}-Day Streak Achieved!`,
+                message: `You earned ${activity.jpAmount} Joy Pearls for your ${newStreak}-day streak! Keep it up!`,
+              },
+            }),
+          ]);
 
           console.log(`✅ Successfully awarded ${activity.jpAmount} JP for ${newStreak}-day streak.`);
         }
@@ -177,10 +168,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ streak });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Unexpected error in /api/streak POST:", err);
-    // If Prisma error return structured message for debugging (but avoid leaking sensitive info)
-    return NextResponse.json({ error: "Internal Server Error", details: err.message ?? String(err) }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "Internal Server Error", details: errorMessage }, { status: 500 });
   }
 }
 
@@ -195,9 +186,22 @@ export async function GET() {
       where: { userId },
     });
 
+    // Check if the streak needs to be reset (user missed a day)
+    if (streak) {
+        const now = new Date();
+        const lastActive = new Date(streak.lastActiveDay);
+        const daysDiff = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff > 1) {
+            console.log("GET: Streak broken. Returning 0.");
+            return NextResponse.json({ streak: { ...streak, currentStreak: 0 } });
+        }
+    }
+
     return NextResponse.json({ streak });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("❌ Error in /api/streak GET:", err);
-    return NextResponse.json({ error: "Internal Server Error", details: err.message ?? String(err) }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "Internal Server Error", details: errorMessage }, { status: 500 });
   }
 }

@@ -43,10 +43,17 @@ interface EventBody {
   allDay?: boolean;
 }
 
+// Helper to safely extract error message
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "An unknown error occurred";
+}
+
 /** GET: Fetch all events for the current user */
 export async function GET() {
   try {
-    await testSupabaseKey(); // quick key check
+    await testSupabaseKey();
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -62,8 +69,8 @@ export async function GET() {
     return NextResponse.json(events || [], {
       headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -100,8 +107,8 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json({ success: true, data: newEvent }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -132,8 +139,8 @@ export async function PATCH(req: NextRequest) {
     if (!updatedEvent) return NextResponse.json({ message: "Event not found or permission denied" }, { status: 404 });
 
     return NextResponse.json({ success: true, data: updatedEvent }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
   }
 }
 
@@ -157,7 +164,7 @@ export async function DELETE(req: NextRequest) {
     if (deleteError) throw deleteError;
 
     return NextResponse.json({ success: true, message: "Event deleted successfully" }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
   }
 }
