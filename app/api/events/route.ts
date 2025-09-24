@@ -102,12 +102,20 @@ export async function POST(req: NextRequest) {
 
     const { title, start, end, description, isBloom, isCompleted, allDay } = body;
 
+    // --- START: IMPROVED VALIDATION ---
     if (!title || !start) {
       console.warn("POST /api/events :: Missing required fields 'title' or 'start'.");
-      return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
+      return NextResponse.json({ message: "Missing required fields: title and start are required." }, { status: 400 });
     }
 
-    const formattedStart = new Date(start).toISOString();
+    const startDate = new Date(start);
+    if (isNaN(startDate.getTime())) {
+        console.error("POST /api/events :: Invalid 'start' date received:", start);
+        return NextResponse.json({ message: `Invalid start date format provided: ${start}` }, { status: 400 });
+    }
+    // --- END: IMPROVED VALIDATION ---
+
+    const formattedStart = startDate.toISOString();
     const formattedEnd = end ? new Date(end).toISOString() : null;
 
     const { data: newEvent, error } = await supabaseAdmin
