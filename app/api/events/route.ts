@@ -102,7 +102,6 @@ export async function POST(req: NextRequest) {
 
     const { title, start, end, description, isBloom, isCompleted, allDay } = body;
 
-    // --- START: IMPROVED VALIDATION ---
     if (!title || !start) {
       console.warn("POST /api/events :: Missing required fields 'title' or 'start'.");
       return NextResponse.json({ message: "Missing required fields: title and start are required." }, { status: 400 });
@@ -110,10 +109,9 @@ export async function POST(req: NextRequest) {
 
     const startDate = new Date(start);
     if (isNaN(startDate.getTime())) {
-        console.error("POST /api/events :: Invalid 'start' date received:", start);
-        return NextResponse.json({ message: `Invalid start date format provided: ${start}` }, { status: 400 });
+      console.error("POST /api/events :: Invalid 'start' date received:", start);
+      return NextResponse.json({ message: `Invalid start date format provided: ${start}` }, { status: 400 });
     }
-    // --- END: IMPROVED VALIDATION ---
 
     const formattedStart = startDate.toISOString();
     const formattedEnd = end ? new Date(end).toISOString() : null;
@@ -168,16 +166,36 @@ export async function PATCH(req: NextRequest) {
       console.warn("PATCH /api/events :: Invalid or missing Event ID.");
       return NextResponse.json({ message: "A valid Event ID is required" }, { status: 400 });
     }
-
-    if (updateData.start) updateData.start = new Date(updateData.start).toISOString();
-    if (updateData.end === "" || updateData.end === undefined) updateData.end = null;
-    else if (updateData.end) updateData.end = new Date(updateData.end).toISOString();
     
-    console.log("PATCH /api/events :: Processed update data:", updateData);
+    // --- START: Robust Date Validation for PATCH ---
+    const finalUpdateData: Partial<EventBody> = { ...updateData };
+
+    if (finalUpdateData.start) {
+        const startDate = new Date(finalUpdateData.start);
+        if (isNaN(startDate.getTime())) {
+            console.error("PATCH /api/events :: Invalid 'start' date received for update:", finalUpdateData.start);
+            return NextResponse.json({ message: `Invalid start date format provided: ${finalUpdateData.start}` }, { status: 400 });
+        }
+        finalUpdateData.start = startDate.toISOString();
+    }
+
+    if (finalUpdateData.end) {
+        const endDate = new Date(finalUpdateData.end);
+        if (isNaN(endDate.getTime())) {
+            console.error("PATCH /api/events :: Invalid 'end' date received for update:", finalUpdateData.end);
+            return NextResponse.json({ message: `Invalid end date format provided: ${finalUpdateData.end}` }, { status: 400 });
+        }
+        finalUpdateData.end = endDate.toISOString();
+    } else if (finalUpdateData.end === '' || finalUpdateData.end === null || finalUpdateData.end === undefined) {
+        finalUpdateData.end = null;
+    }
+    // --- END: Robust Date Validation for PATCH ---
+    
+    console.log("PATCH /api/events :: Processed update data:", finalUpdateData);
 
     const { data: updatedEvent, error } = await supabaseAdmin
       .from("Event")
-      .update({ ...updateData, updatedAt: new Date().toISOString() })
+      .update({ ...finalUpdateData, updatedAt: new Date().toISOString() })
       .eq("id", id)
       .eq("userId", session.user.id)
       .select()
