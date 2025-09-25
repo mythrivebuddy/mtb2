@@ -58,10 +58,10 @@ export async function POST(request: Request) {
           monthlyLimit = 5;
           break;
         case "YEARLY":
-          monthlyLimit = 10;
+          monthlyLimit = 5;
           break;
         case "LIFETIME":
-          monthlyLimit = 20;
+          monthlyLimit = 5;
           break;
         default:
           monthlyLimit = 5;
