@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 
 export default function MemberPage() {
   const router = useRouter();
@@ -36,9 +37,11 @@ export default function MemberPage() {
 
       {/* Header */}
       <div className="flex items-center gap-4">
-        <img
+        <Image
           src={avatar}
           alt={name}
+          width={80}  // Required for next/image
+          height={80} // Required for next/image
           className="h-20 w-20 rounded-full border object-cover"
         />
         <div>
