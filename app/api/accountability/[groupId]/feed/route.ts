@@ -1,17 +1,40 @@
 // app/api/accountability/[groupId]/feed/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { formatDistanceToNow } from "date-fns";
+
+const iconMap = {
+    group_created: "cycle",
+    member_added: "goal",
+    goal_updated: "update",
+    comment_posted: "comment",
+    status_updated: "result"
+} as const;
 
 export async function GET(
-  _req: NextRequest,
-  context: { params: { groupId: string } }
+  _req: Request,
+  { params }: { params: { groupId: string } }
 ) {
-  const { groupId } = context.params;
-  // For now return mocked items. Replace with DB query later.
-  const items = [
-    { id: `${groupId}-1`, icon: "result", title: "Sarah completed her goal: Launch new website", time: "2 hours ago" },
-    { id: `${groupId}-2`, icon: "goal", title: "Michael set a new goal: Increase social media engagement by 20%", time: "Yesterday" },
-    { id: `${groupId}-3`, icon: "cycle", title: "Group cycle started", time: "3 days ago" },
-  ];
-  return NextResponse.json({ items });
-}
+  try {
+    const { groupId } = params;
 
+    const activities = await prisma.activityFeedItem.findMany({
+      where: { groupId },
+      orderBy: { createdAt: "desc" },
+      take: 20, // Get the 20 most recent activities
+    });
+
+    // Format the data to match the frontend's expectation
+    const formattedItems = activities.map((item) => ({
+      id: item.id,
+      icon: iconMap[item.type as keyof typeof iconMap] || "update",
+      title: item.details,
+      time: formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }),
+    }));
+
+    return NextResponse.json({ items: formattedItems });
+  } catch (error) {
+    console.error(`[GET_FEED]`, error);
+    return NextResponse.json({ items: [] }); // Return empty on error
+  }
+}
