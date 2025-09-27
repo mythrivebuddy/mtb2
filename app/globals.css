@@ -206,3 +206,67 @@
   border-radius: 1px;
 }
 
+@keyframes blinkContinuous {
+  0%, 100% { opacity: 0.1; }
+  50% { opacity: 1; }
+}
+
+.animate-blinkContinuous {
+  animation: blinkContinuous 2s ease-in-out infinite;
+  -webkit-animation: blinkContinuous 2s ease-in-out infinite;
+}
+
+
+.animate-blinkContinuous {
+  animation: blinkContinuous 2s ease-in-out infinite;
+}
+
+/* In your global CSS file (e.g., globals.css) */
+.fc-theme .fc-button {
+  background-color: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  box-shadow: none;
+  text-transform: capitalize;
+}
+
+.fc-theme .fc-button:hover {
+  background-color: hsl(var(--secondary) / 0.8);
+}
+
+.fc-theme .fc-button-primary {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.fc-theme .fc-button-primary:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.fc-theme .fc-button-primary:disabled {
+  background-color: hsl(var(--secondary));
+  opacity: 0.6;
+}
+
+.fc-theme .fc-button-primary:not(:disabled).fc-button-active,
+.fc-theme .fc-button-primary:not(:disabled):active {
+  background-color: hsl(var(--primary) / 0.9);
+  box-shadow: none;
+}
+
+/* Fix toolbar on small screens */
+.fc-header-toolbar {
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 4px;
+}
+
+@media (max-width: 640px) {
+  .fc-toolbar-chunk:last-child {
+    display: none !important; /* Hide right side (view buttons) */
+  }
+}

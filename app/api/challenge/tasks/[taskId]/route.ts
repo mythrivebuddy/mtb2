@@ -3,7 +3,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { deductJp, assignJp } from "@/lib/utils/jp"; // Ensure assignJp is imported
+import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType, EnrollmentStatus } from "@prisma/client";
 
 // Define a type for the data used to update an enrollment
@@ -15,13 +15,16 @@ type EnrollmentUpdateData = {
 };
 
 // This function handles PATCH requests to update a specific task's completion status.
-// The second argument is destructured directly to get params. This is the correct, type-safe pattern.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
-  // const userChallengeTaskId = params.taskId;
   const userChallengeTaskId = (await params).taskId;
+
+
+
+
+  // Ensure the user is authenticated and has the correct role
 
   try {
     const session = await checkRole("USER");
@@ -30,10 +33,19 @@ export async function PATCH(
     }
     const userId = session.user.id;
 
-    const { isCompleted } = await request.json();
+    // Get completionDate from the client request
+    const { isCompleted, completionDate } = await request.json();
+
+    // Add validation for the new date string
     if (typeof isCompleted !== "boolean") {
       return NextResponse.json(
         { error: "Invalid 'isCompleted' value provided." },
+        { status: 400 }
+      );
+    }
+    if (!completionDate || !/^\d{4}-\d{2}-\d{2}$/.test(completionDate)) {
+      return NextResponse.json(
+        { error: "Invalid or missing 'completionDate'. Expected YYYY-MM-DD." },
         { status: 400 }
       );
     }
@@ -74,22 +86,18 @@ export async function PATCH(
       }
 
       // --- Penalty and Streak Reset Logic ---
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // Create a UTC date object from the client's date string. This is the correct date.
+      const now = new Date(); // Keep `now` for the exact timestamp of the update
+      const today = new Date(`${completionDate}T00:00:00.000Z`);
+
       const yesterday = new Date(today);
-      yesterday.setDate(today.getDate() - 1);
+      yesterday.setUTCDate(today.getUTCDate() - 1);
 
-      const lastUpdate = enrollment.lastStreakUpdate
-        ? new Date(enrollment.lastStreakUpdate)
-        : null;
+      const lastUpdate = enrollment.lastStreakUpdate ? new Date(enrollment.lastStreakUpdate) : null;
+      // Also ensure lastUpdateDate is handled in UTC for accurate comparisons
       const lastUpdateDate = lastUpdate
-        ? new Date(
-            lastUpdate.getFullYear(),
-            lastUpdate.getMonth(),
-            lastUpdate.getDate()
-          )
+        ? new Date(Date.UTC(lastUpdate.getUTCFullYear(), lastUpdate.getUTCMonth(), lastUpdate.getUTCDate()))
         : null;
-
       // Check if the streak was broken (i.e., the last update was before yesterday)
       if (
         enrollment.currentStreak > 0 &&
@@ -111,7 +119,7 @@ export async function PATCH(
         });
         enrollment.currentStreak = 0; // Update in-memory object
       }
-      
+
       // Update the specific task the user clicked on
       await tx.userChallengeTask.update({
         where: { id: userChallengeTaskId },
@@ -128,7 +136,10 @@ export async function PATCH(
           where: { enrollmentId: enrollment.id },
         });
 
-        const allTasksCompleted = allTasks.every((task) => task.isCompleted);
+        // We manually check against the just-updated task's status
+        const allTasksCompleted = allTasks.every(
+          (task) => (task.id === userChallengeTaskId ? isCompleted : task.isCompleted)
+        );
 
         // If all of today's tasks are now complete...
         if (allTasksCompleted) {
@@ -138,30 +149,26 @@ export async function PATCH(
           // If the last update was yesterday, continue the streak. Otherwise, start a new one.
           if (lastUpdateDate && lastUpdateDate.getTime() === yesterday.getTime()) {
             newStreak++;
-          } else {
+          } else if (!lastUpdateDate || lastUpdateDate.getTime() < yesterday.getTime()) {
             newStreak = 1;
           }
-          
+
           // Use the specific type for the update payload
           const dataToUpdate: EnrollmentUpdateData = {
-              currentStreak: newStreak,
-              longestStreak: Math.max(enrollment.longestStreak, newStreak),
-              lastStreakUpdate: now,
+            currentStreak: newStreak,
+            longestStreak: Math.max(enrollment.longestStreak, newStreak),
+            lastStreakUpdate: now,
           };
 
-          // --- THIS IS THE REWARD LOGIC ---
-          // Calculate the total duration of the challenge in days.
+          // --- REWARD LOGIC ---
           const challengeDurationInMs = challenge.endDate.getTime() - challenge.startDate.getTime();
           const challengeDurationInDays = Math.ceil(challengeDurationInMs / (1000 * 60 * 60 * 24));
 
-          // If the new streak matches the challenge's total duration, the user has won.
           if (newStreak === challengeDurationInDays) {
-              // Assign the reward points if the reward is greater than 0.
-              if (challenge.reward > 0) {
-                  await assignJp(enrollment.user, ActivityType.CHALLENGE_REWARD, tx, { amount: challenge.reward });
-              }
-              // Mark the user's enrollment as 'COMPLETED'.
-              dataToUpdate.status = "COMPLETED";
+            if (challenge.reward > 0) {
+              await assignJp(enrollment.user, ActivityType.CHALLENGE_REWARD, tx, { amount: challenge.reward });
+            }
+            dataToUpdate.status = "COMPLETED";
           }
           // --- END OF REWARD LOGIC ---
 
@@ -169,6 +176,26 @@ export async function PATCH(
           await tx.challengeEnrollment.update({
             where: { id: enrollment.id },
             data: dataToUpdate,
+          });
+
+          // 🎯 CODE INSERTED HERE: Record this day as 'COMPLETED'
+          await tx.completionRecord.upsert({
+            where: {
+              userId_challengeId_date: {
+                userId: enrollment.userId,
+                challengeId: enrollment.challengeId,
+                date: today,
+              },
+            },
+            update: {
+              status: "COMPLETED", // Using a string as per your schema
+            },
+            create: {
+              userId: enrollment.userId,
+              challengeId: enrollment.challengeId,
+              date: today,
+              status: "COMPLETED", // Using a string
+            },
           });
         }
       }

@@ -177,7 +177,7 @@ export default function SpotlightCard() {
       className="rounded-[32px] md:px-10 px-4 text-white relative overflow-hidden h-full custom-phone-bg"
       style={{
         backgroundImage: `url('/landing-bg.svg')`, // Replace with your image URL or path
-        backgroundSize: "100% 100%", // Adjusts image to cover the container
+        backgroundSize: "cover", // Adjusts image to cover the container
         backgroundPosition: "center", // Centers the image
         backgroundRepeat: "no-repeat", // Prevents image repetition
       }}
@@ -201,14 +201,14 @@ export default function SpotlightCard() {
                 : spotlight?.user?.name || "No Spotlight Available"}
             </h3>
             <p className="text-[#B4B4B4] text-[16px]">
-              {spotlight?.user?.userBusinessProfile?.[0]?.featuredWorkTitle ??
+              {spotlight?.user?.userBusinessProfile?.featuredWorkTitle ??
                 "Marketing Coordinator"}
             </p>
           </div>
           <div className="relative  md:w-[160px] md:h-[160px] w-[90px] h-[70px]">
             <Image
               src={
-                spotlight?.user?.userBusinessProfile?.[0].featuredWorkImage ||
+                spotlight?.user?.userBusinessProfile?.featuredWorkImage ||
                 avtarImg
               }
               alt="Profile"
@@ -229,14 +229,14 @@ export default function SpotlightCard() {
           }}
         >
           <p className="text-[#50525B] text-[16px] leading-relaxed mb-6">
-            {spotlight?.user?.userBusinessProfile?.[0].featuredWorkDesc ||
+            {spotlight?.user?.userBusinessProfile?.featuredWorkDesc ||
               `This creates a sense of recognition and highlights the individual in
               focus, while maintaining the overall theme of growth and
               inspiration.`}
           </p>
           <a
             href={
-              spotlight?.user?.userBusinessProfile?.[0].priorityContactLink || 
+              spotlight?.user?.userBusinessProfile?.priorityContactLink || 
               "#"
             }
             target="_blank"

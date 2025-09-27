@@ -1,5 +1,5 @@
 "use client";
-import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import usePushNotifications from "@/hooks/usePushNotifications";
 
@@ -22,12 +22,13 @@ export default function FirstVisitNotificationPopup() {
         "
       >
         <DialogHeader className="space-y-2">
-          <h2 className="text-base sm:text-lg font-semibold text-center sm:text-left">
-            Enable Notifications
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
-            Stay updated with real-time alerts. Enable browser notifications now.
-          </p>
+           <DialogTitle
+            className="text-base sm:text-lg font-semibold text-center sm:text-left">
+      Enable Notifications
+    </DialogTitle>
+        <DialogDescription className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
+      Stay updated with real-time alerts. Enable browser notifications now.
+    </DialogDescription>
         </DialogHeader>
 
         <DialogFooter

@@ -21,7 +21,7 @@ async function getChallengeData(challengeId: string, userId?: string) {
       _count: {
         select: { enrollments: true },
       },
-      creator: true, // Added to match ChallengeWithTasksAndCount type
+      creator: true, // Added to match Challenge With Tasks And Count type
     },
   });
 
@@ -52,7 +52,7 @@ async function getChallengeData(challengeId: string, userId?: string) {
 export default async function ChallengeDetailPage(props: any) {
   const id = props.params.id;
 
-  // Use getServerSession instead of checkRole to handle null sessions gracefully
+  // Use getServerSession instead of check Role to handle null sessions gracefully
   const session = await getServerSession(authConfig);
 
   // Get the userId optionally using optional chaining

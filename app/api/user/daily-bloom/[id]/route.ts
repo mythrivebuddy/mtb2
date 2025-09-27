@@ -130,7 +130,7 @@ export async function PUT(
 
     // Return the updated bloom entry as a JSON response
     return NextResponse.json(updated);
-  } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+  } catch (error: unknown) { //  FIXED: Changed 'any' to 'unknown'
     let errorMessage = "An unknown error occurred";
     if (error instanceof Error) {
         errorMessage = error.message;
@@ -165,7 +165,7 @@ export async function DELETE(
 
     // Return a success message as a JSON response
     return NextResponse.json({ message: "Deleted successfully" });
-  } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+  } catch (error: unknown) { //  FIXED: Changed 'any' to 'unknown'
     let errorMessage = "Failed to delete";
     if (error instanceof Error) {
         errorMessage = error.message;

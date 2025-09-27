@@ -11,9 +11,7 @@ export async function GET() {
     });
 
     const title = template?.title ?? "Daily Challenge Reminder";
-    const message = template?.message ?? "Don't forget to check your daily challenges!";
-
-
+    const message = template?.message ?? "Don't forget to check your daily challenges!";    
     // 2. Fetch subscribed users
     const subscribedUsers = await prisma.pushSubscription.findMany({
       select: { userId: true },
@@ -33,8 +31,8 @@ export async function GET() {
         //   where: { userId, status: "COMPLETED" },
         // });
 
-        const inProgress = await prisma.challengeEnrollment.count({
-          where: { userId, status: "IN_PROGRESS" },
+          const inProgress = await prisma.challengeEnrollment.count({
+            where: { userId, status: "IN_PROGRESS" },
         });
 
         if (

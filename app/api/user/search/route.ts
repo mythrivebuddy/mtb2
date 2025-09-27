@@ -5,10 +5,10 @@ import { checkRole } from "@/lib/utils/auth";
 
 export async function GET(request: NextRequest) {
   try {
-       await checkRole(
-          "USER",
-          "You are not authorized for this action"
-        );
+    await checkRole(
+      "USER",
+      "You are not authorized for this action"
+    );
     const searchTerm = request.nextUrl.searchParams.get("q")?.trim();
 
     if (!searchTerm) {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const users = await prisma.user.findMany({
       where: {
-        role:"USER",
+        role: "USER",
         OR: [
           {
             name: {
@@ -30,27 +30,14 @@ export async function GET(request: NextRequest) {
           },
           {
             userBusinessProfile: {
-              some: {
-                OR: [
-                  { name: { contains: searchTerm, mode: "insensitive" } },
-                  {
-                    businessInfo: { contains: searchTerm, mode: "insensitive" },
-                  },
-                  {
-                    missionStatement: {
-                      contains: searchTerm,
-                      mode: "insensitive",
-                    },
-                  },
-                  { goals: { contains: searchTerm, mode: "insensitive" } },
-                  {
-                    achievements: { contains: searchTerm, mode: "insensitive" },
-                  },
-                  {
-                    keyOfferings: { contains: searchTerm, mode: "insensitive" },
-                  },
-                ],
-              },
+              OR: [
+                { name: { contains: searchTerm, mode: "insensitive" } },
+                { businessInfo: { contains: searchTerm, mode: "insensitive" } },
+                { missionStatement: { contains: searchTerm, mode: "insensitive" } },
+                { goals: { contains: searchTerm, mode: "insensitive" } },
+                { achievements: { contains: searchTerm, mode: "insensitive" } },
+                { keyOfferings: { contains: searchTerm, mode: "insensitive" } },
+              ],
             },
           },
         ],
@@ -60,26 +47,11 @@ export async function GET(request: NextRequest) {
         name: true,
         email: true,
         image: true,
-        // userBusinessProfile: {
-        //   select: {
-        //     name: true,
-        //     businessInfo: true,
-        //     missionStatement: true,
-        //     goals: true,
-        //     achievements: true,
-        //     keyOfferings: true,
-        //     email: true,
-        //     phone: true,
-        //     website: true,
-        //     socialHandles: true,
-        //   },
-        // },
       },
       take: 10,
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
+
 
     return NextResponse.json({
       success: true,

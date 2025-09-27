@@ -64,7 +64,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const profile = user.userBusinessProfile?.[0];
+   const profile = user.userBusinessProfile; 
 
     const response = {
       name: user.name,

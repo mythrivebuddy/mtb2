@@ -1,11 +1,67 @@
-import { ActivityType, AuthMethod } from "@prisma/client";
-import { AuthOptions } from "next-auth";
+import { ActivityType, AuthMethod, Role, Prisma } from "@prisma/client"; // <-- FIX: Added Role and Prisma
+import { AuthOptions, DefaultSession } from "next-auth"; // <-- FIX: Added DefaultSession and User
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { assignJp } from "@/lib/utils/jp";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+
+// 1. --- ADD THIS IMPORT ---
+import jwt from "jsonwebtoken";
+
+
+// --- FIX: ADDED MODULE AUGMENTATION BLOCK ---
+declare module "next-auth" {
+  /**
+   * Extends the built-in Session type
+   */
+  interface Session {
+    supabaseAccessToken?: string;
+    user: {
+      id: string;
+      role: Role;
+      rememberMe?: boolean; // <-- FIX: Made optional
+      isFirstTimeSurvey: boolean;
+      lastSurveyTime: string | null;
+    } & DefaultSession["user"];
+  }
+
+  /**
+   * Extends the built-in User type
+   */
+  interface User {
+    role: Role;
+    rememberMe?: boolean; // <-- FIX: Made optional
+    isFirstTimeSurvey: boolean;
+    lastSurveyTime: Date | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  /**
+   * Extends the built-in JWT type
+   */
+  interface JWT {
+    role: Role;
+    id: string;
+    rememberMe?: boolean; // <-- FIX: Made optional
+    isFirstTimeSurvey: boolean;
+    lastSurveyTime: string | null;
+    maxAge: number;
+    supabaseAccessToken?: string;
+  }
+}
+// --- END AUGMENTATION ---
+
+// FIX: Define two separate types for the different 'includes'
+type AuthUser = Prisma.UserGetPayload<{
+  include: { plan: true; blockedUsers: true };
+}>;
+
+type UserWithPlan = Prisma.UserGetPayload<{
+  include: { plan: true };
+}>;
 
 
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
@@ -26,13 +82,13 @@ export const authConfig: AuthOptions = {
       },
       async authorize(credentials) {
         try {
-          const user = await prisma.user.findUnique({
+          const user: AuthUser | null = await prisma.user.findUnique({ // <-- FIX: Use AuthUser type
             where: {
               email: credentials?.email,
             },
             include: {
               plan: true,
-              blockedUsers: true,
+              blockedUsers: true, // <-- This is now included in the AuthUser type
             },
           });
 
@@ -43,12 +99,18 @@ export const authConfig: AuthOptions = {
 
           if (user.isBlocked) {
             let blockedMessage = "Your account is blocked.";
-            if (user.blockedUsers?.length > 0) {
-              const blockedInfo = user.blockedUsers[0];
+
+            // --- FIX ---
+            // Check if the 'blockedUsers' object exists (is not null)
+            if (user.blockedUsers) {
+              // It's a single object, not an array, so access it directly.
+              const blockedInfo = user.blockedUsers;
               blockedMessage += ` Reason: ${blockedInfo.reason}. Blocked on: ${new Date(
                 blockedInfo.blockedAt
               ).toLocaleString()}.`;
             }
+            // --- END FIX ---
+
             throw new Error(blockedMessage);
           }
 
@@ -82,6 +144,7 @@ export const authConfig: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      // ... (This entire function stays exactly the same)
       if (account?.provider === "credentials") return true;
 
       try {
@@ -105,7 +168,7 @@ export const authConfig: AuthOptions = {
             if (referrer) referredById = referrer.id;
           }
 
-          const createdUser = await prisma.user.create({
+          const createdUser: UserWithPlan = await prisma.user.create({ // <-- FIX: Use UserWithPlan type
             data: {
               role,
               email: user.email!,
@@ -130,7 +193,7 @@ export const authConfig: AuthOptions = {
 
             assignJp(createdUser, ActivityType.REFER_TO);
 
-            const referrer = await prisma.user.findUnique({
+            const referrer: UserWithPlan | null = await prisma.user.findUnique({ // <-- FIX: Use UserWithPlan type
               where: { id: referredById },
               include: { plan: true },
             });
@@ -146,7 +209,7 @@ export const authConfig: AuthOptions = {
           user.isFirstTimeSurvey = createdUser.isFirstTimeSurvey ?? true;
           user.lastSurveyTime = createdUser.lastSurveyTime ?? null;
         } else {
-          const updatedUser = await prisma.user.update({
+          const updatedUser: UserWithPlan = await prisma.user.update({ // <-- FIX: Use UserWithPlan type
             where: { email: user.email! },
             data: {
               name: user.name!,
@@ -172,43 +235,73 @@ export const authConfig: AuthOptions = {
       }
     },
 
-    async jwt({ token, user }) {
+    // 2. --- MODIFIED JWT CALLBACK ---
+    async jwt({ token, user, trigger, session }) {
+      // Your existing logic
       if (user) {
         token.role = user.role;
         token.id = user.id;
-        token.rememberMe = user.rememberMe ?? false;
-        token.maxAge = user.rememberMe ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE;
-        token.isFirstTimeSurvey = user.isFirstTimeSurvey ?? false;
-        token.lastSurveyTime = user.lastSurveyTime ?? null;
+        token.rememberMe = user.rememberMe ?? false; // <-- FIX: Restored '?? false'
+        token.maxAge = (user.rememberMe ?? false) ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE; // <-- FIX: Added '?? false'
+        token.isFirstTimeSurvey = user.isFirstTimeSurvey;
+        token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
       }
+
+      if (trigger === "update" && session) {
+        token.name = session.name;
+        token.picture = session.picture;
+      }
+
+      // --- ADD THIS BLOCK TO SIGN THE SUPABASE TOKEN ---
+      // This runs on sign-in AND on every token refresh
+      if (process.env.SUPABASE_JWT_SECRET && token.id) {
+        const payload = {
+          sub: token.id as string, // This MUST be the user's Supabase UUID
+          role: "authenticated",
+          // Set expiry to be 1 hour
+          exp: Math.floor(Date.now() / 1000) + (60 * 60),
+        };
+        token.supabaseAccessToken = jwt.sign(payload, process.env.SUPABASE_JWT_SECRET);
+      }
+      // --- END NEW BLOCK ---
+
       return token;
     },
 
+    // 3. --- MODIFIED SESSION CALLBACK ---
     async session({ session, token }) {
+      // Your existing logic
       if (session.user) {
         session.user.role = token.role;
         session.user.id = token.id;
-        session.user.rememberMe = token.rememberMe;
-        session.user.isFirstTimeSurvey = token.isFirstTimeSurvey ?? false;
-        session.user.lastSurveyTime = token.lastSurveyTime ?? null;
+        session.user.rememberMe = token.rememberMe ?? false; // <-- FIX: Added '?? false'
+        session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
+        session.user.lastSurveyTime = token.lastSurveyTime;
+
+        session.user.name = token.name;
+        session.user.image = token.picture;
       }
+
+      // --- ADD THIS LINE TO PASS THE TOKEN TO THE CLIENT ---
+      session.supabaseAccessToken = token.supabaseAccessToken; // <-- This is correct now
+      // --- END NEW LINE ---
+
       return session;
     },
 
     async redirect({ url, baseUrl }) {
+      // ... (Your existing redirect logic stays the same)
       console.log(url);
-      
-      
-      // if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // if (url.startsWith(baseUrl)) return url;
       return `${baseUrl}/dashboard`;
     },
   },
   session: {
+    // ... (Your existing session config stays the same)
     strategy: "jwt",
     maxAge: DEFAULT_MAX_AGE,
   },
   pages: {
+    // ... (Your existing pages config stays the same)
     signIn: '/signin',
   },
   secret: process.env.NEXTAUTH_SECRET,
