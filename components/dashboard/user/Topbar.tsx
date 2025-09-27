@@ -105,20 +105,22 @@ export default function TopBar({ user }: { user?: UserType }) {
 
   return (
     <header className="bg-transparent px-2 flex items-center justify-between">
-      <div className="flex flex-col lg:flex-row lg:justify-between gap-4 sm:gap-12 w-full mb-5">
-        <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center">
+      <div className="flex flex-col xlg:flex-row xlg:justify-between gap-4 sm:gap-12 w-full xlg:items-start  mb-5">
+        <div className="flex flex-col sm:flex-row max-xlg:w-full justify-between w-full sm:w-2/3  gap-4 sm:gap-8 lg:gap-2 items-center">
+        {/* <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-8 w-full items-start sm:items-center mb-5"> */}
+        {/* <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center"> */}
           <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
             {pageTitle}
           </h1>
 
           {/* Search Bar and Dropdown Container */}
-          <div className="relative hidden lg:flex w-full sm:w-80 md:w-96">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <div className="relative hidden lg:flex w-full sm:w-80 md:w-94 lg:w-96" >
+            <div className="absolute inset-y-0 w-full left-0 flex items-center pl-3 pointer-events-none ">
               <Search className="h-4 w-4 text-slate-400" />
             </div>
             <input
               type="search"
-              className="bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5"
+              className="bg-white w-full shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5"
               placeholder="Search Anything Here..."
               value={searchTerm}
               onChange={(e) => {
@@ -131,7 +133,7 @@ export default function TopBar({ user }: { user?: UserType }) {
 
             {/* --- CORRECTED SEARCH DROPDOWN --- */}
             {showDropdown && searchTerm && (
-              <div className="absolute top-full left-0 right-0 z-10 mt-2 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
+              <div className="absolute  left-0 right-0 top-full z-10 mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
                 {isLoading ? (
                   <div className="p-2 text-sm text-slate-500">Loading...</div>
                 ) : !users?.length ? ( // More robust check
@@ -162,11 +164,11 @@ export default function TopBar({ user }: { user?: UserType }) {
         </div>
 
         {/* User Stats and Actions Section */}
-        <div className="flex justify-start md:justify-center items-center px-1 gap-3">
+        <div className="flex md:justify-start xlg:justify-center items-center px-1 gap-4">
           <TopBarBadge>
             <StreakDisplay />
           </TopBarBadge>
-
+            
           <TopBarBadge>
             <Image
               src="/Pearls.png"

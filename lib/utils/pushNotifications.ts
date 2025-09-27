@@ -179,17 +179,12 @@ export async function sendPushNotification(
 ) {
   try {
     const payload = JSON.stringify({
-      notification: {
-        title,
-        body,
-        icon,
-        vibrate: [100, 50, 100],
-        data: {
-          url: "/dashboard",
-          ...data,
-        },
-      },
-    });
+    title,
+    body, // ✅ always "body"
+    icon,
+    url: data.url || "/dashboard/notifications", // pass URL here
+    data,
+  });
 
     return await webpush.sendNotification(subscription, payload);
   } catch (error: unknown) {

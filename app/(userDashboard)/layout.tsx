@@ -1,31 +1,28 @@
+// File: app/(userDashboard)/layout.tsx
+
 "use client";
 
 import UserDashboardLayout from "@/components/layout/UserDashboardLayout";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { useSession } from "next-auth/react";
-import { Toaster } from "sonner"; // ✨ Added for toast notifications
-import React from "react";
+import { Toaster } from "sonner";
+import React, { useEffect } from "react"; // Import useEffect
 
 export default function Layout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Get the session directly in the layout
   const { status } = useSession();
 
-  // Conditionally render a component that uses the hook
-  // This prevents the hook from running during the build or when logged out.
   if (status === "authenticated") {
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
   }
 
-  // For loading or unauthenticated states, render a simpler layout
-  // without the user-dependent hook.
   return (
     <>
       <UserDashboardLayout>{children}</UserDashboardLayout>
-      <Toaster richColors /> {/* ✨ Added Toaster for unauthenticated state */}
+      <Toaster richColors />
     </>
   );
 }
@@ -35,14 +32,29 @@ export default function Layout({
  * when a user is authenticated.
  */
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  // THE FIX: The hook is now only called inside this component,
-  // which is only rendered when the session status is 'authenticated'.
+  const { data: session } = useSession(); // Get the full session data here
   useOnlineUserLeaderBoard();
+
+  // --- START OF NEW CODE ---
+  // This hook will register the service worker for push notifications
+  // only when the user is logged in.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator && session?.user?.id) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function(registration) {
+          console.log('Service Worker registered with scope:', registration.scope);
+        }).catch(function(error) {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
+  }, [session]); // This effect runs when the session becomes available
+  // --- END OF NEW CODE ---
 
   return (
     <>
       <UserDashboardLayout>{children}</UserDashboardLayout>
-      <Toaster richColors /> {/* ✨ Added Toaster for authenticated state */}
+      <Toaster richColors />
     </>
   );
 }
+ 

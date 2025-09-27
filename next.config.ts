@@ -122,11 +122,20 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "rukminim2.flixcart.com", // ✅ Added this to fix your error
       },
+       {
+        protocol: "https",
+        hostname: "i.pravatar.cc",
+      },
+      {
+        protocol: "https",
+        hostname: "plus.unsplash.com",
+      },
     ],
   },
   experimental: {
     serverActions: {},
-  },
+   
+  } as any ,
   transpilePackages: ["@tinymce/tinymce-react"],
 };
 

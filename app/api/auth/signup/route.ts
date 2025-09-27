@@ -7,8 +7,10 @@ import { assignJp } from "@/lib/utils/jp";
 import { sign } from "jsonwebtoken";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import axios from "axios";
-//import { addUserToBrevoList } from "@/lib/brevo";
 
+// Added these new imports at the top
+import { addOrUpdateBrevoContact } from "@/lib/brevo";
+import { splitFullName } from "@/lib/utils/utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +46,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Send verification email
-
     const verificationUrl = `${process.env.NEXT_URL}/verify-email?token=${verificationToken}`;
 
     await sendEmailUsingTemplate({
@@ -72,19 +73,19 @@ export async function POST(request: NextRequest) {
       include: { plan: true },
     });
 
-    //  * assign JP as signup reward
+    // * assign JP as signup reward
     assignJp(user, ActivityType.SIGNUP);
 
-    console.log("📬 Sending to Brevo...");
+    // 2. Replace your old commented-out code with this block
+    // ✅ Sync contact with Brevo
+    console.log("📬 Syncing contact with Brevo...");
+    const { firstName, lastName } = splitFullName(user.name);
 
-    // ✅ Add user to Brevo email list
-// await addUserToBrevoList({
-  
-//   email,
-//   firstName: name.split(" ")[0], // optional: get first name
-//   lastName: name.split(" ").slice(1).join(" ") || "", // optional: get last name
-// });
-
+    await addOrUpdateBrevoContact({
+      email: user.email,
+      firstName: firstName,
+      lastName: lastName,
+    });
 
     return NextResponse.json({
       message:
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Signup error:", error);
     if (error instanceof axios.AxiosError) {
-      console.error("Signup error:", error?.response); //! only meant for debuggin in prodction
+      console.error("Signup error:", error?.response); //! only meant for debugging in production
     }
     return NextResponse.json(
       { error: "Failed to create user" },

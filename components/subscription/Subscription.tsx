@@ -9,7 +9,11 @@ import { toast } from "sonner";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import PageSkeleton from "../PageSkeleton";
-import { PaymentModalProps, Plan, SubscriptionData } from "@/types/client/subscription";
+import {
+  PaymentModalProps,
+  Plan,
+  SubscriptionData,
+} from "@/types/client/subscription";
 
 const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
@@ -49,7 +53,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <div className="text-lg sm:text-xl font-bold mt-3 text-gray-900">
             <span>Total: ${price}</span>
             {isSubscription && (
-              <span className="text-gray-600"> /{plan.name.includes("Monthly") ? "month" : "year"}</span>
+              <span className="text-gray-600">
+                {" "}
+                /{plan.name.includes("Monthly") ? "month" : "year"}
+              </span>
             )}
           </div>
         </div>
@@ -206,7 +213,9 @@ const CurrentPlanStatus: React.FC<CurrentPlanStatusProps> = ({
           </h3>
           <p className="text-sm sm:text-base text-gray-600 mt-1">
             You are currently subscribed to the{" "}
-            <span className="font-semibold text-gray-800">{currentPlan.name}</span>
+            <span className="font-semibold text-gray-800">
+              {currentPlan.name}
+            </span>
             {planStart && (
               <span> since {format(new Date(planStart), "MMMM d, yyyy")}</span>
             )}
@@ -347,56 +356,54 @@ const SubscriptionPage: React.FC = () => {
 
     return false;
   };
-  
+
   const currentTierIndex = availableTiers.findIndex(
     (tier) => tier.planId === data?.currentLifetimePlan.planId
   );
 
   return (
-    <div className="w-full min-h-screen  py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-full min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Added Intro Section */}
+        {/* Intro Section */}
         <div className="text-center mb-16 px-4">
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             MyThriveBuddy.com Isn’t Just a Platform — It’s a Growth Ecosystem.
           </h2>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-6">
-            Most platforms give you tools to run your business.
-            <br />
-            MyThriveBuddy gives you Growth Tools and Growth Buddies.
-          </p>
-          <p className="text-xl font-bold text-gray-800 mt-8 mb-3">
-            What if...
-          </p>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Thousands of like-hearted solopreneurs were cheering for you,
-            spotlighting your work, and even sending business your way?
-          </p>
-          <p className="text-xl font-bold text-gray-800 mt-8 mb-3">
-            Imagine this:
-          </p>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            You’re not endlessly churning out content.
-            <br />
-            You’re not spamming Zoom links in dozens of WhatsApp groups.
-            <br />
-            And yet — your next client still finds you.
-          </p>
-          <p className="text-lg text-gray-700 mt-6 max-w-3xl mx-auto">
-            That’s the power of <strong>Growth Buddies</strong>.
-          </p>
-          <p className="text-lg text-gray-600 mt-4 max-w-3xl mx-auto">
-            Solopreneurs and members joining your challenges, spotlighting your
-            services, redeeming their JoyPearls with you, and celebrating your
-            wins — even when you’re offline.
-          </p>
-          <p className="text-lg text-gray-600 mt-6 max-w-3xl mx-auto">
-            Here, you’re not marketing alone.
-            <br />
-            <strong>
-              You’re part of an ecosystem where everyone grows together.
-            </strong>
-          </p>
+          <div className="space-y-6 max-w-3xl mx-auto text-lg text-gray-600 leading-relaxed">
+            <p>
+              Most platforms give you tools to run your business.
+              <br />
+              MyThriveBuddy gives you Growth Tools and Growth Buddies.
+            </p>
+            <p className="text-xl font-bold text-gray-800">What if...</p>
+            <p>
+              Thousands of like-hearted solopreneurs were cheering for you,
+              spotlighting your work, and even sending business your way?
+            </p>
+            <p className="text-xl font-bold text-gray-800">Imagine this:</p>
+            <p>
+              You’re not endlessly churning out content.
+              <br />
+              You’re not spamming Zoom links in dozens of WhatsApp groups.
+              <br />
+              And yet — your next client still finds you.
+            </p>
+            <p className="text-gray-700">
+              That’s the power of <strong>Growth Buddies</strong>.
+            </p>
+            <p>
+              Solopreneurs and members joining your challenges, spotlighting
+              your services, redeeming their JoyPearls with you, and
+              celebrating your wins — even when you’re offline.
+            </p>
+            <p>
+              Here, you’re not marketing alone.
+              <br />
+              <strong>
+                You’re part of an ecosystem where everyone grows together.
+              </strong>
+            </p>
+          </div>
         </div>
 
         {/* Header Section */}
@@ -424,22 +431,29 @@ const SubscriptionPage: React.FC = () => {
           {/* Free Plan Card */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
             <div className="flex-grow">
-              <h2 className="text-2xl font-bold text-gray-900 text-center">Free Plan</h2>
-              <p className="text-center text-gray-600 text-lg mt-2">$0 forever</p>
+              <h2 className="text-2xl font-bold text-gray-900 text-center">
+                Free Plan
+              </h2>
+              <p className="text-center text-gray-600 text-lg mt-2">
+                $0 forever
+              </p>
               <div className="mt-6">
                 <ul className="space-y-3">
                   {[
-                    "Host 1 Challenge Per Month" ,
-                    "No Listing on “Challenges” page", 
-                    "Listing on “Solopreneurs of the Day” page", 
-                    "No Listing on “Webinars” page (coming soon)", 
-                    "Earn JoyPearls on every activity", 
+                    "Host 1 Challenge Per Month",
+                    "No Listing on “Challenges” page",
+                    "Listing on “Solopreneurs of the Day” page",
+                    "No Listing on “Webinars” page (coming soon)",
+                    "Earn JoyPearls on every activity",
                     "List 1 Product on the store (Zero commission on sales)",
-                    "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges", 
-                    "Redeem JoyPearls for Spotlights with other members"
+                    "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
+                    "Redeem JoyPearls for Spotlights with other members",
                   ].map((feature) => (
-                    <li key={feature} className="flex items-center text-sm text-gray-600">
-                      <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                    <li
+                      key={feature}
+                      className="flex items-start text-sm text-gray-600"
+                    >
+                      <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -466,23 +480,30 @@ const SubscriptionPage: React.FC = () => {
 
           {/* Monthly Plan Card */}
           {monthlyPlan && (
-            <div className="bg-white  border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
+            <div className="bg-white border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
               <div className="flex-grow">
-                <h2 className="text-xl font-bold text-gray-900 text-center">Monthly</h2>
-                <p className="text-center text-gray-600 text-lg mt-2">${monthlyPlan.price}/mo</p>
+                <h2 className="text-xl font-bold text-gray-900 text-center">
+                  Monthly
+                </h2>
+                <p className="text-center text-gray-600 text-lg mt-2">
+                  ${monthlyPlan.price}/mo
+                </p>
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
                       "Host 5 Challenges per Month",
-"Listing on “Challenges” page", 
-"Listing on “Solopreneurs of the Day” page", 
-"Listing on “Webinars” page", 
-"Earn 25% Extra JoyPearls on every activity", 
-"List upto 5 products on the store (Zero commission on sales)", 
-"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges"
+                      "Listing on “Challenges” page",
+                      "Listing on “Solopreneurs of the Day” page",
+                      "Listing on “Webinars” page",
+                      "Earn 25% Extra JoyPearls on every activity",
+                      "List upto 5 products on the store (Zero commission on sales)",
+                      "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
                     ].map((feature) => (
-                      <li key={feature} className="flex items-center text-sm text-gray-600">
-                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                      <li
+                        key={feature}
+                        className="flex items-start text-sm text-gray-600"
+                      >
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -500,9 +521,13 @@ const SubscriptionPage: React.FC = () => {
                   )
                 }
                 disabled={isSubscribing || getDisabledStatus("Monthly Plan")}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200 disabled:bg-gray-300"
               >
-                {isSubscribing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Subscribe"}
+                {isSubscribing ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "Subscribe"
+                )}
               </button>
             </div>
           )}
@@ -511,24 +536,33 @@ const SubscriptionPage: React.FC = () => {
           {yearlyPlan && (
             <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 flex flex-col transition-all duration-300 hover:shadow-xl">
               <div className="flex-grow">
-                <h2 className="text-xl font-bold text-gray-900 text-center">Yearly</h2>
-                <p className="text-center text-gray-600 text-lg mt-2">${yearlyPlan.price}/yr</p>
+                <h2 className="text-xl font-bold text-gray-900 text-center">
+                  Yearly
+                </h2>
+                <p className="text-center text-gray-600 text-lg mt-2">
+                  ${yearlyPlan.price}/yr
+                </p>
                 {yearlyPlan.discountPercent && (
-                  <p className="text-green-600 text-sm text-center mt-2">Save {yearlyPlan.discountPercent}%</p>
+                  <p className="text-green-600 text-sm text-center mt-2">
+                    Save {yearlyPlan.discountPercent}%
+                  </p>
                 )}
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                        "Host 5 Challenges per Month",
-"Listing on “Challenges” page", 
- "Listing on “Solopreneurs of the Day” page", 
-"Listing on “Webinars” page", 
-"Earn 25% Extra JoyPearls on every activity", 
-"List upto 5 products on the store (Zero commission on sales)", 
-"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges"
+                      "Host 5 Challenges per Month",
+                      "Listing on “Challenges” page",
+                      "Listing on “Solopreneurs of the Day” page",
+                      "Listing on “Webinars” page",
+                      "Earn 25% Extra JoyPearls on every activity",
+                      "List upto 5 products on the store (Zero commission on sales)",
+                      "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
                     ].map((feature) => (
-                      <li key={feature} className="flex items-center text-sm text-gray-600">
-                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                      <li
+                        key={feature}
+                        className="flex items-start text-sm text-gray-600"
+                      >
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -546,9 +580,13 @@ const SubscriptionPage: React.FC = () => {
                   )
                 }
                 disabled={isSubscribing || getDisabledStatus("Yearly Plan")}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200 disabled:bg-gray-300"
               >
-                {isSubscribing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Subscribe"}
+                {isSubscribing ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "Subscribe"
+                )}
               </button>
             </div>
           )}
@@ -561,21 +599,28 @@ const SubscriptionPage: React.FC = () => {
                 Recommended
               </div>
               <div className="flex-grow">
-                <h2 className="text-xl font-bold text-gray-900 text-center">Lifetime</h2>
-                <p className="text-center text-gray-600 text-lg mt-2">${lifetimeStandardPlan.price}</p>
+                <h2 className="text-xl font-bold text-gray-900 text-center">
+                  Lifetime
+                </h2>
+                <p className="text-center text-gray-600 text-lg mt-2">
+                  ${lifetimeStandardPlan.price}
+                </p>
                 <div className="mt-6">
                   <ul className="space-y-3">
                     {[
-                        "Host 5 Challenges per Month",
-"Listing on “Challenges” page", 
- "Listing on “Solopreneurs of the Day” page", 
-"Listing on “Webinars” page", 
-"Earn 25% Extra JoyPearls on every activity", 
-"List upto 5 products on the store (Zero commission on sales)", 
-"Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
+                      "Host 5 Challenges per Month",
+                      "Listing on “Challenges” page",
+                      "Listing on “Solopreneurs of the Day” page",
+                      "Listing on “Webinars” page",
+                      "Earn 25% Extra JoyPearls on every activity",
+                      "List upto 5 products on the store (Zero commission on sales)",
+                      "Redeem JoyPearls for Spotlights on MTB homepage, newsletter, challenges",
                     ].map((feature) => (
-                      <li key={feature} className="flex items-center text-sm text-gray-600">
-                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                      <li
+                        key={feature}
+                        className="flex items-start text-sm text-gray-600"
+                      >
+                        <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -592,22 +637,32 @@ const SubscriptionPage: React.FC = () => {
                     false
                   )
                 }
-                disabled={isSubscribing || getDisabledStatus("Lifetime Plan Standard")}
-                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200"
+                disabled={
+                  isSubscribing || getDisabledStatus("Lifetime Plan Standard")
+                }
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold w-full mt-6 shadow-md transition-all duration-200 disabled:bg-gray-300"
               >
-                {isSubscribing ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Subscribe"}
+                {isSubscribing ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  "Subscribe"
+                )}
               </button>
             </div>
           )}
         </div>
-        
-        {/* Added "Features Coming soon" line */}
-        <p className="text-center text-gray-500 italic mt-4">*Features Coming soon</p>
+
+        {/* Features Coming soon line */}
+        <p className="text-center text-gray-500 italic mt-4">
+          *Features Coming soon
+        </p>
 
         {/* Lifetime Plan Pricing Table */}
         <div className="mt-12 bg-gradient-to-r from-indigo-800 to-blue-900 text-white rounded-xl p-8 shadow-xl">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold">Invest Once, Thrive Forever</h2>
+            <h2 className="text-3xl font-extrabold">
+              Invest Once, Thrive Forever
+            </h2>
             <p className="text-lg mt-2">Grab Your Lifetime Plan Now!</p>
             <div className="inline-flex items-center bg-indigo-500 text-white text-sm font-semibold px-3 py-1 mt-3 rounded-full">
               <Star className="w-4 h-4 mr-1" />
@@ -620,29 +675,57 @@ const SubscriptionPage: React.FC = () => {
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b border-indigo-400">
-                    <th className="py-4 text-left font-semibold text-indigo-100">Range</th>
-                    <th className="py-4 text-left font-semibold text-indigo-100">Price</th>
-                    <th className="py-4 text-left font-semibold text-indigo-100">Tagline</th>
+                    <th className="px-4 py-3 text-left font-semibold text-indigo-100">
+                      Range
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-indigo-100">
+                      Price
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-indigo-100">
+                      Tagline
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {[
-                    { range: "1-10", price: "$499", tagline: "Early Bird Gets The Best Deal!" },
-                    { range: "11-20", price: "$699", tagline: "Still Early — Save Big!" },
-                    { range: "21-30", price: "$999", tagline: "Almost Half Gone – Act Fast!" },
-                    { range: "31-40", price: "$1399", tagline: "Last Few Spots Left!" },
-                    { range: "41-50", price: "$1899", tagline: "Final Chance At This Offer!" },
+                    {
+                      range: "1-10",
+                      price: "$499",
+                      tagline: "Early Bird Gets The Best Deal!",
+                    },
+                    {
+                      range: "11-20",
+                      price: "$699",
+                      tagline: "Still Early — Save Big!",
+                    },
+                    {
+                      range: "21-30",
+                      price: "$999",
+                      tagline: "Almost Half Gone – Act Fast!",
+                    },
+                    {
+                      range: "31-40",
+                      price: "$1399",
+                      tagline: "Last Few Spots Left!",
+                    },
+                    {
+                      range: "41-50",
+                      price: "$1899",
+                      tagline: "Final Chance At This Offer!",
+                    },
                     { range: "Standard", price: "$2999", tagline: "" },
                   ].map((item, index) => (
                     <tr
                       key={index}
                       className={`${
-                        index === currentTierIndex ? "text-white" : "text-indigo-300"
+                        index === currentTierIndex
+                          ? "text-white"
+                          : "text-indigo-300"
                       } hover:bg-indigo-700/30 transition-colors duration-200`}
                     >
-                      <td className="py-4">{item.range}</td>
-                      <td className="py-4">{item.price}</td>
-                      <td className="py-4">{item.tagline}</td>
+                      <td className="px-4 py-3">{item.range}</td>
+                      <td className="px-4 py-3">{item.price}</td>
+                      <td className="px-4 py-3">{item.tagline}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -661,15 +744,18 @@ const SubscriptionPage: React.FC = () => {
                     handleSubscribe(
                       data.currentLifetimePlan.planId,
                       "499",
-                      data.plans.find((p) => p.id === data.currentLifetimePlan.planId) ??
-                        data.plans[0],
+                      data.plans.find(
+                        (p) => p.id === data.currentLifetimePlan.planId
+                      ) ?? data.plans[0],
                       data.currentLifetimePlan.paypalPlanId,
                       false
                     );
                   }
                 }}
-                disabled={isSubscribing || !data?.currentLifetimePlan || !data?.plans}
-                className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md transition-all duration-200"
+                disabled={
+                  isSubscribing || !data?.currentLifetimePlan || !data?.plans
+                }
+                className="w-full bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-semibold shadow-md transition-all duration-200 disabled:bg-gray-300"
               >
                 {isSubscribing ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />

@@ -16,6 +16,9 @@ module.exports = {
       },
     },
     extend: {
+      screens:{
+        'xlg':'1220px',
+      },
       colors: {
         "thrive-blue": "#1E2875",
         dashboard: "#E8F3FC",

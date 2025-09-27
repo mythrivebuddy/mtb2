@@ -118,7 +118,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   const toggleSidebar = () => setIsOpen(!isOpen);
 
   return (
-    <>
+    <div className="px-1 md:px-2">
       {/* Hamburger Menu Button for Mobile */}
      <div className="flex items-center pt-1 px-4 gap-4 justify-between w-screen ">
   <button
@@ -144,14 +144,16 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   </button>
 
   {/* 🛠️ WRAP THE SEARCH BAR IN A FLEX-GROW DIV */}
- <div className="relative flex-1 pr-12 lg:hidden">
-
+   <div className="relative w-full flex-1 lg:hidden">
+  {/* Search Icon */}
   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
     <Search className="h-4 w-4 text-slate-400" />
   </div>
+
+  {/* Input */}
   <input
     type="search"
-    className="max-xl:w-full bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
+    className="w-[calc(100%-1.5rem)] bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
     placeholder="Search Anything Here..."
     value={searchTerm}
     onChange={(e) => {
@@ -161,8 +163,10 @@ const Sidebar = ({ user }: { user?: UserType }) => {
     onFocus={() => setShowDropdown(true)}
     onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
   />
+
+  {/* Dropdown */}
   {showDropdown && searchTerm && (
-    <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
+    <div className="absolute left-0 top-full mt-1 w-[calc(100%-1.5rem)] z-10 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
       {isLoading ? (
         <div className="p-2 text-sm text-slate-500">Loading...</div>
       ) : users?.length === 0 ? (
@@ -174,6 +178,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             href={`/profile/${user.id}`}
             className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
             target="_blank"
+            onMouseDown={(e) => e.preventDefault()} // prevents blur closing
           >
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.image || undefined} />
@@ -186,6 +191,8 @@ const Sidebar = ({ user }: { user?: UserType }) => {
     </div>
   )}
 </div>
+
+
 
 </div>
 
@@ -250,6 +257,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Survey"
                   onLinkClick={toggleSidebar}
                 /> */}
+                <NavItem
+                  href="/dashboard/accountability"
+                  icon={<LayoutDashboard size={20} />}
+                  label="Accountability Hub"
+                  onLinkClick={toggleSidebar}
+                />
                 <NavItem
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
@@ -349,13 +362,15 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
                 </ComingSoonWrapper>
-                <ComingSoonWrapper>
+                
+              
                  <NavItem 
+                href="/dashboard/reminders"
                  icon={<BellRing />}
                   label="Reminders"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
-                </ComingSoonWrapper>
+               
 
               </NavSection>
               {/* Settings Section */}
@@ -396,7 +411,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
           </div>
         </aside>
       </div>
-    </>
+    </div>
   );
 };
 

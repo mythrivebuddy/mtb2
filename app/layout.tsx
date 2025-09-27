@@ -1,10 +1,14 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Provider from "@/providers/Provider";
-import { Analytics } from "@vercel/analytics/react"; // Importing Vercel Analytics
+import { Analytics } from "@vercel/analytics/react"; 
+import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
+import { Toaster } from "@/components/ui/sonner";
+import PWAInstallButton from "@/components/PWAInstallButton"; // <-- NEW Import
+import { SupabaseClientProvider } from "@/components/providers/SupabaseClientProvider"; // Adjust path if needed
+
 const inter = Inter({ subsets: ["latin"] });
-import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";// ! added by aaisha
-import { Toaster } from "@/components/ui/sonner"; // Import Toaster component
+
 export const metadata = {
   title: "My Thrive Buddy",
   description: "MTB with PWA",
@@ -19,9 +23,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Manifest & PWA setup */}
         <link rel="manifest" href="/manifest.json" />
-        {/* <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="theme-color" content="#000000" /> */}
+        <meta name="theme-color" content="#F1F9FF" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+
+        {/* Google Analytics */}
         <script
           async
           src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
@@ -43,21 +50,31 @@ export default function RootLayout({
       >
         <div className="h-screen bg-gradient-to-br from-[#4A90E2] via-[#F8F2FF] to-[#FF69B4] overflow-y-auto">
           <Provider>
-            <LoginStreakTracker /> {/* //! added by aaisha */}
+            <SupabaseClientProvider>
+            <LoginStreakTracker />
+            
+            {/* Main children */}
             {children}
-             <Analytics /> {/* This tracks all pages */}
+
+            {/* Analytics */}
+            <Analytics />
+            </SupabaseClientProvider>
           </Provider>
         </div>
 
         <Toaster />
 
-        {/* PWA Service Worker Registration Script - NEW ADDITION */}
+        {/* 🚀 PWA Install Button ye rha (always visible, floating in corner) */}
+        <PWAInstallButton />
+
+        {/* 🚀 Service Worker Registration  kiya*/}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/service-worker.js')
+                  navigator.serviceWorker
+                    .register('/service-worker.js')
                     .then((registration) => {
                       console.log('Service Worker registered with scope:', registration.scope);
                     })

@@ -32,7 +32,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
+        <div className="hidden lg:flex items-center space-x-4 lg:space-x-8">
           {session && <NavLink href="/dashboard">Dashboard</NavLink>}
              {/* adding new navigattion for challange  */}
           <NavLink href="/dashboard/challenge">Challenges</NavLink>
@@ -67,12 +67,13 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden p-2"
+         aria-label="menu"
+          className="lg:hidden p-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
+        > 
           <svg
             className="w-6 h-6"
-            fill="none"
+            fill="true"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
@@ -97,7 +98,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white mt-2 p-4 rounded-lg shadow-lg md:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-white mt-2 p-4 rounded-lg shadow-lg lg:hidden z-50">
           <div className="flex flex-col space-y-4">
             {session && <NavLink href="/dashboard">Dashboard</NavLink>}
              <NavLink href="/dashboard/challenge">Challenges</NavLink>

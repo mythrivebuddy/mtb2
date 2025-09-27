@@ -211,8 +211,6 @@
 //   );
 // }
 
-
-
 "use client";
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -255,31 +253,29 @@ export default function DashboardCentrePart() {
   return (
     <div className="space-y-6">
       {/* JP Circulation & Activity */}
-      <div className="flex justify-end items-center gap-4 mb-4">
-        <div>
-          <label htmlFor="from-date" className="font-medium mr-2 text-sm">
-            From:
-          </label>
-          <input
-            id="from-date"
-            type="date"
-            className="border rounded px-3 text-sm py-1 focus:outline-none"
-            value={fromDate}
-            onChange={e => setFromDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label htmlFor="to-date" className="font-medium mr-2 text-sm">
-            To:
-          </label>
-          <input
-            id="to-date"
-            type="date"
-            className="border rounded px-3 text-sm py-1 focus:outline-none"
-            value={toDate}
-            onChange={e => setToDate(e.target.value)}
-          />
-        </div>
+      <div className="flex flex-col sm:flex-row sm:justify-end  sm:items-center gap-4 mb-4">
+        <label htmlFor="from-date" className="font-medium mr-2 text-sm">
+          From:
+        </label>
+        <input
+          id="from-date"
+          type="date"
+          className="border rounded px-3 text-sm py-1 focus:outline-none"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+        />
+
+        <label htmlFor="to-date" className="font-medium mr-2 text-sm">
+          To:
+        </label>
+        <input
+          id="to-date"
+          type="date"
+          className="border rounded px-3 text-sm py-1 focus:outline-none"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+        />
+
         <button
           className="ml-2 px-4 py-1 rounded-lg bg-blue-600 text-white"
           onClick={() => {

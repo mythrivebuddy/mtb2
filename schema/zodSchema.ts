@@ -41,16 +41,12 @@ export const miracleLogSchema = z.object({
 });
 
 
-export const dailyBloomSchema = z
-  .object({
+export const dailyBloomSchema = z.object({
     title: z
       .string()
       .min(1, "Title is required")
       .max(50, "Title cannot exceed 50 characters"),
-    description: z
-      .string()
-      .max(120, "Description cannot exceed 120 characters")
-      .optional(),
+    description: z.string().nullable(), // Changed from .optional() to .nullable()
     dueDate: z.preprocess(
       (arg) => {
         if (typeof arg === "string" && arg.length > 0) {
@@ -69,6 +65,7 @@ export const dailyBloomSchema = z
     isCompleted: z.boolean().default(false),
     taskAddJP: z.boolean().default(false),
     taskCompleteJP: z.boolean().default(false),
+    isFromEvent: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     const isOneSelected = !!data.dueDate !== !!data.frequency;

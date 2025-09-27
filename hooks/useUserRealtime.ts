@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { QueryKey, useQueryClient } from "@tanstack/react-query";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import { OnlineUser } from "@/types/client/user-info";
 
 
@@ -11,7 +11,7 @@ export default function useAdminPresence(queryKey: QueryKey) {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const queryClient = useQueryClient();
   useEffect(() => {
-    const presenceChannel = supabaseClient.channel("user-presence", {
+    const presenceChannel = supabase.channel("user-presence", {
       config: {
         presence: {
           key: "admin",
@@ -41,7 +41,7 @@ export default function useAdminPresence(queryKey: QueryKey) {
 
     return () => {
     
-    supabaseClient.removeChannel(presenceChannel);
+    supabase.removeChannel(presenceChannel);
     };
   }, [queryClient]);
 
