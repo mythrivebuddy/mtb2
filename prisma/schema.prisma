@@ -785,8 +785,8 @@ model ActivityFeedItem {
   groupId String
   group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  type    String // "goal_added", "comment_posted", "member_joined"
-  details String // "John Doe added a new goal: 'Finish Q4 report'"
+  type    String 
+  details String 
 
   createdAt DateTime @default(now())
 }
