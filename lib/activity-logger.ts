@@ -1,6 +1,8 @@
+
 // lib/activity-logger.ts
 import { prisma } from "@/lib/prisma";
-import { supabaseClient } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabaseClient"; 
+
 
 // A mapping for icons based on activity type
 const iconMap = {
