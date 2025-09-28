@@ -52,9 +52,6 @@ model User {
   BuddyLensReviewer             BuddyLensRequest[]    @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
   cart                          Cart[]
-  Comment                       Comment[]
-  Group                         Group[]
-  GroupMember                   GroupMember[]
   invoice                       Invoice[]
   magicBoxes                    MagicBox[]
   miracleLog                    MiracleLog[]
@@ -82,6 +79,9 @@ model User {
   enrollments                   ChallengeEnrollment[]
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
+  groupsOwned                   Group[]               @relation("CoachGroups")
+  groupMemberships              GroupMember[]
+  comments                      Comment[]
 
   @@index([name])
 }
@@ -681,104 +681,146 @@ model Event {
   // user User @relation(fields: [userId], references: [id])
 }
 
-model ActivityFeedItem {
-  id        String   @id
-  groupId   String
-  type      String
-  details   String
-  createdAt DateTime @default(now())
-  Group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-}
-
-model Comment {
-  id        String   @id
-  goalId    String
-  authorId  String
-  text      String
-  mentions  String[]
-  createdAt DateTime @default(now())
-  User      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  Goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
-}
-
-model Cycle {
-  id        String   @id
-  groupId   String
-  startDate DateTime
-  endDate   DateTime
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  Group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  Goal      Goal[]
-  Reward    Reward[]
-}
-
-model Goal {
-  id           String      @id
-  memberId     String
-  groupId      String
-  cycleId      String
-  text         String
-  midwayUpdate String?
-  endResult    String?
-  status       String      @default("on_track")
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime
-  Comment      Comment[]
-  Cycle        Cycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  GroupMember  GroupMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  Note         Note[]
-
-  @@unique([memberId, cycleId])
-}
-
 model Group {
-  id               String             @id
-  name             String
-  description      String?
-  visibility       Visibility         @default(MEMBERS_CAN_SEE_GOALS)
-  cycleDuration    CycleDuration      @default(MONTHLY)
-  progressStage    ProgressStage      @default(THREE_STAGE)
-  notesPrivacy     NotesPrivacy       @default(MEMBER_AND_ADMIN)
-  coachId          String
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime
-  ActivityFeedItem ActivityFeedItem[]
-  Cycle            Cycle[]
-  User             User               @relation(fields: [coachId], references: [id])
-  GroupMember      GroupMember[]
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  visibility    Visibility    @default(MEMBERS_CAN_SEE_GOALS)
+  cycleDuration CycleDuration @default(MONTHLY)
+  progressStage ProgressStage @default(THREE_STAGE) // Was GOAL_MID_END
+  notesPrivacy  NotesPrivacy  @default(MEMBER_AND_ADMIN) // Was NOTES_VISIBLE_TO_ALL
+
+  coachId String
+  coach   User   @relation("CoachGroups", fields: [coachId], references: [id])
+
+  members      GroupMember[]
+  cycles       Cycle[]
+  activityFeed ActivityFeedItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GroupMember {
-  id       String   @id
-  userId   String
-  groupId  String
-  role     String   @default("member")
+  id      String @id @default(cuid())
+  userId  String
+  groupId String
+  role    String @default("member") // 'admin' or 'member'
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  goals Goal[]
+
   joinedAt DateTime @default(now())
-  Goal     Goal[]
-  Group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  User     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
 }
 
-model Note {
-  id        String   @id
-  goalId    String
-  authorId  String
-  text      String
+model Cycle {
+  id      String @id @default(cuid())
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("active") // active, completed
+
+  goals   Goal[]
+  rewards Reward[]
+
   createdAt DateTime @default(now())
-  Goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id       String @id @default(cuid())
+  memberId String
+  groupId  String
+  cycleId  String
+
+  text         String
+  midwayUpdate String?
+  endResult    String?
+  status       String  @default("on_track") // on_track, needs_attention, off_track
+
+  member GroupMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  cycle  Cycle       @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  notes    Note[]
+  comments Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([memberId, cycleId])
+}
+
+model Note {
+  id       String @id @default(cuid())
+  goalId   String
+  authorId String // The User ID of the person who wrote it
+
+  text String
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id       String @id @default(cuid())
+  goalId   String
+  authorId String
+
+  text     String
+  mentions String[]
+
+  goal   Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade) // <-- ADD THIS
+
+  createdAt DateTime @default(now())
+}
+
+model ActivityFeedItem {
+  id      String @id @default(cuid())
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  type    String // "goal_added", "comment_posted", "member_joined"
+  details String // "John Doe added a new goal: 'Finish Q4 report'"
+
+  createdAt DateTime @default(now())
 }
 
 model Reward {
-  id        String   @id
-  adminId   String
-  memberId  String
-  cycleId   String
-  amount    Int
+  id       String @id @default(cuid())
+  adminId  String
+  memberId String
+  cycleId  String
+
+  amount Int
+
+  cycle Cycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
-  Cycle     Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+}
+
+enum Visibility {
+  MEMBERS_CAN_SEE_GOALS
+  ADMIN_ONLY
+}
+
+enum CycleDuration {
+  MONTHLY
+}
+
+enum ProgressStage {
+  TWO_STAGE
+  THREE_STAGE
+}
+
+enum NotesPrivacy {
+  MEMBER_AND_ADMIN
+  ADMIN_ONLY
 }
 
 enum Audience {
@@ -931,23 +973,4 @@ enum EnrollmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
-}
-
-enum CycleDuration {
-  MONTHLY
-}
-
-enum NotesPrivacy {
-  MEMBER_AND_ADMIN
-  ADMIN_ONLY
-}
-
-enum ProgressStage {
-  TWO_STAGE
-  THREE_STAGE
-}
-
-enum Visibility {
-  MEMBERS_CAN_SEE_GOALS
-  ADMIN_ONLY
 }

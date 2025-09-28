@@ -1,6 +1,6 @@
 "use client"; // ensure this is a client component hook
 
-import { supabase } from "@/lib/supabaseClient";
+import { supabaseClient } from "@/lib/supabaseClient";
 
 import { OnlineUser } from "@/types/client/user-info";
 import { useSession } from "next-auth/react";
@@ -15,10 +15,10 @@ export default function useOnlineUserLeaderBoard() {
     // Client-only + valid session + Supabase channel check
     if (typeof window === "undefined") return;
     if (!userId || status !== "authenticated") return;
-    if (!supabase?.channel) return;
+    if (!supabaseClient?.channel) return;
 
     // Create presence channel
-    const presenceChannel = supabase.channel("user-presence", {
+    const presenceChannel = supabaseClient.channel("user-presence", {
       config: { presence: { key: userId } },
     });
 
@@ -65,7 +65,7 @@ export default function useOnlineUserLeaderBoard() {
       cleanUpPresence();
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      supabase.removeChannel(presenceChannel);
+      supabaseClient.removeChannel(presenceChannel);
     };
   }, [userId, status]);
 

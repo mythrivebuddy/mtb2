@@ -1,7 +1,15 @@
+// app/(userDashboard)/dashboard/accountability-hub/page.tsx
 "use client";
 
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { useSession } from "next-auth/react";
+import { ArrowLeft, PlusCircle } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import AccountabilityHeader from "@/components/accountability-hub/AccountabilityHeader";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -10,53 +18,89 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
+import AddMemberModal from "@/components/accountability/AddMemberModal";
+import EditableProgressCell from "@/components/accountability/EditableProgressCell"; // Updated import
+ import GoalStatusUpdater from "@/components/accountability/GoalStatusUpdater";
+import CommentsModal from "@/components/accountability/CommentsModal";
 
-const members = [
-  {
-    id: 1,
-    name: "Anna",
-    avatar: "https://i.pravatar.cc/40?img=1",
-    goal: "Launch new product",
-    midway: "Completed 50%",
-    end: "200 pre-orders",
-    notes: "Met all milestones",
-  },
-  {
-    id: 2,
-    name: "Michael",
-    avatar: "https://i.pravatar.cc/40?img=4",
-    goal: "Launch new product",
-    midway: "Completed 50%",
-    end: "200 pre-orders",
-    notes: "Met all milestones",
-  },
-  {
-    id: 3,
-    name: "John",
-    avatar: "https://i.pravatar.cc/40?img=6",
-    goal: "Launch new product",
-    midway: "Completed 50%",
-    end: "200 pre-orders",
-    notes: "Met all milestones",
-  },
-  {
-    id: 4,
-    name: "Mick",
-    avatar: "https://i.pravatar.cc/40?img=8",
-    goal: "Launch new product",
-    midway: "Completed 50%",
-    end: "200 pre-orders",
-    notes: "Met all milestones",
-  },
-];
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+// Updated type definition
+type GroupViewData = {
+  name: string;
+  activeCycleId: string;
+  requesterRole: "admin" | "member";
+  members: {
+    id: string;
+    user: {
+      id:string;
+      name: string | null;
+      image: string | null;
+    };
+    goals: {
+      id: string;
+      text: string;
+      midwayUpdate: string | null;
+      endResult: string | null;
+      status: "on_track" | "needs_attention" | "off_track"; // Added status
+    }[];
+  }[];
+};
 
 export default function AccountabilityHubPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupId = searchParams.get("groupId");
+  const { data: session } = useSession();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [commentsGoalId, setCommentsGoalId] = useState<string | null>(null);
+
+
+  const { data, error, isLoading } = useSWR<GroupViewData>(
+    groupId ? `/api/accountability-hub/groups/${groupId}/view` : null,
+    fetcher
+  );
+
+  const groupName = data?.name;
+  const activeCycleId = data?.activeCycleId;
+  const members = data?.members;
+  const isAdmin = data?.requesterRole === "admin";
+
+  if (!groupId) {
+    return (
+      <div className="text-center p-10">
+        <p className="text-muted-foreground">No group selected.</p>
+        <Button variant="link" onClick={() => router.back()}>
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  const handleCommentClick = (goalId: string | undefined) => {
+    if (goalId) {
+        setCommentsGoalId(goalId);
+    } else {
+        // Here you could show a toast message like "A goal must be set before commenting"
+    }
+  }
+
   return (
-    <section className="mx-auto w-full sm:w-2/3 py-8 px-4">
+    <section className="mx-auto max-w-6xl py-8 px-4">
+      {groupId && (
+        <AddMemberModal
+          groupId={groupId}
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+        />
+      )}
+      <CommentsModal
+        goalId={commentsGoalId}
+        isOpen={!!commentsGoalId}
+        onOpenChange={() => setCommentsGoalId(null)}
+      />
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
@@ -64,64 +108,179 @@ export default function AccountabilityHubPage() {
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </button>
-      <AccountabilityHeader />
 
-      <div className="w-full max-w-8xl mx-auto border rounded-md mt-6">
-        <Table className="w-full bg-white rounded-lg">
+      {/* Header */}
+      <div className="flex w-full items-center justify-between mb-6">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">
+            {isLoading ? <Skeleton className="h-8 w-48" /> : groupName}
+          </h1>
+        <p className="text-muted-foreground">
+  Track and motivate your solopreneur community&apos;s monthly goals.
+</p>
+
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/accountability-hub/create">
+            <button className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition">
+              <PlusCircle size={24} />
+              <span className="font-semibold hidden sm:inline">Create</span>
+            </button>
+          </Link>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            // onClick={() => setIsModalOpen(true)}
+          >
+            Add Member
+          </Button>
+        </div>
+      </div>
+
+      <Input type="text" placeholder="Search members" className="w-full mb-6" />
+
+      {/* Members Table */}
+      <div className="w-full border rounded-lg">
+        <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[15%] px-2">Member</TableHead>
-              <TableHead className="w-[12%] text-center">Goal</TableHead>
-              <TableHead className="w-[15%] text-center">Midway update</TableHead>
-              <TableHead className="w-[14%] text-center">End Result</TableHead>
-              <TableHead className="w-[10%] text-center">Notes</TableHead>
-              <TableHead className="text-center w-[15%]">Comments</TableHead>
+              <TableHead className="w-[200px]">Member</TableHead>
+              <TableHead>Goal</TableHead>
+              <TableHead>Midway update</TableHead>
+              <TableHead>End Result</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Comments</TableHead>
             </TableRow>
           </TableHeader>
-
           <TableBody>
-            {members.map((m) => (
-              <TableRow key={m.id}>
-                <TableCell className="px-2 align-middle">
-                  <Link
-                    href={{
-                      pathname: `/dashboard/accountability-hub/member/${m.id}`,
-                      query: {
-                        name: m.name,
-                        goal: m.goal,
-                        midway: m.midway,
-                        end: m.end,
-                        notes: m.notes,
-                        avatar: m.avatar,
-                      },
-                    }}
-                  >
-                    <div className="flex items-center gap-2 cursor-pointer">
+            {isLoading && (
+              <>
+                <TableRowSkeleton />
+                <TableRowSkeleton />
+                <TableRowSkeleton />
+              </>
+            )}
+            {error && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-red-500">
+                  Failed to load members.
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && !error && members?.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  No members found in this group yet.
+                </TableCell>
+              </TableRow>
+            )}
+            {members?.map((member) => {
+              const goal = member.goals?.[0];
+              const isCurrentUser = member.user.id === session?.user?.id;
+              return (
+                <TableRow key={member.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
                       <Image
-                        src={m.avatar}
-                        alt={m.name}
+                        src={member.user.image || "/default-avatar.png"}
+                        alt={member.user.name || "User"}
                         width={32}
                         height={32}
                         className="h-8 w-8 rounded-full"
                       />
-                      {m.name}
+                      <span className="font-medium">{member.user.name}</span>
                     </div>
-                  </Link>
-                </TableCell>
-                <TableCell className="align-middle text-center">{m.goal}</TableCell>
-                <TableCell className="align-middle text-blue-600 text-center">
-                  {m.midway}
-                </TableCell>
-                <TableCell className="align-middle text-center">{m.end}</TableCell>
-                <TableCell className="align-middle text-center">{m.notes}</TableCell>
-                <TableCell className="align-middle text-center text-blue-600 cursor-pointer">
+                  </TableCell>
+                  <TableCell>
+                    {activeCycleId && (
+                      <EditableProgressCell
+                        initialValue={goal?.text}
+                        groupId={groupId!}
+                        cycleId={activeCycleId}
+                        fieldToUpdate="text"
+                        isCurrentUser={isCurrentUser}
+                        placeholderText="Click to set goal"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {activeCycleId && (
+                      <EditableProgressCell
+                        initialValue={goal?.midwayUpdate}
+                        groupId={groupId!}
+                        cycleId={activeCycleId}
+                        fieldToUpdate="midwayUpdate"
+                        isCurrentUser={isCurrentUser}
+                        placeholderText="Set midway update"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {activeCycleId && (
+                      <EditableProgressCell
+                        initialValue={goal?.endResult}
+                        groupId={groupId!}
+                        cycleId={activeCycleId}
+                        fieldToUpdate="endResult"
+                        isCurrentUser={isCurrentUser}
+                        placeholderText="Set end result"
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {goal && activeCycleId ? (
+                      <GoalStatusUpdater
+                        goalId={goal.id}
+                        groupId={groupId!}
+                        cycleId={activeCycleId}
+                        currentStatus={goal.status}
+                        isAdmin={isAdmin}
+                      />
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="link">Comment</Button>
+                  </TableCell>
+                  <TableCell className="text-right">
+                {/* UPDATE THE BUTTON'S ONCLICK */}
+                <Button variant="link" onClick={() => handleCommentClick(goal?.id)}>
                   Comment
-                </TableCell>
-              </TableRow>
-            ))}
+                </Button>
+              </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
     </section>
   );
 }
+
+const TableRowSkeleton = () => (
+  <TableRow>
+    <TableCell>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-full" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-full" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-full" />
+    </TableCell>
+    <TableCell>
+      <Skeleton className="h-4 w-20" />
+    </TableCell>
+    <TableCell className="text-right">
+      <Skeleton className="h-8 w-20 ml-auto" />
+    </TableCell>
+  </TableRow>
+);
