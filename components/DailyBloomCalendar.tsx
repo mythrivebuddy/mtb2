@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -58,7 +58,6 @@ interface EventPayload {
   allDay?: boolean;
 }
 
-// ADDED THIS INTERFACE
 interface EventExtendedProps {
   description?: string;
   isBloom?: boolean;
@@ -78,19 +77,27 @@ interface CalendarEvent {
 
 interface Props {
   blooms?: DailyBloom[];
-  events?: CalendarEvent[];
+  events: CalendarEvent[];
   onCreateBloomFromEvent: (payload: {
     title: string;
     description?: string;
     dueDate?: string;
     isCompleted?: boolean;
   }) => void;
+  onUpdateBloomFromEvent: (payload: {
+    id: string;
+    updatedData: {
+      title?: string;
+      description?: string;
+      dueDate?: string;
+    };
+  }) => void;
+  onDeleteBloomFromEvent: (bloomId: string) => void;
 }
 
 // ---------------- Helpers ----------------
 
 const toLocalInput = (dateStr?: string | null) => {
-  // ... (This function is unchanged)
   if (!dateStr) return "";
   const date = new Date(dateStr);
   const y = date.getFullYear();
@@ -100,11 +107,9 @@ const toLocalInput = (dateStr?: string | null) => {
   const min = date.getMinutes().toString().padStart(2, "0");
   return `${y}-${m}-${d}T${h}:${min}`;
 };
-// Helpers to detect temp vs real (UUID) ids
-const isTempId = (id?: string | number | null) => typeof id === "string" && id.startsWith("tmp-");
-//const isUUID = (id?: string | number | null) => typeof id === "string" && UUID_REGEX.test(id);
 
-// Convert server row -> CalendarEvent (small helper)
+const isTempId = (id?: string | number | null) => typeof id === "string" && id.startsWith("tmp-");
+
 const toCalendarEventFromServer = (row: EventPayload): CalendarEvent => ({
   id: String(row.id),
   title: row.title || "Untitled",
@@ -119,9 +124,7 @@ const toCalendarEventFromServer = (row: EventPayload): CalendarEvent => ({
   },
 });
 
-
 const useIsMobile = () => {
-  // ... (This function is unchanged)
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -137,7 +140,6 @@ const useIsMobile = () => {
 // ---------------- Event Form Component ----------------
 
 const EventForm = ({
-
   currentEvent,
   setCurrentEvent,
   mode,
@@ -149,7 +151,6 @@ const EventForm = ({
   isEditing: boolean;
 }) => (
   <div className="grid gap-4 py-4 px-1">
-    
     <div className="grid gap-2">
       <Label htmlFor="title">Title</Label>
       <Input
@@ -237,40 +238,40 @@ const EventForm = ({
       />
       <Label htmlFor="all-day">All Day Event</Label>
     </div>
-
-   
-
   </div>
 );
 
 // ---------------- Main Component ----------------
 
-const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
+const DailyBloomCalendar: React.FC<Props> = ({
+  events: eventsProp,
+  onCreateBloomFromEvent,
+  onUpdateBloomFromEvent,
+  onDeleteBloomFromEvent,
+}) => {
   const isMobile = useIsMobile();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>(eventsProp);
   const [quickText, setQuickText] = useState("");
   const [currentEvent, setCurrentEvent] = useState<CalendarEvent | null>(null);
   const [mode, setMode] = useState<"view" | "create" | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<string[]>(["bloom", "custom"]);
   const realtimeRef = useRef<RealtimeChannel | null>(null);
   const calendarRef = useRef<FullCalendar>(null);
   const [isTabletOrBelow, setIsTabletOrBelow] = useState(false);
-
-  // Get the single, globally-authenticated client from our new Context
   const supabaseClient = useSupabase();
-
-  // UX / status
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastDeletedEvent, setLastDeletedEvent] = useState<CalendarEvent | null>(null);
   const undoTimerRef = useRef<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Debounce refs
   const dragDebounceRef = useRef<number | null>(null);
   const resizeDebounceRef = useRef<number | null>(null);
   const resizeViewDebounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setEvents(eventsProp);
+    setIsLoading(false);
+  }, [eventsProp]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -280,85 +281,26 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Filtered events memo
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      if (event.extendedProps?.isBloom && activeFilters.includes("bloom")) {
-        return true;
-      }
-      if (!event.extendedProps?.isBloom && activeFilters.includes("custom")) {
-        return true;
-      }
-      return false;
-    });
-  }, [events, activeFilters]);
-
-  const toggleFilter = (filter: string) => {
-    setActiveFilters((prev) =>
-      prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
-    );
-  };
-
-  // initial fetch
-  const fetchEvents = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const response = await fetch("/api/events");
-      if (!response.ok) {
-        throw new Error("Failed to fetch events");
-      }
-      const data = await response.json();
-      const formatted = (data || []).map((ev: EventPayload) => ({
-        id: String(ev.id),
-        title: ev.title || "Untitled",
-        start: ev.start,
-        end: ev.end || undefined,
-        allDay: !ev.end && !ev.start.includes("T"),
-        color: ev.isBloom ? "#4dabf7" : "#2ecc71",
-        extendedProps: {
-          description: ev.description || "",
-          isBloom: !!ev.isBloom,
-          isCompleted: !!ev.isCompleted,
-        },
-      }));
-      setEvents(formatted);
-    } catch (err) {
-      console.error("Error fetching events:", err);
-      setErrorMessage("Unable to load calendar events.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
-
   // --- REALTIME SUBSCRIPTION ---
   useEffect(() => {
-    // 1. If the client from the context isn't ready, wait.
     if (!supabaseClient) {
       return;
     }
 
-    // 2. Create the subscription
     const channel = supabaseClient
       .channel("public:Event")
       .on<EventPayload>(
         "postgres_changes",
         { event: "*", schema: "public", table: "Event" },
         (payload) => {
-
-          // Your original state logic:
           const newRow = payload.new as EventPayload;
-          const oldRow = payload.old as { id: number }; // Cast old row for delete
+          const oldRow = payload.old as { id: number };
 
           switch (payload.eventType) {
             case "INSERT":
               if (!("id" in newRow)) break;
-              setEvents((prev) => [
-                ...prev.filter((e) => e.id !== String(newRow.id)),
+              setEvents((prev: CalendarEvent[]) => [
+                ...prev.filter((e: CalendarEvent) => e.id !== String(newRow.id)),
                 {
                   id: String(newRow.id),
                   title: newRow.title,
@@ -376,8 +318,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
               break;
             case "UPDATE":
               if (!("id" in newRow)) break;
-              setEvents((prev) =>
-                prev.map((e) =>
+              setEvents((prev: CalendarEvent[]) =>
+                prev.map((e: CalendarEvent) =>
                   e.id === String(newRow.id)
                     ? {
                       ...e,
@@ -389,7 +331,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
                       extendedProps: {
                         description: newRow.description || "",
                         isBloom: !!newRow.isBloom,
-
                         isCompleted: !!newRow.isCompleted,
                       },
                     }
@@ -399,7 +340,7 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
               break;
             case "DELETE":
               if (!oldRow || !("id" in oldRow)) break;
-              setEvents((prev) => prev.filter((e) => e.id !== String(oldRow.id)));
+              setEvents((prev: CalendarEvent[]) => prev.filter((e: CalendarEvent) => e.id !== String(oldRow.id)));
               break;
           }
         }
@@ -408,22 +349,20 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
 
     realtimeRef.current = channel;
 
-    // 3. Cleanup
     return () => {
       if (realtimeRef.current?.unsubscribe) {
-        supabaseClient.removeChannel(realtimeRef.current); // Use removeChannel for cleanup
+        supabaseClient.removeChannel(realtimeRef.current);
         realtimeRef.current.unsubscribe();
       }
     };
-  }, [supabaseClient]); // This hook now ONLY depends on the client from the context
+  }, [supabaseClient]);
 
-  // view updates on resize (FIXED with DEBOUNCE)
+  // view updates on resize
   useEffect(() => {
     if (typeof window === "undefined") return;
     const calendarApi = calendarRef.current?.getApi();
     if (!calendarApi) return;
 
-    // This function does the actual work
     const updateView = () => {
       const w = window.innerWidth;
       if (w < 640) {
@@ -437,25 +376,21 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       }
     };
 
-    // 1. Defer the *initial* call (fixes the flushSync error)
     const timerId = setTimeout(() => {
       updateView();
     }, 0);
 
-    // 2. Create a *debounced* version of the function for resizing
     const debouncedUpdateView = () => {
       if (resizeViewDebounceRef.current) {
         window.clearTimeout(resizeViewDebounceRef.current);
       }
       resizeViewDebounceRef.current = window.setTimeout(() => {
         updateView();
-      }, 300); // Wait 300ms after resize stops
+      }, 300);
     };
 
-    // 3. Add the *debounced* listener
     window.addEventListener("resize", debouncedUpdateView);
 
-    // 4. Clean up everything
     return () => {
       window.removeEventListener("resize", debouncedUpdateView);
       clearTimeout(timerId);
@@ -465,13 +400,10 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     };
   }, []);
 
-
-  // --- FIX: Wrap handleCloseModal in useCallback ---
   const handleCloseModal = useCallback(() => {
     setMode(null);
     setIsEditing(false);
-  }, []); // Dependencies: [] (setters are stable)
-
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (!currentEvent || !currentEvent.title.trim()) return;
@@ -485,16 +417,15 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       start: currentEvent.start,
       end: currentEvent.end ?? null,
       description: currentEvent.extendedProps?.description || "",
-      isBloom: true, // keep your choice
+      isBloom: true,
       isCompleted: currentEvent.extendedProps?.isCompleted || false,
       allDay: currentEvent.allDay ?? false,
     };
 
     setIsLoading(true);
 
-    // Optimistic insert to UI
-    setEvents(prev => {
-      if (prev.some(e => e.id === tmpId)) return prev;
+    setEvents((prev: CalendarEvent[]) => {
+      if (prev.some((e: CalendarEvent) => e.id === tmpId)) return prev;
       return [
         ...prev,
         {
@@ -514,11 +445,9 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       const json = await response.json();
       if (!response.ok) throw new Error(json?.message || "Failed to save event");
 
-      // Replace tmp object with server event (server returns created row in json.data)
       const serverEvent = toCalendarEventFromServer(json.data);
-      setEvents(prev => prev.map(e => (e.id === tmpId ? serverEvent : e)));
+      setEvents((prev: CalendarEvent[]) => prev.map((e: CalendarEvent) => (e.id === tmpId ? serverEvent : e)));
 
-      // Call parent only AFTER server success to avoid duplicate DB writes
       if (onCreateBloomFromEvent) {
         onCreateBloomFromEvent({
           title: serverEvent.title,
@@ -531,21 +460,17 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       handleCloseModal();
     } catch (err: unknown) {
       console.error("Error saving event:", err);
-      // revert optimistic insert
-      setEvents(prev => prev.filter(e => e.id !== tmpId));
+      setEvents((prev: CalendarEvent[]) => prev.filter((e: CalendarEvent) => e.id !== tmpId));
       setErrorMessage(err instanceof Error ? err.message : "Failed to save event");
     } finally {
       setIsLoading(false);
     }
-  }, [currentEvent, onCreateBloomFromEvent, handleCloseModal]); // <-- Add handleCloseModal
+  }, [currentEvent, onCreateBloomFromEvent, handleCloseModal]);
 
-
-  // keyboard shortcuts:
   useEffect(() => {
     if (!mode) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        // --- FIX: Use the memoized function ---
         handleCloseModal();
       }
       if (e.key === "Enter") {
@@ -559,10 +484,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [mode, currentEvent, isEditing, handleSave, handleCloseModal]); // <-- Add handleCloseModal
+  }, [mode, currentEvent, isEditing, handleSave, handleCloseModal]);
 
-
-  // --- FIX: Wrap handleDateClick in useCallback ---
   const handleDateClick = useCallback((info: DateClickArg) => {
     const startStr = toLocalInput(info.dateStr);
     const isAllDay = info.allDay;
@@ -579,10 +502,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     });
     setMode("create");
     setIsEditing(false);
-  }, []); // Dependencies: [] (setters are stable)
+  }, []);
 
-
-  // --- FIX: Wrap handleQuickAdd in useCallback ---
   const handleQuickAdd = useCallback(async () => {
     if (!quickText.trim()) return;
     const tmpId = `tmp-${Date.now()}`;
@@ -607,7 +528,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     const oldQuickText = quickText;
     setQuickText("");
 
-    // optimistic add
     const optimisticEvent: CalendarEvent = {
       id: tmpId,
       title: bloomPayload.title,
@@ -617,7 +537,7 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       color: "#4dabf7",
       extendedProps: { description: bloomPayload.description, isBloom: true, isCompleted: false },
     };
-    setEvents(prev => [...prev, optimisticEvent]);
+    setEvents((prev: CalendarEvent[]) => [...prev, optimisticEvent]);
 
     try {
       const response = await fetch("/api/events", {
@@ -629,9 +549,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       if (!response.ok) throw new Error(json?.message || "Failed to save quick-add event");
 
       const serverEvent = toCalendarEventFromServer(json.data);
-      setEvents(prev => prev.map(e => (e.id === tmpId ? serverEvent : e)));
+      setEvents((prev: CalendarEvent[]) => prev.map((e: CalendarEvent) => (e.id === tmpId ? serverEvent : e)));
 
-      // Notify parent after server success
       if (onCreateBloomFromEvent) {
         onCreateBloomFromEvent({
           title: serverEvent.title,
@@ -643,18 +562,14 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     } catch (err: unknown) {
       console.error("Quick add error:", err);
       setErrorMessage(err instanceof Error ? err.message : "Quick add failed.");
-      // revert optimistic
-      setEvents(prev => prev.filter(e => e.id !== tmpId));
+      setEvents((prev: CalendarEvent[]) => prev.filter((e: CalendarEvent) => e.id !== tmpId));
       setQuickText(oldQuickText);
     }
-  }, [quickText, onCreateBloomFromEvent]); // Dependencies: [quickText, onCreateBloomFromEvent]
+  }, [quickText, onCreateBloomFromEvent]);
 
-
-  // Mark complete (FIXED: Removed [events] dependency)
   const handleComplete = useCallback(async (id: string) => {
-    // Optimistic update
-    setEvents((prev) =>
-      prev.map((e) =>
+    setEvents((prev: CalendarEvent[]) =>
+      prev.map((e: CalendarEvent) =>
         e.id === id ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: true } } : e
       )
     );
@@ -669,32 +584,43 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         throw new Error(errorData.message || "Failed to complete event");
       }
       confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-      handleCloseModal(); // <-- Use memoized function
+      handleCloseModal();
     } catch (err) {
       console.error("Error completing event:", err);
-      // Revert on error *without* needing the `events` array
-      setEvents((prev) =>
-        prev.map((e) =>
+      setEvents((prev: CalendarEvent[]) =>
+        prev.map((e: CalendarEvent) =>
           e.id === id ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: false } } : e
         )
       );
       setErrorMessage("Failed to mark completed.");
     }
-  }, [handleCloseModal]); // <-- Dependency array is now correct
+  }, [handleCloseModal]);
 
-  // Update event (already memoized)
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
-    const originalEvents = [...events];
 
-    setEvents((prev) => prev.map((e) => (e.id === currentEvent.id ? currentEvent : e)));
-    handleCloseModal(); // <-- Use memoized function
+    if (currentEvent.extendedProps?.isBloom) {
+      const bloomId = currentEvent.id.replace(/^bloom-/, "");
+
+      onUpdateBloomFromEvent({
+        id: bloomId,
+        updatedData: {
+          title: currentEvent.title,
+          description: currentEvent.extendedProps?.description,
+          dueDate: currentEvent.start,
+        },
+      });
+
+      handleCloseModal();
+      return;
+    }
+
     try {
       const response = await fetch("/api/events", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: currentEvent.id,
+          id: currentEvent.id.replace(/^event-/, ""),
           title: currentEvent.title,
           description: currentEvent.extendedProps?.description,
           start: currentEvent.start,
@@ -706,44 +632,46 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to update event");
       }
+      handleCloseModal();
     } catch (err) {
       console.error("Error updating event:", err);
-      setEvents(originalEvents);
       setErrorMessage("Failed to update event.");
     }
-  }, [currentEvent, events, handleCloseModal]); // <-- Add handleCloseModal
-
-
-  // --- FIX: Remove setShowDeleteConfirm(false) ---
+  }, [currentEvent, handleCloseModal, onUpdateBloomFromEvent]);
 
   const handleConfirmDelete = useCallback(async () => {
     if (!currentEvent) return;
     const originalEvents = [...events];
 
-    // Optimistic remove
-    setEvents(prev => prev.filter(e => e.id !== currentEvent.id));
+    setEvents((prev) => prev.filter((e) => e.id !== currentEvent.id));
     setLastDeletedEvent(currentEvent);
     if (undoTimerRef.current) window.clearTimeout(undoTimerRef.current);
+    handleCloseModal();
 
-    handleCloseModal(); // <-- GOOD: This closes the main event form Dialog
-
-    // setShowDeleteConfirm(false); // <-- REMOVE THIS LINE
-
-    // If this was a temporary event, we don't call server delete
-    if (isTempId(currentEvent.id)) {
-      undoTimerRef.current = window.setTimeout(() => {
+    if (currentEvent.extendedProps?.isBloom) {
+      try {
+        const bloomId = currentEvent.id.replace(/^bloom-/, "");
+        onDeleteBloomFromEvent(bloomId);
+        undoTimerRef.current = window.setTimeout(() => {
+          setLastDeletedEvent(null);
+          undoTimerRef.current = null;
+        }, 6000);
+      } catch (err) {
+        console.error("Error calling onDeleteBloomFromEvent:", err);
+        setEvents(originalEvents);
+        setErrorMessage(err instanceof Error ? err.message : "Failed to delete bloom.");
         setLastDeletedEvent(null);
-        undoTimerRef.current = null;
-      }, 6000);
+      }
       return;
     }
 
     try {
+      const eventId = currentEvent.id.replace(/^event-/, "");
 
       const resp = await fetch("/api/events", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: currentEvent.id }),
+        body: JSON.stringify({ id: eventId }),
       });
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.message || "Failed to delete event");
@@ -758,26 +686,21 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       setErrorMessage(err instanceof Error ? err.message : "Failed to delete event.");
       setLastDeletedEvent(null);
     }
-  }, [currentEvent,events, handleCloseModal]); // Dependencies are still correct
+  }, [currentEvent, events, handleCloseModal, onDeleteBloomFromEvent]);
 
-
-  // --- FIX: Wrap handleUndoDelete in useCallback ---
   const handleUndoDelete = useCallback(async () => {
     if (!lastDeletedEvent) return;
 
     const wasTemp = isTempId(lastDeletedEvent.id);
-    // local immediate reinsert (optimistic)
-    setEvents(prev => [...prev, lastDeletedEvent]);
+    setEvents((prev: CalendarEvent[]) => [...prev, lastDeletedEvent]);
     setLastDeletedEvent(null);
     if (undoTimerRef.current) {
       window.clearTimeout(undoTimerRef.current);
       undoTimerRef.current = null;
     }
 
-    // If it was a temp event, nothing to recreate on server
     if (wasTemp) return;
 
-    // If it had server id, re-create on server and replace
     try {
       const payload = {
         title: lastDeletedEvent.title,
@@ -796,8 +719,7 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       const json = await resp.json();
       if (!resp.ok) throw new Error(json?.message || "Failed to recreate event");
       const serverEvent = toCalendarEventFromServer(json.data);
-      // replace any matching by title+start or previous tmp placeholder:
-      setEvents(prev => prev.map(e => {
+      setEvents((prev: CalendarEvent[]) => prev.map((e: CalendarEvent) => {
         if (e.title === lastDeletedEvent.title && e.start === lastDeletedEvent.start) {
           return serverEvent;
         }
@@ -807,10 +729,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
       console.error("Undo re-create error:", err);
       setErrorMessage("Undo succeeded locally but server re-create failed.");
     }
-  }, [lastDeletedEvent]); // Dependencies: [lastDeletedEvent]
+  }, [lastDeletedEvent]);
 
-
-  // --- FIX: Wrap handleEventDrop in useCallback ---
   const handleEventDrop = useCallback(async (info: EventDropArg) => {
     const { event } = info;
 
@@ -841,10 +761,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         dragDebounceRef.current = null;
       }
     }, 300);
-  }, []); // Dependencies: [] (only uses refs and setters)
+  }, []);
 
-
-  // --- FIX: Wrap handleEventResize in useCallback ---
   const handleEventResize = useCallback(async (info: EventResizeDoneArg) => {
     const { event } = info;
     if (resizeDebounceRef.current) window.clearTimeout(resizeDebounceRef.current);
@@ -868,22 +786,17 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         resizeDebounceRef.current = null;
       }
     }, 300);
-  }, []); // Dependencies: [] (only uses refs and setters)
+  }, []);
 
-
-  // memoized eventContent (FINAL, ROBUST FIX)
   const eventContent = useCallback((arg: EventContentArg) => {
     const ext = arg.event.extendedProps as EventExtendedProps;
     const dot = ext?.isCompleted ? "✅" : ext?.isBloom ? "🌱" : "📌";
     const badge = ext?.isBloom ? "Bloom" : ext?.isCompleted ? "Completed" : "Custom";
-
-    // This is the key: Check the current view type to apply styles conditionally.
     const isListView = arg.view.type === 'listWeek';
 
     return (
       <div
         title={arg.event.title + (ext?.description ? " — " + ext.description : "")}
-        // Use `items-start` for list view (better for wrapped text) and `items-center` for all other views.
         className={`px-2 py-1 text-xs rounded-md flex ${isListView ? 'items-start' : 'items-center'} gap-1.5 border shadow-sm cursor-pointer w-full hover:bg-white/60 transition`}
         style={{
           borderColor: arg.event.backgroundColor,
@@ -907,11 +820,10 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
           setIsEditing(false);
         }}
       >
-        {/* Adjust icon padding only for list view to align with wrapped text */}
         <span className={`flex-shrink-0 text-[12px] ${isListView ? 'pt-0.5' : ''}`}>{dot}</span>
         <span
           className={`flex-grow font-medium text-xs sm:text-sm ${ext?.isCompleted ? "line-through text-muted-foreground" : ""
-            } ${isListView ? 'whitespace-normal break-words' : 'truncate'}`} // Conditionally wrap or truncate
+            } ${isListView ? 'whitespace-normal break-words' : 'truncate'}`}
         >
           {arg.event.title}
         </span>
@@ -922,7 +834,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     );
   }, []);
 
-  // memoized FormButtons (unchanged)
   const FormButtons = useCallback(() => (
     <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
       {mode === "create" && (
@@ -955,7 +866,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     </div>
   ), [mode, currentEvent, isEditing, handleSave, handleUpdate, handleComplete]);
 
-  // SkeletonLoader (unchanged)
   const SkeletonLoader = () => (
     <div className="grid gap-2">
       <div className="h-8 bg-gray-100 rounded animate-pulse" />
@@ -963,10 +873,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
     </div>
   );
 
-  // --- Main JSX Return (unchanged) ---
   return (
     <div className="border rounded-2xl shadow-lg bg-white p-4 sm:p-6 relative">
-      {/* Error / Undo banners */}
       {errorMessage && (
         <div className="mb-3 p-2 bg-red-50 border border-red-100 rounded text-sm text-red-700">
           {errorMessage}
@@ -986,7 +894,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
             <span className="font-medium">..You can undo this action</span>
           </div>
           <div className="flex items-center gap-2">
-            {/* --- FIX: Use the memoized function --- */}
             <Button size="sm" onClick={handleUndoDelete}>
               Undo
             </Button>
@@ -1001,38 +908,14 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
           <h2 className="text-lg md:text-xl font-semibold text-gray-800">Daily Blooms Calendar</h2>
         </div>
         <div className="flex flex-wrap items-center justify-start sm:justify-end gap-3">
-          <div className="flex items-center gap-1 border bg-gray-50 p-1 rounded-lg">
-            <span className="text-sm font-medium mr-2 pl-2 text-gray-600 hidden lg:inline">Show:</span>
-            <Button
-              size="sm"
-              onClick={() => toggleFilter("bloom")}
-              variant={activeFilters.includes("bloom") ? "default" : "ghost"}
-              className="text-xs sm:text-sm h-8 px-3"
-              aria-pressed={activeFilters.includes("bloom")}
-            >
-              🌱 Blooms
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => toggleFilter("custom")}
-              variant={activeFilters.includes("custom") ? "default" : "ghost"}
-              className="text-xs sm:text-sm h-8 px-3"
-              aria-pressed={activeFilters.includes("custom")}
-            >
-              📌 Custom
-            </Button>
-          </div>
-          {/* Quick Add Input, now tied to the modified handleQuickAdd */}
           <div className="hidden sm:flex w-full sm:w-auto gap-2">
             <Input
               placeholder="Quick add event..."
               value={quickText}
               onChange={(e) => setQuickText(e.target.value)}
-              // --- FIX: Use the memoized function ---
               onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
               className="flex-grow text-sm h-10"
             />
-            {/* --- FIX: Use the memoized function --- */}
             <Button onClick={handleQuickAdd} variant="default" size="icon" className="flex-shrink-0 h-10 w-10">
               <Plus size={18} />
             </Button>
@@ -1042,31 +925,64 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
 
       {/* FullCalendar */}
       <div className="fc-theme">
+        <style>
+          {`
+            /* --- CHANGE: Custom styles for FullCalendar toolbar buttons --- */
+
+            /* Default state for all primary buttons (Month, Week, Day, Today, Arrows) */
+            .fc-theme .fc-button-primary {
+              background-color: #f1f5f9; /* slate-100 */
+              border-color: #cbd5e1; /* slate-300 */
+              color: #1e293b; /* slate-800 */
+              transition: background-color 0.2s, border-color 0.2s;
+            }
+
+            /* Hover state for buttons */
+            .fc-theme .fc-button-primary:hover {
+              background-color: #e2e8f0; /* slate-200 */
+              border-color: #94a3b8; /* slate-400 */
+            }
+
+            /* Active state for view-switcher buttons (Month, Week, etc.) */
+            .fc-theme .fc-button-primary.fc-button-active,
+            .fc-theme .fc-button-primary.fc-button-active:hover {
+              background-color: #475569; /* slate-600 */
+              border-color: #475569; /* slate-600 */
+              color: #ffffff;
+            }
+
+            /* --- FIX: Make "Today" button always visible --- */
+            .fc-theme .fc-today-button.fc-button:disabled {
+              background-color: #f1f5f9; /* Same as default */
+              border-color: #cbd5e1;   /* Same as default */
+              color: #1e293b;        /* Same as default */
+              opacity: 1;             /* Remove faded look */
+            }
+          `}
+        </style>
         {isLoading ? (
           <SkeletonLoader />
         ) : (
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-            // Dynamically set the initial view based on the device
             initialView={isMobile ? "listWeek" : "dayGridMonth"}
             headerToolbar={{
               left: "prev,next today",
               center: "title",
               right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
             }}
-            events={filteredEvents}
+            // --- CHANGE: Use the main 'events' state directly ---
+            events={events}
             editable={true}
             selectable={true}
             dayMaxEvents={true}
             eventOverlap={false}
             slotEventOverlap={false}
             eventContent={eventContent}
-            // --- FIX: Use memoized functions ---
             dateClick={handleDateClick}
             eventDrop={handleEventDrop}
             eventResize={handleEventResize}
-            // ---------------------------------
             dayHeaderFormat={{ weekday: isMobile ? "short" : "long" }}
             views={{
               dayGridMonth: { titleFormat: { year: "numeric", month: "long" } },
@@ -1079,7 +995,7 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         )}
       </div>
 
-      {/* Mobile FAB (unchanged) */}
+      {/* Mobile FAB */}
       {isMobile && (
         <div className="fixed bottom-6 right-4 z-50">
           <button
@@ -1105,9 +1021,8 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         </div>
       )}
 
-      {/* Modal / Drawer (unchanged) */}
+      {/* Modal / Drawer */}
       {isTabletOrBelow ? (
-        // --- FIX: Use memoized function ---
         <Drawer open={!!mode} onOpenChange={(isOpen) => !isOpen && handleCloseModal()}>
           <DrawerContent>
             <DrawerHeader className="text-left">
@@ -1125,7 +1040,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
           </DrawerContent>
         </Drawer>
       ) : (
-        // --- FIX: Use memoized function ---
         <Dialog open={!!mode} onOpenChange={(isOpen) => !isOpen && handleCloseModal()}>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -1144,7 +1058,7 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
         </Dialog>
       )}
 
-      {/* Alert Dialog (unchanged) */}
+      {/* Alert Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1159,7 +1073,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            {/* --- FIX: Use memoized function --- */}
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -1169,7 +1082,6 @@ const DailyBloomCalendar: React.FC<Props> = ({ onCreateBloomFromEvent }) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 };

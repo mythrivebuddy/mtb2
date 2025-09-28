@@ -661,19 +661,24 @@ model Announcement {
 }
 
 model Event {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title       String
+  description String?
   start       DateTime
   end         DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  description String?
-  isBloom     Boolean   @default(false)
-  isCompleted Boolean   @default(false)
-  allDay      Boolean   @default(false)
-  isbloom     Boolean?  @default(false)
-  iscompleted Boolean?  @default(false)
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String    @db.Uuid
+
+  // CORRECT fields using @map to control the database column name
+  isBloom     Boolean   @default(false) @map("is_bloom")
+  isCompleted Boolean   @default(false) @map("is_completed")
+  allDay      Boolean   @default(false) @map("all_day")
+
+  // Map the foreign key as well
+  userId      String    @db.Uuid @map("user_id")
+
+  // It's also good practice to define the relation to the User model
+  // user User @relation(fields: [userId], references: [id])
 }
 
 model ActivityFeedItem {
