@@ -64,7 +64,7 @@ export async function POST(
 
     const newComment = await prisma.comment.create({
       data: {
-        text: text,
+        content: text,
         goalId: goalId,
         authorId: session.user.id,
       },
@@ -76,11 +76,12 @@ export async function POST(
     });
 
     const goal = await prisma.goal.findUnique({ where: { id: goalId }, select: { groupId: true } });
-    if (goal) {
+    if (goal && goal.groupId) {
       await logActivity(
         goal.groupId,
         'comment_posted',
-        `${session.user.name} posted a new comment.`
+        `${session.user.name} posted a new comment.`,
+        session.user.id
       );
     }
 

@@ -146,6 +146,7 @@ export default function DailyBloomClient() {
     "date"
   );
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false); // New state for calendar dialog
   useOnlineUserLeaderBoard();
 
   // In DailyBloomClient.tsx
@@ -360,6 +361,72 @@ export default function DailyBloomClient() {
     );
   };
 
+  // ... after the `handleUpdateCompletion` function ...
+
+  const handleUpdateBloomFromEvent = (payload: {
+    id: string; // This is the raw bloom ID from the calendar
+    updatedData: {
+      title?: string;
+      description?: string;
+      dueDate?: string; // This is the 'start' date from the calendar event as an ISO string
+    };
+  }) => {
+    // 1. Find the original bloom from our list to get all its data.
+    const originalBloom = dailyBloom.find((b) => b.id === payload.id);
+
+    if (!originalBloom) {
+      toast.error("Error: Could not find the original bloom to update.");
+      console.error("Could not find bloom with id:", payload.id);
+      return;
+    }
+
+    // 2. Create the complete data object for the mutation.
+    // The mutation expects a full DailyBloomFormType object.
+    const updatedBloomData: DailyBloomFormType = {
+      ...originalBloom,
+      title: payload.updatedData.title ?? originalBloom.title,
+      description: payload.updatedData.description ?? originalBloom.description ?? "",
+      // Convert the date string from the calendar back into a Date object for the form
+      dueDate: payload.updatedData.dueDate
+        ? new Date(payload.updatedData.dueDate)
+        : originalBloom.dueDate ? new Date(originalBloom.dueDate) : new Date(),
+    };
+
+    // 3. Use the existing updateMutation to save the changes.
+    updateMutation.mutate(
+      { id: payload.id, updatedData: updatedBloomData },
+      {
+        onSuccess: () => {
+          toast.success("Bloom updated from calendar!");
+        },
+      }
+    );
+  };
+
+  // In your PARENT component (e.g., DailyBloomClient.tsx)
+
+  const handleDeleteBloom = async (bloomId: string) => {
+    try {
+      const response = await fetch(`/api/user/daily-bloom?bloomId=${bloomId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete bloom');
+      }
+
+      // You should also refetch or update your local state here to remove the bloom
+      // For example:
+      // refetchBlooms(); 
+      // or:
+      // setBlooms(currentBlooms => currentBlooms.filter(b => b.id !== bloomId));
+
+    } catch (error) {
+      console.error("Error deleting bloom:", error);
+      // Handle error state in UI
+    }
+  };
+
   // Normalize bloom data and assert the correct type for the calendar component
   const normalizedBlooms = dailyBloom.map((b) => ({
     id: b.id ?? crypto.randomUUID(),
@@ -418,14 +485,20 @@ export default function DailyBloomClient() {
             </div>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => setAddData(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Daily Bloom
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setAddData(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Daily Bloom
+              </Button>
+              <Button onClick={() => setCalendarOpen(true)}>
+                <CalendarIcon className="mr-4 h-2 w-2" />
+                View My Calendar
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="mb-8">
+        {/* <Card className="mb-8">
           <CardHeader>
             <CardTitle>Calendar View</CardTitle>
             <CardDescription>
@@ -433,21 +506,17 @@ export default function DailyBloomClient() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* 👇 THIS IS THE UPDATED COMPONENT 👇 */}
             <CardContent>
-              {/* <DailyBloomCalendar
-                blooms={normalizedBlooms} // your normalized Daily Blooms
-                events={calendarItems}
-                onCreateBloomFromEvent={handleCreateBloomFromEvent} // NEW PROP
-              /> */}
               <DailyBloomCalendar
                 blooms={normalizedBlooms}
                 events={combinedCalendarItems}
                 onCreateBloomFromEvent={handleCreateBloomFromEvent}
+                onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
+                onDeleteBloomFromEvent={handleDeleteBloom}
               />
             </CardContent>
           </CardContent>
-        </Card>
+        </Card> */}
 
         <Overdue
           onView={setViewData}
@@ -700,8 +769,8 @@ export default function DailyBloomClient() {
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                    "en-IN"
-                                  )
+                                  "en-IN"
+                                )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -829,7 +898,7 @@ export default function DailyBloomClient() {
                           min={today}
                           value={
                             field.value &&
-                            !isNaN(new Date(field.value).getTime())
+                              !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -1021,7 +1090,7 @@ export default function DailyBloomClient() {
                           type="date"
                           value={
                             field.value &&
-                            !isNaN(new Date(field.value).getTime())
+                              !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -1123,6 +1192,31 @@ export default function DailyBloomClient() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Confirm Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* New Dialog for Calendar */}
+        <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <DialogContent className="w-[90vw] max-w-4xl rounded-2xl bg-white p-2 shadow-xl border">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                My Calendar
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-2 h-[70vh] overflow-auto">
+              <DailyBloomCalendar
+                blooms={normalizedBlooms}
+                events={combinedCalendarItems}
+                onCreateBloomFromEvent={handleCreateBloomFromEvent}
+                onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
+                onDeleteBloomFromEvent={handleDeleteBloom}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCalendarOpen(false)}>
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>
