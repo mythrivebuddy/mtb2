@@ -33,7 +33,7 @@ export async function GET(
           include: {
             user: { select: { id: true, name: true, image: true } },
           },
-          orderBy: { joinedAt: "asc" },
+          orderBy: { assignedAt: "asc" },
         },
       },
     });
@@ -58,7 +58,7 @@ export async function GET(
         group.members.map(async (member) => {
           const goals = await prisma.goal.findMany({
             where: {
-              memberId: member.id,
+              authorId: member.userId,
               cycleId: activeCycleId,
             },
             select: {

@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -79,6 +79,12 @@ model User {
   enrollments                   ChallengeEnrollment[]
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
+  Goals                         Goal[]                @relation("UserGoals")
+  comments                      Comment[]             @relation("UserComments")
+  createdGroups  Group[]   @relation("CreatedGroups")
+groupMemberships GroupMember[] // Relation to the join table
+activity   ActivityFeedItem[] @relation("UserActivity")
+coachedGroups    Group[]       @relation("CoachedGroups")
 
   @@index([name])
 }
@@ -670,6 +676,151 @@ model Event {
   isCompleted Boolean   @default(false)
 }
 
+model Goal {
+  id          String    @id @default(cuid())
+  text       String
+  description String?
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  midwayUpdate  String?
+  endResult     String?
+  status      String    @default("IN_PROGRESS")
+  stage       ProgressStage @default(NOT_STARTED)
+  
+  // Relation to the User who created the goal
+  authorId    String
+  author      User      @relation("UserGoals", fields: [authorId], references: [id], onDelete: Cascade)
+
+  groupId     String? // Make it optional (?) if a goal doesn't have to belong to a group
+  group       Group?    @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  
+  cycle      Cycle?    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  // A goal can have many comments
+  comments    Comment[]
+  cycleId     String    // ADD THIS FIELD
+  activity   ActivityFeedItem[] @relation("GoalActivity")
+
+  
+
+  @@index([authorId])
+  @@unique([authorId, cycleId]) // ADD THIS UNIQUE CONSTRAINT
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to the User who wrote the comment
+  authorId  String
+  author    User     @relation("UserComments", fields: [authorId], references: [id], onDelete: Cascade)
+  
+  // Relation to the Goal it was posted on
+  goalId    String
+  goal      Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  activity   ActivityFeedItem[] @relation("CommentActivity")
+
+  @@index([authorId])
+  @@index([goalId])
+}
+
+// PASTE THIS AT THE BOTTOM OF YOUR prisma/schema.prisma FILE
+
+model Group {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  visibility  Visibility  @default(PUBLIC)
+
+
+  // Relation to the User who created the group
+  creatorId   String
+  creator     User      @relation("CreatedGroups", fields: [creatorId], references: [id])
+
+  // A group can contain many goals
+  cycles      Cycle[]
+  goals       Goal[]
+  // A group has many members, and a user can be in many groups (Many-to-Many)
+  // ADD THIS LINE
+members      GroupMember[] // Relation to the join table
+activity   ActivityFeedItem[] @relation("GroupActivity")
+
+ coachId     String?  // The ID of the user who is the coach
+  coach       User?    @relation("CoachedGroups", fields: [coachId], references: [id])
+
+progressStage ProgressStage @default(NOT_STARTED)
+notesPrivacy  NotesPrivacy  @default(VISIBLE_TO_GROUP)
+ cycleDuration CycleDuration @default(WEEKLY)
+
+}
+
+model GroupMember {
+  userId    String
+  groupId   String
+  assignedAt DateTime @default(now())
+  assignedBy String   // Example of an extra field you can add
+  role       GroupRole @default(MEMBER)
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId]) // Composite primary key
+}
+
+model Cycle {
+  id        String    @id @default(cuid())
+  startDate DateTime
+  endDate   DateTime
+  status    String    @default("active") // Or you can create a CycleStatus enum
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relation to the Group it belongs to
+  groupId   String
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  // A cycle can have many goals
+  goals     Goal[]
+
+  @@index([groupId])
+}
+
+
+model ActivityFeedItem {
+  id        String           @id @default(cuid())
+  type      ActivityFeedType // The type of event that occurred
+  createdAt DateTime         @default(now())
+
+  // Who performed the action?
+  actorId   String
+  actor     User             @relation("UserActivity", fields: [actorId], references: [id], onDelete: Cascade)
+
+  // Which group did this happen in?
+  groupId   String
+  group     Group            @relation("GroupActivity", fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Optional: Link to the specific goal or comment related to the activity
+  goalId    String?
+  goal      Goal?            @relation("GoalActivity", fields: [goalId], references: [id], onDelete: SetNull)
+
+  commentId String?
+  comment   Comment?         @relation("CommentActivity", fields: [commentId], references: [id], onDelete: SetNull)
+
+  details   Json?  
+
+  // Add indexes for faster querying
+  @@index([groupId, createdAt])
+  @@index([actorId])
+}
+
+
+
 enum Audience {
   EVERYONE
   PAID
@@ -820,4 +971,44 @@ enum EnrollmentStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+enum ActivityFeedType {
+  GOAL_CREATED
+  GOAL_COMPLETED
+  COMMENT_ADDED
+  USER_JOINED_GROUP
+  CYCLE_STARTED
+  CYCLE_ENDED
+  GROUP_CREATED     // For "group_created"
+  GOAL_UPDATED      // For "goal_updated"
+  STATUS_UPDATED    // For "status_updated"
+}
+
+enum Visibility {
+  PUBLIC   // Anyone can see and join the group
+  PRIVATE  // Group is invite-only and not listed publicly
+  MEMBERS_CAN_SEE_GOALS // Only members can see goals within the group
+}
+
+enum ProgressStage {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum NotesPrivacy {
+  PRIVATE_TO_AUTHOR
+  VISIBLE_TO_GROUP
+}
+
+enum CycleDuration {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
 }
