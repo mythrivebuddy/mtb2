@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { memberId } = await params;
+    const { memberId } = params;
     const { searchParams } = new URL(_req.url);
     const groupId = searchParams.get("groupId");
 
@@ -26,39 +26,44 @@ export async function GET(
       where: { userId: session.user.id, groupId: groupId },
     });
     if (!requesterMembership) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden: You are not a member of this group" }, { status: 403 });
     }
 
-    const memberDetails = await prisma.groupMember.findUnique({
-      where: { id: memberId },
+    // <-- FIX STARTS HERE
+    const memberDetails = await prisma.groupMember.findFirst({ // 1. Use findFirst for composite where clauses
+      where: { 
+        userId: memberId, // 2. Use userId (from memberId) and groupId to find the member
+        groupId: groupId,
+      },
       include: {
-        user: true,
         group: { select: { name: true } },
-        goals: {
-          orderBy: { cycle: { startDate: "desc" } },
+        user: { // 3. The 'goals' relation is on the User, so nest it here
           include: {
-            cycle: { select: { startDate: true, endDate: true } },
-            comments: {
-              include: { author: { select: { name: true, image: true } } },
-              orderBy: { createdAt: 'asc' }
+            Goals: {
+              orderBy: { cycle: { startDate: "desc" } },
+              include: {
+                cycle: { select: { startDate: true, endDate: true } },
+                comments: {
+                  include: { author: { select: { name: true, image: true } } },
+                  orderBy: { createdAt: 'asc' }
+                },
+              },
             },
-          },
+          }
         },
       },
     });
+    // <-- FIX ENDS HERE
 
     if (!memberDetails) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+      return NextResponse.json({ error: "Member not found in this group" }, { status: 404 });
     }
     
-    // --- THIS IS THE FIX ---
-    // Create a new object containing all memberDetails, plus the requester's role.
-    // This is type-safe and avoids using `any`.
+    // Your existing logic to add the requester's role is perfectly fine.
     const responseData = {
       ...memberDetails,
       requesterRole: requesterMembership.role,
     };
-    // ----------------------
 
     return NextResponse.json(responseData);
   } catch (error) {
