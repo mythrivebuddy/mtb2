@@ -113,6 +113,8 @@ const toLocalInput = (dateStr?: string | null) => {
   return `${y}-${m}-${d}T${h}:${min}`;
 };
 
+
+// CHdke if id is temporary (for optimistic UI)
 const isTempId = (id?: string | number | null) => typeof id === "string" && id.startsWith("tmp-");
 
 const toCalendarEventFromServer = (row: EventPayload): CalendarEvent => ({
@@ -128,7 +130,7 @@ const toCalendarEventFromServer = (row: EventPayload): CalendarEvent => ({
     isCompleted: !!row.isCompleted,
   },
 });
-
+// Hook to detect mobile
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -143,7 +145,7 @@ const useIsMobile = () => {
 };
 
 // ---------------- Event Form Component ----------------
-
+// Form used in modal/drawer for creating/editing events
 const EventForm = ({
   currentEvent,
   setCurrentEvent,
