@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import AddMemberModal from "@/components/accountability/AddMemberModal";
-import EditableProgressCell from "@/components/accountability/EditableProgressCell"; // Updated import
- import GoalStatusUpdater from "@/components/accountability/GoalStatusUpdater";
+import EditableProgressCell from "@/components/accountability/EditableProgressCell";
+import GoalStatusUpdater from "@/components/accountability/GoalStatusUpdater";
 import CommentsModal from "@/components/accountability/CommentsModal";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -34,7 +34,7 @@ type GroupViewData = {
   members: {
     id: string;
     user: {
-      id:string;
+      id: string;
       name: string | null;
       image: string | null;
     };
@@ -43,7 +43,7 @@ type GroupViewData = {
       text: string;
       midwayUpdate: string | null;
       endResult: string | null;
-      status: "on_track" | "needs_attention" | "off_track"; // Added status
+      status: "on_track" | "needs_attention" | "off_track";
     }[];
   }[];
 };
@@ -53,10 +53,8 @@ export default function AccountabilityHubPage() {
   const searchParams = useSearchParams();
   const groupId = searchParams.get("groupId");
   const { data: session } = useSession();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  // const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [commentsGoalId, setCommentsGoalId] = useState<string | null>(null);
-
 
   const { data, error, isLoading } = useSWR<GroupViewData>(
     groupId ? `/api/accountability-hub/groups/${groupId}/view` : null,
@@ -67,6 +65,15 @@ export default function AccountabilityHubPage() {
   const activeCycleId = data?.activeCycleId;
   const members = data?.members;
   const isAdmin = data?.requesterRole === "admin";
+
+  const handleCommentClick = (goalId: string | undefined) => {
+    if (goalId) {
+      setCommentsGoalId(goalId);
+    } else {
+      // You can add a toast here to inform the user
+      console.log("A goal must be set before commenting.");
+    }
+  };
 
   if (!groupId) {
     return (
@@ -79,21 +86,14 @@ export default function AccountabilityHubPage() {
     );
   }
 
-  const handleCommentClick = (goalId: string | undefined) => {
-    if (goalId) {
-        setCommentsGoalId(goalId);
-    } else {
-        // Here you could show a toast message like "A goal must be set before commenting"
-    }
-  }
-
   return (
     <section className="mx-auto max-w-6xl py-8 px-4">
+      {/* Modals */}
       {groupId && (
         <AddMemberModal
           groupId={groupId}
-          isOpen={isModalOpen}
-          onOpenChange={setIsModalOpen}
+          isOpen={isAddMemberModalOpen}
+          onOpenChange={setIsAddMemberModalOpen}
         />
       )}
       <CommentsModal
@@ -101,6 +101,8 @@ export default function AccountabilityHubPage() {
         isOpen={!!commentsGoalId}
         onOpenChange={() => setCommentsGoalId(null)}
       />
+
+      {/* Navigation and Header */}
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
@@ -109,16 +111,14 @@ export default function AccountabilityHubPage() {
         <span>Back</span>
       </button>
 
-      {/* Header */}
       <div className="flex w-full items-center justify-between mb-6">
         <div className="flex-1">
           <h1 className="text-2xl font-bold">
             {isLoading ? <Skeleton className="h-8 w-48" /> : groupName}
           </h1>
-        <p className="text-muted-foreground">
-  Track and motivate your solopreneur community&apos;s monthly goals.
-</p>
-
+          <p className="text-muted-foreground">
+            Track and motivate your solopreneur communitys  monthly goals.
+          </p>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/dashboard/accountability-hub/create">
@@ -129,7 +129,7 @@ export default function AccountabilityHubPage() {
           </Link>
           <Button
             className="bg-blue-600 hover:bg-blue-700"
-            // onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsAddMemberModalOpen(true)}
           >
             Add Member
           </Button>
@@ -168,10 +168,7 @@ export default function AccountabilityHubPage() {
             )}
             {!isLoading && !error && members?.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center text-muted-foreground"
-                >
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   No members found in this group yet.
                 </TableCell>
               </TableRow>
@@ -190,7 +187,9 @@ export default function AccountabilityHubPage() {
                         height={32}
                         className="h-8 w-8 rounded-full"
                       />
-                      <span className="font-medium">{member.user.name}</span>
+                      <Link href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`} className="font-medium hover:underline">
+                        {member.user.name}
+                      </Link>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -241,14 +240,10 @@ export default function AccountabilityHubPage() {
                     ) : null}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="link">Comment</Button>
+                    <Button variant="link" onClick={() => handleCommentClick(goal?.id)}>
+                      Comment
+                    </Button>
                   </TableCell>
-                  <TableCell className="text-right">
-                {/* UPDATE THE BUTTON'S ONCLICK */}
-                <Button variant="link" onClick={() => handleCommentClick(goal?.id)}>
-                  Comment
-                </Button>
-              </TableCell>
                 </TableRow>
               );
             })}

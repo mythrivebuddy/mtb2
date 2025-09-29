@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { goalId } = params;
+    const { goalId } = await params;
 
     const comments = await prisma.comment.findMany({
       where: { goalId: goalId },
@@ -52,7 +52,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { goalId } = params;
+    const { goalId } = await params;
     const { text } = await req.json();
 
     if (!text) {
