@@ -1,2 +1,0 @@
--- AlterEnum
-ALTER TYPE "ActivityType" ADD VALUE 'CHALLENGE_JOINING_FEE';

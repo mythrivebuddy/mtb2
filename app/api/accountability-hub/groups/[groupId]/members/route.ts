@@ -36,40 +36,33 @@ export async function GET(
     if (!userMembership) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    
+
     const activeCycle = await prisma.cycle.findFirst({
-        where: {
-            groupId: groupId,
-            status: 'active'
-        },
-        orderBy: { startDate: 'desc' }
+      where: {
+        groupId: groupId,
+        status: "active",
+      },
+      orderBy: { startDate: "desc" },
     });
 
-    const members = await prisma.groupMember.findMany({
+    const membersWithGoals = await prisma.groupMember.findMany({
       where: {
         groupId: groupId,
       },
       include: {
         user: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
+          include: {
+            Goals: {
+              where: {
+                cycleId: activeCycle?.id,
+              },
+            },
           },
         },
-        // This now correctly matches the schema
-        goals: {
-            where: {
-                cycleId: activeCycle?.id
-            }
-        }
       },
-      orderBy: {
-        joinedAt: 'asc'
-      }
     });
 
-    return NextResponse.json(members);
+    return NextResponse.json(membersWithGoals);
   } catch (error) {
     console.error(`[GET_GROUP_MEMBERS]`, error);
     return NextResponse.json(
@@ -99,53 +92,64 @@ export async function POST(
       );
     }
 
-    // Security Check: Verify that the current user is an admin of this group
-    const adminMembership = await prisma.groupMember.findFirst({
+    const adminMembers = await prisma.groupMember.findMany({
       where: {
-        groupId: groupId,
-        userId: session.user.id,
-        role: "admin",
+        groupId: groupId, // Using the groupId from params
+        user: {
+          role: "ADMIN",
+        },
+      },
+      include: {
+        user: true,
       },
     });
+    
+    // Check if the current user is one of the admins found
+    const isCurrentUserAdmin = adminMembers.some(member => member.userId === session.user.id);
 
-    if (!adminMembership) {
+    if (!isCurrentUserAdmin) {
       return NextResponse.json(
         { error: "Forbidden: Not an admin" },
         { status: 403 }
       );
     }
-    
-    // Check if the user is already a member
+
     const existingMembership = await prisma.groupMember.findUnique({
-        where: {
-            userId_groupId: {
-                userId: userIdToAdd,
-                groupId: groupId
-            }
-        }
+      where: {
+        userId_groupId: {
+          userId: userIdToAdd,
+          groupId: groupId,
+        },
+      },
     });
 
     if (existingMembership) {
-        return NextResponse.json({ error: "User is already in this group" }, { status: 409 });
+      return NextResponse.json(
+        { error: "User is already in this group" },
+        { status: 409 }
+      );
     }
 
-    // Add the new member
     const newMember = await prisma.groupMember.create({
       data: {
         userId: userIdToAdd,
         groupId: groupId,
-        role: "member", // New users are always added as 'member'
+        role: "MEMBER",
+        assignedBy: session.user.id,
       },
     });
 
-    const userBeingAdded = await prisma.user.findUnique({ where: { id: userIdToAdd }});
+    const userBeingAdded = await prisma.user.findUnique({
+      where: { id: userIdToAdd },
+    });
 
-    // Log this activity
     if (userBeingAdded) {
+      // FIX: Use correct argument order for logActivity
       await logActivity(
         groupId,
-        'member_added',
-        `${session.user.name} added ${userBeingAdded.name} to the group.`
+        "member_added",
+        `${session.user.name} added ${userBeingAdded.name} to the group.`,
+        session.user.id
       );
     }
 
