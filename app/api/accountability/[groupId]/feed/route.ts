@@ -16,8 +16,7 @@ export async function GET(
   { params }: { params: { groupId: string } }
 ) {
   try {
-    const { groupId } = params;
-
+    const { groupId } = await params;
     const activities = await prisma.activityFeedItem.findMany({
       where: { groupId },
       orderBy: { createdAt: "desc" },

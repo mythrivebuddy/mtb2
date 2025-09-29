@@ -41,49 +41,59 @@ export async function POST(req: Request) {
     let goal;
     const dataToUpdate = { [field]: value };
     const uniqueGoalIdentifier = {
-      memberId_cycleId: {
-        memberId: memberRecord.id,
+      authorId_cycleId: {
+        authorId: memberRecord.userId,
         cycleId: cycleId,
       },
     };
-
-    // If we are setting the main goal text, we can create it if it doesn't exist.
-    if (field === 'text') {
-        goal = await prisma.goal.upsert({
-            where: uniqueGoalIdentifier,
-            update: dataToUpdate,
-            create: {
-                text: value, // Ensure the required 'text' field is present on create
-                memberId: memberRecord.id,
-                groupId: groupId,
-                cycleId: cycleId,
-            },
-        });
+    
+    if (field === "text") {
+      goal = await prisma.goal.upsert({
+        where: uniqueGoalIdentifier,
+        update: dataToUpdate,
+        create: {
+          text: value,
+          authorId: memberRecord.userId,
+          groupId: groupId,
+          cycleId: cycleId,
+          status: "IN_PROGRESS",
+        },
+      });
     } else {
-        // For progress updates (midway, end, status), we should only UPDATE an existing goal.
-        goal = await prisma.goal.update({
-            where: uniqueGoalIdentifier,
-            data: dataToUpdate,
-        });
+      goal = await prisma.goal.update({
+        where: uniqueGoalIdentifier,
+        data: dataToUpdate,
+      });
     }
 
-    if (field === 'text') {
-        await logActivity(groupId, 'goal_updated', `${session.user.name} updated their goal.`);
+    if (field === "text") {
+      // FIX: Add currentUserId as the first argument
+      await logActivity(
+        currentUserId,
+        groupId,
+        "goal_updated",
+        `${session.user.name} updated their goal.`
+      );
     }
-    if (field === 'status') {
-        await logActivity(groupId, 'status_updated', `${session.user.name}'s status was updated to "${value}".`);
+    if (field === "status") {
+      // FIX: Add currentUserId as the first argument
+      await logActivity(
+        currentUserId,
+        groupId,
+        "status_updated",
+        `${session.user.name}'s status was updated to "${value}".`
+      );
     }
 
     return NextResponse.json(goal);
   } catch (error) {
-    // This specifically catches the error if .update() fails because the goal doesn't exist
-    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
-         return NextResponse.json(
-            { error: "You must set a main goal before adding progress updates." },
-            { status: 400 }
-        );
+    if (error instanceof Error && "code" in error && error.code === "P2025") {
+      return NextResponse.json(
+        { error: "You must set a main goal before adding progress updates." },
+        { status: 400 }
+      );
     }
-    
+
     console.error(`[GOAL_UPDATE_ERROR]`, error);
     return NextResponse.json(
       { error: "Something went wrong" },
