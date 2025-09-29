@@ -26,7 +26,6 @@ export async function GET(
       );
     }
 
-    // First, verify the current user is actually a member of this group
     const userMembership = await prisma.groupMember.findFirst({
       where: {
         groupId: groupId,
@@ -35,13 +34,9 @@ export async function GET(
     });
 
     if (!userMembership) {
-      return NextResponse.json(
-        { error: "Forbidden" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     
-    // Fetch the active cycle for this group to get the right goals
     const activeCycle = await prisma.cycle.findFirst({
         where: {
             groupId: groupId,
@@ -50,8 +45,6 @@ export async function GET(
         orderBy: { startDate: 'desc' }
     });
 
-
-    // Now, fetch all members of the group and include their user details
     const members = await prisma.groupMember.findMany({
       where: {
         groupId: groupId,
@@ -64,7 +57,7 @@ export async function GET(
             image: true,
           },
         },
-        // Also include the goal for the current active cycle
+        // This now correctly matches the schema
         goals: {
             where: {
                 cycleId: activeCycle?.id
