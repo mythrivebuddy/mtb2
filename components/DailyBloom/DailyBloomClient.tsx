@@ -485,7 +485,7 @@ export default function DailyBloomClient() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={() => setAddData(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Daily Bloom
