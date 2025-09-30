@@ -491,7 +491,7 @@ export default function DailyBloomClient() {
                 Add Daily Bloom
               </Button>
               <Button onClick={() => setCalendarOpen(true)}>
-                <CalendarIcon className="mr-4 h-2 w-2" />
+                <CalendarIcon className="mr-2 h-4 w-2" />
                 View My Calendar
               </Button>
             </div>

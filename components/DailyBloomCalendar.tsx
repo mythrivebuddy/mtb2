@@ -1,8 +1,3 @@
-//components/DailyBloomCalendar.tsx
-//check
-
-// check for Version Control
-
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -584,7 +579,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       const response = await fetch("/api/events", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id, isCompleted: true }),
+        body: JSON.stringify({ id: id.replace(/^event-/, ""), isCompleted: true }),
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -754,12 +749,23 @@ const DailyBloomCalendar: React.FC<Props> = ({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            id: event.id,
+            id: event.id.replace(/^event-/, ""),
             start: event.startStr,
             end: event.endStr || null,
           }),
         });
         if (!response.ok) throw new Error("Failed to update event drop");
+        // --- ADD THIS BLOCK ---
+        // Notify the parent component so the DailyBloomList can update
+        if (onUpdateBloomFromEvent) {
+          onUpdateBloomFromEvent({
+            id: info.event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
+            updatedData: {
+              dueDate: info.event.startStr,
+            },
+          });
+        }
+        // --- END ADD ---
       } catch (err) {
         console.error("Error updating event drop:", err);
         info.revert();
@@ -779,12 +785,23 @@ const DailyBloomCalendar: React.FC<Props> = ({
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            id: event.id,
+            id: event.id.replace(/^event-/, ""),
             start: event.startStr,
             end: event.endStr,
           }),
         });
         if (!response.ok) throw new Error("Failed to update event resize");
+         // --- ADD THIS BLOCK ---
+        // Notify the parent component so the DailyBloomList can update
+        if (onUpdateBloomFromEvent) {
+          onUpdateBloomFromEvent({
+            id: info.event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
+            updatedData: {
+              dueDate: info.event.startStr,
+            },
+          });
+        }
+        // --- END ADD ---
       } catch (err) {
         console.error("Error updating event resize:", err);
         info.revert();
@@ -793,7 +810,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
         resizeDebounceRef.current = null;
       }
     }, 300);
-  }, []);
+  }, [onUpdateBloomFromEvent] // Add prop to dependency array]
+  );
 
   const eventContent = useCallback((arg: EventContentArg) => {
     const ext = arg.event.extendedProps as EventExtendedProps;
@@ -934,38 +952,38 @@ const DailyBloomCalendar: React.FC<Props> = ({
       <div className="fc-theme">
         <style>
           {`
-            /* --- CHANGE: Custom styles for FullCalendar toolbar buttons --- */
+            /* --- CHANGE: Custom styles for FullCalendar toolbar buttons --- */
 
-            /* Default state for all primary buttons (Month, Week, Day, Today, Arrows) */
-            .fc-theme .fc-button-primary {
-              background-color: #f1f5f9; /* slate-100 */
-              border-color: #cbd5e1; /* slate-300 */
-              color: #1e293b; /* slate-800 */
-              transition: background-color 0.2s, border-color 0.2s;
-            }
+            /* Default state for all primary buttons (Month, Week, Day, Today, Arrows) */
+            .fc-theme .fc-button-primary {
+              background-color: #f1f5f9; /* slate-100 */
+              border-color: #cbd5e1; /* slate-300 */
+              color: #1e293b; /* slate-800 */
+              transition: background-color 0.2s, border-color 0.2s;
+            }
 
-            /* Hover state for buttons */
-            .fc-theme .fc-button-primary:hover {
-              background-color: #e2e8f0; /* slate-200 */
-              border-color: #94a3b8; /* slate-400 */
-            }
+            /* Hover state for buttons */
+            .fc-theme .fc-button-primary:hover {
+              background-color: #e2e8f0; /* slate-200 */
+              border-color: #94a3b8; /* slate-400 */
+            }
 
-            /* Active state for view-switcher buttons (Month, Week, etc.) */
-            .fc-theme .fc-button-primary.fc-button-active,
-            .fc-theme .fc-button-primary.fc-button-active:hover {
-              background-color: #475569; /* slate-600 */
-              border-color: #475569; /* slate-600 */
-              color: #ffffff;
-            }
+            /* Active state for view-switcher buttons (Month, Week, etc.) */
+            .fc-theme .fc-button-primary.fc-button-active,
+            .fc-theme .fc-button-primary.fc-button-active:hover {
+              background-color: #475569; /* slate-600 */
+              border-color: #475569; /* slate-600 */
+              color: #ffffff;
+            }
 
-            /* --- FIX: Make "Today" button always visible --- */
-            .fc-theme .fc-today-button.fc-button:disabled {
-              background-color: #f1f5f9; /* Same as default */
-              border-color: #cbd5e1;   /* Same as default */
-              color: #1e293b;        /* Same as default */
-              opacity: 1;             /* Remove faded look */
-            }
-          `}
+            /* --- FIX: Make "Today" button always visible --- */
+            .fc-theme .fc-today-button.fc-button:disabled {
+              background-color: #f1f5f9; /* Same as default */
+              border-color: #cbd5e1;   /* Same as default */
+              color: #1e293b;        /* Same as default */
+              opacity: 1;             /* Remove faded look */
+            }
+          `}
         </style>
         {isLoading ? (
           <SkeletonLoader />
@@ -979,8 +997,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
               center: "title",
               right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
             }}
-            // --- CHANGE: Use the main 'events' state directly ---
-            events={events}
+            // --- CHANGE: Filter out 'Blooms' to only show 'Events' on the calendar ---
+            events={events.filter((event) => !event.extendedProps?.isBloom)}
             editable={true}
             selectable={true}
             dayMaxEvents={true}
@@ -1012,7 +1030,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
               setCurrentEvent({
                 id: `tmp-${Date.now()}`,
                 title: "",
-                start,
+                start: start,
                 end: undefined,
                 allDay: true,
                 color: "#4dabf7",
@@ -1094,6 +1112,3 @@ const DailyBloomCalendar: React.FC<Props> = ({
 };
 
 export default DailyBloomCalendar;
-
-//check 
-//check for Commitnidndnonosfnfosbodnjofnodsjffubdsjbvonkjvkbskbvj
