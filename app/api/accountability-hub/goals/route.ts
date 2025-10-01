@@ -1,9 +1,8 @@
 // app/api/accountability-hub/goals/route.ts
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { logActivity } from "@/lib/activity-logger";
 
 export async function POST(req: Request) {
   try {
@@ -40,43 +39,37 @@ export async function POST(req: Request) {
 
     let goal;
     const dataToUpdate = { [field]: value };
+    
+    // --- THIS IS THE FIX ---
+    // The unique identifier for a Goal is 'memberId_cycleId', not 'authorId_cycleId'.
     const uniqueGoalIdentifier = {
       memberId_cycleId: {
         memberId: memberRecord.id,
         cycleId: cycleId,
       },
     };
+    // -----------------------
 
-    // If we are setting the main goal text, we can create it if it doesn't exist.
     if (field === 'text') {
         goal = await prisma.goal.upsert({
             where: uniqueGoalIdentifier,
             update: dataToUpdate,
             create: {
-                text: value, // Ensure the required 'text' field is present on create
+                text: value,
                 memberId: memberRecord.id,
                 groupId: groupId,
                 cycleId: cycleId,
             },
         });
     } else {
-        // For progress updates (midway, end, status), we should only UPDATE an existing goal.
         goal = await prisma.goal.update({
             where: uniqueGoalIdentifier,
             data: dataToUpdate,
         });
     }
 
-    if (field === 'text') {
-        await logActivity(groupId, 'goal_updated', `${session.user.name} updated their goal.`);
-    }
-    if (field === 'status') {
-        await logActivity(groupId, 'status_updated', `${session.user.name}'s status was updated to "${value}".`);
-    }
-
     return NextResponse.json(goal);
   } catch (error) {
-    // This specifically catches the error if .update() fails because the goal doesn't exist
     if (error instanceof Error && 'code' in error && error.code === 'P2025') {
          return NextResponse.json(
             { error: "You must set a main goal before adding progress updates." },

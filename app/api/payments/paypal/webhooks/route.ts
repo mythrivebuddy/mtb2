@@ -42,43 +42,104 @@ async function verifyWebhook(req: NextRequest, body: string) {
   return verification.verification_status === "SUCCESS";
 }
 
-export async function POST(req: NextRequest) {
-  // 1. Read raw body for signature verification
-  const body = await req.text();
+// export async function POST(req: NextRequest) {
+//   // 1. Read raw body for signature verification
+//   const body = await req.text();
 
-  // 2. Verify signature
+//   // 2. Verify signature
+//   const isValid = await verifyWebhook(req, body);
+//   if (!isValid) {
+//     return NextResponse.json(
+//       { error: "Invalid webhook signature" },
+//       { status: 400 }
+//     );
+//   }
+
+//   // 3. Parse event
+//   const event = JSON.parse(body);
+//   const { event_type, resource } = event;
+
+//   // 4. Handle events
+//   switch (event_type) {
+//     case "BILLING.SUBSCRIPTION.CREATED":
+//     case "BILLING.SUBSCRIPTION.ACTIVATED":
+//       await prisma.user.update({
+//         where: { subscriptionId: resource.id },
+//         data: { subscriptionStatus: "ACTIVE" },
+//       });
+//       break;
+
+//     case "BILLING.SUBSCRIPTION.CANCELLED":
+//     case "BILLING.SUBSCRIPTION.SUSPENDED":
+//       await prisma.user.update({
+//         where: { subscriptionId: resource.id },
+//         data: {
+//           subscriptionStatus:
+//             event_type === "CANCELLED" ? "CANCELLED" : "SUSPENDED",
+//         },
+//       });
+//       break;
+
+export async function POST(req: NextRequest) {
+  const body = await req.text();
   const isValid = await verifyWebhook(req, body);
   if (!isValid) {
-    return NextResponse.json(
-      { error: "Invalid webhook signature" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
   }
 
-  // 3. Parse event
   const event = JSON.parse(body);
   const { event_type, resource } = event;
 
-  // 4. Handle events
   switch (event_type) {
-    case "BILLING.SUBSCRIPTION.CREATED":
-    case "BILLING.SUBSCRIPTION.ACTIVATED":
-      await prisma.user.update({
-        where: { subscriptionId: resource.id },
-        data: { subscriptionStatus: "ACTIVE" },
+    case "BILLING.SUBSCRIPTION.ACTIVATED": {
+      const paypalPlanId = resource.plan_id;
+      const userSubscriptionId = resource.id;
+
+      if (!paypalPlanId) {
+        console.error("❌ Webhook Error: No plan_id found in subscription resource.");
+        break; // Exit without crashing
+      }
+
+      // 1. Find your internal plan using the PayPal ID
+      const plan = await prisma.plan.findUnique({
+        where: { paypalPlanId: paypalPlanId },
       });
+
+      if (!plan) {
+        console.error(`❌ Webhook Error: Plan with paypalPlanId ${paypalPlanId} not found in DB.`);
+        break;
+      }
+
+      // 2. Update the user record with all necessary fields
+      await prisma.user.update({
+        where: { subscriptionId: userSubscriptionId },
+        data: {
+          membership: "PREMIUM", // Or a more descriptive name
+          subscriptionStatus: "ACTIVE",
+          planId: plan.id, // Link to your internal plan
+          challenge_limit: 5, // << SET THE PAID USER LIMIT HERE
+        },
+      });
+
+      console.log(`✅ User with subscription ${userSubscriptionId} upgraded to ${plan.name}. Challenge limit set to 5.`);
       break;
+    }
 
     case "BILLING.SUBSCRIPTION.CANCELLED":
-    case "BILLING.SUBSCRIPTION.SUSPENDED":
+    case "BILLING.SUBSCRIPTION.SUSPENDED": {
       await prisma.user.update({
         where: { subscriptionId: resource.id },
         data: {
-          subscriptionStatus:
-            event_type === "CANCELLED" ? "CANCELLED" : "SUSPENDED",
+          membership: "FREE", // Revert user back to FREE
+          subscriptionStatus: event_type === "BILLING.SUBSCRIPTION.CANCELLED" ? "CANCELLED" : "SUSPENDED",
+          planId: null, // Disconnect the plan
+          challenge_limit: 1, // << RESET THE LIMIT TO THE DEFAULT
         },
       });
+      console.log(`ℹ️ User with subscription ${resource.id} status updated. Membership reverted to FREE and challenge limit set to 1.`);
       break;
+    }
+
 
     case "PAYMENT.SALE.COMPLETED":
       // resource.billing_agreement_id holds the subscriptionId

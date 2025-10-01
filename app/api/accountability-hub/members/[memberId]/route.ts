@@ -14,51 +14,52 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { memberId } = await params;
+    const { memberId } = params;
     const { searchParams } = new URL(_req.url);
     const groupId = searchParams.get("groupId");
 
     if (!groupId) {
       return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
     }
-
+    
+    // Security check: Ensure the user requesting the data is a member of the same group.
     const requesterMembership = await prisma.groupMember.findFirst({
-      where: { userId: session.user.id, groupId: groupId },
+        where: { userId: session.user.id, groupId: groupId }
     });
     if (!requesterMembership) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // --- THIS IS THE CORRECTED QUERY ---
+    // We fetch the GroupMember and include its direct relations: 'user' and 'goals'.
     const memberDetails = await prisma.groupMember.findUnique({
       where: { id: memberId },
       include: {
-        user: true,
-        group: { select: { name: true } },
-        goals: {
-          orderBy: { cycle: { startDate: "desc" } },
+        user: true, // Includes the full user profile (name, image, etc.)
+        group: { select: { name: true } }, // Gets the group's name
+        goals: { // Gets the goals directly related to this GroupMember
+          orderBy: { cycle: { startDate: 'desc' } }, // Show newest cycle's goals first
           include: {
             cycle: { select: { startDate: true, endDate: true } },
-            comments: {
-              include: { author: { select: { name: true, image: true } } },
-              orderBy: { createdAt: 'asc' }
-            },
-          },
+            comments: { // Pre-fetch comments for the goals
+                include: { author: { select: { name: true, image: true }}},
+                orderBy: { createdAt: 'asc' }
+            }
+          }
         },
       },
     });
+    // ------------------------------------
 
     if (!memberDetails) {
       return NextResponse.json({ error: "Member not found" }, { status: 404 });
     }
-    
-    // --- THIS IS THE FIX ---
-    // Create a new object containing all memberDetails, plus the requester's role.
-    // This is type-safe and avoids using `any`.
+
+    // Add the requester's role to the response for the frontend
     const responseData = {
       ...memberDetails,
       requesterRole: requesterMembership.role,
     };
-    // ----------------------
 
     return NextResponse.json(responseData);
   } catch (error) {

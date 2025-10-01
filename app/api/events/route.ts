@@ -1,3 +1,5 @@
+// app/api/events/route.ts
+
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
@@ -9,8 +11,11 @@ export const dynamic = "force-dynamic";
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+console.log("🔑 SUPABASE KEY BEING USED (starts with):", SUPABASE_SERVICE_ROLE_KEY?.substring(0, 8));
+
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("❌ CRITICAL: Supabase server environment variables are missing.");
+  // This will cause the server to fail to start, which is good.
   throw new Error(
     "Supabase server environment variables missing. Make sure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set."
   );
@@ -19,32 +24,41 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 // Supabase admin client (server-only)
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Helper function to check service role key
-async function testSupabaseKey() {
-  const { data, error } = await supabaseAdmin.from("Event").select("*").limit(1);
+// Helper function to check service role key. Throws the actual Supabase error.
+async function validateSupabaseConnection() {
+  const { error } = await supabaseAdmin.from("Event").select("id").limit(1);
   if (error) {
-    console.error("❌ Supabase test query failed:", error.message);
-    throw new Error("Supabase service key invalid or table 'Event' missing.");
+    console.error("❌ Supabase connection test failed:", error);
+    // Throw the original, more descriptive error from Supabase
+    throw error;
   }
-  return data;
 }
 
 // Validate UUID
 const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
+// This interface should match the database column names (snake_case)
 interface EventBody {
   id?: string;
   title?: string;
   start?: string;
   end?: string | null;
   description?: string;
-  isBloom?: boolean;
-  isCompleted?: boolean;
-  allDay?: boolean;
+  is_bloom?: boolean;
+  is_completed?: boolean;
+  all_day?: boolean;
 }
 
 // Helper to safely extract error message
 function getErrorMessage(error: unknown): string {
+    // If it's a Supabase error object, provide more detail
+    if (error && typeof error === 'object') {
+        if ('message' in error) {
+            let msg = String(error.message);
+            if ('hint' in error) msg += ` (Hint: ${error.hint})`;
+            return msg;
+        }
+    }
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
   return "An unknown error occurred";
@@ -54,11 +68,9 @@ function getErrorMessage(error: unknown): string {
 export async function GET() {
   console.log("🚀 GET /api/events :: Function called");
   try {
-    await testSupabaseKey();
+    await validateSupabaseConnection();
 
     const session = await getServerSession(authOptions);
-    console.log("GET /api/events :: Session:", session);
-
     if (!session?.user?.id) {
       console.warn("GET /api/events :: Unauthorized access attempt.");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -80,8 +92,9 @@ export async function GET() {
       headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
     });
   } catch (error: unknown) {
-    console.error("❌ GET /api/events :: Caught an exception:", getErrorMessage(error));
-    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
+    const errorMessage = getErrorMessage(error);
+    console.error("❌ GET /api/events :: Caught an exception:", errorMessage);
+    return NextResponse.json({ success: false, message: errorMessage }, { status: 500 });
   }
 }
 
@@ -89,46 +102,43 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   console.log("🚀 POST /api/events :: Function called");
   try {
+    await validateSupabaseConnection();
     const session = await getServerSession(authOptions);
-    console.log("POST /api/events :: Session:", session);
-
     if (!session?.user?.id) {
       console.warn("POST /api/events :: Unauthorized access attempt.");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+    // Expect the body to use snake_case to match DB
     const body: EventBody = await req.json();
     console.log("POST /api/events :: Request Body:", body);
 
-    const { title, start, end, description, isBloom, isCompleted, allDay } = body;
+    const { title, start, end, description, is_bloom, is_completed, all_day } = body;
 
     if (!title || !start) {
-      console.warn("POST /api/events :: Missing required fields 'title' or 'start'.");
       return NextResponse.json({ message: "Missing required fields: title and start are required." }, { status: 400 });
     }
 
     const startDate = new Date(start);
     if (isNaN(startDate.getTime())) {
-      console.error("POST /api/events :: Invalid 'start' date received:", start);
       return NextResponse.json({ message: `Invalid start date format provided: ${start}` }, { status: 400 });
     }
 
-    const formattedStart = startDate.toISOString();
-    const formattedEnd = end ? new Date(end).toISOString() : null;
+    const eventToInsert = {
+        title,
+        start: startDate.toISOString(),
+        end: end ? new Date(end).toISOString() : null,
+        description: description,
+        is_bloom: is_bloom,
+        is_completed: is_completed,
+        all_day: all_day,
+        userId: session.user.id,
+        updatedAt: new Date().toISOString(),
+    };
 
     const { data: newEvent, error } = await supabaseAdmin
       .from("Event")
-      .insert({
-        title,
-        start: formattedStart,
-        end: formattedEnd,
-        description,
-        isbloom: isBloom, // Mapped to lowercase DB column
-        iscompleted: isCompleted, // Mapped to lowercase DB column
-        allDay,
-        userId: session.user.id,
-        updatedAt: new Date().toISOString(),
-      })
+      .insert(eventToInsert)
       .select()
       .single();
 
@@ -139,27 +149,10 @@ export async function POST(req: NextRequest) {
 
     console.log("POST /api/events :: Successfully created event:", newEvent);
     return NextResponse.json({ success: true, data: newEvent }, { status: 201 });
-  } catch (error: unknown) { // FIXED: Changed to 'unknown' for type safety
-    console.error("❌ POST /api/events :: Caught an exception:", error);
-    
-    // Safely extract error details for debugging
-    const responseDetails: { [key: string]: unknown } = {
-        message: 'An unknown error occurred'
-    };
-
-    if (error && typeof error === 'object') {
-        if ('message' in error) responseDetails.message = error.message;
-        if ('code' in error) responseDetails.code = error.code;
-        if ('details' in error) responseDetails.details = error.details;
-        if ('hint' in error) responseDetails.hint = error.hint;
-        if (error instanceof Error && error.stack) responseDetails.stack = error.stack;
-    }
-
-    return NextResponse.json({ 
-        success: false, 
-        message: "A server error occurred. See details.",
-        details: responseDetails
-    }, { status: 500 });
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+    console.error("❌ POST /api/events :: Caught an exception:", errorMessage);
+    return NextResponse.json({ success: false, message: errorMessage }, { status: 500 });
   }
 }
 
@@ -167,62 +160,38 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   console.log("🚀 PATCH /api/events :: Function called");
   try {
+    await validateSupabaseConnection();
     const session = await getServerSession(authOptions);
-    console.log("PATCH /api/events :: Session:", session);
-
     if (!session?.user?.id) {
-      console.warn("PATCH /api/events :: Unauthorized access attempt.");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const body: EventBody = await req.json();
     console.log("PATCH /api/events :: Request Body:", body);
-    
     const { id, ...updateData } = body;
 
-    if (!id || !uuidRegex.test(id)) {
-      console.warn("PATCH /api/events :: Invalid or missing Event ID.");
-      return NextResponse.json({ message: "A valid Event ID is required" }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ message: "An Event ID is required" }, { status: 400 });
+    }
+    if (!uuidRegex.test(id)) {
+        return NextResponse.json({ message: `Invalid Event ID format: ${id}` }, { status: 400 });
     }
     
-    const finalUpdateData: Partial<EventBody> = { ...updateData };
+    // Create a final object to avoid mutating the original
+    const finalUpdateData = { ...updateData };
 
     if (finalUpdateData.start) {
-        const startDate = new Date(finalUpdateData.start);
-        if (isNaN(startDate.getTime())) {
-            console.error("PATCH /api/events :: Invalid 'start' date received for update:", finalUpdateData.start);
-            return NextResponse.json({ message: `Invalid start date format provided: ${finalUpdateData.start}` }, { status: 400 });
-        }
-        finalUpdateData.start = startDate.toISOString();
+        finalUpdateData.start = new Date(finalUpdateData.start).toISOString();
     }
-
     if (finalUpdateData.end) {
-        const endDate = new Date(finalUpdateData.end);
-        if (isNaN(endDate.getTime())) {
-            console.error("PATCH /api/events :: Invalid 'end' date received for update:", finalUpdateData.end);
-            return NextResponse.json({ message: `Invalid end date format provided: ${finalUpdateData.end}` }, { status: 400 });
-        }
-        finalUpdateData.end = endDate.toISOString();
-    } else if (finalUpdateData.end === '' || finalUpdateData.end === null || finalUpdateData.end === undefined) {
+        finalUpdateData.end = new Date(finalUpdateData.end).toISOString();
+    } else if (finalUpdateData.hasOwnProperty('end')) { // handles setting end to null
         finalUpdateData.end = null;
     }
-    
-    // Remap camelCase keys to lowercase for the database
-    const dbUpdateData: { [key: string]: string | boolean | null | undefined } = { ...finalUpdateData };
-    if (dbUpdateData.hasOwnProperty('isBloom')) {
-        dbUpdateData.isbloom = dbUpdateData.isBloom;
-        delete dbUpdateData.isBloom;
-    }
-    if (dbUpdateData.hasOwnProperty('isCompleted')) {
-        dbUpdateData.iscompleted = dbUpdateData.isCompleted;
-        delete dbUpdateData.isCompleted;
-    }
-
-    console.log("PATCH /api/events :: Processed and mapped update data:", dbUpdateData);
 
     const { data: updatedEvent, error } = await supabaseAdmin
       .from("Event")
-      .update({ ...dbUpdateData, updatedAt: new Date().toISOString() })
+      .update({ ...finalUpdateData, updatedAt: new Date().toISOString() })
       .eq("id", id)
       .eq("userId", session.user.id)
       .select()
@@ -233,15 +202,15 @@ export async function PATCH(req: NextRequest) {
       throw error;
     }
     if (!updatedEvent) {
-      console.warn(`PATCH /api/events :: Event with ID ${id} not found for user ${session.user.id}.`);
       return NextResponse.json({ message: "Event not found or permission denied" }, { status: 404 });
     }
-    
+
     console.log("PATCH /api/events :: Successfully updated event:", updatedEvent);
     return NextResponse.json({ success: true, data: updatedEvent }, { status: 200 });
   } catch (error: unknown) {
-    console.error("❌ PATCH /api/events :: Caught an exception:", getErrorMessage(error));
-    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
+    const errorMessage = getErrorMessage(error);
+    console.error("❌ PATCH /api/events :: Caught an exception:", errorMessage);
+    return NextResponse.json({ success: false, message: errorMessage }, { status: 500 });
   }
 }
 
@@ -249,39 +218,36 @@ export async function PATCH(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   console.log("🚀 DELETE /api/events :: Function called");
   try {
+    await validateSupabaseConnection();
     const session = await getServerSession(authOptions);
-    console.log("DELETE /api/events :: Session:", session);
-
     if (!session?.user?.id) {
-      console.warn("DELETE /api/events :: Unauthorized access attempt.");
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const body: { id?: string } = await req.json();
-    console.log("DELETE /api/events :: Request Body:", body);
-    const { id } = body;
-
-    if (!id || !uuidRegex.test(id)) {
-      console.warn("DELETE /api/events :: Invalid or missing Event ID.");
-      return NextResponse.json({ message: "A valid Event ID is required" }, { status: 400 });
+    const { id } = await req.json();
+    if (!id) {
+      return NextResponse.json({ message: "An Event ID is required" }, { status: 400 });
+    }
+    if (!uuidRegex.test(id)) {
+        return NextResponse.json({ message: `Invalid Event ID format: ${id}` }, { status: 400 });
     }
 
-    const { error: deleteError } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("Event")
       .delete()
       .eq("id", id)
       .eq("userId", session.user.id);
 
-    if (deleteError) {
-      console.error("DELETE /api/events :: Supabase delete error:", deleteError);
-      throw deleteError;
+    if (error) {
+      console.error("DELETE /api/events :: Supabase delete error:", error);
+      throw error;
     }
-    
+
     console.log(`DELETE /api/events :: Successfully deleted event with id: ${id}`);
     return NextResponse.json({ success: true, message: "Event deleted successfully" }, { status: 200 });
   } catch (error: unknown) {
-    console.error("❌ DELETE /api/events :: Caught an exception:", getErrorMessage(error));
-    return NextResponse.json({ success: false, message: getErrorMessage(error) }, { status: 500 });
+    const errorMessage = getErrorMessage(error);
+    console.error("❌ DELETE /api/events :: Caught an exception:", errorMessage);
+    return NextResponse.json({ success: false, message: errorMessage }, { status: 500 });
   }
 }
-

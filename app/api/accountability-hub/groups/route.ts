@@ -1,7 +1,7 @@
 // app/api/accountability-hub/groups/route.ts
 
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -12,21 +12,23 @@ import {
 } from "@prisma/client";
 import { logActivity } from "@/lib/activity-logger";
 
+// Type-safe mapping from form values to Prisma enums
 const visibilityMap: Record<string, Visibility> = {
   members_visible: Visibility.MEMBERS_CAN_SEE_GOALS,
-  admin_only: "ADMIN_ONLY" as Visibility,
+  admin_only: Visibility.ADMIN_ONLY,
 };
 
 const progressStageMap: Record<string, ProgressStage> = {
-  "2_stage": "TWO_STAGE" as ProgressStage,
-  "3_stage": "THREE_STAGE" as ProgressStage,
+  "2_stage": ProgressStage.TWO_STAGE,
+  "3_stage": ProgressStage.THREE_STAGE,
 };
 
 const notesPrivacyMap: Record<string, NotesPrivacy> = {
-  member_and_admin: "MEMBER_AND_ADMIN" as NotesPrivacy,
-  admin_only: "ADMIN_ONLY" as NotesPrivacy,
+  member_and_admin: NotesPrivacy.MEMBER_AND_ADMIN,
+  admin_only: NotesPrivacy.ADMIN_ONLY,
 };
 
+// --- POST function to create a new group ---
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -56,10 +58,10 @@ export async function POST(req: Request) {
         name: groupName,
         description: description,
         coachId: coachId,
-        visibility: visibilityMap[visibility],
-        progressStage: progressStageMap[stages],
-        notesPrivacy: notesPrivacyMap[notesPrivacy],
-        cycleDuration: CycleDuration.MONTHLY,
+        visibility: visibilityMap[visibility] || Visibility.MEMBERS_CAN_SEE_GOALS,
+        progressStage: progressStageMap[stages] || ProgressStage.THREE_STAGE,
+        notesPrivacy: notesPrivacyMap[notesPrivacy] || NotesPrivacy.MEMBER_AND_ADMIN,
+        cycleDuration: CycleDuration.MONTHLY, // Hardcoded as per your spec
         members: {
           create: {
             userId: coachId,
@@ -69,24 +71,18 @@ export async function POST(req: Request) {
         cycles: {
           create: {
             startDate: new Date(),
-            endDate: new Date(
-              new Date().getFullYear(),
-              new Date().getMonth() + 1,
-              0
-            ),
+            endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
             status: "active",
           },
         },
       },
     });
 
-     await logActivity(
+    await logActivity(
       newGroup.id,
-      'group_created',
+      "group_created",
       `The group "${newGroup.name}" was created.`
     );
-
-   
 
     return NextResponse.json(newGroup, { status: 201 });
   } catch (error) {
@@ -98,8 +94,7 @@ export async function POST(req: Request) {
   }
 }
 
-//This APi finds all groups where the current user is a member
-//It includes the current active cycle's dates and a count of all members in the group
+// --- GET function to fetch the user's groups ---
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -108,7 +103,6 @@ export async function GET() {
     }
     const userId = session.user.id;
 
-    // Find all groups where the current user is a member
     const groups = await prisma.group.findMany({
       where: {
         members: {
@@ -118,14 +112,12 @@ export async function GET() {
         },
       },
       include: {
-        //nudge
         members: {
           select: {
             userId: true,
             role: true,
           },
         },
-        // Include the current active cycle's dates
         cycles: {
           where: {
             status: "active",
@@ -135,7 +127,6 @@ export async function GET() {
           },
           take: 1,
         },
-        // Include a count of all members in the group
         _count: {
           select: { members: true },
         },

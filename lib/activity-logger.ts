@@ -1,8 +1,6 @@
-
 // lib/activity-logger.ts
 import { prisma } from "@/lib/prisma";
-import { supabaseClient } from "@/lib/supabaseClient"; 
-
+import { supabaseClient } from "@/lib/supabaseClient";
 
 // A mapping for icons based on activity type
 const iconMap = {
@@ -11,7 +9,7 @@ const iconMap = {
     goal_updated: "update",
     comment_posted: "comment",
     status_updated: "result",
-     cycle_started: "cycle",
+    cycle_started: "cycle",
 } as const;
 
 type ActivityType = keyof typeof iconMap;
@@ -35,12 +33,11 @@ export async function logActivity(
         // 2. Broadcast the new activity via Supabase for real-time updates
         const channel = supabaseClient.channel(`acc-group-${groupId}`);
         
-        // The payload should match the shape expected by the frontend hook
         const payload = {
             id: newActivity.id,
             icon: iconMap[type],
             title: newActivity.details,
-            time: "Just now", // Frontend will show this until next reload
+            time: "Just now",
         };
 
         await channel.send({
