@@ -170,7 +170,7 @@ export default function MemberDetailPage() {
                 className="bg-gray-900 text-white hover:bg-gray-800"
                 onClick={handleSendNudge}
                 disabled={isNudging}
-            >
+            >thisone
               {isNudging ? "Sending..." : "Send Nudge"}
             </Button>
         </div>

@@ -118,6 +118,13 @@ export async function GET() {
         },
       },
       include: {
+        //nudge
+        members: {
+          select: {
+            userId: true,
+            role: true,
+          },
+        },
         // Include the current active cycle's dates
         cycles: {
           where: {

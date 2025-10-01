@@ -1,4 +1,5 @@
 // app/api/accountability-hub/members/[memberId]/nudge/route.ts
+//This is the Api to send nudge notification to a member in an accountability group.
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";

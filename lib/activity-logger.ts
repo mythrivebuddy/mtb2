@@ -10,7 +10,8 @@ const iconMap = {
     member_added: "goal",
     goal_updated: "update",
     comment_posted: "comment",
-    status_updated: "result"
+    status_updated: "result",
+     cycle_started: "cycle",
 } as const;
 
 type ActivityType = keyof typeof iconMap;
