@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth"; 
 
 
 /**
@@ -144,36 +146,54 @@ export async function PUT(
 
 /**
  * Handles DELETE requests to remove a specific Daily Bloom entry.
- * Deletes a 'todo' item by its ID.
+ * Securely deletes a 'todo' item by its ID, ensuring user ownership.
  *
- * @param _req - The NextRequest object (unused in this DELETE handler).
+ * @param _req - The NextRequest object (unused).
  * @param params - An object containing route parameters, specifically Promise<{ id:string }>.
  * @returns A NextResponse indicating successful deletion or an error message.
  */
-
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = (await params).id
+    // 1. Authenticate the user
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
-    // Delete the 'todo' item from the database by its ID
-    await prisma?.todo.delete({
-      where: { id: id },
+    const id = (await params).id;
+    if (!id) {
+        return NextResponse.json({ message: "An item ID is required" }, { status: 400 });
+    }
+
+    // 2. Use `deleteMany` for robust deletion and check ownership
+    const deleteResult = await prisma.todo.deleteMany({
+      where: {
+        id: id,
+        userId: session.user.id, // IMPORTANT: Ensure the user owns this todo
+      },
     });
 
-    // Return a success message as a JSON response
-    return NextResponse.json({ message: "Deleted successfully" });
-  } catch (error: unknown) { //  FIXED: Changed 'any' to 'unknown'
+    // 3. Check if anything was actually deleted
+    if (deleteResult.count === 0) {
+      return NextResponse.json(
+        { message: "Daily Bloom item not found or permission denied" },
+        { status: 404 }
+      );
+    }
+
+    // 4. Return a success message
+    console.log(`DELETE /api/user/daily-bloom :: Successfully deleted todo with id: ${id}`);
+    return NextResponse.json({ message: "Deleted successfully" }, { status: 200 });
+
+  } catch (error: unknown) {
     let errorMessage = "Failed to delete";
     if (error instanceof Error) {
-        errorMessage = error.message;
+      errorMessage = error.message;
     }
     console.error("DELETE Error:", errorMessage);
-    // Return a 500 Internal Server Error response if deletion fails
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-
 }
-
