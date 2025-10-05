@@ -67,13 +67,22 @@ import DailyBloomCalendar from "@/components/DailyBloomCalendar";
 
 // Add this near your other imports at the top
 import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
+// FIX: Define a specific type for extendedProps
+interface CalendarEventExtendedProps {
+  isBloom?: boolean;
+  isCompleted?: boolean;
+  description?: string;
+  [key: string]: unknown; // Allows for other, unknown properties if necessary
+}
 
 // 1. DEFINE A TYPE FOR EVENTS
 interface CalendarEvent {
+  extendedProps: CalendarEventExtendedProps;
   id: string;
   title: string;
   start: string; // Keep as strings for FullCalendar
   end: string;
+
 }
 
 interface DailyBloom extends DailyBloomFormType {
@@ -391,62 +400,62 @@ export default function DailyBloomClient() {
     );
   };
 
-const handleUpdateBloomFromEvent = (payload: {
-  id: string; // This is the raw bloom ID from the calendar
-  updatedData: {
-    title?: string;
-    description?: string;
-    dueDate?: string; // This is the 'start' date from the calendar event as an ISO string
-  };
-}) => {
-  // 1. Attempt to find the original bloom in the parent's current state.
-  const originalBloom = dailyBloom.find((b) => b.id === payload.id);
+  const handleUpdateBloomFromEvent = (payload: {
+    id: string; // This is the raw bloom ID from the calendar
+    updatedData: {
+      title?: string;
+      description?: string;
+      dueDate?: string; // This is the 'start' date from the calendar event as an ISO string
+    };
+  }) => {
+    // 1. Attempt to find the original bloom in the parent's current state.
+    const originalBloom = dailyBloom.find((b) => b.id === payload.id);
 
-  // --- FIX START ---
-  // 2. Handle the case where the bloom is not found (due to a race condition).
-  if (!originalBloom) {
-    // Instead of erroring, log a warning and invalidate the query.
-    // The user's optimistic update in the calendar is already visually correct.
-    // This refetch will ensure the parent's state catches up to the database.
-    console.warn(
-      `Could not find bloom with id: ${payload.id} in local cache. This is likely a race condition after a create. Triggering a refetch to sync.`
-    );
-    queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-    return; // Exit the function gracefully.
-  }
-  // --- FIX END ---
-
-  // 3. If the bloom was found, proceed with the update as normal.
-  // Create the complete data object for the mutation.
-  const updatedBloomData: DailyBloomFormType = {
-    ...originalBloom,
-    title: payload.updatedData.title ?? originalBloom.title,
-    description:
-      payload.updatedData.description ?? originalBloom.description ?? "",
-    dueDate: payload.updatedData.dueDate
-      ? new Date(payload.updatedData.dueDate)
-      : originalBloom.dueDate
-      ? new Date(originalBloom.dueDate)
-      : new Date(),
-  };
-
-  // 4. Use the existing updateMutation to save the changes.
-  updateMutation.mutate(
-    { id: payload.id, updatedData: updatedBloomData },
-    {
-      onSuccess: () => {
-        toast.success("Bloom updated from calendar!");
-      },
-      // You can add an onError callback here if needed
-      onError: (error) => {
-        // Revert optimistic updates if the mutation fails
-        console.error("Failed to update bloom from calendar event:", error);
-        toast.error("Failed to sync calendar change.");
-        queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-      }
+    // --- FIX START ---
+    // 2. Handle the case where the bloom is not found (due to a race condition).
+    if (!originalBloom) {
+      // Instead of erroring, log a warning and invalidate the query.
+      // The user's optimistic update in the calendar is already visually correct.
+      // This refetch will ensure the parent's state catches up to the database.
+      console.warn(
+        `Could not find bloom with id: ${payload.id} in local cache. This is likely a race condition after a create. Triggering a refetch to sync.`
+      );
+      queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+      return; // Exit the function gracefully.
     }
-  );
-};
+    // --- FIX END ---
+
+    // 3. If the bloom was found, proceed with the update as normal.
+    // Create the complete data object for the mutation.
+    const updatedBloomData: DailyBloomFormType = {
+      ...originalBloom,
+      title: payload.updatedData.title ?? originalBloom.title,
+      description:
+        payload.updatedData.description ?? originalBloom.description ?? "",
+      dueDate: payload.updatedData.dueDate
+        ? new Date(payload.updatedData.dueDate)
+        : originalBloom.dueDate
+          ? new Date(originalBloom.dueDate)
+          : new Date(),
+    };
+
+    // 4. Use the existing updateMutation to save the changes.
+    updateMutation.mutate(
+      { id: payload.id, updatedData: updatedBloomData },
+      {
+        onSuccess: () => {
+          toast.success("Bloom updated from calendar!");
+        },
+        // You can add an onError callback here if needed
+        onError: (error) => {
+          // Revert optimistic updates if the mutation fails
+          console.error("Failed to update bloom from calendar event:", error);
+          toast.error("Failed to sync calendar change.");
+          queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
+        }
+      }
+    );
+  };
 
 
   const handleDeleteBloom = (bloomId: string) => {
@@ -497,33 +506,64 @@ const handleUpdateBloomFromEvent = (payload: {
     isFromEvent: b.isFromEvent ?? false,
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
-  // NEW: A memoized function to combine blooms and events
-  const combinedCalendarItems = useMemo(() => {
-    const bloomEvents = dailyBloom.map((bloom) => ({
-      id: `bloom-${bloom.id}`,
-      title: bloom.title,
-      start: bloom.dueDate ? new Date(bloom.dueDate).toISOString() : today,
-      allDay: true,
-      color: bloom.isCompleted ? "#a5d8ff" : "#4dabf7",
-      extendedProps: {
-        isBloom: true,
-        isCompleted: bloom.isCompleted,
-        description: bloom.description || undefined,
-      },
-    }));
+  // // Corrected logic for combining calendar items without duplication
+  // const combinedCalendarItems = useMemo(() => {
+  //   // 1. Get all Blooms from the primary 'dailyBloom' state
+  //   // This ensures that optimistically created/updated blooms are always shown correctly.
+  //   const bloomEvents = dailyBloom.map(bloom => ({
+  //     id: `bloom-${bloom.id}`,
+  //     title: bloom.title,
+  //     start: bloom.dueDate ? new Date(bloom.dueDate).toISOString() : today,
+  //     allDay: true,
+  //     color: bloom.isCompleted ? '#a5d8ff' : '#4dabf7', // Example colors
+  //     extendedProps: {
+  //       isBloom: true,
+  //       isCompleted: bloom.isCompleted,
+  //       description: bloom.description ?? undefined,
+  //     },
+  //   }));
 
-    const regularEvents = (events || []).map((event) => ({
-      ...event,
-      id: `event-${event.id}`,
-      color: "#2ecc71",
-      extendedProps: { isBloom: false },
-    }));
+  //   // 2. Filter the 'events' array to get ONLY regular events (non-blooms)
+  //   // This prevents the blooms fetched from /api/events from being added a second time.
+  //   const regularEvents = (events ?? [])
+  //     .filter(event => !event.extendedProps?.isBloom) // The key fix is here
+  //     .map(event => ({
+  //       ...event,
+  //       id: `event-${event.id}`,
+  //       color: '#2ecc71', // Example color for regular events
+  //       extendedProps: {
+  //         ...event.extendedProps,
+  //         isBloom: false
+  //       },
+  //     }));
 
-    return [...bloomEvents, ...regularEvents];
-  }, [dailyBloom, events, today]);
+  //   // 3. Create a Set of all bloom IDs that are already in the calendar
+  //   const bloomIds = new Set(bloomEvents.map(b => b.id));
 
-  console.log("events", events);
-  console.log(dailyBloom);
+  //   // 4. Combine the two arrays, ensuring no bloom is added twice
+  //   // This handles a rare edge case where a bloom might exist in 'events' but not yet in 'dailyBloom' state
+  //   const allItems = [...bloomEvents];
+  //   regularEvents.forEach(event => {
+  //     // A regular event might represent a bloom not yet in the client's bloom state
+  //     // This check prevents adding it if it's already there from the `dailyBloom` array
+  //     if (!bloomIds.has(event.id)) {
+  //       allItems.push({
+  //         ...event,
+  //         allDay: true, // Ensure allDay is present for type compatibility
+  //         extendedProps: {
+  //           ...event.extendedProps,
+  //           isCompleted: event.extendedProps?.isCompleted ?? false, // Always boolean
+  //           description: event.extendedProps?.description ?? undefined,
+  //           isBloom: false
+  //         },
+  //       });
+  //     }
+  //   });
+
+  //   return allItems;
+
+  // }, [dailyBloom, events, today]);
+
 
   return (
     <div>
@@ -1262,7 +1302,7 @@ const handleUpdateBloomFromEvent = (payload: {
             <div className="py-2 h-[70vh] overflow-auto">
               <DailyBloomCalendar
                 blooms={normalizedBlooms}
-                events={combinedCalendarItems}
+                events={events || []}
                 onCreateBloomFromEvent={handleCreateBloomFromEvent}
                 onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
                 onDeleteBloomFromEvent={handleDeleteBloom}
