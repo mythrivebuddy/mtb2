@@ -54,7 +54,6 @@ export async function GET() {
     return NextResponse.json(events, {
       headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
     });
-// ... inside the GET function in app/api/events/route.ts
 
 } catch (error: unknown) {
   const errorMessage = getErrorMessage(error);

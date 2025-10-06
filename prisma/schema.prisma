@@ -675,7 +675,7 @@ model Event {
   description String?
   isBloom     Boolean   @default(false) @map("is_bloom")
   isCompleted Boolean   @default(false) @map("is_completed")
-  allDay      Boolean   @default(false) @map("all_day") // <-- ADD THIS LINE
+  allDay      Boolean   @default(false) @map("all_day") 
 
   @@map("Event")
 }
