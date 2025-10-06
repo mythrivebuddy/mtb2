@@ -207,3 +207,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: false, message: "Failed to delete event." }, { status: 500 });
   }
 }
+// End of file
