@@ -54,11 +54,23 @@ export async function GET() {
     return NextResponse.json(events, {
       headers: { "Cache-Control": "no-store, max-age=0, must-revalidate" },
     });
-  } catch (error: unknown) {
-    const errorMessage = getErrorMessage(error);
-    console.error("❌ GET /api/events :: Caught an exception:", errorMessage);
-    return NextResponse.json({ success: false, message: "Failed to fetch events." }, { status: 500 });
-  }
+// ... inside the GET function in app/api/events/route.ts
+
+} catch (error: unknown) {
+  const errorMessage = getErrorMessage(error);
+  console.error("❌ GET /api/events :: Caught an exception:", errorMessage);
+
+  // Temporarily return the detailed error message for debugging
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Failed to fetch events.",
+      // Add a 'debugError' field to the response
+      debugError: errorMessage,
+    },
+    { status: 500 }
+  );
+}
 }
 
 /** POST: Create a new event */
