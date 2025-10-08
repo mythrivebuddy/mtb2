@@ -84,4 +84,4 @@ export async function GET(
     console.error(`[GET_CYCLE_REPORT_ERROR]`, error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
-}
+} 

@@ -12,16 +12,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
+ import { useToast } from "@/hooks/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+const REWARD_AMOUNT = 100;
+
+// --- THIS IS THE FIX ---
+// Define a specific type for the member object to avoid using 'any'
 type Member = {
   id: string;
   user: {
     name: string | null;
   };
 };
-
+// -----------------------
 
 export default function CycleReportPage() {
   const router = useRouter();
@@ -66,8 +71,8 @@ export default function CycleReportPage() {
         if (!response.ok) throw new Error(result.error || "Failed to send rewards.");
 
         toast({ title: "Success!", description: result.message });
-        setSelectedMembers(new Set()); // Clear selection
-        mutate(); // Re-fetch report data to show updated reward status if needed
+        setSelectedMembers(new Set());
+        mutate();
     } catch (err) {
         toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
     } finally {
@@ -129,23 +134,23 @@ export default function CycleReportPage() {
                 <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-amber-500"/> Reward Members with JoyPearls</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">Select members to reward for their participation in this cycle.</p>
-              <div className="space-y-2 mb-4">
-    {members.map((member: Member) => ( // <-- FIX #1
-        <div key={member.id} className="flex items-center justify-between p-3 rounded-md border has-[:checked]:bg-blue-50">
-           <label htmlFor={member.id} className="font-medium cursor-pointer">{member.user.name}</label>
-           <Checkbox id={member.id} checked={selectedMembers.has(member.id)} onCheckedChange={() => handleSelectMember(member.id)} />
-        </div>
-    ))}
-</div>
-<div className="flex gap-2">
-    <Button onClick={() => handleReward(Array.from(selectedMembers))} disabled={isRewarding}>
-        {isRewarding ? 'Rewarding...' : `Reward Selected (${selectedMembers.size})`}
-    </Button>
-    <Button variant="secondary" onClick={() => handleReward(members.map((m: Member) => m.id))} disabled={isRewarding}> {/* <-- FIX #2 */}
-        {isRewarding ? 'Rewarding...' : 'Reward All'}
-    </Button>
-</div>
+                <p className="text-sm text-muted-foreground mb-4">Select members to reward for their participation in this cycle. Each rewarded member will receive {REWARD_AMOUNT} JoyPearls.</p>
+                <div className="space-y-2 mb-4">
+                    {members.map((member: Member) => ( // <-- FIX #1
+                        <div key={member.id} className="flex items-center justify-between p-3 rounded-md border has-[:checked]:bg-blue-50">
+                           <label htmlFor={member.id} className="font-medium cursor-pointer">{member.user.name}</label>
+                           <Checkbox id={member.id} checked={selectedMembers.has(member.id)} onCheckedChange={() => handleSelectMember(member.id)} />
+                        </div>
+                    ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => handleReward(Array.from(selectedMembers))} disabled={isRewarding || selectedMembers.size === 0}>
+                        {isRewarding ? 'Rewarding...' : `Reward Selected (${selectedMembers.size})`}
+                    </Button>
+                    <Button variant="secondary" onClick={() => handleReward(members.map((m: Member) => m.id))} disabled={isRewarding}> {/* <-- FIX #2 */}
+                        {isRewarding ? 'Rewarding...' : `Reward All (${members.length})`}
+                    </Button>
+                </div>
             </CardContent>
         </Card>
       </section>
