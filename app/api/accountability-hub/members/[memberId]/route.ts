@@ -33,7 +33,7 @@ export async function GET(
     // --- THIS IS THE CORRECTED QUERY ---
     // We fetch the GroupMember and include its direct relations: 'user' and 'goals'.
     const memberDetails = await prisma.groupMember.findUnique({
-      where: { id: memberId },
+      where: { userId_groupId: { userId: memberId, groupId } },
       include: {
         user: true, // Includes the full user profile (name, image, etc.)
         group: { select: { name: true } }, // Gets the group's name

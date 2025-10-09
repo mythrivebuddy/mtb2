@@ -6,6 +6,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model User {
@@ -85,6 +86,8 @@ model User {
   enrollments                   ChallengeEnrollment[]
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
+    rewardsGiven   Reward[] @relation("AdminRewards")
+  rewardsReceived Reward[] @relation("MemberRewards")
 
   @@index([name])
 }
@@ -707,6 +710,7 @@ model GroupMember {
   role       GroupRole @default(MEMBER)
   group      Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user       User      @relation("AccountabilityMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  goals      Goal[]
 
   @@id([userId, groupId])
 }
@@ -721,39 +725,53 @@ model Cycle {
   groupId   String
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   goals     Goal[]
+  Reward    Reward[]
 
   @@index([groupId])
 }
 
 model Goal {
-  id               String             @id @default(cuid())
+  id               String           @id @default(cuid())
   text             String
   description      String?
-  isCompleted      Boolean            @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  isCompleted      Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
   midwayUpdate     String?
   endResult        String?
-  status           String             @default("IN_PROGRESS")
-  stage            ProgressStage      @default(NOT_STARTED)
-  authorId         String
-  groupId          String?
+  status           String           @default("IN_PROGRESS")
+  stage            ProgressStage    @default(NOT_STARTED)
+  
+  // These two fields replace the old authorId
+  authorId         String // This is the userId
+  groupId          String // This is the groupId
+  
   cycleId          String
   ActivityFeedItem ActivityFeedItem[]
   comments         Comment[]
-  User             User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  cycle            Cycle              @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  Group            Group?             @relation(fields: [groupId], references: [id])
+  
+  // This is the new relation to GroupMember
+  member           GroupMember      @relation(fields: [authorId, groupId], references: [userId, groupId], onDelete: Cascade)
+  
+  cycle            Cycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  // You can remove the direct relation to Group, as it's now accessible via member.group
+  // Group            Group?           @relation(fields: [groupId], references: [id])
+  
+  // You can also remove the old User relation
+  // User             User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@unique([authorId, cycleId])
   @@index([authorId])
+  Group Group[]
+  User User[]
 }
 
 model Comment {
   id               String             @id @default(cuid())
   content          String
   createdAt        DateTime           @default(now())
-  updatedAt        DateTime
+  updatedAt        DateTime           @updatedAt
   authorId         String
   goalId           String
   ActivityFeedItem ActivityFeedItem[]
@@ -781,7 +799,26 @@ model ActivityFeedItem {
   @@index([actorId])
   @@index([groupId, createdAt])
 }
+model Reward {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  jpAmount    Int
+  notes       String?
+
+  adminId     String
+  memberId    String
+  cycleId     String
+
+  admin       User     @relation("AdminRewards", fields: [adminId], references: [id])
+  member      User     @relation("MemberRewards", fields: [memberId], references: [id])
+  cycle       Cycle    @relation(fields: [cycleId], references: [id])
+
+  @@index([adminId])
+  @@index([memberId])
+  @@index([cycleId])
+}
 enum Audience {
   EVERYONE
   PAID

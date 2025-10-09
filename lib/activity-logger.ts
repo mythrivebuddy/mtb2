@@ -1,8 +1,9 @@
 // lib/activity-logger.ts
 import { prisma } from "@/lib/prisma";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { ActivityFeedType } from "@prisma/client";
 
-// A mapping for icons based on activity type
+// A mapping for icons based on activity type (keys are lowercase for convenience)
 const iconMap = {
     group_created: "cycle",
     member_added: "goal",
@@ -12,12 +13,24 @@ const iconMap = {
     cycle_started: "cycle",
 } as const;
 
-type ActivityType = keyof typeof iconMap;
+// Local type for function parameters, derived from our lowercase keys
+type ActivityLogType = keyof typeof iconMap;
 
+// ✅ FIX: A mapping from our convenient lowercase types to the required uppercase Prisma Enum types.
+const typeToEnumMap: Record<ActivityLogType, ActivityFeedType> = {
+    group_created: ActivityFeedType.GROUP_CREATED,
+    member_added: ActivityFeedType.USER_JOINED_GROUP, // Assuming this is the correct mapping
+    goal_updated: ActivityFeedType.GOAL_UPDATED,
+    comment_posted: ActivityFeedType.COMMENT_ADDED, // Assuming this is the correct mapping
+    status_updated: ActivityFeedType.STATUS_UPDATED,
+    cycle_started: ActivityFeedType.CYCLE_STARTED,
+};
 
 export async function logActivity(
     groupId: string,
-    type: ActivityType,
+    // ✅ FIX: Added the required 'actorId' parameter.
+    actorId: string,
+    type: ActivityLogType,
     details: string
 ) {
     try {
@@ -25,8 +38,11 @@ export async function logActivity(
         const newActivity = await prisma.activityFeedItem.create({
             data: {
                 groupId,
-                type,
-                details,
+                actorId, // Pass the actorId to the database
+                // ✅ FIX: Use the map to provide the correct uppercase enum value.
+                type: typeToEnumMap[type],
+                // Store details as a JSON object to match the schema
+                details: { message: details },
             },
         });
 
@@ -36,13 +52,14 @@ export async function logActivity(
         const payload = {
             id: newActivity.id,
             icon: iconMap[type],
-            title: newActivity.details,
+            // Extract the message from the details JSON
+            title: details,
             time: "Just now",
         };
 
         await channel.send({
             type: "broadcast",
-            event: "feed",
+            event: "new_activity", // Using a more specific event name
             payload,
         });
 

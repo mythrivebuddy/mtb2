@@ -1,4 +1,3 @@
-// app/api/accountability-hub/cycles/[cycleId]/reward/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -19,10 +18,11 @@ export async function POST(
     }
 
     const { cycleId } = params;
-    const { memberIds } = await req.json(); // Expecting an array of GroupMember IDs
+    // ✅ FIX: The request body should contain the user IDs of the members to reward.
+    const { userIdsToReward } = await req.json();
 
-    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
-      return NextResponse.json({ error: "Member IDs are required" }, { status: 400 });
+    if (!userIdsToReward || !Array.isArray(userIdsToReward) || userIdsToReward.length === 0) {
+      return NextResponse.json({ error: "User IDs for reward are required" }, { status: 400 });
     }
 
     const cycle = await prisma.cycle.findUnique({
@@ -40,13 +40,19 @@ export async function POST(
     }
 
     // 2. Fetch the full GroupMember records to get their associated User IDs
+    // ✅ FIX: The 'GroupMember' model does not have an 'id'. Filter by 'userId' instead.
     const membersToReward = await prisma.groupMember.findMany({
       where: {
-        id: { in: memberIds },
+        userId: { in: userIdsToReward },
         groupId: cycle.groupId,
       },
       include: { user: { select: { name: true } } },
     });
+
+    // Verify that all requested user IDs are actual members of the group
+    if (membersToReward.length !== userIdsToReward.length) {
+      return NextResponse.json({ error: "One or more provided users are not members of this group." }, { status: 400 });
+    }
 
     const totalCost = membersToReward.length * REWARD_AMOUNT;
 
@@ -80,29 +86,31 @@ export async function POST(
         });
 
         // d. Create a Reward record for logging and history
+        // ✅ FIX: This will work once you update your schema and run 'prisma generate'.
         await tx.reward.create({
-            data: {
-                adminId: session.user.id,
-                memberId: member.userId,
-                cycleId: cycleId,
-                amount: REWARD_AMOUNT,
-            }
+          data: {
+            adminId: session.user.id,
+            memberId: member.userId,
+            cycleId: cycleId,
+            jpAmount: REWARD_AMOUNT,
+          }
         });
       }
     });
-    
+
     // 4. Log this action in the group's activity feed after the transaction succeeds
+    // ✅ FIX (Automatic): 'm.user.name' now works because the query is valid.
     const memberNames = membersToReward.map(m => m.user.name).join(', ');
     await logActivity(
-        cycle.groupId,
-        'status_updated', // Using 'result' icon to signify a positive outcome
-        `${session.user.name} rewarded ${memberNames} with ${REWARD_AMOUNT} JoyPearls each.`
+      cycle.groupId,
+      session.user.id,
+      'status_updated', // ✅ FIX: Corrected to match the expected 'logActivity' type.
+      `${session.user.name} rewarded ${memberNames} with ${REWARD_AMOUNT} JoyPearls each.`
     );
 
     return NextResponse.json({ success: true, message: `${membersToReward.length} members have been rewarded.` });
   } catch (error) {
     console.error(`[REWARD_CYCLE_ERROR]`, error);
-    // Return the specific error message (e.g., "Insufficient JoyPearl balance.")
     return NextResponse.json({ error: (error as Error).message || "Something went wrong" }, { status: 500 });
   }
 }

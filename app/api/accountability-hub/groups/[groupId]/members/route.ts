@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import { Role } from "@prisma/client"; // <-- Import the Role enum
+import { GroupRole } from "@prisma/client";
 
 export async function GET(
   _req: Request,
@@ -46,7 +46,8 @@ export async function GET(
             where: { cycleId: activeCycle?.id }
         }
       },
-      orderBy: { joinedAt: 'asc' }
+      // ✅ FIX: The field is named 'assignedAt' in your schema, not 'joinedAt'.
+      orderBy: { assignedAt: 'asc' } 
     });
 
     return NextResponse.json(members);
@@ -77,7 +78,7 @@ export async function POST(
       where: {
         groupId: groupId,
         userId: session.user.id,
-        role: Role.ADMIN, // <-- FIX #1: Was "admin"
+        role: GroupRole.ADMIN, // Ensure you use the enum value
       },
     });
 
@@ -97,7 +98,8 @@ export async function POST(
       data: {
         userId: userIdToAdd,
         groupId: groupId,
-        role: Role.USER, // <-- FIX #2: Was "member", should be USER
+        assignedBy: session.user.id, // It's good practice to log who assigned the member
+        role: GroupRole.MEMBER, // Ensure you use the enum value
       },
     });
 
@@ -106,6 +108,7 @@ export async function POST(
     if (userBeingAdded) {
       await logActivity(
         groupId,
+        session.user.id,
         'member_added',
         `${session.user.name} added ${userBeingAdded.name} to the group.`
       );
