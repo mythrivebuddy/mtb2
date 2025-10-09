@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logActivity } from "@/lib/activity-logger";
 
 // GET handler to fetch all comments for a goal
 export async function GET(
@@ -41,7 +42,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -57,10 +58,10 @@ export async function POST(
 
     const newComment = await prisma.comment.create({
       data: {
-        text: text, // <-- THIS IS THE FIX (was 'content')
+        text: text,
         goalId: goalId,
         authorId: session.user.id,
-        updatedAt: new Date(),
+        // The incorrect 'updatedAt' field has been removed.
       },
       include: {
         author: {
@@ -68,13 +69,20 @@ export async function POST(
         },
       },
     });
+    
+    // Log the activity after successfully creating the comment
+    const goal = await prisma.goal.findUnique({ where: { id: goalId }, select: { groupId: true } });
+    if (goal) {
+      await logActivity(
+        goal.groupId,
+        'comment_posted',
+        `${session.user.name} posted a new comment.`
+      );
+    }
 
     return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
     console.error(`[POST_COMMENT]`, error);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
