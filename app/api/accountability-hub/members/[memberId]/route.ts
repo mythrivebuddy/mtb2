@@ -39,7 +39,7 @@ export async function GET(
         group: { select: { name: true } },
         user: { // 3. The 'goals' relation is on the User, so nest it here
           include: {
-            Goals: {
+            Goal: {
               orderBy: { cycle: { startDate: "desc" } },
               include: {
                 cycle: { select: { startDate: true, endDate: true } },

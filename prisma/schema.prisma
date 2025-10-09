@@ -46,7 +46,7 @@ model User {
   isFirstTimeSurvey             Boolean?              @default(true)
   lastSurveyTime                DateTime?
   challenge_limit               Int                   @default(1)
-  activity                      ActivityFeedItem[]    @relation("UserActivity")
+  ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
   blockedUsers                  BlockedUsers?
   buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
@@ -54,9 +54,9 @@ model User {
   BuddyLensReview               BuddyLensReview[]
   cart                          Cart[]
   comments                      Comment[]             @relation("UserComments")
-  Goals                         Goal[]                @relation("UserGoals")
+  Goal                          Goal[]
   coachedGroups                 Group[]               @relation("CoachedGroups")
-  createdGroups                 Group[]               @relation("CreatedGroups")
+  Group_Group_creatorIdToUser   Group[]               @relation("Group_creatorIdToUser")
   groupMemberships              GroupMember[]
   invoice                       Invoice[]
   magicBoxes                    MagicBox[]
@@ -664,78 +664,78 @@ model Announcement {
 }
 
 model Event {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title       String
-  start       DateTime
-  end         DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userId      String    @db.Uuid
-  description String?
-  isBloom     Boolean   @default(false) @map("is_bloom")
-  isCompleted Boolean   @default(false) @map("is_completed")
-  allDay      Boolean   @default(false) @map("all_day")
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String
+  start        DateTime
+  end          DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  userId       String    @db.Uuid
+  description  String?
+  is_bloom     Boolean   @default(false)
+  is_completed Boolean   @default(false)
+  all_day      Boolean   @default(false)
 
   @@map("Event")
 }
 
 model Goal {
-  id           String             @id @default(cuid())
-  text         String
-  description  String?
-  isCompleted  Boolean            @default(false)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  midwayUpdate String?
-  endResult    String?
-  status       String             @default("IN_PROGRESS")
-  stage        ProgressStage      @default(NOT_STARTED)
-  authorId     String
-  groupId      String?
-  cycleId      String
-  activity     ActivityFeedItem[] @relation("GoalActivity")
-  comments     Comment[]
-  author       User               @relation("UserGoals", fields: [authorId], references: [id], onDelete: Cascade)
-  cycle        Cycle              @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  group        Group?             @relation(fields: [groupId], references: [id])
+  id               String             @id @default(cuid())
+  text             String
+  description      String?
+  isCompleted      Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  midwayUpdate     String?
+  endResult        String?
+  status           String             @default("IN_PROGRESS")
+  stage            ProgressStage      @default(NOT_STARTED)
+  authorId         String
+  groupId          String?
+  cycleId          String
+  ActivityFeedItem ActivityFeedItem[]
+  comments         Comment[]
+  User             User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  cycle            Cycle              @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  Group            Group?             @relation(fields: [groupId], references: [id])
 
   @@unique([authorId, cycleId])
   @@index([authorId])
 }
 
 model Comment {
-  id        String             @id @default(cuid())
-  content   String
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  authorId  String
-  goalId    String
-  activity  ActivityFeedItem[] @relation("CommentActivity")
-  author    User               @relation("UserComments", fields: [authorId], references: [id], onDelete: Cascade)
-  goal      Goal               @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  id               String             @id @default(cuid())
+  content          String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime
+  authorId         String
+  goalId           String
+  ActivityFeedItem ActivityFeedItem[]
+  author           User               @relation("UserComments", fields: [authorId], references: [id], onDelete: Cascade)
+  goal             Goal               @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
   @@index([goalId])
 }
 
 model Group {
-  id            String             @id @default(cuid())
-  name          String
-  description   String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  visibility    Visibility         @default(PUBLIC)
-  creatorId     String
-  coachId       String?
-  progressStage ProgressStage      @default(NOT_STARTED)
-  notesPrivacy  NotesPrivacy       @default(VISIBLE_TO_GROUP)
-  cycleDuration CycleDuration      @default(WEEKLY)
-  activity      ActivityFeedItem[] @relation("GroupActivity")
-  cycles        Cycle[]
-  goals         Goal[]
-  coach         User?              @relation("CoachedGroups", fields: [coachId], references: [id])
-  creator       User               @relation("CreatedGroups", fields: [creatorId], references: [id])
-  members       GroupMember[]
+  id                         String             @id @default(cuid())
+  name                       String
+  description                String?
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+  visibility                 Visibility         @default(PUBLIC)
+  creatorId                  String
+  coachId                    String?
+  progressStage              ProgressStage      @default(NOT_STARTED)
+  notesPrivacy               NotesPrivacy       @default(VISIBLE_TO_GROUP)
+  cycleDuration              CycleDuration      @default(WEEKLY)
+  activity                   ActivityFeedItem[] @relation("GroupActivity")
+  cycles                     Cycle[]
+  Goal                       Goal[]
+  coach                      User?              @relation("CoachedGroups", fields: [coachId], references: [id])
+  User_Group_creatorIdToUser User               @relation("Group_creatorIdToUser", fields: [creatorId], references: [id])
+  members                    GroupMember[]
 }
 
 model GroupMember {
@@ -756,7 +756,7 @@ model Cycle {
   endDate   DateTime
   status    String   @default("active")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime
   groupId   String
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   goals     Goal[]
@@ -773,13 +773,13 @@ model ActivityFeedItem {
   goalId    String?
   commentId String?
   details   Json?
-  actor     User             @relation("UserActivity", fields: [actorId], references: [id], onDelete: Cascade)
-  comment   Comment?         @relation("CommentActivity", fields: [commentId], references: [id])
-  goal      Goal?            @relation("GoalActivity", fields: [goalId], references: [id])
+  User      User             @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  Comment   Comment?         @relation(fields: [commentId], references: [id])
+  Goal      Goal?            @relation(fields: [goalId], references: [id])
   group     Group            @relation("GroupActivity", fields: [groupId], references: [id], onDelete: Cascade)
 
-  @@index([groupId, createdAt])
   @@index([actorId])
+  @@index([groupId, createdAt])
 }
 
 enum Audience {
@@ -934,23 +934,6 @@ enum EnrollmentStatus {
   FAILED
 }
 
-enum GroupRole {
-  ADMIN
-  MEMBER
-}
-
-enum ActivityFeedType {
-  GOAL_CREATED
-  GOAL_COMPLETED
-  COMMENT_ADDED
-  USER_JOINED_GROUP
-  CYCLE_STARTED
-  CYCLE_ENDED
-  GROUP_CREATED
-  GOAL_UPDATED
-  STATUS_UPDATED
-}
-
 enum Visibility {
   PUBLIC
   PRIVATE
@@ -973,4 +956,21 @@ enum CycleDuration {
   WEEKLY
   BIWEEKLY
   MONTHLY
+}
+
+enum ActivityFeedType {
+  GOAL_CREATED
+  GOAL_COMPLETED
+  COMMENT_ADDED
+  USER_JOINED_GROUP
+  CYCLE_STARTED
+  CYCLE_ENDED
+  GROUP_CREATED
+  GOAL_UPDATED
+  STATUS_UPDATED
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
 }
