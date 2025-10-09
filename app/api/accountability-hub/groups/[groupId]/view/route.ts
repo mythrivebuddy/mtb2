@@ -32,7 +32,8 @@ export async function GET(
           include: {
             user: { select: { id: true, name: true, image: true } },
           },
-          orderBy: { joinedAt: "asc" },
+          // ✅ FIX: The field is named 'assignedAt' in your schema, not 'joinedAt'.
+          orderBy: { assignedAt: "asc" },
         },
       },
     });
@@ -49,14 +50,11 @@ export async function GET(
     const activeCycleId = group.cycles[0]?.id;
     let membersWithGoals = group.members;
 
-    // --- THIS IS THE FIX ---
-    // Instead of modifying the member objects in a loop (which requires 'as any'),
-    // we create a new, correctly typed array of members that includes their goals.
     if (activeCycleId) {
         membersWithGoals = await Promise.all(
             group.members.map(async (member) => {
                 const goals = await prisma.goal.findMany({
-                    where: { memberId: member.id, cycleId: activeCycleId },
+                    where: { member: member, cycleId: activeCycleId },
                     select: {
                         id: true,
                         text: true,
@@ -69,14 +67,13 @@ export async function GET(
             })
         );
     }
-    // ----------------------
 
     const requesterRole = group.members.find(m => m.userId === session.user.id)?.role;
 
     return NextResponse.json({
         name: group.name,
         activeCycleId: activeCycleId,
-        members: membersWithGoals, // Use the new, correctly typed array
+        members: membersWithGoals,
         requesterRole: requesterRole
     });
 

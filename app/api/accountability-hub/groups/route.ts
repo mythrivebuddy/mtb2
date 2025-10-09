@@ -9,22 +9,19 @@ import {
   ProgressStage,
   NotesPrivacy,
   CycleDuration,
-  Role, // Import the existing Role enum
+  GroupRole,
 } from "@prisma/client";
 import { logActivity } from "@/lib/activity-logger";
 
 // Mappings from form values to Prisma enums
 const visibilityMap: Record<string, Visibility> = {
   members_visible: Visibility.MEMBERS_CAN_SEE_GOALS,
-  admin_only: Visibility.ADMIN_ONLY,
+  admin_only: Visibility.PRIVATE,
 };
-const progressStageMap: Record<string, ProgressStage> = {
-  "2_stage": ProgressStage.TWO_STAGE,
-  "3_stage": ProgressStage.THREE_STAGE,
-};
+
 const notesPrivacyMap: Record<string, NotesPrivacy> = {
-  member_and_admin: NotesPrivacy.MEMBER_AND_ADMIN,
-  admin_only: NotesPrivacy.ADMIN_ONLY,
+  member_and_admin: NotesPrivacy.VISIBLE_TO_GROUP,
+  admin_only: NotesPrivacy.PRIVATE_TO_AUTHOR,
 };
 
 export async function POST(req: Request) {
@@ -33,10 +30,10 @@ export async function POST(req: Request) {
     if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const coachId = session.user.id;
+    const creatorId = session.user.id;
 
     const body = await req.json();
-    const { groupName, description, visibility, stages, notesPrivacy } = body;
+    const { groupName, description, visibility, notesPrivacy } = body;
 
     if (!groupName) {
       return NextResponse.json({ error: "Group name is required" }, { status: 400 });
@@ -46,15 +43,17 @@ export async function POST(req: Request) {
       data: {
         name: groupName,
         description: description,
-        coachId: coachId,
-        visibility: visibilityMap[visibility] || Visibility.MEMBERS_CAN_SEE_GOALS,
-        progressStage: progressStageMap[stages] || ProgressStage.THREE_STAGE,
-        notesPrivacy: notesPrivacyMap[notesPrivacy] || NotesPrivacy.MEMBER_AND_ADMIN,
+        creatorId: creatorId,
+        coachId: creatorId,
+        visibility: visibilityMap[visibility] || Visibility.PRIVATE,
+        progressStage: ProgressStage.NOT_STARTED,
+        notesPrivacy: notesPrivacyMap[notesPrivacy] || NotesPrivacy.VISIBLE_TO_GROUP,
         cycleDuration: CycleDuration.MONTHLY,
         members: {
           create: {
-            userId: coachId,
-            role: Role.ADMIN, // <-- THIS IS THE FIX (was "admin")
+            userId: creatorId,
+            assignedBy: creatorId,
+            role: GroupRole.ADMIN,
           },
         },
         cycles: {
@@ -62,6 +61,8 @@ export async function POST(req: Request) {
             startDate: new Date(),
             endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
             status: "active",
+            // ✅ FIX: The 'updatedAt' field is required on creation by your schema.
+            updatedAt: new Date(),
           },
         },
       },
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
 
     await logActivity(
       newGroup.id,
+      creatorId,
       "group_created",
       `The group "${newGroup.name}" was created.`
     );
@@ -136,3 +138,4 @@ export async function GET() {
     );
   }
 }
+

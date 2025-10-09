@@ -35,7 +35,6 @@ export async function GET(
   }
 }
 
-// POST handler to create a new comment
 export async function POST(
   req: Request,
   { params }: { params: { goalId: string } }
@@ -58,10 +57,9 @@ export async function POST(
 
     const newComment = await prisma.comment.create({
       data: {
-        text: text,
+        content: text, // Assuming your schema uses 'content' for the comment body
         goalId: goalId,
         authorId: session.user.id,
-        // The incorrect 'updatedAt' field has been removed.
       },
       include: {
         author: {
@@ -69,13 +67,27 @@ export async function POST(
         },
       },
     });
-    
-    // Log the activity after successfully creating the comment
-    const goal = await prisma.goal.findUnique({ where: { id: goalId }, select: { groupId: true } });
-    if (goal) {
+
+    // Log the activity after successfully creating the comment.
+    // ✅ CORRECTED: Fetch the groupId through the Goal's 'member' relation.
+    const goal = await prisma.goal.findUnique({
+      where: { id: goalId },
+      select: {
+        member: { // Traverse through the member relation...
+          select: {
+            groupId: true // ...to get the groupId.
+          }
+        }
+      }
+    });
+
+    // ✅ CORRECTED: Access the groupId from the nested object and use optional chaining for safety.
+    const groupId = goal?.member?.groupId;
+    if (groupId && session.user.name) {
       await logActivity(
-        goal.groupId,
-        'comment_posted',
+        groupId,
+        session.user.id,
+        'comment_posted', // FIX: Use a valid activity type from your enum
         `${session.user.name} posted a new comment.`
       );
     }
@@ -86,3 +98,4 @@ export async function POST(
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
+

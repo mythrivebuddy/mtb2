@@ -55,12 +55,14 @@ export async function POST(
         startDate: startDate,
         endDate: endDate,
         status: "active",
+        updatedAt: new Date(),
       },
     });
 
     // 4. Log this action in the group's activity feed
     await logActivity(
       groupId,
+      session.user.id,
       'cycle_started',
       `${session.user.name} started a new cycle.`
     );

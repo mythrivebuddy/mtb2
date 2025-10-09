@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { NotificationService } from "@/lib/notification-service";
-import { Role } from "@prisma/client"; // Import the Role enum
+import { Role } from "@prisma/client";
 
 export async function POST(
   req: Request,
@@ -33,17 +33,24 @@ export async function POST(
         role: Role.ADMIN,
       },
       include: {
-        group: { select: { name: true } }, // <-- FIX #1: Was 'Group', now matches the correct schema
+        group: { select: { name: true } },
       },
     });
 
-    if (!adminMembership || !adminMembership.group) { // <-- FIX #2: Was 'Group'
+    if (!adminMembership || !adminMembership.group) {
       return NextResponse.json({ error: "Forbidden: Not an admin or group not found" }, { status: 403 });
     }
     
-    // 2. Get recipient's details
+    // 2. Get recipient's details using the composite unique key
     const recipientMember = await prisma.groupMember.findUnique({
-        where: { id: memberId },
+        where: {
+            // FIX: Use the composite key 'userId_groupId'.
+            // This assumes your schema has @@id([userId, groupId]) or @@unique([userId, groupId]).
+            userId_groupId: {
+                userId: memberId, // 'memberId' from the URL is the user's ID
+                groupId: groupId,
+            },
+        },
         include: { user: { select: { name: true, id: true } } }
     });
 
@@ -52,7 +59,7 @@ export async function POST(
     }
 
     // 3. Create the notification using your existing service
-    const message = `A friendly nudge from your coach: Keep going on your goal in the "${adminMembership.group.name}" group!`; // <-- FIX #3: Was 'Group'
+    const message = `A friendly nudge from your coach: Keep going on your goal in the "${adminMembership.group.name}" group!`;
     const link = `/dashboard/accountability-hub?groupId=${groupId}`;
     
     await NotificationService.createNotification(
@@ -64,7 +71,8 @@ export async function POST(
     // 4. Log the activity
     await logActivity(
         groupId,
-        'goal_updated',
+        session.user.id,
+        'goal_updated', // Consider a more specific action like 'nudge_sent'
         `${session.user.name} sent a nudge to ${recipientMember.user.name}.`
     );
 

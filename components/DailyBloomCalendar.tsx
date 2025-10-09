@@ -1079,4 +1079,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
   );
 };
 
+
 export default DailyBloomCalendar;
+
+
+
+
+
+
+// Helper function to check for temporary IDs
