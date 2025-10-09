@@ -1,9 +1,8 @@
 // app/api/accountability-hub/goals/route.ts
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { logActivity } from "@/lib/activity-logger";
 
 export async function POST(req: Request) {
   try {
@@ -40,60 +39,44 @@ export async function POST(req: Request) {
 
     let goal;
     const dataToUpdate = { [field]: value };
+    
+    // --- THIS IS THE FIX ---
+    // The unique identifier for a Goal is 'memberId_cycleId', not 'authorId_cycleId'.
     const uniqueGoalIdentifier = {
-      authorId_cycleId: {
-        authorId: memberRecord.userId,
+      memberId_cycleId: {
+        memberId: memberRecord.id,
         cycleId: cycleId,
       },
     };
-    
-    if (field === "text") {
-      goal = await prisma.goal.upsert({
-        where: uniqueGoalIdentifier,
-        update: dataToUpdate,
-        create: {
-          text: value,
-          authorId: memberRecord.userId,
-          groupId: groupId,
-          cycleId: cycleId,
-          status: "IN_PROGRESS",
-        },
-      });
-    } else {
-      goal = await prisma.goal.update({
-        where: uniqueGoalIdentifier,
-        data: dataToUpdate,
-      });
-    }
+    // -----------------------
 
-    if (field === "text") {
-      // FIX: Add currentUserId as the first argument
-      await logActivity(
-        currentUserId,
-        groupId,
-        "goal_updated",
-        `${session.user.name} updated their goal.`
-      );
-    }
-    if (field === "status") {
-      // FIX: Add currentUserId as the first argument
-      await logActivity(
-        currentUserId,
-        groupId,
-        "status_updated",
-        `${session.user.name}'s status was updated to "${value}".`
-      );
+    if (field === 'text') {
+        goal = await prisma.goal.upsert({
+            where: uniqueGoalIdentifier,
+            update: dataToUpdate,
+            create: {
+                text: value,
+                memberId: memberRecord.id,
+                groupId: groupId,
+                cycleId: cycleId,
+            },
+        });
+    } else {
+        goal = await prisma.goal.update({
+            where: uniqueGoalIdentifier,
+            data: dataToUpdate,
+        });
     }
 
     return NextResponse.json(goal);
   } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "P2025") {
-      return NextResponse.json(
-        { error: "You must set a main goal before adding progress updates." },
-        { status: 400 }
-      );
+    if (error instanceof Error && 'code' in error && error.code === 'P2025') {
+         return NextResponse.json(
+            { error: "You must set a main goal before adding progress updates." },
+            { status: 400 }
+        );
     }
-
+    
     console.error(`[GOAL_UPDATE_ERROR]`, error);
     return NextResponse.json(
       { error: "Something went wrong" },

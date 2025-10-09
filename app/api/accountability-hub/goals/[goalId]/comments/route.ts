@@ -1,10 +1,9 @@
 // app/api/accountability-hub/goals/[goalId]/comments/route.ts
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth"; // <-- CORRECT AUTH IMPORT
-import { authOptions } from "@/lib/auth"; // <-- CORRECT AUTH IMPORT
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-
 
 // GET handler to fetch all comments for a goal
 export async function GET(
@@ -12,13 +11,12 @@ export async function GET(
   { params }: { params: { goalId: string } }
 ) {
   try {
-    // --- CORRECT AUTH LOGIC ---
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { goalId } = await params;
+    const { goalId } = params;
 
     const comments = await prisma.comment.findMany({
       where: { goalId: goalId },
@@ -33,10 +31,7 @@ export async function GET(
     return NextResponse.json(comments);
   } catch (error) {
     console.error(`[GET_COMMENTS]`, error);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
@@ -46,13 +41,12 @@ export async function POST(
   { params }: { params: { goalId: string } }
 ) {
   try {
-    // --- CORRECT AUTH LOGIC ---
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { goalId } = await params;
+    const { goalId } = params;
     const { text } = await req.json();
 
     if (!text) {
@@ -64,10 +58,10 @@ export async function POST(
 
     const newComment = await prisma.comment.create({
       data: {
-        content: text,
+        text: text,
         goalId: goalId,
         authorId: session.user.id,
-        updatedAt: new Date(),
+        // The incorrect 'updatedAt' field has been removed.
       },
       include: {
         author: {
@@ -75,23 +69,20 @@ export async function POST(
         },
       },
     });
-
+    
+    // Log the activity after successfully creating the comment
     const goal = await prisma.goal.findUnique({ where: { id: goalId }, select: { groupId: true } });
-    if (goal && goal.groupId) {
+    if (goal) {
       await logActivity(
         goal.groupId,
         'comment_posted',
-        `${session.user.name} posted a new comment.`,
-        session.user.id
+        `${session.user.name} posted a new comment.`
       );
     }
 
     return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
     console.error(`[POST_COMMENT]`, error);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

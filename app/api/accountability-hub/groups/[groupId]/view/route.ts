@@ -1,9 +1,9 @@
 // app/api/accountability-hub/groups/[groupId]/view/route.ts
 
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
 
 export async function GET(
   _req: Request,
@@ -15,12 +15,11 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { groupId } = await params;
+    const { groupId } = params;
     if (!groupId) {
       return NextResponse.json({ error: "Group ID required" }, { status: 400 });
     }
 
-    // Fetch the group and its members
     const group = await prisma.group.findUnique({
       where: { id: groupId },
       include: {
@@ -33,7 +32,7 @@ export async function GET(
           include: {
             user: { select: { id: true, name: true, image: true } },
           },
-          orderBy: { assignedAt: "asc" },
+          orderBy: { joinedAt: "asc" },
         },
       },
     });
@@ -41,51 +40,46 @@ export async function GET(
     if (!group) {
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
-
-    // Check if the current user is a member
-    const isMember = group.members.some((m) => m.userId === session.user.id);
+    
+    const isMember = group.members.some(m => m.userId === session.user.id);
     if (!isMember) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const activeCycleId = group.cycles[0]?.id;
-
-    // Build members array with goals (instead of mutating)
     let membersWithGoals = group.members;
 
+    // --- THIS IS THE FIX ---
+    // Instead of modifying the member objects in a loop (which requires 'as any'),
+    // we create a new, correctly typed array of members that includes their goals.
     if (activeCycleId) {
-      membersWithGoals = await Promise.all(
-        group.members.map(async (member) => {
-          const goals = await prisma.goal.findMany({
-            where: {
-              authorId: member.userId,
-              cycleId: activeCycleId,
-            },
-            select: {
-              id: true,
-              text: true,
-              midwayUpdate: true,
-              endResult: true,
-              status: true,
-            },
-          });
-
-          return { ...member, goals };
-        })
-      );
+        membersWithGoals = await Promise.all(
+            group.members.map(async (member) => {
+                const goals = await prisma.goal.findMany({
+                    where: { memberId: member.id, cycleId: activeCycleId },
+                    select: {
+                        id: true,
+                        text: true,
+                        midwayUpdate: true,
+                        endResult: true,
+                        status: true,
+                    },
+                });
+                return { ...member, goals };
+            })
+        );
     }
+    // ----------------------
 
-    // Find the role of the requester
-    const requesterRole = group.members.find(
-      (m) => m.userId === session.user.id
-    )?.role;
+    const requesterRole = group.members.find(m => m.userId === session.user.id)?.role;
 
     return NextResponse.json({
-      name: group.name,
-      activeCycleId,
-      members: membersWithGoals,
-      requesterRole,
+        name: group.name,
+        activeCycleId: activeCycleId,
+        members: membersWithGoals, // Use the new, correctly typed array
+        requesterRole: requesterRole
     });
+
   } catch (error) {
     console.error(`[GET_GROUP_VIEW]`, error);
     return NextResponse.json(
