@@ -121,6 +121,7 @@ const ReminderForm = ({ initialData = {}, onSave, onClose, isEditMode = false, o
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {defaultImages.map(imgSrc => (
                             <div key={imgSrc} onClick={() => setSelectedImage(imgSrc)} className={`relative rounded-lg overflow-hidden cursor-pointer aspect-square transition-all duration-200 ${selectedImage === imgSrc ? 'ring-4 ring-blue-500' : 'ring-2 ring-transparent hover:ring-blue-300'}`}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={imgSrc} alt="Reminder image option" className="w-full h-full object-cover" />
                                 {selectedImage === imgSrc && (<div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center"><Check className="text-white" size={32} /></div>)}
                             </div>
@@ -168,6 +169,7 @@ const ViewReminderModal = ({ reminder, isOpen, onClose, onSnooze, onDone, isSnoo
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4">
             <div onClick={(e) => e.stopPropagation()} className="relative w-full max-w-sm rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 p-8 shadow-2xl text-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={reminder.image} alt={reminder.title} className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-4 border-white shadow-lg" />
                 <h2 className="text-3xl font-bold text-indigo-900 mb-2">{reminder.title}</h2>
                 <p className="text-gray-600 mb-8">{reminder.description}</p>
@@ -207,6 +209,7 @@ const ReminderCard = ({ reminder, onEditClick, onViewClick }: { reminder: Remind
                 <p className="text-sm sm:text-base text-gray-500 mb-3">{formatFrequency(reminder.frequency)}</p>
                 <button onClick={(e) => { e.stopPropagation(); onEditClick(reminder); }} className="flex items-center gap-2 text-sm font-semibold text-gray-600 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-lg w-fit"><Edit size={14} /> Edit</button>
             </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={reminder.image} alt={reminder.title} className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg object-cover flex-shrink-0 ml-4" onError={(e) => { e.currentTarget.src = 'https://placehold.co/150x150/cccccc/ffffff?text=Error'; }} />
         </div>
     );

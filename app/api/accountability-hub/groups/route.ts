@@ -9,48 +9,37 @@ import {
   ProgressStage,
   NotesPrivacy,
   CycleDuration,
+  Role, // Import the existing Role enum
 } from "@prisma/client";
 import { logActivity } from "@/lib/activity-logger";
 
-// Type-safe mapping from form values to Prisma enums
+// Mappings from form values to Prisma enums
 const visibilityMap: Record<string, Visibility> = {
   members_visible: Visibility.MEMBERS_CAN_SEE_GOALS,
   admin_only: Visibility.ADMIN_ONLY,
 };
-
 const progressStageMap: Record<string, ProgressStage> = {
   "2_stage": ProgressStage.TWO_STAGE,
   "3_stage": ProgressStage.THREE_STAGE,
 };
-
 const notesPrivacyMap: Record<string, NotesPrivacy> = {
   member_and_admin: NotesPrivacy.MEMBER_AND_ADMIN,
   admin_only: NotesPrivacy.ADMIN_ONLY,
 };
 
-// --- POST function to create a new group ---
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const coachId = session.user.id;
 
     const body = await req.json();
-    const {
-      groupName,
-      description,
-      visibility,
-      stages,
-      notesPrivacy,
-    } = body;
+    const { groupName, description, visibility, stages, notesPrivacy } = body;
 
     if (!groupName) {
-      return NextResponse.json(
-        { error: "Group name is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Group name is required" }, { status: 400 });
     }
 
     const newGroup = await prisma.group.create({
@@ -61,11 +50,11 @@ export async function POST(req: Request) {
         visibility: visibilityMap[visibility] || Visibility.MEMBERS_CAN_SEE_GOALS,
         progressStage: progressStageMap[stages] || ProgressStage.THREE_STAGE,
         notesPrivacy: notesPrivacyMap[notesPrivacy] || NotesPrivacy.MEMBER_AND_ADMIN,
-        cycleDuration: CycleDuration.MONTHLY, // Hardcoded as per your spec
+        cycleDuration: CycleDuration.MONTHLY,
         members: {
           create: {
             userId: coachId,
-            role: "admin",
+            role: Role.ADMIN, // <-- THIS IS THE FIX (was "admin")
           },
         },
         cycles: {
@@ -87,14 +76,11 @@ export async function POST(req: Request) {
     return NextResponse.json(newGroup, { status: 201 });
   } catch (error) {
     console.error("Error creating group:", error);
-    return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
 
-// --- GET function to fetch the user's groups ---
+// GET function remains the same
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -126,6 +112,11 @@ export async function GET() {
             startDate: "desc",
           },
           take: 1,
+          include: {
+            _count: {
+              select: { goals: true },
+            },
+          },
         },
         _count: {
           select: { members: true },

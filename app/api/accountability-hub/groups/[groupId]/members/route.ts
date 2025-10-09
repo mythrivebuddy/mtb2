@@ -5,8 +5,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { Role } from "@prisma/client"; // <-- Import the Role enum
 
-// --- GET function to fetch all members of a group ---
 export async function GET(
   _req: Request,
   { params }: { params: { groupId: string } }
@@ -23,7 +23,6 @@ export async function GET(
       return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
     }
 
-    // Security check: Make sure the requester is part of the group
     const userMembership = await prisma.groupMember.findFirst({
       where: { groupId: groupId, userId: session.user.id },
     });
@@ -32,28 +31,19 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     
-    // Find the active cycle to filter goals correctly
     const activeCycle = await prisma.cycle.findFirst({
         where: { groupId: groupId, status: 'active' },
         orderBy: { startDate: 'desc' }
     });
 
-    // --- THIS IS THE FIX ---
-    // The query now fetches GroupMembers and includes their related 'user' and 'goals'
     const members = await prisma.groupMember.findMany({
       where: { groupId: groupId },
       include: {
-        user: { // Include the user details for this member
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+        user: {
+          select: { id: true, name: true, image: true },
         },
-        goals: { // ALSO include the goals for this member
-            where: {
-                cycleId: activeCycle?.id
-            }
+        goals: {
+            where: { cycleId: activeCycle?.id }
         }
       },
       orderBy: { joinedAt: 'asc' }
@@ -66,14 +56,13 @@ export async function GET(
   }
 }
 
-// --- POST function to add a new member ---
 export async function POST(
   req: Request,
   { params }: { params: { groupId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -88,7 +77,7 @@ export async function POST(
       where: {
         groupId: groupId,
         userId: session.user.id,
-        role: "admin",
+        role: Role.ADMIN, // <-- FIX #1: Was "admin"
       },
     });
 
@@ -108,13 +97,13 @@ export async function POST(
       data: {
         userId: userIdToAdd,
         groupId: groupId,
-        role: "member",
+        role: Role.USER, // <-- FIX #2: Was "member", should be USER
       },
     });
 
     const userBeingAdded = await prisma.user.findUnique({ where: { id: userIdToAdd }});
 
-    if (userBeingAdded && session.user.name) {
+    if (userBeingAdded) {
       await logActivity(
         groupId,
         'member_added',

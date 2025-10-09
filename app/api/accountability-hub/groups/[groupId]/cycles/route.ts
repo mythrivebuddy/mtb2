@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { Role } from "@prisma/client"; // <-- Import the Role enum
 
 export async function POST(
   req: Request,
@@ -11,7 +12,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -22,7 +23,7 @@ export async function POST(
       where: {
         groupId: groupId,
         userId: session.user.id,
-        role: "admin",
+        role: Role.ADMIN, // <-- THIS IS THE FIX (was "admin")
       },
     });
 
@@ -60,7 +61,7 @@ export async function POST(
     // 4. Log this action in the group's activity feed
     await logActivity(
       groupId,
-      'cycle_started', // <-- THIS IS THE FIX
+      'cycle_started',
       `${session.user.name} started a new cycle.`
     );
 

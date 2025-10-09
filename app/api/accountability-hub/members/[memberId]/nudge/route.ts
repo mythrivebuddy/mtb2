@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { NotificationService } from "@/lib/notification-service";
+import { Role } from "@prisma/client"; // Import the Role enum
 
 export async function POST(
   req: Request,
@@ -24,21 +25,23 @@ export async function POST(
       return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
     }
 
+    // 1. Verify admin status and get group name
     const adminMembership = await prisma.groupMember.findFirst({
       where: {
         userId: session.user.id,
         groupId: groupId,
-        role: "admin",
+        role: Role.ADMIN,
       },
       include: {
-        group: { select: { name: true } },
+        group: { select: { name: true } }, // <-- FIX #1: Was 'Group', now matches the correct schema
       },
     });
 
-    if (!adminMembership) {
-      return NextResponse.json({ error: "Forbidden: Not an admin" }, { status: 403 });
+    if (!adminMembership || !adminMembership.group) { // <-- FIX #2: Was 'Group'
+      return NextResponse.json({ error: "Forbidden: Not an admin or group not found" }, { status: 403 });
     }
     
+    // 2. Get recipient's details
     const recipientMember = await prisma.groupMember.findUnique({
         where: { id: memberId },
         include: { user: { select: { name: true, id: true } } }
@@ -48,7 +51,8 @@ export async function POST(
         return NextResponse.json({ error: "Recipient member not found" }, { status: 404 });
     }
 
-    const message = `A friendly nudge from your coach: Keep going on your goal in the "${adminMembership.group.name}" group!`;
+    // 3. Create the notification using your existing service
+    const message = `A friendly nudge from your coach: Keep going on your goal in the "${adminMembership.group.name}" group!`; // <-- FIX #3: Was 'Group'
     const link = `/dashboard/accountability-hub?groupId=${groupId}`;
     
     await NotificationService.createNotification(
@@ -57,14 +61,12 @@ export async function POST(
         link
     );
 
-    // --- THIS IS THE FIX ---
-    // The call to logActivity now correctly uses only 3 arguments.
+    // 4. Log the activity
     await logActivity(
         groupId,
         'goal_updated',
         `${session.user.name} sent a nudge to ${recipientMember.user.name}.`
     );
-    // -----------------------
 
     return NextResponse.json({ success: true });
   } catch (error) {

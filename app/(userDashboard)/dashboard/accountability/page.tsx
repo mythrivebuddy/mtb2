@@ -10,7 +10,7 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+ import { useToast } from "@/hooks/use-toast";
 import JPCard from "@/components/dashboard/JPCard";
 import ActivityFeed from "@/components/accountability/ActivityFeed";
 import useAccountabilityFeed from "@/hooks/useAccountabilityFeed";
@@ -42,7 +42,9 @@ export default function AccountabilityHubHome() {
   const activeCycle = group?.cycles?.[0];
   const groupId = group?.id;
   const { items: activityItems } = useAccountabilityFeed(groupId);
-const isAdmin = group?.members.find((m: { userId: string; role: string }) => m.userId === session?.user?.id)?.role === 'admin';
+
+  const isAdmin = group?.members.find((m: { userId: string; role: string }) => m.userId === session?.user?.id)?.role === 'admin';
+
   const [notes, setNotes] = useState(group?.description || "");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
 
@@ -118,10 +120,9 @@ const isAdmin = group?.members.find((m: { userId: string; role: string }) => m.u
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <JPCard value={group._count.members} label="Total Members" />
-          <JPCard value={0} label="Goals in Progress" />
+          <JPCard value={group.cycles[0]?._count.goals || 0} label="Goals in Progress" />
         </div>
         
-        {/* A General actions card for everyone */}
         <Card className="rounded-3xl">
           <CardHeader><CardTitle className="text-lg">Actions</CardTitle></CardHeader>
           <CardContent className="flex flex-wrap gap-3">
@@ -129,7 +130,6 @@ const isAdmin = group?.members.find((m: { userId: string; role: string }) => m.u
           </CardContent>
         </Card>
 
-        {/* Admin-only sections */}
         {isAdmin && (
           <>
             <Card className="rounded-3xl">
