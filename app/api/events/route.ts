@@ -102,9 +102,9 @@ export async function POST(req: NextRequest) {
         start: startDate,
         end: end ? new Date(end) : null,
         description,
-        isBloom,
-        isCompleted,
-        allDay,
+        is_bloom: isBloom,
+        is_completed: isCompleted,
+        all_day: allDay,
         userId: session.user.id,
       },
     });

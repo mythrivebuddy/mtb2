@@ -665,17 +665,17 @@ model Announcement {
 }
 
 model Event {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title       String
-  start       DateTime
-  end         DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userId      String    @db.Uuid
-  description String?
-  isBloom     Boolean   @default(false) @map("is_bloom")
-  isCompleted Boolean   @default(false) @map("is_completed")
-  allDay      Boolean   @default(false) @map("all_day")
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String
+  start        DateTime
+  end          DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  userId       String    @db.Uuid
+  description  String?
+  is_bloom     Boolean   @default(false)
+  is_completed Boolean   @default(false)
+  all_day      Boolean   @default(false)
 
   @@map("Event")
 }

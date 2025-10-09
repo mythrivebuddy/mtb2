@@ -60,6 +60,7 @@ export async function POST(
         text: text, // <-- THIS IS THE FIX (was 'content')
         goalId: goalId,
         authorId: session.user.id,
+        updatedAt: new Date(),
       },
       include: {
         author: {
