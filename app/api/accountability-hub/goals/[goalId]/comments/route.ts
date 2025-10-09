@@ -67,6 +67,7 @@ export async function POST(
         content: text,
         goalId: goalId,
         authorId: session.user.id,
+        updatedAt: new Date(),
       },
       include: {
         author: {

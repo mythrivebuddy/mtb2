@@ -52,7 +52,7 @@ export async function GET(
       include: {
         user: {
           include: {
-            Goals: {
+            Goal: {
               where: {
                 cycleId: activeCycle?.id,
               },
