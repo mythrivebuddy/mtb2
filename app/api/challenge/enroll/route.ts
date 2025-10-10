@@ -1,4 +1,4 @@
-// app/api/challenge/enroll/route.ts
+// app/api/challenge/enroll/route.ts\\
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
