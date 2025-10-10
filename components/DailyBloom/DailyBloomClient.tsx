@@ -8,6 +8,7 @@ import {
   useMutation,
   useQueryClient,
   useQuery,
+  type InfiniteData,
 } from "@tanstack/react-query";
 import {
   Trash2,
@@ -82,7 +83,6 @@ interface CalendarEvent {
   title: string;
   start: string; // Keep as strings for FullCalendar
   end: string;
-
 }
 
 interface DailyBloom extends DailyBloomFormType {
@@ -105,6 +105,11 @@ export interface ClientDailyBloom {
   taskAddJP: boolean;
   taskCompleteJP: boolean;
   isFromEvent?: boolean;
+}
+// Define the structure for a single page of blooms
+interface DailyBloomPage {
+  data: DailyBloom[];
+  totalCount: number;
 }
 
 const defaultFormValues: DailyBloomFormType = {
@@ -182,7 +187,6 @@ export default function DailyBloomClient() {
     },
   });
 
-
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const {
@@ -256,20 +260,80 @@ export default function DailyBloomClient() {
 
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
-      const res = await axios.post("/api/user/daily-bloom", newData);
-      return res.data;
+      const { data } = await axios.post("/api/user/daily-bloom", newData);
+      return data;
     },
-    onSuccess: () => {
-      invalidateAllQueries();
-      toast.success("Daily Bloom created successfully!");
-      setAddData(false);
+    onMutate: async (newBloom) => {
+      await queryClient.cancelQueries({
+        queryKey: ["dailyBloom", frequencyFilter, statusFilter],
+      });
+
+      const previousBlooms = queryClient.getQueryData([
+        "dailyBloom",
+        frequencyFilter,
+        statusFilter,
+      ]);
+
+      // 3. Optimistically update to the new value
+      queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
+        ["dailyBloom", frequencyFilter, statusFilter],
+        (oldData) => {
+          // FIX: Ensure dueDate is a Date, not a string
+          const optimisticBloom: DailyBloom = {
+            ...newBloom,
+            id: `temp-${Date.now()}`,
+            dueDate: newBloom.dueDate
+              ? new Date(newBloom.dueDate)
+              : new Date(),
+            createdAt: new Date().toISOString(),
+            isCompleted: false,
+            isFromEvent: true,
+            updatedAt: new Date().toISOString(),
+            description: newBloom.description ?? "",
+          };
+
+          if (!oldData || !oldData.pages) {
+            return {
+              pages: [{ data: [optimisticBloom], totalCount: 1 }],
+              pageParams: [1],
+            } as InfiniteData<DailyBloomPage>;
+          }
+
+          const newData = oldData.pages.map(
+            (page: DailyBloomPage, index: number) => {
+              if (index === 0) {
+                return {
+                  ...page,
+                  data: [optimisticBloom, ...page.data],
+                  totalCount: page.totalCount + 1,
+                };
+              }
+              return page;
+            }
+          );
+
+          return { ...oldData, pages: newData };
+        }
+      );
+
+      return { previousBlooms };
     },
-    onError: (error: AxiosError) => {
+    onError: (err, newBloom, context) => {
+      if (context?.previousBlooms) {
+        queryClient.setQueryData(
+          ["dailyBloom", frequencyFilter, statusFilter],
+          context.previousBlooms
+        );
+      }
       const errorMessage = getAxiosErrorMessage(
-        error,
+        err,
         "An error occurred while creating Daily Bloom."
       );
       toast.error(errorMessage);
+    },
+    onSettled: () => {
+      invalidateAllQueries();
+      setAddData(false);
     },
   });
 
@@ -291,14 +355,16 @@ export default function DailyBloomClient() {
     // When mutate is called, this will run before the mutation function
     onMutate: async (newBloomData) => {
       // 1. Cancel any outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({ queryKey: ['dailyBlooms'] });
+      await queryClient.cancelQueries({ queryKey: ["dailyBlooms"] });
 
       // 2. Snapshot the previous value
-      const previousBlooms = queryClient.getQueryData<DailyBloom[]>(['dailyBlooms']);
+      const previousBlooms = queryClient.getQueryData<DailyBloom[]>([
+        "dailyBlooms",
+      ]);
 
       // 3. Optimistically update to the new value using .map()
       // THIS IS THE CORE FIX: It finds the item and replaces it.
-      queryClient.setQueryData<DailyBloom[]>(['dailyBlooms'], (oldData = []) =>
+      queryClient.setQueryData<DailyBloom[]>(["dailyBlooms"], (oldData = []) =>
         oldData.map((bloom) =>
           bloom.id === newBloomData.id
             ? { ...bloom, ...newBloomData.updatedData }
@@ -316,7 +382,7 @@ export default function DailyBloomClient() {
     onError: (error: AxiosError, variables, context) => {
       // If the mutation fails, roll back to the previous state
       if (context?.previousBlooms) {
-        queryClient.setQueryData(['dailyBlooms'], context.previousBlooms);
+        queryClient.setQueryData(["dailyBlooms"], context.previousBlooms);
       }
       const errorMessage = getAxiosErrorMessage(
         error,
@@ -328,7 +394,7 @@ export default function DailyBloomClient() {
     // Your original onSuccess logic, but moved to onSettled
     // This ensures the data is always re-fetched from the server to guarantee consistency
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailyBlooms'] });
+      queryClient.invalidateQueries({ queryKey: ["dailyBlooms"] });
     },
   });
 
@@ -452,11 +518,10 @@ export default function DailyBloomClient() {
           console.error("Failed to update bloom from calendar event:", error);
           toast.error("Failed to sync calendar change.");
           queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-        }
+        },
       }
     );
   };
-
 
   const handleDeleteBloom = (bloomId: string) => {
     // 1. Basic validation to ensure an ID was actually passed.
@@ -478,7 +543,9 @@ export default function DailyBloomClient() {
         // The onSuccess logic from the useMutation hook already handles
         // query invalidation and showing a success toast.
         // You can add extra logging here if needed.
-        console.log(`Deletion successfully triggered for bloom: ${actualBloomId}`);
+        console.log(
+          `Deletion successfully triggered for bloom: ${actualBloomId}`
+        );
       },
       onError: (error) => {
         // Optional: Add specific error handling for calendar deletions.
@@ -506,64 +573,34 @@ export default function DailyBloomClient() {
     isFromEvent: b.isFromEvent ?? false,
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
-  // // Corrected logic for combining calendar items without duplication
-  // const combinedCalendarItems = useMemo(() => {
-  //   // 1. Get all Blooms from the primary 'dailyBloom' state
-  //   // This ensures that optimistically created/updated blooms are always shown correctly.
-  //   const bloomEvents = dailyBloom.map(bloom => ({
-  //     id: `bloom-${bloom.id}`,
-  //     title: bloom.title,
-  //     start: bloom.dueDate ? new Date(bloom.dueDate).toISOString() : today,
-  //     allDay: true,
-  //     color: bloom.isCompleted ? '#a5d8ff' : '#4dabf7', // Example colors
-  //     extendedProps: {
-  //       isBloom: true,
-  //       isCompleted: bloom.isCompleted,
-  //       description: bloom.description ?? undefined,
-  //     },
-  //   }));
+  // FIX: Create a single, unified source of truth for the calendar
+  const combinedCalendarItems = useMemo(() => {
+    // 1. Map your `dailyBloom` data (which is optimistically updated)
+    //    into the format FullCalendar expects. This is the primary source for blooms.
+    const bloomEvents = dailyBloom.map((bloom) => ({
+      id: `bloom-${bloom.id}`,
+      title: bloom.title,
+      start: bloom.dueDate
+        ? new Date(bloom.dueDate).toISOString()
+        : new Date().toISOString().split("T")[0],
+      allDay: true,
+      color: bloom.isCompleted ? "#a5d8ff" : "#4dabf7", // Light blue for completed, dark for pending
+      extendedProps: {
+        isBloom: true,
+        isCompleted: bloom.isCompleted,
+        description: bloom.description ?? "",
+      },
+    }));
 
-  //   // 2. Filter the 'events' array to get ONLY regular events (non-blooms)
-  //   // This prevents the blooms fetched from /api/events from being added a second time.
-  //   const regularEvents = (events ?? [])
-  //     .filter(event => !event.extendedProps?.isBloom) // The key fix is here
-  //     .map(event => ({
-  //       ...event,
-  //       id: `event-${event.id}`,
-  //       color: '#2ecc71', // Example color for regular events
-  //       extendedProps: {
-  //         ...event.extendedProps,
-  //         isBloom: false
-  //       },
-  //     }));
+    // 2. Take the separate `events` from your other API call but
+    //    filter out any that are also blooms to prevent duplicates.
+    const regularEvents = (events ?? []).filter(
+      (event) => !event.extendedProps?.isBloom
+    );
 
-  //   // 3. Create a Set of all bloom IDs that are already in the calendar
-  //   const bloomIds = new Set(bloomEvents.map(b => b.id));
-
-  //   // 4. Combine the two arrays, ensuring no bloom is added twice
-  //   // This handles a rare edge case where a bloom might exist in 'events' but not yet in 'dailyBloom' state
-  //   const allItems = [...bloomEvents];
-  //   regularEvents.forEach(event => {
-  //     // A regular event might represent a bloom not yet in the client's bloom state
-  //     // This check prevents adding it if it's already there from the `dailyBloom` array
-  //     if (!bloomIds.has(event.id)) {
-  //       allItems.push({
-  //         ...event,
-  //         allDay: true, // Ensure allDay is present for type compatibility
-  //         extendedProps: {
-  //           ...event.extendedProps,
-  //           isCompleted: event.extendedProps?.isCompleted ?? false, // Always boolean
-  //           description: event.extendedProps?.description ?? undefined,
-  //           isBloom: false
-  //         },
-  //       });
-  //     }
-  //   });
-
-  //   return allItems;
-
-  // }, [dailyBloom, events, today]);
-
+    // 3. Combine them into a single array.
+    return [...bloomEvents, ...regularEvents];
+  }, [dailyBloom, events]); // This will re-compute whenever your blooms or events change
 
   return (
     <div>
@@ -863,8 +900,8 @@ export default function DailyBloomClient() {
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                  "en-IN"
-                                )
+                                    "en-IN"
+                                  )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -992,7 +1029,7 @@ export default function DailyBloomClient() {
                           min={today}
                           value={
                             field.value &&
-                              !isNaN(new Date(field.value).getTime())
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -1184,7 +1221,7 @@ export default function DailyBloomClient() {
                           type="date"
                           value={
                             field.value &&
-                              !isNaN(new Date(field.value).getTime())
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -1302,7 +1339,7 @@ export default function DailyBloomClient() {
             <div className="py-2 h-[70vh] overflow-auto">
               <DailyBloomCalendar
                 blooms={normalizedBlooms}
-                events={events || []}
+                events={combinedCalendarItems}
                 onCreateBloomFromEvent={handleCreateBloomFromEvent}
                 onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
                 onDeleteBloomFromEvent={handleDeleteBloom}
