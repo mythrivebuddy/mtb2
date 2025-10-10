@@ -248,6 +248,11 @@ export default function DailyBloomClient() {
     return data?.pages.flatMap((page) => page.data) || [];
   }, [data]);
   console.log("Blooms data from API:", dailyBloom); // <-- ADD THIS
+  // Add this entire block to de-duplicate the list before rendering
+const uniqueBlooms = useMemo(() => {
+  const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
+  return Array.from(bloomMap.values());
+}, [dailyBloom]);
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -337,66 +342,73 @@ export default function DailyBloomClient() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (payload: {
-      id: string;
-      updatedData: DailyBloomFormType;
-    }) => {
-      // This part stays the same - it's your API call
-      const res = await axios.put(
-        `/api/user/daily-bloom/${payload.id}`,
-        payload.updatedData
-      );
-      return res.data;
-    },
+const updateMutation = useMutation({
+  mutationFn: async (payload: {
+    id: string;
+    updatedData: DailyBloomFormType;
+  }) => {
+    const res = await axios.put(
+      `/api/user/daily-bloom/${payload.id}`,
+      payload.updatedData
+    );
+    return res.data;
+  },
 
-    // --- START: ADD THIS OPTIMISTIC UPDATE LOGIC ---
+  onMutate: async (newBloomData) => {
+    const queryKey = ["dailyBloom", frequencyFilter, statusFilter];
 
-    // When mutate is called, this will run before the mutation function
-    onMutate: async (newBloomData) => {
-      // 1. Cancel any outgoing refetches so they don't overwrite our optimistic update
-      await queryClient.cancelQueries({ queryKey: ["dailyBlooms"] });
+    // 1. Cancel any outgoing refetches
+    await queryClient.cancelQueries({ queryKey });
 
-      // 2. Snapshot the previous value
-      const previousBlooms = queryClient.getQueryData<DailyBloom[]>([
-        "dailyBlooms",
-      ]);
+    // 2. Snapshot the previous value
+    const previousBlooms = queryClient.getQueryData<
+      InfiniteData<DailyBloomPage>
+    >(queryKey);
 
-      // 3. Optimistically update to the new value using .map()
-      // THIS IS THE CORE FIX: It finds the item and replaces it.
-      queryClient.setQueryData<DailyBloom[]>(["dailyBlooms"], (oldData = []) =>
-        oldData.map((bloom) =>
-          bloom.id === newBloomData.id
-            ? { ...bloom, ...newBloomData.updatedData }
-            : bloom
-        )
-      );
+    // 3. Optimistically update to the new value
+    queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
+      queryKey,
+      (oldData) => {
+        if (!oldData) return undefined;
 
-      // 4. Return a context object with the snapshotted value
-      return { previousBlooms };
-    },
-
-    // --- END: ADD THIS OPTIMISTIC UPDATE LOGIC ---
-
-    // Your original onError logic, but with the context to roll back changes
-    onError: (error: AxiosError, variables, context) => {
-      // If the mutation fails, roll back to the previous state
-      if (context?.previousBlooms) {
-        queryClient.setQueryData(["dailyBlooms"], context.previousBlooms);
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => ({
+            ...page,
+            data: page.data.map((bloom) =>
+              bloom.id === newBloomData.id
+                ? { ...bloom, ...newBloomData.updatedData }
+                : bloom
+            ),
+          })),
+        };
       }
-      const errorMessage = getAxiosErrorMessage(
-        error,
-        "Failed to update task. Reverting changes."
-      );
-      toast.error(errorMessage);
-    },
+    );
 
-    // Your original onSuccess logic, but moved to onSettled
-    // This ensures the data is always re-fetched from the server to guarantee consistency
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["dailyBlooms"] });
-    },
-  });
+    // 4. Return a context object with the snapshotted value
+    return { previousBlooms, queryKey };
+  },
+
+  onError: (error: AxiosError, variables, context) => {
+    // If the mutation fails, roll back to the previous state from context
+    if (context?.previousBlooms) {
+      queryClient.setQueryData(context.queryKey, context.previousBlooms);
+    }
+    const errorMessage = getAxiosErrorMessage(
+      error,
+      "Failed to update task. Reverting changes."
+    );
+    toast.error(errorMessage);
+  },
+
+  onSettled: (data, error, variables, context) => {
+    // Invalidate the query to re-fetch from the server and ensure consistency
+    if (context?.queryKey) {
+      queryClient.invalidateQueries({ queryKey: context.queryKey });
+    }
+    invalidateAllQueries(); // Also invalidate other related queries
+  },
+});
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -770,7 +782,7 @@ export default function DailyBloomClient() {
                   {isMobile ? (
                     // --- MOBILE: Card View ---
                     <div className="space-y-4">
-                      {dailyBloom.map((bloom: DailyBloom) => (
+                      {uniqueBlooms.map((bloom: DailyBloom) => (
                         <Card key={bloom.id} className="p-4">
                           <div className="flex flex-col space-y-3">
                             <div className="flex items-start justify-between gap-4">
@@ -858,7 +870,7 @@ export default function DailyBloomClient() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {dailyBloom.map((bloom) => (
+                        {uniqueBlooms.map((bloom) => (
                           <TableRow key={bloom.id}>
                             <TableCell className="text-center">
                               <Input
