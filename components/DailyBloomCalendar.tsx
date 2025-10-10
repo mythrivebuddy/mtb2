@@ -665,78 +665,88 @@ const DailyBloomCalendar: React.FC<Props> = ({
     }
   }, [lastDeletedEvent]);
 
-  const handleEventDrop = useCallback(
-    async (info: EventDropArg) => {
-      const { event } = info;
-      if (isTempId(event.id)) {
-        setErrorMessage("Please save the event before moving/resizing it.");
-        info.revert();
-        return;
-      }
-      if (dragDebounceRef.current) window.clearTimeout(dragDebounceRef.current);
-      dragDebounceRef.current = window.setTimeout(async () => {
-        try {
-          const response = await fetch("/api/events", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: event.id.replace(/^event-/, ""),
-              start: event.startStr,
-              end: event.endStr || null,
-            }),
-          });
-          if (!response.ok) throw new Error("Failed to update event drop");
-          if (onUpdateBloomFromEvent) {
-            onUpdateBloomFromEvent({
-              id: info.event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
-              updatedData: { dueDate: info.event.startStr },
-            });
-          }
-        } catch (err) {
-          console.error("Error updating event drop:", err);
-          info.revert();
-          setErrorMessage("Failed to move event.");
-        } finally {
-          dragDebounceRef.current = null;
-        }
-      }, 300);
-    },
-    [onUpdateBloomFromEvent] // ----- CHANGE: Added dependency -----
-  );
+  const handleEventDrop = useCallback(
+    async (info: EventDropArg) => {
+      const { event } = info;
+      if (isTempId(event.id)) {
+        setErrorMessage("Please save the event before moving/resizing it.");
+        info.revert();
+        return;
+      }
+      if (dragDebounceRef.current) window.clearTimeout(dragDebounceRef.current);
+      dragDebounceRef.current = window.setTimeout(async () => {
+        try {
+          // If it's a bloom, use the dedicated parent handler
+          if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
+            onUpdateBloomFromEvent({
+              id: info.event.id.replace(/^bloom-/, ""),
+              updatedData: { dueDate: info.event.startStr },
+            });
+          } else {
+            // Otherwise, use the generic event API
+            const response = await fetch("/api/events", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                // ----- FIX: Strip both 'event-' and 'bloom-' prefixes -----
+                id: event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
+                // ----- END FIX -----
+                start: event.startStr,
+                end: event.endStr || null,
+              }),
+            });
+            if (!response.ok) throw new Error("Failed to update event drop");
+          }
+        } catch (err) {
+          console.error("Error updating event drop:", err);
+          info.revert();
+          setErrorMessage("Failed to move event.");
+        } finally {
+          dragDebounceRef.current = null;
+        }
+      }, 300);
+    },
+    [onUpdateBloomFromEvent]
+  );
 
-  const handleEventResize = useCallback(
-    async (info: EventResizeDoneArg) => {
-      const { event } = info;
-      if (resizeDebounceRef.current) window.clearTimeout(resizeDebounceRef.current);
-      resizeDebounceRef.current = window.setTimeout(async () => {
-        try {
-          const response = await fetch("/api/events", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: event.id.replace(/^event-/, ""),
-              start: event.startStr,
-              end: event.endStr,
-            }),
-          });
-          if (!response.ok) throw new Error("Failed to update event resize");
-          if (onUpdateBloomFromEvent) {
-            onUpdateBloomFromEvent({
-              id: info.event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
-              updatedData: { dueDate: info.event.startStr },
-            });
-          }
-        } catch (err) {
-          console.error("Error updating event resize:", err);
-          info.revert();
-          setErrorMessage("Failed to resize event.");
-        } finally {
-          resizeDebounceRef.current = null;
-        }
-      }, 300);
-    },
-    [onUpdateBloomFromEvent]
-  );
+  const handleEventResize = useCallback(
+    async (info: EventResizeDoneArg) => {
+      const { event } = info;
+      if (resizeDebounceRef.current) window.clearTimeout(resizeDebounceRef.current);
+      resizeDebounceRef.current = window.setTimeout(async () => {
+        try {
+          // If it's a bloom, use the dedicated parent handler
+          if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
+            onUpdateBloomFromEvent({
+              id: info.event.id.replace(/^bloom-/, ""),
+            	updatedData: { dueDate: info.event.startStr }, // Resizing a bloom likely just changes its date
+            });
+          } else {
+          	// Otherwise, use the generic event API
+            const response = await fetch("/api/events", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                // ----- FIX: Strip both 'event-' and 'bloom-' prefixes -----
+                id: event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
+                // ----- END FIX -----
+                start: event.startStr,
+                end: event.endStr,
+              }),
+            });
+            if (!response.ok) throw new Error("Failed to update event resize");
+          }
+        } catch (err) {
+          console.error("Error updating event resize:", err);
+          info.revert();
+          setErrorMessage("Failed to resize event.");
+        } finally {
+          resizeDebounceRef.current = null;
+        }
+      }, 300);
+    },
+    [onUpdateBloomFromEvent]
+  );
 
   const eventContent = useCallback((arg: EventContentArg) => {
     const ext = arg.event.extendedProps as EventExtendedProps;
