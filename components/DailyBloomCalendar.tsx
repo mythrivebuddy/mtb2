@@ -84,7 +84,7 @@ interface Props {
     description?: string;
     dueDate?: string;
     isCompleted?: boolean;
-  }) => void;
+  }) => void | Promise<void>;
   onUpdateBloomFromEvent: (payload: {
     id: string;
     updatedData: {
@@ -278,10 +278,10 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const dragDebounceRef = useRef<number | null>(null);
   const resizeDebounceRef = useRef<number | null>(null);
   const resizeViewDebounceRef = useRef<number | null>(null);
-  
+
 
   useEffect(() => {
-    
+
     console.log("PROPS_CHANGED: eventsProp has changed. Overwriting local events state.", eventsProp);
     setEvents(eventsProp);
     setIsLoading(false);
@@ -289,7 +289,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   // --- REALTIME SUBSCRIPTION ---
   useEffect(() => {
-    
+
     if (!supabaseClient) return;
 
     const channel = supabaseClient
@@ -394,61 +394,31 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleSave = useCallback(async () => {
     if (!currentEvent || !currentEvent.title.trim()) return;
-
     setIsSubmitting(true);
-    // Create a temporary ID for the optimistic update
-    const tmpId = `tmp-${Date.now()}`;
-    const eventPayload = {
-      title: currentEvent.title,
-      start: currentEvent.start,
-      end: currentEvent.end ?? null,
-      description: currentEvent.extendedProps?.description,
-      isBloom: true,
-      isCompleted: currentEvent.extendedProps?.isCompleted ?? false,
-      allDay: currentEvent.allDay ?? false,
-    };
 
-    // Optimistically add the event to the UI with a temporary ID
-    setEvents(prev => [
-      ...prev,
-      { ...currentEvent, id: tmpId, extendedProps: { ...currentEvent.extendedProps, isBloom: true } },
-    ]);
+    setEvents(prev => [...prev, currentEvent]);
+    handleCloseModal();
 
     try {
-      // Send the request to the server
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventPayload),
+      // Delegate creation entirely to the parent component.
+      // The parent's react-query `onMutate` will handle the optimistic update.
+      await onCreateBloomFromEvent({
+        title: currentEvent.title,
+        description: currentEvent.extendedProps?.description || '',
+        dueDate: currentEvent.start,
+        isCompleted: false,
       });
-
-      const json = await response.json();
-      if (!response.ok) {
-        throw new Error(json?.message || 'Failed to save event.');
-      }
-
-      // On success, we no longer update the state here.
-      // The real-time listener will handle it.
-      if (onCreateBloomFromEvent) {
-        onCreateBloomFromEvent({
-          title: json.data.title,
-          description: json.data.description,
-          dueDate: json.data.start,
-          isCompleted: json.data.isCompleted,
-        });
-      }
       handleCloseModal();
-
-    } catch (err: unknown) {
-      console.error('Error saving event', err);
-      // If the API call fails, remove the optimistic event
-      setEvents(prev => prev.filter(e => e.id !== tmpId));
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to save event');
+    } catch (err) {
+      console.error("Error creating event:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Failed to save event.");
+      // --- FIX: Revert on Failure ---
+      // 4. If the API call fails, remove the optimistically added event.
+      setEvents(prev => prev.filter(e => e.id !== currentEvent.id));
     } finally {
       setIsSubmitting(false);
     }
   }, [currentEvent, onCreateBloomFromEvent, handleCloseModal]);
-
 
   useEffect(() => {
     if (!mode) return;
@@ -484,76 +454,46 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const handleQuickAdd = useCallback(async () => {
     if (!quickText.trim()) return;
 
-    const tmpId = `tmp-${Date.now()}`;
-    const oldQuickText = quickText;
-    setQuickText('');
+    const textToSubmit = quickText;
+    // Optimistically clear input
 
-    const optimisticEvent: CalendarEvent = {
-      id: tmpId,
-      title: oldQuickText,
-      start: new Date().toISOString().slice(0, 10),
+    const tempId = `tmp-${Date.now()}`;
+
+    // --- FIX START: Create a temporary event object ---
+    const newEvent: CalendarEvent = {
+      id: tempId,
+      title: textToSubmit,
+      start: new Date().toISOString().slice(0, 10), // Default to today
       allDay: true,
-      color: '#4dabf7',
-      extendedProps: { description: 'Quick add', isBloom: true, isCompleted: false },
-    };
-
-    // Optimistically add to UI
-    setEvents(prev => [...prev, optimisticEvent]);
-
-    try {
-      const eventPayload = {
-        title: oldQuickText,
-        start: optimisticEvent.start,
-        end: null,
+      color: "#4dabf7", // Default bloom color
+      extendedProps: {
         description: 'Quick add',
         isBloom: true,
         isCompleted: false,
-        allDay: true,
-      };
+      },
+    };
+    setQuickText('');
 
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventPayload),
+    setEvents(prev => [...prev, newEvent]);
+
+
+    try {
+      // Delegate creation entirely to the parent component.
+      await onCreateBloomFromEvent({
+        title: textToSubmit,
+        description: 'Quick add',
+        dueDate: new Date().toISOString().slice(0, 10), // Today
+        isCompleted: false,
       });
-
-      if (!response.ok) {
-        const json = await response.json();
-        throw new Error(json?.message || 'Failed to save quick-add event');
-      }
-
-      // // Add this helper function
-      // const getUniqueEvents = (events: CalendarEvent[]): CalendarEvent[] => {
-      //   const seen = new Set<string>();
-      //   return events.filter(event => {
-      //     if (seen.has(event.id)) {
-      //       return false;
-      //     }
-      //     seen.add(event.id);
-      //     return true;
-      //   });
-      // };
-
-
-      // On success, do nothing. The real-time listener will handle the update.
-      const serverEvent = toCalendarEventFromServer((await response.json()).data);
-      if (onCreateBloomFromEvent) {
-        onCreateBloomFromEvent({
-          title: serverEvent.title,
-          description: serverEvent.extendedProps?.description,
-          dueDate: serverEvent.start,
-          isCompleted: serverEvent.extendedProps?.isCompleted,
-        });
-      }
-    } catch (err: unknown) {
-      console.error('Quick add error:', err);
-      // On failure, revert the optimistic changes
-      setEvents(prev => prev.filter(e => e.id !== tmpId));
-      setQuickText(oldQuickText);
-      setErrorMessage(err instanceof Error ? err.message : 'Quick add failed.');
+    } catch (err) {
+      console.error("Quick add error:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Quick add failed.");
+      // --- FIX: Revert on Failure ---
+      // 3. If the API fails, revert the input field and remove the optimistic event.
+      setQuickText(textToSubmit);
+      setEvents(prev => prev.filter(e => e.id !== tempId));
     }
   }, [quickText, onCreateBloomFromEvent]);
-
 
   const handleComplete = useCallback(async (id: string) => {
     setIsSubmitting(true);
@@ -893,7 +833,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
     </div>
   );
   // ----- END CHANGE -----
-
+  console.log('Final events being passed to FullCalendar:', events);
   return (
     <div className="border rounded-2xl shadow-lg bg-white p-4 sm:p-6 relative">
       {errorMessage && (
@@ -961,6 +901,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
           <SkeletonLoader />
         ) : (
           <FullCalendar
+            key={events.length}
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
             initialView={isMobile ? "listWeek" : "dayGridMonth"}
