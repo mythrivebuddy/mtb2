@@ -8,6 +8,8 @@ import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
+
+export const maxDuration = 60; // 60 seconds
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authConfig);
