@@ -82,12 +82,19 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
       });
       setEnrollment(response.data.enrollment);
       } catch (err) {
-      const errorMessage =
-          axios.isAxiosError(err) && err.response?.data?.error
-          ? err.response.data.error
-          : "An unexpected error occurred.";
-      setError(errorMessage);
-      } finally {
+  let errorMessage = "An unexpected error occurred. Please try again.";
+  if (axios.isAxiosError(err) && err.response?.data?.error) {
+    const errorData = err.response.data.error;
+
+    // Handle both string and object error responses safely
+    if (typeof errorData === 'object' && errorData.message) {
+      errorMessage = errorData.message;
+    } else if (typeof errorData === 'string') {
+      errorMessage = errorData;
+    }
+  }
+  setError(errorMessage);
+} finally {
       setIsEnrolling(false);
       }
   };
