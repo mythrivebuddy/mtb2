@@ -157,7 +157,7 @@ const EventForm = ({
   isEditing: boolean;
   isSubmitting: boolean;
 }) => (
-  <div className="grid gap-4 py-4 px-1">
+  <div className="grid gap-4 py-4">
     <div className="grid gap-2">
       <Label htmlFor="title">Title</Label>
       <Input
@@ -976,9 +976,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 {mode === "create" ? "Fill in the details for your new event." : "View or manage your event details."}
               </DrawerDescription>
             </DrawerHeader>
+            <div className="px-4 overflow-y-auto">
             {currentEvent && (
               <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
             )}
+            </div>
             <DrawerFooter className="pt-4">
               <FormButtons />
             </DrawerFooter>
@@ -993,9 +995,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 {mode === "create" ? "Fill in the details for your new event." : "View or manage your event details."}
               </DialogDescription>
             </DialogHeader>
+            <div className="px-4 overflow-y-auto max-h-[60vh]">
             {currentEvent && (
               <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
             )}
+            </div>
             <DialogFooter>
               <FormButtons />
             </DialogFooter>
