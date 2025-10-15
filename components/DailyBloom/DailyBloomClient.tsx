@@ -168,19 +168,27 @@ export default function DailyBloomClient() {
   const [calendarOpen, setCalendarOpen] = useState(false); // New state for calendar dialog
   useOnlineUserLeaderBoard();
 
+  // --- In DailyBloomClient.tsx ---
+
   const handleCreateBloomFromEvent = (payload: {
     title: string;
     description?: string;
-    dueDate?: string;
+    dueDate?: string; // This is the 'start' date from the calendar event
   }) => {
     createMutation.mutate({
+      // These are the fields from DailyBloomFormType
       title: payload.title,
       description: payload.description || "",
       dueDate: payload.dueDate ? new Date(payload.dueDate) : new Date(),
       isCompleted: false,
-      isFromEvent: true,
+      addToCalendar: true, // This is the crucial flag
+      frequency: undefined,
+      startTime: payload.dueDate ? format(new Date(payload.dueDate), 'HH:mm') : "",
+      endTime: "", // Let the user set this later if they want
       taskAddJP: false,
       taskCompleteJP: false,
+      isFromEvent: true, // Mark this bloom as created from an even
+
     });
   };
 
@@ -279,86 +287,82 @@ export default function DailyBloomClient() {
     queryClient.invalidateQueries({ queryKey: ["events"] });
   };
 
-// ⬇️ REPLACE your existing createMutation with this corrected version ⬇️
-  const createMutation = useMutation({
-    mutationFn: async (newData: DailyBloomFormType & { isFromEvent?: boolean }) => {
-      const { data } = await axios.post("/api/user/daily-bloom", newData);
-      return data;
-    },
-    onMutate: async (newBloom) => {
-      await queryClient.cancelQueries({
-        queryKey: ["dailyBloom", frequencyFilter, statusFilter],
-      });
+  // --- Replace the existing createMutation ---
+  const createMutation = useMutation({
+    mutationFn: async (newData: DailyBloomFormType) => {
+      // Expects the API to return the created bloom object
+      const { data } = await axios.post<DailyBloom>("/api/user/daily-bloom", newData);
+      return data;
+    },
+    onMutate: async (newBloom) => {
+      const queryKey = ["dailyBloom", frequencyFilter, statusFilter];
+      await queryClient.cancelQueries({ queryKey });
 
-      const previousBlooms = queryClient.getQueryData([
-        "dailyBloom",
-        frequencyFilter,
-        statusFilter,
-      ]);
+      const previousBlooms = queryClient.getQueryData(queryKey);
 
-      queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
-        ["dailyBloom", frequencyFilter, statusFilter],
-        (oldData) => {
-          const optimisticBloom: DailyBloom = {
-            ...newBloom,
-            id: `temp-${Date.now()}`,
-            dueDate: newBloom.dueDate
-              ? new Date(newBloom.dueDate)
-              : new Date(),
-            createdAt: new Date().toISOString(),
-            isCompleted: false,
-            // FIX: This now correctly uses the value from the form submission,
-            // instead of being hardcoded to `true`.
-            isFromEvent: !!newBloom.isFromEvent,
-            updatedAt: new Date().toISOString(),
-            description: newBloom.description ?? "",
-          };
+      queryClient.setQueryData<InfiniteData<DailyBloomPage>>(queryKey, (oldData) => {
+        const optimisticBloom: DailyBloom = {
+          ...newBloom,
+          id: `temp-${Date.now()}`,
+          dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : new Date(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isCompleted: false,
+          isFromEvent: newBloom.addToCalendar || false,
+          description: newBloom.description ?? "",
+        };
 
-          if (!oldData || !oldData.pages) {
-            return {
-              pages: [{ data: [optimisticBloom], totalCount: 1 }],
-              pageParams: [1],
-            } as InfiniteData<DailyBloomPage>;
-          }
+        if (!oldData || !oldData.pages) {
+          return { pages: [{ data: [optimisticBloom], totalCount: 1 }], pageParams: [1] };
+        }
 
-          const newData = oldData.pages.map(
-            (page: DailyBloomPage, index: number) => {
-              if (index === 0) {
-                return {
-                  ...page,
-                  data: [optimisticBloom, ...page.data],
-                  totalCount: page.totalCount + 1,
-                };
-              }
-              return page;
-            }
-          );
+        const firstPage = oldData.pages[0];
+        const updatedFirstPage = {
+          ...firstPage,
+          data: [optimisticBloom, ...firstPage.data],
+          totalCount: firstPage.totalCount + 1,
+        };
 
-          return { ...oldData, pages: newData };
-        }
-      );
+        return { ...oldData, pages: [updatedFirstPage, ...oldData.pages.slice(1)] };
+      });
 
-      return { previousBlooms };
-    },
-    onError: (err, newBloom, context) => {
-      if (context?.previousBlooms) {
-        queryClient.setQueryData(
-          ["dailyBloom", frequencyFilter, statusFilter],
-          context.previousBlooms
-        );
-      }
-      const errorMessage = getAxiosErrorMessage(
-        err,
-        "An error occurred while creating Daily Bloom."
-      );
-      toast.error(errorMessage);
-    },
-    onSettled: () => {
-      invalidateAllQueries();
-      setAddData(false);
-    },
-  });
+      return { previousBlooms, queryKey };
+    },
+    // ✅ CHANGE 1: Add this onSuccess handler
+    onSuccess: (createdBloom, variables, context) => {
+      if (!context) return;
 
+      // This replaces the temporary bloom with the real one from the API
+      queryClient.setQueryData<InfiniteData<DailyBloomPage>>(context.queryKey, (oldData) => {
+        if (!oldData) return;
+        return {
+          ...oldData,
+          pages: oldData.pages.map(page => ({
+            ...page,
+            data: page.data.map(bloom =>
+              bloom.id.startsWith('temp-') ? createdBloom : bloom
+            ),
+          })),
+        };
+      });
+      toast.success("Bloom created successfully!");
+    },
+    onError: (err, newBloom, context) => {
+      if (context?.previousBlooms) {
+        queryClient.setQueryData(context.queryKey, context.previousBlooms);
+      }
+      const errorMessage = getAxiosErrorMessage(err, "An error occurred while creating Daily Bloom.");
+      toast.error(errorMessage);
+    },
+    // ✅ CHANGE 2: Modify onSettled to NOT invalidate 'dailyBloom' query
+    onSettled: () => {
+      setAddData(false);
+      // Invalidate related data, but not the main 'dailyBloom' query
+      queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
+      queryClient.invalidateQueries({ queryKey: ["user", userId] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+    },
+  });
   const updateMutation = useMutation({
     mutationFn: async (payload: {
       id: string;
@@ -445,24 +449,24 @@ export default function DailyBloomClient() {
     },
   });
 
-// ⬇️ REPLACE your existing onSubmit function with this one ⬇️
-  const onSubmit = (formData: DailyBloomFormType) => {
-    const dataToSubmit =
-      addInputType === "date"
-        ? { ...formData, frequency: undefined }
-        : { ...formData, dueDate: undefined };
+  // ⬇️ REPLACE your existing onSubmit function with this one ⬇️
+  const onSubmit = (formData: DailyBloomFormType) => {
+    const dataToSubmit =
+      addInputType === "date"
+        ? { ...formData, frequency: undefined }
+        : { ...formData, dueDate: undefined };
 
-    // Create a payload that correctly uses the `isFromEvent` flag
-    // to track if this bloom should be on the calendar.
-    const payload = {
-      ...dataToSubmit,
-      isFromEvent: dataToSubmit.addToCalendar,
-    };
+    // Create a payload that correctly uses the `isFromEvent` flag
+    // to track if this bloom should be on the calendar.
+    const payload = {
+      ...dataToSubmit,
+      isFromEvent: dataToSubmit.addToCalendar,
+    };
 
-    // The `as any` is used here to accommodate the extra `isFromEvent` property,
-    // similar to how your `handleCreateBloomFromEvent` function works.
-    createMutation.mutate(payload as unknown as DailyBloomFormType & { isFromEvent?: boolean });
-  };
+    // The `as any` is used here to accommodate the extra `isFromEvent` property,
+    // similar to how your `handleCreateBloomFromEvent` function works.
+    createMutation.mutate(payload as unknown as DailyBloomFormType & { isFromEvent?: boolean });
+  };
 
 
   const onUpdate = (formData: DailyBloomFormType) => {
@@ -507,63 +511,55 @@ export default function DailyBloomClient() {
     );
   };
 
+  // --- In DailyBloomClient.tsx ---
+
   const handleUpdateBloomFromEvent = (payload: {
-    id: string; // This is the raw bloom ID from the calendar
+    id: string; // This is the raw bloom ID from the calendar (e.g., 'bloom-clyg1234')
     updatedData: {
       title?: string;
-      description?: string;
-      dueDate?: string; // This is the 'start' date from the calendar event as an ISO string
+      dueDate?: string; // This is the new 'start' date from the calendar event
+      // The calendar might also pass an 'end' date if resized
+      end?: string;
     };
   }) => {
-    // 1. Attempt to find the original bloom in the parent's current state.
-    const originalBloom = dailyBloom.find((b) => b.id === payload.id);
+    // CRITICAL: Clean the ID from the "bloom-" prefix
+    const actualBloomId = payload.id.replace('bloom-', '');
 
-    // --- FIX START ---
-    // 2. Handle the case where the bloom is not found (due to a race condition).
+    // 1. Find the original, full bloom object from our local state.
+    const originalBloom = dailyBloom.find((b) => b.id === actualBloomId);
+
+    // If the bloom somehow isn't in our local cache yet (race condition), 
+    // we can't update it. Invalidate queries to sync up.
     if (!originalBloom) {
-      // Instead of erroring, log a warning and invalidate the query.
-      // The user's optimistic update in the calendar is already visually correct.
-      // This refetch will ensure the parent's state catches up to the database.
-      console.warn(
-        `Could not find bloom with id: ${payload.id} in local cache. This is likely a race condition after a create. Triggering a refetch to sync.`
-      );
+      console.warn(`Could not find bloom with id: ${actualBloomId} to update from calendar. Refetching.`);
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-      return; // Exit the function gracefully.
+      return;
     }
-    // --- FIX END ---
 
-    // 3. If the bloom was found, proceed with the update as normal.
-    // Create the complete data object for the mutation.
+    // 2. Construct the *complete* form data object for the update.
+    // We use the original bloom data as the base and overwrite it with changes.
+    const newDueDate = payload.updatedData.dueDate ? new Date(payload.updatedData.dueDate) : new Date(originalBloom.dueDate || new Date());
+    const newEndDate = payload.updatedData.end ? new Date(payload.updatedData.end) : null;
+
     const updatedBloomData: DailyBloomFormType = {
+      // Start with all original data
       ...originalBloom,
       title: payload.updatedData.title ?? originalBloom.title,
-      description:
-        payload.updatedData.description ?? originalBloom.description ?? "",
-      dueDate: payload.updatedData.dueDate
-        ? new Date(payload.updatedData.dueDate)
-        : originalBloom.dueDate
-          ? new Date(originalBloom.dueDate)
-          : new Date(),
+      description: originalBloom.description ?? "",
+      dueDate: newDueDate,
+      // Ensure this flag stays true
+      addToCalendar: true,
+      // Update start and end times based on the calendar drag/resize
+      startTime: format(newDueDate, 'HH:mm'),
+      endTime: newEndDate ? format(newEndDate, 'HH:mm') : originalBloom.endTime,
     };
 
-    // 4. Use the existing updateMutation to save the changes.
-    updateMutation.mutate(
-      { id: payload.id, updatedData: updatedBloomData },
-      {
-        onSuccess: () => {
-          toast.success("Bloom updated from calendar!");
-        },
-        // You can add an onError callback here if needed
-        onError: (error) => {
-          // Revert optimistic updates if the mutation fails
-          console.error("Failed to update bloom from calendar event:", error);
-          toast.error("Failed to sync calendar change.");
-          queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
-        },
-      }
-    );
+    // 3. Call the existing updateMutation with the correct ID and complete data.
+    updateMutation.mutate({
+      id: actualBloomId,
+      updatedData: updatedBloomData
+    });
   };
-
   const handleDeleteBloom = (bloomId: string) => {
     // 1. Basic validation to ensure an ID was actually passed.
     if (!bloomId) {
@@ -615,48 +611,68 @@ export default function DailyBloomClient() {
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
 const combinedCalendarItems = useMemo(() => {
-  const eventMap = new Map<string, CalendarEvent>();
+    // 1. Process blooms to create calendar events
+    const bloomEvents = uniqueBlooms.reduce<CalendarEvent[]>((acc, bloom) => {
+        if (bloom.isFromEvent && bloom.dueDate) {
+            const startDate = new Date(bloom.dueDate);
+            let endDate = new Date(startDate);
 
-  // Step 1: Process events from the dedicated events API
-  const regularEvents = events ?? [];
-  regularEvents.forEach((event) => {
-    const normalizedId =
-      event.extendedProps?.isBloom && !event.id.startsWith("bloom-")
-        ? `bloom-${event.id}`
-        : event.id;
-    eventMap.set(normalizedId, event);
-  });
+            // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
+            const safeDescription = bloom.description || '';
+            
+            // Use regex to parse time from the safe description string
+            const timeMatch = safeDescription.match(/\[Time: (\d{2}:\d{2})(?:-(\d{2}:\d{2}))?\]/);
 
-  // Step 2: Process the local dailyBloom array
-  dailyBloom.forEach((bloom) => {
-    // --- THIS IS THE CRITICAL FIX ---
-    // Only add a bloom to the calendar if it has a due date AND
-    // it was explicitly marked as a calendar event (`isFromEvent`).
-    if (!bloom.dueDate || !bloom.isFromEvent) {
-      return;
-    }
+            if (timeMatch) {
+                const extractedStartTime = timeMatch[1];
+                const extractedEndTime = timeMatch[2];
 
-    const bloomEventId = `bloom-${bloom.id}`;
-    const bloomAsEvent: CalendarEvent = {
-      id: bloomEventId,
-      title: bloom.title,
-      start: new Date(bloom.dueDate).toISOString(),
-      end: "", // You can calculate an end time if available
-      extendedProps: {
-        description: bloom.description || "",
-        isBloom: true,
-        isCompleted: bloom.isCompleted,
-      },
-    };
+                const [startHours, startMinutes] = extractedStartTime.split(':');
+                startDate.setHours(Number(startHours), Number(startMinutes), 0, 0);
+                endDate = new Date(startDate);
 
-    // Overwrite any stale data from the main `events` fetch
-    // with the most up-to-date local/optimistic data.
-    eventMap.set(bloomEventId, bloomAsEvent);
-  });
+                if (extractedEndTime) {
+                    const [endHours, endMinutes] = extractedEndTime.split(':');
+                    endDate.setHours(Number(endHours), Number(endMinutes), 0, 0);
+                }
+            }
+            
+            acc.push({
+                id: `bloom-${bloom.id}`,
+                title: bloom.title,
+                start: startDate.toISOString(),
+                end: endDate.toISOString(),
+                extendedProps: {
+                    description: safeDescription.replace(/\[Time:.*?\]/, '').trim(),
+                    isBloom: true,
+                    isCompleted: bloom.isCompleted,
+                },
+            });
+        }
+        return acc;
+    }, []);
 
-  // Step 3: Return the final, de-duplicated list of items to render
-  return Array.from(eventMap.values());
-}, [dailyBloom, events]);
+    // 2. Filter out any "ghost" events (logic unchanged)
+    const bloomEventIdentifiers = new Set(
+        bloomEvents.map(be => {
+            const date = new Date(be.start).toISOString().split('T')[0];
+            return `${date}_${be.title}`;
+        })
+    );
+
+    const pureEvents = (events ?? [])
+        .filter(event => {
+            if (event.extendedProps?.isBloom) return false;
+            const eventDate = new Date(event.start).toISOString().split('T')[0];
+            const eventIdentifier = `${eventDate}_${event.title}`;
+            return !bloomEventIdentifiers.has(eventIdentifier);
+        });
+
+    // 3. Combine the clean lists
+    return [...pureEvents, ...bloomEvents];
+
+}, [uniqueBlooms, events]);
+
   return (
     <div>
       <CustomAccordion />
