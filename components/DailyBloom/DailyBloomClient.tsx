@@ -603,26 +603,46 @@ export default function DailyBloomClient() {
 
 // in DailyBloomClient.tsx
 
-// Find this useMemo hook...
-/*
+// Replace the current simple `useMemo` with this robust, de-duplicating version.
 const combinedCalendarItems = useMemo(() => {
-  // 1. Map your `dailyBloom` data (which is optimistically updated)
-  const bloomEvents = dailyBloom.map((bloom) => ({ ... }));
+    // Step 1: Map the `dailyBloom` array into the calendar event format.
+    // This array contains our optimistic updates, so it's the most current source for blooms.
+    const bloomEvents = dailyBloom.map((bloom) => {
+      // Blooms must have a due date to appear on the calendar.
+      if (!bloom.dueDate) return null;
 
-  // 2. Take the separate `events` from your other API call but
-  const regularEvents = (events ?? []).filter(...);
+      return {
+        id: `bloom-${bloom.id}`, // IMPORTANT: Use a consistent prefix.
+        title: bloom.title,
+        start: new Date(bloom.dueDate).toISOString(),
+        allDay: true,
+        color: "#4dabf7", // Bloom-specific color
+        extendedProps: {
+          description: bloom.description || "",
+          isBloom: true,
+          isCompleted: bloom.isCompleted,
+        },
+      };
+    }).filter(Boolean) as unknown as CalendarEvent[]; // Filter out any nulls
 
-  // 3. Combine them into a single array.
-  return [...bloomEvents, ...regularEvents];
-}, [dailyBloom, events]);
-*/
+    // Step 2: Get the regular events from the API.
+    // We assume the API might also return blooms, so we don't pre-filter this list.
+    const regularEvents = events ?? [];
 
-// ...and REPLACE it with this much simpler and correct version:
-const combinedCalendarItems = useMemo(() => {
-  // The `/api/events` endpoint is now the single source of truth for the calendar.
-  // This will include regular events AND any blooms that were created with "Add to Calendar".
-  return events ?? [];
-}, [events]); // This only needs to re-run when the `events` query updates.
+    // Step 3: Combine both arrays and de-duplicate using a Map.
+    // A Map automatically handles uniqueness by key. This is the perfect tool to solve our problem.
+    // We place regularEvents first, then bloomEvents. If an event ID exists in both,
+    // the version from `bloomEvents` (our more up-to-date, optimistic source) will overwrite the older one.
+    const eventMap = new Map<string, CalendarEvent>();
+
+    regularEvents.forEach(event => eventMap.set(event.id, event));
+    bloomEvents.forEach(event => eventMap.set(event.id, event));
+
+    // Step 4: Convert the Map's values back into an array.
+    // This is our final, clean, de-duplicated list of events to render.
+    return Array.from(eventMap.values());
+
+}, [dailyBloom, events]); // Re-run this logic whenever blooms or events data changes.
 
 
   return (
