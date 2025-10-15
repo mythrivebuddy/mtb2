@@ -6,25 +6,29 @@ import { checkRole } from "@/lib/utils/auth";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType, EnrollmentStatus } from "@prisma/client";
 
-// Define a type for the data used to update an enrollment
 type EnrollmentUpdateData = {
   currentStreak: number;
   longestStreak: number;
   lastStreakUpdate: Date;
-  status?: EnrollmentStatus; // Status is optional
+  status?: EnrollmentStatus;
 };
 
-// This function handles PATCH requests to update a specific task's completion status.
+/**
+ * Normalizes a Date object to the start of its day in UTC (00:00:00.000Z).
+ * Essential for accurate date comparisons without time interference.
+ */
+function normalizeToUTCStartOfDay(date: Date): Date {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  return new Date(Date.UTC(year, month, day));
+}
+
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
+  { params }: { params: { taskId: string } }
 ) {
-  const userChallengeTaskId = (await params).taskId;
-
-
-
-
-  // Ensure the user is authenticated and has the correct role
+  const { taskId: userChallengeTaskId } = params;
 
   try {
     const session = await checkRole("USER");
@@ -33,91 +37,61 @@ export async function PATCH(
     }
     const userId = session.user.id;
 
-    // Get completionDate from the client request
     const { isCompleted, completionDate } = await request.json();
 
-    // Add validation for the new date string
     if (typeof isCompleted !== "boolean") {
-      return NextResponse.json(
-        { error: "Invalid 'isCompleted' value provided." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid 'isCompleted' value." }, { status: 400 });
     }
     if (!completionDate || !/^\d{4}-\d{2}-\d{2}$/.test(completionDate)) {
-      return NextResponse.json(
-        { error: "Invalid or missing 'completionDate'. Expected YYYY-MM-DD." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid 'completionDate'. Expected YYYY-MM-DD." }, { status: 400 });
     }
 
     let allTasksWereCompletedToday = false;
 
-    // A transaction ensures all database operations (streak, penalty, reward) succeed or fail together.
     await prisma.$transaction(async (tx) => {
-      // Find the specific task the user is updating and include related data.
       const taskToUpdate = await tx.userChallengeTask.findFirst({
-        where: {
-          id: userChallengeTaskId,
-          enrollment: { userId: userId },
-        },
+        where: { id: userChallengeTaskId, enrollment: { userId: userId } },
         include: {
           enrollment: {
             include: {
-              challenge: true, // Needed for penalty and reward amounts
-              user: { include: { plan: true } }, // Needed for JP functions
+              challenge: true,
+              user: { include: { plan: true } },
             },
           },
         },
       });
 
       if (!taskToUpdate) {
-        throw new Error(
-          "Task not found or you do not have permission to update it."
-        );
+        throw new Error("Task not found or you do not have permission to update it.");
       }
 
       const { enrollment } = taskToUpdate;
       const { challenge } = enrollment;
 
       if (challenge.status !== "ACTIVE") {
-        throw new Error(
-          "This challenge is not active. Tasks can only be updated for active challenges."
-        );
+        throw new Error("This challenge is not active. Tasks can only be updated for active challenges.");
       }
 
-      // --- Penalty and Streak Reset Logic ---
-      // Create a UTC date object from the client's date string. This is the correct date.
-      const now = new Date(); // Keep `now` for the exact timestamp of the update
-      const today = new Date(`${completionDate}T00:00:00.000Z`);
-
+      const now = new Date(); // The exact timestamp for this update
+      const today = new Date(`${completionDate}T00:00:00.000Z`); // Start of the completion day in UTC
+      
       const yesterday = new Date(today);
       yesterday.setUTCDate(today.getUTCDate() - 1);
 
-      const lastUpdate = enrollment.lastStreakUpdate ? new Date(enrollment.lastStreakUpdate) : null;
-      // Also ensure lastUpdateDate is handled in UTC for accurate comparisons
-      const lastUpdateDate = lastUpdate
-        ? new Date(Date.UTC(lastUpdate.getUTCFullYear(), lastUpdate.getUTCMonth(), lastUpdate.getUTCDate()))
+      const lastUpdateDate = enrollment.lastStreakUpdate
+        ? normalizeToUTCStartOfDay(new Date(enrollment.lastStreakUpdate))
         : null;
-      // Check if the streak was broken (i.e., the last update was before yesterday)
-      if (
-        enrollment.currentStreak > 0 &&
-        lastUpdateDate &&
-        lastUpdateDate < yesterday
-      ) {
+
+      // Check if streak was broken (last update was before yesterday)
+      if (enrollment.currentStreak > 0 && lastUpdateDate && lastUpdateDate < yesterday) {
         if (challenge.penalty > 0) {
-          await deductJp(
-            enrollment.user,
-            ActivityType.CHALLENGE_PENALTY,
-            tx,
-            { amount: challenge.penalty }
-          );
+          await deductJp(enrollment.user, ActivityType.CHALLENGE_PENALTY, tx, { amount: challenge.penalty });
         }
-        // Reset the streak to 0
         await tx.challengeEnrollment.update({
           where: { id: enrollment.id },
           data: { currentStreak: 0 },
         });
-        enrollment.currentStreak = 0; // Update in-memory object
+        enrollment.currentStreak = 0; // Update in-memory object for subsequent logic
       }
 
       // Update the specific task the user clicked on
@@ -125,60 +99,51 @@ export async function PATCH(
         where: { id: userChallengeTaskId },
         data: {
           isCompleted: isCompleted,
-          lastCompletedAt: isCompleted ? new Date() : undefined,
+          lastCompletedAt: isCompleted ? now : null, // Set to now, or clear it if unchecking
         },
       });
 
-      // --- Streak and Reward Calculation Logic ---
-      // This block only runs if a task is being marked as complete.
       if (isCompleted) {
         const allTasks = await tx.userChallengeTask.findMany({
           where: { enrollmentId: enrollment.id },
         });
 
-        // We manually check against the just-updated task's status
         const allTasksCompleted = allTasks.every(
           (task) => (task.id === userChallengeTaskId ? isCompleted : task.isCompleted)
         );
 
-        // If all of today's tasks are now complete...
         if (allTasksCompleted) {
           allTasksWereCompletedToday = true;
           let newStreak = enrollment.currentStreak;
 
-          // If the last update was yesterday, continue the streak. Otherwise, start a new one.
           if (lastUpdateDate && lastUpdateDate.getTime() === yesterday.getTime()) {
-            newStreak++;
+            newStreak++; // Continue the streak
           } else if (!lastUpdateDate || lastUpdateDate.getTime() < yesterday.getTime()) {
-            newStreak = 1;
+            newStreak = 1; // Start a new streak
           }
+          // Note: If lastUpdateDate is today, the streak doesn't change, which is correct.
 
-          // Use the specific type for the update payload
           const dataToUpdate: EnrollmentUpdateData = {
             currentStreak: newStreak,
             longestStreak: Math.max(enrollment.longestStreak, newStreak),
             lastStreakUpdate: now,
           };
 
-          // --- REWARD LOGIC ---
           const challengeDurationInMs = challenge.endDate.getTime() - challenge.startDate.getTime();
-          const challengeDurationInDays = Math.ceil(challengeDurationInMs / (1000 * 60 * 60 * 24));
+          const challengeDurationInDays = Math.ceil(challengeDurationInMs / (1000 * 60 * 60 * 24)) + 1; // +1 to be inclusive
 
-          if (newStreak === challengeDurationInDays) {
+          if (newStreak >= challengeDurationInDays) {
             if (challenge.reward > 0) {
               await assignJp(enrollment.user, ActivityType.CHALLENGE_REWARD, tx, { amount: challenge.reward });
             }
             dataToUpdate.status = "COMPLETED";
           }
-          // --- END OF REWARD LOGIC ---
 
-          // Update the enrollment with the new streak and possibly completed status.
           await tx.challengeEnrollment.update({
             where: { id: enrollment.id },
             data: dataToUpdate,
           });
 
-          // 🎯 CODE INSERTED HERE: Record this day as 'COMPLETED'
           await tx.completionRecord.upsert({
             where: {
               userId_challengeId_date: {
@@ -187,14 +152,12 @@ export async function PATCH(
                 date: today,
               },
             },
-            update: {
-              status: "COMPLETED", // Using a string as per your schema
-            },
+            update: { status: "COMPLETED" },
             create: {
               userId: enrollment.userId,
               challengeId: enrollment.challengeId,
               date: today,
-              status: "COMPLETED", // Using a string
+              status: "COMPLETED",
             },
           });
         }
@@ -206,20 +169,13 @@ export async function PATCH(
       allTasksCompleted: allTasksWereCompletedToday,
     });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "An unknown error occurred";
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Failed to update task:", errorMessage);
 
-    if (
-      errorMessage.includes("not active") ||
-      errorMessage.includes("Insufficient JP balance")
-    ) {
+    if (errorMessage.includes("not active") || errorMessage.includes("Insufficient JP balance")) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { error: "An internal server error occurred." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "An internal server error occurred." }, { status: 500 });
   }
 }
