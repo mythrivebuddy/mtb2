@@ -603,47 +603,58 @@ export default function DailyBloomClient() {
 
 // in DailyBloomClient.tsx
 
-// Replace the current simple `useMemo` with this robust, de-duplicating version.
+// Replace the current combinedCalendarItems with this robust, de-duplicating version.
 const combinedCalendarItems = useMemo(() => {
-    // Step 1: Map the `dailyBloom` array into the calendar event format.
-    // This array contains our optimistic updates, so it's the most current source for blooms.
-    const bloomEvents = dailyBloom.map((bloom) => {
-      // Blooms must have a due date to appear on the calendar.
-      if (!bloom.dueDate) return null;
-
-      return {
-        id: `bloom-${bloom.id}`, // IMPORTANT: Use a consistent prefix.
-        title: bloom.title,
-        start: new Date(bloom.dueDate).toISOString(),
-        allDay: true,
-        color: "#4dabf7", // Bloom-specific color
-        extendedProps: {
-          description: bloom.description || "",
-          isBloom: true,
-          isCompleted: bloom.isCompleted,
-        },
-      };
-    }).filter(Boolean) as unknown as CalendarEvent[]; // Filter out any nulls
-
-    // Step 2: Get the regular events from the API.
-    // We assume the API might also return blooms, so we don't pre-filter this list.
-    const regularEvents = events ?? [];
-
-    // Step 3: Combine both arrays and de-duplicate using a Map.
-    // A Map automatically handles uniqueness by key. This is the perfect tool to solve our problem.
-    // We place regularEvents first, then bloomEvents. If an event ID exists in both,
-    // the version from `bloomEvents` (our more up-to-date, optimistic source) will overwrite the older one.
+    // A Map to store the final, de-duplicated list of events.
+    // The key will be the event's unique ID.
     const eventMap = new Map<string, CalendarEvent>();
 
-    regularEvents.forEach(event => eventMap.set(event.id, event));
-    bloomEvents.forEach(event => eventMap.set(event.id, event));
+    // Step 1: Process the events coming from the generic '/api/events' endpoint.
+    const regularEvents = events ?? [];
+    regularEvents.forEach(event => {
+        // --- THIS IS THE CRITICAL FIX ---
+        // We check if the event is a bloom (based on your extendedProps).
+        // If it is, we MUST prefix its ID to match the format we use for local blooms.
+        // If it's not a bloom, we use its ID as-is.
+        const normalizedId = (event.extendedProps?.isBloom && !event.id.startsWith('bloom-'))
+            ? `bloom-${event.id}` 
+            : event.id;
+        
+        eventMap.set(normalizedId, event);
+    });
 
-    // Step 4: Convert the Map's values back into an array.
-    // This is our final, clean, de-duplicated list of events to render.
+    // Step 2: Process the local `dailyBloom` array.
+    // This array contains our most up-to-date data, including any optimistic updates.
+    dailyBloom.forEach(bloom => {
+        // Blooms must have a due date to appear on the calendar.
+        if (!bloom.dueDate) return;
+
+        // The ID is already prefixed here, which is correct.
+        const bloomEventId = `bloom-${bloom.id}`;
+
+        const bloomAsEvent: CalendarEvent = {
+          id: bloomEventId,
+          title: bloom.title,
+          start: new Date(bloom.dueDate).toISOString(),
+          // allDay and color can be set here if needed, matching your original logic
+          extendedProps: {
+            description: bloom.description || "",
+            isBloom: true,
+            isCompleted: bloom.isCompleted,
+          },
+          end: ""
+        };
+
+        // By setting it here, we ensure that the local, optimistically updated
+        // version of a bloom ALWAYS overwrites the one that might have come from the API.
+        eventMap.set(bloomEventId, bloomAsEvent);
+    });
+    
+    // Step 3: Convert the Map's values back into an array.
+    // This is our final, clean, de-duplicated list of items to render.
     return Array.from(eventMap.values());
 
 }, [dailyBloom, events]); // Re-run this logic whenever blooms or events data changes.
-
 
   return (
     <div>
