@@ -102,13 +102,13 @@ export const dailyBloomSchema = z
         });
       }
       // End time becomes required
-      if (!data.endTime) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "End time is required to add to calendar.",
-          path: ["endTime"],
-        });
-      }
+      // if (!data.endTime) {
+      //   ctx.addIssue({
+      //     code: z.ZodIssueCode.custom,
+      //     message: "End time is required to add to calendar.",
+      //     path: ["endTime"],
+      //   });
+      // }
       // End time must be after start time
       if (data.startTime && data.endTime && data.startTime >= data.endTime) {
         ctx.addIssue({
