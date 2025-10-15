@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dailyBloomSchema } from "@/schema/zodSchema";
 import { prisma } from "@/lib/prisma";
-import { checkRole } from "@/lib/utils/auth";
+// import { checkRole } from "@/lib/utils/auth";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
@@ -81,7 +81,7 @@ export async function PUT(
       addToCalendar, 
       startTime, 
       endTime, 
-      extendedProps, // Also handle extendedProps if it's being sent
+      //extendedProps, // Also handle extendedProps if it's being sent
       ...todoData // `todoData` now contains ONLY fields that belong to the Todo model
     } = body;
     // --- END: THE FIX ---
