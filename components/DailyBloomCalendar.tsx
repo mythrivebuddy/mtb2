@@ -455,45 +455,47 @@ const DailyBloomCalendar: React.FC<Props> = ({
     if (!quickText.trim()) return;
 
     const textToSubmit = quickText;
-    // Optimistically clear input
-
     const tempId = `tmp-${Date.now()}`;
 
-    // --- FIX START: Create a temporary event object ---
+    // --- FIX START: Get local date string instead of UTC ---
+    const localDate = new Date();
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+    const day = String(localDate.getDate()).padStart(2, '0');
+    const todayDateString = `${year}-${month}-${day}`;
+    // --- FIX END ---
+
     const newEvent: CalendarEvent = {
       id: tempId,
       title: textToSubmit,
-      start: new Date().toISOString().slice(0, 10), // Default to today
+      start: todayDateString, // Use the correct local date string
       allDay: true,
-      color: "#4dabf7", // Default bloom color
+      color: "#4dabf7", 
       extendedProps: {
         description: 'Quick add',
         isBloom: true,
         isCompleted: false,
       },
     };
-    setQuickText('');
 
+    setQuickText('');
     setEvents(prev => [...prev, newEvent]);
 
-
     try {
-      // Delegate creation entirely to the parent component.
       await onCreateBloomFromEvent({
         title: textToSubmit,
         description: 'Quick add',
-        dueDate: new Date().toISOString().slice(0, 10), // Today
+        dueDate: todayDateString, // Use the correct local date string
         isCompleted: false,
       });
     } catch (err) {
       console.error("Quick add error:", err);
       setErrorMessage(err instanceof Error ? err.message : "Quick add failed.");
-      // --- FIX: Revert on Failure ---
-      // 3. If the API fails, revert the input field and remove the optimistic event.
       setQuickText(textToSubmit);
       setEvents(prev => prev.filter(e => e.id !== tempId));
     }
   }, [quickText, onCreateBloomFromEvent]);
+
 
   const handleComplete = useCallback(async (id: string) => {
     setIsSubmitting(true);
