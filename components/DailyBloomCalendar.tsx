@@ -802,7 +802,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const FormButtons = useCallback(() => (
     <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
       {mode === "create" && (
-        <Button onClick={handleSave} disabled={isSubmitting} className="py-2 px-3 text-sm sm:text-base">
+        <Button onClick={handleSave} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Event
         </Button>
@@ -810,23 +810,23 @@ const DailyBloomCalendar: React.FC<Props> = ({
       {mode === "view" && currentEvent && (
         <>
           {!isEditing && !currentEvent.extendedProps?.isCompleted && (
-            <Button onClick={() => setIsEditing(true)} disabled={isSubmitting} className="py-2 px-3 text-sm sm:text-base">
+            <Button onClick={() => setIsEditing(true)} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
               Edit
             </Button>
           )}
           {isEditing && (
-            <Button onClick={handleUpdate} disabled={isSubmitting} className="py-2 px-3 text-sm sm:text-base">
+            <Button onClick={handleUpdate} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
           )}
           {!currentEvent.extendedProps?.isCompleted && (
-            <Button onClick={() => handleComplete(currentEvent.id)} disabled={isSubmitting} className="py-2 px-3 text-sm sm:text-base">
+            <Button onClick={() => handleComplete(currentEvent.id)} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Mark Completed ✅
             </Button>
           )}
-          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={isSubmitting} className="py-2 px-3 text-sm sm:text-base">
+          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
             Delete
           </Button>
         </>
@@ -1032,10 +1032,3 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
 
 export default DailyBloomCalendar;
-
-
-
-
-
-
-// Helper function to check for temporary IDs
