@@ -268,11 +268,11 @@ export default function ChallengeManagementPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isCalendarVisible]);
 
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ taskId, isCompleted, completionDate }: { taskId: string; isCompleted: boolean; completionDate: string }) => {
-      // Send the user's current date to the server
-      return axios.patch(`/api/challenge/tasks/${taskId}`, { isCompleted, completionDate });
-    },
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, isCompleted, completionDate }: { taskId: string; isCompleted: boolean; completionDate: string }) => {
+      // Send the user's current date to the server
+      return axios.patch(`/api/challenge/tasks/${taskId}`, { isCompleted, completionDate });
+    },
     onSuccess: (data) => {
       if (data.data.allTasksCompleted) {
         setIsCompletionModalOpen(true);
@@ -316,12 +316,12 @@ export default function ChallengeManagementPage() {
     },
   });
 
-const handleToggleTask = (taskId: string, newStatus: boolean) => {
-    // Get today's date in 'YYYY-MM-DD' format and send it
-    const today = new Date();
-    const completionDate = normalizeDateToLocalString(today); 
-    updateTaskMutation.mutate({ taskId, isCompleted: newStatus, completionDate });
-  };
+  const handleToggleTask = (taskId: string, newStatus: boolean) => {
+    // Get today's date in 'YYYY-MM-DD' format and send it
+    const today = new Date();
+    const completionDate = normalizeDateToLocalString(today);
+    updateTaskMutation.mutate({ taskId, isCompleted: newStatus, completionDate });
+  };
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== "undefined" ? window.location.origin : "");
   const shareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${slug}`;
@@ -354,14 +354,7 @@ const handleToggleTask = (taskId: string, newStatus: boolean) => {
   if (!challenge) { return <div className="text-center text-gray-500 mt-10 p-4">Challenge data not found.</div>; }
 
   const daysLeft = Math.ceil((new Date(challenge.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  // const completedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
-    // ✅ FIX: Calculate the total number of days the user has ever completed.
-  // This matches your definition for "Longest Streak".
   const totalCompletedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
-
-  // ✅ FIX: Calculate the total number of days that have passed in the challenge.
-  // This matches your definition for "Days Completed" (completed + missed days).
-  const daysPassed = (challenge.history || []).length;
 
   return (
     <>
@@ -380,16 +373,16 @@ const handleToggleTask = (taskId: string, newStatus: boolean) => {
                 </button>
               </div>
             </div>
-              <div className="flex items-center gap-8 justify-between mb-4">
+            <div className="flex items-center gap-8 justify-between mb-4">
 
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
-              {challenge.title}
-            </h1>
-             <p className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100">
-              {/* <span> */}
-                  Created by : {challenge?.creator?.name} 
-              {/* </span> */}
-                </p>
+              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
+                {challenge.title}
+              </h1>
+              <p className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100">
+                {/* <span> */}
+                Created by : {challenge?.creator?.name}
+                {/* </span> */}
+              </p>
             </div>
             <div className="flex items-center gap-2 text-sm text-slate-500 mt-2">
               <CalendarDays className="w-4 h-4 flex-shrink-0" />
@@ -412,9 +405,9 @@ const handleToggleTask = (taskId: string, newStatus: boolean) => {
               <StatCard icon={<Flame className="w-6 h-6 text-white" />} label="Current Streak" value={`${challenge.currentStreak} Days`} colorClass="bg-orange-500" cornerIcon={<button onClick={handleCalendarToggle} className="p-1 rounded-full hover:bg-gray-200 transition-colors"><CalendarDays className="w-4 h-4 text-gray-400" /></button>} />
               {isCalendarVisible && <ChallengeCalendar history={challenge.history || []} challengeStartDate={challenge.startDate} positionClasses={`left-0 lg:left-1/2 lg:-translate-x-1/2 ${calendarPosition}`} calendarRef={calendarRef} />}
             </div>
-            <StatCard icon={<Target className="w-6 h-6 text-white" />} label="Longest Streak" value={`${totalCompletedDays} Days`} colorClass="bg-red-500" />
+            <StatCard icon={<Target className="w-6 h-6 text-white" />} label="Longest Streak" value={`${challenge.longestStreak} Days`} colorClass="bg-red-500" />
             <StatCard icon={<Award className="w-6 h-6 text-white" />} label="Reward" value={`${challenge.reward} JP`} colorClass="bg-green-500" />
-            <StatCard icon={<CheckCircle2 className="w-6 h-6 text-white" />} label="Days Completed" value={`${daysPassed} Days`} colorClass="bg-sky-500" />
+            <StatCard icon={<CheckCircle2 className="w-6 h-6 text-white" />} label="Days Completed" value={`${totalCompletedDays} Days`} colorClass="bg-sky-500" />
             <StatCard icon={<Users className="w-6 h-6 text-white" />} label="Participants" value={challenge.participantCount} colorClass="bg-blue-500" />
             <StatCard icon={<Calendar className="w-6 h-6 text-white" />} label="Ends In" value={`${daysLeft > 0 ? daysLeft : 0} Days`} colorClass="bg-teal-500" />
           </div>
@@ -440,7 +433,10 @@ const handleToggleTask = (taskId: string, newStatus: boolean) => {
                     <Image src={player.avatar} alt={player.name} width={40} height={40} className="rounded-full mr-4" />
                     <div className="flex-grow">
                       <p className="font-semibold text-gray-800">{player.name}</p>
-                      <p className="text-sm text-gray-500">{player.score.toLocaleString()} Day Streak</p>
+                      {/* --- THIS IS THE MODIFIED LINE --- */}
+                      <p className="text-sm text-gray-500">
+                        {player.score.toLocaleString()} Days Completed ({player.score.toLocaleString()} Day Streak)
+                      </p>
                     </div>
                   </li>
                 ))}
