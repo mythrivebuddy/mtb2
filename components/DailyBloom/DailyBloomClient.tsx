@@ -65,6 +65,8 @@ import HoverDetails from "./HoverDetails";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import CustomAccordion from "../dashboard/user/ CustomAccordion";
 import DailyBloomCalendar from "@/components/DailyBloomCalendar";
+import { Switch } from "@/components/ui/switch";
+
 
 // Add this near your other imports at the top
 import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
@@ -120,6 +122,9 @@ const defaultFormValues: DailyBloomFormType = {
   isCompleted: false,
   taskAddJP: false,
   taskCompleteJP: false,
+  addToCalendar: false,
+  startTime: "",
+  endTime: "",
 };
 
 // --- START: useMediaQuery Hook ---
@@ -195,11 +200,17 @@ export default function DailyBloomClient() {
     reset,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<DailyBloomFormType>({
     resolver: zodResolver(dailyBloomSchema),
     defaultValues: defaultFormValues,
   });
+
+  // ADDED: Watch the 'addToCalendar' field to conditionally render time inputs
+  const watchAddToCalendar = watch("addToCalendar");
+  // ADDED: Also watch the addInputType to reset calendar fields if switching to frequency
+  //const watchAddInputType = watch("addInputType", addInputType); // Assuming you add addInputType to the form state, but for simplicity let's use the component state
 
   useEffect(() => {
     if (editData) {
@@ -208,6 +219,10 @@ export default function DailyBloomClient() {
         description: editData.description || "",
         frequency: editData.frequency || undefined,
         dueDate: editData.dueDate ? new Date(editData.dueDate) : undefined,
+        // ADDED: Reset with calendar data if it exists
+        addToCalendar: editData.addToCalendar || false,
+        startTime: editData.startTime || "",
+        endTime: editData.endTime || "",
       });
     }
   }, [editData, reset]);
@@ -249,10 +264,10 @@ export default function DailyBloomClient() {
   }, [data]);
   console.log("Blooms data from API:", dailyBloom); // <-- ADD THIS
   // Add this entire block to de-duplicate the list before rendering
-const uniqueBlooms = useMemo(() => {
-  const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
-  return Array.from(bloomMap.values());
-}, [dailyBloom]);
+  const uniqueBlooms = useMemo(() => {
+    const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
+    return Array.from(bloomMap.values());
+  }, [dailyBloom]);
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -261,6 +276,7 @@ const uniqueBlooms = useMemo(() => {
     queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
     queryClient.invalidateQueries({ queryKey: ["overdueDailyBlooms"] });
     queryClient.invalidateQueries({ queryKey: ["user", userId] });
+    queryClient.invalidateQueries({ queryKey: ["events"] });
   };
 
   const createMutation = useMutation({
@@ -342,73 +358,73 @@ const uniqueBlooms = useMemo(() => {
     },
   });
 
-const updateMutation = useMutation({
-  mutationFn: async (payload: {
-    id: string;
-    updatedData: DailyBloomFormType;
-  }) => {
-    const res = await axios.put(
-      `/api/user/daily-bloom/${payload.id}`,
-      payload.updatedData
-    );
-    return res.data;
-  },
+  const updateMutation = useMutation({
+    mutationFn: async (payload: {
+      id: string;
+      updatedData: DailyBloomFormType;
+    }) => {
+      const res = await axios.put(
+        `/api/user/daily-bloom/${payload.id}`,
+        payload.updatedData
+      );
+      return res.data;
+    },
 
-  onMutate: async (newBloomData) => {
-    const queryKey = ["dailyBloom", frequencyFilter, statusFilter];
+    onMutate: async (newBloomData) => {
+      const queryKey = ["dailyBloom", frequencyFilter, statusFilter];
 
-    // 1. Cancel any outgoing refetches
-    await queryClient.cancelQueries({ queryKey });
+      // 1. Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey });
 
-    // 2. Snapshot the previous value
-    const previousBlooms = queryClient.getQueryData<
-      InfiniteData<DailyBloomPage>
-    >(queryKey);
+      // 2. Snapshot the previous value
+      const previousBlooms = queryClient.getQueryData<
+        InfiniteData<DailyBloomPage>
+      >(queryKey);
 
-    // 3. Optimistically update to the new value
-    queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
-      queryKey,
-      (oldData) => {
-        if (!oldData) return undefined;
+      // 3. Optimistically update to the new value
+      queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
+        queryKey,
+        (oldData) => {
+          if (!oldData) return undefined;
 
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            data: page.data.map((bloom) =>
-              bloom.id === newBloomData.id
-                ? { ...bloom, ...newBloomData.updatedData }
-                : bloom
-            ),
-          })),
-        };
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((bloom) =>
+                bloom.id === newBloomData.id
+                  ? { ...bloom, ...newBloomData.updatedData }
+                  : bloom
+              ),
+            })),
+          };
+        }
+      );
+
+      // 4. Return a context object with the snapshotted value
+      return { previousBlooms, queryKey };
+    },
+
+    onError: (error: AxiosError, variables, context) => {
+      // If the mutation fails, roll back to the previous state from context
+      if (context?.previousBlooms) {
+        queryClient.setQueryData(context.queryKey, context.previousBlooms);
       }
-    );
+      const errorMessage = getAxiosErrorMessage(
+        error,
+        "Failed to update task. Reverting changes."
+      );
+      toast.error(errorMessage);
+    },
 
-    // 4. Return a context object with the snapshotted value
-    return { previousBlooms, queryKey };
-  },
-
-  onError: (error: AxiosError, variables, context) => {
-    // If the mutation fails, roll back to the previous state from context
-    if (context?.previousBlooms) {
-      queryClient.setQueryData(context.queryKey, context.previousBlooms);
-    }
-    const errorMessage = getAxiosErrorMessage(
-      error,
-      "Failed to update task. Reverting changes."
-    );
-    toast.error(errorMessage);
-  },
-
-  onSettled: (data, error, variables, context) => {
-    // Invalidate the query to re-fetch from the server and ensure consistency
-    if (context?.queryKey) {
-      queryClient.invalidateQueries({ queryKey: context.queryKey });
-    }
-    invalidateAllQueries(); // Also invalidate other related queries
-  },
-});
+    onSettled: (data, error, variables, context) => {
+      // Invalidate the query to re-fetch from the server and ensure consistency
+      if (context?.queryKey) {
+        queryClient.invalidateQueries({ queryKey: context.queryKey });
+      }
+      invalidateAllQueries(); // Also invalidate other related queries
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -585,34 +601,29 @@ const updateMutation = useMutation({
     isFromEvent: b.isFromEvent ?? false,
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
-  // FIX: Create a single, unified source of truth for the calendar
-  const combinedCalendarItems = useMemo(() => {
-    // 1. Map your `dailyBloom` data (which is optimistically updated)
-    //    into the format FullCalendar expects. This is the primary source for blooms.
-    const bloomEvents = dailyBloom.map((bloom) => ({
-      id: `bloom-${bloom.id}`,
-      title: bloom.title,
-      start: bloom.dueDate
-        ? new Date(bloom.dueDate).toISOString()
-        : new Date().toISOString().split("T")[0],
-      allDay: true,
-      color: bloom.isCompleted ? "#a5d8ff" : "#4dabf7", // Light blue for completed, dark for pending
-      extendedProps: {
-        isBloom: true,
-        isCompleted: bloom.isCompleted,
-        description: bloom.description ?? "",
-      },
-    }));
+// in DailyBloomClient.tsx
 
-    // 2. Take the separate `events` from your other API call but
-    //    filter out any that are also blooms to prevent duplicates.
-    const regularEvents = (events ?? []).filter(
-      (event) => !event.extendedProps?.isBloom
-    );
+// Find this useMemo hook...
+/*
+const combinedCalendarItems = useMemo(() => {
+  // 1. Map your `dailyBloom` data (which is optimistically updated)
+  const bloomEvents = dailyBloom.map((bloom) => ({ ... }));
 
-    // 3. Combine them into a single array.
-    return [...bloomEvents, ...regularEvents];
-  }, [dailyBloom, events]); // This will re-compute whenever your blooms or events change
+  // 2. Take the separate `events` from your other API call but
+  const regularEvents = (events ?? []).filter(...);
+
+  // 3. Combine them into a single array.
+  return [...bloomEvents, ...regularEvents];
+}, [dailyBloom, events]);
+*/
+
+// ...and REPLACE it with this much simpler and correct version:
+const combinedCalendarItems = useMemo(() => {
+  // The `/api/events` endpoint is now the single source of truth for the calendar.
+  // This will include regular events AND any blooms that were created with "Add to Calendar".
+  return events ?? [];
+}, [events]); // This only needs to re-run when the `events` query updates.
+
 
   return (
     <div>
@@ -912,8 +923,8 @@ const updateMutation = useMutation({
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                    "en-IN"
-                                  )
+                                  "en-IN"
+                                )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -1029,38 +1040,97 @@ const updateMutation = useMutation({
                     </Button>
                   </div>
                 </div>
+
+                {/* --- MODIFIED SECTION START --- */}
                 {addInputType === "date" ? (
-                  <Controller
-                    name="dueDate"
-                    control={control}
-                    render={({ field }) => (
-                      <div className="grid w-full items-center gap-1.5">
-                        <Label>Due Date</Label>
-                        <Input
-                          type="date"
-                          min={today}
-                          value={
-                            field.value &&
-                            !isNaN(new Date(field.value).getTime())
-                              ? format(new Date(field.value), "yyyy-MM-dd")
-                              : ""
-                          }
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value
-                                ? new Date(e.target.value)
-                                : undefined
-                            )
-                          }
-                        />
-                        {errors.dueDate && (
-                          <p className="text-sm text-red-500 mt-1">
-                            {errors.dueDate.message}
-                          </p>
+                  <>
+                    <Controller
+                      name="dueDate"
+                      control={control}
+                      render={({ field }) => (
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label>Due Date</Label>
+                          <Input
+                            type="date"
+                            min={today}
+                            value={
+                              field.value &&
+                                !isNaN(new Date(field.value).getTime())
+                                ? format(new Date(field.value), "yyyy-MM-dd")
+                                : ""
+                            }
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value
+                                  ? new Date(e.target.value)
+                                  : undefined
+                              )
+                            }
+                          />
+                          {errors.dueDate && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.dueDate.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    />
+
+                    {/* --- NEW: Add to Calendar Switch --- */}
+                    <div className="flex items-center space-x-2 rounded-md border p-3">
+                      <Controller
+                        name="addToCalendar"
+                        control={control}
+                        render={({ field }) => (
+                          <Switch
+                            id="add-to-calendar"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         )}
+                      />
+                      <Label htmlFor="add-to-calendar" className="cursor-pointer">
+                        Add to Calendar
+                      </Label>
+                    </div>
+                    {errors.addToCalendar && (
+                      <p className="text-sm text-red-500 -mt-2">
+                        {errors.addToCalendar.message}
+                      </p>
+                    )}
+
+                    {/* --- NEW: Conditional Time Inputs --- */}
+                    {watchAddToCalendar && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="startTime-add">Start Time</Label>
+                          <Input
+                            id="startTime-add"
+                            type="time"
+                            {...register("startTime")}
+                          />
+                          {errors.startTime && (
+                            <p className="text-red-500 text-sm">
+                              {errors.startTime.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="grid w-full items-center gap-1.5">
+                          <Label htmlFor="endTime-add">End Time</Label>
+                          <Input
+                            id="endTime-add"
+                            type="time"
+                            {...register("endTime")}
+                          />
+                          {errors.endTime && (
+                            <p className="text-red-500 text-sm">
+                              {errors.endTime.message}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     )}
-                  />
+                  </>
                 ) : (
                   <Controller
                     name="frequency"
@@ -1233,7 +1303,7 @@ const updateMutation = useMutation({
                           type="date"
                           value={
                             field.value &&
-                            !isNaN(new Date(field.value).getTime())
+                              !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }

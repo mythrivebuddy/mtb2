@@ -10,8 +10,6 @@ import AppLayout from "@/components/layout/AppLayout";
 import { useQueryClient } from "@tanstack/react-query";
 //import { useSearchParams } from "next/navigation";
 
-
-
 // NOTE: The type definitions are assumed to be correct.
 type Creator = Pick<User, "id" | "name">;
 
