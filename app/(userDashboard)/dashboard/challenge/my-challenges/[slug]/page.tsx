@@ -354,7 +354,14 @@ const handleToggleTask = (taskId: string, newStatus: boolean) => {
   if (!challenge) { return <div className="text-center text-gray-500 mt-10 p-4">Challenge data not found.</div>; }
 
   const daysLeft = Math.ceil((new Date(challenge.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  const completedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
+  // const completedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
+    // ✅ FIX: Calculate the total number of days the user has ever completed.
+  // This matches your definition for "Longest Streak".
+  const totalCompletedDays = (challenge.history || []).filter((day) => day.status === "COMPLETED").length;
+
+  // ✅ FIX: Calculate the total number of days that have passed in the challenge.
+  // This matches your definition for "Days Completed" (completed + missed days).
+  const daysPassed = (challenge.history || []).length;
 
   return (
     <>
@@ -405,9 +412,9 @@ const handleToggleTask = (taskId: string, newStatus: boolean) => {
               <StatCard icon={<Flame className="w-6 h-6 text-white" />} label="Current Streak" value={`${challenge.currentStreak} Days`} colorClass="bg-orange-500" cornerIcon={<button onClick={handleCalendarToggle} className="p-1 rounded-full hover:bg-gray-200 transition-colors"><CalendarDays className="w-4 h-4 text-gray-400" /></button>} />
               {isCalendarVisible && <ChallengeCalendar history={challenge.history || []} challengeStartDate={challenge.startDate} positionClasses={`left-0 lg:left-1/2 lg:-translate-x-1/2 ${calendarPosition}`} calendarRef={calendarRef} />}
             </div>
-            <StatCard icon={<Target className="w-6 h-6 text-white" />} label="Longest Streak" value={`${challenge.longestStreak} Days`} colorClass="bg-red-500" />
+            <StatCard icon={<Target className="w-6 h-6 text-white" />} label="Longest Streak" value={`${totalCompletedDays} Days`} colorClass="bg-red-500" />
             <StatCard icon={<Award className="w-6 h-6 text-white" />} label="Reward" value={`${challenge.reward} JP`} colorClass="bg-green-500" />
-            <StatCard icon={<CheckCircle2 className="w-6 h-6 text-white" />} label="Days Completed" value={`${completedDays} Days`} colorClass="bg-sky-500" />
+            <StatCard icon={<CheckCircle2 className="w-6 h-6 text-white" />} label="Days Completed" value={`${daysPassed} Days`} colorClass="bg-sky-500" />
             <StatCard icon={<Users className="w-6 h-6 text-white" />} label="Participants" value={challenge.participantCount} colorClass="bg-blue-500" />
             <StatCard icon={<Calendar className="w-6 h-6 text-white" />} label="Ends In" value={`${daysLeft > 0 ? daysLeft : 0} Days`} colorClass="bg-teal-500" />
           </div>

@@ -7,6 +7,10 @@ import axios from "axios";
 import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert, UserCircle } from "lucide-react";
 import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask, User } from "@prisma/client";
 import AppLayout from "@/components/layout/AppLayout";
+import { useQueryClient } from "@tanstack/react-query";
+//import { useSearchParams } from "next/navigation";
+
+
 
 // NOTE: The type definitions are assumed to be correct.
 type Creator = Pick<User, "id" | "name">;
@@ -48,6 +52,12 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
   const [isPolling, setIsPolling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  //const searchParams = useSearchParams();
+//const defaultTab = (searchParams.get("tab") as "hosted" | "joined") || "hosted";
+
+
+
 
   useEffect(() => {
     if (enrollment && enrollment.userTasks.length === 0) {
@@ -73,31 +83,40 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
     }
   }, [enrollment, challenge.id]);
 
-  const handleEnroll = async () => {
-      setIsEnrolling(true);
-      setError(null);
-      try {
-      const response = await axios.post("/api/challenge/enroll", {
-          challengeId: challenge.id,
-      });
-      setEnrollment(response.data.enrollment);
-      } catch (err) {
-  let errorMessage = "An unexpected error occurred. Please try again.";
-  if (axios.isAxiosError(err) && err.response?.data?.error) {
-    const errorData = err.response.data.error;
+const handleEnroll = async () => {
+  setIsEnrolling(true);
+  setError(null);
+  try {
+    await axios.post("/api/challenge/enroll", { challengeId: challenge.id });
 
-    // Handle both string and object error responses safely
-    if (typeof errorData === 'object' && errorData.message) {
-      errorMessage = errorData.message;
-    } else if (typeof errorData === 'string') {
-      errorMessage = errorData;
-    }
-  }
-  setError(errorMessage);
-} finally {
-      setIsEnrolling(false);
+    const enrollmentResp = await axios.get(`/api/challenge/enrollments/${challenge.id}`);
+    const fetchedEnrollment: EnrollmentWithTasks = enrollmentResp.data.enrollment;
+
+    setEnrollment(fetchedEnrollment);
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["myChallenges", "hosted"] }),
+      queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
+    ]);
+
+    router.back();
+
+  } catch (err) {
+    let errorMessage = "An unexpected error occurred. Please try again.";
+    if (axios.isAxiosError(err) && err.response?.data?.error) {
+      const errorData = err.response.data.error;
+      if (typeof errorData === "object" && errorData.message) {
+        errorMessage = errorData.message;
+      } else if (typeof errorData === "string") {
+        errorMessage = errorData;
       }
-  };
+    }
+    setError(errorMessage);
+  } finally {
+    setIsEnrolling(false);
+  }
+};
+
 
   const handleJoinClick = () => {
       if (sessionStatus === 'loading') return;
@@ -110,10 +129,18 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
       }
   };
 
-  const handleCloseModalAndRedirect = () => {
-      setIsEnrollSuccessModalOpen(false);
-      router.push("/dashboard/challenge");
-  };
+const handleCloseModalAndRedirect = async () => {
+  setIsEnrollSuccessModalOpen(false);
+
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["myChallenges", "hosted"] }),
+    queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
+  ]);
+
+  router.back();
+ 
+};
+
 
   const statusColors = {
     ACTIVE: "bg-blue-100 text-blue-800",
