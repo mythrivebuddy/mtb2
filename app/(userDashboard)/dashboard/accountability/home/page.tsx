@@ -6,7 +6,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
-import { TriangleAlert, Users, Ban, Plus } from "lucide-react";
+import { TriangleAlert, Users, Plus } from "lucide-react";
 
 import { GroupCard } from "@/components/accountability/GroupCard";
 import Link from "next/link";
@@ -120,33 +120,7 @@ export default function AccountabilityHomePage() {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto grid  my-4 grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-12">
-        {/* === Column 1: Groups You've Created === */}
-        <section>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
-            Groups You've Created
-          </h2>
-          <motion.div
-            className="space-y-4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {createdGroups.length > 0 ? (
-              createdGroups.map((group) => (
-                <motion.div key={group.id} variants={itemVariants}>
-                  <GroupCard key={group.id} group={group} />
-                </motion.div>
-              ))
-            ) : (
-              <div className="text-center text-gray-500 bg-white p-8 rounded-xl border border-gray-200 flex flex-col items-center gap-4">
-                <Ban className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
-                <span>You haven't created any groups yet.</span>
-              </div>
-            )}
-          </motion.div>
-        </section>
-
-        {/* === Column 2: Groups You're A Member Of === */}
+          {/* === Column 2: Groups You're A Member Of === */}
         <section>
           <h2 className="text-2xl font-semibold text-gray-800 mb-5">
             Groups You're A Member Of
@@ -171,6 +145,33 @@ export default function AccountabilityHomePage() {
             )}
           </motion.div>
         </section>
+        {/* === Column 1: Groups You've Created === */}
+        <section>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
+            Groups You've Created
+          </h2>
+          <motion.div
+            className="space-y-4"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {createdGroups.length > 0 ? (
+              createdGroups.map((group) => (
+                <motion.div key={group.id} variants={itemVariants}>
+                  <GroupCard key={group.id} group={group} />
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 bg-white p-8 rounded-xl border border-gray-200 flex flex-col items-center gap-4">
+                <Users className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
+                <span>You haven't created any groups yet.</span>
+              </div>
+            )}
+          </motion.div>
+        </section>
+
+      
       </div>
       <Link href="/dashboard/accountability-hub/create">
         <div className="mt-12 flex justify-center">
