@@ -16,7 +16,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type Comment = {
   id: string;
-  text: string;
+  content: string;
   createdAt: string;
   author: {
     name: string | null;
@@ -72,13 +72,13 @@ export default function CommentsModal({ goalId, isOpen, onOpenChange }: Comments
           {error && <p className="text-red-500 text-center">Could not load comments.</p>}
           {!isLoading && comments?.map((comment) => (
             <div key={comment.id} className="flex items-start gap-3">
-              <Image src={comment.author.image || '/default-avatar.png'} alt={comment.author.name || 'User'} width={32} height={32} className="rounded-full mt-1"/>
+              <Image src={comment.author.image || '/public-avatar.jpg'} alt={comment.author.name || 'User'} width={32} height={32} className="rounded-full mt-1"/>
               <div>
                 <div className="flex items-center gap-2">
                   <p className="font-semibold">{comment.author.name}</p>
                   <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}</p>
                 </div>
-                <p className="text-sm text-foreground">{comment.text}</p>
+                <p className="text-sm text-foreground">{comment.content}</p>
               </div>
             </div>
           ))}

@@ -181,7 +181,7 @@ export default function AccountabilityHubPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Image
-                        src={member.user.image || "/default-avatar.png"}
+                        src={member.user.image || "/public-avatar.jpg"}
                         alt={member.user.name || "User"}
                         width={32}
                         height={32}

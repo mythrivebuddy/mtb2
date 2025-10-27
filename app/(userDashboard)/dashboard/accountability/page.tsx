@@ -41,7 +41,9 @@ export default function AccountabilityHubHome() {
   const group = groups?.[0];
   const activeCycle = group?.cycles?.[0];
   const groupId = group?.id;
-  const { items: activityItems } = useAccountabilityFeed(groupId);
+  const { items: activityItems,isLoading: activityLoading } = useAccountabilityFeed(groupId);
+  console.log("activity itmes ",activityItems);
+  
 
   const isAdmin = group?.members.find((m: { userId: string; role: string }) => m.userId === session?.user?.id)?.role === 'admin';
 
@@ -114,7 +116,7 @@ export default function AccountabilityHubHome() {
         {/* Banner and Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
           <Card className="overflow-hidden rounded-3xl"><div className="relative aspect-[21/9] w-full overflow-hidden"><Image src="/accountablity.png" alt="Accountability group banner" fill className="object-cover" priority sizes="100vw"/></div></Card>
-          <Card className="rounded-3xl"><CardHeader><CardTitle className="text-lg">Activity Feed</CardTitle></CardHeader><CardContent><ActivityFeed items={activityItems} /></CardContent></Card>
+          <Card className="rounded-3xl"><CardHeader><CardTitle className="text-lg">Activity Feed</CardTitle></CardHeader><CardContent><ActivityFeed items={activityItems} isLoading={activityLoading} /></CardContent></Card>
         </div>
 
         {/* Stats */}
