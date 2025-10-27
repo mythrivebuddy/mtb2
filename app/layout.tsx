@@ -4,6 +4,8 @@ import Provider from "@/providers/Provider";
 import { Analytics } from "@vercel/analytics/react"; 
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
 import { Toaster } from "@/components/ui/sonner";
+import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
+
 import PWAInstallButton from "@/components/PWAInstallButton"; // <-- NEW Import
 import { SupabaseClientProvider } from "@/components/providers/SupabaseClientProvider"; // Adjust path if needed
 
@@ -63,6 +65,7 @@ export default function RootLayout({
         </div>
 
         <Toaster />
+        <ShadcnToaster />
 
         {/* 🚀 PWA Install Button ye rha (always visible, floating in corner) */}
         <PWAInstallButton />

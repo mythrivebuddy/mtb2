@@ -93,8 +93,6 @@ export default function EditableProgressCell({
       </div>
     );
   }
-  console.log({ placeholderText });
-  console.log({ value });
 
   return (
     <div

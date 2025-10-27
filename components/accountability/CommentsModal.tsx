@@ -72,7 +72,8 @@ export default function CommentsModal({ goalId, isOpen, onOpenChange }: Comments
           {error && <p className="text-red-500 text-center">Could not load comments.</p>}
           {!isLoading && comments?.map((comment) => (
             <div key={comment.id} className="flex items-start gap-3">
-              <Image src={comment.author.image || '/public-avatar.jpg'} alt={comment.author.name || 'User'} width={32} height={32} className="rounded-full mt-1"/>
+              <Image src={comment.author.image ? comment.author.image : `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.name?.charAt(0) || "User")}&background=random&color=fff`} alt={comment.author.name || 'User'} width={32} height={32} className="rounded-full mt-1"/>
+              
               <div>
                 <div className="flex items-center gap-2">
                   <p className="font-semibold">{comment.author.name}</p>

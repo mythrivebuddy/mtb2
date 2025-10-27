@@ -41,46 +41,45 @@ export async function GET(
     if (!group) {
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
-    console.log("group",group);
-    
-    
-    const isMember = group.members.some(m => m.userId === session.user.id);
+
+    const isMember = group.members.some((m) => m.userId === session.user.id);
     if (!isMember) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const activeCycleId = group.cycles[0]?.id;
     let membersWithGoals = group.members;
 
     if (activeCycleId) {
-        membersWithGoals = await Promise.all(
-            group.members.map(async (member) => {
-                const goals = await prisma.goal.findMany({
-                    where: { member: member, cycleId: activeCycleId },
-                    select: {
-                        id: true,
-                        text: true,
-                        midwayUpdate: true,
-                        endResult: true,
-                        status: true,
-                        authorId:true,
-                    },
-                });
-                return { ...member, goals };
-            })
-        );
+      membersWithGoals = await Promise.all(
+        group.members.map(async (member) => {
+          const goals = await prisma.goal.findMany({
+            where: { member: member, cycleId: activeCycleId },
+            select: {
+              id: true,
+              text: true,
+              midwayUpdate: true,
+              endResult: true,
+              status: true,
+              authorId: true,
+            },
+          });
+          return { ...member, goals };
+        })
+      );
     }
 
-    const requesterRole = group.members.find(m => m.userId === session.user.id)?.role;
+    const requesterRole = group.members.find(
+      (m) => m.userId === session.user.id
+    )?.role;
 
     return NextResponse.json({
-        name: group.name,
-        group:group,
-        activeCycleId: activeCycleId,
-        members: membersWithGoals,
-        requesterRole: requesterRole
+      name: group.name,
+      group: group,
+      activeCycleId: activeCycleId,
+      members: membersWithGoals,
+      requesterRole: requesterRole,
     });
-
   } catch (error) {
     console.error(`[GET_GROUP_VIEW]`, error);
     return NextResponse.json(

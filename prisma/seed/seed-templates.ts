@@ -1,4 +1,3 @@
-
 import { prisma } from "@/lib/prisma";
 
 async function main() {
@@ -90,6 +89,26 @@ async function main() {
         <p>You received {{jpAmount}} JP and shared {{sharedAmount}} JP with {{receiverName}}.</p>
         <p>Thank you for spreading joy in our community!</p>
       `,
+    },
+    {
+      templateId: "user-added-to-accountability-hub-group",
+      subject: "You've been added to the Accountability hub Group!",
+      description:
+        "Email sent when a user is added to an accountability hub group.",
+      htmlContent: `
+      <p>Hello {{userName}},</p>
+      <p>You have been added as a member to the accountability hub group: <strong>{{groupName}}</strong>.</p>
+      <p>Click the button below to view the group and get started on your goals:</p>
+      <p style="padding: 10px 0;">
+      <a 
+        href="{{groupUrl}}" 
+        style="background-color: #007bff; color: #ffffff; padding: 10px 15px; text-decoration: none; border-radius: 5px; font-family: sans-serif;"
+      >
+        View Group
+      </a>
+      </p>
+      <p>We're excited to have you on board!</p>
+  `,
     },
   ];
 

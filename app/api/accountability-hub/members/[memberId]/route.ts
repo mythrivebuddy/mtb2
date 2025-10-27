@@ -19,15 +19,18 @@ export async function GET(
     const groupId = searchParams.get("groupId");
 
     if (!groupId) {
-      return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      );
     }
-    
+
     // Security check: Ensure the user requesting the data is a member of the same group.
     const requesterMembership = await prisma.groupMember.findFirst({
-        where: { userId: session.user.id, groupId: groupId }
+      where: { userId: session.user.id, groupId: groupId },
     });
     if (!requesterMembership) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // --- THIS IS THE CORRECTED QUERY ---
@@ -37,15 +40,17 @@ export async function GET(
       include: {
         user: true, // Includes the full user profile (name, image, etc.)
         group: { select: { name: true } }, // Gets the group's name
-        goals: { // Gets the goals directly related to this GroupMember
-          orderBy: { cycle: { startDate: 'desc' } }, // Show newest cycle's goals first
+        goals: {
+          // Gets the goals directly related to this GroupMember
+          orderBy: { cycle: { startDate: "desc" } }, // Show newest cycle's goals first
           include: {
             cycle: { select: { startDate: true, endDate: true } },
-            comments: { // Pre-fetch comments for the goals
-                include: { author: { select: { name: true, image: true }}},
-                orderBy: { createdAt: 'asc' }
-            }
-          }
+            comments: {
+              // Pre-fetch comments for the goals
+              include: { author: { select: { name: true, image: true } } },
+              orderBy: { createdAt: "asc" },
+            },
+          },
         },
       },
     });
@@ -64,6 +69,9 @@ export async function GET(
     return NextResponse.json(responseData);
   } catch (error) {
     console.error(`[GET_MEMBER_DETAILS]`, error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
