@@ -95,9 +95,9 @@ export default function AccountabilityHubPage() {
   const handleSave = async (
     cycleId: string,
     fieldToUpdate: "text",
-    memberUserId: string
+    // memberUserId: string
   ) => {
-    if (!groupId || !editingGoalValue.trim()) return;
+    if (!groupId || !editingGoalValue.trim() ) return;
 
     const value = editingGoalValue;
 
@@ -311,7 +311,7 @@ export default function AccountabilityHubPage() {
                                 handleSave(
                                   activeCycleId,
                                   "text",
-                                  member.userId
+                                  // member.userId
                                 )
                               }
                               size="sm"
