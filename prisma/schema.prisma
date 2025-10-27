@@ -693,8 +693,8 @@ model Group {
   creatorId                  String
   coachId                    String?
   progressStage              ProgressStage      @default(NOT_STARTED)
-  notesPrivacy               NotesPrivacy       @default(MEMBER_AND_ADMIN)
-  cycleDuration              CycleDuration      @default(MONTHLY)
+  notesPrivacy               NotesPrivacy       @default(VISIBLE_TO_GROUP)
+  cycleDuration              CycleDuration      @default(MONTHLY) 
   activityFeed               ActivityFeedItem[]
   cycles                     Cycle[]
   coach                      User?              @relation("CoachGroups", fields: [coachId], references: [id])
@@ -979,8 +979,8 @@ enum ProgressStage {
 }
 
 enum NotesPrivacy {
-  MEMBER_AND_ADMIN
-  ADMIN_ONLY
+  PRIVATE_TO_AUTHOR
+  VISIBLE_TO_GROUP
 }
 
 enum ActivityFeedType {
