@@ -42,7 +42,7 @@ interface AccountabilityHomeData {
 
 const fetchAccountabilityData = async (): Promise<AccountabilityHomeData> => {
   const { data } = await axios.get(
-    "http://localhost:3000/api/accountability/home-data"
+    `/api/accountability/home-data`
   );
   if (!data.success) {
     throw new Error("API returned an error or success: false");
