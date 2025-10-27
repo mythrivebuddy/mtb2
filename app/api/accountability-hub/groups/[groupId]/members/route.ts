@@ -67,7 +67,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { groupId } = params;
+    const { groupId } = await params;
     const { userIdToAdd } = await req.json();
 
     if (!userIdToAdd) {

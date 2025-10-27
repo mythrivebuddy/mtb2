@@ -15,12 +15,13 @@ type Status = "on_track" | "needs_attention" | "off_track";
 
 const statusConfig: Record<Status, { label: string; color: string }> = {
   on_track: { label: "On Track", color: "bg-blue-500 hover:bg-blue-600" },
-  needs_attention: { label: "Needs Attention", color: "bg-yellow-500 hover:bg-yellow-600" },
-  off_track: { label: "Off Track", color: "bg-red-500 hover:bg-red-600" },
+  needs_attention: { label: "Needs Attention", color: "bg-yellow-600 hover:bg-yellow-700" },
+  off_track: { label: "Off Track", color: "bg-red-500 hover:bg-red-700" },
+  // in_progress: { label: "In Progress", color: "bg-purple-500 hover:bg-purple-700" },
 };
 
 interface GoalStatusUpdaterProps {
-  goalId: string;
+  goalId: string; 
   groupId: string;
   cycleId: string;
   currentStatus: Status;
@@ -58,13 +59,15 @@ export default function GoalStatusUpdater({
   };
 
   const statusInfo = statusConfig[currentStatus] || statusConfig.on_track;
-
+   console.log({statusConfig});
   if (!isAdmin) {
     return (
       <Badge className={`${statusInfo.color} text-white`}>{statusInfo.label}</Badge>
     );
   }
-
+ console.log({statusConfig});
+ 
+  
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

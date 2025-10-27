@@ -86,7 +86,7 @@ export default function MemberDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Image
-          src={member.user.image || "/default-avatar.png"}
+          src={member.user.image || "/public-avatar.jpg"}
           alt={member.user.name || "User"}
           width={80}
           height={80}
@@ -94,7 +94,6 @@ export default function MemberDetailPage() {
         />
         <div>
           <h1 className="text-2xl font-bold">{member.user.name}</h1>
-          <p className="text-blue-600">Consultant</p>
         </div>
       </div>
 
