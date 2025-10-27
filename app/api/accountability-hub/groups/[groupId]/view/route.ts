@@ -41,6 +41,8 @@ export async function GET(
     if (!group) {
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
+    console.log("group",group);
+    
     
     const isMember = group.members.some(m => m.userId === session.user.id);
     if (!isMember) {
@@ -61,6 +63,7 @@ export async function GET(
                         midwayUpdate: true,
                         endResult: true,
                         status: true,
+                        authorId:true,
                     },
                 });
                 return { ...member, goals };
@@ -72,6 +75,7 @@ export async function GET(
 
     return NextResponse.json({
         name: group.name,
+        group:group,
         activeCycleId: activeCycleId,
         members: membersWithGoals,
         requesterRole: requesterRole

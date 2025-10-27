@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { memberId } = params;
+    const { memberId } = await params;
     const { searchParams } = new URL(_req.url);
     const groupId = searchParams.get("groupId");
 
