@@ -23,10 +23,10 @@ import EditableProgressCell from "@/components/accountability/EditableProgressCe
 import GoalStatusUpdater from "@/components/accountability/GoalStatusUpdater";
 import CommentsModal from "@/components/accountability/CommentsModal";
 import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-// Type definition matches your JSON structure
 type GroupViewData = {
   name: string;
   group: {
@@ -56,6 +56,7 @@ type GroupViewData = {
 export default function AccountabilityHubPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const groupId = searchParams.get("groupId");
   const { toast } = useToast();
   const { mutate } = useSWRConfig();
@@ -68,37 +69,32 @@ export default function AccountabilityHubPage() {
   );
   const [editingGoalValue, setEditingGoalValue] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ search state
 
-  const { data, error, isLoading: groupDataLoading } = useSWR<GroupViewData>(
+  const {
+    data,
+    error,
+    isLoading: groupDataLoading,
+  } = useSWR<GroupViewData>(
     groupId ? `/api/accountability-hub/groups/${groupId}/view` : null,
     fetcher
   );
 
   const groupName = data?.name;
   const activeCycleId = data?.activeCycleId;
-  const members = data?.members;
+  const members = data?.members || [];
 
-  // Read visibility from the correct 'group' object
   const groupVisibility = data?.group?.visibility;
-
-  // This check is for the person VIEWING the page
   const isAdmin = data?.requesterRole?.toLowerCase() === "admin";
-
-  // This prop is now ONLY used for the Goal cell's logic
   const isGroupPrivate = groupVisibility === "PRIVATE";
 
   const handleCommentClick = (goalId: string | undefined) => {
     if (goalId) setCommentsGoalId(goalId);
-    else console.log("A goal must be set before commenting.");
+    else sonnerToast("No Comments allowed if no goal is set.");
   };
 
-  const handleSave = async (
-    cycleId: string,
-    fieldToUpdate: "text",
-    // memberUserId: string
-  ) => {
-    if (!groupId || !editingGoalValue.trim() ) return;
-
+  const handleSave = async (cycleId: string, fieldToUpdate: "text") => {
+    if (!groupId || !editingGoalValue.trim()) return;
     const value = editingGoalValue;
 
     setIsLoading(true);
@@ -141,6 +137,11 @@ export default function AccountabilityHubPage() {
     );
   }
 
+  // ✅ Filter members based on search term
+  const filteredMembers = members.filter((member) =>
+    member.user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <section className="mx-auto max-w-6xl py-8 px-4">
       {/* Modals */}
@@ -175,28 +176,33 @@ export default function AccountabilityHubPage() {
             Track and motivate your solopreneur community’s monthly goals.
           </p>
         </div>
-        
-          {
-            isAdmin && (
-              <div className="flex items-center gap-4">
-              <Link href="/dashboard/accountability-hub/create">
-            <button className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition">
-              <PlusCircle size={24} />
-              <span className="font-semibold hidden sm:inline">Create</span>
-            </button>
-          </Link>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => setIsAddMemberModalOpen(true)}
-          >
-            Add Member
-          </Button>
-        </div>
-            )
-          }
+
+        {isAdmin && (
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard/accountability-hub/create">
+              <button className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition">
+                <PlusCircle size={24} />
+                <span className="font-semibold hidden sm:inline">Create</span>
+              </button>
+            </Link>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setIsAddMemberModalOpen(true)}
+            >
+              Add Member
+            </Button>
+          </div>
+        )}
       </div>
 
-      <Input type="text" placeholder="Search members" className="w-full mb-6" />
+      {/* ✅ Search Input */}
+      <Input
+        type="text"
+        placeholder="Search members..."
+        className="w-full mb-6"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
 
       {/* Members Table */}
       <div className="w-full border rounded-lg">
@@ -229,75 +235,71 @@ export default function AccountabilityHubPage() {
               </TableRow>
             )}
 
-            {!groupDataLoading && !error && members?.length === 0 && (
+            {!groupDataLoading && !error && filteredMembers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  No members found in this group yet.
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground"
+                >
+                  {searchTerm
+                    ? "No members match your search."
+                    : "No members found in this group yet."}
                 </TableCell>
               </TableRow>
             )}
 
-            {members?.map((member) => {
+            {filteredMembers.map((member) => {
               const goal = member.goals?.[0];
-              console.log({goal});
-              
-              // This is the user ID of the person *in the row*
               const isCurrentUser = member.user.id === session?.user?.id;
-
-              // Use member.userId as the unique ID for editing state
               const isEditingGoal = editingGoalMemberId === member.userId;
-
-              // **VISIBILITY LOGIC:** This variable now *only* controls the Goal cell.
               const isGoalVisible = !isGroupPrivate || isAdmin || isCurrentUser;
 
               return (
-                // Use member.userId as the unique React key
                 <TableRow key={member.userId}>
-                  {/* Member Cell - With your "Coach" badge */}
-                  {/* Member Cell - With Corner Ribbon */}
-<TableCell className="relative overflow-hidden p-2">
-  {/* --- The Ribbon --- */}
-  {member.role?.toLowerCase() === 'admin' && (
-    <div
-      className="absolute top-0 left-0 w-28 -translate-x-[2.7rem] translate-y-1 -rotate-45 bg-yellow-300 text-center text-[0.6rem] font-medium text-black shadow-md"
-      style={{ lineHeight: '1.25rem' }}
-    >
-      Coach
-    </div>
-  )}
-  {/* --- End of Ribbon --- */}
+                  <TableCell className="relative overflow-hidden p-2">
+                    {member.role?.toLowerCase() === "admin" && (
+                      <div
+                        className="absolute top-0 left-0 w-28 -translate-x-[2.7rem] translate-y-1 -rotate-45 bg-yellow-300 text-center text-[0.6rem] font-medium text-black shadow-md"
+                        style={{ lineHeight: "1.25rem" }}
+                      >
+                        Coach
+                      </div>
+                    )}
 
-  {/* Original Cell Content - Added `relative z-10` to sit on top of the ribbon */}
-  <div className="relative z-10 flex items-center gap-3">
-    {/* This is the original avatar div, without the ribbon logic */}
-    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-      <Image
-        src={member.user.image || "/public-avatar.jpg"}
-        alt={member.user.name || "User"}
-        width={32}
-        height={32}
-        className="h-8 w-8 rounded-full"
-      />
-    </div>
+                    <div className="relative z-10 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                        <Image
+                          src={
+                            member?.user?.image
+                              ? member.user.image
+                              : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                  member?.user?.name?.charAt(0) || "User"
+                                )}&background=random&color=fff`
+                          }
+                          alt={member?.user?.name || "User"}
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 rounded-full"
+                        />
+                      </div>
 
-    {/* This is the original name div */}
-    <div className="flex items-center gap-2">
-      <Link
-        href={`/dashboard/accountability-hub/member/${member.userId}?groupId=${groupId}`}
-        className="font-medium hover:underline"
-      >
-        {member.user.name}
-      </Link>
-    </div>
-  </div>
-</TableCell>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/dashboard/accountability-hub/member/${member.userId}?groupId=${groupId}`}
+                          className="font-medium hover:underline"
+                        >
+                          {member.user.name}
+                        </Link>
+                      </div>
+                    </div>
+                  </TableCell>
 
-                  {/* Goal Cell - This is the ONLY cell that respects privacy */}
+                  {/* Goal Cell */}
                   <TableCell>
                     {activeCycleId && (
                       <>
                         {isEditingGoal ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex -center gap-2">
                             <Input
                               value={editingGoalValue}
                               onChange={(e) =>
@@ -307,13 +309,7 @@ export default function AccountabilityHubPage() {
                               disabled={isLoading}
                             />
                             <Button
-                              onClick={() =>
-                                handleSave(
-                                  activeCycleId,
-                                  "text",
-                                  // member.userId
-                                )
-                              }
+                              onClick={() => handleSave(activeCycleId, "text")}
                               size="sm"
                               disabled={isLoading || !editingGoalValue.trim()}
                             >
@@ -332,44 +328,34 @@ export default function AccountabilityHubPage() {
                             </Button>
                           </div>
                         ) : (
-                          // Display goal or click-to-edit prompt
                           <div
                             onClick={() => {
-                              // **FIX:** Only the current user can click to edit.
                               if (isCurrentUser) {
                                 setEditingGoalMemberId(member.userId);
                                 setEditingGoalValue(goal?.text || "");
                               }
                             }}
                             className={`p-2 rounded-md min-h-[40px] ${
-                              // **FIX:** Only show cursor/hover if it's the current user.
                               isCurrentUser
                                 ? "cursor-pointer hover:bg-slate-50"
                                 : ""
                             }`}
                           >
-                            {/* This rendering logic respects the privacy setting */}
                             {(() => {
-                              if (!isGoalVisible) {
+                              if (!isGoalVisible)
                                 return (
                                   <span className="text-muted-foreground">
-                                    {/* This message is only seen by non-admins/non-owners */}
                                     Private to Coach and {member.user.name}
                                   </span>
                                 );
-                              }
 
                               if (goal?.text) return goal.text;
-
-                              // **FIX:** Only the current user sees "Click to set goal"
                               if (isCurrentUser)
                                 return (
                                   <span className="text-muted-foreground">
                                     Click to set goal
                                   </span>
                                 );
-
-                              // **FIX:** Admins or other members will see "No goal set"
                               return (
                                 <span className="text-muted-foreground">
                                   No goal set
@@ -382,7 +368,6 @@ export default function AccountabilityHubPage() {
                     )}
                   </TableCell>
 
-                  {/* Midway Update - Always visible */}
                   <TableCell>
                     {activeCycleId && (
                       <EditableProgressCell
@@ -397,7 +382,6 @@ export default function AccountabilityHubPage() {
                     )}
                   </TableCell>
 
-                  {/* End Result - Always visible */}
                   <TableCell>
                     {activeCycleId && (
                       <EditableProgressCell
@@ -412,7 +396,6 @@ export default function AccountabilityHubPage() {
                     )}
                   </TableCell>
 
-                  {/* Status - Always visible */}
                   <TableCell>
                     {goal && activeCycleId ? (
                       <GoalStatusUpdater
@@ -420,17 +403,15 @@ export default function AccountabilityHubPage() {
                         groupId={groupId!}
                         cycleId={activeCycleId}
                         currentStatus={goal.status}
-                        isAdmin={isAdmin} // 'isAdmin' is the viewer's role
+                        isAdmin={isAdmin}
                       />
                     ) : null}
                   </TableCell>
 
-                  {/* Comments - Always visible and enabled */}
                   <TableCell className="text-right">
                     <Button
                       variant="link"
                       onClick={() => handleCommentClick(goal?.id)}
-                      // 'disabled' prop removed
                     >
                       Comment
                     </Button>

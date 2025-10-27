@@ -31,7 +31,10 @@ export async function GET(
     return NextResponse.json(comments);
   } catch (error) {
     console.error(`[GET_COMMENTS]`, error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
 
@@ -73,12 +76,13 @@ export async function POST(
     const goal = await prisma.goal.findUnique({
       where: { id: goalId },
       select: {
-        member: { // Traverse through the member relation...
+        member: {
+          // Traverse through the member relation...
           select: {
-            groupId: true // ...to get the groupId.
-          }
-        }
-      }
+            groupId: true, // ...to get the groupId.
+          },
+        },
+      },
     });
 
     // ✅ CORRECTED: Access the groupId from the nested object and use optional chaining for safety.
@@ -87,7 +91,7 @@ export async function POST(
       await logActivity(
         groupId,
         session.user.id,
-        'comment_posted', // FIX: Use a valid activity type from your enum
+        "comment_posted", // FIX: Use a valid activity type from your enum
         `${session.user.name} posted a new comment.`
       );
     }
@@ -95,7 +99,9 @@ export async function POST(
     return NextResponse.json(newComment, { status: 201 });
   } catch (error) {
     console.error(`[POST_COMMENT]`, error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
-

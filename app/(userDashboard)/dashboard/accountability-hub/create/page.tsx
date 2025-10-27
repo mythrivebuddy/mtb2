@@ -90,7 +90,7 @@ export default function CreateGroupPage() {
       });
 
       // Redirect to the main hub page after creation
-      router.push("/dashboard/accountability");
+      router.push("/dashboard/accountability?groupId=" + newGroup.id);
     } catch (error) {
       console.error(error);
       toast({

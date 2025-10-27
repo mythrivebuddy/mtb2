@@ -90,59 +90,108 @@ export async function POST(req: Request) {
 }
 
 // GET function remains the same
-export async function GET() {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const userId = session.user.id;
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-        const groups = await prisma.group.findMany({
-            where: {
-                members: {
-                    some: {
-                        userId: userId,
-                    },
-                },
+    const userId = session.user.id;
+    const { searchParams } = new URL(req.url);
+    const groupId = searchParams.get("groupId");
+
+    // ✅ If groupId is provided, return only that group
+    if (groupId) {
+      const group = await prisma.group.findFirst({
+        where: {
+          id: groupId,
+          members: {
+            some: {
+              userId: userId,
             },
-            include: {
-                members: {
-                    select: {
-                        userId: true,
-                        role: true,
-                    },
-                },
-                cycles: {
-                    where: {
-                        status: "active",
-                    },
-                    orderBy: {
-                        startDate: "desc",
-                    },
-                    take: 1,
-                    include: {
-                        _count: {
-                            select: { goals: true },
-                        },
-                    },
-                },
-                _count: {
-                    select: { members: true },
-                },
+          },
+        },
+        include: {
+          members: {
+            select: {
+              userId: true,
+              role: true,
+              user: true,
+            },
+          },
+          cycles: {
+            where: {
+              status: "active",
             },
             orderBy: {
-                createdAt: "desc",
+              startDate: "desc",
             },
-        });
+            take: 1,
+            include: {
+              _count: {
+                select: { goals: true },
+              },
+            },
+          },
+          _count: {
+            select: { members: true },
+          },
+        },
+      });
 
-        return NextResponse.json(groups);
-    } catch (error) {
-        console.error("Error fetching groups:", error);
-        return NextResponse.json(
-            { error: "Something went wrong" },
-            { status: 500 }
-        );
+      if (!group)
+        return NextResponse.json({ error: "Group not found" }, { status: 404 });
+
+      return NextResponse.json(group);
     }
-    
+
+    // ✅ Otherwise return all groups the user is a member of
+    const groups = await prisma.group.findMany({
+      where: {
+        members: {
+          some: {
+            userId: userId,
+          },
+        },
+      },
+      include: {
+        members: {
+          select: {
+            userId: true,
+            role: true,
+            user: true,
+          },
+        },
+        cycles: {
+          where: {
+            status: "active",
+          },
+          orderBy: {
+            startDate: "desc",
+          },
+          take: 1,
+          include: {
+            _count: {
+              select: { goals: true },
+            },
+          },
+        },
+        _count: {
+          select: { members: true },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json(groups);
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
 }
