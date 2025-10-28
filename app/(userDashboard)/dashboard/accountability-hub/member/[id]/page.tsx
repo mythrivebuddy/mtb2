@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { ArrowLeft } from "lucide-react";
@@ -11,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -95,10 +93,9 @@ export default function MemberDetailPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
   const memberId = params.id as string;
   const groupId = searchParams.get("groupId");
-  const [isNudging, setIsNudging] = useState(false);
+  // const [isNudging, setIsNudging] = useState(false);
 
   // This fetches the specific member's details
   const {
@@ -128,34 +125,34 @@ export default function MemberDetailPage() {
     })) || [];
   // ✅ --- END of new data fetching ---
 
-  const handleSendNudge = async () => {
-    setIsNudging(true);
-    try {
-      const response = await fetch(
-        `/api/accountability-hub/members/${memberId}/nudge`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ groupId }),
-        }
-      );
+  // const handleSendNudge = async () => {
+  //   setIsNudging(true);
+  //   try {
+  //     const response = await fetch(
+  //       `/api/accountability-hub/members/${memberId}/nudge`,
+  //       {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ groupId }),
+  //       }
+  //     );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to send nudge.");
-      }
+  //     if (!response.ok) {
+  //       const errorData = await response.json();
+  //       throw new Error(errorData.error || "Failed to send nudge.");
+  //     }
 
-      toast({ title: "Nudge sent successfully!" });
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: (err as Error).message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsNudging(false);
-    }
-  };
+  //     toast({ title: "Nudge sent successfully!" });
+  //   } catch (err) {
+  //     toast({
+  //       title: "Error",
+  //       description: (err as Error).message,
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsNudging(false);
+  //   }
+  // };
 
   if (isLoading) return <MemberPageSkeleton />;
   if (error || !member)
@@ -166,7 +163,9 @@ export default function MemberDetailPage() {
     );
 
   const latestGoal = member.goals?.[0];
-  const isAdmin = member.requesterRole === "admin";
+  const isAdmin = member.requesterRole === "ADMIN";
+  console.log({isAdmin});
+  
 
   return (
     <section className="mx-auto max-w-4xl py-8 px-4">
@@ -310,14 +309,16 @@ export default function MemberDetailPage() {
       {/* Action Button */}
       {isAdmin && (
         <div className="mt-8">
+          <Link href='/dashboard/accountability-hub/send-nudge-page'>
           <Button
             className="bg-gray-900 text-white hover:bg-gray-800"
-            onClick={handleSendNudge}
-            disabled={isNudging}
+            // onClick={handleSendNudge}
+            // disabled={isNudging}
           >
-            thisone
-            {isNudging ? "Sending..." : "Send Nudge"}
+            {/* {isNudging ? "Sending..." : "Send Nudge"} */}
+            send nudge
           </Button>
+          </Link>
         </div>
       )}
     </section>
