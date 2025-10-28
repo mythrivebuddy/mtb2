@@ -1,4 +1,3 @@
-// app/(userDashboard)/dashboard/accountability/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -26,9 +25,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -39,48 +37,45 @@ export default function AccountabilityHubHome() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupId = searchParams?.get("groupId") ?? undefined;
-  console.log({groupId});
-  
+
   const {
     data: groups,
     error,
     isLoading,
-  } = useSWR( groupId ? `/api/accountability-hub/groups?groupId=${groupId}` : null, fetcher);
+  } = useSWR(groupId ? `/api/accountability-hub/groups?groupId=${groupId}` : null, fetcher);
 
   const group = groups;
   const activeCycle = group?.cycles?.[0];
-  const { items: activityItems, isLoading: activityLoading } =
-    useAccountabilityFeed(groupId);
+  const { items: activityItems, isLoading: activityLoading } = useAccountabilityFeed(groupId);
 
-  const isAdmin =
-    group?.members.find(
-      (m: { userId: string; role: string }) => m.userId === session?.user?.id
-    )?.role === "admin";
+  const isAdmin = group?.members?.some(
+    (m: { userId: string; role: string }) =>
+      m.userId === session?.user?.id && m.role?.toLowerCase() === "admin"
+  );
 
-  const [notes, setNotes] = useState(group?.description || "");
+  const [notes, setNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
 
   useEffect(() => {
-    if (group?.description) {
-      setNotes(group.description);
+    if (group?.notes) {
+      setNotes(group.notes);
     }
-  }, [group?.description]);
+  }, [group?.notes]);
 
   const handleSaveNotes = async () => {
     if (!groupId) return;
     setIsSavingNotes(true);
     try {
-      const response = await fetch(
-        `/api/accountability-hub/groups/${groupId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description: notes }),
-        }
-      );
-      if (!response.ok) throw new Error("Failed to save notes.");
+      const response = await fetch(`/api/accountability-hub/groups/${groupId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Failed to save notes.");
+
       toast({ title: "Notes saved successfully!" });
-      mutate("/api/accountability-hub/groups");
+      mutate(`/api/accountability-hub/groups?groupId=${groupId}`);
     } catch (err) {
       toast({
         title: "Error",
@@ -95,18 +90,15 @@ export default function AccountabilityHubHome() {
   const handleStartNewCycle = async () => {
     if (!groupId) return;
     try {
-      const response = await fetch(
-        `/api/accountability-hub/groups/${groupId}/cycles`,
-        {
-          method: "POST",
-        }
-      );
+      const response = await fetch(`/api/accountability-hub/groups/${groupId}/cycles`, {
+        method: "POST",
+      });
       if (!response.ok) throw new Error("Failed to start new cycle.");
       toast({
         title: "New cycle started!",
         description: "The group is ready for new goals.",
       });
-      mutate("/api/accountability-hub/groups");
+      mutate(`/api/accountability-hub/groups?groupId=${groupId}`);
     } catch (err) {
       toast({
         title: "Error",
@@ -123,41 +115,30 @@ export default function AccountabilityHubHome() {
         <p className="text-red-500">Failed to load accountability hub.</p>
       </div>
     );
-  // if (!group) {
-  //   return (
-  //     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center">
-  //       <h2 className="text-2xl font-bold mb-2">
-  //         Welcome to the Accountability Hub!
-  //       </h2>
-  //       <p className="text-muted-foreground mb-4">
-  //         Create a group to start tracking goals with your community.
-  //       </p>
-  //       <Link href="/dashboard/accountability-hub/create">
-  //         <Button>Create Your First Group</Button>
-  //       </Link>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
-         <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
-      >
-        <ArrowLeft className="h-5 w-5" />
-        <span>Back</span>
-      </button>
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span>Back</span>
+        </button>
+
         {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">
             Group Name: {group?.name}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-             • Active Cycle:{" "}
+            • Active Cycle:{" "}
             {activeCycle
-              ? `${format(new Date(activeCycle.startDate), "MMM d")} – ${format(new Date(activeCycle.endDate), "MMM d, yyyy")}`
+              ? `${format(new Date(activeCycle.startDate), "MMM d")} – ${format(
+                  new Date(activeCycle.endDate),
+                  "MMM d, yyyy"
+                )}`
               : "No active cycle"}
           </p>
         </div>
@@ -206,42 +187,18 @@ export default function AccountabilityHubHome() {
           </CardContent>
         </Card>
 
-        {isAdmin && (
-          <>
-            <Card className="rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-lg">Admin Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-3">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button>Start New Cycle</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will complete the current cycle and start a new
-                        one. All members will be able to set new goals. This
-                        action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleStartNewCycle}>
-                        Continue
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-lg">Admin Notes</CardTitle>
-              </CardHeader>
-              <CardContent>
+        {/* Notes Section */}
+        <Card className="rounded-3xl">
+          <CardHeader>
+            <CardTitle className="text-lg">Group Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {group?.notes ? (
+              <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground whitespace-pre-line">
+                {group.notes}
+              </div>
+            ) : isAdmin ? (
+              <>
                 <Textarea
                   className="w-full h-40"
                   placeholder="Write quick group notes..."
@@ -255,9 +212,45 @@ export default function AccountabilityHubHome() {
                 >
                   {isSavingNotes ? "Saving..." : "Save Notes"}
                 </Button>
-              </CardContent>
-            </Card>
-          </>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">
+                No notes available.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Admin Actions */}
+        {isAdmin && (
+          <Card className="rounded-3xl">
+            <CardHeader>
+              <CardTitle className="text-lg">Admin Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-3">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button>Start New Cycle</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will complete the current cycle and start a new one.
+                      All members will be able to set new goals. This action
+                      cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleStartNewCycle}>
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

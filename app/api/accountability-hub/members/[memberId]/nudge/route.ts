@@ -5,8 +5,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import { NotificationService } from "@/lib/notification-service";
 import { Role } from "@prisma/client";
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendEmail } from "@/utils/sendEmail";
 
 export async function POST(
   req: Request,
@@ -19,7 +20,8 @@ export async function POST(
     }
 
     const { memberId } = await params;
-    const { groupId } = await req.json();
+    const { groupId,pushNotificationSent,title,description,subject,emailContent,url } = await req.json();
+    
 
     if (!groupId) {
       return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
@@ -58,16 +60,22 @@ export async function POST(
         return NextResponse.json({ error: "Recipient member not found" }, { status: 404 });
     }
 
-    // 3. Create the notification using your existing service
-    const message = `A friendly nudge from your coach: Keep going on your goal in the "${adminMembership.group.name}" group!`;
-    const link = `/dashboard/accountability-hub?groupId=${groupId}`;
-    
-    await NotificationService.createNotification(
-        recipientMember.userId,
-        message,
-        link
-    );
-
+    // 3. Send the nudge notification
+    if (pushNotificationSent) {
+      await sendPushNotificationToUser(
+        recipientMember.user.id,
+        title,
+        description,
+        {url}
+      )
+    } else {
+     await sendEmail({
+        userId: recipientMember.user.id,
+        subject,
+        body: emailContent
+      })
+     
+    }
     // 4. Log the activity
     await logActivity(
         groupId,
@@ -76,7 +84,7 @@ export async function POST(
         `${session.user.name} sent a nudge to ${recipientMember.user.name}.`
     );
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "Nudge sent successfully" });
   } catch (error) {
     console.error(`[SEND_NUDGE_ERROR]`, error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
