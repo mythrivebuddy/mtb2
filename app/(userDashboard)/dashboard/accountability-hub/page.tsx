@@ -197,7 +197,7 @@ export default function AccountabilityHubPage() {
         )}
       </div>
 
-      {/* ✅ Search Input */}
+      {/* Search Input */}
       <Input
         type="text"
         placeholder="Search members..."
@@ -207,16 +207,18 @@ export default function AccountabilityHubPage() {
       />
 
       {/* Members Table */}
-      <div className="w-full border rounded-lg">
+      <div className="w-full border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Member</TableHead>
-              <TableHead>Goal</TableHead>
-              <TableHead>Midway update</TableHead>
-              <TableHead>End Result</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Comments</TableHead>
+              <TableHead className="min-w-[200px]">Member</TableHead>
+              <TableHead className="min-w-[150px]">Goal</TableHead>
+              <TableHead className="min-w-[150px]">Midway update</TableHead>
+              <TableHead className="min-w-[150px]">End Result</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="text-right min-w-[100px]">
+                Comments
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -301,7 +303,7 @@ export default function AccountabilityHubPage() {
                     {activeCycleId && (
                       <>
                         {isEditingGoal ? (
-                          <div className="flex -center gap-2">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
                             <Input
                               value={editingGoalValue}
                               onChange={(e) =>
@@ -309,25 +311,28 @@ export default function AccountabilityHubPage() {
                               }
                               placeholder="Enter your goal"
                               disabled={isLoading}
+                              className="flex-grow min-w-[150px] w-full sm:w-auto"
                             />
-                            <Button
-                              onClick={() => handleSave(activeCycleId, "text")}
-                              size="sm"
-                              disabled={isLoading || !editingGoalValue.trim()}
-                            >
-                              {isLoading ? "..." : "Save"}
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setEditingGoalMemberId(null);
-                                setEditingGoalValue("");
-                              }}
-                              size="sm"
-                              variant="outline"
-                              disabled={isLoading}
-                            >
-                              Cancel
-                            </Button>
+                            <div className="flex justify-end sm:justify-start gap-2 flex-shrink-0">
+                              <Button
+                                onClick={() => handleSave(activeCycleId, "text")}
+                                size="sm"
+                                disabled={isLoading || !editingGoalValue.trim()}
+                              >
+                                {isLoading ? "..." : "Save"}
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  setEditingGoalMemberId(null);
+                                  setEditingGoalValue("");
+                                }}
+                                size="sm"
+                                variant="outline"
+                                disabled={isLoading}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <div
@@ -337,7 +342,7 @@ export default function AccountabilityHubPage() {
                                 setEditingGoalValue(goal?.text || "");
                               }
                             }}
-                            className={`p-2 rounded-md min-h-[40px] ${
+                            className={`p-2 rounded-md min-h-[40px] w-full ${
                               isCurrentUser
                                 ? "cursor-pointer hover:bg-slate-50"
                                 : ""
@@ -370,6 +375,7 @@ export default function AccountabilityHubPage() {
                     )}
                   </TableCell>
 
+                  {/* Midway Update Cell */}
                   <TableCell>
                     {activeCycleId && (
                       <EditableProgressCell
@@ -377,13 +383,14 @@ export default function AccountabilityHubPage() {
                         groupId={groupId!}
                         cycleId={activeCycleId}
                         fieldToUpdate="midwayUpdate"
-                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"}
+                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"} // Replace with actual value if needed
                         isCurrentUser={isCurrentUser}
                         placeholderText="Set midway update"
                       />
                     )}
                   </TableCell>
 
+                  {/* End Result Cell */}
                   <TableCell>
                     {activeCycleId && (
                       <EditableProgressCell
@@ -391,13 +398,14 @@ export default function AccountabilityHubPage() {
                         groupId={groupId!}
                         cycleId={activeCycleId}
                         fieldToUpdate="endResult"
-                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"}
+                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"} // Replace with actual value if needed
                         isCurrentUser={isCurrentUser}
                         placeholderText="Set end result"
                       />
                     )}
                   </TableCell>
 
+                  {/* Status Cell */}
                   <TableCell>
                     {goal && activeCycleId ? (
                       <GoalStatusUpdater
@@ -410,6 +418,7 @@ export default function AccountabilityHubPage() {
                     ) : null}
                   </TableCell>
 
+                  {/* Comments Cell */}
                   <TableCell className="text-right">
                     <Button
                       variant="link"

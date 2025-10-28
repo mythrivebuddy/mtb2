@@ -68,13 +68,16 @@ export default function EditableProgressCell({
 
   if (isEditing) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholderText}
           disabled={isLoading}
+          className="flex-grow min-w-[150px] w-full sm:w-auto"
         />
+        <div className="flex justify-end sm:justify-start gap-2 flex-shrink-0">
+
         <Button
           onClick={handleSave}
           size="sm"
@@ -90,6 +93,7 @@ export default function EditableProgressCell({
         >
           Cancel
         </Button>
+          </div>
       </div>
     );
   }
