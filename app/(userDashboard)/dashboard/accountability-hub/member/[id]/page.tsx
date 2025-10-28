@@ -1,4 +1,3 @@
-// app/(userDashboard)/dashboard/accountability-hub/member/[id]/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link"; // ✅ Import Link
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -15,15 +15,81 @@ import { useToast } from "@/hooks/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-type Comment = {
+// ✅ Define a type for our suggestion data
+type MentionSuggestion = {
   id: string;
-  text: string;
-  createdAt: string;
-  author: {
+  display: string;
+  image: string | null;
+};
+
+// ✅ Define the Member type
+type Member = {
+  userId: string;
+  user: {
+    id: string;
     name: string | null;
     image: string | null;
   };
 };
+
+// ✅ Type for the new SWR fetch
+type GroupViewData = {
+  members: Member[];
+};
+
+// ✅ Fix the Comment type
+type Comment = {
+  id: string;
+  createdAt: string;
+  content: string; // Only content is needed
+  author: {
+    name: string;
+    image: string | null;
+  };
+};
+
+// ✅ --- COPIED from CommentsModal.tsx ---
+// This function now finds mentions by name and searches the member list
+const renderCommentContent = (
+  content: string,
+  groupId: string | null,
+  allMembers: MentionSuggestion[] // ✅ Requires the full member list
+) => {
+  // Regex to find all @mentions (e.g., @Toheed, @ex1)
+  const mentionRegex = /@(\w+)\b/g;
+
+  // Split the content by the regex
+  const parts = content.split(mentionRegex);
+
+  return parts.map((part, index) => {
+    // Even parts are regular text (before, between, or after mentions)
+    if (index % 2 === 0) {
+      return part;
+    }
+
+    // Odd parts are the "DisplayName" (e.g., "Toheed")
+    const displayName = part;
+    // Find the member in the list
+    const member = allMembers.find((m) => m.display === displayName);
+
+    // If we found a member and have a groupId, make a link
+    if (member && groupId) {
+      return (
+        <Link
+          key={`${member.id}-${index}`}
+          href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
+          className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200 transition-colors"
+        >
+          @{displayName}
+        </Link>
+      );
+    }
+
+    // If no match or no groupId, just render the plain text mention
+    return `@${displayName}`;
+  });
+};
+// ✅ --- END of copied function ---
 
 export default function MemberDetailPage() {
   const router = useRouter();
@@ -34,6 +100,7 @@ export default function MemberDetailPage() {
   const groupId = searchParams.get("groupId");
   const [isNudging, setIsNudging] = useState(false);
 
+  // This fetches the specific member's details
   const {
     data: member,
     error,
@@ -44,6 +111,22 @@ export default function MemberDetailPage() {
       : null,
     fetcher
   );
+
+  // ✅ --- NEW SWR FETCH ---
+  // We also need to fetch ALL members in the group to render mentions
+  const { data: groupData } = useSWR<GroupViewData>(
+    groupId ? `/api/accountability-hub/groups/${groupId}/view` : null,
+    fetcher
+  );
+
+  // ✅ Format all members for the render function
+  const allMembersData: MentionSuggestion[] =
+    groupData?.members.map((member) => ({
+      id: member.user.id,
+      display: member.user.name || "User",
+      image: member.user.image,
+    })) || [];
+  // ✅ --- END of new data fetching ---
 
   const handleSendNudge = async () => {
     setIsNudging(true);
@@ -102,7 +185,12 @@ export default function MemberDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Image
-          src={member.user.image || "/public-avatar.jpg"}
+          src={
+            member.user.image ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              member.user.name
+            )}&background=random&color=fff`
+          }
           alt={member.user.name || "User"}
           width={80}
           height={80}
@@ -131,8 +219,8 @@ export default function MemberDetailPage() {
                   latestGoal.status === "on_track"
                     ? "default"
                     : latestGoal.status === "needs_attention"
-                      ? "secondary"
-                      : "destructive"
+                    ? "secondary"
+                    : "destructive"
                 }
                 className="capitalize"
               >
@@ -178,11 +266,16 @@ export default function MemberDetailPage() {
                 latestGoal.comments.map((comment: Comment) => (
                   <div key={comment.id} className="flex items-start gap-3">
                     <Image
-                      src={comment.author.image || "/default-avatar.png"}
+                      src={
+                        comment.author.image ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                          comment?.author?.name
+                        )}&background=random&color=fff`
+                      }
                       alt={comment.author.name || "User"}
-                      width={32}
-                      height={32}
-                      className="rounded-full mt-1"
+                      width={36}
+                      height={36}
+                      className="rounded-full"
                     />
                     <div>
                       <div className="flex items-center gap-2">
@@ -193,7 +286,14 @@ export default function MemberDetailPage() {
                           })}
                         </p>
                       </div>
-                      <p className="text-sm text-foreground">{comment.text}</p>
+                      {/* ✅ MODIFIED LINE */}
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {renderCommentContent(
+                          comment.content,
+                          groupId,
+                          allMembersData
+                        )}
+                      </p>
                     </div>
                   </div>
                 ))
