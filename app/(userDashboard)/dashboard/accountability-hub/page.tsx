@@ -207,7 +207,7 @@ export default function AccountabilityHubPage() {
       />
 
       {/* Members Table */}
-      <div className="w-full border rounded-lg overflow-x-auto">
+      <div className="w-full border rounded-lg overflow-x-clip">
         <Table>
           <TableHeader>
             <TableRow>

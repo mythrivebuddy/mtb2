@@ -309,7 +309,7 @@ export default function MemberDetailPage() {
       {/* Action Button */}
       {isAdmin && (
         <div className="mt-8">
-          <Link href='/dashboard/accountability-hub/send-nudge-page'>
+          <Link href={`/dashboard/accountability-hub/send-nudge-page?memberId=${member.userId}&groupId=${groupId}&memberName=${member.user.name}`}>
           <Button
             className="bg-gray-900 text-white hover:bg-gray-800"
             // onClick={handleSendNudge}

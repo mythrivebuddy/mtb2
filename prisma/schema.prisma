@@ -700,6 +700,7 @@ model Group {
   User_Group_creatorIdToUser User               @relation("Group_creatorIdToUser", fields: [creatorId], references: [id])
   members                    GroupMember[]
   Goal                       Goal[]             @relation("GoalToGroup")
+  notes                     String?
 }
 
 model GroupMember {
@@ -807,8 +808,6 @@ model Reward {
 }
 model Nudge{
   id       String   @id @default(cuid())
-  userId    String
-  message   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   groupId  String
