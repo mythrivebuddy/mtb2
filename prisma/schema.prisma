@@ -88,7 +88,6 @@ model User {
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
   Goal                          Goal[]                @relation("GoalToUser")
-  
 
   @@index([name])
 }
@@ -694,7 +693,7 @@ model Group {
   coachId                    String?
   progressStage              ProgressStage      @default(NOT_STARTED)
   notesPrivacy               NotesPrivacy       @default(VISIBLE_TO_GROUP)
-  cycleDuration              CycleDuration      @default(MONTHLY) 
+  cycleDuration              CycleDuration      @default(MONTHLY)
   activityFeed               ActivityFeedItem[]
   cycles                     Cycle[]
   coach                      User?              @relation("CoachGroups", fields: [coachId], references: [id])
@@ -806,7 +805,28 @@ model Reward {
   @@index([memberId])
   @@index([cycleId])
 }
+model Nudge{
+  id       String   @id @default(cuid())
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  groupId  String
+  adminId  String
+  memberId  String
+  pushNotificationSent Boolean @default(false)
+  sendEmail Boolean @default(false)
+  
+  // for push notification 
+  title    String?
+  description String?
 
+  // for email
+  subject  String?
+  emailContent String?
+
+  url String
+}
 enum Audience {
   EVERYONE
   PAID
