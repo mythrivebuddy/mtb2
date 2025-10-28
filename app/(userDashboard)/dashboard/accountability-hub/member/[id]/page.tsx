@@ -11,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -95,10 +94,9 @@ export default function MemberDetailPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
   const memberId = params.id as string;
   const groupId = searchParams.get("groupId");
-  const [isNudging, setIsNudging] = useState(false);
+  // const [isNudging, setIsNudging] = useState(false);
 
   // This fetches the specific member's details
   const {
@@ -316,9 +314,10 @@ export default function MemberDetailPage() {
           <Button
             className="bg-gray-900 text-white hover:bg-gray-800"
             // onClick={handleSendNudge}
-            disabled={isNudging}
+            // disabled={isNudging}
           >
-            {isNudging ? "Sending..." : "Send Nudge"}
+            {/* {isNudging ? "Sending..." : "Send Nudge"} */}
+            send nudge
           </Button>
           </Link>
         </div>
