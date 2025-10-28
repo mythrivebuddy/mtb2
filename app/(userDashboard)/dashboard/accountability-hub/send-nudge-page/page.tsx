@@ -49,8 +49,8 @@ export default function SendNudgePage() {
     onSuccess: () => {
       toast.success("Push notification sent successfully!");
     },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to send push notification");
+    onError: (err: unknown) => {
+      toast.error((err as Error).message || "Failed to send push notification");
     },
   });
 
@@ -77,8 +77,9 @@ export default function SendNudgePage() {
     onSuccess: () => {
       toast.success("Email sent successfully!");
     },
-    onError: (err: any) => {
-      toast.error(err.message || "Failed to send email");
+    onError: (err: unknown) => {
+      
+      toast.error((err as Error).message || "Failed to send email");
     },
   });
 
