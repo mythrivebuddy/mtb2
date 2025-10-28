@@ -154,6 +154,8 @@ export default function AccountabilityHubPage() {
       )}
       <CommentsModal
         goalId={commentsGoalId}
+        members={members}
+        groupId={groupId}
         isOpen={!!commentsGoalId}
         onOpenChange={() => setCommentsGoalId(null)}
       />

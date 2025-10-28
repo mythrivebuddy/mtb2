@@ -1,4 +1,3 @@
-// app/api/accountability-hub/goals/[goalId]/comments/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -49,7 +48,8 @@ export async function POST(
     }
 
     const { goalId } = params;
-    const { text } = await req.json();
+    // ✅ --- FIX: Explicitly type the `text` from req.json() ---
+    const { text }: { text: string } = await req.json();
 
     if (!text) {
       return NextResponse.json(
@@ -72,28 +72,67 @@ export async function POST(
     });
 
     // Log the activity after successfully creating the comment.
-    // ✅ CORRECTED: Fetch the groupId through the Goal's 'member' relation.
     const goal = await prisma.goal.findUnique({
       where: { id: goalId },
       select: {
         member: {
-          // Traverse through the member relation...
           select: {
-            groupId: true, // ...to get the groupId.
+            groupId: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
       },
     });
 
-    // ✅ CORRECTED: Access the groupId from the nested object and use optional chaining for safety.
     const groupId = goal?.member?.groupId;
+    const goalOwnerName = goal?.member?.user?.name;
+
     if (groupId && session.user.name) {
+      // 1. Log the main "comment posted" activity
+      const commentLogMessage = goalOwnerName
+        ? `${session.user.name} commented on ${goalOwnerName}'s goal.`
+        : `${session.user.name} posted a new comment.`;
+
       await logActivity(
         groupId,
         session.user.id,
-        "comment_posted", // FIX: Use a valid activity type from your enum
-        `${session.user.name} posted a new comment.`
+        "comment_posted",
+        commentLogMessage
       );
+
+      // --- MENTION LOGGING ---
+      // 2. Parse the comment text for mentions and log each one
+      const mentionRegex = /@(\w+)\b/g;
+      const mentions = text.match(mentionRegex) || []; // e.g., ["@Toheed", "@ex1"]
+
+      const uniqueMentions = [...new Set(mentions)];
+
+      if (uniqueMentions.length > 0) {
+        // Because `text` is now a `string`, `uniqueMentions` is correctly
+        // inferred as `string[]`, and `mention` is inferred as `string`.
+        const logPromises = uniqueMentions.map((mention) => {
+          const mentionedName = mention.substring(1);
+
+          const logMessage = goalOwnerName
+            ? `${session.user.name} mentioned @${mentionedName} in a comment on ${goalOwnerName}'s goal.`
+            : `${session.user.name} mentioned @${mentionedName} in a comment.`;
+
+          // Use "comment_posted" as the type, per the previous fix
+          return logActivity(
+            groupId,
+            session.user.id,
+            "comment_posted", 
+            logMessage
+          );
+        });
+
+        await Promise.all(logPromises);
+      }
+      // --- END MENTION LOGGING ---
     }
 
     return NextResponse.json(newComment, { status: 201 });
