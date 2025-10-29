@@ -62,7 +62,10 @@ export default function EditableProgressCell({
 
   if (!isCurrentUser) {
     return (
-      <>{initialValue || <span className="text-muted-foreground">...</span>}</>
+      <>{initialValue || <span className="px-12">
+        <span className="text-muted-foreground text-center">...</span>
+        </span>
+        }</>
     );
   }
 

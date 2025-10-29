@@ -316,7 +316,7 @@ export default function MemberDetailPage() {
             // disabled={isNudging}
           >
             {/* {isNudging ? "Sending..." : "Send Nudge"} */}
-            send nudge
+            Send Nudge
           </Button>
           </Link>
         </div>

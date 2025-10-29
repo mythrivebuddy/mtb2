@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { logActivity } from "@/lib/activity-logger";
+import { ActivityType } from "@prisma/client";
+import { assignJp, deductJp } from "@/lib/utils/jp";
 
-// Define a constant for the reward amount for easy changes in the future
-const REWARD_AMOUNT = 100; // e.g., 100 JoyPearls per member
+// const REWARD_AMOUNT = 100; // --- REMOVED: This now comes from the client
 
 export async function POST(
   req: Request,
@@ -13,104 +13,125 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || !session.user.name) {
+    if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
-    const { cycleId } = params;
-    // ✅ FIX: The request body should contain the user IDs of the members to reward.
-    const { userIdsToReward } = await req.json();
+    const adminId = session.user.id;
+    const { cycleId } = await params;
 
-    if (!userIdsToReward || !Array.isArray(userIdsToReward) || userIdsToReward.length === 0) {
-      return NextResponse.json({ error: "User IDs for reward are required" }, { status: 400 });
+    // --- MODIFIED: Destructure 'amount' from the request body ---
+    const { memberIds, amount } = (await req.json()) as {
+      memberIds: string[];
+      amount: number;
+    };
+
+    if (!memberIds?.length)
+      return NextResponse.json(
+        { error: "No members provided" },
+        { status: 400 }
+      );
+
+    // --- ADDED: Validate the 'amount' from the client ---
+    if (!amount || typeof amount !== "number" || amount <= 0) {
+      return NextResponse.json(
+        { error: "Invalid reward amount. Must be a positive number." },
+        { status: 400 }
+      );
     }
+    
+    // Use the validated amount.
+    const rewardPerMember = Math.ceil(amount);
+
+    // 1. Fetch all required data...
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: { plan: true },
+    });
+
+    if (!admin)
+      return NextResponse.json(
+        { error: "Admin user not found" },
+        { status: 404 }
+      );
 
     const cycle = await prisma.cycle.findUnique({
       where: { id: cycleId },
       include: { group: true },
     });
 
-    if (!cycle) {
+    if (!cycle)
       return NextResponse.json({ error: "Cycle not found" }, { status: 404 });
-    }
 
-    // 1. Verify the current user is the admin (coach) of this group
-    if (cycle.group.coachId !== session.user.id) {
-      return NextResponse.json({ error: "Forbidden: Not an admin" }, { status: 403 });
-    }
-
-    // 2. Fetch the full GroupMember records to get their associated User IDs
-    // ✅ FIX: The 'GroupMember' model does not have an 'id'. Filter by 'userId' instead.
-    const membersToReward = await prisma.groupMember.findMany({
-      where: {
-        userId: { in: userIdsToReward },
-        groupId: cycle.groupId,
-      },
-      include: { user: { select: { name: true } } },
+    const members = await prisma.user.findMany({
+      where: { id: { in: memberIds } },
+      include: { plan: true },
     });
 
-    // Verify that all requested user IDs are actual members of the group
-    if (membersToReward.length !== userIdsToReward.length) {
-      return NextResponse.json({ error: "One or more provided users are not members of this group." }, { status: 400 });
+    if (members.length !== memberIds.length) {
+      return NextResponse.json(
+        { error: "One or more member IDs are invalid" },
+        { status: 404 }
+      );
     }
 
-    const totalCost = membersToReward.length * REWARD_AMOUNT;
+    // 2. Define cost based on the dynamic amount
+    // --- MODIFIED: Use rewardPerMember ---
+    const totalBaseAmount = rewardPerMember * memberIds.length;
 
-    // 3. Use a database transaction to ensure all operations succeed or fail together
-    await prisma.$transaction(async (tx) => {
-      // a. Get the admin's current profile to check their balance
-      const admin = await tx.user.findUnique({
-        where: { id: session.user.id },
-      });
-      if (!admin || admin.jpBalance < totalCost) {
-        throw new Error("Insufficient JoyPearl balance.");
-      }
+    // 3. Execute the transaction
+    const rewards = await prisma.$transaction(async (tx) => {
+      // a. Deduct the *total* cost from the admin
+      await deductJp(
+        admin,
+        ActivityType.COACH_REWARD_SPEND,
+        tx,
+        { amount: totalBaseAmount } // This uses the calculated total
+      );
 
-      // b. Deduct the total cost from the admin's balance
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: {
-          jpBalance: { decrement: totalCost },
-          jpSpent: { increment: totalCost },
-        },
-      });
+      // b. Assign the reward to each member
+      const memberAssignments = members.map((member) =>
+        assignJp(
+          member,
+          ActivityType.COACH_REWARD_RECEIVE,
+          tx,
+          { amount: rewardPerMember } // --- MODIFIED: Use rewardPerMember ---
+        )
+      );
+      await Promise.all(memberAssignments);
 
-      // c. Loop through and credit JoyPearls to each rewarded member
-      for (const member of membersToReward) {
-        await tx.user.update({
-          where: { id: member.userId },
+      // c. Create the 'Reward' log records
+      const rewardCreations = memberIds.map((memberId: string) =>
+        tx.reward.create({
           data: {
-            jpBalance: { increment: REWARD_AMOUNT },
-            jpEarned: { increment: REWARD_AMOUNT },
+            jpAmount: rewardPerMember, // --- MODIFIED: Use rewardPerMember ---
+            adminId: adminId,
+            memberId,
+            cycleId,
+            notes: `Cycle reward from ${cycle.group.name}`,
           },
-        });
+        })
+      );
 
-        // d. Create a Reward record for logging and history
-        // ✅ FIX: This will work once you update your schema and run 'prisma generate'.
-        await tx.reward.create({
-          data: {
-            adminId: session.user.id,
-            memberId: member.userId,
-            cycleId: cycleId,
-            jpAmount: REWARD_AMOUNT,
-          }
-        });
-      }
+      return await Promise.all(rewardCreations);
     });
 
-    // 4. Log this action in the group's activity feed after the transaction succeeds
-    // ✅ FIX (Automatic): 'm.user.name' now works because the query is valid.
-    const memberNames = membersToReward.map(m => m.user.name).join(', ');
-    await logActivity(
-      cycle.groupId,
-      session.user.id,
-      'status_updated', // ✅ FIX: Corrected to match the expected 'logActivity' type.
-      `${session.user.name} rewarded ${memberNames} with ${REWARD_AMOUNT} JoyPearls each.`
-    );
+    // 4. If transaction is successful, return success
+    return NextResponse.json({
+      message: `Rewarded ${rewards.length} member(s) successfully!`,
+    });
+  } catch (err) {
+    console.error("REWARD ERROR", err);
 
-    return NextResponse.json({ success: true, message: `${membersToReward.length} members have been rewarded.` });
-  } catch (error) {
-    console.error(`[REWARD_CYCLE_ERROR]`, error);
-    return NextResponse.json({ error: (error as Error).message || "Something went wrong" }, { status: 500 });
+    if (err instanceof Error && err.message === "Insufficient JP balance") {
+      return NextResponse.json(
+        { error: "Insufficient JP balance to give this reward." },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "Failed to send rewards" },
+      { status: 500 }
+    );
   }
 }

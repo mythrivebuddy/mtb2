@@ -59,6 +59,7 @@ export async function GET(
               id: true,
               text: true,
               midwayUpdate: true,
+              notes: true,
               endResult: true,
               status: true,
               authorId: true,
