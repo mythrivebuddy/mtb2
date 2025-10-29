@@ -736,6 +736,7 @@ model Goal {
   text             String
   description      String?
   isCompleted      Boolean            @default(false)
+  notes            String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   midwayUpdate     String?
@@ -881,6 +882,10 @@ enum ActivityType {
   CHALLENGE_FEE_EARNED
   CHALLENGE_PENALTY
   CHALLENGE_REWARD
+  // accountability group related
+  REWARD_JP_TO_MEMBER_BY_COACH
+  COACH_REWARD_SPEND      // For the admin's deduction
+  COACH_REWARD_RECEIVE    // For the member's credit
 }
 
 enum TransactionType {
@@ -991,6 +996,8 @@ enum CycleDuration {
 }
 
 enum ProgressStage {
+  STAGE_2
+  STAGE_3
   NOT_STARTED
   IN_PROGRESS
   COMPLETED

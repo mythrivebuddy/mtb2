@@ -25,11 +25,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+// These imports are correct for App Router
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+// This is your main component.
+// In App Router, you might export this from its own file
+// and import it into your `page.tsx`.
 export default function AccountabilityHubHome() {
   const { data: session } = useSession();
   const { toast } = useToast();
@@ -42,11 +46,15 @@ export default function AccountabilityHubHome() {
     data: groups,
     error,
     isLoading,
-  } = useSWR(groupId ? `/api/accountability-hub/groups?groupId=${groupId}` : null, fetcher);
+  } = useSWR(
+    groupId ? `/api/accountability-hub/groups?groupId=${groupId}` : null,
+    fetcher
+  );
 
   const group = groups;
   const activeCycle = group?.cycles?.[0];
-  const { items: activityItems, isLoading: activityLoading } = useAccountabilityFeed(groupId);
+  const { items: activityItems, isLoading: activityLoading } =
+    useAccountabilityFeed(groupId);
 
   const isAdmin = group?.members?.some(
     (m: { userId: string; role: string }) =>
@@ -56,23 +64,96 @@ export default function AccountabilityHubHome() {
   const [notes, setNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
 
+  // --- NEW LOGIC ---
+  const [isCompletingCycle, setIsCompletingCycle] = useState(false);
+  setIsCompletingCycle(false);
+
+  /**
+   * Handles automatically completing a cycle when its end date is passed.
+   */
+  // const handleAutoCompleteCycle = async () => {
+  //   if (!groupId || !activeCycle || isCompletingCycle) return;
+
+  //   setIsCompletingCycle(true);
+  //   toast({
+  //     title: "Cycle has ended",
+  //     description: "Updating status to completed...",
+  //   });
+
+  //   try {
+  //     // This fetch call works perfectly with the new App Route Handler
+  //     const response = await fetch(
+  //       `/api/accountability-hub/cycles/${activeCycle.id}/update-status?groupId=${groupId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ status: "completed" }),
+  //       }
+  //     );
+
+  //     const result = await response.json();
+  //     if (!response.ok) {
+  //       throw new Error(result.message || "Failed to complete cycle.");
+  //     }
+
+  //     toast({
+  //       title: "Cycle Completed!",
+  //       description: "Redirecting to the cycle summary page...",
+  //     });
+
+  //     // Redirect to the specific cycle page as requested
+  //     router.push(`/dashboard/accountability-hub/cycle/${activeCycle.id}?groupId=${groupId}`);
+  //   } catch (err) {
+  //     toast({
+  //       title: "Error",
+  //       description: (err as Error).message,
+  //       variant: "destructive",
+  //     });
+  //     setIsCompletingCycle(false);
+  //   }
+  // };
+
+  /**
+   * Check if the active cycle is expired on page load.
+   */
+  useEffect(() => {
+    if (activeCycle) {
+      const isExpired = new Date() > new Date(activeCycle.endDate);
+      const isActive = activeCycle.status === "active";
+
+      if (isExpired && isActive) {
+        router.push(`/dashboard/accountability-hub/cycle/${activeCycle.id}?groupId=${groupId}`);
+      }
+    }
+  }, [activeCycle]); // Dependency array ensures this runs when data loads
+  // --- END NEW LOGIC ---
+
   useEffect(() => {
     if (group?.notes) {
       setNotes(group.notes);
     }
   }, [group?.notes]);
 
+  const isPrivate = group?.visibility === "PRIVATE";
+  const canSeeNotes = !isPrivate || isAdmin;
+
   const handleSaveNotes = async () => {
     if (!groupId) return;
     setIsSavingNotes(true);
     try {
-      const response = await fetch(`/api/accountability-hub/groups/${groupId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes }),
-      });
+      // This fetch path will need an App Route Handler at
+      // /app/api/accountability-hub/groups/[groupId]/route.ts
+      const response = await fetch(
+        `/api/accountability-hub/groups/${groupId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ notes }),
+        }
+      );
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Failed to save notes.");
+      if (!response.ok)
+        throw new Error(result.message || "Failed to save notes.");
 
       toast({ title: "Notes saved successfully!" });
       mutate(`/api/accountability-hub/groups?groupId=${groupId}`);
@@ -90,9 +171,14 @@ export default function AccountabilityHubHome() {
   const handleStartNewCycle = async () => {
     if (!groupId) return;
     try {
-      const response = await fetch(`/api/accountability-hub/groups/${groupId}/cycles`, {
-        method: "POST",
-      });
+      // This fetch path will need an App Route Handler at
+      // /app/api/accountability-hub/groups/[groupId]/cycles/route.ts
+      const response = await fetch(
+        `/api/accountability-hub/groups/${groupId}/cycles`,
+        {
+          method: "POST",
+        }
+      );
       if (!response.ok) throw new Error("Failed to start new cycle.");
       toast({
         title: "New cycle started!",
@@ -107,6 +193,23 @@ export default function AccountabilityHubHome() {
       });
     }
   };
+
+  // --- NEW LOADING STATE ---
+  if (isCompletingCycle) {
+    return (
+      <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8 flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <h2 className="text-xl font-semibold text-slate-900">
+            Cycle has ended
+          </h2>
+          <p className="text-muted-foreground">
+            Updating status and redirecting you to the summary...
+          </p>
+        </div>
+      </div>
+    );
+  }
+  // --- END NEW LOADING STATE ---
 
   if (isLoading) return <LoadingSkeleton />;
   if (error)
@@ -194,9 +297,15 @@ export default function AccountabilityHubHome() {
           </CardHeader>
           <CardContent>
             {group?.notes ? (
-              <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground whitespace-pre-line">
-                {group.notes}
-              </div>
+              canSeeNotes ? (
+                <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground whitespace-pre-line">
+                  {group.notes}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  These notes are private and only visible to the admin.
+                </p>
+              )
             ) : isAdmin ? (
               <>
                 <Textarea
@@ -215,7 +324,7 @@ export default function AccountabilityHubHome() {
               </>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                No notes available.
+                No notes have been added to this group yet.
               </p>
             )}
           </CardContent>

@@ -1,22 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner"; 
-import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 
 export default function SendNudgePage() {
-    const searchParams = useSearchParams();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"push" | "email">("push");
-    const memberId = searchParams.get("memberId");
+  const router = useRouter();
+  const memberId = searchParams.get("memberId");
   const memberName = searchParams.get("memberName") || "Member";
   const groupId = searchParams.get("groupId");
-    const memberToNudge = { id: memberId || "", name: memberName };
+  const memberToNudge = { id: memberId || "", name: memberName };
   // --- Push Notification Form ---
-  const [pushTitle, setPushTitle] = useState("Freindly Reminder from Your Accountability Hub");
+  const [pushTitle, setPushTitle] = useState(
+    "Freindly Reminder from Your Accountability Hub"
+  );
   const [pushDescription, setPushDescription] = useState(
     `Hey ${memberToNudge.name}, just a friendly reminder to update your goal progress!`
   );
@@ -35,15 +37,15 @@ export default function SendNudgePage() {
       const res = await axios.post(
         `/api/accountability-hub/members/${memberToNudge.id}/nudge`,
         {
-          
-            groupId,
-            pushNotificationSent: true,
-            title: pushTitle,
-            description: pushDescription,
-            url: "/dashboard", // optional redirect URL for notification
-          }
+          groupId,
+          pushNotificationSent: true,
+          title: pushTitle,
+          description: pushDescription,
+          url: "/dashboard", // optional redirect URL for notification
+        }
       );
-      if (!res.data.success) throw new Error("Failed to send push notification");
+      if (!res.data.success)
+        throw new Error("Failed to send push notification");
       return res.data;
     },
     onSuccess: () => {
@@ -78,7 +80,6 @@ export default function SendNudgePage() {
       toast.success("Email sent successfully!");
     },
     onError: (err: unknown) => {
-      
       toast.error((err as Error).message || "Failed to send email");
     },
   });
@@ -112,12 +113,12 @@ export default function SendNudgePage() {
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-2">
-          <Link
-            href="/dashboard"
+          <button
+            onClick={() => router.back()}
             className="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
+          </button>
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Send Nudge</h2>
             <p className="text-gray-500 text-sm">

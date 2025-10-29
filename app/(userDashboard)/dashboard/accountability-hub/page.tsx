@@ -20,10 +20,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import AddMemberModal from "@/components/accountability/AddMemberModal";
 import EditableProgressCell from "@/components/accountability/EditableProgressCell";
+
 import GoalStatusUpdater from "@/components/accountability/GoalStatusUpdater";
 import CommentsModal from "@/components/accountability/CommentsModal";
 import { useToast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
+import EditableNotesCell from "@/components/accountability/EditableNotesCell";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -31,6 +33,7 @@ type GroupViewData = {
   name: string;
   group: {
     visibility: "PRIVATE" | "VISIBLE_TO_GROUP";
+    progressStage: "NOT_STARTED" | "STAGE_2" | "STAGE_3";
   };
   activeCycleId: string;
   requesterRole: "admin" | "member" | "ADMIN" | "MEMBER";
@@ -47,6 +50,7 @@ type GroupViewData = {
       text: string;
       midwayUpdate: string | null;
       endResult: string | null;
+      notes?: string | null; // ✅ added notes field
       status: "on_track" | "needs_attention" | "off_track";
       authorId: string;
     }[];
@@ -69,13 +73,9 @@ export default function AccountabilityHubPage() {
   );
   const [editingGoalValue, setEditingGoalValue] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState(""); // ✅ search state
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const {
-    data,
-    error,
-    isLoading: groupDataLoading,
-  } = useSWR<GroupViewData>(
+  const { data, error, isLoading: groupDataLoading } = useSWR<GroupViewData>(
     groupId ? `/api/accountability-hub/groups/${groupId}/view` : null,
     fetcher
   );
@@ -83,10 +83,12 @@ export default function AccountabilityHubPage() {
   const groupName = data?.name;
   const activeCycleId = data?.activeCycleId;
   const members = data?.members || [];
-
   const groupVisibility = data?.group?.visibility;
   const isAdmin = data?.requesterRole?.toLowerCase() === "admin";
   const isGroupPrivate = groupVisibility === "PRIVATE";
+
+  const progressStage = data?.group?.progressStage;
+  const isMidwayVisible = progressStage !== "STAGE_2";
 
   const handleCommentClick = (goalId: string | undefined) => {
     if (goalId) setCommentsGoalId(goalId);
@@ -137,14 +139,12 @@ export default function AccountabilityHubPage() {
     );
   }
 
-  // ✅ Filter members based on search term
   const filteredMembers = members.filter((member) =>
     member.user.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <section className="mx-auto max-w-6xl py-8 px-4">
-      {/* Modals */}
       {groupId && isAdmin && (
         <AddMemberModal
           groupId={groupId}
@@ -160,7 +160,6 @@ export default function AccountabilityHubPage() {
         onOpenChange={() => setCommentsGoalId(null)}
       />
 
-      {/* Header */}
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
@@ -197,7 +196,6 @@ export default function AccountabilityHubPage() {
         )}
       </div>
 
-      {/* Search Input */}
       <Input
         type="text"
         placeholder="Search members..."
@@ -206,34 +204,36 @@ export default function AccountabilityHubPage() {
         onChange={(e) => setSearchTerm(e.target.value)}
       />
 
-      {/* Members Table */}
       <div className="w-full border rounded-lg overflow-x-clip">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="min-w-[200px]">Member</TableHead>
               <TableHead className="min-w-[150px]">Goal</TableHead>
-              <TableHead className="min-w-[150px]">Midway update</TableHead>
+              {isMidwayVisible && (
+                <TableHead className="min-w-[150px]">Midway update</TableHead>
+              )}
               <TableHead className="min-w-[150px]">End Result</TableHead>
+              
+                <TableHead className="min-w-[150px]">Notes</TableHead>
+              
               <TableHead className="min-w-[100px]">Status</TableHead>
-              <TableHead className="text-right min-w-[100px]">
-                Comments
-              </TableHead>
+              <TableHead className="text-right min-w-[100px]">Comments</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
             {groupDataLoading && (
               <>
-                <TableRowSkeleton />
-                <TableRowSkeleton />
-                <TableRowSkeleton />
+                <TableRowSkeleton isMidwayVisible={isMidwayVisible} />
+                <TableRowSkeleton isMidwayVisible={isMidwayVisible} />
+                <TableRowSkeleton isMidwayVisible={isMidwayVisible} />
               </>
             )}
 
             {error && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-red-500">
+                <TableCell colSpan={7} className="text-center text-red-500">
                   Failed to load members.
                 </TableCell>
               </TableRow>
@@ -242,7 +242,7 @@ export default function AccountabilityHubPage() {
             {!groupDataLoading && !error && filteredMembers.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="text-center text-muted-foreground"
                 >
                   {searchTerm
@@ -262,14 +262,10 @@ export default function AccountabilityHubPage() {
                 <TableRow key={member.userId}>
                   <TableCell className="relative overflow-hidden p-2">
                     {member.role?.toLowerCase() === "admin" && (
-                      <div
-                        className="absolute top-0 left-0 w-28 -translate-x-[2.7rem] translate-y-1 -rotate-45 bg-yellow-300 text-center text-[0.6rem] font-medium text-black shadow-md"
-                        style={{ lineHeight: "1.25rem" }}
-                      >
+                      <div className="absolute top-0 left-0 w-28 -translate-x-[2.7rem] translate-y-1 -rotate-45 bg-yellow-300 text-center text-[0.6rem] font-medium text-black shadow-md">
                         Coach
                       </div>
                     )}
-
                     <div className="relative z-10 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
                         <Image
@@ -286,15 +282,12 @@ export default function AccountabilityHubPage() {
                           className="h-8 w-8 rounded-full"
                         />
                       </div>
-
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/dashboard/accountability-hub/member/${member.userId}?groupId=${groupId}`}
-                          className="font-medium hover:underline"
-                        >
-                          {member.user.name}
-                        </Link>
-                      </div>
+                      <Link
+                        href={`/dashboard/accountability-hub/member/${member.userId}?groupId=${groupId}`}
+                        className="font-medium hover:underline"
+                      >
+                        {member.user.name}
+                      </Link>
                     </div>
                   </TableCell>
 
@@ -306,14 +299,12 @@ export default function AccountabilityHubPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
                             <Input
                               value={editingGoalValue}
-                              onChange={(e) =>
-                                setEditingGoalValue(e.target.value)
-                              }
+                              onChange={(e) => setEditingGoalValue(e.target.value)}
                               placeholder="Enter your goal"
                               disabled={isLoading}
-                              className="flex-grow min-w-[150px] w-full sm:w-auto"
+                              className="flex-grow min-w-[150px]"
                             />
-                            <div className="flex justify-end sm:justify-start gap-2 flex-shrink-0">
+                            <div className="flex gap-2">
                               <Button
                                 onClick={() => handleSave(activeCycleId, "text")}
                                 size="sm"
@@ -342,7 +333,7 @@ export default function AccountabilityHubPage() {
                                 setEditingGoalValue(goal?.text || "");
                               }
                             }}
-                            className={`p-2 rounded-md min-h-[40px] w-full ${
+                            className={`p-2 rounded-md min-h-[40px] ${
                               isCurrentUser
                                 ? "cursor-pointer hover:bg-slate-50"
                                 : ""
@@ -355,7 +346,6 @@ export default function AccountabilityHubPage() {
                                     Private to Coach and {member.user.name}
                                   </span>
                                 );
-
                               if (goal?.text) return goal.text;
                               if (isCurrentUser)
                                 return (
@@ -375,22 +365,22 @@ export default function AccountabilityHubPage() {
                     )}
                   </TableCell>
 
-                  {/* Midway Update Cell */}
-                  <TableCell>
-                    {activeCycleId && (
-                      <EditableProgressCell
-                        initialValue={goal?.midwayUpdate}
-                        groupId={groupId!}
-                        cycleId={activeCycleId}
-                        fieldToUpdate="midwayUpdate"
-                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"} // Replace with actual value if needed
-                        isCurrentUser={isCurrentUser}
-                        placeholderText="Set midway update"
-                      />
-                    )}
-                  </TableCell>
+                  {isMidwayVisible && (
+                    <TableCell>
+                      {activeCycleId && (
+                        <EditableProgressCell
+                          initialValue={goal?.midwayUpdate}
+                          groupId={groupId!}
+                          cycleId={activeCycleId}
+                          fieldToUpdate="midwayUpdate"
+                          isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"}
+                          isCurrentUser={isCurrentUser}
+                          placeholderText="Set midway update"
+                        />
+                      )}
+                    </TableCell>
+                  )}
 
-                  {/* End Result Cell */}
                   <TableCell>
                     {activeCycleId && (
                       <EditableProgressCell
@@ -398,27 +388,40 @@ export default function AccountabilityHubPage() {
                         groupId={groupId!}
                         cycleId={activeCycleId}
                         fieldToUpdate="endResult"
-                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"} // Replace with actual value if needed
+                        isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"}
                         isCurrentUser={isCurrentUser}
                         placeholderText="Set end result"
                       />
                     )}
                   </TableCell>
 
-                  {/* Status Cell */}
+                  {/* ✅ Notes Cell (Admin Only) */}
                   <TableCell>
-                    {goal && activeCycleId ? (
+                  {goal ? (
+                    <EditableNotesCell
+                      goalId={goal.id}
+                      groupId={groupId!}
+                      initialValue={goal.notes || ""}
+                      canEdit={isAdmin} // ✅ Only admin can edit
+                    />
+                  ) : (
+                    <span className="text-muted-foreground text-xs">No notes allowed if no goal set</span>
+                  )}
+                </TableCell>
+
+                  <TableCell>
+                    { goal && activeCycleId ? (
                       <GoalStatusUpdater
-                        goalId={goal.id}
+                        goalId={goal?.id}
                         groupId={groupId!}
                         cycleId={activeCycleId}
-                        currentStatus={goal.status}
+                        currentStatus={goal?.status}
                         isAdmin={isAdmin}
+                        authorId={member?.user?.id}
                       />
-                    ) : null}
+                    ) : <span className="mx-6">....</span>}
                   </TableCell>
 
-                  {/* Comments Cell */}
                   <TableCell className="text-right">
                     <Button
                       variant="link"
@@ -437,7 +440,7 @@ export default function AccountabilityHubPage() {
   );
 }
 
-const TableRowSkeleton = () => (
+const TableRowSkeleton = ({ isMidwayVisible }: { isMidwayVisible: boolean }) => (
   <TableRow>
     <TableCell>
       <div className="flex items-center gap-3">
@@ -448,9 +451,11 @@ const TableRowSkeleton = () => (
     <TableCell>
       <Skeleton className="h-4 w-full" />
     </TableCell>
-    <TableCell>
-      <Skeleton className="h-4 w-full" />
-    </TableCell>
+    {isMidwayVisible && (
+      <TableCell>
+        <Skeleton className="h-4 w-full" />
+      </TableCell>
+    )}
     <TableCell>
       <Skeleton className="h-4 w-full" />
     </TableCell>

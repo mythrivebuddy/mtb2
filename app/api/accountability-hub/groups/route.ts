@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         const creatorId = session.user.id;
 
         const body = await req.json();
-        const { groupName, description, visibility, notesPrivacy } = body;
+        const { groupName, description, visibility, notesPrivacy, stages } = body;
 
         if (!groupName) {
             return NextResponse.json({ error: "Group name is required" }, { status: 400 });
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
                 creatorId: creatorId,
                 coachId: creatorId,
                 visibility: visibilityMap[visibility] || Visibility.PRIVATE,
-                progressStage: ProgressStage.NOT_STARTED,
+                progressStage: stages in ProgressStage ? stages as ProgressStage : ProgressStage.STAGE_3,
                 // ✅ FIX: The fallback value must also be a valid enum member.
                 notesPrivacy: notesPrivacyMap[notesPrivacy] ,
                 cycleDuration: CycleDuration.MONTHLY,

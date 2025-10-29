@@ -1,4 +1,3 @@
-// components/accountability/GoalStatusUpdater.tsx
 "use client";
 
 import { useSWRConfig } from "swr";
@@ -20,21 +19,22 @@ const statusConfig: Record<Status, { label: string; color: string }> = {
     color: "bg-yellow-600 hover:bg-yellow-700",
   },
   off_track: { label: "Off Track", color: "bg-red-500 hover:bg-red-700" },
-  // in_progress: { label: "In Progress", color: "bg-purple-500 hover:bg-purple-700" },
 };
 
 interface GoalStatusUpdaterProps {
   goalId: string;
   groupId: string;
   cycleId: string;
+  authorId: string;
   currentStatus: Status;
   isAdmin: boolean;
 }
 
 export default function GoalStatusUpdater({
-  //goalId,
+  goalId,
   groupId,
   cycleId,
+  authorId,
   currentStatus,
   isAdmin,
 }: GoalStatusUpdaterProps) {
@@ -48,7 +48,9 @@ export default function GoalStatusUpdater({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groupId,
+          goalId,
           cycleId,
+          authorId,
           field: "status",
           value: newStatus,
         }),
@@ -58,27 +60,32 @@ export default function GoalStatusUpdater({
       mutate(`/api/accountability-hub/groups/${groupId}/view`);
     } catch (error) {
       toast({
-        title: (error as Error).message || "Error searching users.",
+        title: (error as Error).message || "Error updating status.",
         variant: "destructive",
       });
     }
   };
 
   const statusInfo = statusConfig[currentStatus] || statusConfig.on_track;
-  console.log({ statusConfig });
+
+  // Non-admins just see the badge
   if (!isAdmin) {
     return (
-      <Badge className={`${statusInfo.color} text-white`}>
+      <Badge
+        className={`${statusInfo.color} text-white text-xs flex justify-center text-center`} // <-- MODIFIED HERE
+      >
         {statusInfo.label}
       </Badge>
     );
   }
-  console.log({ statusConfig });
 
+  // Admins get the dropdown
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Badge className={`${statusInfo.color} text-white cursor-pointer`}>
+        <Badge
+          className={`${statusInfo.color} text-white cursor-pointer text-xs flex justify-center text-center`} // <-- MODIFIED HERE
+        >
           {statusInfo.label}
         </Badge>
       </DropdownMenuTrigger>
@@ -87,6 +94,7 @@ export default function GoalStatusUpdater({
           <DropdownMenuItem
             key={statusKey}
             onClick={() => handleStatusChange(statusKey as Status)}
+            className="text-xs"
           >
             {statusConfig[statusKey as Status].label}
           </DropdownMenuItem>

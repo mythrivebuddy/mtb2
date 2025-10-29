@@ -53,7 +53,7 @@ export default function CreateGroupPage() {
     description: "",
     visibility: "members_visible",
     duration: "monthly",
-    stages: "3_stage",
+    stages: "STAGE_3",
     notesPrivacy: "member_and_admin",
   });
 
@@ -207,19 +207,19 @@ export default function CreateGroupPage() {
               </legend>
               <div className="mt-2 space-y-2">
                 <RadioInput
-                  id="stage_2"
+                  id="STAGE_2"
                   name="stages"
-                  value="2_stage"
+                  value="STAGE_2"
                   label="Goal → End"
-                  checked={formData.stages === "2_stage"}
+                  checked={formData.stages === "STAGE_2"}
                   onChange={handleChange}
                 />
                 <RadioInput
-                  id="stage_3"
+                  id="STAGE_3"
                   name="stages"
-                  value="3_stage"
+                  value="STAGE_3"
                   label="Goal → Midway → End"
-                  checked={formData.stages === "3_stage"}
+                  checked={formData.stages === "STAGE_3"}
                   onChange={handleChange}
                 />
               </div>
