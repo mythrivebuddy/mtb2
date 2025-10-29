@@ -66,7 +66,9 @@ export default function AccountabilityHubHome() {
 
   // --- NEW LOGIC ---
   const [isCompletingCycle, setIsCompletingCycle] = useState(false);
+  useEffect(() => {
   setIsCompletingCycle(false);
+}, []);
 
   /**
    * Handles automatically completing a cycle when its end date is passed.
