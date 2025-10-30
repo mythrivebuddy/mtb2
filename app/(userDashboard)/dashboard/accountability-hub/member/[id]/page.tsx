@@ -3,7 +3,6 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { ArrowLeft } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link"; // ✅ Import Link
 import { format, formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -183,7 +182,7 @@ export default function MemberDetailPage() {
 
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Image
+        <img
           src={
             member.user.image ||
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
@@ -264,7 +263,7 @@ export default function MemberDetailPage() {
               {latestGoal.comments.length > 0 ? (
                 latestGoal.comments.map((comment: Comment) => (
                   <div key={comment.id} className="flex items-start gap-3">
-                    <Image
+                    <img
                       src={
                         comment.author.image ||
                         `https://ui-avatars.com/api/?name=${encodeURIComponent(

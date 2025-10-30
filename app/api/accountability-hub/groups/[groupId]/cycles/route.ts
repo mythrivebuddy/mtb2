@@ -88,7 +88,7 @@ export async function POST(
       groupId,
       session.user.id,
       "cycle_started",
-      `${session.user.name} marked the current cycle as repeat and refreshed its dates.`
+      `${session.user.name} began a fresh cycle — ready for new goals, notes, and progress ahead`
     );
 
     return NextResponse.json(

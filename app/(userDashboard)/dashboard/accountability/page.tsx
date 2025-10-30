@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import useSWR, { useSWRConfig } from "swr";
+import  { useSWRConfig } from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
@@ -346,7 +346,7 @@ export default function AccountabilityHubHome() {
                           className="flex justify-between items-center border rounded-lg p-2"
                         >
                           <div className="flex items-center gap-3">
-                            <Image
+                            <img
                               src={member.user.image || "/default-avatar.png"}
                               alt={member.user.name}
                               width={32}

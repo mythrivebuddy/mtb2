@@ -131,7 +131,7 @@ export default function AddMemberModal({
               className="flex items-center justify-between p-2 rounded-md hover:bg-accent"
             >
               <div className="flex items-center gap-3">
-                <Image
+                <img
                   src={
                     user?.image
                       ? user.image

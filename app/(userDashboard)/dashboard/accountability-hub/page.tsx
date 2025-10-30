@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, PlusCircle } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -278,7 +277,7 @@ export default function AccountabilityHubPage() {
                     )}
                     <div className="relative z-10 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                        <Image
+                        <img
                           src={
                             member?.user?.image
                               ? member.user.image
