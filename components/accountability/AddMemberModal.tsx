@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { useSWRConfig } from "swr";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,

@@ -20,12 +20,13 @@ type MentionSuggestion = {
 };
 
 // ✅ Define the Member type
-type Member = {
+export  type Member = {
   userId: string;
   user: {
     id: string;
-    name: string | null;
+    name: string;
     image: string | null;
+    role:string | null
   };
 };
 

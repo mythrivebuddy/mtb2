@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import  { useSWRConfig } from "swr";
+import { useSWRConfig } from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
@@ -35,10 +35,20 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { is } from "tinymce";
+
+type Member = {
+  userId: string;
+  role: string;
+  user: {
+    id: string;
+    name: string;
+    image: string | null;
+    email?: string | null;
+  };
+};
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -91,13 +101,16 @@ export default function AccountabilityHubHome() {
 
   const isPrivate = group?.visibility === "PRIVATE";
   const canSeeNotes = !isPrivate || isAdmin;
-   const { mutateAsync: startNewCycle,isPending: isCreatingCycle } = useMutation({
-    mutationFn: async () => {
-      if (!groupId) throw new Error("Missing group ID");
-      const res = await axios.post(`/api/accountability-hub/groups/${groupId}/cycles`);
-      return res.data;
-    },
-  });
+  const { mutateAsync: startNewCycle, isPending: isCreatingCycle } =
+    useMutation({
+      mutationFn: async () => {
+        if (!groupId) throw new Error("Missing group ID");
+        const res = await axios.post(
+          `/api/accountability-hub/groups/${groupId}/cycles`
+        );
+        return res.data;
+      },
+    });
 
   /** 🧾 Save Notes */
   const handleSaveNotes = async () => {
@@ -156,8 +169,14 @@ export default function AccountabilityHubHome() {
         toast.success("You have successfully left the group.");
         router.push("/dashboard/accountability/home");
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to leave the group.");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(
+          err.response?.data?.message || "Failed to leave the group."
+        );
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } finally {
       setIsLeaving(false);
     }
@@ -172,16 +191,20 @@ export default function AccountabilityHubHome() {
         `/api/accountability-hub/groups/${groupId}/leave?userId=${memberId}`
         // api/accountability-hub/groups/[groupId]/leave/route.ts
       );
-
-      if (res.data.success) {
+      const { success } = res.data;
+      if (success) {
         toast.success(`${memberName} has been removed from the group.`);
         await refetch();
         setIsDialogOpen(false);
       } else {
         toast.error(res.data.message || "Failed to remove member.");
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to remove member.");
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Failed to remove member.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } finally {
       setRemovingMemberId(null);
     }
@@ -190,9 +213,9 @@ export default function AccountabilityHubHome() {
   /** Filter members */
   const filteredMembers =
     group?.members?.filter(
-      (m: any) =>
+      (m: Member) =>
         m.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        m.role.toLowerCase() !== "admin"
+        m?.role?.toLowerCase() !== "admin"
     ) || [];
   if (isCompletingCycle) {
     return (
@@ -295,7 +318,9 @@ export default function AccountabilityHubHome() {
             {group?.cycles[0]?.status === "repeat" && !isAdmin && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive">{isLeaving ? "Leaving..." : "Leave Group"}</Button>
+                  <Button variant="destructive">
+                    {isLeaving ? "Leaving..." : "Leave Group"}
+                  </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -340,7 +365,7 @@ export default function AccountabilityHubHome() {
                   />
                   <div className="max-h-60 overflow-y-auto space-y-2">
                     {filteredMembers.length > 0 ? (
-                      filteredMembers.map((member: any) => (
+                      filteredMembers.map((member: Member) => (
                         <div
                           key={member.userId}
                           className="flex justify-between items-center border rounded-lg p-2"
@@ -348,7 +373,7 @@ export default function AccountabilityHubHome() {
                           <div className="flex items-center gap-3">
                             <img
                               src={member.user.image || "/default-avatar.png"}
-                              alt={member.user.name}
+                              alt={member.user.name || "Member Avatar"}
                               width={32}
                               height={32}
                               className="rounded-full"
@@ -434,11 +459,10 @@ export default function AccountabilityHubHome() {
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button disabled={isCreatingCycle}>
-                    {
-                      isCreatingCycle ? "Starting New Cycle..." : "Start New Cycle"
-                    }
-        
-                    </Button>
+                    {isCreatingCycle
+                      ? "Starting New Cycle..."
+                      : "Start New Cycle"}
+                  </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
