@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useSWRConfig } from "swr";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface EditableNotesCellProps {
   goalId: string;
@@ -19,15 +19,16 @@ export default function EditableNotesCell({
   initialValue,
   canEdit,
 }: EditableNotesCellProps) {
-  const { toast } = useToast();
+
   const { mutate } = useSWRConfig();
   const [isEditing, setIsEditing] = useState(false);
   const [notes, setNotes] = useState(initialValue || "");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!notes.trim()) {
-      toast({ title: "Notes cannot be empty.", variant: "destructive" });
+      toast.success("Notes cannot be empty.");
       return;
     }
 
@@ -45,13 +46,10 @@ export default function EditableNotesCell({
       if (!response.ok) throw new Error("Failed to update notes.");
 
       await mutate(`/api/accountability-hub/groups/${groupId}/view`);
-      toast({ title: "Notes updated successfully! 📝" });
+      toast.success("Notes updated successfully! 📝");
       setIsEditing(false);
     } catch (error) {
-      toast({
-        title: (error as Error).message || "Error updating notes.",
-        variant: "destructive",
-      });
+      toast.error((error as Error).message || "Error updating notes.");
     } finally {
       setIsLoading(false);
     }
@@ -69,18 +67,25 @@ export default function EditableNotesCell({
   // ✅ Editable for admins
   if (isEditing) {
     return (
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+      <form onSubmit={handleSave} className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
         <Input
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Enter notes"
           disabled={isLoading}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setIsEditing(false);
+            }
+          }}
           className="flex-grow min-w-[150px]"
         />
         <div className="flex gap-2">
           <Button
             size="sm"
-            onClick={handleSave}
+            type="submit"
             disabled={isLoading || !notes.trim()}
           >
             {isLoading ? "Saving..." : "Save"}
@@ -97,7 +102,7 @@ export default function EditableNotesCell({
             Cancel
           </Button>
         </div>
-      </div>
+      </form>
     );
   }
 

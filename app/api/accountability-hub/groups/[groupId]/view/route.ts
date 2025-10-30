@@ -24,7 +24,7 @@ export async function GET(
       where: { id: groupId },
       include: {
         cycles: {
-          where: { status: "active" },
+          where: { status: { in: ["active", "repeat"] } },
           orderBy: { startDate: "desc" },
           take: 1,
         },
@@ -46,8 +46,11 @@ export async function GET(
     if (!isMember) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-
+    console.log(group);
+    
     const activeCycleId = group.cycles[0]?.id;
+    console.log("acitivecyccleid ",activeCycleId);
+    
     let membersWithGoals = group.members;
 
     if (activeCycleId) {

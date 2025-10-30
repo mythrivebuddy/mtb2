@@ -122,7 +122,7 @@ export async function GET(req: Request) {
           },
           cycles: {
             where: {
-              status: "active",
+              status: { in: ["active", "repeat"] },
             },
             orderBy: {
               startDate: "desc",
@@ -165,7 +165,7 @@ export async function GET(req: Request) {
         },
         cycles: {
           where: {
-            status: "active",
+           status: { in: ["active", "repeat"] },
           },
           orderBy: {
             startDate: "desc",

@@ -17,7 +17,7 @@ export default function SendNudgePage() {
   const memberToNudge = { id: memberId || "", name: memberName };
   // --- Push Notification Form ---
   const [pushTitle, setPushTitle] = useState(
-    "Freindly Reminder from Your Accountability Hub"
+    "Friendly Reminder from Your Accountability Hub"
   );
   const [pushDescription, setPushDescription] = useState(
     `Hey ${memberToNudge.name}, just a friendly reminder to update your goal progress!`
@@ -46,10 +46,11 @@ export default function SendNudgePage() {
       );
       if (!res.data.success)
         throw new Error("Failed to send push notification");
-      return res.data;
+        return res.data;
     },
     onSuccess: () => {
       toast.success("Push notification sent successfully!");
+      router.back();
     },
     onError: (err: unknown) => {
       toast.error((err as Error).message || "Failed to send push notification");
@@ -78,6 +79,7 @@ export default function SendNudgePage() {
     },
     onSuccess: () => {
       toast.success("Email sent successfully!");
+      router.back();
     },
     onError: (err: unknown) => {
       toast.error((err as Error).message || "Failed to send email");
