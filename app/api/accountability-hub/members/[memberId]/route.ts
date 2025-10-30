@@ -39,7 +39,7 @@ export async function GET(
       where: { userId_groupId: { userId: memberId, groupId } },
       include: {
         user: true, // Includes the full user profile (name, image, etc.)
-        group: { select: { name: true } }, // Gets the group's name
+        group: { select: { name: true,progressStage:true } }, // Gets the group's name
         goals: {
           // Gets the goals directly related to this GroupMember
           orderBy: { cycle: { startDate: "desc" } }, // Show newest cycle's goals first

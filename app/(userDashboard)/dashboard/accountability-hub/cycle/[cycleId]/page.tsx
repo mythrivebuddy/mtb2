@@ -64,6 +64,7 @@ export default function CycleReportPage() {
     DEFAULT_REWARD_AMOUNT
   );
   const [memberIdsToReward, setMemberIdsToReward] = useState<string[]>([]);
+  const [isStartingCycle, setIsStartingCycle] = useState(false);
 
   // --- Destructure 'session' and 'update' function ---
   const { data: session, update: updateSession } = useSession();
@@ -155,16 +156,21 @@ export default function CycleReportPage() {
   };
 
   const handleStartNewCycle = async () => {
+    setIsStartingCycle(true)
     if (!groupId) return;
     try {
       const response = await axios.post(
         `/api/accountability-hub/groups/${groupId}/cycles`
       );
-      toast(response?.data?.message || "New cycle started successfully");
-      mutate(`/api/accountability-hub/groups?groupId=${groupId}`);
-      router.push(`/dashboard/accountability?groupId=${groupId}`);
+      if (response.data.success) {
+        toast.success("New cycle started successfully");
+        mutate(`/api/accountability-hub/groups?groupId=${groupId}`);
+        router.push(`/dashboard/accountability?groupId=${groupId}`);
+      }
     } catch (err) {
       toast((err as Error).message);
+    }finally{
+      setIsStartingCycle(false)
     }
   };
 
@@ -402,8 +408,11 @@ export default function CycleReportPage() {
               <Button
                 className="w-full"
                 onClick={handleStartNewCycle}
+                disabled={isStartingCycle}
               >
-                Start New Cycle
+                {
+                  isStartingCycle ? "Starting..." : "Start New Cycle"
+                }
               </Button>
             </Card>
           )}

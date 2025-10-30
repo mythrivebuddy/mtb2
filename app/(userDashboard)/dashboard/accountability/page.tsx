@@ -96,6 +96,18 @@ export default function AccountabilityHubHome() {
     setIsCompletingCycle(false);
   }, []);
   useEffect(() => {
+    if (activeCycle) {
+      const isExpired = new Date() > new Date(activeCycle.endDate);
+      const isActive = activeCycle.status === "active";
+
+      if (isExpired && isActive) {
+        router.push(
+          `/dashboard/accountability-hub/cycle/${activeCycle.id}?groupId=${groupId}`
+        );
+      }
+    }
+  }, [activeCycle]);
+  useEffect(() => {
     if (group?.notes) setNotes(group.notes);
   }, [group?.notes]);
 
@@ -372,7 +384,13 @@ export default function AccountabilityHubHome() {
                         >
                           <div className="flex items-center gap-3">
                             <img
-                              src={member.user.image || "/default-avatar.png"}
+                              src={
+                                member?.user?.image
+                                  ? member.user.image
+                                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                      member?.user?.name?.charAt(0) || "User"
+                                    )}&background=random&color=fff`
+                              }
                               alt={member.user.name || "Member Avatar"}
                               width={32}
                               height={32}
