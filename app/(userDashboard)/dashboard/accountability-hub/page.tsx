@@ -85,7 +85,7 @@ export default function AccountabilityHubPage() {
 
   const groupName = data?.name;
   const activeCycleId = data?.activeCycleId;
-  console.log("acitve cycle id ",activeCycleId);
+
   
   const members = data?.members || [];
   const groupVisibility = data?.group?.visibility;
@@ -263,7 +263,7 @@ export default function AccountabilityHubPage() {
               const goal = member.goals?.[0];
               
               const isCurrentUser = member.user.id === session?.user?.id;
-              console.log({isCurrentUser});
+              
               const isEditingGoal = editingGoalMemberId === member.userId;
               const isGoalVisible = !isGroupPrivate || isAdmin || isCurrentUser;
 
@@ -306,7 +306,10 @@ export default function AccountabilityHubPage() {
                       <>
                         {isEditingGoal ? (
                           <form
-                            onSubmit={() => handleSave(activeCycleId, "text")}
+                            onSubmit={(e) =>{
+                              e.preventDefault();
+                               handleSave(activeCycleId, "text")
+                              }}
                             className="flex flex-col sm:flex-row sm:items-center gap-2 w-full"
                           >
                             <Input

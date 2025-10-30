@@ -20,13 +20,13 @@ type MentionSuggestion = {
 };
 
 // ✅ Define the Member type
-export  type Member = {
+export type Member = {
   userId: string;
   user: {
     id: string;
     name: string;
     image: string | null;
-    role:string | null
+    role: string | null;
   };
 };
 
@@ -164,8 +164,6 @@ export default function MemberDetailPage() {
 
   const latestGoal = member.goals?.[0];
   const isAdmin = member.requesterRole === "ADMIN";
-  console.log({isAdmin});
-  
 
   return (
     <section className="mx-auto max-w-4xl py-8 px-4">
@@ -218,8 +216,8 @@ export default function MemberDetailPage() {
                   latestGoal.status === "on_track"
                     ? "default"
                     : latestGoal.status === "needs_attention"
-                    ? "secondary"
-                    : "destructive"
+                      ? "secondary"
+                      : "destructive"
                 }
                 className="capitalize"
               >
@@ -230,12 +228,14 @@ export default function MemberDetailPage() {
           <CardContent className="space-y-6">
             <p className="text-gray-800 text-lg p-4 bg-slate-50 rounded-md">{`"${latestGoal.text}"`}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-              <div>
-                <p className="font-semibold text-gray-700">Midway Update</p>
-                <p className="text-gray-600 mt-1">
-                  {latestGoal.midwayUpdate || "Pending..."}
-                </p>
-              </div>
+              {latestGoal?.progressStage === "STAGE_3" && (
+                <div>
+                  <p className="font-semibold text-gray-700">Midway Update</p>
+                  <p className="text-gray-600 mt-1">
+                    {latestGoal.midwayUpdate || "Pending..."}
+                  </p>
+                </div>
+              )}
               <div>
                 <p className="font-semibold text-gray-700">End Result</p>
                 <p className="text-gray-600 mt-1">
@@ -309,15 +309,17 @@ export default function MemberDetailPage() {
       {/* Action Button */}
       {isAdmin && (
         <div className="mt-8">
-          <Link href={`/dashboard/accountability-hub/send-nudge-page?memberId=${member.userId}&groupId=${groupId}&memberName=${member.user.name}`}>
-          <Button
-            className="bg-gray-900 text-white hover:bg-gray-800"
-            // onClick={handleSendNudge}
-            // disabled={isNudging}
+          <Link
+            href={`/dashboard/accountability-hub/send-nudge-page?memberId=${member.userId}&groupId=${groupId}&memberName=${member.user.name}`}
           >
-            {/* {isNudging ? "Sending..." : "Send Nudge"} */}
-            Send Nudge
-          </Button>
+            <Button
+              className="bg-gray-900 text-white hover:bg-gray-800"
+              // onClick={handleSendNudge}
+              // disabled={isNudging}
+            >
+              {/* {isNudging ? "Sending..." : "Send Nudge"} */}
+              Send Nudge
+            </Button>
           </Link>
         </div>
       )}
