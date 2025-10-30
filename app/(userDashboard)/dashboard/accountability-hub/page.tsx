@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
 import { useSession } from "next-auth/react";
 import { ArrowLeft, PlusCircle } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,13 +74,19 @@ export default function AccountabilityHubPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data, error, isLoading: groupDataLoading } = useSWR<GroupViewData>(
+  const {
+    data,
+    error,
+    isLoading: groupDataLoading,
+  } = useSWR<GroupViewData>(
     groupId ? `/api/accountability-hub/groups/${groupId}/view` : null,
     fetcher
   );
 
   const groupName = data?.name;
   const activeCycleId = data?.activeCycleId;
+  console.log("acitve cycle id ",activeCycleId);
+  
   const members = data?.members || [];
   const groupVisibility = data?.group?.visibility;
   const isAdmin = data?.requesterRole?.toLowerCase() === "admin";
@@ -214,11 +219,13 @@ export default function AccountabilityHubPage() {
                 <TableHead className="min-w-[150px]">Midway update</TableHead>
               )}
               <TableHead className="min-w-[150px]">End Result</TableHead>
-              
-                <TableHead className="min-w-[150px]">Notes</TableHead>
-              
+
+              <TableHead className="min-w-[150px]">Notes</TableHead>
+
               <TableHead className="min-w-[100px]">Status</TableHead>
-              <TableHead className="text-right min-w-[100px]">Comments</TableHead>
+              <TableHead className="text-right min-w-[100px]">
+                Comments
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -254,7 +261,9 @@ export default function AccountabilityHubPage() {
 
             {filteredMembers.map((member) => {
               const goal = member.goals?.[0];
+              
               const isCurrentUser = member.user.id === session?.user?.id;
+              console.log({isCurrentUser});
               const isEditingGoal = editingGoalMemberId === member.userId;
               const isGoalVisible = !isGroupPrivate || isAdmin || isCurrentUser;
 
@@ -268,7 +277,7 @@ export default function AccountabilityHubPage() {
                     )}
                     <div className="relative z-10 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                        <Image
+                        <img
                           src={
                             member?.user?.image
                               ? member.user.image
@@ -296,21 +305,39 @@ export default function AccountabilityHubPage() {
                     {activeCycleId && (
                       <>
                         {isEditingGoal ? (
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                          <form
+                            onSubmit={() => handleSave(activeCycleId, "text")}
+                            className="flex flex-col sm:flex-row sm:items-center gap-2 w-full"
+                          >
                             <Input
                               value={editingGoalValue}
-                              onChange={(e) => setEditingGoalValue(e.target.value)}
+                              onChange={(e) =>
+                                setEditingGoalValue(e.target.value)
+                              }
                               placeholder="Enter your goal"
                               disabled={isLoading}
                               className="flex-grow min-w-[150px]"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  if (editingGoalValue.trim()) {
+                                    handleSave(activeCycleId, "text");
+                                  }
+                                } else if (e.key === "Escape") {
+                                  setEditingGoalMemberId(null);
+                                  setEditingGoalValue("");
+                                }
+                              }}
                             />
+
                             <div className="flex gap-2">
                               <Button
-                                onClick={() => handleSave(activeCycleId, "text")}
+                                type="submit"
                                 size="sm"
                                 disabled={isLoading || !editingGoalValue.trim()}
                               >
-                                {isLoading ? "..." : "Save"}
+                                {isLoading ? "Saving..." : "Save"}
                               </Button>
                               <Button
                                 onClick={() => {
@@ -324,7 +351,7 @@ export default function AccountabilityHubPage() {
                                 Cancel
                               </Button>
                             </div>
-                          </div>
+                          </form>
                         ) : (
                           <div
                             onClick={() => {
@@ -397,20 +424,22 @@ export default function AccountabilityHubPage() {
 
                   {/* ✅ Notes Cell (Admin Only) */}
                   <TableCell>
-                  {goal ? (
-                    <EditableNotesCell
-                      goalId={goal.id}
-                      groupId={groupId!}
-                      initialValue={goal.notes || ""}
-                      canEdit={isAdmin} // ✅ Only admin can edit
-                    />
-                  ) : (
-                    <span className="text-muted-foreground text-xs">No notes allowed if no goal set</span>
-                  )}
-                </TableCell>
+                    {goal ? (
+                      <EditableNotesCell
+                        goalId={goal.id}
+                        groupId={groupId!}
+                        initialValue={goal.notes || ""}
+                        canEdit={isAdmin} // ✅ Only admin can edit
+                      />
+                    ) : (
+                      <span className="text-muted-foreground text-xs">
+                        No notes allowed if no goal set
+                      </span>
+                    )}
+                  </TableCell>
 
                   <TableCell>
-                    { goal && activeCycleId ? (
+                    {goal && activeCycleId ? (
                       <GoalStatusUpdater
                         goalId={goal?.id}
                         groupId={groupId!}
@@ -419,7 +448,9 @@ export default function AccountabilityHubPage() {
                         isAdmin={isAdmin}
                         authorId={member?.user?.id}
                       />
-                    ) : <span className="mx-6">....</span>}
+                    ) : (
+                      <span className="mx-6">....</span>
+                    )}
                   </TableCell>
 
                   <TableCell className="text-right">
@@ -440,7 +471,11 @@ export default function AccountabilityHubPage() {
   );
 }
 
-const TableRowSkeleton = ({ isMidwayVisible }: { isMidwayVisible: boolean }) => (
+const TableRowSkeleton = ({
+  isMidwayVisible,
+}: {
+  isMidwayVisible: boolean;
+}) => (
   <TableRow>
     <TableCell>
       <div className="flex items-center gap-3">
