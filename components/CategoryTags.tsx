@@ -1,3 +1,4 @@
+// components/CategoryTags.tsx
 import { useState } from "react";
 import type { Category } from "../types/types";
 

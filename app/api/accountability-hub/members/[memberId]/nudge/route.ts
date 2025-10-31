@@ -5,7 +5,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
-import { NotificationService } from "@/lib/notification-service";
+import { Role } from "@prisma/client";
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendEmail } from "@/utils/sendEmail";
 
 export async function POST(
   req: Request,
@@ -13,13 +15,13 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    // BEST PRACTICE: Also check for name since we use it in the log
     if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { memberId } = params;
-    const { groupId } = await req.json();
+    const { memberId } = await params;
+    const { groupId,pushNotificationSent,title,description,subject,emailContent,url } = await req.json();
+    
 
     if (!groupId) {
       return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
@@ -30,52 +32,56 @@ export async function POST(
       where: {
         userId: session.user.id,
         groupId: groupId,
-        role: "ADMIN",
+        role: Role.ADMIN,
       },
       include: {
         group: { select: { name: true } },
       },
     });
 
-    // More robust check
-    if (!adminMembership?.group) {
-      return NextResponse.json({ error: "Forbidden: Not an admin of this group" }, { status: 403 });
+    if (!adminMembership || !adminMembership.group) {
+      return NextResponse.json({ error: "Forbidden: Not an admin or group not found" }, { status: 403 });
     }
     
-    // 2. Get recipient's details
-    // <-- FIX 1: Find member by the combination of their userId and groupId.
-    // This fixes the "'id' does not exist" error.
-    const recipientMember = await prisma.groupMember.findFirst({ 
+    // 2. Get recipient's details using the composite unique key
+    const recipientMember = await prisma.groupMember.findUnique({
         where: {
-            userId: memberId, // Use the memberId from params
-            groupId: groupId, // Ensure they are in the correct group
+            // FIX: Use the composite key 'userId_groupId'.
+            // This assumes your schema has @@id([userId, groupId]) or @@unique([userId, groupId]).
+            userId_groupId: {
+                userId: memberId, // 'memberId' from the URL is the user's ID
+                groupId: groupId,
+            },
         },
-        // The select clause is correct, but the query to get here was not.
-        select: { userId: true, user: { select: { name: true } } }
+        include: { user: { select: { name: true, id: true } } }
     });
 
-    // More robust check. This also fixes the "'user' does not exist" error.
-    if (!recipientMember?.user) {
-        return NextResponse.json({ error: "Recipient member not found in this group" }, { status: 404 });
+    if (!recipientMember || !recipientMember.user.name) {
+        return NextResponse.json({ error: "Recipient member not found" }, { status: 404 });
     }
 
-    // 3. Create the notification using your existing service
-    const message = `A friendly nudge from your coach: Keep going on your goal in the "${adminMembership.group.name}" group!`;
-    const link = `/dashboard/accountability-hub?groupId=${groupId}`;
-    
-    await NotificationService.createNotification(
-        recipientMember.userId,
-        message,
-        link
-    );
-
+    // 3. Send the nudge notification
+    if (pushNotificationSent) {
+      await sendPushNotificationToUser(
+        recipientMember.user.id,
+        title,
+        description,
+        {url}
+      )
+    } else {
+     await sendEmail({
+        userId: recipientMember.user.id,
+        subject,
+        body: emailContent
+      })
+     
+    }
     // 4. Log the activity
-    // <-- FIX 2: Provide all 4 required arguments. The missing one was the 'actorId'.
     await logActivity(
-      groupId,
-      'member_added', // Use an allowed ActivityType value
-      `${session.user.name} sent a nudge to ${recipientMember.user.name}.`,
-      session.user.id // The logged-in user is the "actor" performing the action
+        groupId,
+        session.user.id,
+        'goal_updated', // Consider a more specific action like 'nudge_sent'
+        `${session.user.name} sent a nudge to ${recipientMember.user.name}.`
     );
 
     return NextResponse.json({ success: true, message: "Nudge sent successfully" });

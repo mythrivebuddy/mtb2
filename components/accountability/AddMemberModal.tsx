@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { useSWRConfig } from "swr";
-import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -53,12 +52,17 @@ export default function AddMemberModal({
     setIsSearching(true);
     const handler = setTimeout(async () => {
       try {
-        const response = await fetch(`/api/users/search?query=${query}&groupId=${groupId}`);
+        const response = await fetch(
+          `/api/users/search?query=${query}&groupId=${groupId}`
+        );
         if (!response.ok) throw new Error("Search failed");
         const data = await response.json();
         setResults(data);
       } catch (error) {
-       toast({ title: (error as Error).message || "Error searching users.", variant: "destructive" });
+        toast({
+          title: (error as Error).message || "Error searching users.",
+          variant: "destructive",
+        });
       } finally {
         setIsSearching(false);
       }
@@ -70,24 +74,26 @@ export default function AddMemberModal({
   const handleAddMember = async (userId: string) => {
     setIsAdding(userId);
     try {
-      const response = await fetch(`/api/accountability-hub/groups/${groupId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userIdToAdd: userId }),
-      });
+      const response = await fetch(
+        `/api/accountability-hub/groups/${groupId}/members`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userIdToAdd: userId }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to add member.");
       }
-      
+
       toast({ title: "Member added successfully!" });
       // Refresh the main members list data
       mutate(`/api/accountability-hub/groups/${groupId}/view`);
       onOpenChange(false); // Close the modal on success
       setQuery(""); // Reset search
       setResults([]);
-
     } catch (error) {
       toast({ title: (error as Error).message, variant: "destructive" });
     } finally {
@@ -114,14 +120,23 @@ export default function AddMemberModal({
         <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
           {isSearching && <UserSkeleton />}
           {!isSearching && results.length === 0 && query.length > 1 && (
-            <p className="text-center text-sm text-muted-foreground py-4">No users found.</p>
+            <p className="text-center text-sm text-muted-foreground py-4">
+              No users found.
+            </p>
           )}
           {results.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
+            <div
+              key={user.id}
+              className="flex items-center justify-between p-2 rounded-md hover:bg-accent"
+            >
               <div className="flex items-center gap-3">
-                <Image
-                  src={user.image || "/default-avatar.png"}
-                  alt={user.name || "User"}
+                <img
+                  src={
+                    user?.image
+                      ? user.image
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name?.charAt(0) || "User")}&background=random&color=fff`
+                  }
+                  alt={user?.name || "User"}
                   width={32}
                   height={32}
                   className="h-8 w-8 rounded-full"
@@ -147,14 +162,14 @@ export default function AddMemberModal({
 }
 
 const UserSkeleton = () => (
-    <div className="flex items-center justify-between p-2">
-        <div className="flex items-center gap-3">
-            <Skeleton className="h-8 w-8 rounded-full" />
-            <div className="space-y-1">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
-            </div>
-        </div>
-        <Skeleton className="h-8 w-16" />
+  <div className="flex items-center justify-between p-2">
+    <div className="flex items-center gap-3">
+      <Skeleton className="h-8 w-8 rounded-full" />
+      <div className="space-y-1">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-3 w-32" />
+      </div>
     </div>
-)
+    <Skeleton className="h-8 w-16" />
+  </div>
+);

@@ -1,4 +1,3 @@
-// components/accountability/GoalStatusUpdater.tsx
 "use client";
 
 import { useSWRConfig } from "swr";
@@ -15,22 +14,27 @@ type Status = "on_track" | "needs_attention" | "off_track";
 
 const statusConfig: Record<Status, { label: string; color: string }> = {
   on_track: { label: "On Track", color: "bg-blue-500 hover:bg-blue-600" },
-  needs_attention: { label: "Needs Attention", color: "bg-yellow-500 hover:bg-yellow-600" },
-  off_track: { label: "Off Track", color: "bg-red-500 hover:bg-red-600" },
+  needs_attention: {
+    label: "Needs Attention",
+    color: "bg-yellow-600 hover:bg-yellow-700",
+  },
+  off_track: { label: "Off Track", color: "bg-red-500 hover:bg-red-700" },
 };
 
 interface GoalStatusUpdaterProps {
   goalId: string;
   groupId: string;
   cycleId: string;
+  authorId: string;
   currentStatus: Status;
   isAdmin: boolean;
 }
 
 export default function GoalStatusUpdater({
-  //goalId,
+  goalId,
   groupId,
   cycleId,
+  authorId,
   currentStatus,
   isAdmin,
 }: GoalStatusUpdaterProps) {
@@ -39,13 +43,15 @@ export default function GoalStatusUpdater({
 
   const handleStatusChange = async (newStatus: Status) => {
     try {
-      const response = await fetch('/api/accountability-hub/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/accountability-hub/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           groupId,
+          goalId,
           cycleId,
-          field: 'status',
+          authorId,
+          field: "status",
           value: newStatus,
         }),
       });
@@ -53,22 +59,33 @@ export default function GoalStatusUpdater({
       toast({ title: "Status updated!" });
       mutate(`/api/accountability-hub/groups/${groupId}/view`);
     } catch (error) {
-      toast({ title: (error as Error).message || "Error searching users.", variant: "destructive" });
+      toast({
+        title: (error as Error).message || "Error updating status.",
+        variant: "destructive",
+      });
     }
   };
 
   const statusInfo = statusConfig[currentStatus] || statusConfig.on_track;
 
+  // Non-admins just see the badge
   if (!isAdmin) {
     return (
-      <Badge className={`${statusInfo.color} text-white`}>{statusInfo.label}</Badge>
+      <Badge
+        className={`${statusInfo.color} text-white text-xs flex justify-center text-center`} // <-- MODIFIED HERE
+      >
+        {statusInfo.label}
+      </Badge>
     );
   }
 
+  // Admins get the dropdown
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Badge className={`${statusInfo.color} text-white cursor-pointer`}>
+        <Badge
+          className={`${statusInfo.color} text-white cursor-pointer text-xs flex justify-center text-center`} // <-- MODIFIED HERE
+        >
           {statusInfo.label}
         </Badge>
       </DropdownMenuTrigger>
@@ -77,6 +94,7 @@ export default function GoalStatusUpdater({
           <DropdownMenuItem
             key={statusKey}
             onClick={() => handleStatusChange(statusKey as Status)}
+            className="text-xs"
           >
             {statusConfig[statusKey as Status].label}
           </DropdownMenuItem>

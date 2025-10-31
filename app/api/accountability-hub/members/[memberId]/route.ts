@@ -14,52 +14,53 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { memberId } = params;
+    const { memberId } = await params;
     const { searchParams } = new URL(_req.url);
     const groupId = searchParams.get("groupId");
 
     if (!groupId) {
-      return NextResponse.json({ error: "Group ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Group ID is required" },
+        { status: 400 }
+      );
     }
 
+    // Security check: Ensure the user requesting the data is a member of the same group.
     const requesterMembership = await prisma.groupMember.findFirst({
       where: { userId: session.user.id, groupId: groupId },
     });
     if (!requesterMembership) {
-      return NextResponse.json({ error: "Forbidden: You are not a member of this group" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // <-- FIX STARTS HERE
-    const memberDetails = await prisma.groupMember.findFirst({ // 1. Use findFirst for composite where clauses
-      where: { 
-        userId: memberId, // 2. Use userId (from memberId) and groupId to find the member
-        groupId: groupId,
-      },
+    // --- THIS IS THE CORRECTED QUERY ---
+    // We fetch the GroupMember and include its direct relations: 'user' and 'goals'.
+    const memberDetails = await prisma.groupMember.findUnique({
+      where: { userId_groupId: { userId: memberId, groupId } },
       include: {
-        group: { select: { name: true } },
-        user: { // 3. The 'goals' relation is on the User, so nest it here
+        user: true, // Includes the full user profile (name, image, etc.)
+        group: { select: { name: true,progressStage:true } }, // Gets the group's name
+        goals: {
+          // Gets the goals directly related to this GroupMember
+          orderBy: { cycle: { startDate: "desc" } }, // Show newest cycle's goals first
           include: {
-            Goals: {
-              orderBy: { cycle: { startDate: "desc" } },
-              include: {
-                cycle: { select: { startDate: true, endDate: true } },
-                comments: {
-                  include: { author: { select: { name: true, image: true } } },
-                  orderBy: { createdAt: 'asc' }
-                },
-              },
+            cycle: { select: { startDate: true, endDate: true } },
+            comments: {
+              // Pre-fetch comments for the goals
+              include: { author: { select: { name: true, image: true } } },
+              orderBy: { createdAt: "asc" },
             },
-          }
+          },
         },
       },
     });
-    // <-- FIX ENDS HERE
+    // ------------------------------------
 
     if (!memberDetails) {
-      return NextResponse.json({ error: "Member not found in this group" }, { status: 404 });
+      return NextResponse.json({ error: "Member not found" }, { status: 404 });
     }
-    
-    // Your existing logic to add the requester's role is perfectly fine.
+
+    // Add the requester's role to the response for the frontend
     const responseData = {
       ...memberDetails,
       requesterRole: requesterMembership.role,
@@ -68,6 +69,9 @@ export async function GET(
     return NextResponse.json(responseData);
   } catch (error) {
     console.error(`[GET_MEMBER_DETAILS]`, error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }

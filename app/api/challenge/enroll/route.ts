@@ -1,4 +1,4 @@
-// File: app/api/enroll/route.ts
+// app/api/challenge/enroll/route.ts\\
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -8,6 +8,8 @@ import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
+
+export const maxDuration = 60; // 60 seconds
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authConfig);
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ CORRECTED QUERY: Fetch the challenge and its template tasks separately.
+    // ✅ GOOD: Fetching the challenge and its tasks separately is efficient.
     const challengeToJoin = await prisma.challenge.findUnique({
       where: { id: challengeId },
     });
@@ -38,11 +40,9 @@ export async function POST(request: Request) {
     }
     
     // Fetch the template tasks associated with this challenge.
-    // This assumes you have a model named `ChallengeTask` linked to the challenge.
     const templateTasks = await prisma.challengeTask.findMany({
         where: { challengeId: challengeId },
     });
-
 
     if (challengeToJoin.creatorId === joinerId) {
       return NextResponse.json(
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Fetch the joiner and check for existing enrollment
+    // Fetch the joiner and check for existing enrollment concurrently.
     const [joiner, existingEnrollment] = await Promise.all([
       prisma.user.findUnique({
         where: { id: joinerId },
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ MODIFIED TRANSACTION: Now creates enrollment AND tasks together.
+    // --- Transaction for Database Operations Only ---
     const newEnrollment = await prisma.$transaction(
       async (tx) => {
         // 1. Handle JP cost if applicable
@@ -113,31 +113,34 @@ export async function POST(request: Request) {
           },
         });
 
-        // 3. ✅ CRITICAL FIX: Create the user's tasks from the template tasks we fetched.
+        // 3. Create the user's tasks from the templates
         if (templateTasks && templateTasks.length > 0) {
           await tx.userChallengeTask.createMany({
             data: templateTasks.map((task) => ({
               description: task.description,
               enrollmentId: enrollment.id,
-              templateTaskId: task.id, // ✅ ERROR FIX: Added the missing required field.
+              templateTaskId: task.id, // ✅ Good, this required field is present
             })),
           });
         }
-
-        // 4. Send notification
-        sendPushNotificationToUser(
-          challengeToJoin.creatorId,
-          "New challenger alert 🚀",
-          `${session.user.name} joined "${challengeToJoin.title}"!`,
-          { url: "/dashboard/challenge/my-challenges" }
-        );
-
+        
+        // Return the enrollment data so we can use it after the transaction
         return enrollment;
       },
-      { timeout: 15000 }
+      { timeout: 15000 } // Keep a reasonable timeout for the transaction itself
     );
 
-    // Respond to the client
+    // --- ⚠️ REFACTOR: Perform External API Calls AFTER the transaction succeeds ---
+    // This ensures the database is not locked while waiting for the network.
+    // This is a "fire-and-forget" call; we don't need to `await` it to send the response to the user.
+    sendPushNotificationToUser(
+      challengeToJoin.creatorId,
+      "New challenger alert 🚀",
+      `${session.user.name} joined "${challengeToJoin.title}"!`,
+      { url: "/dashboard/challenge/my-challenges" }
+    );
+
+    // Respond to the client immediately after the database is updated.
     return NextResponse.json(
       {
         message: "Enrollment successful!",
@@ -145,9 +148,12 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
+
   } catch (error) {
+    // ✅ IMPROVEMENT: Log the full error object for better debugging insights.
+    console.error("Enrollment transaction failed:", error); 
+    
     if (error instanceof Error) {
-      console.error("Enrollment error:", error.message);
       if (error.message.includes("Insufficient JP balance")) {
         return NextResponse.json(
           { error: "You do not have enough JP to join this challenge." },
@@ -156,7 +162,7 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    console.error("Unknown error during enrollment:", error);
+
     return NextResponse.json(
       { error: "An unexpected internal server error occurred." },
       { status: 500 }

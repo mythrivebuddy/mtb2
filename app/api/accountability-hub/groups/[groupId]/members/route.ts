@@ -1,11 +1,13 @@
 // app/api/accountability-hub/groups/[groupId]/members/route.ts
 
 import { NextResponse } from "next/server";
-
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
 import { logActivity } from "@/lib/activity-logger";
+import { GroupRole } from "@prisma/client";
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 export async function GET(
   _req: Request,
@@ -27,10 +29,7 @@ export async function GET(
     }
 
     const userMembership = await prisma.groupMember.findFirst({
-      where: {
-        groupId: groupId,
-        userId: session.user.id,
-      },
+      where: { groupId: groupId, userId: session.user.id },
     });
 
     if (!userMembership) {
@@ -38,31 +37,25 @@ export async function GET(
     }
 
     const activeCycle = await prisma.cycle.findFirst({
-      where: {
-        groupId: groupId,
-        status: "active",
-      },
+      where: { groupId: groupId, status: "active" },
       orderBy: { startDate: "desc" },
     });
 
-    const membersWithGoals = await prisma.groupMember.findMany({
-      where: {
-        groupId: groupId,
-      },
+    const members = await prisma.groupMember.findMany({
+      where: { groupId: groupId },
       include: {
         user: {
-          include: {
-            Goals: {
-              where: {
-                cycleId: activeCycle?.id,
-              },
-            },
-          },
+          select: { id: true, name: true, image: true },
+        },
+        goals: {
+          where: { cycleId: activeCycle?.id },
         },
       },
+
+      orderBy: { assignedAt: "asc" },
     });
 
-    return NextResponse.json(membersWithGoals);
+    return NextResponse.json(members);
   } catch (error) {
     console.error(`[GET_GROUP_MEMBERS]`, error);
     return NextResponse.json(
@@ -78,11 +71,11 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { groupId } = params;
+    const { groupId } = await params;
     const { userIdToAdd } = await req.json();
 
     if (!userIdToAdd) {
@@ -91,23 +84,30 @@ export async function POST(
         { status: 400 }
       );
     }
-
-    const adminMembers = await prisma.groupMember.findMany({
+    const userToAdd = await prisma.user.findUnique({
+      where: { id: userIdToAdd },
+    });
+    if (!userToAdd) {
+      return NextResponse.json(
+        { error: "User to add not found" },
+        { status: 404 }
+      );
+    }
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+    });
+    if (!group) {
+      return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    }
+    const adminMembership = await prisma.groupMember.findFirst({
       where: {
-        groupId: groupId, // Using the groupId from params
-        user: {
-          role: "ADMIN",
-        },
-      },
-      include: {
-        user: true,
+        groupId: groupId,
+        userId: session.user.id,
+        role: GroupRole.ADMIN, // Ensure you use the enum value
       },
     });
-    
-    // Check if the current user is one of the admins found
-    const isCurrentUserAdmin = adminMembers.some(member => member.userId === session.user.id);
 
-    if (!isCurrentUserAdmin) {
+    if (!adminMembership) {
       return NextResponse.json(
         { error: "Forbidden: Not an admin" },
         { status: 403 }
@@ -115,12 +115,7 @@ export async function POST(
     }
 
     const existingMembership = await prisma.groupMember.findUnique({
-      where: {
-        userId_groupId: {
-          userId: userIdToAdd,
-          groupId: groupId,
-        },
-      },
+      where: { userId_groupId: { userId: userIdToAdd, groupId: groupId } },
     });
 
     if (existingMembership) {
@@ -134,24 +129,45 @@ export async function POST(
       data: {
         userId: userIdToAdd,
         groupId: groupId,
-        role: "MEMBER",
-        assignedBy: session.user.id,
+        assignedBy: session.user.id, // It's good practice to log who assigned the member
+        role: GroupRole.MEMBER, // Ensure you use the enum value
       },
     });
 
-    const userBeingAdded = await prisma.user.findUnique({
-      where: { id: userIdToAdd },
+    //  Get users with active push subscriptions
+    const userHavePushSubscription = await prisma.pushSubscription.findFirst({
+      where: { user: { id: userToAdd.id } },
     });
 
-    if (userBeingAdded) {
-      // FIX: Use correct argument order for logActivity
-      await logActivity(
-        groupId,
-        "member_added",
-        `${session.user.name} added ${userBeingAdded.name} to the group.`,
-        session.user.id
+    const groupUrl = `${process.env.NEXT_URL}/dashboard/accountability-hub?groupId=${groupId}`;
+
+    // Prepare email configuration
+    await sendEmailUsingTemplate({
+      toEmail: userToAdd.email,
+      toName: userToAdd.name,
+      templateId: "user-added-to-accountability-hub-group",
+      templateData: {
+        groupUrl,
+        groupName: group.name,
+        userName: userToAdd.name,
+      },
+    });
+    if (userHavePushSubscription) {
+      // Send push notification
+      sendPushNotificationToUser(
+        userToAdd.id,
+        `You've been added to the Accountability Hub Group!`,
+        `Hi ${userToAdd.name}, you’ve been added to the group ${group.name}. Tap to view your group and start working on your goals!`,
+        { url: groupUrl }
       );
     }
+    // logging activity
+    await logActivity(
+      groupId,
+      session.user.id,
+      "member_added",
+      `${session.user.name} added ${userToAdd.name} to the group.`
+    );
 
     return NextResponse.json(newMember, { status: 201 });
   } catch (error) {
