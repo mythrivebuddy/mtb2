@@ -196,6 +196,21 @@ async function main() {
       activity: ActivityType.CHALLENGE_REWARD,
       jpAmount: 0,
       transactionType: TransactionType.CREDIT
+    },
+    {
+      activity: ActivityType.REWARD_JP_TO_MEMBER_BY_COACH,
+      jpAmount: 0,
+      transactionType: TransactionType.CREDIT
+    },
+    {
+      activity: ActivityType.COACH_REWARD_RECEIVE,
+      jpAmount: 0,
+      transactionType: TransactionType.CREDIT
+    },
+    {
+      activity: ActivityType.COACH_REWARD_SPEND,
+      jpAmount: 0,
+      transactionType: TransactionType.DEBIT
     }
   ];
 

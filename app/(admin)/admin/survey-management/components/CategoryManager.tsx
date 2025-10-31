@@ -12,6 +12,8 @@ import {
 import { toast } from 'sonner';
 import { CategoryType, QuestionType } from '../page';
 
+
+
 type Props = {
   categories: CategoryType[];
   setCategories: React.Dispatch<React.SetStateAction<CategoryType[]>>;
@@ -94,13 +96,16 @@ export default function CategoryManager({
         />
 
         <Input type="file" accept="image/*" onChange={handleImageChange} />
-        {imagePreview && (
-          <img
-            src={imagePreview}
-            alt="Preview"
-            className="w-24 h-24 object-cover rounded border"
-          />
-        )}
+
+{imagePreview && (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src={imagePreview}
+    alt="Preview"
+    className="w-24 h-24 object-cover rounded border"
+  />
+)}
+
 
         <Button onClick={handleAdd}>Add Category</Button>
 
@@ -114,6 +119,7 @@ export default function CategoryManager({
               className="flex items-center justify-between border p-3 rounded-md shadow-sm"
             >
               <div className="flex items-center gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={cat.imageUrl}
                   alt={cat.name}

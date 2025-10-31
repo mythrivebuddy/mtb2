@@ -1,9 +1,9 @@
 // app/api/accountability-hub/groups/[groupId]/view/route.ts
 
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
 
 export async function GET(
   _req: Request,
@@ -20,12 +20,11 @@ export async function GET(
       return NextResponse.json({ error: "Group ID required" }, { status: 400 });
     }
 
-    // Fetch the group and its members
     const group = await prisma.group.findUnique({
       where: { id: groupId },
       include: {
         cycles: {
-          where: { status: "active" },
+          where: { status: { in: ["active", "repeat"] } },
           orderBy: { startDate: "desc" },
           take: 1,
         },
@@ -33,6 +32,7 @@ export async function GET(
           include: {
             user: { select: { id: true, name: true, image: true } },
           },
+          // ✅ FIX: The field is named 'assignedAt' in your schema, not 'joinedAt'.
           orderBy: { assignedAt: "asc" },
         },
       },
@@ -42,49 +42,47 @@ export async function GET(
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
 
-    // Check if the current user is a member
     const isMember = group.members.some((m) => m.userId === session.user.id);
     if (!isMember) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-
+    console.log(group);
+    
     const activeCycleId = group.cycles[0]?.id;
-
-    // Build members array with goals (instead of mutating)
+    console.log("acitivecyccleid ",activeCycleId);
+    
     let membersWithGoals = group.members;
 
     if (activeCycleId) {
       membersWithGoals = await Promise.all(
         group.members.map(async (member) => {
           const goals = await prisma.goal.findMany({
-            where: {
-              authorId: member.userId,
-              cycleId: activeCycleId,
-            },
+            where: { member: member, cycleId: activeCycleId },
             select: {
               id: true,
               text: true,
               midwayUpdate: true,
+              notes: true,
               endResult: true,
               status: true,
+              authorId: true,
             },
           });
-
           return { ...member, goals };
         })
       );
     }
 
-    // Find the role of the requester
     const requesterRole = group.members.find(
       (m) => m.userId === session.user.id
     )?.role;
 
     return NextResponse.json({
       name: group.name,
-      activeCycleId,
+      group: group,
+      activeCycleId: activeCycleId,
       members: membersWithGoals,
-      requesterRole,
+      requesterRole: requesterRole,
     });
   } catch (error) {
     console.error(`[GET_GROUP_VIEW]`, error);

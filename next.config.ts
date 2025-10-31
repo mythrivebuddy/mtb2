@@ -117,6 +117,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "ui-avatars.com",
+        pathname: "/**",
       },
       {
         protocol: "https",
@@ -130,6 +131,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "plus.unsplash.com",
       },
+      
     ],
   },
   experimental: {
