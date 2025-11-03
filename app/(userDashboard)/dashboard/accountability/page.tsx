@@ -38,6 +38,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import AddMemberModal from "@/components/accountability/AddMemberModal";
 
 type Member = {
   userId: string;
@@ -92,6 +93,8 @@ export default function AccountabilityHubHome() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+
   useEffect(() => {
     setIsCompletingCycle(false);
   }, []);
@@ -356,73 +359,88 @@ export default function AccountabilityHubHome() {
               </AlertDialog>
             )}
 
-            {/* Remove Members (Admin Only) */}
-            {group?.cycles[0]?.status === "repeat" && isAdmin && (
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive">Remove Members</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Remove Members</DialogTitle>
-                    <DialogDescription>
-                      Search for a member and remove them from the group.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Input
-                    placeholder="Search members..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="mb-3"
-                  />
-                  <div className="max-h-60 overflow-y-auto space-y-2">
-                    {filteredMembers.length > 0 ? (
-                      filteredMembers.map((member: Member) => (
-                        <div
-                          key={member.userId}
-                          className="flex justify-between items-center border rounded-lg p-2"
-                        >
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={
-                                member?.user?.image
-                                  ? member.user.image
-                                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                      member?.user?.name?.charAt(0) || "User"
-                                    )}&background=random&color=fff`
-                              }
-                              alt={member.user.name || "Member Avatar"}
-                              width={32}
-                              height={32}
-                              className="rounded-full"
-                            />
-                            <span>{member.user.name}</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={removingMemberId === member.userId}
-                            onClick={() =>
-                              handleRemoveMember(
-                                member.userId,
-                                member.user.name
-                              )
-                            }
+            {/*Add Members and  Remove Members (Admin Only) */}
+            {isAdmin && (
+              <>
+             
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setIsAddMemberModalOpen(true)}
+                >
+                  Add Member
+                </Button>
+                <AddMemberModal
+                  groupId={group.id}
+                  isOpen={isAddMemberModalOpen}
+                  onOpenChange={setIsAddMemberModalOpen}
+                  refetch={refetch}
+                />
+                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive">Remove Members</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Remove Members</DialogTitle>
+                      <DialogDescription>
+                        Search for a member and remove them from the group.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                      placeholder="Search members..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="mb-3"
+                    />
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                      {filteredMembers.length > 0 ? (
+                        filteredMembers.map((member: Member) => (
+                          <div
+                            key={member.userId}
+                            className="flex justify-between items-center border rounded-lg p-2"
                           >
-                            {removingMemberId === member.userId
-                              ? "Removing..."
-                              : "Remove"}
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        No members found.
-                      </p>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={
+                                  member?.user?.image
+                                    ? member.user.image
+                                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                        member?.user?.name?.charAt(0) || "User"
+                                      )}&background=random&color=fff`
+                                }
+                                alt={member.user.name || "Member Avatar"}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                              />
+                              <span>{member.user.name}</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={removingMemberId === member.userId}
+                              onClick={() =>
+                                handleRemoveMember(
+                                  member.userId,
+                                  member.user.name
+                                )
+                              }
+                            >
+                              {removingMemberId === member.userId
+                                ? "Removing..."
+                                : "Remove"}
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          No members found.
+                        </p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
             )}
           </CardContent>
         </Card>

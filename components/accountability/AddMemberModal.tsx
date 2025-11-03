@@ -27,12 +27,14 @@ interface AddMemberModalProps {
   groupId: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  refetch?: () => void;
 }
 
 export default function AddMemberModal({
   groupId,
   isOpen,
   onOpenChange,
+  refetch
 }: AddMemberModalProps) {
   const { toast } = useToast();
   const { mutate } = useSWRConfig();
@@ -91,6 +93,9 @@ export default function AddMemberModal({
       toast({ title: "Member added successfully!" });
       // Refresh the main members list data
       mutate(`/api/accountability-hub/groups/${groupId}/view`);
+      if (refetch) {
+        refetch();
+      }
       onOpenChange(false); // Close the modal on success
       setQuery(""); // Reset search
       setResults([]);
