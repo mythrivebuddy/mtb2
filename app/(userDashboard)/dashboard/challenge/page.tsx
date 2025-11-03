@@ -37,6 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { motion,AnimatePresence } from "framer-motion";
+import ChallengeDescription from "@/components/Dompurify";
 
 // --- Types ---
 type Challenge = ChallengeDetailsForClient & {
@@ -300,10 +301,15 @@ export default function ChallengePage() {
                 <div key={c.id} onClick={() => router.push(isJoined ? `/dashboard/challenge/my-challenges/${c.id}` : `/dashboard/challenge/upcoming-challenges/${c.id}`)} className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1">
                   {isJoined && <div className="absolute top-4 -right-9 transform rotate-45 bg-indigo-500 text-center text-white text-sm font-semibold py-1 w-32">Joined</div>}
                   <div className="mb-2 pt-4"><h3 className="text-xl font-bold text-indigo-800 truncate">{c.title}</h3></div>
-                  <p className="text-sm text-slate-600 mb-4 line-clamp-2">{c.description || "No desc."}</p>
+                  {/* <p className="text-sm text-slate-600 mb-4 line-clamp-2">{c.description || "No desc."}</p> */}
+                  {
+                    c.description && (
+                      <ChallengeDescription html={c.description} />
+                    )
+                  }
                   <span className="inline-block w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-purple-100 mb-4">Created By: {c.creatorName}</span>
                   {getStartDateInfo(c.startDate) && <div className="mb-4"><span className="inline-block bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">{getStartDateInfo(c.startDate)}</span></div>}
-                  <div className={`flex items-center gap-2 mb-2 ${!getStartDateInfo(c.startDate) && "mt-10"}`}>
+                  <div className={`flex items-center gap-2 mb-2 text-white bg-orange-700 px-2 py-1 rounded-sm w-fit ${!getStartDateInfo(c.startDate) && "mt-10"}`}>
                     <CalendarDays className="w-4 h-4" /><span className="text-sm">{formatDate(c.startDate)}</span><span className="text-slate-300">→</span><span className="text-sm">{formatDate(c.endDate)}</span>
                   </div>
                   {/* --- CARD FOOTER --- */}

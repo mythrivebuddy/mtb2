@@ -566,6 +566,7 @@ model Challenge {
   status        ChallengeStatus       @default(UPCOMING)
   createdAt     DateTime              @default(now())
   creatorId     String
+  social_link_task String?
   enrollments   ChallengeEnrollment[]
   templateTasks ChallengeTask[]
   creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
