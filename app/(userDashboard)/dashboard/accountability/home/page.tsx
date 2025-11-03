@@ -5,11 +5,20 @@
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-
-import { TriangleAlert, Users, Plus } from "lucide-react";
-
+import {
+  TriangleAlert,
+  Users,
+  Plus,
+  Link2,
+  LinkIcon,
+  Check,
+} from "lucide-react";
 import { GroupCard } from "@/components/accountability/GroupCard";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { fetchReferralStats } from "@/components/refer-friend/ReferFriend";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -41,9 +50,7 @@ interface AccountabilityHomeData {
 }
 
 const fetchAccountabilityData = async (): Promise<AccountabilityHomeData> => {
-  const { data } = await axios.get(
-    `/api/accountability/home-data`
-  );
+  const { data } = await axios.get(`/api/accountability/home-data`);
   if (!data.success) {
     throw new Error("API returned an error or success: false");
   }
@@ -68,6 +75,9 @@ const itemVariants = {
 
 // --- Main Page Component ---
 export default function AccountabilityHomePage() {
+  const router = useRouter();
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isCopyLoading, setIsCopyLoading] = useState<boolean>(false);
   const { data, isLoading, isError, error, refetch } = useQuery<
     AccountabilityHomeData,
     Error
@@ -76,6 +86,11 @@ export default function AccountabilityHomePage() {
     queryFn: fetchAccountabilityData,
   });
 
+  // for referral
+  const { data: stats } = useQuery({
+    queryKey: ["referral-stats"],
+    queryFn: fetchReferralStats,
+  });
   //  Loading State
   if (isLoading) {
     return <LoadingSkeleton />;
@@ -111,6 +126,25 @@ export default function AccountabilityHomePage() {
   //  Success State
   const joinedGroups = data?.joinedGroups || [];
   const createdGroups = data?.createdGroups || [];
+  // for referral
+
+  const handleCopyReferral = async () => {
+    setIsCopyLoading(true);
+    try {
+      const referralUrl = stats
+        ? `${window.location.origin}/signup?ref=${stats.referralCode}`
+        : "";
+      await navigator.clipboard.writeText(referralUrl);
+      setIsCopied(true);
+      toast.success("Referral link copied!");
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (error) {
+      toast.error("Failed to copy referral link");
+      console.error(error);
+    } finally {
+      setIsCopyLoading(false);
+    }
+  };
 
   return (
     <motion.main
@@ -120,7 +154,7 @@ export default function AccountabilityHomePage() {
       transition={{ duration: 0.5 }}
     >
       <div className="max-w-7xl mx-auto grid  my-4 grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-12">
-          {/* === Column 2: Groups You're A Member Of === */}
+        {/* === Column 2: Groups You're A Member Of === */}
         <section>
           <h2 className="text-2xl font-semibold text-gray-800 mb-5">
             Groups You're A Member Of
@@ -170,9 +204,52 @@ export default function AccountabilityHomePage() {
             )}
           </motion.div>
         </section>
-
-      
       </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="py-8 px-4 bg-white rounded-md"
+      >
+        <h2 className="text-2xl font-bold">✨ Invite & Grow Together!</h2>
+        <p className="text-muted-foreground">
+          Bring your clients, friends, or fellow solopreneurs to MyThriveBuddy
+          and you can add them to your accountability group.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+          <button
+            onClick={() => router.push("/dashboard/refer-friend")}
+            className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors ease-linear"
+          >
+            🌟 Invite via Referral Page
+          </button>
+          <button
+            onClick={handleCopyReferral}
+            disabled={isCopyLoading}
+            className={`p-2 shadow-md rounded-md flex gap-2 items-center font-medium transition-colors ease-linear ${
+              isCopied
+                ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
+                : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
+            }`}
+          >
+            {isCopied ? (
+              <>
+                Copied!
+                <Check size={16} />
+              </>
+            ) : (
+              <>
+                <LinkIcon size={16} />
+                {isCopyLoading ? "Copying..." : "Copy My Invite Link"}
+              </>
+            )}
+          </button>
+        </div>
+        <p className="text-muted-foreground mt-4">
+          You both earn 500 JoyPearls when they join!
+        </p>
+      </motion.div>
+
       <Link href="/dashboard/accountability-hub/create">
         <div className="mt-12 flex justify-center">
           <motion.button

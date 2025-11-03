@@ -22,7 +22,7 @@ import PageSkeleton from '../PageSkeleton';
 import { ReferralStats } from '@/types/client/refer-friend';
 
 
-async function fetchReferralStats(): Promise<ReferralStats> {
+export async function fetchReferralStats(): Promise<ReferralStats> {
   try {
     const response = await axios.get('/api/refer-friend');
     console.log('response=',response);
