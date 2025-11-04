@@ -71,22 +71,16 @@ export async function GET() {
     await Promise.all(notificationsToSend);
 
     // Update reminders that were successfully notified
-    if (remindersToUpdate.size > 0) {
-        for (const [id, lastNotifiedAt] of remindersToUpdate.entries()) {
-            await prisma.reminder.update({
-                where: { id },
-                data: { lastNotifiedAt },
-            });
-        }
-    }
+    // if (remindersToUpdate.size > 0) {
+    //     for (const [id, lastNotifiedAt] of remindersToUpdate.entries()) {
+    //         await prisma.reminder.update({
+    //             where: { id },
+    //             data: { lastNotifiedAt },
+    //         });
+    //     }
+    // }
     
     // Delete any invalid subscriptions
-    if (subscriptionsToDelete.length > 0) {
-        console.log(`Deleting ${subscriptionsToDelete.length} invalid subscriptions.`);
-        await prisma.pushSubscription.deleteMany({
-            where: { id: { in: subscriptionsToDelete } },
-        });
-    }
 
     console.log(`Cron job finished. Attempted to send ${notificationsToSend.length} notifications.`);
     return NextResponse.json({
