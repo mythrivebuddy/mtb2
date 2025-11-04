@@ -8,6 +8,7 @@ import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangl
 import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask, User } from "@prisma/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { useQueryClient } from "@tanstack/react-query";
+import ChallengeDescription from "@/components/Dompurify";
 //import { useSearchParams } from "next/navigation";
 
 // NOTE: The type definitions are assumed to be correct.
@@ -162,7 +163,12 @@ const handleCloseModalAndRedirect = async () => {
           </div>
 
           {/* Description */}
-          <p className="text-slate-600 text-lg mb-8">{challenge.description}</p>
+          {/* <p className="text-slate-600 text-lg mb-8">{challenge.description}</p> */}
+          {
+            challenge.description && (
+              <ChallengeDescription html={challenge.description}/>
+            )
+          }
 
           {/* Tasks Section */}
           <div className="border-t border-slate-200 pt-6">

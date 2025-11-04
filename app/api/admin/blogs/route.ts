@@ -1,8 +1,14 @@
 import { prisma } from "@/lib/prisma";
-import { supabaseClient } from "@/lib/supabase"; // Fixed: Use named import
+// import { supabaseClient } from "@/lib/supabase"; // Fixed: Use named import
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 
+import { createClient } from "@supabase/supabase-js";
+
+export const supabaseClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // ✅ use the service role key on server routes
+);
 // Create a new blog post
 export async function POST(req: NextRequest) {
   try {

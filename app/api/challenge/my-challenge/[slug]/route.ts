@@ -188,7 +188,7 @@ export async function GET(
     const formattedLeaderboard = leaderboard.map((entry) => ({
       id: entry.user.id,
       name: entry.user.name || "Anonymous",
-      avatar: entry.user.image || "/default-avatar.png",
+      avatar: entry.user.image || "",
       score: entry.currentStreak,
     }));
 

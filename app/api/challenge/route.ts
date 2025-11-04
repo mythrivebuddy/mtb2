@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       startDate,
       endDate,
       tasks,
+      social_link_task,
     } = validationResult.data;
 
     // 7️⃣ Transaction: create challenge, enroll, deduct JP
@@ -124,11 +125,13 @@ export async function POST(request: Request) {
             templateTasks: {
               create: tasks.map((task) => ({ description: task.description })),
             },
+            social_link_task:social_link_task ?? "",
           },
           include: { templateTasks: true },
         });
 
-        console.log(`✅ Challenge created for user ${userId}: ${challenge.id}`);
+        console.log("create challenge ",challenge);
+        
 
         // D: Enroll creator and create tasks
         await tx.challengeEnrollment.create({

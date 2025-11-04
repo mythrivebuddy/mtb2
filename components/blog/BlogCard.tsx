@@ -18,7 +18,7 @@ export default function BlogCard({
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full">
         <div className="relative w-full aspect-[4/2]">
           <Image
-            src={image}
+            src={image || "/logo.png"}
             alt={title}
             fill
             sizes="(max-width: 768px) 100vw, 33vw"
@@ -34,7 +34,6 @@ export default function BlogCard({
             <div className="flex items-center space-x-4">
               <span>{date}</span>
               <span>{readTime}</span>
-              <h1>hello</h1>
             </div>
           </div>
         </div>

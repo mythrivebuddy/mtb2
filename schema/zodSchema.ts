@@ -130,7 +130,7 @@ export const challengeSchema = z
     cost: z.number(),
     reward: z.number(),
     penalty: z.number(),
-
+    social_link_task: z.string().optional(),
     startDate: z.coerce.date().refine(
       (date) => {
         const today = new Date();
