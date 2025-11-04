@@ -88,10 +88,13 @@ export default function usePushNotifications() {
       }
 
       // Create new subscription
+      //  const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+
       const subscription = await swRegistration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: applicationServerKey as BufferSource, // ✅ Explicit cast fixes TS error
       });
+
 
       // Send subscription to backend
       await axios.post("/api/push/subscribe", {
@@ -192,8 +195,8 @@ export default function usePushNotifications() {
   };
 }
 // Helper function to convert VAPID key
-function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
-  // <-- Change return type
+// ✅ Convert Base64 VAPID key to Uint8Array
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = window.atob(base64);
@@ -201,5 +204,6 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
-  return outputArray.buffer; // <-- Return the underlying buffer
+  return outputArray;
 }
+
