@@ -14,8 +14,8 @@ export const activityDisplayMap: Record<string, string> = {
   BUG_REPORT: "reporting a bug",
   REFER_BY: "being referred by someone",
   REFER_TO: "referring someone",
-  MAGIC_BOX_REWARD: "earning a Magic Box reward",
-  MAGIC_BOX_SHARED_REWARD: "earning a shared Magic Box reward",
+  MAGIC_BOX_REWARD: "a Magic Box reward",
+  MAGIC_BOX_SHARED_REWARD: "a shared Magic Box reward",
 
   DAILY_BLOOM_CREATION_REWARD: "creating a Daily Bloom task",
   DAILY_BLOOM_COMPLETION_REWARD: "completing a Daily Bloom task",
@@ -28,3 +28,37 @@ export const activityDisplayMap: Record<string, string> = {
   COACH_REWARD_SPEND: "sending a group member reward",
   COACH_REWARD_RECEIVE: "receiving a reward from your coach"
 };
+
+// For Transaction Page → "Created a challenge", "Earned a Magic Box reward"
+export const activityDisplayMapV3: Record<string, string> = {
+  SIGNUP: "Signed up",
+  DAILY_LOGIN: "Logged in daily",
+  QUIZ_CORRECT: "Answered a quiz correctly",
+  ADD_LOG: "Added a log",
+  SPOTLIGHT: "Participated in Spotlight",
+  PROSPERITY_DROP: "Received a Prosperity Drop",
+  BUSINESSPROFILE_COMPLETE: "Completed your business profile",
+  MIRACLE_LOG: "Added a Miracle Log",
+  DAILY_BLOOM: "Created a Daily Bloom",
+  PROGRESS_VAULT: "Used the Progress Vault",
+  GENERAL_FEEDBACK: "Submitted general feedback",
+  FEATURE_REQUEST: "Submitted a feature request",
+  BUG_REPORT: "Reported a bug",
+  REFER_BY: "Reward for being referred",
+  REFER_TO: "Reward for referring someone",
+  MAGIC_BOX_REWARD: "Earned a Magic Box reward",
+  MAGIC_BOX_SHARED_REWARD: "Earned a shared Magic Box reward",
+  DAILY_BLOOM_CREATION_REWARD: "Created a Daily Bloom task",
+  DAILY_BLOOM_COMPLETION_REWARD: "Completed a Daily Bloom task",
+  CHALLENGE_CREATION_FEE: "Created a challenge",
+  CHALLENGE_JOINING_FEE: "Joined a challenge",
+  CHALLENGE_FEE_EARNED: "Someone joined your challenge",
+  CHALLENGE_PENALTY: "Challenge penalty applied",
+  CHALLENGE_REWARD: "Completed a challenge successfully",
+  COACH_REWARD_SPEND: "Sent a group member reward",
+  COACH_REWARD_RECEIVE: "Received a reward from your coach",
+  STREAK_REWARD: "Earned a streak reward",
+  BONUS_REWARD: "Received a bonus reward",
+  SYSTEM_ADJUSTMENT: "System adjustment",
+};
+

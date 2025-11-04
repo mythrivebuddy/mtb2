@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { activityDisplayMap } from "@/lib/constants/activityNames";
+import { activityDisplayMap, activityDisplayMapV3 } from "@/lib/constants/activityNames";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "6");
   const skip = (page - 1) * limit;
+
+  // ✅ Determine version flag
+  const versionFlag =
+    searchParams.get("version") === "v3" || searchParams.get("v3") === "true";
+
+  // ✅ Pick correct map
+  const displayMap = versionFlag ? activityDisplayMapV3 : activityDisplayMap;
+
   const session = await checkRole("USER");
   const userId = session.user.id;
 
@@ -33,7 +41,7 @@ export async function GET(request: Request) {
       activity: {
         ...tx.activity,
         displayName:
-          activityDisplayMap[tx.activity.activity] || tx.activity.activity,
+          displayMap[tx.activity.activity] || tx.activity.activity,
       },
     }));
 
@@ -43,6 +51,7 @@ export async function GET(request: Request) {
       page: currentPage,
       limit,
       totalPages,
+      version: versionFlag ? "v3" : "default",
     });
   } catch (error) {
     console.error("Error fetching user history:", error);
