@@ -9,7 +9,6 @@ import {
   TriangleAlert,
   Users,
   Plus,
-  Link2,
   LinkIcon,
   Check,
 } from "lucide-react";
