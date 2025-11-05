@@ -576,6 +576,7 @@ export default function ChallengeManagementPage() {
               </h1>
               <Link
                 href={`/profile/${challenge.creatorId}`}
+                target="_blank"
                 className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100"
               >
                 {/* <span> */}
@@ -709,6 +710,7 @@ export default function ChallengeManagementPage() {
                   <li key={player.id}>
                     <Link
                       href={`/profile/${player.id}`}
+                      target="_blank"
                       key={player.id}
                       className="flex items-center hover:bg-gray-100 rounded-lg p-4"
                     >
