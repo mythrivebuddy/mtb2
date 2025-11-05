@@ -51,7 +51,7 @@ export async function DELETE(
 
     // 🧩 CASE 1: Admin removing another member
     if (targetUserId && targetUserId !== actingUserId) {
-      if (!isAdmin) {
+      if (!isAdmin && !(session.user.role === "ADMIN")) {
         return NextResponse.json(
           { message: "Only admins can remove members." },
           { status: 403 }

@@ -32,7 +32,7 @@ export async function GET(
       where: { groupId: groupId, userId: session.user.id },
     });
 
-    if (!userMembership) {
+    if (!userMembership && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -107,7 +107,7 @@ export async function POST(
       },
     });
 
-    if (!adminMembership) {
+    if (!adminMembership && session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden: Not an admin" },
         { status: 403 }

@@ -3,7 +3,7 @@ import "./globals.css";
 import Provider from "@/providers/Provider";
 import { Analytics } from "@vercel/analytics/react"; 
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 
 import PWAInstallButton from "@/components/PWAInstallButton"; // <-- NEW Import

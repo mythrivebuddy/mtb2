@@ -43,7 +43,7 @@ export async function GET(
     }
 
     const isMember = group.members.some((m) => m.userId === session.user.id);
-    if (!isMember) {
+    if (!isMember && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     console.log(group);
