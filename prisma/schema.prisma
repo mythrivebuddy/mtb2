@@ -702,6 +702,7 @@ model Group {
   members                    GroupMember[]
   Goal                       Goal[]             @relation("GoalToGroup")
   notes                     String?
+  isBlocked                 Boolean             @default(false)
 }
 
 model GroupMember {
