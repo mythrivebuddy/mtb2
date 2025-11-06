@@ -1,12 +1,7 @@
 // components/accountability/CommentsModal.tsx
 "use client";
 
-import {
-  useState,
-  useRef,
-  ChangeEvent,
-  KeyboardEvent,
-} from "react";
+import { useState, useRef, ChangeEvent, KeyboardEvent } from "react";
 import useSWR from "swr";
 import { useSWRConfig } from "swr";
 import { formatDistanceToNow } from "date-fns";
@@ -22,11 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -35,7 +26,7 @@ type Comment = {
   content: string;
   createdAt: string;
   author: {
-    id:string | null;
+    id: string | null;
     name: string | null;
     image: string | null;
   };
@@ -74,7 +65,7 @@ const renderCommentContent = (
 ) => {
   // Regex to find all @mentions (e.g., @Toheed, @ex1)
   const mentionRegex = /@(\w+)\b/g;
-  
+
   // Split the content by the regex
   const parts = content.split(mentionRegex);
 
@@ -87,13 +78,13 @@ const renderCommentContent = (
     // Odd parts are the "DisplayName" (e.g., "Toheed")
     const displayName = part;
     // Find the member in the list
-    const member = allMembers.find(m => m.display === displayName);
+    const member = allMembers.find((m) => m.display === displayName);
 
     // If we found a member and have a groupId, make a link
     if (member && groupId) {
       return (
         <Link
-        href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
+          href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
           key={`${member.id}-${index}`}
           className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200 transition-colors"
         >
@@ -149,11 +140,11 @@ export default function CommentsModal({
 
   const handleSubmit = async () => {
     if (!newComment.trim() || isGroupBlocked) return;
-    
+
     // --- ❌ NO PROCESSING ---
     // We send the raw text (e.g., "Hello @Toheed") directly to the API
     // as you requested.
-    
+
     setIsPosting(true);
     try {
       const res = await fetch(
@@ -200,7 +191,7 @@ export default function CommentsModal({
 
     setTimeout(() => {
       const newCursorPos = part1.length + mentionText.length;
-      if(textareaRef.current) {
+      if (textareaRef.current) {
         textareaRef.current.focus();
         textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
       }
@@ -220,11 +211,11 @@ export default function CommentsModal({
       setShowSuggestions(false);
       return;
     }
-    
+
     const textAfterAt = textBeforeCursor.substring(atIndex);
     if (/^@\[[^\]]+\]\([^)]+\)$/.test(textAfterAt)) {
-        setShowSuggestions(false);
-        return;
+      setShowSuggestions(false);
+      return;
     }
 
     const query = textBeforeCursor.substring(atIndex + 1);
@@ -250,9 +241,7 @@ export default function CommentsModal({
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveSuggestionIndex(
-        (prev) => (prev + 1) % suggestions.length
-      );
+      setActiveSuggestionIndex((prev) => (prev + 1) % suggestions.length);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveSuggestionIndex(
@@ -281,36 +270,49 @@ export default function CommentsModal({
           )}
           {!isLoading &&
             comments?.map((comment) => (
-              <Link href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`} key={comment.id} className="flex items-start gap-3">
-                <Image
-                  src={
-                    comment.author.image
-                      ? comment.author.image
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          comment.author.name?.charAt(0) || "User"
-                        )}&background=random&color=fff`
-                  }
-                  alt={comment.author.name || "User"}
-                  width={32}
-                  height={32}
-                  className="rounded-full mt-1"
-                />
+              <div key={comment.id} className="flex items-start gap-3">
+                <Link
+                  href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`}
+                >
+                  <Image
+                    src={
+                      comment.author.image
+                        ? comment.author.image
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            comment.author.name?.charAt(0) || "User"
+                          )}&background=random&color=fff`
+                    }
+                    alt={comment.author.name || "User"}
+                    width={32}
+                    height={32}
+                    className="rounded-full mt-1"
+                  />
+                </Link>
 
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold">{comment.author.name}</p>
+                    <Link
+                      href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`}
+                      className="font-semibold hover:underline"
+                    >
+                      {comment.author.name}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), {
                         addSuffix: true,
                       })}
                     </p>
                   </div>
+
                   <p className="text-sm text-foreground whitespace-pre-wrap">
-                    {/* ✅ Pass groupId AND allMembersData to the render function */}
-                    {renderCommentContent(comment.content, groupId, allMembersData)}
+                    {renderCommentContent(
+                      comment.content,
+                      groupId,
+                      allMembersData
+                    )}
                   </p>
                 </div>
-              </Link>
+              </div>
             ))}
           {!isLoading && comments?.length === 0 && (
             <p className="text-center text-muted-foreground py-8">
@@ -324,9 +326,9 @@ export default function CommentsModal({
               {suggestions.map((suggestion, index) => (
                 <button
                   key={suggestion.id}
-                  type="button" 
+                  type="button"
                   onMouseDown={(e) => {
-                    e.preventDefault(); 
+                    e.preventDefault();
                     handleSuggestionClick(suggestion);
                   }}
                   onMouseEnter={() => setActiveSuggestionIndex(index)}
@@ -356,7 +358,7 @@ export default function CommentsModal({
             onChange={handleCommentChange}
             onKeyDown={handleKeyDown}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            onFocus={handleCommentChange} 
+            onFocus={handleCommentChange}
             className="mb-2"
           />
           <Button

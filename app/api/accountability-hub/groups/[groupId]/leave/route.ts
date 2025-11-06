@@ -20,7 +20,7 @@ export async function DELETE(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { groupId } = params;
+    const { groupId } = await params;
     const url = new URL(req.url);
     const targetUserId = url.searchParams.get("userId"); // userId from query
     const actingUserId = session.user.id;

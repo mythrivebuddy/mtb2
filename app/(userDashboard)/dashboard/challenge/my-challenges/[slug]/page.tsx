@@ -27,6 +27,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { getAvatar } from "@/lib/utils/getDefaultAvatar";
 import ChallengeDescription from "@/components/Dompurify";
+import ChallengeChat from "@/components/ChallengeChat";
 
 // --- TYPE DEFINITIONS ---
 interface CompletionRecord {
@@ -45,6 +46,7 @@ interface LeaderboardPlayer {
   avatar: string;
 }
 interface ChallengeDetails {
+  id:string;
   creatorId: string;
   social_link_task: string | null;
   creator: { name: string };
@@ -742,6 +744,7 @@ export default function ChallengeManagementPage() {
               </ul>
             </div>
           </div>
+          <ChallengeChat challengeId={challenge.id} />
         </main>
       </div>
 

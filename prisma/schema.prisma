@@ -88,6 +88,7 @@ model User {
   createdChallenges             Challenge[]           @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
   Goal                          Goal[]                @relation("GoalToUser")
+  sentChallengeMessages   ChallengeMessage[]          @relation("UserMessages")
 
   @@index([name])
 }
@@ -570,6 +571,7 @@ model Challenge {
   enrollments   ChallengeEnrollment[]
   templateTasks ChallengeTask[]
   creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
+  messages ChallengeMessage[]         @relation("ChallengeMessages")
 
   @@map("challenges")
 }
@@ -612,6 +614,21 @@ model ChallengeEnrollment {
 
   @@unique([userId, challengeId])
   @@map("challenge_enrollments")
+}
+model ChallengeMessage {
+  id          String   @id @default(cuid())
+  message     String
+  createdAt   DateTime @default(now())
+
+  userId      String
+  challengeId String
+
+  user        User      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation("ChallengeMessages", fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId, createdAt])
+  @@map("challenge_messages")
+
 }
 
 model NotificationSettings {
