@@ -14,6 +14,7 @@ interface EditableProgressCellProps {
   isCurrentUser: boolean;
   placeholderText: string;
   isGoalPrivateToAdmin: "PRIVATE" | "VISIBLE_TO_GROUP" | null;
+  isGroupBlocked: boolean;
 }
 
 export default function EditableProgressCell({
@@ -24,6 +25,7 @@ export default function EditableProgressCell({
   isGoalPrivateToAdmin,
   isCurrentUser,
   placeholderText,
+  isGroupBlocked,
 }: EditableProgressCellProps) {
   
   const { mutate } = useSWRConfig();
@@ -75,7 +77,7 @@ export default function EditableProgressCell({
     );
   }
 
-  if (isEditing) {
+  if (isEditing && !isGroupBlocked) {
     return (
       <form
         onSubmit={(e) => {

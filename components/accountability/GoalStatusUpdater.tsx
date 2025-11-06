@@ -28,6 +28,7 @@ interface GoalStatusUpdaterProps {
   authorId: string;
   currentStatus: Status;
   isAdmin: boolean;
+  isGroupBlocked:boolean;
 }
 
 export default function GoalStatusUpdater({
@@ -35,6 +36,7 @@ export default function GoalStatusUpdater({
   groupId,
   cycleId,
   authorId,
+  isGroupBlocked,
   currentStatus,
   isAdmin,
 }: GoalStatusUpdaterProps) {
@@ -69,7 +71,7 @@ export default function GoalStatusUpdater({
   const statusInfo = statusConfig[currentStatus] || statusConfig.on_track;
 
   // Non-admins just see the badge
-  if (!isAdmin) {
+  if (!isAdmin || isGroupBlocked) {
     return (
       <Badge
         className={`${statusInfo.color} text-white text-xs flex justify-center text-center`} // <-- MODIFIED HERE

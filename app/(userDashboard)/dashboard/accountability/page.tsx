@@ -84,6 +84,8 @@ export default function AccountabilityHubHome() {
     (m: { userId: string; role: string }) =>
       m.userId === session?.user?.id && m.role?.toLowerCase() === "admin"
   );
+  
+  const isGroupBlocked = group?.isBlocked == true;
 
   const [notes, setNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -258,7 +260,7 @@ export default function AccountabilityHubHome() {
     <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <button
-          onClick={() => router.push(`/dashboard/accountability/home`)}
+          onClick={() => router.back()}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -270,6 +272,11 @@ export default function AccountabilityHubHome() {
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">
             Group Name: {group?.name}
           </h1>
+          {
+            group.description && (
+              <p className="text-md text-muted-foreground mt-1">Description:{group?.description}</p>
+            )
+          }
           <p className="text-sm text-muted-foreground mt-1">
             • Active Cycle:{" "}
             {activeCycle
@@ -280,6 +287,12 @@ export default function AccountabilityHubHome() {
               : "No active cycle"}
           </p>
         </div>
+        {/* ✅ GROUP BLOCKED WARNING */}
+        {isGroupBlocked && (
+          <div className="p-4 rounded-xl bg-red-100 border border-red-300 text-red-700 font-semibold text-center">
+            🚫 This group has been blocked by the platform admin. It is now view-only, and no actions are allowed.
+          </div>
+        )}
 
         {/* Banner + Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
@@ -360,12 +373,12 @@ export default function AccountabilityHubHome() {
             )}
 
             {/*Add Members and  Remove Members (Admin Only) */}
-            {isAdmin && (
+            {(isAdmin || session?.user?.role === "ADMIN") && (
               <>
-             
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700"
                   onClick={() => setIsAddMemberModalOpen(true)}
+                  disabled={isGroupBlocked}
+                  className={`bg-blue-600 hover:bg-blue-700 ${isGroupBlocked ? "hover:cursor-not-allowed opacity-75" : ""}`}
                 >
                   Add Member
                 </Button>
@@ -375,9 +388,9 @@ export default function AccountabilityHubHome() {
                   onOpenChange={setIsAddMemberModalOpen}
                   refetch={refetch}
                 />
-                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="destructive">Remove Members</Button>
+                    <Button variant="destructive" disabled={isGroupBlocked} className={`${isGroupBlocked ? "opacity-75":""}`}>Remove Members</Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-lg">
                     <DialogHeader>
@@ -461,7 +474,7 @@ export default function AccountabilityHubHome() {
                   These notes are private and only visible to the admin.
                 </p>
               )
-            ) : isAdmin ? (
+            ) : (isAdmin)? (
               <>
                 <Textarea
                   className="w-full h-40"
@@ -471,7 +484,7 @@ export default function AccountabilityHubHome() {
                 />
                 <Button
                   onClick={handleSaveNotes}
-                  disabled={isSavingNotes}
+                  disabled={isSavingNotes || isGroupBlocked}
                   className="mt-4"
                 >
                   {isSavingNotes ? "Saving..." : "Save Notes"}
@@ -494,7 +507,7 @@ export default function AccountabilityHubHome() {
             <CardContent className="flex flex-wrap gap-3">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button disabled={isCreatingCycle}>
+                  <Button disabled={isCreatingCycle || isGroupBlocked}>
                     {isCreatingCycle
                       ? "Starting New Cycle..."
                       : "Start New Cycle"}

@@ -111,6 +111,7 @@ console.log(spotlightUnseenCount);
             <NavSection title="Menu">
               <NavItem href="/admin/dashboard" label="Dashboard" />
                   <NavItem href="/admin/announcement" label="Announcement" />
+                  <NavItem href="/admin/accountability-hub" label="Accountability hub" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
               <NavItem href="/admin/survey-management" label="Survey Management" />
