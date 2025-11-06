@@ -22,7 +22,7 @@ export async function GET(
   request: NextRequest,
   context: { params: { slug: string } }
 ) {
-  const { slug: challengeId } = context.params;
+  const { slug: challengeId } = await context.params;
 
   try {
     const session = await checkRole("USER");
