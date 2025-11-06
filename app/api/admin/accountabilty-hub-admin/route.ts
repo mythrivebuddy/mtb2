@@ -58,6 +58,7 @@ export const GET = async (req: Request) => {
       updatedAt: g.updatedAt,
       memberCount: g.members.length,
       createdBy: g.User_Group_creatorIdToUser?.name ?? "Unknown",
+      isBlocked: g.isBlocked ?? false,
     }));
 
     return NextResponse.json({

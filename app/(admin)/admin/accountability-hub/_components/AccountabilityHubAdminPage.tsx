@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pagination } from "@/components/ui/pagination";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -26,6 +26,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+// ✅ Group Type
 type AccountabilityGroup = {
   id: string;
   name: string;
@@ -34,6 +35,7 @@ type AccountabilityGroup = {
   updatedAt: string;
   memberCount: number;
   createdBy: string;
+  isBlocked?: boolean; // ✅ Added
 };
 
 interface GroupsApiResponse {
@@ -52,47 +54,76 @@ export default function AccountabilityHubAdminPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedGroupStatus, setSelectedGroupStatus] = useState<
+    "block" | "unblock" | null
+  >(null);
 
-  const queryClient = useQueryClient();
-
-  // ✅ Debounce search
+  // ✅ Debounce Search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
       setPage(1);
     }, 400);
-
     return () => clearTimeout(timer);
   }, [search]);
 
-  // ✅ Fetch groups
-  const { data, isLoading,refetch } = useQuery<GroupsApiResponse>({
+  // ✅ Fetch Groups
+  const { data, isLoading, refetch } = useQuery<GroupsApiResponse>({
     queryKey: ["accountabilityGroupsForAdmin", page, debouncedSearch],
     queryFn: async () => {
       const res = await axios.get(
         `/api/admin/accountabilty-hub-admin?page=${page}&pageSize=${pageSize}&search=${debouncedSearch}`
       );
-      return res.data as GroupsApiResponse;
+      return res.data;
     },
     placeholderData: (prev) => prev,
   });
 
-  // ✅ Hard Delete Mutation
+  // ✅ DELETE Mutation
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!selectedGroupId) return;
-      return axios.delete(
-        `/api/accountability-hub/groups/${selectedGroupId}`
-      );
+      return axios.delete(`/api/accountability-hub/groups/${selectedGroupId}`);
     },
-    onSuccess: async() => {
+    onSuccess: async () => {
       setDeleteDialogOpen(false);
-      toast.success("Group deleted successfully!");
-      await refetch()
+      const deletedName = getSelectedGroupName();
+      toast.success(`${deletedName} has been deleted successfully.`);
+
+      await refetch();
       setSelectedGroupId(null);
     },
   });
+
+  // ✅ BLOCK / UNBLOCK Mutation
+  const blockMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedGroupId) return;
+      return axios.patch(
+        `/api/accountability-hub/groups/block-group?groupId=${selectedGroupId}`
+      );
+    },
+    onSuccess: async (res) => {
+      if (res?.data.success) {
+        const groupName = res.data?.group?.name;
+        const msg = res.data?.group?.isBlocked
+          ? `${groupName} has been blocked successfully.`
+          : `${groupName} has been unblocked successfully.`;
+
+        toast.success(msg);
+        await refetch();
+        setBlockDialogOpen(false);
+        setSelectedGroupId(null);
+        setSelectedGroupStatus(null);
+      }
+    },
+  });
+  const getSelectedGroupName = () => {
+    return groups.find((g) => g.id === selectedGroupId)?.name || "this group";
+  };
 
   const groups = data?.groups ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -109,7 +140,7 @@ export default function AccountabilityHubAdminPage() {
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-6">Accountability Groups</h2>
 
-      {/* ✅ Search + Filter */}
+      {/* ✅ Search */}
       <div className="flex flex-col sm:flex-row mb-4 gap-4">
         <Input
           value={search}
@@ -131,10 +162,10 @@ export default function AccountabilityHubAdminPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-start">Name</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead className="text-center">Created By</TableHead>
               <TableHead className="text-center">Members</TableHead>
-              <TableHead className="text-center">Date Created</TableHead>
+              <TableHead className="text-center">Created</TableHead>
               <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -151,47 +182,98 @@ export default function AccountabilityHubAdminPage() {
               </TableRow>
             )}
 
-            {groups.length > 0 &&
-              groups.map((g) => (
-                <TableRow key={g.id}>
-                  <TableCell>{g.name}</TableCell>
-                  <TableCell className="text-center">{g.createdBy}</TableCell>
-                  <TableCell className="text-center">{g.memberCount}</TableCell>
-                  <TableCell className="text-center">
-                    {new Date(g.createdAt).toLocaleDateString("en-GB")}
-                  </TableCell>
+            {groups.map((g) => (
+              <TableRow
+                key={g.id}
+                className={g.isBlocked ? "bg-red-50 opacity-70 w-full" : ""}
+              >
+                {/* ✅ NAME + BADGE INSIDE SAME CELL */}
+                <TableCell>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{g.name}</span>
 
-                  <TableCell>
-                    <div className="flex items-center gap-4 justify-center">
-                      <Link
-                        href={`/dashboard/accountability/?groupId=${g.id}`}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        View
-                      </Link>
+                    {g.isBlocked && (
+                      <span className="mt-1 inline-block bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded w-fit">
+                        🔒 Blocked by Admin
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
 
-                      <button className="text-indigo-600 hover:text-indigo-900">
-                        Edit
-                      </button>
+                <TableCell className="text-center">{g.createdBy}</TableCell>
+                <TableCell className="text-center">{g.memberCount}</TableCell>
+                <TableCell className="text-center">
+                  {new Date(g.createdAt).toLocaleDateString("en-GB")}
+                </TableCell>
 
-                      {/* ✅ DELETE BUTTON (opens dialog) */}
-                      <button
-                        className="text-red-600 hover:text-red-900"
-                        onClick={() => {
-                          setSelectedGroupId(g.id);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        Delete
-                      </button>
+                {/* ✅ ACTIONS */}
+                <TableCell className={`text-center`}>
+                  <div className="flex items-center gap-4 justify-center">
+                    {/* ✅ VIEW */}
+                    <Link
+                      href={`/dashboard/accountability/?groupId=${g.id}`}
+                      target="_blank"
+                      className={
+                        g.isBlocked
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-blue-600 hover:text-blue-900"
+                      }
+                      onClick={(e) => g.isBlocked && e.preventDefault()}
+                    >
+                      View
+                    </Link>
 
-                      <button className="text-orange-600 hover:text-orange-900">
-                        Block
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    {/* ✅ EDIT */}
+
+                    <button
+                      disabled={g.isBlocked}
+                      onClick={() =>
+                        window.open(
+                          `/dashboard/accountability-hub/create?groupId=${g.id}`,
+                          "_blank"
+                        )
+                      }
+                      className={
+                        g.isBlocked
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-indigo-600 hover:text-indigo-900"
+                      }
+                    >
+                      Edit
+                    </button>
+
+                    {/* ✅ DELETE (Always Red) */}
+                    <button
+                      onClick={() => {
+                        setSelectedGroupId(g.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className="text-red-600 font-semibold hover:text-red-800"
+                    >
+                      Delete
+                    </button>
+
+                    {/* ✅ BLOCK / UNBLOCK */}
+                    <button
+                      className={
+                        g.isBlocked
+                          ? "text-green-700 font-semibold hover:text-green-900" // ✅ Unblock — Green (clear meaning)
+                          : "text-orange-600 font-semibold hover:text-orange-800" // ✅ Block — Orange
+                      }
+                      onClick={() => {
+                        setSelectedGroupId(g.id);
+                        setSelectedGroupStatus(
+                          g.isBlocked ? "unblock" : "block"
+                        );
+                        setBlockDialogOpen(true);
+                      }}
+                    >
+                      {g.isBlocked ? "Unblock" : "Block"}
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>
@@ -205,21 +287,22 @@ export default function AccountabilityHubAdminPage() {
         />
       </div>
 
-      {/* ✅ ShadCN Delete Dialog */}
+      {/* ✅ DELETE DIALOG */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-red-600">Delete Group</DialogTitle>
           </DialogHeader>
 
-          <p className="mb-4">
-            Are you sure you want to delete this group? This action cannot be undone.
+          <p>
+            Are you sure you want to delete the group{" "}
+            <strong>{getSelectedGroupName()}</strong>? This action cannot be
+            undone.
           </p>
 
           <DialogFooter>
             <Button
               variant="outline"
-              disabled={deleteMutation.isPending}
               onClick={() => setDeleteDialogOpen(false)}
             >
               Cancel
@@ -232,11 +315,52 @@ export default function AccountabilityHubAdminPage() {
             >
               {deleteMutation.isPending ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                   Deleting...
                 </span>
               ) : (
-                "Confirm Delete"
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ BLOCK / UNBLOCK DIALOG */}
+      <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-orange-600">
+              {selectedGroupStatus === "block"
+                ? "Block Group"
+                : "Unblock Group"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <p>
+            Are you sure you want to{" "}
+            {selectedGroupStatus === "block" ? "block" : "unblock"}
+            the group <strong>{getSelectedGroupName()}</strong> ?
+          </p>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlockDialogOpen(false)}>
+              Cancel
+            </Button>
+
+            <Button
+              disabled={blockMutation.isPending}
+              onClick={() => blockMutation.mutate()}
+            >
+              {blockMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                  Processing...
+                </span>
+              ) : selectedGroupStatus === "block" ? (
+                "Confirm Block"
+              ) : (
+                "Confirm Unblock"
               )}
             </Button>
           </DialogFooter>

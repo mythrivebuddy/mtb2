@@ -35,6 +35,7 @@ type Comment = {
   content: string;
   createdAt: string;
   author: {
+    id:string | null;
     name: string | null;
     image: string | null;
   };
@@ -61,6 +62,7 @@ interface CommentsModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   groupId: string | null; // ✅ Accept groupId
+  isGroupBlocked: boolean;
 }
 
 // ✅ --- NEW renderCommentContent Function ---
@@ -91,8 +93,8 @@ const renderCommentContent = (
     if (member && groupId) {
       return (
         <Link
+        href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
           key={`${member.id}-${index}`}
-          href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
           className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200 transition-colors"
         >
           @{displayName}
@@ -109,6 +111,7 @@ export default function CommentsModal({
   goalId,
   isOpen,
   onOpenChange,
+  isGroupBlocked,
   members,
   groupId, // ✅ Destructure groupId
 }: CommentsModalProps) {
@@ -145,8 +148,8 @@ export default function CommentsModal({
   });
 
   const handleSubmit = async () => {
-    if (!newComment.trim()) return;
-
+    if (!newComment.trim() || isGroupBlocked) return;
+    
     // --- ❌ NO PROCESSING ---
     // We send the raw text (e.g., "Hello @Toheed") directly to the API
     // as you requested.
@@ -179,7 +182,7 @@ export default function CommentsModal({
   // --- ✅ Custom Mention Logic ---
 
   const handleSuggestionClick = (suggestion: MentionSuggestion) => {
-    if (mentionStartIndex === -1) return;
+    if (mentionStartIndex === -1 || isGroupBlocked) return;
 
     const mentionText = `@${suggestion.display} `;
     const part1 = newComment.substring(0, mentionStartIndex);
@@ -278,7 +281,7 @@ export default function CommentsModal({
           )}
           {!isLoading &&
             comments?.map((comment) => (
-              <div key={comment.id} className="flex items-start gap-3">
+              <Link href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`} key={comment.id} className="flex items-start gap-3">
                 <Image
                   src={
                     comment.author.image
@@ -307,7 +310,7 @@ export default function CommentsModal({
                     {renderCommentContent(comment.content, groupId, allMembersData)}
                   </p>
                 </div>
-              </div>
+              </Link>
             ))}
           {!isLoading && comments?.length === 0 && (
             <p className="text-center text-muted-foreground py-8">
@@ -349,6 +352,7 @@ export default function CommentsModal({
             ref={textareaRef}
             placeholder="Write a comment... @ to mention a member."
             value={newComment}
+            disabled={isGroupBlocked}
             onChange={handleCommentChange}
             onKeyDown={handleKeyDown}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
@@ -357,7 +361,7 @@ export default function CommentsModal({
           />
           <Button
             onClick={handleSubmit}
-            disabled={isPosting || !newComment.trim()}
+            disabled={isPosting || !newComment.trim() || isGroupBlocked}
           >
             {isPosting ? "Posting..." : "Post Comment"}
           </Button>

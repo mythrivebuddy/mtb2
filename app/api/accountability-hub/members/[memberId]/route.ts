@@ -29,7 +29,7 @@ export async function GET(
     const requesterMembership = await prisma.groupMember.findFirst({
       where: { userId: session.user.id, groupId: groupId },
     });
-    if (!requesterMembership) {
+    if (!requesterMembership && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -39,7 +39,7 @@ export async function GET(
       where: { userId_groupId: { userId: memberId, groupId } },
       include: {
         user: true, // Includes the full user profile (name, image, etc.)
-        group: { select: { name: true,progressStage:true } }, // Gets the group's name
+        group: { select: { name: true,progressStage:true, id: true,isBlocked:true } }, // Gets the group's name
         goals: {
           // Gets the goals directly related to this GroupMember
           orderBy: { cycle: { startDate: "desc" } }, // Show newest cycle's goals first
@@ -47,7 +47,7 @@ export async function GET(
             cycle: { select: { startDate: true, endDate: true } },
             comments: {
               // Pre-fetch comments for the goals
-              include: { author: { select: { name: true, image: true } } },
+              include: { author: { select: { id: true, name: true, image: true } } },
               orderBy: { createdAt: "asc" },
             },
           },
@@ -63,7 +63,7 @@ export async function GET(
     // Add the requester's role to the response for the frontend
     const responseData = {
       ...memberDetails,
-      requesterRole: requesterMembership.role,
+      requesterRole: requesterMembership?.role || 'MEMBER',
     };
 
     return NextResponse.json(responseData);
