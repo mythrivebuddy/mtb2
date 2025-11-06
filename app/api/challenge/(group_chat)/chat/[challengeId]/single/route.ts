@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request, { params }: { params: { challengeId: string } }) {
+  console.log(params);
+  
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
