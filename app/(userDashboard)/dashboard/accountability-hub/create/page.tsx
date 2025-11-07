@@ -1,13 +1,12 @@
-// app/(userDashboard)/dashboard/accountability-hub/create/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import { ArrowLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import {toast} from "sonner"
 
-// Radio Input component for cleaner code
 interface RadioInputProps {
   id: string;
   name: string;
@@ -44,18 +43,68 @@ const RadioInput = ({
   </div>
 );
 
+type FormState = {
+  groupName: string;
+  description: string;
+  visibility: "PUBLIC" | "PRIVATE" | "MEMBERS_CAN_SEE_GOALS";
+  duration: "MONTHLY";
+  stages: "STAGE_2" | "STAGE_3";
+  notesPrivacy: "PRIVATE_TO_AUTHOR" | "VISIBLE_TO_GROUP";
+};
+
 export default function CreateGroupPage() {
   const router = useRouter();
-  const { toast } = useToast();
+  // const { toast } = useToast();
+  
+  const sp = useSearchParams();
+
+  const groupId = sp.get("groupId");
+  const isEditMode = Boolean(groupId);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [initialLoading, setInitialLoading] = useState(isEditMode);
+
+  const [formData, setFormData] = useState<FormState>({
     groupName: "",
     description: "",
-    visibility: "members_visible",
-    duration: "monthly",
+    visibility: "MEMBERS_CAN_SEE_GOALS",
+    duration: "MONTHLY",
     stages: "STAGE_3",
-    notesPrivacy: "member_and_admin",
+    notesPrivacy: "VISIBLE_TO_GROUP",
   });
+
+  // ✅ Load existing group in edit mode
+  useEffect(() => {
+    if (!isEditMode) {
+      setInitialLoading(false);
+      return;
+    }
+
+    const load = async () => {
+      try {
+        const res = await axios.get(
+          `/api/accountability-hub/groups/${groupId}/view`
+        );
+        const g = res.data.group;
+
+        setFormData({
+          groupName: g.name ?? "",
+          description: g.description ?? "",
+          visibility: g.visibility,
+          duration: g.cycleDuration ?? "MONTHLY",
+          stages: g.progressStage ?? "STAGE_3",
+          notesPrivacy: g.notesPrivacy,
+        });
+      } catch (err: unknown) {
+        console.log(err);
+        toast.success("Failed to load group details.");
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    load();
+  }, [groupId, isEditMode]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -64,44 +113,50 @@ export default function CreateGroupPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ CREATE API integrated
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/accountability-hub/groups", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      if (!isEditMode) {
+        // ✅ Create group
+        const res = await axios.post(
+          "/api/accountability-hub/groups",
+          formData
+        );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create group");
+        toast.success(res?.data?.message || "Group created successfully.");
+        router.push(`/dashboard/accountability?groupId=${res.data.id}`);
+      } else {
+        // ✅ Edit group (PATCH API)
+        const res = await axios.patch(
+          `/api/accountability-hub/groups/${groupId}/edit`,
+          formData
+        );
+        toast.success(res?.data?.message);
+
+        router.push(`/dashboard/accountability?groupId=${groupId}`);
       }
-
-      const newGroup = await response.json();
-
-      toast({
-        title: "Success!",
-        description: `Group "${newGroup.name}" has been created.`,
-      });
-
-      // Redirect to the main hub page after creation
-      router.push("/dashboard/accountability?groupId=" + newGroup.id);
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        // Axios error - safe to access response
+        toast.error(error.response?.data?.error || "Something went wrong.");
+      } else if (error instanceof Error) {
+        // Generic JS Error
+        toast.error(error.message || "Something went wrong.");
+      } else {
+        // Unknown non-error thrown
+        toast.error("Something went wrong.");
+      }
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return <div className="p-6 text-center text-lg">Loading group...</div>;
+  }
 
   return (
     <section className="mx-auto max-w-4xl py-8 px-4">
@@ -112,57 +167,54 @@ export default function CreateGroupPage() {
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </button>
+
       <div className="bg-white rounded-lg shadow-md p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Create New Group
+          {isEditMode ? "Edit Group" : "Create New Group"}
         </h1>
         <p className="text-gray-600 mb-8">
-          Fill in the details below to start a new accountability group.
+          {isEditMode
+            ? "Update the group details."
+            : "Fill in the details below to create a new accountability group."}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Group Name */}
           <div>
-            <label
-              htmlFor="groupName"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Group Name
             </label>
             <input
               type="text"
               name="groupName"
-              id="groupName"
               value={formData.groupName}
               onChange={handleChange}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="e.g., Q4 Marketing Goals"
               required
               disabled={isLoading}
             />
           </div>
 
-          {/* Group Description */}
+          {/* Description */}
           <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Group Description
             </label>
             <textarea
               name="description"
-              id="description"
               rows={3}
               value={formData.description}
               onChange={handleChange}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="Describe the main objective of this group."
               disabled={isLoading}
-            ></textarea>
+            />
           </div>
 
+          {/* Options */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-4">
+            {/* Visibility */}
             <fieldset>
               <legend className="text-sm font-medium text-gray-700">
                 Visibility of Goals
@@ -171,21 +223,23 @@ export default function CreateGroupPage() {
                 <RadioInput
                   id="vis_members"
                   name="visibility"
-                  value="members_visible"
+                  value="MEMBERS_CAN_SEE_GOALS"
                   label="Members can see each other's goals"
-                  checked={formData.visibility === "members_visible"}
+                  checked={formData.visibility === "MEMBERS_CAN_SEE_GOALS"}
                   onChange={handleChange}
                 />
                 <RadioInput
                   id="vis_admin"
                   name="visibility"
-                  value="admin_only"
+                  value="PRIVATE"
                   label="Only admins can see member goals"
-                  checked={formData.visibility === "admin_only"}
+                  checked={formData.visibility === "PRIVATE"}
                   onChange={handleChange}
                 />
               </div>
             </fieldset>
+
+            {/* Cycle Duration */}
             <fieldset>
               <legend className="text-sm font-medium text-gray-700">
                 Cycle Duration
@@ -194,20 +248,22 @@ export default function CreateGroupPage() {
                 <RadioInput
                   id="dur_monthly"
                   name="duration"
-                  value="monthly"
+                  value="MONTHLY"
                   label="Monthly"
-                  checked={formData.duration === "monthly"}
+                  checked={formData.duration === "MONTHLY"}
                   onChange={handleChange}
                 />
               </div>
             </fieldset>
+
+            {/* Progress Stages */}
             <fieldset>
               <legend className="text-sm font-medium text-gray-700">
                 Progress Stages
               </legend>
               <div className="mt-2 space-y-2">
                 <RadioInput
-                  id="STAGE_2"
+                  id="s2"
                   name="stages"
                   value="STAGE_2"
                   label="Goal → End"
@@ -215,7 +271,7 @@ export default function CreateGroupPage() {
                   onChange={handleChange}
                 />
                 <RadioInput
-                  id="STAGE_3"
+                  id="s3"
                   name="stages"
                   value="STAGE_3"
                   label="Goal → Midway → End"
@@ -224,49 +280,57 @@ export default function CreateGroupPage() {
                 />
               </div>
             </fieldset>
+
+            {/* Notes Privacy */}
             <fieldset>
               <legend className="text-sm font-medium text-gray-700">
                 Notes Privacy
               </legend>
               <div className="mt-2 space-y-2">
-                {/* THIS IS THE CORRECTED SECTION */}
                 <RadioInput
-                  id="notes_member_admin"
+                  id="np_visible"
                   name="notesPrivacy"
-                  value="member_and_admin"
+                  value="VISIBLE_TO_GROUP"
                   label="Members and Admins"
-                  checked={formData.notesPrivacy === "member_and_admin"}
+                  checked={formData.notesPrivacy === "VISIBLE_TO_GROUP"}
                   onChange={handleChange}
                 />
                 <RadioInput
-                  id="notes_admin_only"
+                  id="np_private"
                   name="notesPrivacy"
-                  value="admin_only"
+                  value="PRIVATE_TO_AUTHOR"
                   label="Admins Only"
-                  checked={formData.notesPrivacy === "admin_only"}
+                  checked={formData.notesPrivacy === "PRIVATE_TO_AUTHOR"}
                   onChange={handleChange}
                 />
               </div>
             </fieldset>
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className="flex justify-end gap-4 pt-6">
             <Link href="/dashboard/accountability">
               <button
                 type="button"
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 disabled={isLoading}
               >
                 Cancel
               </button>
             </Link>
+
             <button
               type="submit"
-              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400"
               disabled={isLoading}
+              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400"
             >
-              {isLoading ? "Creating..." : "Create Group"}
+              {isEditMode
+                ? isLoading
+                  ? "Updating..."
+                  : "Update Group"
+                : isLoading
+                  ? "Creating..."
+                  : "Create Group"}
             </button>
           </div>
         </form>

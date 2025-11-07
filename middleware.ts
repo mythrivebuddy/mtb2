@@ -19,8 +19,22 @@ export default withAuth(
     }
 
     // Redirect admins accessing /dashboard to /admin/dashboard
-    if (token && path.startsWith("/dashboard") && token.role === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    // if (token && path.startsWith("/dashboard") && token.role === "ADMIN") {
+    //   return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    // }
+    if (token && token.role === "ADMIN" && path.startsWith("/dashboard")) {
+      const allowedAdminRoutes = [
+        "/dashboard/accountability",
+        "/dashboard/accountability-hub",
+      ];
+
+      const isAllowed = allowedAdminRoutes.some((r) => path.startsWith(r));
+
+      if (!isAllowed) {
+        return NextResponse.redirect(
+          new URL("/admin/dashboard", req.url)
+        );
+      }
     }
 
     // Redirect non-admins accessing /admin to /dashboard

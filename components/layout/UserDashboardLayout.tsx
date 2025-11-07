@@ -13,7 +13,7 @@ import useUserPresence from "@/hooks/userUserPresence";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { status: sessionStatus } = useSession();
+  const { status: sessionStatus,data:session } = useSession();
 
   const { data: announcements } = useQuery({
     queryKey: ["user-announcement"],
@@ -70,7 +70,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="w-full min-h-screen bg-dashboard max-w-full overflow-hidden">
-      {isLoggedIn && (
+      {isLoggedIn  && (session.user.role === "USER") && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">
           <Sidebar user={user} />
         </div>
@@ -81,7 +81,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           isLoggedIn ? "ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-16" : ""
         }`}
       >
-        {isLoggedIn && (
+        {isLoggedIn && (session.user.role === "USER") && (
           <div className="md:mx-10 mx-5">
             <TopBar user={user} />
             {

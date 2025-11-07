@@ -22,6 +22,7 @@ import {
   IPlan, // Assuming IPlan is part of this import
 } from "@/types/client/user-info";
 import useAdminPresence from "@/hooks/useUserRealtime";
+import Link from "next/link";
 
 // --- API Functions ---
 
@@ -213,7 +214,7 @@ export default function UserInfoContent() {
             {users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
                       {user.name.slice(0, 2).toUpperCase()}
                       {onlineUserIds.has(user?.id) && (
@@ -224,7 +225,7 @@ export default function UserInfoContent() {
                       <div className="text-sm font-medium">{user.name}</div>
                       <div className="text-sm text-gray-500">{user.email}</div>
                     </div>
-                  </div>
+                  </Link>
                 </TableCell>
                 <TableCell>{user.jpEarned}</TableCell>
                 <TableCell>{user.jpBalance}</TableCell>

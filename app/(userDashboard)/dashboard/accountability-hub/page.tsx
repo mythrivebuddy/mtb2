@@ -33,6 +33,7 @@ type GroupViewData = {
   group: {
     visibility: "PRIVATE" | "VISIBLE_TO_GROUP";
     progressStage: "NOT_STARTED" | "STAGE_2" | "STAGE_3";
+    isBlocked: boolean;
   };
   activeCycleId: string;
   requesterRole: "admin" | "member" | "ADMIN" | "MEMBER";
@@ -85,7 +86,7 @@ export default function AccountabilityHubPage() {
 
   const groupName = data?.name;
   const activeCycleId = data?.activeCycleId;
-
+  const isGroupBlocked = Boolean(data?.group?.isBlocked);
   
   const members = data?.members || [];
   const groupVisibility = data?.group?.visibility;
@@ -101,7 +102,7 @@ export default function AccountabilityHubPage() {
   };
 
   const handleSave = async (cycleId: string, fieldToUpdate: "text") => {
-    if (!groupId || !editingGoalValue.trim()) return;
+    if (!groupId || !editingGoalValue.trim() || isGroupBlocked) return;
     const value = editingGoalValue;
 
     setIsLoading(true);
@@ -162,6 +163,7 @@ export default function AccountabilityHubPage() {
         members={members}
         groupId={groupId}
         isOpen={!!commentsGoalId}
+        isGroupBlocked={isGroupBlocked}
         onOpenChange={() => setCommentsGoalId(null)}
       />
 
@@ -172,7 +174,12 @@ export default function AccountabilityHubPage() {
         <ArrowLeft className="h-5 w-5" />
         <span>Back</span>
       </button>
-
+          {/* ✅ GROUP BLOCKED WARNING */}
+        {isGroupBlocked && (
+          <div className="p-4 rounded-xl bg-red-100 border border-red-300 text-red-700 font-semibold text-center">
+            🚫 This group has been blocked by the platform admin. It is now view-only, and no actions are allowed.
+          </div>
+        )}
       <div className="flex w-full items-center justify-between mb-6">
         <div className="flex-1">
           <h1 className="text-2xl font-bold">
@@ -182,7 +189,7 @@ export default function AccountabilityHubPage() {
             Track and motivate your solopreneur community’s monthly goals.
           </p>
         </div>
-
+          
         {isAdmin && (
           <div className="flex items-center gap-4">
             <Link href="/dashboard/accountability-hub/create">
@@ -194,6 +201,7 @@ export default function AccountabilityHubPage() {
             <Button
               className="bg-blue-600 hover:bg-blue-700"
               onClick={() => setIsAddMemberModalOpen(true)}
+              disabled={isGroupBlocked}
             >
               Add Member
             </Button>
@@ -304,7 +312,7 @@ export default function AccountabilityHubPage() {
                   <TableCell>
                     {activeCycleId && (
                       <>
-                        {isEditingGoal ? (
+                        {(isEditingGoal && !isGroupBlocked) ? (
                           <form
                             onSubmit={(e) =>{
                               e.preventDefault();
@@ -338,7 +346,8 @@ export default function AccountabilityHubPage() {
                               <Button
                                 type="submit"
                                 size="sm"
-                                disabled={isLoading || !editingGoalValue.trim()}
+                                disabled={isGroupBlocked || isLoading || !editingGoalValue.trim()}
+
                               >
                                 {isLoading ? "Saving..." : "Save"}
                               </Button>
@@ -349,7 +358,7 @@ export default function AccountabilityHubPage() {
                                 }}
                                 size="sm"
                                 variant="outline"
-                                disabled={isLoading}
+                                disabled={isLoading || isGroupBlocked}
                               >
                                 Cancel
                               </Button>
@@ -397,7 +406,7 @@ export default function AccountabilityHubPage() {
 
                   {isMidwayVisible && (
                     <TableCell>
-                      {activeCycleId && (
+                      {activeCycleId  && (
                         <EditableProgressCell
                           initialValue={goal?.midwayUpdate}
                           groupId={groupId!}
@@ -406,6 +415,7 @@ export default function AccountabilityHubPage() {
                           isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"}
                           isCurrentUser={isCurrentUser}
                           placeholderText="Set midway update"
+                          isGroupBlocked={isGroupBlocked}
                         />
                       )}
                     </TableCell>
@@ -420,6 +430,7 @@ export default function AccountabilityHubPage() {
                         fieldToUpdate="endResult"
                         isGoalPrivateToAdmin={"VISIBLE_TO_GROUP"}
                         isCurrentUser={isCurrentUser}
+                        isGroupBlocked={isGroupBlocked}
                         placeholderText="Set end result"
                       />
                     )}
@@ -431,6 +442,7 @@ export default function AccountabilityHubPage() {
                       <EditableNotesCell
                         goalId={goal.id}
                         groupId={groupId!}
+                        isGroupBlocked={isGroupBlocked}
                         initialValue={goal.notes || ""}
                         canEdit={isAdmin} // ✅ Only admin can edit
                       />
@@ -450,6 +462,7 @@ export default function AccountabilityHubPage() {
                         currentStatus={goal?.status}
                         isAdmin={isAdmin}
                         authorId={member?.user?.id}
+                        isGroupBlocked={isGroupBlocked}
                       />
                     ) : (
                       <span className="mx-6">....</span>
@@ -459,6 +472,7 @@ export default function AccountabilityHubPage() {
                   <TableCell className="text-right">
                     <Button
                       variant="link"
+                      // disabled={isGroupBlocked}
                       onClick={() => handleCommentClick(goal?.id)}
                     >
                       Comment

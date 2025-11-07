@@ -21,7 +21,7 @@ export async function GET(
       where: { goalId: goalId },
       include: {
         author: {
-          select: { name: true, image: true },
+          select: { name: true, image: true,id: true },
         },
       },
       orderBy: { createdAt: "asc" },

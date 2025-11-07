@@ -12,6 +12,7 @@ const iconMap = {
     status_updated: "result",
     cycle_started: "cycle",
     group_leave: "group_leave",
+    group_blocked: "group_blocked",
 } as const;
 
 // Local type for function parameters, derived from our lowercase keys
@@ -26,6 +27,7 @@ const typeToEnumMap: Record<ActivityLogType, ActivityFeedType> = {
     status_updated: ActivityFeedType.STATUS_UPDATED,
     cycle_started: ActivityFeedType.CYCLE_STARTED,
     group_leave: ActivityFeedType.GROUP_LEAVE, // Added mapping for 'leave' activity
+    group_blocked: ActivityFeedType.GROUP_BLOCKED_BY_ADMIN,
 };
 
 export async function logActivity(

@@ -270,3 +270,13 @@
     display: none !important; /* Hide right side (view buttons) */
   }
 }
+
+@keyframes whatsapp-bounce {
+  0% { transform: translateY(0); opacity: .5; }
+  50% { transform: translateY(-2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: .5; }
+}
+
+.animate-whatsapp-bounce {
+  animation: whatsapp-bounce 1s infinite ease-in-out;
+}

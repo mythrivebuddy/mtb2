@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { checkRole } from "@/lib/utils/auth";
+// import { checkRole } from "@/lib/utils/auth";
+import { getServerSession } from "next-auth";
+import { authConfig } from "../auth/[...nextauth]/auth.config";
 
 export async function GET() {
   //   const { searchParams } = new URL(req.url);
   //   const userId = searchParams.get("userId");
-  const session = await checkRole("USER");
+  // const session = await checkRole("USER");
+    const session = await getServerSession(authConfig)
+    if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   const userId = session.user.id;
 
   if (!userId) {

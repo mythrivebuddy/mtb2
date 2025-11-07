@@ -2,7 +2,6 @@ import { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { activityDisplayMap } from "../constants/activityNames";
 
-
 // Helper function to create a notification
 export async function createNotification(
   userId: string,
@@ -15,7 +14,6 @@ export async function createNotification(
   return await prisma.notification.create({
     data: { userId, type, title, message, metadata },
   });
-   
 }
 
 // Returns notification data for JP earned
@@ -28,57 +26,57 @@ export function getJPEarnedNotificationData(
     userId,
     type: NotificationType.JP_EARNED,
     title: "JP Earned",
-    message: `You earned ${amount} JP for ${activityDisplayMap[activity]}`,
+    message: `You earned ${amount} JP for ${activityDisplayMap[activity]}.`,
     metadata: { amount, activity },
   };
 }
 
-// Returns notification data for prosperity applied
+// Returns notification data for Prosperity Drop application
 export function getProsperityAppliedNotificationData(userId: string) {
   return {
     userId,
     type: NotificationType.PROSPERITY_APPLIED,
     title: "Prosperity Drop Applied",
     message:
-      "Your prosperity drop application has been submitted and is under review",
+      "Your Prosperity Drop application has been submitted and is under review.",
     metadata: {},
   };
 }
 
-// Returns notification data for spotlight approved
+// Returns notification data for Spotlight approval
 export function getSpotlightApprovedNotificationData(userId: string) {
   return {
     userId,
     type: NotificationType.SPOTLIGHT_APPROVED,
     title: "Spotlight Approved",
-    message: "Your spotlight application has been approved",
+    message: "Your Spotlight application has been approved.",
     metadata: { url: "/dashboard/spotlight" },
   };
 }
 
-// Returns notification data for spotlight approved
+// Returns notification data for Spotlight application
 export function getSpotlightAppliedNotificationData(userId: string) {
   return {
     userId,
     type: NotificationType.SPOTLIGHT_APPLIED,
     title: "Spotlight Applied",
-    message: "You have applied for spotlight and it is under review",
+    message: "You have applied for Spotlight. Your request is under review.",
     metadata: {},
   };
 }
 
-// Returns notification data for spotlight active
+// Returns notification data for active Spotlight
 export function getSpotlightActiveNotificationData(userId: string) {
   return {
     userId,
     type: NotificationType.SPOTLIGHT_ACTIVE,
     title: "Spotlight Active",
-    message: "Your spotlight is now active and visible to other users",
+    message: "Your Spotlight is now active and visible to other users.",
     metadata: {},
   };
 }
 
-// Returns notification data for magic box shared
+// Returns notification data for Magic Box sharing
 export function getMagicBoxSharedNotificationData(
   sharedByUserId: string,
   sharedByUserName: string,
@@ -94,7 +92,7 @@ export function getMagicBoxSharedNotificationData(
   };
 }
 
-// Returns notification data for magic box reward (for sender)
+// Returns notification data for Magic Box reward (sender)
 export function getMagicBoxRewardNotificationData(
   userId: string,
   amount: number
@@ -103,11 +101,11 @@ export function getMagicBoxRewardNotificationData(
     userId,
     type: NotificationType.JP_EARNED,
     title: "Magic Box Reward",
-    message: `You earned ${amount} JP from opening the Magic Box!`,
+    message: `You earned ${amount} JP from opening a Magic Box!`,
   };
 }
 
-// Returns notification data for spotlight transaction (spending JP to activate)
+// Returns notification data for Spotlight transaction (spending JP)
 export function getSpotlightTransactionNotificationData(
   userId: string,
   jpAmount: number
@@ -121,7 +119,7 @@ export function getSpotlightTransactionNotificationData(
   };
 }
 
-// Returns notification data for spotlight application (spending JP to apply)
+// Returns notification data for Spotlight application transaction
 export function getSpotlightAppliedTransactionNotificationData(
   userId: string,
   jpAmount: number
@@ -135,6 +133,7 @@ export function getSpotlightAppliedTransactionNotificationData(
   };
 }
 
+// Create JP earned notification
 export async function createJPEarnedNotification(
   userId: string,
   amount: number,
@@ -144,12 +143,12 @@ export async function createJPEarnedNotification(
     userId,
     NotificationType.JP_EARNED,
     "JP Earned",
-    `You earned ${amount} JP for ${activityDisplayMap[activity]}`,
+    `You earned ${amount} JP for ${activityDisplayMap[activity]}.`,
     { amount, activity }
   );
 }
 
-// return notification for create jp spent notification
+// Create JP spent notification
 export async function createJpSpentNotification(
   userId: string,
   amount: number,
@@ -159,7 +158,7 @@ export async function createJpSpentNotification(
     userId,
     NotificationType.JP_SPEND,
     "JP Spent",
-    `You spend ${amount} JP for ${activityDisplayMap[activity]}`,
+    `You spent ${amount} JP for ${activityDisplayMap[activity]}.`,
     { amount, activity }
   );
 }
@@ -169,36 +168,32 @@ export async function createProsperityAppliedNotification(userId: string) {
     userId,
     NotificationType.PROSPERITY_APPLIED,
     "Prosperity Drop Applied",
-    "Your prosperity drop application has been submitted and is under review",
+    "Your Prosperity Drop application has been submitted and is under review.",
     {}
   );
 }
 
 /**
- * Create a notification for prosperity approval (in-app only, no push)
- * @param userId - ID of the user to notify
+ * Creates a notification for Prosperity Drop approval.
  */
 export async function createProsperityApprovedNotification(userId: string) {
   return createNotification(
     userId,
     NotificationType.PROSPERITY_APPROVED,
     "Prosperity Drop Approved",
-    "Your prosperity drop application has been approved"
-    // { url: "/dashboard/prosperity" }
+    "Your Prosperity Drop application has been approved."
   );
 }
 
 /**
- * Create a notification for spotlight approval (in-app only, no push)
- * @param userId - ID of the user to notify
+ * Creates a notification for Spotlight approval.
  */
 export async function createSpotlightApprovedNotification(userId: string) {
-  // Create in-app notification only
   return createNotification(
     userId,
     NotificationType.SPOTLIGHT_APPROVED,
     "Spotlight Approved",
-    "Your spotlight application has been approved",
+    "Your Spotlight application has been approved.",
     { url: "/dashboard/spotlight" }
   );
 }
@@ -208,7 +203,7 @@ export async function createSpotlightAppliedNotification(userId: string) {
     userId,
     NotificationType.SPOTLIGHT_APPLIED,
     "Spotlight Applied",
-    "You have applied for spotlight and it is under review",
+    "You have applied for Spotlight. Your request is under review.",
     {}
   );
 }
@@ -218,7 +213,7 @@ export async function createSpotlightActiveNotification(userId: string) {
     userId,
     NotificationType.SPOTLIGHT_ACTIVE,
     "Spotlight Active",
-    "Your spotlight is now active and visible to other users",
+    "Your Spotlight is now active and visible to other users.",
     {}
   );
 }
@@ -238,7 +233,7 @@ export async function createMagicBoxSharedNotification(
   );
 }
 
-// Returns notification data for BuddyLens claim
+// BuddyLens — Request Claimed
 export function getBuddyLensClaimedNotificationData(
   userId: string,
   reviewerName: string,
@@ -248,12 +243,12 @@ export function getBuddyLensClaimedNotificationData(
     userId,
     type: NotificationType.BUDDY_LENS_CLAIMED,
     title: "BuddyLens Request Claimed",
-    message: `${reviewerName} claimed your BuddyLens request in ${domain}. Approve or reject.`,
+    message: `${reviewerName} claimed your BuddyLens request in ${domain}. You can approve or reject it.`,
     metadata: { url: `/dashboard/buddy-lens/approve` },
   };
 }
 
-// Returns notification data for BuddyLens approval
+// BuddyLens — Claim Approved
 export function getBuddyLensApprovedNotificationData(
   userId: string,
   domain: string,
@@ -263,12 +258,12 @@ export function getBuddyLensApprovedNotificationData(
     userId,
     type: NotificationType.BUDDY_LENS_APPROVED,
     title: "BuddyLens Claim Approved",
-    message: `Your claim for the BuddyLens request in ${domain} has been approved! Start reviewing now.`,
+    message: `Your claim for the BuddyLens request in ${domain} has been approved! You can start reviewing now.`,
     metadata: { url: `/dashboard/buddy-lens/reviewer?requestId=${requestId}` },
   };
 }
 
-// Returns notification data for BuddyLens rejection
+// BuddyLens — Claim Rejected
 export function getBuddyLensRejectedNotificationData(
   userId: string,
   domain: string
@@ -282,7 +277,7 @@ export function getBuddyLensRejectedNotificationData(
   };
 }
 
-// Returns notification data for BuddyLens review completion
+// BuddyLens — Review Completed
 export function getBuddyLensReviewedNotificationData(
   userId: string,
   domain: string,
@@ -298,7 +293,7 @@ export function getBuddyLensReviewedNotificationData(
   };
 }
 
-// Returns notification data for BuddyLens reviewer completion
+// BuddyLens — Reviewer Rewarded
 export function getBuddyLensReviewerCompletedNotificationData(
   userId: string,
   domain: string,
@@ -309,26 +304,27 @@ export function getBuddyLensReviewerCompletedNotificationData(
     userId,
     type: NotificationType.BUDDY_LENS_COMPLETED,
     title: "BuddyLens Review Reward",
-    message: `You have earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`,
+    message: `You earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`,
     metadata: { url: `/dashboard/buddy-lens/reviewer/${requestId}`, jpAmount },
   };
 }
 
-// Returns notification data for BuddyLens cancellation
+// BuddyLens — Claim Cancelled
 export function getBuddyLensCancelledNotificationData(
   userId: string,
   domain: string
 ) {
   return {
     userId,
-    type: NotificationType.BUDDY_LENS_REJECTED, // Using REJECTED type since it's similar
+    type: NotificationType.BUDDY_LENS_REJECTED,
     title: "BuddyLens Claim Cancelled",
     message: `The claim for your BuddyLens request in ${domain} has been cancelled by the requester.`,
     metadata: { url: `/dashboard/buddy-lens/reviewer` },
   };
 }
 
-// Create BuddyLens claim notification
+// --- Create Notification Variants (Async versions) ---
+
 export async function createBuddyLensClaimedNotification(
   userId: string,
   reviewerName: string,
@@ -339,14 +335,11 @@ export async function createBuddyLensClaimedNotification(
     userId,
     NotificationType.BUDDY_LENS_CLAIMED,
     "BuddyLens Request Claimed",
-    `${reviewerName} claimed your BuddyLens request in ${domain}. Approve or reject.`,
-    {
-      url: `/dashboard/buddy-lens/approve?requestId=${requestId}`,
-    }
+    `${reviewerName} claimed your BuddyLens request in ${domain}. You can approve or reject it.`,
+    { url: `/dashboard/buddy-lens/approve?requestId=${requestId}` }
   );
 }
 
-// Create BuddyLens approval notification
 export async function createBuddyLensApprovedNotification(
   userId: string,
   domain: string,
@@ -356,12 +349,11 @@ export async function createBuddyLensApprovedNotification(
     userId,
     NotificationType.BUDDY_LENS_APPROVED,
     "BuddyLens Claim Approved",
-    `Your claim for the BuddyLens request in ${domain} has been approved! Start reviewing now.`,
+    `Your claim for the BuddyLens request in ${domain} has been approved! You can start reviewing now.`,
     { url: `/dashboard/buddy-lens/reviewer?requestId=${requestId}` }
   );
 }
 
-// Create BuddyLens rejection notification
 export async function createBuddyLensRejectedNotification(
   userId: string,
   domain: string
@@ -375,7 +367,6 @@ export async function createBuddyLensRejectedNotification(
   );
 }
 
-// Create BuddyLens review completion notification
 export async function createBuddyLensReviewedNotification(
   userId: string,
   domain: string,
@@ -391,30 +382,26 @@ export async function createBuddyLensReviewedNotification(
   );
 }
 
-// Create BuddyLens reviewer completion notification
 export async function createBuddyLensReviewerCompletedNotification(
   userId: string,
   domain: string,
   jpAmount: number
-  // reviewId: string
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_COMPLETED,
     "BuddyLens Review Reward",
-    `You have earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`
-    // { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount }
+    `You earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`
   );
 }
 
-// Create BuddyLens cancellation notification
 export async function createBuddyLensCancelledNotification(
   userId: string,
   domain: string
 ) {
   return createNotification(
     userId,
-    NotificationType.BUDDY_LENS_REJECTED, // Using REJECTED type since it's similar
+    NotificationType.BUDDY_LENS_REJECTED,
     "BuddyLens Claim Cancelled",
     `The claim for your BuddyLens request in ${domain} has been cancelled by the requester.`,
     { url: `/dashboard/buddy-lens/reviewer` }

@@ -38,6 +38,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import AddMemberModal from "@/components/accountability/AddMemberModal";
 
 type Member = {
   userId: string;
@@ -83,6 +84,8 @@ export default function AccountabilityHubHome() {
     (m: { userId: string; role: string }) =>
       m.userId === session?.user?.id && m.role?.toLowerCase() === "admin"
   );
+  
+  const isGroupBlocked = group?.isBlocked == true;
 
   const [notes, setNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -92,6 +95,8 @@ export default function AccountabilityHubHome() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+
   useEffect(() => {
     setIsCompletingCycle(false);
   }, []);
@@ -255,7 +260,7 @@ export default function AccountabilityHubHome() {
     <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <button
-          onClick={() => router.push(`/dashboard/accountability/home`)}
+          onClick={() => router.push("/dashboard/accountability/home")}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -267,6 +272,11 @@ export default function AccountabilityHubHome() {
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">
             Group Name: {group?.name}
           </h1>
+          {
+            group.description && (
+              <p className="text-md text-muted-foreground mt-1">Description:{group?.description}</p>
+            )
+          }
           <p className="text-sm text-muted-foreground mt-1">
             • Active Cycle:{" "}
             {activeCycle
@@ -277,6 +287,12 @@ export default function AccountabilityHubHome() {
               : "No active cycle"}
           </p>
         </div>
+        {/* ✅ GROUP BLOCKED WARNING */}
+        {isGroupBlocked && (
+          <div className="p-4 rounded-xl bg-red-100 border border-red-300 text-red-700 font-semibold text-center">
+            🚫 This group has been blocked by the platform admin. It is now view-only, and no actions are allowed.
+          </div>
+        )}
 
         {/* Banner + Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
@@ -356,73 +372,88 @@ export default function AccountabilityHubHome() {
               </AlertDialog>
             )}
 
-            {/* Remove Members (Admin Only) */}
-            {group?.cycles[0]?.status === "repeat" && isAdmin && (
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive">Remove Members</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Remove Members</DialogTitle>
-                    <DialogDescription>
-                      Search for a member and remove them from the group.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Input
-                    placeholder="Search members..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="mb-3"
-                  />
-                  <div className="max-h-60 overflow-y-auto space-y-2">
-                    {filteredMembers.length > 0 ? (
-                      filteredMembers.map((member: Member) => (
-                        <div
-                          key={member.userId}
-                          className="flex justify-between items-center border rounded-lg p-2"
-                        >
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={
-                                member?.user?.image
-                                  ? member.user.image
-                                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                      member?.user?.name?.charAt(0) || "User"
-                                    )}&background=random&color=fff`
-                              }
-                              alt={member.user.name || "Member Avatar"}
-                              width={32}
-                              height={32}
-                              className="rounded-full"
-                            />
-                            <span>{member.user.name}</span>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={removingMemberId === member.userId}
-                            onClick={() =>
-                              handleRemoveMember(
-                                member.userId,
-                                member.user.name
-                              )
-                            }
+            {/*Add Members and  Remove Members (Admin Only) */}
+            {(isAdmin || session?.user?.role === "ADMIN") && (
+              <>
+                <Button
+                  onClick={() => setIsAddMemberModalOpen(true)}
+                  disabled={isGroupBlocked}
+                  className={`bg-blue-600 hover:bg-blue-700 ${isGroupBlocked ? "hover:cursor-not-allowed opacity-75" : ""}`}
+                >
+                  Add Member
+                </Button>
+                <AddMemberModal
+                  groupId={group.id}
+                  isOpen={isAddMemberModalOpen}
+                  onOpenChange={setIsAddMemberModalOpen}
+                  refetch={refetch}
+                />
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" disabled={isGroupBlocked} className={`${isGroupBlocked ? "opacity-75":""}`}>Remove Members</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Remove Members</DialogTitle>
+                      <DialogDescription>
+                        Search for a member and remove them from the group.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                      placeholder="Search members..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="mb-3"
+                    />
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                      {filteredMembers.length > 0 ? (
+                        filteredMembers.map((member: Member) => (
+                          <div
+                            key={member.userId}
+                            className="flex justify-between items-center border rounded-lg p-2"
                           >
-                            {removingMemberId === member.userId
-                              ? "Removing..."
-                              : "Remove"}
-                          </Button>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 text-center py-4">
-                        No members found.
-                      </p>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={
+                                  member?.user?.image
+                                    ? member.user.image
+                                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                        member?.user?.name?.charAt(0) || "User"
+                                      )}&background=random&color=fff`
+                                }
+                                alt={member.user.name || "Member Avatar"}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                              />
+                              <span>{member.user.name}</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={removingMemberId === member.userId}
+                              onClick={() =>
+                                handleRemoveMember(
+                                  member.userId,
+                                  member.user.name
+                                )
+                              }
+                            >
+                              {removingMemberId === member.userId
+                                ? "Removing..."
+                                : "Remove"}
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          No members found.
+                        </p>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
             )}
           </CardContent>
         </Card>
@@ -443,7 +474,7 @@ export default function AccountabilityHubHome() {
                   These notes are private and only visible to the admin.
                 </p>
               )
-            ) : isAdmin ? (
+            ) : (isAdmin)? (
               <>
                 <Textarea
                   className="w-full h-40"
@@ -453,7 +484,7 @@ export default function AccountabilityHubHome() {
                 />
                 <Button
                   onClick={handleSaveNotes}
-                  disabled={isSavingNotes}
+                  disabled={isSavingNotes || isGroupBlocked}
                   className="mt-4"
                 >
                   {isSavingNotes ? "Saving..." : "Save Notes"}
@@ -476,7 +507,7 @@ export default function AccountabilityHubHome() {
             <CardContent className="flex flex-wrap gap-3">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button disabled={isCreatingCycle}>
+                  <Button disabled={isCreatingCycle || isGroupBlocked}>
                     {isCreatingCycle
                       ? "Starting New Cycle..."
                       : "Start New Cycle"}
