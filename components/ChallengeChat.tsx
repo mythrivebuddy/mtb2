@@ -358,7 +358,7 @@ export default function ChallengeChat({
             setHasNewMessages(false);
             setShowScrollArrow(false);
           }}
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 rounded-full bg-gray-700 shadow-lg"
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 rounded-full bg-gray-700 shadow-lg"
         >
           <ArrowDown className="w-5 h-5 text-white" />
           {hasNewMessages && (
