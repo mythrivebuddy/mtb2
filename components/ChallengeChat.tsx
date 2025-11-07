@@ -83,7 +83,6 @@ function renderMessageText(text: string, isMe: boolean) {
   });
 }
 
-
 export default function ChallengeChat({
   challengeId,
   isChatDisabled,
@@ -181,10 +180,7 @@ export default function ChallengeChat({
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
-        typingTimeoutRef.current = setTimeout(
-          () => setWhoIsTyping(null),
-          2500
-        );
+        typingTimeoutRef.current = setTimeout(() => setWhoIsTyping(null), 2500);
       })
       .subscribe();
 
@@ -219,7 +215,7 @@ export default function ChallengeChat({
     setMessages((prev) => [...prev, optimistic]);
 
     // scrollBottom();
-    setTimeout(()=>scrollBottom(),0)
+    setTimeout(() => scrollBottom(), 0);
     setShowScrollArrow(false);
     setHasNewMessages(false);
 
@@ -373,28 +369,28 @@ export default function ChallengeChat({
 
       {/* Footer */}
       <CardFooter className="border-t w-full p-3">
-  {isChatDisabled ? (
-    <div className="flex items-center justify-center w-full h-20 bg-red-50 text-red-700 font-medium">
-      Chat is disabled — this challenge has ended.
-    </div>
-  ) : (
-    <div className="relative w-full">
-      {/* ✅ Full-Width Textarea */}
-      <Textarea
-        ref={textareaRef}
-        rows={1}
-        placeholder="Type a message…"
-        value={input}
-        onChange={handleTyping}
-        onKeyDown={handleKeyDown}
-        className="min-h-12 max-h-[150px] resize-none w-full pr-12"
-      />
+        {isChatDisabled ? (
+          <div className="flex items-center justify-center w-full h-20 bg-red-50 text-red-700 font-medium">
+            Chat is disabled — this challenge has ended.
+          </div>
+        ) : (
+          <div className="relative w-full">
+            {/* ✅ Full-Width Textarea */}
+            <Textarea
+              ref={textareaRef}
+              rows={1}
+              placeholder="Type a message…"
+              value={input}
+              onChange={handleTyping}
+              onKeyDown={handleKeyDown}
+              className="min-h-12 max-h-[150px] resize-none w-full pr-12"
+            />
 
-      {/* ✅ Send button INSIDE textarea (absolute) */}
-      <button
-        onClick={sendMessage}
-        disabled={!input.trim()}
-        className="
+            {/* ✅ Send button INSIDE textarea (absolute) */}
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim()}
+              className="
           absolute 
           right-2 
           bottom-2 
@@ -410,13 +406,12 @@ export default function ChallengeChat({
           items-center 
           justify-center
         "
-      >
-        <Send className="w-5 h-5 text-white" />
-      </button>
-    </div>
-  )}
-</CardFooter>
-
+            >
+              <Send className="w-5 h-5 text-white" />
+            </button>
+          </div>
+        )}
+      </CardFooter>
     </Card>
   );
 }
@@ -469,12 +464,12 @@ export default function ChallengeChat({
 //     <div
 //       className="
 //         bg-white/5
-//         px-3 py-2 
-//         rounded-xl 
+//         px-3 py-2
+//         rounded-xl
 //         shadow-xl
 //         rounded-bl-none
-//         w-fit 
-//         flex flex-col items-start gap-1 
+//         w-fit
+//         flex flex-col items-start gap-1
 //         border border-gray-200
 //       "
 //     >
