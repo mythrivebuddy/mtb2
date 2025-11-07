@@ -22,12 +22,12 @@ export async function POST(request: Request) {
     // 1️⃣ Authenticate user
     const session = await checkRole("USER");
     if (!session?.user?.id) {
-      console.log("❌ ERROR: No session or user ID found.");
+      
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
-    console.log(`ℹ️ Searching for user with ID: ${userId}`);
+    // console.log(`ℹ️ Searching for user with ID: ${userId}`);
 
     // 2️⃣ Fetch user and include their plan (for the deductJp function)
     const user = await prisma.user.findUnique({
@@ -36,10 +36,17 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      console.log("❌ ERROR: User not found.");
+      // console.log("❌ ERROR: User not found.");
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
+    if (user.membership === "PAID" && user.challenge_limit !== 5) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { challenge_limit: 5 },
+  });
 
+  user.challenge_limit = 5;
+}
     // 3️⃣ Get monthly limit directly from user record
     const monthlyLimit = user.challenge_limit;
 
@@ -54,9 +61,6 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log(
-      `ℹ️ User ${userId} has created ${monthlyChallengeCount} challenge(s) this month. Monthly limit from DB: ${monthlyLimit}`
-    );
 
     // 5️⃣ Enforce the limit
     if (monthlyChallengeCount >= monthlyLimit) {
@@ -75,7 +79,7 @@ export async function POST(request: Request) {
 
     if (!validationResult.success) {
       const errorMessages = validationResult.error.flatten().fieldErrors;
-      console.log(`❌ Validation errors for user ${userId}:`, errorMessages);
+     
       return NextResponse.json({ error: errorMessages }, { status: 400 });
     }
 
@@ -148,16 +152,11 @@ export async function POST(request: Request) {
           },
         });
 
-        console.log(
-          `✅ User ${userId} enrolled in challenge ${challenge.id} with tasks`
-        );
 
         return challenge;
       },
       { maxWait: 10000, timeout: 20000 }
     );
-
-    console.log(`✅ Transaction completed successfully for user ${userId}`);
 
     return NextResponse.json(
       {

@@ -26,10 +26,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
+  // DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Editor } from "@tinymce/tinymce-react";
+import { toast } from "sonner";
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
   if (!title) return "";
@@ -57,6 +58,7 @@ const MessageModal = ({
   title: string;
   message: string;
 }) => {
+  const router = useRouter()
   if (!isOpen) return null;
 
   return (
@@ -74,14 +76,17 @@ const MessageModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="flex justify-center">
+        <div className="!flex !flex-col gap-2">
           <Button
             onClick={onClose}
-            className="bg-red-600  hover:bg-red-700 w-full sm:w-auto"
+            className="bg-red-600  hover:bg-red-700 "
           >
-            OK
+            Continue with Free Plan
           </Button>
-        </DialogFooter>
+          <Button onClick={()=>router.push(`/dashboard/subscription`)} className="bg-green-700 hover:bg-green-800">
+          Upgrade Now
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -97,6 +102,7 @@ interface ChallengeApiResponse {
   data: {
     id: string;
     title: string;
+    message: string;
   };
 }
 
@@ -160,7 +166,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       penalty: 0,
       startDate: new Date(new Date().setDate(today.getDate() + 2)),
       endDate: undefined,
-      social_link_task:""
+      social_link_task: "",
     },
   });
 
@@ -180,6 +186,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       const challengeTitle = data.data?.title;
       if (challengeId && challengeTitle) {
         const slug = generateSlug(challengeTitle);
+        toast.success(data.data?.message || "Challenge created successfully");
         router.push(
           `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`
         );
@@ -333,63 +340,62 @@ export default function CreateChallenge({}: CreateChallengeProps) {
             </div>
 
             <div>
-  <label
-    htmlFor="description"
-    className="mb-1 block text-sm font-medium text-slate-700"
-  >
-    Detailed Description
-  </label>
-<Controller
-  name="description"
-  control={control}
-  render={({ field }) => (
-    <Editor
-      id="description"
-      key="challenge-description-editor"
-      apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-      value={field.value}
-      onEditorChange={(content) => field.onChange(content)}
-      init={{
-        height: 400,
-        menubar: false,
-        toolbar_mode: "sliding",
-        promotion: false,
-        // ✅ Removed "link" and "code" from plugins
-        plugins: [
-          "advlist",
-          "autolink",
-          "lists",
-          "charmap",
-          "preview",
-          "anchor",
-          "searchreplace",
-          "visualblocks",
-          "fullscreen",
-          "insertdatetime",
-          "media",
-          "table",
-          "help",
-          "wordcount",
-        ],
-        // ✅ Removed "link" and "code" buttons from toolbar
-        toolbar:
-          "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
+              <label
+                htmlFor="description"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Detailed Description
+              </label>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <Editor
+                    id="description"
+                    key="challenge-description-editor"
+                    apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                    value={field.value}
+                    onEditorChange={(content) => field.onChange(content)}
+                    init={{
+                      height: 400,
+                      menubar: false,
+                      toolbar_mode: "sliding",
+                      promotion: false,
+                      // ✅ Removed "link" and "code" from plugins
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                      ],
+                      // ✅ Removed "link" and "code" buttons from toolbar
+                      toolbar:
+                        "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
 
-        block_formats:
-          "Paragraph=p",
+                      block_formats: "Paragraph=p",
 
-        valid_elements:
-          "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
-        extended_valid_elements: "",
+                      valid_elements:
+                        "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
+                      extended_valid_elements: "",
 
-        verify_html: false,
-        cleanup: false,
-        forced_root_block: "p",
+                      verify_html: false,
+                      cleanup: false,
+                      forced_root_block: "p",
 
-        placeholder:
-          "Describe the goals, rules, and what makes your challenge unique...",
+                      placeholder:
+                        "Describe the goals, rules, and what makes your challenge unique...",
 
-        content_style: `
+                      content_style: `
           body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
           h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
           h2 { font-size: 1.5em; font-weight: 600; color: #334155; margin-top: 0.75rem; margin-bottom: 0.5rem; }
@@ -397,22 +403,17 @@ export default function CreateChallenge({}: CreateChallengeProps) {
           blockquote { border-left: 3px solid #c084fc; margin-left: 0; padding-left: 1rem; color: #4b5563; font-style: italic; background-color: #f9fafb; border-radius: 0.25rem; }
           p { margin: 0.5rem 0; }
         `,
-      }}
-    />
-  )}
-/>
+                    }}
+                  />
+                )}
+              />
 
-
-
-
-
-  {errors.description && (
-    <p className="mt-1 text-sm text-red-500">
-      {errors.description.message}
-    </p>
-  )}
-</div>
-
+              {errors.description && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.description.message}
+                </p>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
@@ -593,40 +594,42 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 </p>
               )}
             </div>
-              <div className="flex flex-col">
-  <label
-    htmlFor="social_link_task"
-    className="mb-1 block text-sm font-medium text-slate-700"
-  >
-    Social Media Link
-  </label>
-  <input
-    type="text"
-    id="social_link_task"
-    className={`flex-1 w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 ${
-      errors.social_link_task
-        ? "border-red-500 focus:ring-red-500"
-        : "border-slate-200 bg-slate-50 focus:ring-purple-500"
-    }`}
-    {...register("social_link_task", {
-      required: "Social media link is required",
-      pattern: {
-        value: /^(https?:\/\/)([\w.-]+)\.([a-z]{2,})([\/\w .-]*)*\/?$/,
-        message: "Please enter a valid URL (must start with http:// or https://)",
-      },
-    })}
-    placeholder="Enter the YouTube or Instagram link for this challenge"
-  />
-  {errors.social_link_task && (
-    <p className="mt-1 text-xs text-red-500">
-      {errors.social_link_task.message}
-    </p>
-  )}
-  <p className="mt-1 text-xs text-slate-500">
-    Add one YouTube or Instagram link related to this challenge — for example, a promo video.
-  </p>
-</div>
-
+            <div className="flex flex-col">
+              <label
+                htmlFor="social_link_task"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Social Media Link
+              </label>
+              <input
+                type="text"
+                id="social_link_task"
+                className={`flex-1 w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 ${
+                  errors.social_link_task
+                    ? "border-red-500 focus:ring-red-500"
+                    : "border-slate-200 bg-slate-50 focus:ring-purple-500"
+                }`}
+                {...register("social_link_task", {
+                  required: "Social media link is required",
+                  pattern: {
+                    value:
+                      /^(https?:\/\/)([\w.-]+)\.([a-z]{2,})([\/\w .-]*)*\/?$/,
+                    message:
+                      "Please enter a valid URL (must start with http:// or https://)",
+                  },
+                })}
+                placeholder="Enter the YouTube or Instagram link for this challenge"
+              />
+              {errors.social_link_task && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.social_link_task.message}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">
+                Add one YouTube or Instagram link related to this challenge —
+                for example, a promo video.
+              </p>
+            </div>
 
             <div className="mt-8 flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
               <button

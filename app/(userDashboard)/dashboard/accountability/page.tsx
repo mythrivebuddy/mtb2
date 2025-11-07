@@ -260,7 +260,7 @@ export default function AccountabilityHubHome() {
     <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8">
       <div className="max-w-6xl mx-auto space-y-6">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/dashboard/accountability/home")}
           className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
         >
           <ArrowLeft className="h-5 w-5" />

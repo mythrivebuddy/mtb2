@@ -126,7 +126,7 @@ export default function CreateGroupPage() {
           formData
         );
 
-        toast.success(res?.data?.message);
+        toast.success(res?.data?.message || "Group created successfully.");
         router.push(`/dashboard/accountability?groupId=${res.data.id}`);
       } else {
         // ✅ Edit group (PATCH API)

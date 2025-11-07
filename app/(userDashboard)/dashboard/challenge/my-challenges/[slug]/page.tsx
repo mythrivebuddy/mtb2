@@ -44,9 +44,10 @@ interface LeaderboardPlayer {
   name: string;
   score: number;
   avatar: string;
+  completedDays: number;
 }
 interface ChallengeDetails {
-  id:string;
+  id: string;
   creatorId: string;
   social_link_task: string | null;
   creator: { name: string };
@@ -115,7 +116,7 @@ const TaskItem = ({
       {task.completed && <Check className="w-4 h-4 text-white" />}
     </div>
     {/* <span className="flex-grow">{task.description}</span> */}
-    <ChallengeDescription html={task.description}/>
+    <ChallengeDescription html={task.description} />
   </button>
 );
 
@@ -386,6 +387,7 @@ export default function ChallengeManagementPage() {
     },
     enabled: !!slug,
   });
+  console.log({ challenge });
 
   const handleCalendarToggle = () => {
     if (!streakCardRef.current) return;
@@ -548,6 +550,7 @@ export default function ChallengeManagementPage() {
   const totalCompletedDays = (challenge.history || []).filter(
     (day) => day.status === "COMPLETED"
   ).length;
+  console.log("completed days ", totalCompletedDays);
 
   return (
     <>
@@ -608,21 +611,21 @@ export default function ChallengeManagementPage() {
           {/* --- ✅ Social media link section --- */}
           <div className="mt-4">
             {challenge.social_link_task &&
-            challenge.social_link_task?.trim() !== "" && (
-              <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
-                <p className="text-gray-700 font-semibold mb-1">
-                  Social Media Link for tasks
-                </p>
-                <Link
-                  href={challenge.social_link_task}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-indigo-600 hover:text-indigo-700 hover:underline break-words"
-                >
-                  {challenge.social_link_task}
-                </Link>
-              </div>
-            )}
+              challenge.social_link_task?.trim() !== "" && (
+                <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
+                  <p className="text-gray-700 font-semibold mb-1">
+                   Related Links:
+                  </p>
+                  <Link
+                    href={challenge.social_link_task}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:text-indigo-700 hover:underline break-words"
+                  >
+                    {challenge.social_link_task}
+                  </Link>
+                </div>
+              )}
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 mt-8">
@@ -734,8 +737,10 @@ export default function ChallengeManagementPage() {
                         </p>
                         {/* --- THIS IS THE MODIFIED LINE --- */}
                         <p className="text-sm text-gray-500">
-                          {player.score.toLocaleString()} Days Completed (
-                          {player.score.toLocaleString()} Day Streak)
+                          {player.completedDays.toLocaleString()}{" "}
+                          {player.completedDays === 1 ? "Day" : "Days"}{" "}
+                          Completed ({player.score.toLocaleString()}{" "}
+                          {player.score === 1 ? "Day" : "Days"} Streak)
                         </p>
                       </div>
                     </Link>
