@@ -8,6 +8,8 @@ import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangl
 import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask, User } from "@prisma/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { useQueryClient } from "@tanstack/react-query";
+import ChallengeDescription from "@/components/Dompurify";
+import { toast } from "sonner";
 //import { useSearchParams } from "next/navigation";
 
 // NOTE: The type definitions are assumed to be correct.
@@ -96,8 +98,8 @@ const handleEnroll = async () => {
       queryClient.invalidateQueries({ queryKey: ["myChallenges", "hosted"] }),
       queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
     ]);
-
-    router.back();
+    toast.success("You have successfully enrolled in this challenge.");
+    router.push(`/dashboard/challenge/my-challenges/${challenge.id}`);
 
   } catch (err) {
     let errorMessage = "An unexpected error occurred. Please try again.";
@@ -121,6 +123,7 @@ const handleEnroll = async () => {
 
       if (sessionStatus === 'authenticated') {
       handleEnroll();
+      
       } else {
       const redirectPath = `/dashboard/challenge/upcoming-challenges/${challenge.id}`;
       router.push(`/signin?redirect=${(redirectPath)}`);
@@ -162,7 +165,12 @@ const handleCloseModalAndRedirect = async () => {
           </div>
 
           {/* Description */}
-          <p className="text-slate-600 text-lg mb-8">{challenge.description}</p>
+          {/* <p className="text-slate-600 text-lg mb-8">{challenge.description}</p> */}
+          {
+            challenge.description && (
+              <ChallengeDescription html={challenge.description}/>
+            )
+          }
 
           {/* Tasks Section */}
           <div className="border-t border-slate-200 pt-6">

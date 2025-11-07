@@ -22,7 +22,7 @@ export async function GET(
   request: NextRequest,
   context: { params: { slug: string } }
 ) {
-  const { slug: challengeId } = context.params;
+  const { slug: challengeId } = await context.params;
 
   try {
     const session = await checkRole("USER");
@@ -143,19 +143,19 @@ export async function GET(
     let dailyTasks: Task[];
 
     if (enrollment) {
-  // Case 1: The user IS enrolled (whether they are the creator or not).
-  // Give them their personal, trackable tasks so they can complete them.
-  dailyTasks = (enrollment.userTasks || []).map((task) => ({
-    id: task.id,            // ✅ Correct: This is the userChallengeTask.id
-    description: task.description,
-    completed: task.isCompleted,
-  }));
-} else {
-  // Case 2: The user is NOT enrolled.
-  // They have no personal tasks to complete. Sending an empty array is the correct behavior
-  // for a "my-challenges" page, even if they are the creator.
-  dailyTasks = [];
-}
+      // Case 1: The user IS enrolled (whether they are the creator or not).
+      // Give them their personal, trackable tasks so they can complete them.
+      dailyTasks = (enrollment.userTasks || []).map((task) => ({
+        id: task.id,            // ✅ Correct: This is the userChallengeTask.id
+        description: task.description,
+        completed: task.isCompleted,
+      }));
+    } else {
+      // Case 2: The user is NOT enrolled.
+      // They have no personal tasks to complete. Sending an empty array is the correct behavior
+      // for a "my-challenges" page, even if they are the creator.
+      dailyTasks = [];
+    }
 
     // // --- THIS IS THE CORRECTED LOGIC ---
     // // We now check if the user is the creator FIRST.
@@ -182,14 +182,25 @@ export async function GET(
     // }
 
 
+    // ✅ Fetch completed days for ALL users in this challenge
+    const completedRecords = await prisma.completionRecord.groupBy({
+      by: ["userId"],
+      where: { challengeId },
+      _count: { id: true },
+    });
 
+    // ✅ Convert to map for fast access
+    const completedDaysMap = new Map(
+      completedRecords.map((rec) => [rec.userId, rec._count.id])
+    );
 
     // Format leaderboard and history data for the frontend
     const formattedLeaderboard = leaderboard.map((entry) => ({
       id: entry.user.id,
       name: entry.user.name || "Anonymous",
-      avatar: entry.user.image || "/default-avatar.png",
+      avatar: entry.user.image || "",
       score: entry.currentStreak,
+      completedDays: completedDaysMap.get(entry.user.id) || 0,
     }));
 
     const history = (completionRecords || []).map(comp => ({

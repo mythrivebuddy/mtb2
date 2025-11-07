@@ -103,42 +103,41 @@ export async function GET(req: Request) {
 
     // ✅ If groupId is provided, return only that group
     if (groupId) {
-      const group = await prisma.group.findFirst({
-        where: {
-          id: groupId,
-          members: {
-            some: {
-              userId: userId,
-            },
-          },
+      const isAdmin = session.user.role === "ADMIN";
+
+const group = await prisma.group.findFirst({
+  where: isAdmin
+    ? { id: groupId } // ✅ admin can view ANY group
+    : {
+        id: groupId,
+        members: {
+          some: { userId },
         },
-        include: {
-          members: {
-            select: {
-              userId: true,
-              role: true,
-              user: true,
-            },
-          },
-          cycles: {
-            where: {
-              status: { in: ["active", "repeat"] },
-            },
-            orderBy: {
-              startDate: "desc",
-            },
-            take: 1,
-            include: {
-              _count: {
-                select: { goals: true },
-              },
-            },
-          },
-          _count: {
-            select: { members: true },
-          },
-        },
-      });
+      },
+  include: {
+    members: {
+      select: {
+        userId: true,
+        role: true,
+        user: true,
+      },
+    },
+    cycles: {
+      where: {
+        status: { in: ["active", "repeat"] },
+      },
+      orderBy: {
+        startDate: "desc",
+      },
+      take: 1,
+      include: {
+        _count: { select: { goals: true } },
+      },
+    },
+    _count: { select: { members: true } },
+  },
+});
+
 
       if (!group)
         return NextResponse.json({ error: "Group not found" }, { status: 404 });

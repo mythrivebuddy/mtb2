@@ -33,6 +33,9 @@ export type Member = {
 // ✅ Type for the new SWR fetch
 type GroupViewData = {
   members: Member[];
+  group: {
+    isBlocked: boolean;
+  };
 };
 
 // ✅ Fix the Comment type
@@ -116,6 +119,8 @@ export default function MemberDetailPage() {
     fetcher
   );
 
+  const isGroupBlocked = groupData?.group.isBlocked;
+
   // ✅ Format all members for the render function
   const allMembersData: MentionSuggestion[] =
     groupData?.members.map((member) => ({
@@ -123,6 +128,12 @@ export default function MemberDetailPage() {
       display: member.user.name || "User",
       image: member.user.image,
     })) || [];
+  const redirectToSendNudgePage = () => {
+    router.push(
+      `/dashboard/accountability-hub/send-nudge-page?memberId=${member.userId}&groupId=${groupId}&memberName=${member.user.name}`
+    );
+  };
+
   // ✅ --- END of new data fetching ---
 
   // const handleSendNudge = async () => {
@@ -309,18 +320,18 @@ export default function MemberDetailPage() {
       {/* Action Button */}
       {isAdmin && (
         <div className="mt-8">
-          <Link
-            href={`/dashboard/accountability-hub/send-nudge-page?memberId=${member.userId}&groupId=${groupId}&memberName=${member.user.name}`}
-          >
+          <div>
             <Button
-              className="bg-gray-900 text-white hover:bg-gray-800"
+              className={`bg-gray-900 text-white hover:bg-gray-800 ${isGroupBlocked ? "opacity-75 hover:cursor-not-allowed" : ""}`}
               // onClick={handleSendNudge}
               // disabled={isNudging}
+              disabled={isGroupBlocked}
+              onClick={redirectToSendNudgePage}
             >
               {/* {isNudging ? "Sending..." : "Send Nudge"} */}
               Send Nudge
             </Button>
-          </Link>
+          </div>
         </div>
       )}
     </section>

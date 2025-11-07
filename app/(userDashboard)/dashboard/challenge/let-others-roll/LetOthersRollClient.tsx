@@ -4,6 +4,7 @@ import { LinkIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import ChallengeDescription from "@/components/Dompurify";
 
 // Define the structure of your challenge data
 interface ChallengeDetails {
@@ -98,9 +99,10 @@ export default function LetOthersRollClient() {
                 {challengeDetails.title}
               </h2>
               {challengeDetails.description && (
-                <p className="text-slate-600 text-md">
-                  {challengeDetails.description}
-                </p>
+                <ChallengeDescription html={challengeDetails.description}/>
+                // <p className="text-slate-600 text-md">
+                //   {challengeDetails.description}
+                // </p>
               )}
             </div>
           )}

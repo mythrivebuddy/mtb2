@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Replace your old commented-out code with this block
     // ✅ Sync contact with Brevo
-    console.log("📬 Syncing contact with Brevo...");
+    
     const { firstName, lastName } = splitFullName(user.name);
 
     await addOrUpdateBrevoContact({

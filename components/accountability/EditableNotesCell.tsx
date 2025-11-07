@@ -11,12 +11,14 @@ interface EditableNotesCellProps {
   groupId: string;
   initialValue: string;
   canEdit: boolean; // ✅ new prop
+  isGroupBlocked: boolean;
 }
 
 export default function EditableNotesCell({
   goalId,
   groupId,
   initialValue,
+  isGroupBlocked,
   canEdit,
 }: EditableNotesCellProps) {
 
@@ -65,7 +67,7 @@ export default function EditableNotesCell({
   }
 
   // ✅ Editable for admins
-  if (isEditing) {
+  if (isEditing && !isGroupBlocked) {
     return (
       <form onSubmit={handleSave} className="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
         <Input
@@ -108,6 +110,7 @@ export default function EditableNotesCell({
 
   return (
     <div
+    
       onClick={() => canEdit && setIsEditing(true)}
       className={`p-2 rounded-md min-h-[40px] cursor-${
         canEdit ? "pointer hover:bg-slate-50" : "default"

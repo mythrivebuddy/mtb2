@@ -52,7 +52,7 @@ const TransactionHistoryContent = () => {
     queryKey: ["transactions-history", page, limit],
     queryFn: async () => {
       const { data } = await axios.get(
-        `/api/user/history?page=${page}&limit=${limit}`
+        `/api/user/history?page=${page}&limit=${limit}&version=v3`
       );
       return data;
     },
