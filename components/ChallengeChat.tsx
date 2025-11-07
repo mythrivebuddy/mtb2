@@ -19,6 +19,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import Link from "next/link";
 
 type Msg = {
   id: string;
@@ -54,7 +55,6 @@ const TypingIndicator = ({ name }: { name: string }) => (
         border border-gray-200
       "
     >
-      
       {/* WhatsApp Dot Animation */}
       <div className="flex gap-1 items-center pl-1">
         <span className="w-2 h-2 bg-gray-800 rounded-full animate-whatsapp-bounce [animation-delay:-0.3s]"></span>
@@ -66,6 +66,27 @@ const TypingIndicator = ({ name }: { name: string }) => (
     </div>
   </div>
 );
+function renderMessageText(text: string, isMe: boolean) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  return text.split(urlRegex).map((part, index) => {
+    const isUrl = /(https?:\/\/[^\s]+)/.test(part); // ✅ fresh regex, no mutation
+    if (isUrl) {
+      return (
+        <Link
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${isMe ? "text-blue-300" : "text-blue-600"} underline break-words`}
+        >
+          {part}
+        </Link>
+      );
+    }
+    return part; // normal text
+  });
+}
 
 export default function ChallengeChat({
   challengeId,
@@ -245,7 +266,7 @@ export default function ChallengeChat({
                 className={`max-w-[70%] min-w-24 h-fit px-4 py-2 rounded-lg shadow-sm
                 ${
                   isMe
-                    ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-primary-foreground rounded-br-none"
+                    ? "bg-emerald-800 text-primary-foreground rounded-br-none"
                     : "bg-background text-foreground rounded-bl-none border"
                 }`}
               >
@@ -254,7 +275,10 @@ export default function ChallengeChat({
                     {msg.user?.name ?? "Member"}
                   </p>
                 )}
-                <p className="">{msg.message}</p>
+                <p className="break-words">
+                  {renderMessageText(msg.message, isMe)}
+                </p>
+
                 <p
                   className={`text-[10px] mt-1 text-right ${
                     isMe
@@ -343,7 +367,7 @@ export default function ChallengeChat({
 //       console.log("GEt all message api running ");
 //       setMessages(res.data);
 //       console.log({messages});
-      
+
 //     } catch (error) {
 //       console.error("Failed to load messages:", error);
 //     }
@@ -445,7 +469,7 @@ export default function ChallengeChat({
 //         {messages.map((msg) => {
 //           const isMe = msg.userId === currentUserId;
 //           console.log({messages});
-          
+
 //           return (
 //             <div
 //               key={msg.id}
