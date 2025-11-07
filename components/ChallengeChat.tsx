@@ -67,7 +67,7 @@ function renderMessageText(text: string, isMe: boolean) {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${isMe ? "text-blue-300" : "text-blue-600"} underline`}
+            className={`${isMe ? "text-blue-300" : "text-blue-600"} underline break-words break-all max-w-full inline-block`}
           >
             {part}
           </Link>{" "}
