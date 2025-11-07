@@ -614,7 +614,7 @@ export default function ChallengeManagementPage() {
               challenge.social_link_task?.trim() !== "" && (
                 <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                   <p className="text-gray-700 font-semibold mb-1">
-                   Related Links:
+                    Related Links:
                   </p>
                   <Link
                     href={challenge.social_link_task}
@@ -749,7 +749,10 @@ export default function ChallengeManagementPage() {
               </ul>
             </div>
           </div>
-          <ChallengeChat challengeId={challenge.id} />
+          <ChallengeChat
+            challengeId={challenge.id}
+            isChatDisabled={new Date(challenge.endDate).getTime() < Date.now()}
+          />
         </main>
       </div>
 
