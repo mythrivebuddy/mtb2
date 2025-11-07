@@ -124,7 +124,7 @@ export default function MyChallenges() {
         <div className="mb-8">
           <button
   type="button"
-  onClick={() => router.back()}
+  onClick={() => router.push(`/dashboard/challenge`)}
   className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-400"
 >
   <ArrowLeft size={18} />

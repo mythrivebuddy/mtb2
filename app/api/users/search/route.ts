@@ -30,6 +30,9 @@ export async function GET(req: Request) {
     const users = await prisma.user.findMany({
       where: {
         // Find users who are NOT in the current group
+        role:{
+            not: "ADMIN"
+        },
         id: {
             notIn: existingMemberIds
         },
