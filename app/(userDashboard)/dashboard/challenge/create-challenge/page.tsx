@@ -599,7 +599,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 htmlFor="social_link_task"
                 className="mb-1 block text-sm font-medium text-slate-700"
               >
-                Social Media Link
+                Related Link:
               </label>
               <input
                 type="text"

@@ -162,7 +162,7 @@ export async function PATCH(
           });
         }
       }
-    }); // --- End of Transaction ---
+    },{timeout:50000}); // --- End of Transaction ---
 
     return NextResponse.json({
       message: "Task updated successfully.",

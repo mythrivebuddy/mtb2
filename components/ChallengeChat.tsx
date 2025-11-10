@@ -269,7 +269,7 @@ export default function ChallengeChat({
   };
 
   return (
-    <Card className="flex flex-col h-[600px] mt-10 relative">
+    <Card className="flex flex-col h-[550px] mt-10 relative">
       <CardHeader>
         <CardTitle>Group Chat</CardTitle>
 
