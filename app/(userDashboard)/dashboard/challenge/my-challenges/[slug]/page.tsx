@@ -559,7 +559,7 @@ export default function ChallengeManagementPage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <button
-                onClick={() => router.back()}
+                onClick={() => router.push(`/dashboard/challenge`)}
                 className="flex items-center gap-1 text-gray-600 hover:text-indigo-600 transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />

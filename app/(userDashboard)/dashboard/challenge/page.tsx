@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
+import { Editor } from "@tinymce/tinymce-react";
+
 import {
   CalendarDays,
   Gift,
@@ -52,6 +54,7 @@ type Challenge = ChallengeDetailsForClient & {
 type Task = {
   id: string;
   description: string;
+   templateTaskId?: string;
   completed?: boolean;
 };
 
@@ -153,10 +156,13 @@ export default function ChallengePage() {
   useEffect(() => {
     if (challengeDetails) {
       setEditFormData({
-        title: challengeDetails.title,
-        description: challengeDetails.description || "",
-        tasks: challengeDetails.dailyTasks || [],
-      });
+  title: challengeDetails.title,
+  description: challengeDetails.description || "",
+  tasks: (challengeDetails.dailyTasks ?? []).map(t => ({
+    id: t.templateTaskId,      // ✅ Use templateTaskId for editing
+    description: t.description
+  })),
+});
     }
   }, [challengeDetails]);
 
@@ -357,10 +363,62 @@ export default function ChallengePage() {
                 <Label htmlFor="title" className="text-right">Title</Label>
                 <Input id="title" name="title" value={editFormData.title} onChange={handleEditFormChange} className="col-span-3" required />
               </div>
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="description" className="text-right pt-2">Description</Label>
-                <Textarea id="description" name="description" value={editFormData.description} onChange={handleEditFormChange} className="col-span-3" />
-              </div>
+             <div className="grid grid-cols-4 items-start gap-4">
+  <Label htmlFor="description" className="text-right pt-2">Description</Label>
+
+  <div className="col-span-3">
+    <Editor
+      id="description-editor-edit"
+      apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+      value={editFormData.description}
+      onEditorChange={(content) =>
+        setEditFormData((prev) => ({ ...prev, description: content }))
+      }
+      init={{
+        height: 350,
+        menubar: false,
+        toolbar_mode: "sliding",
+        promotion: false,
+        plugins: [
+          "advlist",
+          "autolink",
+          "lists",
+          "charmap",
+          "preview",
+          "anchor",
+          "searchreplace",
+          "visualblocks",
+          "fullscreen",
+          "insertdatetime",
+          "media",
+          "table",
+          "help",
+          "wordcount",
+        ],
+        toolbar:
+          "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
+        block_formats: "Paragraph=p",
+        valid_elements:
+          "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
+        extended_valid_elements: "",
+        verify_html: false,
+        cleanup: false,
+        forced_root_block: "p",
+        placeholder:
+          "Write your challenge description...",
+        content_style: `
+          body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
+          h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
+          h2 { font-size: 1.5em; font-weight: 600; color: #334155; margin-top: 0.75rem; margin-bottom: 0.5rem; }
+          h3 { font-size: 1.25em; font-weight: 600; color: #475569; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+          blockquote { border-left: 3px solid #c084fc; padding-left: 1rem; color: #4b5563; font-style: italic; }
+          p { margin: 0.5rem 0; }
+        `,
+      }}
+    />
+  </div>
+</div>
+
               {/* Task Editing Section */}
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right pt-2">Tasks</Label>
