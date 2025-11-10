@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -28,6 +29,7 @@ import Link from "next/link";
 import { getAvatar } from "@/lib/utils/getDefaultAvatar";
 import ChallengeDescription from "@/components/Dompurify";
 import ChallengeChat from "@/components/ChallengeChat";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // --- TYPE DEFINITIONS ---
 interface CompletionRecord {
@@ -555,6 +557,7 @@ export default function ChallengeManagementPage() {
   return (
     <>
       <div className="min-h-screen font-sans">
+        {/* HEADER */}
         <header className="bg-white m-4 p-4 sm:p-6 rounded-2xl shadow-sm">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-4">
@@ -565,30 +568,30 @@ export default function ChallengeManagementPage() {
                 <ChevronLeft className="w-5 h-5" />
                 <span className="font-medium">Back</span>
               </button>
-              <div>
-                <button
-                  onClick={() => setIsShareModalOpen(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-full text-md font-semibold hover:bg-amber-700 transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Share</span>
-                </button>
-              </div>
+
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-full text-md font-semibold hover:bg-amber-700 transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Share</span>
+              </button>
             </div>
+
             <div className="flex items-center gap-8 justify-between mb-4">
               <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900">
                 {challenge.title}
               </h1>
+
               <Link
                 href={`/profile/${challenge.creatorId}`}
                 target="_blank"
                 className="w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-[0.6rem] sm:text-xs font-semibold px-1 sm:py-1 rounded-md shadow-sm border flex items-center justify-center border-purple-100"
               >
-                {/* <span> */}
                 Created by : {challenge?.creator?.name}
-                {/* </span> */}
               </Link>
             </div>
+
             <div className="flex max-sm:text-[0.6rem] items-center gap-2 text-sm text-white bg-orange-700 w-fit px-2 py-1 rounded-md mt-2">
               <CalendarDays className="w-4 h-4 flex-shrink-0" />
               <div className="flex items-center gap-2 flex-wrap">
@@ -599,36 +602,32 @@ export default function ChallengeManagementPage() {
             </div>
           </div>
         </header>
+
+        {/* MAIN */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+          {/* DESCRIPTION */}
           {challenge.description && (
             <div className="bg-white p-6 rounded-2xl shadow-sm mb-8">
-              {/* <p className="text-gray-600 leading-relaxed">
-                {challenge.description}
-              </p> */}
               <ChallengeDescription html={challenge.description} />
             </div>
           )}
-          {/* --- ✅ Social media link section --- */}
-          <div className="mt-4">
-            {challenge.social_link_task &&
-              challenge.social_link_task?.trim() !== "" && (
-                <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
-                  <p className="text-gray-700 font-semibold mb-1">
-                    Related Links:
-                  </p>
-                  <Link
-                    href={challenge.social_link_task}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-indigo-600 hover:text-indigo-700 hover:underline break-words"
-                  >
-                    {challenge.social_link_task}
-                  </Link>
-                </div>
-              )}
-          </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 mt-8">
+          {/* SOCIAL LINK */}
+          {challenge.social_link_task?.trim() && (
+            <div className="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 shadow-sm mb-6">
+              <p className="text-gray-700 font-semibold mb-1">Related Links:</p>
+              <Link
+                href={challenge.social_link_task}
+                target="_blank"
+                className="text-indigo-600 hover:text-indigo-700 hover:underline break-words"
+              >
+                {challenge.social_link_task}
+              </Link>
+            </div>
+          )}
+
+          {/* STAT CARDS */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10 mt-8">
             <div className="relative" ref={streakCardRef}>
               <StatCard
                 icon={<Flame className="w-6 h-6 text-white" />}
@@ -653,30 +652,35 @@ export default function ChallengeManagementPage() {
                 />
               )}
             </div>
+
             <StatCard
               icon={<Target className="w-6 h-6 text-white" />}
               label="Longest Streak"
               value={`${challenge.longestStreak} Days`}
               colorClass="bg-red-500"
             />
+
             <StatCard
               icon={<Award className="w-6 h-6 text-white" />}
               label="Reward"
               value={`${challenge.reward} JP`}
               colorClass="bg-green-500"
             />
+
             <StatCard
               icon={<CheckCircle2 className="w-6 h-6 text-white" />}
               label="Days Completed"
               value={`${totalCompletedDays} Days`}
               colorClass="bg-sky-500"
             />
+
             <StatCard
               icon={<Users className="w-6 h-6 text-white" />}
               label="Participants"
               value={challenge.participantCount}
               colorClass="bg-blue-500"
             />
+
             <StatCard
               icon={<Calendar className="w-6 h-6 text-white" />}
               label="Ends In"
@@ -684,185 +688,188 @@ export default function ChallengeManagementPage() {
               colorClass="bg-teal-500"
             />
           </div>
+
+          {/* ✅ FIXED GRID STRUCTURE */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Your Daily Tasks
-              </h2>
-              <div className="space-y-3">
-                {challenge.dailyTasks?.length > 0 ? (
-                  challenge.dailyTasks.map((task) => (
-                    <TaskItem
-                      key={task.id}
-                      task={task}
-                      onToggle={handleToggleTask}
-                      isUpdating={updateTaskMutation.isPending}
-                    />
-                  ))
-                ) : (
-                  <p className="text-gray-500">
-                    No tasks defined for this challenge yet.
-                  </p>
-                )}
+            {/* ✅ LEFT COLUMN (Daily Tasks + Group Chat) */}
+            <div className="lg:col-span-2 flex flex-col gap-8">
+              {/* ✅ DAILY TASKS (unchanged width) */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm ">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                  Your Daily Tasks
+                </h2>
+
+                <div className="space-y-3">
+                  {challenge.dailyTasks?.length > 0 ? (
+                    challenge.dailyTasks.map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        onToggle={handleToggleTask}
+                        isUpdating={updateTaskMutation.isPending}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No tasks defined.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ✅ GROUP CHAT directly below tasks, same width */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                  Group Chat
+                </h2>
+
+                <ChallengeChat
+                  challengeId={challenge.id}
+                  isChatDisabled={
+                    new Date(challenge.endDate).getTime() < Date.now()
+                  }
+                />
               </div>
             </div>
-            <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm">
+
+            {/* ✅ RIGHT COLUMN (Leaderboard) */}
+            <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm self-start">
               <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <Users className="w-6 h-6 mr-3 text-indigo-500" /> Leaderboard
               </h2>
-              <ul className="space-y-4">
-                {challenge.leaderboard?.map((player, index) => (
-                  <li key={player.id}>
-                    <Link
-                      href={`/profile/${player.id}`}
-                      target="_blank"
-                      key={player.id}
-                      className="flex items-center hover:bg-gray-100 rounded-lg p-4"
-                    >
-                      <span className="text-lg font-bold text-gray-400 w-8">
-                        {index + 1}
-                      </span>
-                      <Image
-                        src={
-                          player.avatar ? player.avatar : getAvatar(player.name)
-                        }
-                        alt={player.name}
-                        width={40}
-                        height={40}
-                        className="rounded-full mr-4"
-                      />
-                      <div className="flex-grow">
-                        <p className="font-semibold text-gray-800">
-                          {player.name}
-                        </p>
-                        {/* --- THIS IS THE MODIFIED LINE --- */}
-                        <p className="text-sm text-gray-500">
-                          {player.completedDays.toLocaleString()}{" "}
-                          {player.completedDays === 1 ? "Day" : "Days"}{" "}
-                          Completed ({player.score.toLocaleString()}{" "}
-                          {player.score === 1 ? "Day" : "Days"} Streak)
-                        </p>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+
+              {/* ✅ Fixed height = 3 users max, then scroll */}
+              <ScrollArea className="h-[240px] sm:h-[380px] pr-2">
+                <ul className="space-y-4">
+                  {challenge.leaderboard?.map((player, index) => (
+                    <li key={player.id}>
+                      <Link
+                        href={`/profile/${player.id}`}
+                        target="_blank"
+                        className="flex items-center hover:bg-gray-100 rounded-lg p-4 min-h-[60px]"
+                      >
+                        <span className="text-lg font-bold text-gray-400 w-8">
+                          {index + 1}
+                        </span>
+
+                        <Image
+                          src={
+                            player.avatar
+                              ? player.avatar
+                              : getAvatar(player.name)
+                          }
+                          alt={player.name}
+                          width={40}
+                          height={40}
+                          className="rounded-full mr-4"
+                        />
+
+                        <div className="flex-grow">
+                          <p className="font-semibold text-gray-800">
+                            {player.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {player.completedDays} Days Completed (
+                            {player.score} Streak)
+                          </p>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
             </div>
           </div>
-          <ChallengeChat
-            challengeId={challenge.id}
-            isChatDisabled={new Date(challenge.endDate).getTime() < Date.now()}
-          />
         </main>
       </div>
 
-      {/* --- Modals --- */}
+      {/* ✅ COMPLETION MODAL */}
       {isCompletionModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          {" "}
-          <div className="bg-white p-6 rounded-xl shadow-2xl transform translate-y-[-10px] transition-all duration-300 bg-gradient-to-br from-white to-gray-50 border border-gray-100">
-            {" "}
-            <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" />{" "}
+          <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
+            <PartyPopper className="w-20 h-20 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              {" "}
-              Day Complete!{" "}
-            </h2>{" "}
+              Day Complete!
+            </h2>
             <p className="text-slate-600 mb-6">
-              {" "}
-              Great job! You&apos;ve completed all your tasks for today. Your
-              streak has been updated.{" "}
-            </p>{" "}
+              Great job! You've completed all your tasks today.
+            </p>
             <button
               onClick={() => setIsCompletionModalOpen(false)}
-              className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all"
+              className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all"
             >
-              {" "}
-              Keep Going!{" "}
-            </button>{" "}
-          </div>{" "}
+              Keep Going!
+            </button>
+          </div>
         </div>
       )}
+
+      {/* ✅ ERROR MODAL */}
       {isErrorModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          {" "}
-          <div className="bg-white p-6 rounded-xl shadow-2xl transform translate-y-[-10px] transition-all duration-300 bg-gradient-to-br from-white to-gray-50 border border-gray-100">
-            {" "}
-            <CalendarX className="w-20 h-20 text-amber-500 mx-auto mb-4" />{" "}
+          <div className="bg-white p-6 rounded-xl shadow-2xl border border-gray-100">
+            <CalendarX className="w-20 h-20 text-amber-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-slate-800 mb-2">
-              {" "}
-              Challenge Not Active{" "}
-            </h2>{" "}
-            <p className="text-slate-600 mb-6">
-              {" "}
-              {errorMessage ||
-                "This challenge is currently inactive or has ended. You can no longer submit tasks for it."}{" "}
-            </p>{" "}
+              Challenge Not Active
+            </h2>
+            <p className="text-slate-600 mb-6">{errorMessage}</p>
             <button
               onClick={() => setIsErrorModalOpen(false)}
-              className="w-full bg-slate-800 text-white p-3 rounded-lg font-semibold hover:bg-slate-700 transition-colors"
+              className="w-full bg-slate-800 text-white p-3 rounded-lg font-semibold hover:bg-slate-700"
             >
-              {" "}
-              Got It{" "}
-            </button>{" "}
-          </div>{" "}
+              Got It
+            </button>
+          </div>
         </div>
       )}
+
+      {/* ✅ SHARE MODAL */}
       {isShareModalOpen && (
         <div
           onClick={() => setIsShareModalOpen(false)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
         >
-          {" "}
           <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8"
           >
-            {" "}
             <div className="flex justify-between items-center mb-6">
-              {" "}
-              <h2 className="text-xl font-bold text-slate-800">Share</h2>{" "}
+              <h2 className="text-xl font-bold text-slate-800">Share</h2>
               <button
                 onClick={() => setIsShareModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600"
               >
-                {" "}
-                <CloseIcon size={24} />{" "}
-              </button>{" "}
-            </div>{" "}
-            <div>
-              {" "}
-              <h3 className="text-sm font-semibold text-slate-500 mb-3">
-                {" "}
-                Share link via{" "}
-              </h3>{" "}
-              <div className="flex items-center justify-start gap-4 text-slate-700 mb-6 flex-wrap">
-                {" "}
-                {socialLinks.map((social) => (
-                  <button
-                    key={social.name}
-                    onClick={social.onClick}
-                    aria-label={`Share on ${social.name}`}
-                    className="w-12 h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"
-                  >
-                    {" "}
-                    {social.icon}{" "}
-                  </button>
-                ))}{" "}
-              </div>{" "}
-              <h3 className="text-sm font-semibold text-slate-500 mb-3">
-                {" "}
-                Page direct{" "}
-              </h3>{" "}
-              <button
-                onClick={handleCopyLink}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors shadow-sm"
-              >
-                {" "}
-                <CopyIcon className="w-5 h-5" />{" "}
-                <span>{copied ? "Copied!" : "Copy link"}</span>{" "}
-              </button>{" "}
-            </div>{" "}
-          </div>{" "}
+                <CloseIcon size={24} />
+              </button>
+            </div>
+
+            <h3 className="text-sm font-semibold text-slate-500 mb-3">
+              Share link via
+            </h3>
+
+            <div className="flex items-center justify-start gap-4 text-slate-700 mb-6 flex-wrap">
+              {socialLinks.map((social) => (
+                <button
+                  key={social.name}
+                  onClick={social.onClick}
+                  aria-label={`Share on ${social.name}`}
+                  className="w-12 h-12 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-full"
+                >
+                  {social.icon}
+                </button>
+              ))}
+            </div>
+
+            <h3 className="text-sm font-semibold text-slate-500 mb-3">
+              Page direct
+            </h3>
+
+            <button
+              onClick={handleCopyLink}
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm"
+            >
+              <CopyIcon className="w-5 h-5" />
+              <span>{copied ? "Copied!" : "Copy link"}</span>
+            </button>
+          </div>
         </div>
       )}
     </>

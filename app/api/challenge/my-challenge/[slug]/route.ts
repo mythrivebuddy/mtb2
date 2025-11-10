@@ -88,7 +88,7 @@ export async function GET(
       prisma.challengeEnrollment.findMany({
         where: { challengeId },
         orderBy: { currentStreak: "desc" },
-        take: 10,
+        // take: ,
         include: { user: { select: { id: true, name: true, image: true } } },
       }),
       prisma.completionRecord.findMany({
