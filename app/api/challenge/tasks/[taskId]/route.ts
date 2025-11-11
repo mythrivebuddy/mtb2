@@ -28,7 +28,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { taskId: string } }
 ) {
-  const { taskId: userChallengeTaskId } = params;
+  const { taskId: userChallengeTaskId } = await params;
 
   try {
     const session = await checkRole("USER");

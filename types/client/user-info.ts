@@ -18,9 +18,8 @@ export interface IUser {
   createdAt: string;
   isBlocked: boolean;
   plan?: IPlan | null;
-
   isOnline : boolean
-
+  image?:string
 }
 export interface IBlockUserResponse {
   message: string;

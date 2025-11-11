@@ -60,6 +60,7 @@ export async function GET(request: Request) {
         isBlocked: true,  
         plan: { select: { name: true } },
         isOnline:true,
+        image:true
       },
       orderBy: { createdAt:"desc" },
     });
