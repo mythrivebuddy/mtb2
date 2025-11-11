@@ -716,11 +716,7 @@ export default function ChallengeManagementPage() {
               </div>
 
               {/* ✅ GROUP CHAT directly below tasks, same width */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                  Group Chat
-                </h2>
-
+              <div className="bg-white px-6 py-2 rounded-2xl shadow-sm">
                 <ChallengeChat
                   challengeId={challenge.id}
                   isChatDisabled={
