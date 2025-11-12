@@ -27,7 +27,7 @@ export const DELETE = async (request: NextRequest) => {
     });
 
     return NextResponse.json(
-      { message: `${userName} removed from challenge successfully`,success:true },
+      { message: `${userName} was removed from challenge successfully`,success:true },
       { status: 200 }
     );
   } catch (error: any) {
