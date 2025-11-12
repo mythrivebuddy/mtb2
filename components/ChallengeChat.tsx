@@ -317,13 +317,20 @@ useEffect(() => {
           </p>
       </CardHeader>
       {/* ✅ Scroll area */}
-      <ScrollArea>      
+      <ScrollArea className="flex-1">      
       <CardContent
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20"
+        className="flex flex-col justify-end min-h-[350px] h-full overflow-y-auto p-4 space-y-4 bg-muted/20"
       >
-        {messages.map((msg) => {
+        {
+          messages.length == 0 ? (
+             <div className="flex flex-1 items-center justify-center text-gray-500 italic">
+        No messages yet — start the conversation 👋
+      </div>
+          ) :(
+             <div className="space-y-4">
+                  {messages.map((msg) => {
           const isMe = msg.userId === currentUserId;
 
           return (
@@ -384,10 +391,14 @@ useEffect(() => {
         {whoIsTyping && <TypingIndicator name={whoIsTyping} />}
 
         <div ref={bottomRef} />
+             </div>
+          )
+        }
+    
       </CardContent>
       </ScrollArea>
 
-      {/* ✅ FLOATING SCROLL ARROW */}
+      {/* ✅ FLOATING SCROLL ARROW */}  
       {!isChatDisabled && showScrollArrow && (
         <Button
           size="sm"
