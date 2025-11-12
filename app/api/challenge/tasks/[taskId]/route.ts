@@ -28,7 +28,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { taskId: string } }
 ) {
-  const { taskId: userChallengeTaskId } = params;
+  const { taskId: userChallengeTaskId } = await params;
 
   try {
     const session = await checkRole("USER");
@@ -162,7 +162,7 @@ export async function PATCH(
           });
         }
       }
-    }); // --- End of Transaction ---
+    },{timeout:50000}); // --- End of Transaction ---
 
     return NextResponse.json({
       message: "Task updated successfully.",

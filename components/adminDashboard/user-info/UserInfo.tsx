@@ -168,8 +168,15 @@ export default function UserInfoContent() {
   const totalPages = Math.ceil(total / pageSize);
 
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
+  console.log({onlineUsers});
+  
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
-
+  const filteredUsers =
+  filter === "online"
+    ? users.filter((u) => onlineUserIds.has(u.id))
+    : users;
+  console.log(filteredUsers);
+  
   // --- JSX ---
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -192,6 +199,7 @@ export default function UserInfoContent() {
           <option value="all">All Users</option>
           <option value="blocked">Blocked</option>
           <option value="new">New</option>
+          <option value="online">Online users</option>
         </select>
       </div>
 
@@ -211,16 +219,25 @@ export default function UserInfoContent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user) => (
+            {filteredUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <Link href={`/profile/${user.id}`} className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
+                  <Link href={`/profile/${user.id}`} target="_blank" className="flex items-center gap-3">
+                  {
+                    user.image ? (
+                      <div className="rounded-full h-10 w-10">
+                        <img src={user.image} alt={user.name}  className="h-full  w-full rounded-full object-cover"/>
+                      </div>
+                    ):(
+                       <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
                       {user.name.slice(0, 2).toUpperCase()}
                       {onlineUserIds.has(user?.id) && (
                         <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
                       )}
                     </div>
+                    )
+                  }
+                   
                     <div>
                       <div className="text-sm font-medium">{user.name}</div>
                       <div className="text-sm text-gray-500">{user.email}</div>
@@ -258,7 +275,7 @@ export default function UserInfoContent() {
                 </TableCell>
               </TableRow>
             ))}
-            {users.length === 0 && !isLoading && (
+            {filteredUsers.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
                   colSpan={5}
