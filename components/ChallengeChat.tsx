@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 
 import Link from "next/link";
+import { ScrollArea } from "./ui/scroll-area";
 
 type Msg = {
   id: string;
@@ -106,6 +107,8 @@ export default function ChallengeChat({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isTypingRef = useRef(false);
+  const footerRef = useRef<HTMLDivElement>(null);
+
 
   const scrollBottom = () => {
     bottomRef.current?.scrollIntoView({
@@ -190,6 +193,41 @@ export default function ChallengeChat({
     };
   }, [challengeId, currentUserId]);
 
+// Detect when textarea/footer is visible — then scroll the *actual* chat area
+
+useEffect(() => {
+  if (!footerRef.current) return;
+
+  const observer = new IntersectionObserver(
+    (entries,obs) => {
+      const [entry] = entries;
+      if (entry.isIntersecting) {
+        console.log("Textarea is visible ✅");
+        // ✅ Scroll the actual ScrollArea content, not the wrapper
+        const scrollContainer = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "smooth",
+          });
+        } else {
+          // fallback to bottom ref (in case ScrollArea structure changes)
+          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+               // ✅ Stop observing after first trigger
+        obs.disconnect();
+      }
+    },
+    { threshold: 0.3 }
+  );
+
+  observer.observe(footerRef.current);
+  return () => observer.disconnect();
+}, []);
+
+
+
+
   // ✅ FIX: Replace optimistic message properly
   const sendMessage = async () => {
     const text = input.trim();
@@ -273,14 +311,13 @@ export default function ChallengeChat({
       <CardHeader>
         <CardTitle>Group Chat</CardTitle>
 
-        {whoIsTyping && (
+        
           <p className="text-sm text-green-700 mt-1 animate-pulse">
-            {whoIsTyping} is typing…
+        {whoIsTyping && `${whoIsTyping} is typing…`}
           </p>
-        )}
       </CardHeader>
-
       {/* ✅ Scroll area */}
+      <ScrollArea>      
       <CardContent
         ref={scrollRef}
         onScroll={handleScroll}
@@ -348,6 +385,7 @@ export default function ChallengeChat({
 
         <div ref={bottomRef} />
       </CardContent>
+      </ScrollArea>
 
       {/* ✅ FLOATING SCROLL ARROW */}
       {!isChatDisabled && showScrollArrow && (
@@ -368,7 +406,7 @@ export default function ChallengeChat({
       )}
 
       {/* Footer */}
-      <CardFooter className="border-t w-full p-3">
+      <CardFooter ref={footerRef} className="border-t w-full p-3">
         {isChatDisabled ? (
           <div className="flex items-center justify-center w-full h-20 bg-red-50 text-red-700 font-medium">
             Chat is disabled — this challenge has ended.
