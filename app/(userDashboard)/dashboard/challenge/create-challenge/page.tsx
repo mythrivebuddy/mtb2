@@ -58,7 +58,7 @@ const MessageModal = ({
   title: string;
   message: string;
 }) => {
-  const router = useRouter()
+  const router = useRouter();
   if (!isOpen) return null;
 
   return (
@@ -77,14 +77,14 @@ const MessageModal = ({
         </DialogHeader>
 
         <div className="!flex !flex-col gap-2">
-          <Button
-            onClick={onClose}
-            className="bg-red-600  hover:bg-red-700 "
-          >
+          <Button onClick={onClose} className="bg-red-600  hover:bg-red-700 ">
             Continue with Free Plan
           </Button>
-          <Button onClick={()=>router.push(`/dashboard/subscription`)} className="bg-green-700 hover:bg-green-800">
-          Upgrade Now
+          <Button
+            onClick={() => router.push(`/dashboard/subscription`)}
+            className="bg-green-700 hover:bg-green-800"
+          >
+            Upgrade Now
           </Button>
         </div>
       </DialogContent>
@@ -426,24 +426,36 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 <Controller
                   name="startDate"
                   control={control}
-                  render={({ field }) => (
-                    <div className="relative">
-                      <CalendarIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <input
-                        id="startDate"
-                        type="date"
-                        min={formatDateForInput(today)}
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        value={formatDateForInput(field.value)}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value ? new Date(e.target.value) : null
-                          )
-                        }
-                      />
-                    </div>
-                  )}
+                  render={({ field }) => {
+                    // ✅ Ensure the value is always a Date or null (never an object)
+                    const value =
+                      field.value instanceof Date
+                        ? field.value
+                        : typeof field.value === "string"
+                          ? new Date(field.value)
+                          : null;
+
+                    return (
+                      <div className="relative">
+                        <CalendarIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                        <input
+                          id="startDate"
+                          type="date"
+                          min={formatDateForInput(today)}
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          value={formatDateForInput(value)}
+                          onChange={(e) => {
+                            const newDate = e.target.value
+                              ? new Date(e.target.value)
+                              : null;
+                            field.onChange(newDate);
+                          }}
+                        />
+                      </div>
+                    );
+                  }}
                 />
+
                 {errors.startDate && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.startDate.message}
@@ -460,24 +472,35 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 <Controller
                   name="endDate"
                   control={control}
-                  render={({ field }) => (
-                    <div className="relative">
-                      <CalendarIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                      <input
-                        id="endDate"
-                        type="date"
-                        min={formatDateForInput(today)}
-                        className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        value={formatDateForInput(field.value)}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value ? new Date(e.target.value) : null
-                          )
-                        }
-                      />
-                    </div>
-                  )}
+                  render={({ field }) => {
+                    const value =
+                      field.value instanceof Date
+                        ? field.value
+                        : typeof field.value === "string"
+                          ? new Date(field.value)
+                          : null;
+
+                    return (
+                      <div className="relative">
+                        <CalendarIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                        <input
+                          id="endDate"
+                          type="date"
+                          min={formatDateForInput(today)}
+                          className="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          value={formatDateForInput(value)}
+                          onChange={(e) => {
+                            const newDate = e.target.value
+                              ? new Date(e.target.value)
+                              : null;
+                            field.onChange(newDate);
+                          }}
+                        />
+                      </div>
+                    );
+                  }}
                 />
+
                 {errors.endDate && (
                   <p className="mt-1 text-sm text-red-500">
                     {errors.endDate.message}
