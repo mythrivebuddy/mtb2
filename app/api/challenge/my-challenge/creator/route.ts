@@ -30,19 +30,10 @@ export const DELETE = async (request: NextRequest) => {
       { message: `${userName} was removed from challenge successfully`,success:true },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error deleting enrollment:", error);
-
-    // Handle case where the enrollment doesn’t exist
-    if (error.code === "P2025") {
-      return NextResponse.json(
-        { message: "Enrollment not found" },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json(
-      { message: "Internal server error" },
+      { message: "Internal server error while removing user from the challenge" },
       { status: 500 }
     );
   }
