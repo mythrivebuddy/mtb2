@@ -846,6 +846,50 @@ model Nudge{
 
   url String
 }
+
+// The new Page model for CMS from admin
+model Page {
+  id              String   @id @default(cuid())
+  title           String   // "Page Title" field
+  slug            String   @unique // Auto-generated but editable
+  
+  // Content
+  content         Json     // Stores rich text/block data
+  
+  // SEO Fields
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  canonicalUrl    String?
+  
+  // OG (Social) Fields
+  ogTitle         String?
+  ogDescription   String?
+  ogImage         String?  // URL to the "Featured Image"
+  
+  // AEO & Structured Data
+  schemaType      PageSchemaType @default(NONE) // Helps UI render the right form
+  schemaMarkup    Json?    // Stores the final JSON-LD object
+
+  // Author id
+  authorId        String?
+
+  // Status & Timestamps
+  isPublished     Boolean  @default(false) // "Publish Toggle"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+}
+
+// Enum for the AEO/Schema feature
+enum PageSchemaType {
+  NONE        // Default
+  ARTICLE
+  FAQ_PAGE
+  HOW_TO
+  CUSTOM_JSON // For raw JSON-LD input
+}
+
 enum Audience {
   EVERYONE
   PAID
