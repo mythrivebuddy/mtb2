@@ -1,5 +1,10 @@
+"use client";
+import ContentManagementSystem from "./_components/ContentManagementSystem";
+
 export default function Cms(){
     return(
-        <h1>CMS</h1>
+        <section className="h-screen">
+       <ContentManagementSystem/>
+        </section>
     )
 }
