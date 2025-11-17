@@ -5,6 +5,7 @@ import ReadOnlyTipTapEditor from "@/app/simple/read-only-editor";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { RESERVED_PUBLIC_ROUTES } from "@/lib/constant";
 
 
 export async function generateMetadata({
@@ -19,7 +20,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const finalTitle = `${page.metaTitle || page.title} | MythriveBuddy`;
+  const finalTitle = `${page.metaTitle || page.title} - MythriveBuddy`;
 
   return {
     title: finalTitle,
@@ -40,6 +41,10 @@ export async function generateMetadata({
 
 
 async function fetchPage(slug: string) {
+  if (RESERVED_PUBLIC_ROUTES.includes(slug)) {
+    return null;
+  }
+
   try {
     const cookieHeader = (await cookies()).toString();
     const res = await fetch(`${process.env.NEXT_URL}/api/pages/${slug}`, {

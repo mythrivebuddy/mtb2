@@ -269,8 +269,11 @@ import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-men
 import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu";
 import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button";
 import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button";
-import { ColorHighlightPopover, ColorHighlightPopoverButton } from "@/components/tiptap-ui/color-highlight-popover";
-import { LinkPopover,LinkButton } from "@/components/tiptap-ui/link-popover";
+import {
+  ColorHighlightPopover,
+  ColorHighlightPopoverButton,
+} from "@/components/tiptap-ui/color-highlight-popover";
+import { LinkPopover, LinkButton } from "@/components/tiptap-ui/link-popover";
 import { MarkButton } from "@/components/tiptap-ui/mark-button";
 import { TextAlignButton } from "@/components/tiptap-ui/text-align-button";
 import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button";
@@ -312,7 +315,10 @@ function MainToolbarContent({
 
       <ToolbarGroup>
         <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
-        <ListDropdownMenu types={["bulletList", "orderedList", "taskList"]} portal={isMobile} />
+        <ListDropdownMenu
+          types={["bulletList", "orderedList", "taskList"]}
+          portal={isMobile}
+        />
         <BlockquoteButton />
         <CodeBlockButton />
       </ToolbarGroup>
@@ -325,7 +331,11 @@ function MainToolbarContent({
         <MarkButton type="strike" />
         <MarkButton type="code" />
         <MarkButton type="underline" />
-        {!isMobile ? <ColorHighlightPopover /> : <ColorHighlightPopoverButton onClick={onHighlighterClick} />}
+        {!isMobile ? (
+          <ColorHighlightPopover />
+        ) : (
+          <ColorHighlightPopoverButton onClick={onHighlighterClick} />
+        )}
         {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
       </ToolbarGroup>
 
@@ -349,7 +359,7 @@ function MainToolbarContent({
 
       <ToolbarGroup>
         <Button type="button" variant="outline" onClick={triggerFileInput}>
-          Add
+          Add Image
         </Button>
       </ToolbarGroup>
 
@@ -357,9 +367,7 @@ function MainToolbarContent({
 
       <ToolbarSeparator />
 
-      <ToolbarGroup>
-        {/* <ThemeToggle /> */}
-      </ToolbarGroup>
+      <ToolbarGroup>{/* <ThemeToggle /> */}</ToolbarGroup>
     </>
   );
 }
@@ -375,7 +383,11 @@ const MobileToolbarContent = ({
     <ToolbarGroup>
       <Button variant="ghost" onClick={onBack}>
         <ArrowLeftIcon className="tiptap-button-icon" />
-        {type === "highlighter" ? <HighlighterIcon className="tiptap-button-icon" /> : <LinkIcon className="tiptap-button-icon" />}
+        {type === "highlighter" ? (
+          <HighlighterIcon className="tiptap-button-icon" />
+        ) : (
+          <LinkIcon className="tiptap-button-icon" />
+        )}
       </Button>
     </ToolbarGroup>
 
@@ -393,10 +405,11 @@ export function SimpleEditorWrapper({
   handleImageUploadLocal: (file: File) => Promise<string>;
 }) {
   const isMobile = useIsBreakpoint() && false;
-  
 
   const { height } = useWindowSize();
-  const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">("main");
+  const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
+    "main"
+  );
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [fileInputKey, setFileInputKey] = useState(0);
 
@@ -404,7 +417,7 @@ export function SimpleEditorWrapper({
   //   editor,
   //   overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
   // });
-// console.log("isMobile", isMobile, "rect", rect);
+  // console.log("isMobile", isMobile, "rect", rect);
   useEffect(() => {
     if (!isMobile && mobileView !== "main") {
       setMobileView("main");
@@ -458,7 +471,11 @@ export function SimpleEditorWrapper({
           }
           return true;
         });
-        toDelete.reverse().forEach((pos) => tr.delete(pos, pos + state.doc.nodeAt(pos)!.nodeSize));
+        toDelete
+          .reverse()
+          .forEach((pos) =>
+            tr.delete(pos, pos + state.doc.nodeAt(pos)!.nodeSize)
+          );
         if (tr.docChanged) view.dispatch(tr);
         toast.error(err?.message || "Upload failed");
       } finally {
@@ -470,9 +487,7 @@ export function SimpleEditorWrapper({
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
-        <Toolbar
-          ref={toolbarRef}
-        >
+        <Toolbar ref={toolbarRef}>
           {mobileView === "main" ? (
             <MainToolbarContent
               onHighlighterClick={() => setMobileView("highlighter")}
@@ -481,7 +496,10 @@ export function SimpleEditorWrapper({
               triggerFileInput={triggerFileInput}
             />
           ) : (
-            <MobileToolbarContent type={mobileView === "highlighter" ? "highlighter" : "link"} onBack={() => setMobileView("main")} />
+            <MobileToolbarContent
+              type={mobileView === "highlighter" ? "highlighter" : "link"}
+              onBack={() => setMobileView("main")}
+            />
           )}
         </Toolbar>
 
@@ -519,7 +537,9 @@ export default function ManageCreateEditPage() {
   const [isPublishing, setIsPublishing] = useState(false);
 
   const [faqItems, setFaqItems] = useState([{ question: "", answer: "" }]);
-  const [howToSteps, setHowToSteps] = useState([{ title: "", description: "" }]);
+  const [howToSteps, setHowToSteps] = useState([
+    { title: "", description: "" },
+  ]);
   const [articleData, setArticleData] = useState({
     headline: "",
     author: "",
@@ -619,7 +639,7 @@ export default function ManageCreateEditPage() {
       Heading.configure({
         levels: [1, 2, 3, 4, 5, 6],
       }),
-      
+
       BulletList,
       OrderedList,
       ListItem,
@@ -631,13 +651,15 @@ export default function ManageCreateEditPage() {
       // ReactCalloutNode,
       // Color, // For the color popover
       TaskList, // For the task list button
-      TaskItem.configure({ // Required by TaskList
+      TaskItem.configure({
+        // Required by TaskList
         nested: true,
       }),
       Superscript, // For the superscript button
-      Subscript,   // For the subscript button
-      TextAlign.configure({ // For the text-align buttons
-        types: ['heading', 'paragraph'],
+      Subscript, // For the subscript button
+      TextAlign.configure({
+        // For the text-align buttons
+        types: ["heading", "paragraph"],
       }),
     ],
     editorProps: {
@@ -654,8 +676,6 @@ export default function ManageCreateEditPage() {
       setValue("content", editor.getJSON());
     },
   });
-
-
 
   useEffect(() => {
     if (isEdit && pageQuery.data) {
@@ -680,35 +700,34 @@ export default function ManageCreateEditPage() {
       );
 
       // ⭐ Prefill FAQ items
-    if (p.schemaType === "FAQ_PAGE" && p.schemaMarkup?.mainEntity) {
-      setFaqItems(
-        p.schemaMarkup.mainEntity.map((item: any) => ({
-          question: item.name || "",
-          answer: item.acceptedAnswer?.text || "",
-        }))
-      );
-    }
+      if (p.schemaType === "FAQ_PAGE" && p.schemaMarkup?.mainEntity) {
+        setFaqItems(
+          p.schemaMarkup.mainEntity.map((item: any) => ({
+            question: item.name || "",
+            answer: item.acceptedAnswer?.text || "",
+          }))
+        );
+      }
 
-    // ⭐ Prefill HOW-TO steps
-    if (p.schemaType === "HOW_TO" && p.schemaMarkup?.step) {
-      setHowToSteps(
-        p.schemaMarkup.step.map((s: any) => ({
-          title: s.name || "",
-          description: s.text || "",
-        }))
-      );
-    }
+      // ⭐ Prefill HOW-TO steps
+      if (p.schemaType === "HOW_TO" && p.schemaMarkup?.step) {
+        setHowToSteps(
+          p.schemaMarkup.step.map((s: any) => ({
+            title: s.name || "",
+            description: s.text || "",
+          }))
+        );
+      }
 
-    // ⭐ Prefill ARTICLE schema data
-    if (p.schemaType === "ARTICLE") {
-      setArticleData({
-        headline: p.schemaMarkup?.headline || "",
-        author: p.schemaMarkup?.author?.name || "",
-        datePublished: p.schemaMarkup?.datePublished || "",
-        image: p.schemaMarkup?.image || "",
-      });
-    }
-
+      // ⭐ Prefill ARTICLE schema data
+      if (p.schemaType === "ARTICLE") {
+        setArticleData({
+          headline: p.schemaMarkup?.headline || "",
+          author: p.schemaMarkup?.author?.name || "",
+          datePublished: p.schemaMarkup?.datePublished || "",
+          image: p.schemaMarkup?.image || "",
+        });
+      }
 
       setTimeout(() => {
         editor?.commands.setContent(p.content ?? { type: "doc", content: [] });
@@ -722,7 +741,9 @@ export default function ManageCreateEditPage() {
   const genTempId = () =>
     `temp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement> | File | null) => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement> | File | null
+  ) => {
     let file: File | undefined;
     if (!e) return;
     if (e instanceof File) {
@@ -907,7 +928,9 @@ export default function ManageCreateEditPage() {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{isEdit ? "Edit Page" : "Create Page"}</BreadcrumbPage>
+            <BreadcrumbPage>
+              {isEdit ? "Edit Page" : "Create Page"}
+            </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -915,7 +938,9 @@ export default function ManageCreateEditPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col items-start gap-2">
-          <h1 className="text-2xl font-semibold">{isEdit ? "Edit Page" : "Create Page"}</h1>
+          <h1 className="text-2xl font-semibold">
+            {isEdit ? "Edit Page" : "Create Page"}
+          </h1>
           <Button
             variant="secondary"
             type="button"
@@ -930,7 +955,9 @@ export default function ManageCreateEditPage() {
 
       {/* Stepper */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Step {step}: {stepTitles[step - 1]}</h2>
+        <h2 className="text-xl font-semibold">
+          Step {step}: {stepTitles[step - 1]}
+        </h2>
         <div className="text-sm text-muted-foreground">Page {step} of 4</div>
       </div>
 
@@ -960,10 +987,14 @@ export default function ManageCreateEditPage() {
                 <Label>Content Editor</Label>
 
                 <div className="mt-3">
-                  {
-                    !editor ? "Loading editor ........." : <SimpleEditorWrapper editor={editor} handleImageUploadLocal={(file) => uploadImageToApi(file)} />
-                  }
-                  
+                  {!editor ? (
+                    "Loading editor ........."
+                  ) : (
+                    <SimpleEditorWrapper
+                      editor={editor}
+                      handleImageUploadLocal={(file) => uploadImageToApi(file)}
+                    />
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -986,16 +1017,24 @@ export default function ManageCreateEditPage() {
                 </div>
                 <div>
                   <Label>Meta Keywords (Optional)</Label>
-                  <Input {...register("metaKeywords")} placeholder="e.g., solo, entrepreneur" />
+                  <Input
+                    {...register("metaKeywords")}
+                    placeholder="e.g., solo, entrepreneur"
+                  />
                 </div>
                 <div>
                   <Label>Canonical URL (Optional)</Label>
-                  <Input {...register("canonicalUrl")} placeholder="https://..." />
+                  <Input
+                    {...register("canonicalUrl")}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
 
               <div className="space-y-4 p-4 border rounded-lg">
-                <h3 className="text-lg font-medium mb-4">Social Sharing (Open Graph)</h3>
+                <h3 className="text-lg font-medium mb-4">
+                  Social Sharing (Open Graph)
+                </h3>
                 <div>
                   <Label>Social Title (og:title)</Label>
                   <Input {...register("ogTitle")} />
@@ -1004,9 +1043,69 @@ export default function ManageCreateEditPage() {
                   <Label>Social Description (og:description)</Label>
                   <Textarea {...register("ogDescription")} rows={3} />
                 </div>
-                <div>
-                  <Label>Social Image URL (og:image)</Label>
-                  <Input {...register("ogImage")} placeholder="https://.../image.png" />
+                {/* OG IMAGE UPLOAD */}
+                <div className="space-y-2">
+                  <div className="h-40 w-40">
+                    <Label>Social Image (og:image)</Label>
+
+                    {/* Preview */}
+                    {watch("ogImage") && (
+                      <img
+                        src={watch("ogImage")}
+                        alt="og-image-preview"
+                        className="w-[100%] h-[100%] object-cover rounded border"
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Input
+                      {...register("ogImage")}
+                      placeholder="https://.../image.png"
+                      className="flex-1"
+                    />
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() =>
+                        document.getElementById("ogUpload")?.click()
+                      }
+                    >
+                      Upload
+                    </Button>
+
+                    <input
+                      id="ogUpload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        try {
+                          toast.info("Uploading image...");
+                          const fd = new FormData();
+                          fd.append("file", file);
+
+                          const res = await axios.post(
+                            "/api/admin/cms/upload",
+                            fd
+                          );
+                          // toast.info("Wait uploading image ")
+                          if (res.data?.url) {
+                            setValue("ogImage", res.data.url);
+                            toast.success("Image uploaded!");
+                          } else {
+                            toast.error("Upload failed!");
+                          }
+                        } catch (err) {
+                          toast.error("Upload error");
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -1025,7 +1124,10 @@ export default function ManageCreateEditPage() {
                     name="schemaType"
                     control={control}
                     render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -1034,18 +1136,32 @@ export default function ManageCreateEditPage() {
                           <SelectItem value="ARTICLE">Article</SelectItem>
                           <SelectItem value="FAQ_PAGE">FAQ</SelectItem>
                           <SelectItem value="HOW_TO">How To</SelectItem>
-                          <SelectItem value="CUSTOM_JSON">Custom JSON</SelectItem>
+                          <SelectItem value="CUSTOM_JSON">
+                            Custom JSON
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
                 </div>
 
-                {watch("schemaType") === "FAQ_PAGE" && <FaqSchemaForm items={faqItems} setItems={setFaqItems} />}
+                {watch("schemaType") === "FAQ_PAGE" && (
+                  <FaqSchemaForm items={faqItems} setItems={setFaqItems} />
+                )}
 
-                {watch("schemaType") === "HOW_TO" && <HowToSchemaForm steps={howToSteps} setSteps={setHowToSteps} />}
+                {watch("schemaType") === "HOW_TO" && (
+                  <HowToSchemaForm
+                    steps={howToSteps}
+                    setSteps={setHowToSteps}
+                  />
+                )}
 
-                {watch("schemaType") === "ARTICLE" && <ArticleSchemaForm data={articleData} setData={setArticleData} />}
+                {watch("schemaType") === "ARTICLE" && (
+                  <ArticleSchemaForm
+                    data={articleData}
+                    setData={setArticleData}
+                  />
+                )}
 
                 <div className="flex-1 flex flex-col mt-4">
                   <Label>Schema JSON-LD</Label>
@@ -1122,7 +1238,10 @@ export default function ManageCreateEditPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              <p>You're all set. You can save this page as a draft or publish it to make it live.</p>
+              <p>
+                You're all set. You can save this page as a draft or publish it
+                to make it live.
+              </p>
 
               <Button
                 variant="secondary"
@@ -1144,7 +1263,8 @@ export default function ManageCreateEditPage() {
                     variant="destructive"
                     type="button"
                     onClick={() => {
-                      if (confirm("Are you sure you want to delete this page?")) deletePage.mutate(id!);
+                      if (confirm("Are you sure you want to delete this page?"))
+                        deletePage.mutate(id!);
                     }}
                     disabled={deletePage.isPending}
                   >
@@ -1159,7 +1279,8 @@ export default function ManageCreateEditPage() {
                   disabled={isSavingDraft || isPublishing}
                   className="flex items-center gap-2"
                 >
-                  <Save size={16} /> {isSavingDraft ? "Saving..." : "Save Draft"}
+                  <Save size={16} />{" "}
+                  {isSavingDraft ? "Saving..." : "Save Draft"}
                 </Button>
 
                 <Button
@@ -1169,7 +1290,11 @@ export default function ManageCreateEditPage() {
                   className="flex items-center gap-2"
                 >
                   <Send size={16} />{" "}
-                  {isPublishing ? "Publishing..." : isEdit ? "Update & Publish" : "Publish"}
+                  {isPublishing
+                    ? "Publishing..."
+                    : isEdit
+                      ? "Update & Publish"
+                      : "Publish"}
                 </Button>
               </div>
             </CardContent>
@@ -1189,7 +1314,11 @@ export default function ManageCreateEditPage() {
         </Button>
 
         {step !== 4 && (
-          <Button type="button" onClick={nextStep} className="flex items-center gap-1">
+          <Button
+            type="button"
+            onClick={nextStep}
+            className="flex items-center gap-1"
+          >
             Next <ChevronRight size={16} />
           </Button>
         )}

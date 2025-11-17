@@ -1,40 +1,47 @@
-    import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/utils/requireAdminFromSession";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-    import { requireAdmin } from "@/lib/utils/requireAdminFromSession";
-    import { supabaseAdmin } from "@/lib/supabaseAdmin";
+export async function POST(req: Request) {
+  const session = await requireAdmin();
+  if (!session) 
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    export async function POST(req: Request) {
-    const session = await requireAdmin();
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const form = await req.formData();
+  const file = form.get("file") as File | null;
+  const fileType = form.get("type") as string | null; // "og" or "editor"
 
-    const form = await req.formData();
-    const file = form.get("file") as File | null;
+  if (!file) {
+    return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+  }
 
-    if (!file) {
-        return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    }
+  const ext = file.name.split(".").pop();
+  const fileName = `${fileType || "editor"}-${Date.now()}.${ext}`;
 
-    const ext = file.name.split(".").pop();
-    const fileName = `editor-${Date.now()}.${ext}`;
-    const filePath = `pages/${fileName}`;
+  const folder =
+    fileType === "og"
+      ? "og-images"
+      : "pages";
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+  const filePath = `${folder}/${fileName}`;
 
-    const { error } = await supabaseAdmin.storage
-        .from("cms-assets")
-        .upload(filePath, buffer, {
-        contentType: file.type,
-        upsert: false,
-        });
+  const buffer = Buffer.from(await file.arrayBuffer());
 
-    if (error) {
-        console.error(error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+  const { error } = await supabaseAdmin.storage
+    .from("cms-assets")
+    .upload(filePath, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
-    const {
-        data: { publicUrl },
-    } = supabaseAdmin.storage.from("cms-assets").getPublicUrl(filePath);
+  if (error) {
+    console.error(error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-    return NextResponse.json({ url: publicUrl });
-    }
+  const {
+    data: { publicUrl },
+  } = supabaseAdmin.storage.from("cms-assets").getPublicUrl(filePath);
+
+  return NextResponse.json({ url: publicUrl });
+}
