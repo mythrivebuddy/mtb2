@@ -1,6 +1,10 @@
+@use '../styles/_variables.scss';
+@use '../styles/_keyframe-animations.scss';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 
 @layer base {
   :root {
@@ -144,10 +148,10 @@
   backface-visibility: hidden;
 }
 
-.text-front {
-  /* z-index: 1; */
-  /* background-color: #FFF; */
-}
+// .text-front {
+//   /* z-index: 1; */
+//   /* background-color: #FFF; */
+// }
 .text-back {
   transform:h-10 items-center justify-center rounded-md bg-muted p-1 text-muted rotateY(180deg);
 }

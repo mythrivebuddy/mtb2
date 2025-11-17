@@ -1,0 +1,178 @@
+/* ---------------------------------------------------------
+   Simple Editor Only — No global overrides
+--------------------------------------------------------- */
+
+/* ProseMirror base font */
+.tiptap.ProseMirror {
+  font-family: "DM Sans", sans-serif !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  outline: none !important;
+  border: none !important;
+}
+
+/* Wrapper */
+.simple-editor-wrapper {
+  width: 100%;
+  height: auto;
+  background: #ffffff !important;
+  padding-bottom: 4rem;
+}
+
+/* Centered editor content */
+.simple-editor-content {
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 1rem;
+  background: #ffffff !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Editor body with compact padding */
+.simple-editor-content .tiptap.ProseMirror.simple-editor {
+  padding: 1rem 1rem 5rem !important; /* ⬅ reduced padding */
+  min-height: 60vh;
+  background: #ffffff !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+/* Mobile spacing */
+@media screen and (max-width: 480px) {
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    padding: 1rem 1rem 6rem !important;
+  }
+}
+
+/* Paragraph text */
+.tiptap.ProseMirror p {
+  color: #000000 !important;
+}
+
+/* Image wrapper */
+.tiptap-image-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+/* Images */
+.tiptap-image-wrapper img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* ===================================
+   ADD THESE STYLES FOR TIPTAP ELEMENTS
+   =================================== */
+
+/* Headings */
+.tiptap.ProseMirror h1 {
+  font-size: 2.25rem; /* 36px */
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap.ProseMirror h2 {
+  font-size: 1.875rem; /* 30px */
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap.ProseMirror h3 {
+  font-size: 1.5rem; /* 24px */
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.tiptap.ProseMirror h4 {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Lists (Unordered and Ordered) */
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol {
+  padding-left: 2rem; /* This indents the list */
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tiptap.ProseMirror ul {
+  list-style-type: disc; /* This adds the bullet points */
+}
+
+.tiptap.ProseMirror ol {
+  list-style-type: decimal; /* This adds the numbers */
+}
+
+.tiptap.ProseMirror li {
+  margin-top: 0.25rem;
+}
+.tiptap.ProseMirror a{
+   color: #2563eb; /* nice blue */
+  text-decoration: underline; /* or none if you prefer */
+  font-weight: 500;
+}
+.tiptap.ProseMirror a:hover{
+  color: #1d4ed8;
+  cursor:pointer;
+}
+/* Task Lists (which you are using) */
+.tiptap.ProseMirror li[data-type="taskItem"] {
+  list-style-type: none; /* No bullet points for tasks */
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tiptap.ProseMirror li[data-type="taskItem"] > label {
+  /* This is the checkbox */
+  margin-top: 0.25rem;
+}
+
+.tiptap.ProseMirror li[data-type="taskItem"] > div {
+  /* This is the text content */
+  flex-grow: 1;
+}
+
+/* Other common elements you'll need */
+.tiptap.ProseMirror blockquote {
+  border-left: 3px solid #e0e0e0;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #555;
+}
+
+.tiptap.ProseMirror code {
+  background-color: #f1f1f1;
+  color: #e01e5a;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.tiptap.ProseMirror pre {
+  background: #0d0d0d;
+  color: #fff;
+  font-family: monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.tiptap.ProseMirror pre code {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.85rem;
+}
