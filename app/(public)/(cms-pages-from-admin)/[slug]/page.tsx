@@ -28,13 +28,13 @@ export async function generateMetadata({
     keywords: page.metaKeywords,
     alternates: {
       canonical:
-        page.canonicalUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/${page.slug}`,
+        page.canonicalUrl || `${process.env.NEXT_URL}/${page.slug}`,
     },
     openGraph: {
       title: page.ogTitle || page.metaTitle || page.title,
       description: page.ogDescription || page.metaDescription,
       images: page.ogImage ? [page.ogImage] : [],
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/${page.slug}`,
+      url: `${process.env.NEXT_URL}/${page.slug}`,
     },
   };
 }
