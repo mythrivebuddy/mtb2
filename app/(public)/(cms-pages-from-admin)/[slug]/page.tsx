@@ -7,7 +7,6 @@ import { authOptions } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { RESERVED_PUBLIC_ROUTES } from "@/lib/constant";
 
-
 export async function generateMetadata({
   params,
 }: {
@@ -27,8 +26,7 @@ export async function generateMetadata({
     description: page.metaDescription,
     keywords: page.metaKeywords,
     alternates: {
-      canonical:
-        page.canonicalUrl || `${process.env.NEXT_URL}/${page.slug}`,
+      canonical: page.canonicalUrl || `${process.env.NEXT_URL}/${page.slug}`,
     },
     openGraph: {
       title: page.ogTitle || page.metaTitle || page.title,
@@ -38,7 +36,6 @@ export async function generateMetadata({
     },
   };
 }
-
 
 async function fetchPage(slug: string) {
   if (RESERVED_PUBLIC_ROUTES.includes(slug)) {
@@ -55,8 +52,9 @@ async function fetchPage(slug: string) {
       },
     });
     const data = await res.json();
+    console.log("data", data);
 
-     if (!data || !data.id) {
+    if (!data || !data.id) {
       return null;
     }
 
@@ -95,8 +93,8 @@ export default async function Page({ params }: { params: { slug: string } }) {
       )}
 
       {/* Page Content */}
-      <main className="max-w-4xl mx-auto p-6">
-        <section className="p-4 mb-8">
+      <main className="w-full px-0">
+        <section className="w-full px-0">
           <ReadOnlyTipTapEditor content={page.content} />
         </section>
       </main>

@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useEditor, EditorContent, EditorContext } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
-import Youtube from "@tiptap/extension-youtube";
+// import Youtube from "@tiptap/extension-youtube";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,12 @@ import { TextStyle } from "@tiptap/extension-text-style"; // Keep this
 import FontSize from "../_components/Fontsize";
 // import ReactCalloutNode from "../_components/TiptapReactComponents.tsx";
 
-import { ArrowLeft, Save, Send, ChevronRight, ChevronLeft } from "lucide-react";
+import { ArrowLeft, Save, Send, ChevronRight, ChevronLeft, YoutubeIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { AxiosError } from "axios";
 
 
@@ -71,145 +76,174 @@ import type { Node as PMNode } from "prosemirror-model";
    ResizableImage Node Definition
    =========================== */
 export const ResizableImage = Node.create({
+
   name: "image",
+
   group: "block",
+
   draggable: true,
+
   atom: true,
+
   selectable: true,
 
+
+
   addAttributes() {
+
     return {
+
       src: { default: null },
+
       alt: { default: "" },
+
       width: { default: "100%" },
-      uploading: { default: false },
+
+      uploading: { default: null },
+
       tempId: { default: null },
+
     };
+
   },
+
+
 
   parseHTML() {
+
     return [
+
       {
+
         tag: "img[src]",
+
       },
+
     ];
+
   },
 
+
+
   renderHTML({ HTMLAttributes }) {
-    const { uploading, width, tempId, ...rest } = HTMLAttributes;
+
+    const { uploading, tempId, ...rest } = HTMLAttributes;
+
+
+
+    // remove width from HTML
+
+    delete rest.width;
+
+
 
     return [
+
       "div",
+
       {
+
         class: "tiptap-image-wrapper",
-        style: `width:${width};position:relative;display:inline-block;`,
+
+        style: "width:100%; position:relative; display:block;",
+
         "data-uploading": uploading ? "true" : "false",
+
         "data-temp-id": tempId || undefined,
+
       },
+
       [
+
         "img",
+
         mergeAttributes(
+
           {
+
             class: "tiptap-image",
-            style: "display:block;width:100%;border-radius:8px;",
+
+            style: "display:block;width:100%;height:auto;border-radius:8px;",
+
           },
+
           rest
+
         ),
+
       ],
+
+
 
       uploading ? ["div", { class: "tiptap-image-skeleton" }] : "",
 
-      !uploading
-        ? [
-            "div",
-            {
-              class: "resize-handle",
-              contenteditable: "false",
-              style:
-                "width:12px;height:12px;position:absolute;right:-6px;bottom:-6px;background:#999;border-radius:50%;cursor:se-resize;",
-            },
-          ]
-        : "",
     ];
+
   },
+
+
+
+  /* ⭐ NodeView WITHOUT RESIZE HANDLE */
 
   addNodeView() {
-    return ({ node, editor, getPos }) => {
+
+    return ({ node }) => {
+
       const wrapper = document.createElement("div");
+
       wrapper.className = "tiptap-image-wrapper";
+
       wrapper.style.position = "relative";
-      wrapper.style.display = "inline-block";
-      wrapper.style.width = node.attrs.width || "100%";
+
+      wrapper.style.display = "block";
+
+      wrapper.style.width = "100%";
+
+
 
       const img = document.createElement("img");
+
       img.src = node.attrs.src;
+
+      img.alt = node.attrs.alt || "";
+
       img.style.width = "100%";
+
+      img.style.height = "auto";
+
       img.style.borderRadius = "8px";
+
       wrapper.appendChild(img);
 
-      // --- Upload Skeleton ---
+
+
+      // Skeleton while uploading
+
       if (node.attrs.uploading) {
+
         const skeleton = document.createElement("div");
+
         skeleton.className = "tiptap-image-skeleton";
+
         skeleton.style.cssText =
+
           "position:absolute;inset:0;background:#e5e7eb;opacity:.6;border-radius:8px;";
+
         wrapper.appendChild(skeleton);
+
       }
 
-      // --- Resize Handle ---
-      const handle = document.createElement("div");
-      handle.className = "resize-handle";
-      handle.style.cssText =
-        "width:12px;height:12px;position:absolute;right:-6px;bottom:-6px;background:#999;border-radius:50%;cursor:se-resize;";
-      wrapper.appendChild(handle);
 
-      // SKIP resizing while uploading
-      if (!node.attrs.uploading) {
-        handle.addEventListener("mousedown", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          const startX = e.clientX;
-          const startWidth = wrapper.getBoundingClientRect().width;
-
-          let lastUpdate = 0; // throttle marker
-
-          const onMove = (ev: MouseEvent) => {
-            const delta = ev.clientX - startX;
-            const newWidth = Math.max(60, startWidth + delta);
-
-            wrapper.style.width = `${newWidth}px`;
-
-            const now = Date.now();
-            if (now - lastUpdate < 60) return; // throttle 60ms updates
-            lastUpdate = now;
-
-            const pos = getPos();
-            if (typeof pos !== "number") return;
-
-            editor.commands.command(({ tr }) => {
-              tr.setNodeMarkup(pos, undefined, {
-                ...node.attrs,
-                width: `${newWidth}px`,
-              });
-              return true;
-            });
-          };
-
-          const onUp = () => {
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-          };
-
-          document.addEventListener("mousemove", onMove);
-          document.addEventListener("mouseup", onUp);
-        });
-      }
 
       return { dom: wrapper };
+
     };
+
   },
+
 });
+
+
 
 /* ===========================
    Helper: upload to API
@@ -299,18 +333,100 @@ import TextAlign from "@tiptap/extension-text-align";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
 import { ArticleFormData, ArticleSchema, FaqItem, FAQSchema, HowToSchema, HowToStepForm, SchemaMarkup } from "@/types/types";
+import { ResponsiveYoutube } from "@/components/tiptap-templates/simple/ResponsiveYoutube";
 
 /* Toolbar UI pieces (local) */
+
+ const extractYouTubeID = (input: string): string | null => {
+  if (!input || typeof input !== "string") return null;
+
+  // strip HTML if user pasted an iframe/html blob
+  const srcMatch = input.match(/src=["']([^"']+)["']/i);
+  if (srcMatch && srcMatch[1]) input = srcMatch[1];
+
+  // Common YouTube URL patterns
+  const regexes = [
+    /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/, // watch?v= or embed/
+    /(?:youtu\.be\/)([A-Za-z0-9_-]{11})/, // youtu.be/
+    /youtube\.com\/v\/([A-Za-z0-9_-]{11})/, // /v/
+    /\/([A-Za-z0-9_-]{11})(?:\?|&|$)/, // fallback: 11-char id somewhere
+  ];
+
+  for (const r of regexes) {
+    const m = input.match(r);
+    if (m && m[1]) return m[1];
+  }
+
+  return null;
+};
+
+export function YouTubePopover({ editor }: { editor: Editor }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [url, setUrl] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const id = extractYouTubeID(url) || (url.length === 11 ? url : null);
+
+    if (!id) {
+      toast.error("Invalid YouTube URL");
+      return;
+    }
+
+    // This is the key difference: inserting a node instead of setting a mark
+    editor.commands.insertContent({
+      type: "youtube",
+      attrs: { src: `https://www.youtube.com/embed/${id}` },
+    });
+
+    setIsOpen(false);
+    setUrl("");
+    toast.success("YouTube embedded");
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" type="button" className="gap-2">
+          <YoutubeIcon className="h-4 w-4 text-red-600" />
+          Add YouTube
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-4" align="start" side="top">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <h4 className="font-medium leading-none mb-1">Add YouTube Video</h4>
+          <div className="flex gap-2">
+            <Input
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Paste YouTube URL..."
+              className="h-8"
+              autoFocus
+            />
+            <Button type="submit" size="sm" className="h-8">
+              Add
+            </Button>
+          </div>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function MainToolbarContent({
+  editor,
   onHighlighterClick,
   onLinkClick,
   isMobile,
   triggerFileInput,
+  // youtubePrompt
 }: {
+  editor: Editor;
   onHighlighterClick: () => void;
   onLinkClick: () => void;
   isMobile: boolean;
   triggerFileInput: () => void;
+  // youtubePrompt: () => void;
 }) {
   return (
     <>
@@ -371,6 +487,7 @@ function MainToolbarContent({
         <Button type="button" variant="outline" onClick={triggerFileInput}>
           Add Image
         </Button>
+        <YouTubePopover editor={editor} />
       </ToolbarGroup>
 
       <Spacer />
@@ -497,16 +614,33 @@ export function SimpleEditorWrapper({
     };
   };
 
+//   const insertYouTubeByPrompt = () => {
+//   const input = prompt("YouTube URL or ID:");
+//   if (!input || !editor) return;
+//   const id = extractYouTubeID(input) || (input.length === 11 ? input : null);
+//   if (!id) return toast.error("Couldn't parse YouTube ID");
+
+//   editor.commands.insertContent({
+//     type: "youtube",
+//     attrs: { src: `https://www.youtube.com/embed/${id}` },
+//   });
+
+//   toast.success("YouTube embedded");
+// };
+
+
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
         <Toolbar ref={toolbarRef} data-toolbar>
           {mobileView === "main" ? (
             <MainToolbarContent
+            editor={editor}
               onHighlighterClick={() => setMobileView("highlighter")}
               onLinkClick={() => setMobileView("link")}
               isMobile={isMobile}
               triggerFileInput={triggerFileInput}
+               // youtubePrompt={insertYouTubeByPrompt}
             />
           ) : (
             <MobileToolbarContent
@@ -652,6 +786,8 @@ export default function ManageCreateEditPage() {
   }, [title]);
 
   /* ========== Editor ========== */
+ 
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -666,7 +802,9 @@ export default function ManageCreateEditPage() {
       FontSize,
       Underline,
       ResizableImage,
-      Youtube,
+     ResponsiveYoutube.configure({
+            HTMLAttributes: { allowfullscreen: "true" },
+          }),
       // ReactCalloutNode,
       // Color, // For the color popover
       TaskList, // For the task list button
@@ -696,20 +834,47 @@ export default function ManageCreateEditPage() {
           return false;
         },
       },
+      handlePaste(view, event) {
+      try {
+        const clipboardData = (event as ClipboardEvent).clipboardData;
+        if (!clipboardData) return false;
+
+        // Prefer text/html (iframe paste), then fallback to plain text
+        const html = clipboardData.getData("text/html");
+        const text = clipboardData.getData("text/plain");
+
+        const combined = (html && html.length > 0) ? html : text;
+        const id = extractYouTubeID(combined);
+
+        if (id) {
+          // insert a youtube node and stop the default paste
+          const { state, dispatch } = view;
+          const pos = state.selection.from;
+
+          const node = view.state.schema.nodes.youtube?.create({
+            src: `https://www.youtube.com/embed/${id}`,
+            // some youtube extensions prefer 'videoId' attr; include both if possible
+            // videoId: id,
+          });
+
+          if (node) {
+            const tr = state.tr.insert(pos, node);
+            dispatch(tr.scrollIntoView());
+            return true;
+          }
+        }
+      } catch (err) {
+        // swallow errors so paste doesn't break; return false to allow fallback
+        // console.warn("youtube paste error", err);
+        console.log(err);
+      }
+
+      // not a youtube paste -> let other handlers/process continue
+      return false;
     },
-//   handleDOMEvents: {
-//     mousedown: (_view, event) => {
-//       const el = event.target as HTMLElement;
-
-//       if (el.closest("[data-toolbar]")) {
-//         event.preventDefault();
-//         return true;
-//       }
-
-//       return false;
-//     },
-//   },
-// },
+    },
+      // handlePaste will try to detect YouTube links in pasted text/html and convert them to a youtube node
+    
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
