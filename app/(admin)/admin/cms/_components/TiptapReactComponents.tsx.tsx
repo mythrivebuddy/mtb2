@@ -2,9 +2,9 @@
 
 import React from "react";
 import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer, useEditor } from "@tiptap/react";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
-
+import type { Node as PMNode } from "prosemirror-model";
 // -----------------------------
 // 1) REACT BLOCK COMPONENT
 // -----------------------------
@@ -16,9 +16,18 @@ export type CalloutAttrs = {
   body?: string;
   tone?: "info" | "warning" | "success";
 };
+interface NodeViewProps {
+  node: PMNode & { attrs: CalloutAttrs };
+  updateAttributes: (attr: Partial<CalloutAttrs>) => void;
+  deleteNode: () => void;
+  selected: boolean;
+  getPos: () => number;
+  editor: Editor;
+}
 
-export function CalloutBox({ node, updateAttributes }: any) {
-  const attrs: CalloutAttrs = node.attrs || {};
+type CalloutBoxProps = Pick<NodeViewProps, "node" | "updateAttributes">;
+export function CalloutBox({ node, updateAttributes }: CalloutBoxProps) {
+      const attrs = node.attrs;
 
   return (
     <div className="p-3 rounded-md border" style={{ background: "#f8fafc" }}>
@@ -31,7 +40,7 @@ export function CalloutBox({ node, updateAttributes }: any) {
         />
         <select
           value={attrs.tone || "info"}
-          onChange={(e) => updateAttributes({ tone: e.target.value })}
+          onChange={(e) => updateAttributes({ tone: e.target.value as CalloutAttrs["tone"] })}
           className="text-xs"
         >
           <option value="info">Info</option>
@@ -86,7 +95,7 @@ const ReactCalloutNode = Node.create({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(CalloutBox as any);
+    return ReactNodeViewRenderer(CalloutBox);
   },
 });
 

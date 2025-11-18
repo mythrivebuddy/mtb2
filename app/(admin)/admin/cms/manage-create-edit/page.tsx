@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -45,6 +46,8 @@ import FontSize from "../_components/Fontsize";
 // import ReactCalloutNode from "../_components/TiptapReactComponents.tsx";
 
 import { ArrowLeft, Save, Send, ChevronRight, ChevronLeft } from "lucide-react";
+import type { AxiosError } from "axios";
+
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   ssr: false,
@@ -53,7 +56,7 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
 /* ===========================
    Enhanced RESIZABLE Image Node
    =========================== */
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Editor, JSONContent, Node, mergeAttributes } from "@tiptap/core";
 import { ArticleSchemaForm } from "../_components/schemaForms/ArticleSchemaForm";
 import { HowToSchemaForm } from "../_components/schemaForms/HowToSchemaForm";
 import { FaqSchemaForm } from "../_components/schemaForms/FaqSchemaForm";
@@ -62,6 +65,7 @@ import {
   generateFAQSchema,
   generateHowToSchema,
 } from "../_components/schemaGenerators";
+import type { Node as PMNode } from "prosemirror-model";
 
 /* ===========================
    ResizableImage Node Definition
@@ -222,11 +226,12 @@ async function uploadImageToApi(file: File): Promise<string> {
 /* ===========================
    Types
    =========================== */
+  
 type Page = {
   id: string;
   title: string;
   slug: string;
-  content?: any;
+  content?:  JSONContent;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
@@ -235,14 +240,14 @@ type Page = {
   ogDescription?: string;
   ogImage?: string;
   schemaType?: string;
-  schemaMarkup?: any;
+  schemaMarkup?: SchemaMarkup;
   isPublished: boolean;
 };
 
 type FormValues = {
   title: string;
   slug: string;
-  content: any;
+  content: JSONContent;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
@@ -251,8 +256,14 @@ type FormValues = {
   ogDescription?: string;
   ogImage?: string;
   schemaType: string;
+  schemaMarkup?: SchemaMarkup;
   isPublished: boolean;
 };
+type UpdatePageArgs = {
+  id: string;
+  payload: FormValues;
+};
+
 
 /* ===========================
    SimpleEditorWrapper (adapted from template)
@@ -278,8 +289,6 @@ import { MarkButton } from "@/components/tiptap-ui/mark-button";
 import { TextAlignButton } from "@/components/tiptap-ui/text-align-button";
 import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button";
 import { useIsBreakpoint } from "@/hooks/use-is-breakpoint";
-import { useWindowSize } from "@/hooks/use-window-size";
-// import { useCursorVisibility } from "@/hooks/use-cursor-visibility";
 import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon";
 import { HighlighterIcon } from "@/components/tiptap-icons/highlighter-icon";
 import { LinkIcon } from "@/components/tiptap-icons/link-icon";
@@ -289,6 +298,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TextAlign from "@tiptap/extension-text-align";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
+import { ArticleFormData, ArticleSchema, FaqItem, FAQSchema, HowToSchema, HowToStepForm, SchemaMarkup } from "@/types/types";
 
 /* Toolbar UI pieces (local) */
 function MainToolbarContent({
@@ -316,7 +326,7 @@ function MainToolbarContent({
       <ToolbarGroup>
         <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
         <ListDropdownMenu
-          types={["bulletList", "orderedList", "taskList"]}
+          types={["bulletList", "orderedList"]}
           portal={isMobile}
         />
         <BlockquoteButton />
@@ -401,12 +411,12 @@ export function SimpleEditorWrapper({
   editor,
   handleImageUploadLocal,
 }: {
-  editor: any;
+  editor: Editor;
   handleImageUploadLocal: (file: File) => Promise<string>;
 }) {
   const isMobile = useIsBreakpoint() && false;
 
-  const { height } = useWindowSize();
+  
   const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
     "main"
   );
@@ -448,8 +458,9 @@ export function SimpleEditorWrapper({
         const url = await handleImageUploadLocal(file);
         const { state, view } = editor;
         const tr = state.tr;
-        state.doc.descendants((node: any, pos: number) => {
-          if (node.type.name === "image" && node.attrs?.tempId === tempId) {
+        state.doc.descendants((node: PMNode, pos: number) => {
+          const attrs = (node as unknown as { attrs?: Record<string, unknown> }).attrs;
+          if (node.type.name === "image" && attrs?.tempId === tempId) {
             tr.setNodeMarkup(pos, undefined, {
               ...node.attrs,
               src: url,
@@ -461,12 +472,13 @@ export function SimpleEditorWrapper({
         });
         if (tr.docChanged) view.dispatch(tr);
         toast.success("Image uploaded");
-      } catch (err: any) {
+      } catch (err) {
         const { state, view } = editor;
         const tr = state.tr;
         const toDelete: number[] = [];
-        state.doc.descendants((node: any, pos: number) => {
-          if (node.type.name === "image" && node.attrs?.tempId === tempId) {
+        state.doc.descendants((node: PMNode, pos: number) => {
+          const attrs = (node as unknown as { attrs?: Record<string, unknown> }).attrs;
+          if (node.type.name === "image" && attrs?.tempId === tempId) {
             toDelete.push(pos);
           }
           return true;
@@ -477,7 +489,8 @@ export function SimpleEditorWrapper({
             tr.delete(pos, pos + state.doc.nodeAt(pos)!.nodeSize)
           );
         if (tr.docChanged) view.dispatch(tr);
-        toast.error(err?.message || "Upload failed");
+        const message = (err as unknown as { message?: string })?.message ?? "Upload failed";
+        toast.error(message);
       } finally {
         setFileInputKey((k) => k + 1);
       }
@@ -487,7 +500,7 @@ export function SimpleEditorWrapper({
   return (
     <div className="simple-editor-wrapper">
       <EditorContext.Provider value={{ editor }}>
-        <Toolbar ref={toolbarRef}>
+        <Toolbar ref={toolbarRef} data-toolbar>
           {mobileView === "main" ? (
             <MainToolbarContent
               onHighlighterClick={() => setMobileView("highlighter")}
@@ -530,18 +543,19 @@ export default function ManageCreateEditPage() {
 
   const [step, setStep] = useState(1);
   const [schemaText, setSchemaText] = useState("");
-  const [schemaPreview, setSchemaPreview] = useState<any>(null);
+  const [schemaPreview, setSchemaPreview] = useState(null);
 
   const [isSlugEdited, setIsSlugEdited] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  const [faqItems, setFaqItems] = useState([{ question: "", answer: "" }]);
-  const [howToSteps, setHowToSteps] = useState([
+  const [faqItems, setFaqItems] = useState<FaqItem[]>([{ question: "", answer: "" }]);
+  const [howToSteps, setHowToSteps] = useState<HowToStepForm[]>([
     { title: "", description: "" },
   ]);
-  const [articleData, setArticleData] = useState({
+  const [articleData, setArticleData] = useState<ArticleFormData>({
     headline: "",
+    description:"",
     author: "",
     datePublished: "",
     image: "",
@@ -564,8 +578,8 @@ export default function ManageCreateEditPage() {
     },
   });
 
-  const createPage = useMutation({
-    mutationFn: async (payload: any) => {
+  const createPage = useMutation<Page, AxiosError<{ error: string }>, FormValues>({
+    mutationFn: async (payload: FormValues) => {
       const res = await axios.post("/api/admin/cms", payload);
       return res.data;
     },
@@ -574,13 +588,17 @@ export default function ManageCreateEditPage() {
       queryClient.invalidateQueries({ queryKey: ["cms-pages"] });
       router.push(`/admin/cms/manage-create-edit?id=${data.id}`);
     },
-    onError: (err: any) => {
+    onError: (err) => {
       toast.error(err.response?.data?.error || "Failed to create page");
     },
   });
 
-  const updatePage = useMutation({
-    mutationFn: async ({ id, payload }: any) => {
+  const updatePage = useMutation<
+  Page,
+  AxiosError<{ error: string }>,
+  UpdatePageArgs
+>({
+    mutationFn: async ({ id, payload }) => {
       const res = await axios.put(`/api/admin/cms/${id}`, payload);
       return res.data;
     },
@@ -589,10 +607,10 @@ export default function ManageCreateEditPage() {
       queryClient.invalidateQueries({ queryKey: ["cms-page", id] });
       queryClient.invalidateQueries({ queryKey: ["cms-pages"] });
     },
-    onError: (err: any) => {
+    onError: (err) => {
       toast.error(err.response?.data?.error || "Failed to update page");
     },
-  });
+  });  
 
   const deletePage = useMutation({
     mutationFn: async (deleteId: string) => {
@@ -610,7 +628,7 @@ export default function ManageCreateEditPage() {
       defaultValues: {
         title: "",
         slug: "",
-        content: { type: "doc", content: [] },
+        content: { type: "doc", content: [] } as JSONContent,
         metaTitle: "",
         metaDescription: "",
         metaKeywords: "",
@@ -619,6 +637,7 @@ export default function ManageCreateEditPage() {
         ogDescription: "",
         ogImage: "",
         schemaType: "NONE",
+        schemaMarkup: null,
         isPublished: false,
       },
     });
@@ -663,13 +682,19 @@ export default function ManageCreateEditPage() {
       }),
     ],
     editorProps: {
-      handleDOMEvents: {
-        keydown: (_view, event) => {
-          // IMPORTANT: Let Tiptap handle keyboard logic
-          return false;
-        },
-      },
+  handleDOMEvents: {
+    mousedown: (_view, event) => {
+      const el = event.target as HTMLElement;
+
+      if (el.closest("[data-toolbar]")) {
+        event.preventDefault();
+        return true;
+      }
+
+      return false;
     },
+  },
+},
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -700,9 +725,10 @@ export default function ManageCreateEditPage() {
       );
 
       // ⭐ Prefill FAQ items
-      if (p.schemaType === "FAQ_PAGE" && p.schemaMarkup?.mainEntity) {
+      if (p.schemaType === "FAQ_PAGE" && "mainEntity" in (p.schemaMarkup ?? {})) {
+         const faqSchema = p.schemaMarkup as FAQSchema;
         setFaqItems(
-          p.schemaMarkup.mainEntity.map((item: any) => ({
+          faqSchema.mainEntity.map((item) => ({
             question: item.name || "",
             answer: item.acceptedAnswer?.text || "",
           }))
@@ -710,9 +736,10 @@ export default function ManageCreateEditPage() {
       }
 
       // ⭐ Prefill HOW-TO steps
-      if (p.schemaType === "HOW_TO" && p.schemaMarkup?.step) {
+      if (p.schemaType === "HOW_TO" && "step" in (p.schemaMarkup ?? {})) {
+        const howTo = p.schemaMarkup as HowToSchema;
         setHowToSteps(
-          p.schemaMarkup.step.map((s: any) => ({
+          howTo.step.map((s) => ({
             title: s.name || "",
             description: s.text || "",
           }))
@@ -721,11 +748,13 @@ export default function ManageCreateEditPage() {
 
       // ⭐ Prefill ARTICLE schema data
       if (p.schemaType === "ARTICLE") {
+        const article = p.schemaMarkup as ArticleSchema;
         setArticleData({
-          headline: p.schemaMarkup?.headline || "",
-          author: p.schemaMarkup?.author?.name || "",
-          datePublished: p.schemaMarkup?.datePublished || "",
-          image: p.schemaMarkup?.image || "",
+          headline: article.headline || "",
+          description: article.description || "",
+          author: article.author?.name || "",
+          datePublished: article.datePublished || "",
+          image: article.image || "",
         });
       }
 
@@ -734,103 +763,103 @@ export default function ManageCreateEditPage() {
       }, 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageQuery.data, isEdit, reset]);
+  }, [pageQuery.data, isEdit, reset,editor]);
 
   /* ========== Image upload with base64 preview + skeleton + replace ========== */
 
-  const genTempId = () =>
-    `temp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+  // const genTempId = () =>
+  //   `temp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement> | File | null
-  ) => {
-    let file: File | undefined;
-    if (!e) return;
-    if (e instanceof File) {
-      file = e;
-    } else {
-      file = e.target?.files?.[0];
-    }
-    if (!file) return;
-    const reader = new FileReader();
-    const tempId = genTempId();
-    reader.readAsDataURL(file);
+  // const handleImageUpload = async (
+  //   e: React.ChangeEvent<HTMLInputElement> | File | null
+  // ) => {
+  //   let file: File | undefined;
+  //   if (!e) return;
+  //   if (e instanceof File) {
+  //     file = e;
+  //   } else {
+  //     file = e.target?.files?.[0];
+  //   }
+  //   if (!file) return;
+  //   const reader = new FileReader();
+  //   const tempId = genTempId();
+  //   reader.readAsDataURL(file);
 
-    reader.onload = async () => {
-      const base64 = String(reader.result ?? "");
+  //   reader.onload = async () => {
+  //     const base64 = String(reader.result ?? "");
 
-      // Insert temporary image node
-      editor
-        ?.chain()
-        .focus()
-        .insertContent({
-          type: "image",
-          attrs: { src: base64, uploading: true, tempId, width: "100%" },
-        })
-        .run();
+  //     // Insert temporary image node
+  //     editor
+  //       ?.chain()
+  //       .focus()
+  //       .insertContent({
+  //         type: "image",
+  //         attrs: { src: base64, uploading: true, tempId, width: "100%" },
+  //       })
+  //       .run();
 
-      // Upload
-      try {
-        const url = await uploadImageToApi(file as File);
+  //     // Upload
+  //     try {
+  //       const url = await uploadImageToApi(file as File);
 
-        // Replace all nodes with matching tempId
-        const { state, view } = editor!;
-        const tr = state.tr;
-        state.doc.descendants((node, pos) => {
-          if (node.type.name === "image" && node.attrs?.tempId === tempId) {
-            tr.setNodeMarkup(pos, undefined, {
-              ...node.attrs,
-              src: url,
-              uploading: false,
-              tempId: null,
-            });
-          }
-          return true;
-        });
-        if (tr.docChanged) view.dispatch(tr);
+  //       // Replace all nodes with matching tempId
+  //       const { state, view } = editor!;
+  //       const tr = state.tr;
+  //       state.doc.descendants((node, pos) => {
+  //         if (node.type.name === "image" && node.attrs?.tempId === tempId) {
+  //           tr.setNodeMarkup(pos, undefined, {
+  //             ...node.attrs,
+  //             src: url,
+  //             uploading: false,
+  //             tempId: null,
+  //           });
+  //         }
+  //         return true;
+  //       });
+  //       if (tr.docChanged) view.dispatch(tr);
 
-        toast.success("Image uploaded");
-      } catch (err: any) {
-        const { state, view } = editor!;
-        const tr = state.tr;
-        const toDelete: number[] = [];
-        state.doc.descendants((node, pos) => {
-          if (node.type.name === "image" && node.attrs?.tempId === tempId) {
-            toDelete.push(pos);
-          }
-          return true;
-        });
-        toDelete
-          .reverse()
-          .forEach((pos) =>
-            tr.delete(pos, pos + state.doc.nodeAt(pos)!.nodeSize)
-          );
-        if (tr.docChanged) view.dispatch(tr);
-        toast.error(err?.message || "Upload failed");
-      } finally {
-        if (!(e instanceof File) && (e.target as HTMLInputElement)) {
-          (e.target as HTMLInputElement).value = "";
-        }
-      }
-    };
-  };
+  //       toast.success("Image uploaded");
+  //     } catch (err: any) {
+  //       const { state, view } = editor!;
+  //       const tr = state.tr;
+  //       const toDelete: number[] = [];
+  //       state.doc.descendants((node, pos) => {
+  //         if (node.type.name === "image" && node.attrs?.tempId === tempId) {
+  //           toDelete.push(pos);
+  //         }
+  //         return true;
+  //       });
+  //       toDelete
+  //         .reverse()
+  //         .forEach((pos) =>
+  //           tr.delete(pos, pos + state.doc.nodeAt(pos)!.nodeSize)
+  //         );
+  //       if (tr.docChanged) view.dispatch(tr);
+  //       toast.error(err?.message || "Upload failed");
+  //     } finally {
+  //       if (!(e instanceof File) && (e.target as HTMLInputElement)) {
+  //         (e.target as HTMLInputElement).value = "";
+  //       }
+  //     }
+  //   };
+  // };
 
   /* ========== YouTube insert ========== */
-  const insertYouTube = () => {
-    const input = prompt("Enter YouTube URL or ID:");
-    if (!input) return;
-    const id = input.includes("http")
-      ? input.split("v=")[1] || input.split("/").pop()
-      : input;
-    editor
-      ?.chain()
-      .focus()
-      .insertContent(
-        `<iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>`
-      )
-      .run();
-    toast.success("YouTube video added!");
-  };
+  // const insertYouTube = () => {
+  //   const input = prompt("Enter YouTube URL or ID:");
+  //   if (!input) return;
+  //   const id = input.includes("http")
+  //     ? input.split("v=")[1] || input.split("/").pop()
+  //     : input;
+  //   editor
+  //     ?.chain()
+  //     .focus()
+  //     .insertContent(
+  //       `<iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>`
+  //     )
+  //     .run();
+  //   toast.success("YouTube video added!");
+  // };
 
   /* ========== Save handlers ========== */
   const handleSave = async (values: FormValues, publishState: boolean) => {
@@ -841,7 +870,7 @@ export default function ManageCreateEditPage() {
     }
     let schemaMarkup = null;
     try {
-      schemaMarkup = schemaText ? JSON.parse(schemaText) : null;
+      schemaMarkup = schemaText ? (JSON.parse(schemaText) as Record<string, unknown>) : null;
     } catch {
       toast.error("Invalid Schema JSON!");
       setIsSavingDraft(false);
@@ -853,7 +882,7 @@ export default function ManageCreateEditPage() {
       ...values,
       isPublished: publishState,
       schemaMarkup,
-      content: editor?.getJSON(),
+      content: editor?.getJSON() ?? { type: "doc", content: [] },
     };
 
     try {
@@ -889,21 +918,22 @@ export default function ManageCreateEditPage() {
   ];
 
   useEffect(() => {
-    let json: any = null;
+     const schemaType = watch("schemaType");
+     let json: FAQSchema | HowToSchema | ArticleSchema | null = null;
 
-    if (watch("schemaType") === "FAQ_PAGE") {
-      json = generateFAQSchema(faqItems);
+    if (schemaType === "FAQ_PAGE") {
+      json = generateFAQSchema(faqItems) as FAQSchema;
     }
 
-    if (watch("schemaType") === "HOW_TO") {
-      json = generateHowToSchema(howToSteps);
+    if (schemaType === "HOW_TO") {
+      json = generateHowToSchema(howToSteps) as HowToSchema;
     }
 
-    if (watch("schemaType") === "ARTICLE") {
-      json = generateArticleSchema(articleData);
+    if (schemaType === "ARTICLE") {
+      json = generateArticleSchema(articleData) as ArticleSchema;
     }
 
-    if (json && watch("schemaType") !== "CUSTOM_JSON") {
+    if (json && schemaType !== "CUSTOM_JSON") {
       setSchemaText(JSON.stringify(json, null, 2));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1053,7 +1083,7 @@ export default function ManageCreateEditPage() {
                       <img
                         src={watch("ogImage")}
                         alt="og-image-preview"
-                        className="w-[100%] h-[100%] object-cover rounded border"
+                        className="w-full h-full object-contain rounded"
                       />
                     )}
                   </div>
@@ -1081,6 +1111,7 @@ export default function ManageCreateEditPage() {
                       accept="image/*"
                       className="hidden"
                       onChange={async (e) => {
+                          const fileInput = e.target as HTMLInputElement;
                         const file = e.target.files?.[0];
                         if (!file) return;
 
@@ -1101,8 +1132,12 @@ export default function ManageCreateEditPage() {
                             toast.error("Upload failed!");
                           }
                         } catch (err) {
+                          console.log(err);
                           toast.error("Upload error");
-                        }
+                        } finally {
+      // 🔥 CRITICAL — reset the input so user can upload again
+      fileInput.value = "";
+    }
                       }}
                     />
                   </div>

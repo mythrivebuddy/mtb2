@@ -27,6 +27,8 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { SchemaMarkup } from "@/types/types";
+import { JSONContent } from "@tiptap/react";
 
 type CMSPage = {
   id: string;
@@ -40,9 +42,9 @@ type CMSPage = {
   ogTitle?: string;
   ogDescription?: string;
   ogImage?: string;
-  schemaMarkup?: any;
+  schemaMarkup?: SchemaMarkup;
   schemaType?: string;
-  content: any;
+  content: JSONContent;
   createdAt: string;
   updatedAt: string;
   authorId: string;

@@ -1,25 +1,39 @@
 "use client";
+import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { HowToStepForm } from "@/types/types";
 
-export function HowToSchemaForm({ steps, setSteps }: any) {
+type HowToSchemaFormProps = {
+  steps: HowToStepForm[];
+  setSteps: React.Dispatch<React.SetStateAction<HowToStepForm[]>>;
+};
+
+
+export function HowToSchemaForm({ steps, setSteps }: HowToSchemaFormProps) {
   const addStep = () => {
     setSteps([...steps, { title: "", description: "" }]);
   };
 
-  const updateStep = (index: number, field: string, value: string) => {
-    const updated = [...steps];
-    (updated[index] as any)[field] = value;
-    setSteps(updated);
+    const updateStep = (
+    index: number,
+    field: keyof HowToStepForm,
+    value: string
+  ) => {
+    setSteps((prev) =>
+      prev.map((step, i) =>
+        i === index ? { ...step, [field]: value } : step
+      )
+    );
   };
 
   const removeStep = (index: number) => {
-    setSteps(steps.filter((_: any, i: number) => i !== index));
+    setSteps((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
     <div className="space-y-4 mt-4">
-      {steps.map((step: any, idx: number) => (
+      {steps.map((step, idx) => (
         <div
           key={idx}
           className="border p-3 rounded-md space-y-3 bg-muted/40"

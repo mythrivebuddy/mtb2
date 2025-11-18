@@ -1,25 +1,33 @@
 "use client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { FaqItem } from "@/types/types";
+import React from "react";
 
-export function FaqSchemaForm({ items, setItems }: any) {
+type FaqSchemaFormProps = {
+  items: FaqItem[];
+  setItems: React.Dispatch<React.SetStateAction<FaqItem[]>>;
+};
+export function FaqSchemaForm({ items, setItems }: FaqSchemaFormProps){
   const addItem = () => {
     setItems([...items, { question: "", answer: "" }]);
   };
 
-  const updateItem = (index: number, field: string, value: string) => {
-    const updated = [...items];
-    (updated[index] as any)[field] = value;
-    setItems(updated);
+  const updateItem = (index: number, field: keyof FaqItem, value: string) => {
+    setItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      )
+    );
   };
 
   const removeItem = (index: number) => {
-    setItems(items.filter((_: any, i: number) => i !== index));
+    setItems(items.filter((_, i) => i !== index));
   };
 
   return (
     <div className="space-y-4 mt-4">
-      {items.map((item: any, idx: number) => (
+      {items.map((item, idx) => (
         <div
           key={idx}
           className="border p-3 rounded-md space-y-3 bg-muted/40"

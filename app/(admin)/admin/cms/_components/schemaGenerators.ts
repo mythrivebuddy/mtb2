@@ -1,3 +1,5 @@
+import { ArticleFormData, ArticleSchema } from "@/types/types";
+
 export function generateFAQSchema(items: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",
@@ -26,21 +28,19 @@ export function generateHowToSchema(steps: { title: string; description: string 
   };
 }
 
-export function generateArticleSchema(values: {
-  headline: string;
-  author: string;
-  datePublished: string;
-  image?: string;
-}) {
+export function generateArticleSchema(form: ArticleFormData): ArticleSchema {
   return {
-    "@context": "https://schema.org",
     "@type": "Article",
-    "headline": values.headline,
-    "author": {
+    headline: form.headline,
+    datePublished: form.datePublished,
+
+    ...(form.description && { description: form.description }),
+    ...(form.image && { image: form.image }),
+
+    author: {
       "@type": "Person",
-      "name": values.author,
+      name: form.author,
     },
-    "datePublished": values.datePublished,
-    ...(values.image && { image: values.image }),
   };
 }
+
