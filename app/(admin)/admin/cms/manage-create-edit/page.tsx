@@ -682,19 +682,34 @@ export default function ManageCreateEditPage() {
       }),
     ],
     editorProps: {
-  handleDOMEvents: {
-    mousedown: (_view, event) => {
-      const el = event.target as HTMLElement;
+      handleDOMEvents: {
+        mousedown: (_view, event) => {
+          const el = event.target as HTMLElement;
 
-      if (el.closest("[data-toolbar]")) {
-        event.preventDefault();
-        return true;
-      }
+          // Check if the click happened inside the toolbar
+          if (el.closest("[data-toolbar]")) {
+            // Prevent the default mousedown behavior (stealing focus)
+            event.preventDefault();
+            return true; // Stop processing the event
+          }
 
-      return false;
+          return false;
+        },
+      },
     },
-  },
-},
+//   handleDOMEvents: {
+//     mousedown: (_view, event) => {
+//       const el = event.target as HTMLElement;
+
+//       if (el.closest("[data-toolbar]")) {
+//         event.preventDefault();
+//         return true;
+//       }
+
+//       return false;
+//     },
+//   },
+// },
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
