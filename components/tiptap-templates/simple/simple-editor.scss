@@ -21,7 +21,7 @@
 
 /* Centered editor content */
 .simple-editor-content {
-  max-width: 680px;
+  max-width: 1080px;
   width: 100%;
   margin: 0 auto;
   padding-top: 1rem;
@@ -32,7 +32,7 @@
 
 /* Editor body with compact padding */
 .simple-editor-content .tiptap.ProseMirror.simple-editor {
-  padding: 1rem 1rem 5rem !important; /* ⬅ reduced padding */
+  padding: 1rem 1rem 5rem !important;
   min-height: 60vh;
   background: #ffffff !important;
   border-radius: 8px;
@@ -51,21 +51,57 @@
   color: #000000 !important;
 }
 
-/* Image wrapper */
+/* ===================================
+   UPDATED: IMAGES (Full Width)
+   =================================== */
+
+/* Image wrapper - Now flex and 100% width */
 .tiptap-image-wrapper {
-  display: inline-block;
+  display: flex;
+  width: 100% !important;
+  justify-content: center;
+  margin: 1.5rem 0 !important; /* Add vertical spacing */
   position: relative;
 }
 
-/* Images */
+/* Images - Force fill width */
 .tiptap-image-wrapper img {
-  max-width: 100%;
+  width: 100% !important; /* Forces image to fill the container */
   height: auto;
+  display: block;
   border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  -ms-border-radius: 8px;
+  -o-border-radius: 8px;
 }
 
 /* ===================================
-   ADD THESE STYLES FOR TIPTAP ELEMENTS
+   UPDATED: YOUTUBE (Full Width)
+   =================================== */
+
+.youtube-wrapper {
+  position: relative;
+  width: 100% !important; /* Force full width */
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  margin: 1.5rem 0; /* Add vertical spacing */
+  display: block;
+}
+
+.youtube-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+}
+
+/* ===================================
+   STYLES FOR TIPTAP ELEMENTS
    =================================== */
 
 /* Headings */
@@ -100,34 +136,37 @@
 /* Lists (Unordered and Ordered) */
 .tiptap.ProseMirror ul,
 .tiptap.ProseMirror ol {
-  padding-left: 2rem; /* This indents the list */
+  padding-left: 2rem;
   margin-top: 1rem;
   margin-bottom: 1rem;
 }
 
 .tiptap.ProseMirror ul {
-  list-style-type: disc; /* This adds the bullet points */
+  list-style-type: disc;
 }
 
 .tiptap.ProseMirror ol {
-  list-style-type: decimal; /* This adds the numbers */
+  list-style-type: decimal;
 }
 
 .tiptap.ProseMirror li {
   margin-top: 0.25rem;
 }
-.tiptap.ProseMirror a{
-   color: #2563eb; /* nice blue */
-  text-decoration: underline; /* or none if you prefer */
+
+.tiptap.ProseMirror a {
+  color: #2563eb; /* nice blue */
+  text-decoration: underline;
   font-weight: 500;
 }
-.tiptap.ProseMirror a:hover{
+
+.tiptap.ProseMirror a:hover {
   color: #1d4ed8;
-  cursor:pointer;
+  cursor: pointer;
 }
-/* Task Lists (which you are using) */
+
+/* Task Lists */
 .tiptap.ProseMirror li[data-type="taskItem"] {
-  list-style-type: none; /* No bullet points for tasks */
+  list-style-type: none;
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
@@ -135,16 +174,14 @@
 }
 
 .tiptap.ProseMirror li[data-type="taskItem"] > label {
-  /* This is the checkbox */
   margin-top: 0.25rem;
 }
 
 .tiptap.ProseMirror li[data-type="taskItem"] > div {
-  /* This is the text content */
   flex-grow: 1;
 }
 
-/* Other common elements you'll need */
+/* Blockquote */
 .tiptap.ProseMirror blockquote {
   border-left: 3px solid #e0e0e0;
   padding-left: 1rem;
@@ -153,6 +190,7 @@
   color: #555;
 }
 
+/* Code Inline */
 .tiptap.ProseMirror code {
   background-color: #f1f1f1;
   color: #e01e5a;
@@ -161,6 +199,7 @@
   font-family: monospace;
 }
 
+/* Code Block */
 .tiptap.ProseMirror pre {
   background: #0d0d0d;
   color: #fff;
@@ -175,4 +214,116 @@
   padding: 0;
   background: none;
   font-size: 0.85rem;
+}
+
+/* Global text line-height */
+.tiptap.ProseMirror {
+  line-height: 1.55;
+}
+
+.tiptap.ProseMirror p {
+  line-height: 1.55;
+}
+
+/* Lists */
+.tiptap.ProseMirror ul,
+.tiptap.ProseMirror ol,
+.tiptap.ProseMirror li {
+  line-height: 1.45;
+}
+
+/* Headings */
+.tiptap.ProseMirror h1,
+.tiptap.ProseMirror h2,
+.tiptap.ProseMirror h3,
+.tiptap.ProseMirror h4 {
+  line-height: 1.25;
+}
+
+/* MOBILE: slightly tighter spacing */
+@media (max-width: 480px) {
+  .tiptap.ProseMirror {
+    line-height: 1.45 !important;
+  }
+}
+
+/* ---------------------------------------------------------
+   MOBILE TYPOGRAPHY + SPACING FIXES (FULL RESPONSIVENESS)
+--------------------------------------------------------- */
+
+@media screen and (max-width: 480px) {
+
+  /* Reduce container padding for mobile */
+  .simple-editor-content {
+    padding: 0 0.75rem !important;
+  }
+
+  .simple-editor-content .tiptap.ProseMirror.simple-editor {
+    padding: 0.75rem 0.75rem 0rem !important;
+  }
+
+  /* Paragraphs */
+  .tiptap.ProseMirror p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin: 0.6rem 0 !important;
+  }
+
+  /* Headings smaller on mobile */
+  .tiptap.ProseMirror h1 {
+    font-size: 1.5rem !important;
+    margin: 1rem 0 0.4rem !important;
+  }
+  .tiptap.ProseMirror h2 {
+    font-size: 1.3rem !important;
+    margin: 0.9rem 0 0.4rem !important;
+  }
+  .tiptap.ProseMirror h3 {
+    font-size: 1.15rem !important;
+    margin: 0.75rem 0 0.3rem !important;
+  }
+  .tiptap.ProseMirror h4 {
+    font-size: 1.05rem !important;
+  }
+
+  /* Lists */
+  .tiptap.ProseMirror ul,
+  .tiptap.ProseMirror ol {
+    padding-left: 1.25rem !important;
+    margin: 0.75rem 0 !important;
+  }
+
+  /* List items */
+  .tiptap.ProseMirror li {
+    margin: 0.3rem 0 !important;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  /* Images on mobile */
+  .tiptap-image-wrapper {
+    margin: 1rem 0 !important;
+  }
+
+  .tiptap-image-wrapper img {
+    border-radius: 10px !important;
+  }
+
+  /* YouTube wrapper spacing on mobile */
+  .youtube-wrapper {
+    margin: 1rem 0 !important;
+  }
+
+  /* Blockquote */
+  .tiptap.ProseMirror blockquote {
+    padding-left: 0.75rem !important;
+    margin: 0.75rem 0 !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Code block */
+  .tiptap.ProseMirror pre {
+    padding: 0.5rem !important;
+    font-size: 0.8rem !important;
+  }
 }
