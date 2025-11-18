@@ -681,20 +681,20 @@ export default function ManageCreateEditPage() {
         types: ["heading", "paragraph"],
       }),
     ],
-    editorProps: {
-  handleDOMEvents: {
-    mousedown: (_view, event) => {
-      const el = event.target as HTMLElement;
+//     editorProps: {
+//   handleDOMEvents: {
+//     mousedown: (_view, event) => {
+//       const el = event.target as HTMLElement;
 
-      if (el.closest("[data-toolbar]")) {
-        event.preventDefault();
-        return true;
-      }
+//       if (el.closest("[data-toolbar]")) {
+//         event.preventDefault();
+//         return true;
+//       }
 
-      return false;
-    },
-  },
-},
+//       return false;
+//     },
+//   },
+// },
     content: "",
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
