@@ -56,6 +56,10 @@ async function fetchPage(slug: string) {
     });
     const data = await res.json();
 
+     if (!data || !data.id) {
+      return null;
+    }
+
     return data;
   } catch (e) {
     console.log(e);
@@ -69,7 +73,6 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
   const page = await fetchPage(slug);
   const session = await getServerSession(authOptions);
-  console.log("session in frontend ", session?.user);
 
   const isAdmin = session?.user?.role === "ADMIN";
   if (!page) {
