@@ -681,7 +681,22 @@ export default function ManageCreateEditPage() {
         types: ["heading", "paragraph"],
       }),
     ],
-//     editorProps: {
+    editorProps: {
+      handleDOMEvents: {
+        mousedown: (_view, event) => {
+          const el = event.target as HTMLElement;
+
+          // Check if the click happened inside the toolbar
+          if (el.closest("[data-toolbar]")) {
+            // Prevent the default mousedown behavior (stealing focus)
+            event.preventDefault();
+            return true; // Stop processing the event
+          }
+
+          return false;
+        },
+      },
+    },
 //   handleDOMEvents: {
 //     mousedown: (_view, event) => {
 //       const el = event.target as HTMLElement;
