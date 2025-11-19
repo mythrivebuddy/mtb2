@@ -89,6 +89,7 @@ model User {
   buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
   Goal                          Goal[]                @relation("GoalToUser")
   sentChallengeMessages   ChallengeMessage[]          @relation("UserMessages")
+  challengeMessageReactions ChallengeMessageReaction[]
 
   @@index([name])
 }
@@ -626,11 +627,28 @@ model ChallengeMessage {
   user        User      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
   challenge   Challenge @relation("ChallengeMessages", fields: [challengeId], references: [id], onDelete: Cascade)
 
+  reactions ChallengeMessageReaction[]
+
   @@index([challengeId, createdAt])
   @@map("challenge_messages")
 
 }
 
+
+model ChallengeMessageReaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  createdAt DateTime @default(now())
+
+  userId    String
+  messageId String
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   ChallengeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji]) // One specific emoji per user per message
+  @@index([messageId])
+}
 model NotificationSettings {
   id                String           @id @default(uuid())
   notification_type NotificationType @unique
