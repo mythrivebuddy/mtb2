@@ -646,7 +646,7 @@ model ChallengeMessageReaction {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   message   ChallengeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, messageId, emoji]) // One specific emoji per user per message
+  @@unique([userId, messageId]) // One specific emoji per user per message
   @@index([messageId])
 }
 model NotificationSettings {

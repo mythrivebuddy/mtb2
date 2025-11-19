@@ -25,6 +25,14 @@ export async function GET(
             image: true,
           },
         },
+        reactions: {
+  select: {
+    emoji: true,
+    userId: true,
+    // 👇 UPDATE THIS LINE to include 'image'
+    user: { select: { name: true, image: true } } 
+  }
+}
       },
       orderBy: { createdAt: "asc" },
     });
