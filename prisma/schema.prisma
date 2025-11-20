@@ -90,6 +90,7 @@ model User {
   Goal                          Goal[]                @relation("GoalToUser")
   sentChallengeMessages   ChallengeMessage[]          @relation("UserMessages")
   challengeMessageReactions ChallengeMessageReaction[]
+  challengePollVotes ChallengeMessagePollVote[]
 
   @@index([name])
 }
@@ -618,7 +619,7 @@ model ChallengeEnrollment {
 }
 model ChallengeMessage {
   id          String   @id @default(cuid())
-  message     String
+  message     String?
   createdAt   DateTime @default(now())
 
   userId      String
@@ -629,6 +630,9 @@ model ChallengeMessage {
 
   reactions ChallengeMessageReaction[]
 
+  // ✅ ADDED: Poll Relation
+  poll        ChallengeMessagePoll?
+
   // ✅ ADDED: Reply Relation
   replyToId   String?
   replyTo     ChallengeMessage?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
@@ -637,6 +641,47 @@ model ChallengeMessage {
   @@index([challengeId, createdAt])
   @@map("challenge_messages")
 
+}
+
+model ChallengeMessagePoll {
+  id            String   @id @default(cuid())
+  question      String
+  createdAt     DateTime @default(now())
+  
+  // Options
+  allowMultiple Boolean @default(true) 
+
+  messageId     String   @unique
+  message       ChallengeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  options       ChallengeMessagePollOption[]
+
+  @@map("challenge_polls")
+}
+
+model ChallengeMessagePollOption {
+  id     String @id @default(cuid())
+  text   String
+  pollId String
+  poll   ChallengeMessagePoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  votes  ChallengeMessagePollVote[]
+
+  @@map("challenge_poll_options")
+}
+
+model ChallengeMessagePollVote {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  optionId  String
+  option    ChallengeMessagePollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, optionId]) // User can vote for an option only once
+  @@map("challenge_poll_votes")
 }
 
 

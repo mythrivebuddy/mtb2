@@ -1,3 +1,4 @@
+// /api/challenge/(group_chat)/chat/[challengeId]/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
