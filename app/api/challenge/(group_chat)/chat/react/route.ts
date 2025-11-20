@@ -1,3 +1,4 @@
+// /api/challenge/(group_chat)/chat/react/route.ts
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

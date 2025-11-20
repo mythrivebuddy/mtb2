@@ -52,7 +52,7 @@ interface Task {
   description: string;
   completed: boolean;
 }
-interface LeaderboardPlayer {
+export interface LeaderboardPlayer {
   id: string;
   name: string;
   score: number;
@@ -802,6 +802,7 @@ export default function ChallengeManagementPage() {
                   isChatDisabled={
                     new Date(challenge.endDate).getTime() < Date.now()
                   }
+                  members={challenge.leaderboard || []}
                 />
               </div>
             </div>

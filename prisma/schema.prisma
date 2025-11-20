@@ -629,6 +629,11 @@ model ChallengeMessage {
 
   reactions ChallengeMessageReaction[]
 
+  // ✅ ADDED: Reply Relation
+  replyToId   String?
+  replyTo     ChallengeMessage?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies     ChallengeMessage[] @relation("Replies")
+
   @@index([challengeId, createdAt])
   @@map("challenge_messages")
 

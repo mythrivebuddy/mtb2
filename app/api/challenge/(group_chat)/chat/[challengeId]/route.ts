@@ -26,13 +26,20 @@ export async function GET(
           },
         },
         reactions: {
-  select: {
-    emoji: true,
-    userId: true,
-    // 👇 UPDATE THIS LINE to include 'image'
-    user: { select: { name: true, image: true } } 
-  }
-}
+          select: {
+            emoji: true,
+            userId: true,
+            // 👇 UPDATE THIS LINE to include 'image'
+            user: { select: { name: true, image: true } }
+          }
+        },
+        replyTo: {
+          select: {
+            id: true,
+            message: true,
+            user: { select: { name: true } },
+          },
+        },
       },
       orderBy: { createdAt: "asc" },
     });
