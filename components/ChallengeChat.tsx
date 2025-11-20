@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, ChangeEvent, KeyboardEvent } from "react";
 import axios from "axios";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useSession } from "next-auth/react";
-import { Send, ArrowDown, SmilePlus, Reply, X } from "lucide-react";
+import { Send, ArrowDown, SmilePlus, Reply, X, BarChartHorizontal } from "lucide-react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,6 +29,11 @@ import { ScrollArea } from "./ui/scroll-area";
 import { PopoverClose } from "@radix-ui/react-popover";
 import { LeaderboardPlayer } from "@/app/(userDashboard)/dashboard/challenge/my-challenges/[slug]/page";
 
+// ✅ Import Poll Components
+import { PollCreationModal } from "./PollCreationModal";
+import { PollBubble } from "./PollBubble";
+import { toast } from "sonner";
+
 // --- Types ---
 type Reaction = {
   emoji: string;
@@ -36,14 +41,20 @@ type Reaction = {
   user: { name: string | null; image: string | null };
 };
 
+// ✅ New Poll Types
+type PollVote = { userId: string; user: { name: string | null; image: string | null } };
+type PollOption = { id: string; text: string; votes: PollVote[] };
+type PollData = { id: string; question: string; allowMultiple: boolean; options: PollOption[] };
+
 type Msg = {
   id: string;
-  message: string;
+  message: string | null;
   createdAt: string;
   userId: string;
   challengeId: string;
   user?: { id: string; name: string; image: string | null };
   reactions?: Reaction[];
+  poll?: PollData;
   replyTo?: {
     id: string;
     message: string;
@@ -71,21 +82,16 @@ const getInitials = (name: string | null | undefined) => {
 };
 
 // --- Mention rendering function ---
-// Finds @mentions of the form @Display (alphanumeric/underscore) and replaces with Links if member found.
 const renderMentions = (
   content: string,
-  allMembers: MentionSuggestion[]
+  allMembers: MentionSuggestion[],
+  isMe:boolean
 ) => {
   const mentionRegex = /@(\w+)\b/g;
   const parts = content.split(mentionRegex);
 
   return parts.map((part, index) => {
-    // Even indices are plain text
-    if (index % 2 === 0) {
-      return part;
-    }
-
-    // Odd indices are the captured display name (without '@')
+    if (index % 2 === 0) return part;
     const displayName = part;
     const member = allMembers.find((m) => m.display === displayName);
 
@@ -94,21 +100,20 @@ const renderMentions = (
         <Link
           key={`${member.id}-${index}`}
           href={`/profile/${member.id}`}
-          className="text-blue-500 px-1 font-semibold "
+          className={`${isMe ? "text-blue-300":"text-blue-500"} font-semibold`}
         >
           @{displayName}
         </Link>
       );
     }
-
-    // Not found: render plain mention text
     return `@${displayName}`;
   });
 };
 
-// --- Text Parser: Renders clickable URLs AND mentions ---
-function renderMessageText(text: string, isMe: boolean, allMembers: MentionSuggestion[]) {
-  // URL regex
+// --- Text Parser ---
+function renderMessageText(text: string | null, isMe: boolean, allMembers: MentionSuggestion[]) {
+  if (!text) return null;
+   
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
 
@@ -122,14 +127,13 @@ function renderMessageText(text: string, isMe: boolean, allMembers: MentionSugge
               href={part}
               target="_blank"
               rel="noopener noreferrer"
-              className={`${isMe ? "text-blue-200" : "text-blue-600"} underline break-words break-all hover:opacity-80`}
+              className={`${isMe ? "text-blue-200" : "text-blue-600"} underline break-all hover:opacity-80`}
             >
               {part}
             </Link>
           );
         }
-        // For non-URL parts, further parse mentions
-        return <span key={`text-${index}`}>{renderMentions(part, allMembers)}</span>;
+        return <span key={`text-${index}`}>{renderMentions(part, allMembers,isMe)}</span>;
       })}
     </span>
   );
@@ -151,6 +155,8 @@ export default function ChallengeChat({
   const [replyingTo, setReplyingTo] = useState<Msg | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
+  const [isPollModalOpen, setIsPollModalOpen] = useState(false);
+
   const session = useSession();
   const currentUserId = session.data?.user.id;
   const [input, setInput] = useState("");
@@ -162,7 +168,6 @@ export default function ChallengeChat({
   const footerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Local throttle to avoid spamming typing broadcasts
   const isTypingSentRef = useRef(false);
   const typingSentResetRef = useRef<number | null>(null);
 
@@ -173,7 +178,7 @@ export default function ChallengeChat({
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
 
-  // Map members to mention format once. Use LeaderboardPlayer optional fields safely.
+  // Map members to mention format
   const allMembersData: MentionSuggestion[] = members.map((m) => {
     const mm = m as LeaderboardPlayer & {
       user?: { id?: string; name?: string; image?: string };
@@ -190,16 +195,10 @@ export default function ChallengeChat({
         ? mm.userId
         : mm.user?.id ?? "";
 
-    const display =
-      mm.name ?? mm.user?.name ?? "User";
-
+    const display = mm.name ?? mm.user?.name ?? "User";
     const image = mm.image ?? mm.user?.image ?? null;
 
-    return {
-      id: resolvedId,
-      display,
-      image,
-    };
+    return { id: resolvedId, display, image };
   });
 
   // --- Scrolling logic ---
@@ -290,6 +289,74 @@ export default function ChallengeChat({
     }
   };
 
+  // ✅ FIXED: POLL HANDLER (Now updates state immediately)
+  const handleCreatePoll = async (question: string, options: string[], allowMultiple: boolean) => {
+    try {
+       const res = await axios.post("/api/challenge/chat/poll/create", {
+         challengeId,
+         question,
+         options,
+         allowMultiple
+       });
+       
+       // ✅ FIX: Manually add the new poll to state (since no optimistic UI)
+       const newPollMsg = res.data;
+       setMessages(prev => [...prev, newPollMsg]);
+       toast.success("Poll created successfully!")
+       setTimeout(() => scrollBottom(), 100);
+    } catch (error) {
+      console.error("Poll creation failed", error);
+      toast.error("Failed to create poll!")
+    }
+  };
+
+  const handleVote = async (pollId: string, optionId: string) => {
+    if (!currentUserId) return;
+
+    // Optimistic Update
+    setMessages(prev => prev.map(msg => {
+      if (msg.poll?.id !== pollId) return msg;
+       
+      const poll = msg.poll;
+      const myId = currentUserId;
+       
+      const newOptions = poll.options.map(opt => {
+        const hasVoted = opt.votes.some(v => v.userId === myId);
+        
+        if (opt.id === optionId) {
+          if (hasVoted) {
+             return { ...opt, votes: opt.votes.filter(v => v.userId !== myId) };
+          } else {
+             return { 
+               ...opt, 
+               votes: [...opt.votes, { userId: myId, user: { name: session.data?.user?.name ?? "You", image: session.data?.user?.image ?? null } }] 
+             };
+          }
+        }
+        
+        if (!poll.allowMultiple && hasVoted) {
+           return { ...opt, votes: opt.votes.filter(v => v.userId !== myId) };
+        }
+        
+        return opt;
+      });
+      
+      return { ...msg, poll: { ...poll, options: newOptions } };
+    }));
+
+    // API Call
+    try {
+      await axios.post("/api/challenge/chat/poll/vote", {
+        challengeId,
+        pollId,
+        optionId
+      });
+    } catch (e) {
+      console.error("Vote failed", e);
+      loadMessages(); // Revert on error
+    }
+  };
+
   // --- Realtime ---
   useEffect(() => {
     loadMessages();
@@ -315,7 +382,6 @@ export default function ChallengeChat({
         });
       })
       .on("broadcast", { event: "typing" }, (payload) => {
-        // payload.payload should contain { name, userId }
         const p = payload.payload as { name?: string; userId?: string } | undefined;
         if (!p) return;
         if (p.userId === currentUserId) return;
@@ -324,7 +390,6 @@ export default function ChallengeChat({
         if (typingTimeoutRef.current) {
           window.clearTimeout(typingTimeoutRef.current);
         }
-        // Clear after 2.5s of inactivity
         typingTimeoutRef.current = window.setTimeout(() => setWhoIsTyping(null), 2500);
       })
       .on("broadcast", { event: "reaction_update" }, (payload) => {
@@ -335,6 +400,15 @@ export default function ChallengeChat({
           )
         );
       })
+      // ✅ Poll Realtime Listener (Updates the poll when ANYONE votes)
+      .on("broadcast", { event: "poll_update" }, (payload) => {
+        const { messageId, poll } = payload.payload as { messageId: string, poll: PollData };
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === messageId ? { ...msg, poll } : msg
+          )
+        );
+      })
       .subscribe();
 
     return () => {
@@ -342,7 +416,6 @@ export default function ChallengeChat({
       if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
       if (typingSentResetRef.current) window.clearTimeout(typingSentResetRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [challengeId, currentUserId]);
 
   useEffect(() => {
@@ -397,7 +470,7 @@ export default function ChallengeChat({
       replyTo: currentReply
         ? {
             id: currentReply.id,
-            message: currentReply.message,
+            message: currentReply.message!,
             user: { name: currentReply.user?.name ?? "User" },
           }
         : null,
@@ -412,7 +485,7 @@ export default function ChallengeChat({
     try {
       const res = await axios.post(`/api/challenge/chat/send`, {
         challengeId,
-        message: text, // raw text, contains @mentions as typed
+        message: text,
         replyToId: currentReply?.id,
       });
       const saved: Msg = res.data;
@@ -432,7 +505,7 @@ export default function ChallengeChat({
 
     const mentionText = `@${suggestion.display} `;
     const part1 = input.substring(0, mentionStartIndex);
-    const part2 = input.substring(mentionStartIndex + mentionQuery.length + 1); // +1 for '@'
+    const part2 = input.substring(mentionStartIndex + mentionQuery.length + 1);
 
     const newText = part1 + mentionText + part2;
     setInput(newText);
@@ -442,7 +515,6 @@ export default function ChallengeChat({
     setMentionStartIndex(-1);
     setActiveSuggestionIndex(0);
 
-    // Restore caret just after inserted mention
     setTimeout(() => {
       const newCursorPos = part1.length + mentionText.length;
       if (textareaRef.current) {
@@ -458,13 +530,11 @@ export default function ChallengeChat({
 
     setInput(text);
 
-    // Auto-resize
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
 
-    // Mention detection (keeps suggestions behavior)
     const textBeforeCursor = text.substring(0, cursorPosition);
     const atIndex = textBeforeCursor.lastIndexOf("@");
 
@@ -473,7 +543,6 @@ export default function ChallengeChat({
       setMentionStartIndex(-1);
     } else {
       const textAfterAt = textBeforeCursor.substring(atIndex);
-      // Prevent showing suggestion if it's already a markdown-style link or contains spaces
       if (/^@\[[^\]]+\]\([^)]+\)$/.test(textAfterAt)) {
         setShowSuggestions(false);
         setMentionStartIndex(-1);
@@ -485,11 +554,9 @@ export default function ChallengeChat({
         } else {
           setMentionQuery(query);
           setMentionStartIndex(atIndex);
-
           const filteredSuggestions = allMembersData.filter((member) =>
             member.display.toLowerCase().includes(query.toLowerCase())
           );
-
           setSuggestions(filteredSuggestions);
           setShowSuggestions(filteredSuggestions.length > 0);
           setActiveSuggestionIndex(0);
@@ -497,19 +564,15 @@ export default function ChallengeChat({
       }
     }
 
-    // Send typing indicator for any input (not only when typing @)
     if (!channelRef.current || !session.data?.user?.name) return;
 
     if (!isTypingSentRef.current) {
-      // send typing broadcast
       channelRef.current.send({
         type: "broadcast",
         event: "typing",
         payload: { name: session.data.user.name, userId: currentUserId },
       });
       isTypingSentRef.current = true;
-
-      // Reset the throttle after 1.5s so further typing will send again
       if (typingSentResetRef.current) {
         window.clearTimeout(typingSentResetRef.current);
       }
@@ -531,12 +594,7 @@ export default function ChallengeChat({
         setActiveSuggestionIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
         return;
       } else if (e.key === "Enter" || e.key === "Tab") {
-        // If suggestion list is open, use selection
-        // Allow Enter+Shift to produce newline; this handler overrides only when selecting suggestions
-        if (e.shiftKey && e.key === "Enter") {
-          // allow newline
-          return;
-        }
+        if (e.shiftKey && e.key === "Enter") return;
         e.preventDefault();
         handleSuggestionClick(suggestions[activeSuggestionIndex]);
         return;
@@ -547,7 +605,6 @@ export default function ChallengeChat({
       }
     }
 
-    // Normal send: Enter without Shift
     if (e.key === "Enter" && !e.shiftKey && !showSuggestions) {
       e.preventDefault();
       sendMessage();
@@ -593,25 +650,26 @@ export default function ChallengeChat({
   };
 
   return (
-    <Card className="flex flex-col h-[550px] mt-10 relative">
+    // ✅ FIX: Added w-full, max-w-full and overflow-hidden to container
+    <Card className="flex flex-col h-[550px] mt-10 relative w-full max-w-full overflow-visible">
       <CardHeader>
         <CardTitle>Group Chat</CardTitle>
         <p className="text-sm text-green-700 mt-1 animate-pulse">
           {whoIsTyping && `${whoIsTyping} is typing…`}
         </p>
       </CardHeader>
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 w-full overflow-x-auto">
         <CardContent
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex flex-col justify-end min-h-[350px] h-full overflow-y-auto p-4 space-y-6 bg-muted/20"
+          className="flex flex-col justify-end min-h-[350px] h-full  overflow-x-auto p-4 space-y-6 bg-muted/20 w-full"
         >
           {messages.length === 0 ? (
             <div className="flex flex-1 items-center justify-center text-gray-500 italic">
               No messages yet — start the conversation 👋
             </div>
           ) : (
-            <div className="space-y-6 pb-2">
+            <div className="space-y-6 pb-2 w-full">
               {messages.map((msg) => {
                 const isMe = msg.userId === currentUserId;
                 const hasReactions = msg.reactions && msg.reactions.length > 0;
@@ -624,12 +682,12 @@ export default function ChallengeChat({
                   <div
                     key={msg.id}
                     id={`msg-${msg.id}`}
-                    className={`flex items-end gap-2 group relative transition-colors duration-500 p-1 rounded ${
-                      isMe ? "justify-end" : "justify-start"
+                    className={`flex items-end gap-2 group relative transition-colors duration-500 p-1 rounded w-full ${
+                      isMe ? "justify-end mr-4" : "justify-start"
                     } ${isHighlighted ? "bg-yellow-100/80" : ""}`}
                   >
                     {!isMe && (
-                      <Avatar className="w-8 h-8 self-end mb-4">
+                      <Avatar className="w-8 h-8 self-end mb-4 shrink-0">
                         <AvatarImage
                           src={
                             msg.user?.image && !msg.user.image.endsWith("/0")
@@ -643,8 +701,21 @@ export default function ChallengeChat({
                       </Avatar>
                     )}
 
-                    {/* Message Bubble Wrapper */}
-                    <div className="relative max-w-[70%] min-w-24 flex flex-col">
+                    {/* ✅ FIX: Adjusted widths. Mobile max-w-[70%] allows room for avatar + padding. */}
+<div
+  className="
+    relative
+    max-w-max
+    flex flex-col
+    min-w-fit
+    overflow-visible
+    whitespace-pre-wrap
+    break-words
+  "
+>
+
+
+
                       <div
                         className={`px-4 py-2 rounded-lg shadow-sm z-10 relative ${
                           isMe
@@ -680,9 +751,22 @@ export default function ChallengeChat({
                             {msg.user?.name ?? "Member"}
                           </p>
                         )}
-                        <p className="break-words">
-                          {renderMessageText(msg.message, isMe, allMembersData)}
-                        </p>
+
+                        {/* ✅ FIX: Added break-words, break-all and whitespace-pre-wrap for safety */}
+                        {msg.poll ? (
+                          <div className="w-full overflow-hidden">
+                             <PollBubble 
+                              poll={msg.poll} 
+                              currentUserId={currentUserId} 
+                              onVote={(optId) => handleVote(msg.poll!.id, optId)} 
+                            />
+                          </div>
+                        ) : (
+                          <p className="break-words whitespace-pre-wrap w-full max-w-full overflow-visible">
+                             {renderMessageText(msg.message, isMe, allMembersData)}
+                           </p>
+                        )}
+
                         <p
                           className={`text-[10px] mt-1 text-right ${
                             isMe ? "text-white/70" : "text-gray-500"
@@ -698,23 +782,24 @@ export default function ChallengeChat({
 
                       {!isChatDisabled && !msg.__optimistic && (
                         <div
-                          className={`absolute -top-3 flex gap-1 z-20 ${
-                            isMe ? "-left-16" : "-right-16"
-                          }`}
+                          className={`absolute -top-2 flex gap-1 z-20    ${isMe ? "left-2 sm:-left-1" : "right-2 sm:-right-1"}`}
                         >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full bg-white border shadow-sm"
-                            onClick={() => {
-                              setReplyingTo(msg);
-                              setTimeout(() => {
-                                textareaRef.current?.focus();
-                              }, 50);
-                            }}
-                          >
-                            <Reply className="w-3 h-3 text-gray-500" />
-                          </Button>
+                          {/* Hide Reply button for polls for simplicity */}
+                          {!msg.poll && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 rounded-full bg-white border shadow-sm"
+                              onClick={() => {
+                                setReplyingTo(msg);
+                                setTimeout(() => {
+                                  textareaRef.current?.focus();
+                                }, 50);
+                              }}
+                            >
+                              <Reply className="w-3 h-3 text-gray-500" />
+                            </Button>
+                          )}
 
                           <Popover>
                             <PopoverTrigger asChild>
@@ -788,7 +873,7 @@ export default function ChallengeChat({
                                     </TabsTrigger>
                                   ))}
                                 </TabsList>
-                                <ScrollArea className="h-[250px]">
+                                <ScrollArea className="max-h-[250px] sm:h-[250px]">
                                   <TabsContent value="all" className="m-0 p-0">
                                     <div className="p-2 space-y-1">
                                       {allReactions.map((r, i) => (
@@ -857,7 +942,6 @@ export default function ChallengeChat({
           </div>
         ) : (
           <>
-            {/* Reply banner */}
             {replyingTo && (
               <div className="w-full flex items-center justify-between bg-gray-50 p-2 rounded-lg border-l-4 border-indigo-500 animate-in slide-in-from-bottom-2">
                 <div className="flex flex-col overflow-hidden pl-1">
@@ -877,34 +961,9 @@ export default function ChallengeChat({
               </div>
             )}
 
-            <div className="w-full flex items-end gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 rounded-full shrink-0 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
-                  >
-                    <SmilePlus className="w-6 h-6" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" side="top" align="start">
-                  <div className="grid grid-cols-4 gap-2">
-                    {QUICK_REACTIONS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => handleInsertEmoji(emoji)}
-                        className="text-2xl hover:bg-gray-100 p-2 rounded transition-colors"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <div className="relative flex-1">
-                {/* Suggestions dropdown */}
+            <div className="w-full flex items-end gap-2 relative">
+              
+              <div className="relative w-full flex-1 overflow-visible">
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute -bottom-full left-0 right-0 mb-2 z-50 max-h-60 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md outline-none p-1">
                     {suggestions.map((suggestion, index) => (
@@ -932,54 +991,100 @@ export default function ChallengeChat({
                   </div>
                 )}
 
-                <Textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDownOnTextarea}
-                  placeholder="Type a message... @ to mention a member."
-                  className="min-h-[40px] max-h-[150px] py-3 px-4 resize-none w-full"
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                  onFocus={(e) => {
-                    // trigger mention detection when focusing
-                    const target = e.target as HTMLTextAreaElement;
-                    const cursorPos = target.selectionStart;
-                    const textBeforeCursor = target.value.substring(0, cursorPos);
-                    const atIndex = textBeforeCursor.lastIndexOf("@");
-                    if (atIndex !== -1) {
-                      const q = textBeforeCursor.substring(atIndex + 1);
-                      if (!/\s/.test(q) && !/@/.test(q)) {
-                        const filteredSuggestions = allMembersData.filter((member) =>
-                          member.display.toLowerCase().includes(q.toLowerCase())
-                        );
-                        setSuggestions(filteredSuggestions);
-                        setShowSuggestions(filteredSuggestions.length > 0);
-                        setActiveSuggestionIndex(0);
-                        setMentionStartIndex(atIndex);
-                        setMentionQuery(q);
-                      }
-                    }
-                  }}
-                />
-              </div>
+      <div className="relative w-full">
 
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-full p-3 h-10 w-10 flex items-center justify-center shadow-sm transition-colors shrink-0"
-              >
-                <Send className="w-5 h-5" />
-              </button>
+  {/* ✅ FIX: Added w-full to Textarea */}
+  <Textarea
+    ref={textareaRef}
+    value={input}
+    onChange={handleInputChange}
+    onKeyDown={handleKeyDownOnTextarea}
+    placeholder="Type a message... @ to mention."
+    className="
+      min-h-[45px] 
+      max-h-[150px] 
+      py-8 
+      pl-4    /* increased left padding */
+      pr-24 
+      resize-none 
+      w-full 
+      rounded-xl
+    "
+    style={{ lineHeight: "1.4" }} // fixes cursor alignment when wrapping
+  />
+
+  {/* Poll Button - align to TOP instead of bottom */}
+  <button
+    onClick={() => setIsPollModalOpen(true)}
+    className="
+      absolute left-3 top-1
+      text-gray-500 hover:text-indigo-600
+      h-7 w-7 flex items-center justify-center
+    "
+  >
+    <BarChartHorizontal className="w-5 h-5" />
+  </button>
+
+  {/* Emoji Button - align to TOP */}
+  <Popover>
+    <PopoverTrigger asChild>
+      <button
+        className="
+          absolute left-12 top-1
+          text-gray-500 hover:text-indigo-600
+          h-7 w-7 flex items-center justify-center
+        "
+      >
+        <SmilePlus className="w-5 h-5" />
+      </button>
+    </PopoverTrigger>
+    <PopoverContent className="w-64 p-2" side="top" align="start">
+      <div className="grid grid-cols-4 gap-2">
+        {QUICK_REACTIONS.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={() => handleInsertEmoji(emoji)}
+            className="text-2xl hover:bg-gray-100 p-2 rounded"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </PopoverContent>
+  </Popover>
+
+  {/* Send Button */}
+  <button
+    onClick={sendMessage}
+    disabled={!input.trim()}
+    className="
+      absolute right-3 top-2
+      bg-indigo-600 hover:bg-indigo-700 
+      text-white rounded-full 
+      p-2 h-9 w-9 
+      flex items-center justify-center
+      disabled:opacity-50
+    "
+  >
+    <Send className="w-5 h-5" />
+  </button>
+</div>
+              </div>
             </div>
           </>
         )}
       </CardFooter>
+
+      {/* ✅ Render Poll Creation Modal */}
+      <PollCreationModal 
+        isOpen={isPollModalOpen} 
+        onOpenChange={setIsPollModalOpen}
+        onCreatePoll={handleCreatePoll}
+      />
     </Card>
   );
 }
-
-
-// ! wroking 2 code 
+// ! wroking 2 code
 
 // "use client";
 

@@ -11,7 +11,7 @@ export async function GET(
 
     if (!challengeId) {
       return NextResponse.json(
-        { error: "Challenge ID is required" },
+        { error: "Challenge ID is required" },  
         { status: 400 }
       );
     }
@@ -41,6 +41,21 @@ export async function GET(
             user: { select: { name: true } },
           },
         },
+        poll: {
+          include: {
+            options: {
+              orderBy: { id: 'asc' },
+              include: {
+                votes: {
+                  select: {
+                    userId: true,
+                    user: { select: { name: true, image: true } }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: "asc" },
     });
