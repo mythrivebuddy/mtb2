@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "./globals.scss";
 import Provider from "@/providers/Provider";
 import { Analytics } from "@vercel/analytics/react"; 
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
