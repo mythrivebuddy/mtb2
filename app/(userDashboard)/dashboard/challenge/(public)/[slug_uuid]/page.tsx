@@ -3,7 +3,6 @@
 import { notFound } from "next/navigation";
 import React from "react";
 import { getServerSession } from "next-auth/next"; // Helper to get session on the server
-import { prisma } from "@/lib/prisma"; // Your Prisma client instance
 import ChallengeDetailClient from "./ChallengeDetailClient";
 import { getChallengeData } from "./action";
 import type { Metadata } from "next";
@@ -34,20 +33,10 @@ export default async function ChallengeDetailPage({
 
   // --- START: Added logic to check user enrollment ---
   const session = await getServerSession(); // Call without authOptions
-  let isEnrolled = false;
-
-  // If the user is logged in, check if they are enrolled in this challenge
-  if (session?.user?.id && challengeData) {
-    const enrollment = await prisma.challengeEnrollment.findUnique({
-      where: {
-        userId_challengeId: {
-          userId: session.user.id,
-          challengeId: challengeData.id,
-        },
-      },
-    });
-    isEnrolled = !!enrollment; // Set to true if an enrollment record exists
-  }
+ 
+  const isInitiallyUserEnrolled = challengeData.enrollments.some(enrollment => enrollment.user.email === session?.user?.email);
+ 
+  
   // --- END: Added logic to check user enrollment ---
 
   // Convert Date objects to strings before passing to the client.
@@ -64,7 +53,7 @@ export default async function ChallengeDetailPage({
   return (
     <ChallengeDetailClient
       challenge={serializableChallenge}
-      initialIsEnrolled={isEnrolled} // <-- Pass the enrollment status to the client
+      initialIsEnrolled={isInitiallyUserEnrolled} // <-- Pass the enrollment status to the client
     />
   );
 }

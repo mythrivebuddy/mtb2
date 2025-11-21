@@ -21,6 +21,7 @@ export const getChallengeData = cache(async (slug_uuid: string) => {
                 creator: { select: { id:true,name: true } },
                 templateTasks: { select: { id: true, description: true } },
                 _count: { select: { enrollments: true } },
+                enrollments:{select:{user:{select:{email:true}}}}
             }
         });
         return challenge;

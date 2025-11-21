@@ -83,9 +83,12 @@ export default function ChallengeDetailClient({
   };
 
   const handleCloseSuccessModal = () => {
+     router.push(`/dashboard/challenge`);
+  setTimeout(() => {
     setIsSuccessModalOpen(false);
-    router.push("/dashboard/challenge/my-challenges");
+  }, 0);
   };
+  
 
   // 1. Extract the main page content into a constant
   const pageContent = (
