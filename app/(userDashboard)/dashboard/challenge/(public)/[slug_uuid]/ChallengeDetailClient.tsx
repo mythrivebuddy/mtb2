@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { Check, PartyPopper, Loader2 } from "lucide-react"; // Import Loader2
 import { ChallengeDetailsForClient } from "@/types/client/challengeDetail";
 import AppLayout from "@/components/layout/AppLayout"; // Import AppLayout
+import ChallengeDescription from "@/components/Dompurify";
 
 // A modal for after a user successfully joins
 const SuccessModal = ({
@@ -82,9 +83,12 @@ export default function ChallengeDetailClient({
   };
 
   const handleCloseSuccessModal = () => {
+     router.push(`/dashboard/challenge`);
+  setTimeout(() => {
     setIsSuccessModalOpen(false);
-    router.push("/dashboard/challenge/my-challenges");
+  }, 0);
   };
+  
 
   // 1. Extract the main page content into a constant
   const pageContent = (
@@ -115,7 +119,10 @@ export default function ChallengeDetailClient({
             <span className="font-semibold">{challenge.creator.name}</span>
           </p>
         </div>
-        <p className="text-slate-600">{challenge.description}</p>
+        {challenge.description && (
+            <ChallengeDescription html={challenge.description} />
+          )
+        }
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
           <div className="bg-slate-50 p-4 rounded-lg">
             <p className="text-sm text-slate-500">Starts On</p>
