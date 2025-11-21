@@ -4,15 +4,33 @@ import AppLayout from "@/components/layout/AppLayout";
 import ReadOnlyTipTapEditor from "@/app/simple/read-only-editor";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 import { RESERVED_PUBLIC_ROUTES } from "@/lib/constant";
+import type { JSONContent } from "@tiptap/react";
+/* --------------------------------------------
+   DIRECT DATABASE FETCH (NO API CALL)
+---------------------------------------------*/
+async function fetchPage(slug: string) {
+  if (RESERVED_PUBLIC_ROUTES.includes(slug)) {
+    return null;
+  }
 
+  const page = await prisma.page.findUnique({
+    where: { slug },
+  });
+
+  return page;
+}
+
+/* --------------------------------------------
+   METADATA (SSR)
+---------------------------------------------*/
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
 }) {
-  const { slug } = await params;
+  const slug = params.slug;
   const page = await fetchPage(slug);
 
   if (!page || !page.isPublished) {
@@ -26,56 +44,35 @@ export async function generateMetadata({
     description: page.metaDescription,
     keywords: page.metaKeywords,
     alternates: {
-      canonical: page.canonicalUrl || `${process.env.NEXT_URL}/${page.slug}`,
+      canonical:
+        page.canonicalUrl || `${process.env.NEXT_PUBLIC_SITE_URL}/${page.slug}`,
     },
     openGraph: {
       title: page.ogTitle || page.metaTitle || page.title,
       description: page.ogDescription || page.metaDescription,
       images: page.ogImage ? [page.ogImage] : [],
-      url: `${process.env.NEXT_URL}/${page.slug}`,
+      url: `${process.env.NEXT_PUBLIC_SITE_URL}/${page.slug}`,
     },
   };
 }
 
-async function fetchPage(slug: string) {
-  if (RESERVED_PUBLIC_ROUTES.includes(slug)) {
-    return null;
-  }
-
-  try {
-    const cookieHeader = (await cookies()).toString();
-    const res = await fetch(`${process.env.NEXT_URL}/api/pages/${slug}`, {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        cookie: cookieHeader,
-      },
-    });
-    const data = await res.json();
-    console.log("data", data);
-
-    if (!data || !data.id) {
-      return null;
-    }
-
-    return data;
-  } catch (e) {
-    console.log(e);
-
-    return null;
-  }
-}
-
+/* --------------------------------------------
+   PAGE COMPONENT
+---------------------------------------------*/
 export default async function Page({ params }: { params: { slug: string } }) {
-  const { slug } = await params;
+  const slug = params.slug;
 
+  // Direct DB query
   const page = await fetchPage(slug);
-  const session = await getServerSession(authOptions);
 
+  const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.role === "ADMIN";
+
   if (!page) {
     notFound();
   }
+
+  // If page unpublished, only admin can see it
   if (!page.isPublished && !isAdmin) {
     notFound();
   }
@@ -95,7 +92,11 @@ export default async function Page({ params }: { params: { slug: string } }) {
       {/* Page Content */}
       <main className="w-full px-0">
         <section className="w-full px-0">
-          <ReadOnlyTipTapEditor content={page.content} />
+          <ReadOnlyTipTapEditor
+            content={
+              (page.content ?? { type: "doc", content: [] }) as JSONContent
+            }
+          />
         </section>
       </main>
     </AppLayout>
