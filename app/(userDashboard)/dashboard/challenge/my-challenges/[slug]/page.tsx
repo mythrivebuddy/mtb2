@@ -21,6 +21,7 @@ import {
   ChevronRight,
   CheckCircle2,
   XCircle,
+  LucideTrash2,
 } from "lucide-react";
 import Image from "next/image";
 import axios, { AxiosError } from "axios";
@@ -30,6 +31,16 @@ import { getAvatar } from "@/lib/utils/getDefaultAvatar";
 import ChallengeDescription from "@/components/Dompurify";
 import ChallengeChat from "@/components/ChallengeChat";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // --- TYPE DEFINITIONS ---
 interface CompletionRecord {
@@ -41,7 +52,7 @@ interface Task {
   description: string;
   completed: boolean;
 }
-interface LeaderboardPlayer {
+export interface LeaderboardPlayer {
   id: string;
   name: string;
   score: number;
@@ -364,6 +375,7 @@ export default function ChallengeManagementPage() {
   const params = useParams();
   const slug = params.slug as string;
   const queryClient = useQueryClient();
+  const session = useSession();
 
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -372,6 +384,13 @@ export default function ChallengeManagementPage() {
   const [copied, setCopied] = useState(false);
   const [isCalendarVisible, setIsCalendarVisible] = useState(false);
   const [calendarPosition, setCalendarPosition] = useState("top-full mt-2");
+  // const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const [selectedUser, setSelectedUser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isUserDeleting, setIsUserDeleting] = useState<boolean>(false);
 
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const streakCardRef = useRef<HTMLDivElement>(null);
@@ -381,6 +400,7 @@ export default function ChallengeManagementPage() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery<ChallengeDetails, AxiosError<{ error?: string }>>({
     queryKey: ["getChallengeDetails", slug],
     queryFn: async () => {
@@ -389,7 +409,6 @@ export default function ChallengeManagementPage() {
     },
     enabled: !!slug,
   });
-  console.log({ challenge });
 
   const handleCalendarToggle = () => {
     if (!streakCardRef.current) return;
@@ -520,6 +539,68 @@ export default function ChallengeManagementPage() {
         social.template.replace("{url}", shareUrl).replace("{text}", shareText)
       ),
   }));
+  const deleteUserMutation = async (
+    challengeId: string,
+    userId: string,
+    user_name: string
+  ): Promise<{ message: string }> => {
+    if (!challengeId || !userId) {
+      throw new Error("Challenge ID and User ID are required");
+    }
+
+    try {
+      // ✅ Using searchParams (Axios `params` option auto-serializes)
+      const response = await axios.delete<{ message: string }>(
+        "/api/challenge/my-challenge/creator",
+        {
+          params: { challengeId, userId, user_name },
+        }
+      );
+
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const message =
+          error.response?.data?.message || "Failed to delete user enrollment";
+        throw new Error(message);
+      }
+
+      throw new Error("Unexpected error while deleting enrollment");
+    }
+  };
+
+  /**
+   * Handles the deletion flow (confirmation + toast feedback)
+   */
+  const handleRemoveUserFromChallenge = async (
+    challengeId: string,
+    userId: string,
+    user_name: string
+  ): Promise<void> => {
+    try {
+      setIsUserDeleting(true);
+      const result = await deleteUserMutation(challengeId, userId, user_name);
+      await refetch();
+      toast.success(result.message || "User removed successfully ✅");
+    } catch (error: unknown) {
+      let message = "Failed to delete the user";
+
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error
+      ) {
+        const axiosError = error as AxiosError<{ message?: string }>;
+        message = axiosError.response?.data?.message || message;
+      }
+
+      toast.error(message);
+    } finally {
+      setIsUserDeleting(false);
+    }
+  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -552,7 +633,6 @@ export default function ChallengeManagementPage() {
   const totalCompletedDays = (challenge.history || []).filter(
     (day) => day.status === "COMPLETED"
   ).length;
-  console.log("completed days ", totalCompletedDays);
 
   return (
     <>
@@ -690,89 +770,100 @@ export default function ChallengeManagementPage() {
           </div>
 
           {/* ✅ FIXED GRID STRUCTURE */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* ✅ LEFT COLUMN (Daily Tasks + Group Chat) */}
-            <div className="lg:col-span-2 flex flex-col gap-8">
-              {/* ✅ DAILY TASKS (unchanged width) */}
-              <div className="bg-white p-6 rounded-2xl shadow-sm ">
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                  Your Daily Tasks
-                </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+  {/* ✅ LEFT COLUMN (Daily Tasks + Group Chat) */}
+  <div className="lg:col-span-2 flex flex-col gap-8">
+    {/* DAILY TASKS */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">
+        Your Daily Tasks
+      </h2>
+      <div className="space-y-3">
+        {challenge.dailyTasks?.length > 0 ? (
+          challenge.dailyTasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggle={handleToggleTask}
+              isUpdating={updateTaskMutation.isPending}
+            />
+          ))
+        ) : (
+          <p className="text-gray-500">No tasks defined.</p>
+        )}
+      </div>
+    </div>
 
-                <div className="space-y-3">
-                  {challenge.dailyTasks?.length > 0 ? (
-                    challenge.dailyTasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        onToggle={handleToggleTask}
-                        isUpdating={updateTaskMutation.isPending}
-                      />
-                    ))
-                  ) : (
-                    <p className="text-gray-500">No tasks defined.</p>
-                  )}
-                </div>
-              </div>
+    {/* GROUP CHAT */}
+    <div className="bg-white px-0 sm:px-4 py-2 rounded-2xl shadow-sm">
+      <ChallengeChat
+        challengeId={challenge.id}
+        isChatDisabled={new Date(challenge.endDate).getTime() < Date.now()}
+        members={challenge.leaderboard || []}
+      />
+    </div>
+  </div>
 
-              {/* ✅ GROUP CHAT directly below tasks, same width */}
-              <div className="bg-white px-6 py-2 rounded-2xl shadow-sm">
-                <ChallengeChat
-                  challengeId={challenge.id}
-                  isChatDisabled={
-                    new Date(challenge.endDate).getTime() < Date.now()
-                  }
+  {/* ✅ RIGHT COLUMN (Leaderboard) */}
+  {/* Changes: Removed 'self-start', added 'h-full flex flex-col' */}
+  <div className="lg:col-span-1 bg-white px-3 py-6 rounded-2xl shadow-sm flex flex-col h-full">
+    <div className="flex-shrink-0 mb-4">
+      <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+        <Users className="w-6 h-6 mr-3 text-indigo-500" /> Leaderboard
+      </h2>
+    </div>
+
+    {/* ✅ SCROLL AREA */}
+    {/* Changes: flex-1 (fills height), min-h-0 (allows scroll), removed fixed pixel heights */}
+    <ScrollArea className="flex-1 min-h-0 w-full pr-2">
+      <ul className="space-y-4">
+        {challenge.leaderboard?.map((player, index) => (
+          <li key={player.id}>
+            <div className="flex justify-between items-start hover:bg-gray-100 rounded-lg py-4 px-2 min-h-[60px]">
+              <Link
+                href={`/profile/${player.id}`}
+                target="_blank"
+                className="flex items-center w-full"
+              >
+                <span className="text-md font-bold text-gray-400 w-6">
+                  {index + 1}
+                </span>
+
+                <Image
+                  src={player.avatar ? player.avatar : getAvatar(player.name)}
+                  alt={player.name}
+                  width={35}
+                  height={35}
+                  className="rounded-full mr-3"
                 />
-              </div>
+
+                <div className="flex-grow">
+                  <p className="font-semibold text-gray-800">{player.name}</p>
+                  <p className="text-[12px] sm:text-[16px] lg:text-[12px] xl:text-[11px] text-gray-500">
+                    {player.completedDays} Days Completed ({player.score} Streak)
+                  </p>
+                </div>
+              </Link>
+              {session.data?.user.id === challenge.creatorId &&
+                player.id !== challenge.creatorId && (
+                  <button
+                    onClick={() =>
+                      setSelectedUser({
+                        id: player.id,
+                        name: player.name,
+                      })
+                    }
+                    className="text-red-700 hover:text-red-800 cursor-pointer"
+                  >
+                    <LucideTrash2 className="w-4 h-4 xl:w-5 xl:h-5" />
+                  </button>
+                )}
             </div>
-
-            {/* ✅ RIGHT COLUMN (Leaderboard) */}
-            <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm self-start">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                <Users className="w-6 h-6 mr-3 text-indigo-500" /> Leaderboard
-              </h2>
-
-              {/* ✅ Fixed height = 3 users max, then scroll */}
-              <ScrollArea className="h-[240px] sm:h-[380px] pr-2">
-                <ul className="space-y-4">
-                  {challenge.leaderboard?.map((player, index) => (
-                    <li key={player.id}>
-                      <Link
-                        href={`/profile/${player.id}`}
-                        target="_blank"
-                        className="flex items-center hover:bg-gray-100 rounded-lg p-4 min-h-[60px]"
-                      >
-                        <span className="text-lg font-bold text-gray-400 w-8">
-                          {index + 1}
-                        </span>
-
-                        <Image
-                          src={
-                            player.avatar
-                              ? player.avatar
-                              : getAvatar(player.name)
-                          }
-                          alt={player.name}
-                          width={40}
-                          height={40}
-                          className="rounded-full mr-4"
-                        />
-
-                        <div className="flex-grow">
-                          <p className="font-semibold text-gray-800">
-                            {player.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {player.completedDays} Days Completed (
-                            {player.score} Streak)
-                          </p>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </ScrollArea>
-            </div>
+          </li>
+        ))}
+      </ul>
+    </ScrollArea>
+  </div>
           </div>
         </main>
       </div>
@@ -868,6 +959,43 @@ export default function ChallengeManagementPage() {
           </div>
         </div>
       )}
+      {/* ✅ Remove User Dialog (only one instance globally) */}
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove <strong>{selectedUser?.name}</strong>{" "}
+              from this challenge. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2">
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md font-semibold"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={async () => {
+                if (!selectedUser) return;
+                await handleRemoveUserFromChallenge(
+                  challenge.id,
+                  selectedUser.id,
+                  selectedUser.name
+                );
+                setSelectedUser(null);
+              }}
+              disabled={isUserDeleting}
+              className={`px-4 py-2 bg-red-600 ${isUserDeleting && "bg-red-800"} hover:bg-red-700 text-white rounded-md font-semibold flex items-center justify-center gap-2`}
+            >
+              {isUserDeleting ? "Removing..." : "Remove"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

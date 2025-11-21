@@ -6,9 +6,8 @@ import { cn } from "@/lib/utils/tw";
 import { Menu } from "lucide-react";
 import React, { useState } from "react";
 import { NavItemProps } from "@/types/client/nav";
-import { useQuery} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
 
 const NavItem = ({ href, label }: NavItemProps) => {
   const pathname = usePathname();
@@ -45,25 +44,20 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 );
 
 const Sidebar = () => {
-const pathname = usePathname();
+  const pathname = usePathname();
 
-
-const { data: spotlightUnseenCount } = useQuery({
-  queryKey: ["spotlightUnseenCount"],
-  queryFn: async () => {
-    const { data } = await axios.get("/api/admin/spotlight/unseen-count");
-    return data;
-  },
-});
-console.log(spotlightUnseenCount);
-
-
+  const { data: spotlightUnseenCount } = useQuery({
+    queryKey: ["spotlightUnseenCount"],
+    queryFn: async () => {
+      const { data } = await axios.get("/api/admin/spotlight/unseen-count");
+      return data;
+    },
+  });
+  console.log(spotlightUnseenCount);
 
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
-  
-  
 
   return (
     <>
@@ -110,42 +104,58 @@ console.log(spotlightUnseenCount);
           <div className="flex flex-col gap-8 mt-10 flex-grow">
             <NavSection title="Menu">
               <NavItem href="/admin/dashboard" label="Dashboard" />
-                  <NavItem href="/admin/announcement" label="Announcement" />
-                  <NavItem href="/admin/accountability-hub" label="Accountability hub" />
+              <NavItem href="/admin/announcement" label="Announcement" />
+              <NavItem
+                href="/admin/accountability-hub"
+                label="Accountability hub"
+              />
+              <NavItem href="/admin/cms" label="CMS" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
-              <NavItem href="/admin/survey-management" label="Survey Management" />
-              <NavItem href="/admin/notification-management" label="Notification Management" />
-          
+              <NavItem
+                href="/admin/survey-management"
+                label="Survey Management"
+              />
+              <NavItem
+                href="/admin/notification-management"
+                label="Notification Management"
+              />
 
               {/* Spotlight with custom badge */}
-                  <li>
-  <Link
-    href="/admin/spotlight"
-    className={cn(
-      "flex items-center justify-between py-2 hover:text-jp-orange relative",
-      pathname === "/admin/spotlight" ? "text-jp-orange" : "text-[#6C7894]"
-    )}
-  >
-     <span className="font-normal text-lg">Spotlight Management</span>
-  
-    <span>
-    {spotlightUnseenCount?.count !== undefined && spotlightUnseenCount?.count > 0 && (
-      <span className="absolute xl:mr-1 right-6 lg:right-8 top-1 px-[0.4rem] py-1 text-[0.5rem] font-semibold bg-red-500 text-white rounded-full">
-    {spotlightUnseenCount?.count} 
-  </span> )} 
-</span>
+              <li>
+                <Link
+                  href="/admin/spotlight"
+                  className={cn(
+                    "flex items-center justify-between py-2 hover:text-jp-orange relative",
+                    pathname === "/admin/spotlight"
+                      ? "text-jp-orange"
+                      : "text-[#6C7894]"
+                  )}
+                >
+                  <span className="font-normal text-lg">
+                    Spotlight Management
+                  </span>
 
-  
-  </Link>
-</li>
+                  <span>
+                    {spotlightUnseenCount?.count !== undefined &&
+                      spotlightUnseenCount?.count > 0 && (
+                        <span className="absolute xl:mr-1 right-6 lg:right-8 top-1 px-[0.4rem] py-1 text-[0.5rem] font-semibold bg-red-500 text-white rounded-full">
+                          {spotlightUnseenCount?.count}
+                        </span>
+                      )}
+                  </span>
+                </Link>
+              </li>
 
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
               <NavItem href="/admin/faq" label="FAQs" />
               <NavItem href="/admin/activity/update-jp" label="JP Management" />
               <NavItem href="/admin/plans" label="Manage Plans" />
-              <NavItem href="/admin/manage-store-product" label="Product Management" />
+              <NavItem
+                href="/admin/manage-store-product"
+                label="Product Management"
+              />
             </NavSection>
           </div>
         </div>

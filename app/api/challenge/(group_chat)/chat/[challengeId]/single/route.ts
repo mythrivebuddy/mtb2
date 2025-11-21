@@ -1,3 +1,4 @@
+// /api/challenge/(group_chat)/chat/[challengeId]/single/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -15,6 +16,12 @@ export async function GET(req: Request, { params }: { params: { challengeId: str
       user: {
         select: { id: true, name: true, image: true },
       },
+      reactions:{
+        select: {
+            emoji: true,
+            userId: true,
+          }
+      }
     },
   });
 

@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 // 1. Create an Admin Supabase client
-// (Do NOT expose the service key on the client)
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { challengeId, message } = await req.json();
+    const { challengeId, message, replyToId } = await req.json();
 
     if (!challengeId || !message?.trim()) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
@@ -32,9 +32,17 @@ export async function POST(req: Request) {
         message,
         challengeId,
         userId: user.id,
+        replyToId: replyToId || null,
       },
       include: {
         user: { select: { id: true, name: true, image: true } },
+        replyTo: {
+          select: {
+            id: true,
+            message: true,
+            user: { select: { name: true } },
+          },
+        },
       },
     });
 

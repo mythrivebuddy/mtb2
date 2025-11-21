@@ -1,3 +1,4 @@
+// /api/challenge/(group_chat)/chat/[challengeId]/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -10,7 +11,7 @@ export async function GET(
 
     if (!challengeId) {
       return NextResponse.json(
-        { error: "Challenge ID is required" },
+        { error: "Challenge ID is required" },  
         { status: 400 }
       );
     }
@@ -25,6 +26,36 @@ export async function GET(
             image: true,
           },
         },
+        reactions: {
+          select: {
+            emoji: true,
+            userId: true,
+            // 👇 UPDATE THIS LINE to include 'image'
+            user: { select: { name: true, image: true } }
+          }
+        },
+        replyTo: {
+          select: {
+            id: true,
+            message: true,
+            user: { select: { name: true } },
+          },
+        },
+        poll: {
+          include: {
+            options: {
+              orderBy: { id: 'asc' },
+              include: {
+                votes: {
+                  select: {
+                    userId: true,
+                    user: { select: { name: true, image: true } }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: "asc" },
     });
