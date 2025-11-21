@@ -35,7 +35,9 @@ export default async function ChallengeDetailPage({
   // --- START: Added logic to check user enrollment ---
   const session = await getServerSession(); // Call without authOptions
   let isEnrolled = false;
-
+  const isInitiallyUserEnrolled = challengeData.enrollments.some(enrollment => enrollment.user.email === session?.user?.email);
+ 
+  
   // If the user is logged in, check if they are enrolled in this challenge
   if (session?.user?.id && challengeData) {
     const enrollment = await prisma.challengeEnrollment.findUnique({
@@ -64,7 +66,7 @@ export default async function ChallengeDetailPage({
   return (
     <ChallengeDetailClient
       challenge={serializableChallenge}
-      initialIsEnrolled={isEnrolled} // <-- Pass the enrollment status to the client
+      initialIsEnrolled={isInitiallyUserEnrolled} // <-- Pass the enrollment status to the client
     />
   );
 }
