@@ -144,6 +144,7 @@ export const challengeSchema = z
 
 
     endDate: z.coerce.date(),
+    isIssuingCertificate: z.boolean().default(false),
 
     tasks: z
       .array(

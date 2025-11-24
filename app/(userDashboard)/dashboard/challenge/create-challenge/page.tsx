@@ -17,7 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
 import {
@@ -31,6 +31,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Editor } from "@tinymce/tinymce-react";
 import { toast } from "sonner";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
   if (!title) return "";
@@ -127,6 +129,9 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     message: string;
   } | null>(null);
 
+  const [isShowingCertificateToggle, setIsShowingCertificateToggle] =
+    useState(false);
+
   const {
     data: user,
     isLoading: isUserLoading,
@@ -153,6 +158,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     handleSubmit,
     register,
     control,
+    watch,
     formState: { errors },
   } = useForm<challengeSchemaFormType>({
     resolver: zodResolver(challengeSchema),
@@ -169,6 +175,9 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       social_link_task: "",
     },
   });
+  const isIssuingCertificate = watch("isIssuingCertificate");
+  const startDate = watch("startDate");
+  const endDate = watch("endDate");
 
   const { fields, append, remove } = useFieldArray({ name: "tasks", control });
 
@@ -228,6 +237,26 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     }
     mutation.mutate(data);
   };
+
+  useEffect(() => {
+  if (!startDate || !endDate) {
+    setIsShowingCertificateToggle(false);
+    return;
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Normalize both dates
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  const diffInMs = end.getTime() - start.getTime();
+  const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+  setIsShowingCertificateToggle(diffInDays >= 5);
+}, [startDate, endDate]);
+
 
   if (isUserLoading || isFeeLoading) {
     return (
@@ -653,6 +682,28 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 for example, a promo video.
               </p>
             </div>
+
+            {isShowingCertificateToggle && (
+              <div className="flex gap-4 items-center">
+                <Label
+                  htmlFor="multiple"
+                  className="cursor-pointer font-medium text-sm"
+                >
+                  Completion Certificate
+                </Label>
+                <Controller
+                  name="isIssuingCertificate"
+                  control={control}
+                  render={({ field }) => (
+                    <Switch
+                      id="multiple"
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+            )}
 
             <div className="mt-8 flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
               <button

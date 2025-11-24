@@ -570,6 +570,7 @@ model Challenge {
   createdAt     DateTime              @default(now())
   creatorId     String
   social_link_task String?
+  isIssuingCertificate Boolean @default(false)
   enrollments   ChallengeEnrollment[]
   templateTasks ChallengeTask[]
   creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
