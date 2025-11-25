@@ -121,6 +121,23 @@ const completionPercentage = Math.round(
       );
     }
 
+    // 4. Fetch creator signature
+const creatorSignature = await prisma.challengeCreatorSignature.findUnique({
+  where: { userId: challenge.creatorId },
+});
+
+let signatureUrl: string | undefined = undefined;
+let signatureText: string | undefined = undefined;
+
+if (creatorSignature) {
+  if (creatorSignature.type === "TEXT") {
+    signatureText = creatorSignature.text ?? undefined;
+  } else {
+    signatureUrl = creatorSignature.imageUrl ?? undefined;
+  }
+}
+
+
     // 5. Generate certificate values
     const certificateId = generateCertificateId();
     const verificationHash = generateVerificationHash(
@@ -136,9 +153,11 @@ const completionPercentage = Math.round(
       challengeName: challenge.title,
       issueDate: new Date().toISOString().split("T")[0],
       creatorName: challenge.creator?.name ?? "Challenge Creator",
-      signatureUrl: challenge.creatorSignatureUrl ?? undefined,
       certificateId,
       qrCodeDataUrl,
+      signatureUrl,
+      signatureText,
+      signatureType: creatorSignature?.type, // optional, if your PDF component supports it
     };
 
     // 7. Generate PDF (React-PDF → Buffer)

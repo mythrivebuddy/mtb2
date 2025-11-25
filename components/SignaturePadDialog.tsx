@@ -18,7 +18,7 @@ export default function SignaturePadDialog({
 
   const handleSave = () => {
     if (!padRef.current) return;
-    const dataUrl = padRef.current.getTrimmedCanvas().toDataURL("image/png");
+   const dataUrl = padRef.current.getCanvas().toDataURL("image/png");
     onSave(dataUrl);
     onClose();
   };
