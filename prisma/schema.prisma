@@ -95,6 +95,8 @@ model User {
    certificatesReceived ChallengeCertificate[] @relation("CertificatesReceivedByUser")
    certificatesIssued   ChallengeCertificate[] @relation("CertificatesIssuedByUser")
 
+  challengeCreatorSignature ChallengeCreatorSignature?
+
   @@index([name])
 }
 
@@ -731,6 +733,17 @@ model ChallengeCertificate {
   @@map("challenge_certificates")
 }
 
+// challenge creator signatures
+model ChallengeCreatorSignature {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  type             SignatureType   // "IMAGE", "TEXT", "DRAWN"
+  text             String?  // for text signature
+  imageUrl         String?  // signed URL from Supabase bucket
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+}
+
 model NotificationSettings {
   id                String           @id @default(uuid())
   notification_type NotificationType @unique
@@ -1190,3 +1203,11 @@ enum GroupRole {
   ADMIN
   MEMBER
 }
+
+// enum for challenge creator signature 
+enum SignatureType {
+  IMAGE
+  TEXT
+  DRAWN
+}
+
