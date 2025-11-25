@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import SignaturePadDialog from "@/components/SignaturePadDialog";
+import { Task } from "../page";
 
 interface ChallengeHistory {
   date: string;
@@ -43,6 +45,7 @@ interface ParticipantEntry {
   avatar: string;
   joinedAt: string;
   lastActiveDate: string;
+  isCertificateIssued: boolean;
 }
 
 interface APIResponse {
@@ -50,11 +53,11 @@ interface APIResponse {
   title: string;
   startDate: string;
   endDate: string;
-  dailyTasks: any[];
+  dailyTasks: Task[];
   leaderboard: LeaderboardEntry[];
   history: ChallengeHistory[];
   participants: ParticipantEntry[];
-  creatorId: string; // make sure your API includes this
+  creatorId: string;
 }
 
 interface BuiltParticipant {
@@ -63,6 +66,7 @@ interface BuiltParticipant {
   completionPercentage: number;
   joinedDate: string;
   lastActiveDate: string;
+  isCertificateIssued: boolean;
 }
 
 export default function CertificatesManagementPage() {
@@ -75,8 +79,6 @@ export default function CertificatesManagementPage() {
     "eligible"
   );
 
-  // track which participants have been issued in this session
-  const [issuedMap, setIssuedMap] = useState<Record<string, boolean>>({});
   const [issuingId, setIssuingId] = useState<string | null>(null);
 
   // preview dialog state
@@ -86,6 +88,17 @@ export default function CertificatesManagementPage() {
     string | null
   >(null);
 
+  // signature dialog state
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [signatureTextPreview, setSignatureTextPreview] = useState<
+    string | null
+  >(null);
+  const [isSignatureUploading, setIsSignatureUploading] = useState(false);
+
   const { data, isLoading, error } = useQuery<APIResponse>({
     queryKey: ["certificateDetails", slug],
     queryFn: async () => {
@@ -94,18 +107,48 @@ export default function CertificatesManagementPage() {
     },
   });
 
+  const uploadSignatureAxios = async (
+    form: FormData
+  ): Promise<string | null> => {
+    try {
+      setIsSignatureUploading(true);
+      const { data } = await axios.post("/api/signature", form, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      // For IMAGE / DRAWN signatures, backend returns `imageUrl`
+      const imageUrl: string | null = data?.signature?.imageUrl ?? null;
+      return imageUrl;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(
+          error.response?.data?.error ||
+            error.message ||
+            "Signature upload failed"
+        );
+      } else {
+        toast.error("Signature upload failed");
+      }
+      throw error;
+    } finally {
+      setIsSignatureUploading(false);
+    }
+  };
+
   const issueCertificateMutation = useMutation({
     mutationFn: async (participantId: string) => {
       setIssuingId(participantId);
       const res = await axios.post("/api/challenge/certificates/generate", {
         participantId,
         challengeId: data?.id,
-        issuedById: data?.creatorId, // ensure creatorId comes from API
+        issuedById: data?.creatorId,
       });
       return res.data as {
         success: boolean;
         pdfUrl: string;
-        certificate: any;
+        certificate: unknown;
         completionPercentage: number;
       };
     },
@@ -113,10 +156,20 @@ export default function CertificatesManagementPage() {
       setIssuingId(null);
 
       // mark participant as issued in local state
-      setIssuedMap((prev) => ({
-        ...prev,
-        [participantId]: true,
-      }));
+      // Update React Query cache instantly
+      queryClient.setQueryData(
+        ["certificateDetails", slug],
+        (oldData: APIResponse | undefined) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            participants: oldData.participants.map((p) =>
+              p.id === participantId ? { ...p, isCertificateIssued: true } : p
+            ),
+          };
+        }
+      );
 
       // find the participant for display
       const participantName =
@@ -130,16 +183,20 @@ export default function CertificatesManagementPage() {
       // show success toast
       toast.success(`Certificate issued successfully to ${participantName}.`);
 
-      // if later you load issued certificates from backend, you can also invalidate:
+      // If later you store issued certificates in backend:
       // queryClient.invalidateQueries({ queryKey: ["certificateDetails", slug] });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setIssuingId(null);
-      const message =
-        err?.response?.data?.error ||
-        err?.message ||
-        "Failed to issue certificate.";
-      toast.error(message);
+      if (axios.isAxiosError(err)) {
+        const message =
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to issue certificate.";
+        toast.error(message);
+      } else {
+        toast.error("Failed to issue certificate.");
+      }
     },
   });
 
@@ -196,31 +253,31 @@ export default function CertificatesManagementPage() {
         completionPercentage,
         joinedDate: p.joinedAt,
         lastActiveDate: p.lastActiveDate,
+        isCertificateIssued: p.isCertificateIssued ?? false,
       };
     }
   );
 
   // derive sets for issued participants
-  const issuedIds = new Set(
-    Object.entries(issuedMap)
-      .filter(([_, v]) => v)
-      .map(([participantId]) => participantId)
-  );
+  // const issuedIds = new Set(
+  //   participants.filter((p) => p.isCertificateIssued).map((p) => p.id)
+  // );
 
   // ======================================================
   // FILTER ELIGIBILITY
   // ======================================================
   const eligible = participants.filter(
     (p: BuiltParticipant) =>
-      p.completionPercentage >= 75 && !issuedIds.has(p.id)
+      p.completionPercentage >= 75 && !p.isCertificateIssued
   );
 
   const notEligible = participants.filter(
-    (p: BuiltParticipant) => p.completionPercentage < 75 && !issuedIds.has(p.id)
+    (p: BuiltParticipant) =>
+      p.completionPercentage < 75 && !p.isCertificateIssued
   );
 
-  const issued: BuiltParticipant[] = participants.filter((p) =>
-    issuedIds.has(p.id)
+  const issued: BuiltParticipant[] = participants.filter(
+    (p) => p.isCertificateIssued
   );
 
   const formatDate = (iso: string) => {
@@ -264,7 +321,7 @@ export default function CertificatesManagementPage() {
 
           <TableBody>
             {list.map((u: BuiltParticipant) => {
-              const isIssued = issuedIds.has(u.id);
+              const isIssued = u.isCertificateIssued;
               const isIssuingThis =
                 issuingId === u.id && issueCertificateMutation.isPending;
 
@@ -324,6 +381,155 @@ export default function CertificatesManagementPage() {
 
   return (
     <>
+      {/* Dialog for Signature Management */}
+      <Dialog open={signatureDialogOpen} onOpenChange={setSignatureDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Manage Certificate Signature</DialogTitle>
+            <DialogDescription>
+              Upload an image, type your signature, or sign using a pad. This
+              signature will be used on all certificates you issue.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 mt-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setShowImageUpload(true);
+                setShowTextInput(false);
+                setShowSignaturePad(false);
+              }}
+              className="px-3 py-2 rounded bg-gray-200 text-sm font-semibold hover:bg-gray-300"
+            >
+              Upload Signature Image
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowTextInput(true);
+                setShowImageUpload(false);
+                setShowSignaturePad(false);
+              }}
+              className="px-3 py-2 rounded bg-gray-200 text-sm font-semibold hover:bg-gray-300"
+            >
+              Type Signature Text
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowSignaturePad(true);
+                setShowImageUpload(false);
+                setShowTextInput(false);
+              }}
+              className="px-3 py-2 rounded bg-green-600 text-white text-sm font-semibold hover:bg-green-700"
+            >
+              Sign Using Pad
+            </button>
+          </div>
+
+          {isSignatureUploading && (
+            <p className="mt-2 text-sm text-indigo-600 font-medium">
+              Uploading signature...
+            </p>
+          )}
+
+          {/* IMAGE UPLOAD SECTION */}
+          {showImageUpload && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-medium text-slate-700">
+                Upload Signature Image
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={isSignatureUploading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+
+                  const form = new FormData();
+                  form.append("type", "IMAGE");
+                  form.append("file", file);
+
+                  const imageUrl = await uploadSignatureAxios(form);
+                  if (imageUrl) {
+                    setSignaturePreview(imageUrl);
+                    setSignatureTextPreview(null);
+                    toast.success("Signature image saved.");
+                  }
+                }}
+              />
+
+              {signaturePreview && !isSignatureUploading && (
+                <img
+                  src={signaturePreview}
+                  alt="Signature Preview"
+                  className="mt-3 h-20 object-contain border rounded-md p-2 bg-white"
+                />
+              )}
+            </div>
+          )}
+
+          {/* TEXT SIGNATURE SECTION */}
+          {showTextInput && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm font-medium text-slate-700">
+                Signature Text
+              </p>
+              <input
+                type="text"
+                placeholder="Enter your signature"
+                className="border rounded px-3 py-2 w-full text-sm"
+                disabled={isSignatureUploading}
+                onBlur={async (e) => {
+                  const text = e.target.value.trim();
+                  if (!text) return;
+
+                  const form = new FormData();
+                  form.append("type", "TEXT");
+                  form.append("text", text);
+
+                  await uploadSignatureAxios(form);
+
+                  setSignatureTextPreview(text);
+                  setSignaturePreview(null);
+                  toast.success("Signature text saved.");
+                }}
+              />
+
+              {signatureTextPreview && !isSignatureUploading && (
+                <p className="mt-3 text-2xl font-semibold font-[PinyonScript]">
+                  {signatureTextPreview}
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Separate SignaturePad Dialog (reuses existing component) */}
+      <SignaturePadDialog
+        open={showSignaturePad}
+        onClose={() => setShowSignaturePad(false)}
+        onSave={async (dataUrl: string) => {
+          const form = new FormData();
+          form.append("type", "DRAWN");
+          form.append("dataUrl", dataUrl);
+
+          const imageUrl = await uploadSignatureAxios(form);
+          if (imageUrl) {
+            setSignaturePreview(imageUrl);
+            setSignatureTextPreview(null);
+            toast.success("Drawn signature saved.");
+          }
+          setShowSignaturePad(false);
+        }}
+      />
+
       {/* Dialog for PDF preview */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
@@ -350,16 +556,31 @@ export default function CertificatesManagementPage() {
       <div className="p-4 sm:p-6 max-w-5xl mx-auto">
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
-          <h1 className="text-3xl font-bold">Certificate Management</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Certificate Management</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Issue certificates to eligible participants and manage your
+              certificate signature.
+            </p>
+          </div>
 
-          <button
-            onClick={() =>
-              router.push(`/dashboard/challenge/my-challenges/${slug}`)
-            }
-            className="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300"
-          >
-            Back
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSignatureDialogOpen(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 text-sm"
+            >
+              Manage Signature
+            </button>
+
+            <button
+              onClick={() =>
+                router.push(`/dashboard/challenge/my-challenges/${slug}`)
+              }
+              className="px-4 py-2 bg-gray-200 rounded-lg font-semibold hover:bg-gray-300 text-sm"
+            >
+              Back
+            </button>
+          </div>
         </div>
 
         {/* TABS */}

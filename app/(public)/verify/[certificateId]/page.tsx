@@ -8,7 +8,7 @@ export default async function VerifyChallengeCertificatePage({
 }) {
   const {certificateId} = await params;
 
-  let data: any = null;
+  let data = null;
 
   try {
     const res = await axios.get(
@@ -18,6 +18,7 @@ export default async function VerifyChallengeCertificatePage({
     data = res.data;
   } catch (err) {
     data = { valid: false };
+    console.log(err);
   }
 
   return (

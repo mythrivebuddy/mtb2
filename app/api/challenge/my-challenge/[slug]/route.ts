@@ -178,7 +178,8 @@ const lastActiveLookup = new Map(
     joinedAt: e.joinedAt.toISOString(),
     lastActiveDate: lastActive
       ? lastActive.toISOString()
-      : e.joinedAt.toISOString()
+      : e.joinedAt.toISOString(),
+    isCertificateIssued: e.isCertificateIssued
   };
 });
 

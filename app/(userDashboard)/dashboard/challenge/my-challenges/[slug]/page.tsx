@@ -47,7 +47,7 @@ interface CompletionRecord {
   date: string;
   status: "COMPLETED" | "MISSED";
 }
-interface Task {
+export interface Task {
   id: string;
   description: string;
   completed: boolean;

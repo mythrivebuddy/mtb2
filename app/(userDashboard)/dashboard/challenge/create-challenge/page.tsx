@@ -33,7 +33,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import SignaturePadDialog from "@/components/SignaturePadDialog";
+
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
   if (!title) return "";
@@ -132,14 +132,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
 
   const [isShowingCertificateToggle, setIsShowingCertificateToggle] =
     useState(false);
-  const [showImageUpload, setShowImageUpload] = useState(false);
-  const [showTextInput, setShowTextInput] = useState(false);
-  const [showSignaturePad, setShowSignaturePad] = useState(false);
-  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
-  const [signatureTextPreview, setSignatureTextPreview] = useState<
-    string | null
-  >(null);
-  const [isSignatureUploading, setIsSignatureUploading] = useState(false);
 
   const {
     data: user,
@@ -184,7 +176,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       social_link_task: "",
     },
   });
-  const isIssuingCertificate = watch("isIssuingCertificate");
+ 
   const startDate = watch("startDate");
   const endDate = watch("endDate");
 
@@ -266,24 +258,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     setIsShowingCertificateToggle(diffInDays >= 5);
   }, [startDate, endDate]);
 
-  const uploadSignatureAxios = async (form: FormData) => {
-    try {
-      setIsSignatureUploading(true);
-
-      const { data } = await axios.post("/api/signature", form, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      return data?.signature?.imageUrl || null;
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Signature upload failed");
-      throw error;
-    } finally {
-      setIsSignatureUploading(false);
-    }
-  };
+  
 
   if (isUserLoading || isFeeLoading) {
     return (
@@ -732,148 +707,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </div>
             )}
 
-            {isIssuingCertificate && (
-              <div className="mt-4 space-y-5 p-4 border bg-slate-50 rounded-lg">
-                <h3 className="font-semibold text-slate-800">
-                  Certificate Signature Options
-                </h3>
-
-                {/* OPTION BUTTONS */}
-                <div className="flex gap-4 flex-wrap">
-                  {/* Upload Image Button */}
-                  <Button
-                    type="button"
-                    disabled={isSignatureUploading}
-                    onClick={() => {
-                      setShowImageUpload(true);
-                      setShowTextInput(false);
-                      setShowSignaturePad(false);
-                    }}
-                  >
-                    Upload Signature Image
-                  </Button>
-
-                  {/* Text Signature Button */}
-                  <Button
-                    type="button"
-                    disabled={isSignatureUploading}
-                    onClick={() => {
-                      setShowTextInput(true);
-                      setShowImageUpload(false);
-                      setShowSignaturePad(false);
-                    }}
-                  >
-                    Type Signature Text
-                  </Button>
-
-                  {/* Signature Pad Button */}
-                  <Button
-                    type="button"
-                    disabled={isSignatureUploading}
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      setShowSignaturePad(true);
-                      setShowImageUpload(false);
-                      setShowTextInput(false);
-                    }}
-                  >
-                    Sign Using Pad
-                  </Button>
-                </div>
-
-                {/* LOADING INDICATOR */}
-                {isSignatureUploading && (
-                  <p className="text-sm text-blue-600 font-medium">
-                    Uploading signature...
-                  </p>
-                )}
-
-                {/* IMAGE UPLOAD SECTION */}
-                {showImageUpload && (
-                  <div className="space-y-2">
-                    <Label>Upload Signature Image</Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      disabled={isSignatureUploading}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-
-                        const form = new FormData();
-                        form.append("type", "IMAGE");
-                        form.append("file", file);
-
-                        const imageUrl = await uploadSignatureAxios(form);
-
-                        if (imageUrl) {
-                          setSignaturePreview(imageUrl);
-                          setSignatureTextPreview(null);
-                        }
-                      }}
-                    />
-
-                    {/* PREVIEW */}
-                    {signaturePreview && !isSignatureUploading && (
-                      <img
-                        src={signaturePreview}
-                        alt="Signature Preview"
-                        className="mt-3 h-20 object-contain border rounded-md p-2 bg-white"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* TEXT SIGNATURE SECTION */}
-                {showTextInput && (
-                  <div className="space-y-2">
-                    <Label>Signature Text</Label>
-                    <input
-                      type="text"
-                      placeholder="Enter your signature"
-                      className="border rounded px-3 py-2 w-full"
-                      disabled={isSignatureUploading}
-                      onBlur={async (e) => {
-                        const text = e.target.value.trim();
-                        if (!text) return;
-
-                        const form = new FormData();
-                        form.append("type", "TEXT");
-                        form.append("text", text);
-
-                        await uploadSignatureAxios(form);
-
-                        setSignatureTextPreview(text);
-                        setSignaturePreview(null);
-                      }}
-                    />
-
-                    {/* PREVIEW */}
-                    {signatureTextPreview && !isSignatureUploading && (
-                      <p className="mt-3 font-signature text-2xl font-semibold">
-                        {signatureTextPreview}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* SIGNATURE PAD MODAL TRIGGER (Dialog renders elsewhere) */}
-                {showSignaturePad && null}
-              </div>
-            )}
-
-            {signaturePreview && (
-              <div className="mt-4">
-                <p className="font-semibold text-slate-700 mb-2">
-                  Your Signature Preview:
-                </p>
-                <img
-                  src={signaturePreview}
-                  alt="Signature Preview"
-                  className="h-20 w-40 object-contain border rounded-md p-2 bg-white"
-                />
-              </div>
-            )}
 
             <div className="mt-8 flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
               <button
@@ -904,22 +737,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               }}
               title={modalContent?.title ?? ""}
               message={modalContent?.message ?? ""}
-            />
-            <SignaturePadDialog
-              open={showSignaturePad}
-              onClose={() => setShowSignaturePad(false)}
-              onSave={async (dataUrl) => {
-                const form = new FormData();
-                form.append("type", "DRAWN");
-                form.append("dataUrl", dataUrl);
-
-                const imageUrl = await uploadSignatureAxios(form);
-
-                if (imageUrl) {
-                  setSignaturePreview(imageUrl);
-                  setSignatureTextPreview(null);
-                }
-              }}
             />
           </form>
         </div>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import axios from "axios";
+
 
 export async function GET(req: Request) {
     try {
@@ -43,6 +43,7 @@ export async function GET(req: Request) {
             },
         });
     } catch (err) {
+        console.log(err);
         return NextResponse.json({
             valid: false,
             message: "Server error",

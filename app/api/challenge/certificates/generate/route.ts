@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { user, challenge, userTasks } = enrollment;
+    const { user, challenge} = enrollment;
 
     // 2. Challenge-level eligibility: duration >= 5 days & certificates enabled
     const start = new Date(challenge.startDate);
@@ -91,28 +91,28 @@ export async function POST(req: NextRequest) {
     // 4. Participant-level eligibility
     //    You said completion is computed on frontend, but for safety we compute here too.
     //    We'll approximate completion as: completedTasks / totalTasks * 100
-   const totalChallengeDays =
-  Math.floor(
-    (new Date(challenge.endDate).getTime() -
-      new Date(challenge.startDate).getTime()) /
-      (1000 * 60 * 60 * 24)
-  ) + 1;
+    const totalChallengeDays =
+      Math.floor(
+        (new Date(challenge.endDate).getTime() -
+          new Date(challenge.startDate).getTime()) /
+        (1000 * 60 * 60 * 24)
+      ) + 1;
 
-// Fetch completed days from completionRecord table
-const completedDaysRecord = await prisma.completionRecord.count({
-  where: {
-    challengeId,
-    userId: participantId,
-  },
-});
+    // Fetch completed days from completionRecord table
+    const completedDaysRecord = await prisma.completionRecord.count({
+      where: {
+        challengeId,
+        userId: participantId,
+      },
+    });
 
-// Same formula as frontend
-const completionPercentage = Math.round(
-  (completedDaysRecord / totalChallengeDays) * 100
-);
+    // Same formula as frontend
+    const completionPercentage = Math.round(
+      (completedDaysRecord / totalChallengeDays) * 100
+    );
 
-    console.log({completionPercentage});
-    
+    console.log({ completionPercentage });
+
 
     if (completionPercentage < 75) {
       return NextResponse.json(
@@ -122,20 +122,20 @@ const completionPercentage = Math.round(
     }
 
     // 4. Fetch creator signature
-const creatorSignature = await prisma.challengeCreatorSignature.findUnique({
-  where: { userId: challenge.creatorId },
-});
+    const creatorSignature = await prisma.challengeCreatorSignature.findUnique({
+      where: { userId: challenge.creatorId },
+    });
 
-let signatureUrl: string | undefined = undefined;
-let signatureText: string | undefined = undefined;
+    let signatureUrl: string | undefined = undefined;
+    let signatureText: string | undefined = undefined;
 
-if (creatorSignature) {
-  if (creatorSignature.type === "TEXT") {
-    signatureText = creatorSignature.text ?? undefined;
-  } else {
-    signatureUrl = creatorSignature.imageUrl ?? undefined;
-  }
-}
+    if (creatorSignature) {
+      if (creatorSignature.type === "TEXT") {
+        signatureText = creatorSignature.text ?? undefined;
+      } else {
+        signatureUrl = creatorSignature.imageUrl ?? undefined;
+      }
+    }
 
 
     // 5. Generate certificate values
@@ -197,7 +197,18 @@ if (creatorSignature) {
       },
     });
 
-    // Optionally: you can also mark something on enrollment if you add fields later
+    // 10. Mark enrollment as having certificate issued
+    await prisma.challengeEnrollment.update({
+      where: {
+        userId_challengeId: {
+          userId: participantId,
+          challengeId,
+        },
+      },
+      data: {
+        isCertificateIssued: true,
+      },
+    });
 
     return NextResponse.json(
       {
@@ -208,10 +219,10 @@ if (creatorSignature) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error issuing certificate:", error);
     return NextResponse.json(
-      { error: "Internal server error", details: error.message },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
