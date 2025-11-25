@@ -33,6 +33,7 @@ import { Editor } from "@tinymce/tinymce-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import SignaturePadDialog from "@/components/SignaturePadDialog";
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
   if (!title) return "";
@@ -131,6 +132,9 @@ export default function CreateChallenge({}: CreateChallengeProps) {
 
   const [isShowingCertificateToggle, setIsShowingCertificateToggle] =
     useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
 
   const {
     data: user,
@@ -160,6 +164,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     control,
     watch,
     formState: { errors },
+    setValue,
   } = useForm<challengeSchemaFormType>({
     resolver: zodResolver(challengeSchema),
     defaultValues: {
@@ -239,24 +244,23 @@ export default function CreateChallenge({}: CreateChallengeProps) {
   };
 
   useEffect(() => {
-  if (!startDate || !endDate) {
-    setIsShowingCertificateToggle(false);
-    return;
-  }
+    if (!startDate || !endDate) {
+      setIsShowingCertificateToggle(false);
+      return;
+    }
 
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-  // Normalize both dates
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
+    // Normalize both dates
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
 
-  const diffInMs = end.getTime() - start.getTime();
-  const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    const diffInMs = end.getTime() - start.getTime();
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
 
-  setIsShowingCertificateToggle(diffInDays >= 5);
-}, [startDate, endDate]);
-
+    setIsShowingCertificateToggle(diffInDays >= 5);
+  }, [startDate, endDate]);
 
   if (isUserLoading || isFeeLoading) {
     return (
@@ -705,6 +709,90 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </div>
             )}
 
+            {isIssuingCertificate && (
+              <div className="mt-4 space-y-5 p-4 border bg-slate-50 rounded-lg">
+                <h3 className="font-semibold text-slate-800">
+                  Certificate Signature Options
+                </h3>
+
+                {/* BUTTONS */}
+                <div className="flex gap-4 flex-wrap">
+                  {/* Upload Image */}
+                  <Button
+                    variant="default"
+                    type="button"
+                    onClick={() => {
+                      setShowImageUpload(true);
+                      setShowTextInput(false);
+                    }}
+                  >
+                    Upload Signature Image
+                  </Button>
+
+                  {/* Enter Text Signature */}
+                  <Button
+                    variant="default"
+                    type="button"
+                    onClick={() => {
+                      setShowTextInput(true);
+                      setShowImageUpload(false);
+                    }}
+                  >
+                    Type Signature Text
+                  </Button>
+
+                  {/* Signature Pad */}
+                  <Button
+                    type="button"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      setShowSignaturePad(true);
+                      setShowTextInput(false);
+                      setShowImageUpload(false);
+                    }}
+                  >
+                    Sign Using Pad
+                  </Button>
+                </div>
+
+                {/* IMAGE UPLOAD */}
+                {showImageUpload && (
+                  <div className="space-y-2">
+                    <Label>Upload Signature Image</Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        const reader = new FileReader();
+                        reader.onload = () =>
+                          setValue(
+                            "creatorSignatureUrl",
+                            reader.result as string
+                          );
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* TEXT SIGNATURE */}
+                {showTextInput && (
+                  <div className="space-y-2">
+                    <Label>Signature Text</Label>
+                    <input
+                      type="text"
+                      placeholder="Enter your handwritten-style signature"
+                      className="border rounded px-3 py-2 w-full"
+                      {...register("creatorSignatureText")}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="mt-8 flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -734,6 +822,14 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               }}
               title={modalContent?.title ?? ""}
               message={modalContent?.message ?? ""}
+            />
+            <SignaturePadDialog
+              open={showSignaturePad}
+              onClose={() => setShowSignaturePad(false)}
+              onSave={(dataUrl) => {
+                setValue("creatorSignatureUrl", dataUrl);
+                toast.success("Signature added successfully!");
+              }}
             />
           </form>
         </div>

@@ -378,6 +378,7 @@ export default function ChallengeManagementPage() {
   const queryClient = useQueryClient();
   const session = useSession();
 
+
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -709,7 +710,7 @@ export default function ChallengeManagementPage() {
 
           {/* Certificate management page button */}
           {
-            challenge.isIssuingCertificate && challenge.creatorId === session.data?.user.id && (
+           session.data && challenge.isIssuingCertificate && challenge.creatorId == session.data.user.id && (
               <div className="">
                 <Link href={`/dashboard/challenge/my-challenges/${challenge.id}/certificates`}>
                   <button className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all">
