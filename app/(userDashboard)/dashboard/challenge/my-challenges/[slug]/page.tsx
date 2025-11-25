@@ -47,7 +47,7 @@ interface CompletionRecord {
   date: string;
   status: "COMPLETED" | "MISSED";
 }
-interface Task {
+export interface Task {
   id: string;
   description: string;
   completed: boolean;
@@ -59,7 +59,7 @@ export interface LeaderboardPlayer {
   avatar: string;
   completedDays: number;
 }
-interface ChallengeDetails {
+export interface ChallengeDetails {
   id: string;
   creatorId: string;
   social_link_task: string | null;
@@ -77,6 +77,7 @@ interface ChallengeDetails {
   dailyTasks: Task[];
   leaderboard: LeaderboardPlayer[];
   history: CompletionRecord[];
+  isIssuingCertificate: boolean;
 }
 
 // --- HELPER COMPONENTS ---
@@ -376,6 +377,7 @@ export default function ChallengeManagementPage() {
   const slug = params.slug as string;
   const queryClient = useQueryClient();
   const session = useSession();
+
 
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
@@ -705,6 +707,19 @@ export default function ChallengeManagementPage() {
               </Link>
             </div>
           )}
+
+          {/* Certificate management page button */}
+          {
+           session.data && challenge.isIssuingCertificate && challenge.creatorId == session.data.user.id && (
+              <div className="">
+                <Link href={`/dashboard/challenge/my-challenges/${challenge.id}/certificates`}>
+                  <button className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all">
+                    Certificate Management
+                  </button>
+                </Link>
+              </div>
+            )
+          }
 
           {/* STAT CARDS */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10 mt-8">

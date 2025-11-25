@@ -92,6 +92,11 @@ model User {
   challengeMessageReactions ChallengeMessageReaction[]
   challengePollVotes ChallengeMessagePollVote[]
 
+   certificatesReceived ChallengeCertificate[] @relation("CertificatesReceivedByUser")
+   certificatesIssued   ChallengeCertificate[] @relation("CertificatesIssuedByUser")
+
+  challengeCreatorSignature ChallengeCreatorSignature?
+
   @@index([name])
 }
 
@@ -570,10 +575,16 @@ model Challenge {
   createdAt     DateTime              @default(now())
   creatorId     String
   social_link_task String?
+  isIssuingCertificate Boolean @default(false)
+
+  creatorSignatureText  String?      // If they choose text signature
+  creatorSignatureUrl   String?       // If they upload image signature
+
   enrollments   ChallengeEnrollment[]
   templateTasks ChallengeTask[]
   creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
   messages ChallengeMessage[]         @relation("ChallengeMessages")
+  certificates  ChallengeCertificate[]
 
   @@map("challenges")
 }
@@ -609,6 +620,7 @@ model ChallengeEnrollment {
   challengeId      String
   currentStreak    Int                 @default(0)
   longestStreak    Int                 @default(0)
+  isCertificateIssued Boolean @default(false)
   lastStreakUpdate DateTime?           @map("last_streak_update")
   challenge        Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -699,6 +711,40 @@ model ChallengeMessageReaction {
   @@unique([userId, messageId]) // One specific emoji per user per message
   @@index([messageId])
 }
+
+// certificate of challenges 
+model ChallengeCertificate {
+  id              String    @id @default(cuid())
+  certificateId   String    @unique            // MTB-CHL-XXXXXX
+  participantId   String
+  challengeId     String
+  issuedById      String                     // Creator ID
+  issuedAt        DateTime  @default(now())
+
+  // Certificate assets
+  certificateUrl  String                     // PDF/image URL
+  qrCodeUrl       String?                    // QR code file if stored
+  verificationHash String                    // SHA-256 hash
+
+  // Relations
+  participant      User      @relation("CertificatesReceivedByUser", fields: [participantId], references: [id], onDelete: Cascade)
+  challenge       Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  issuedBy         User      @relation("CertificatesIssuedByUser", fields: [issuedById], references: [id], onDelete: Cascade)
+
+  @@map("challenge_certificates")
+}
+
+// challenge creator signatures
+model ChallengeCreatorSignature {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  type             SignatureType   // "IMAGE", "TEXT", "DRAWN"
+  text             String?  // for text signature
+  imageUrl         String?  // signed URL from Supabase bucket
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id])
+}
+
 model NotificationSettings {
   id                String           @id @default(uuid())
   notification_type NotificationType @unique
@@ -1158,3 +1204,11 @@ enum GroupRole {
   ADMIN
   MEMBER
 }
+
+// enum for challenge creator signature 
+enum SignatureType {
+  IMAGE
+  TEXT
+  DRAWN
+}
+
