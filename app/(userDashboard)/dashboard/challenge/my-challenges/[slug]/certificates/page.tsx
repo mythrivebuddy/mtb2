@@ -4,7 +4,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Table,
@@ -26,6 +26,7 @@ import { Loader2 } from "lucide-react";
 import SignaturePadDialog from "@/components/SignaturePadDialog";
 import { Task } from "../page";
 
+
 interface ChallengeHistory {
   date: string;
   status: string;
@@ -39,7 +40,7 @@ interface LeaderboardEntry {
   completedDays: number;
 }
 
-interface ParticipantEntry {
+export interface ParticipantEntry {
   id: string;
   name: string;
   avatar: string;
@@ -106,6 +107,19 @@ export default function CertificatesManagementPage() {
       return response.data;
     },
   });
+
+
+
+useEffect(() => {
+  const font = new FontFace(
+    "MerriweatherSignature",
+    "url(/fonts/Merriweather-Regular.ttf)"
+  );
+
+  font.load().then((loadedFont) => {
+    document.fonts.add(loadedFont);
+  });
+}, []);
 
   const uploadSignatureAxios = async (
     form: FormData
@@ -475,39 +489,53 @@ export default function CertificatesManagementPage() {
           )}
 
           {/* TEXT SIGNATURE SECTION */}
-          {showTextInput && (
-            <div className="mt-4 space-y-2">
-              <p className="text-sm font-medium text-slate-700">
-                Signature Text
-              </p>
-              <input
-                type="text"
-                placeholder="Enter your signature"
-                className="border rounded px-3 py-2 w-full text-sm"
-                disabled={isSignatureUploading}
-                onBlur={async (e) => {
-                  const text = e.target.value.trim();
-                  if (!text) return;
+   {showTextInput && (
+  <>
+    
 
-                  const form = new FormData();
-                  form.append("type", "TEXT");
-                  form.append("text", text);
+    <div className="mt-4 space-y-3">
+      <p className="text-sm font-medium text-slate-700">Type Your Signature</p>
 
-                  await uploadSignatureAxios(form);
+      <input
+        type="text"
+        placeholder="Enter your signature text"
+        value={signatureTextPreview || ""}
+        disabled={isSignatureUploading}
+        onChange={(e) => setSignatureTextPreview(e.target.value)}
+        className="border rounded px-3 py-2 w-full text-sm"
+      />
 
-                  setSignatureTextPreview(text);
-                  setSignaturePreview(null);
-                  toast.success("Signature text saved.");
-                }}
-              />
+      <button
+        disabled={!signatureTextPreview || isSignatureUploading}
+        onClick={async () => {
+          if (!signatureTextPreview) return;
 
-              {signatureTextPreview && !isSignatureUploading && (
-                <p className="mt-3 text-2xl font-semibold font-[PinyonScript]">
-                  {signatureTextPreview}
-                </p>
-              )}
-            </div>
-          )}
+          const form = new FormData();
+          form.append("type", "TEXT");
+          form.append("text", signatureTextPreview);
+
+          await uploadSignatureAxios(form);
+          toast.success("Signature text saved.");
+        }}
+        className="px-3 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:bg-gray-400"
+      >
+        Save Signature
+      </button>
+
+      {signatureTextPreview && !isSignatureUploading && (
+      <p
+  className="mt-2 text-3xl border p-3 rounded bg-white"
+  style={{ fontFamily: "MerriweatherSignature" }}
+>
+  {signatureTextPreview}
+</p>
+
+      )}
+    </div>
+  </>
+)}
+
+
         </DialogContent>
       </Dialog>
 

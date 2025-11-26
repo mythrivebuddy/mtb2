@@ -41,6 +41,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ParticipantEntry } from "./certificates/page";
 
 // --- TYPE DEFINITIONS ---
 interface CompletionRecord {
@@ -78,6 +79,7 @@ export interface ChallengeDetails {
   leaderboard: LeaderboardPlayer[];
   history: CompletionRecord[];
   isIssuingCertificate: boolean;
+  participants: ParticipantEntry[];
 }
 
 // --- HELPER COMPONENTS ---
@@ -627,7 +629,12 @@ export default function ChallengeManagementPage() {
       </div>
     );
   }
+  const loggedInParticipant = challenge.participants.find(
+  (p) => p.id === session.data?.user.id
+);
 
+// Check if their certificate has been issued
+const hasUserCertificateIssued = loggedInParticipant?.isCertificateIssued === true;
   const daysLeft = Math.ceil(
     (new Date(challenge.endDate).getTime() - new Date().getTime()) /
       (1000 * 60 * 60 * 24)
@@ -720,6 +727,13 @@ export default function ChallengeManagementPage() {
               </div>
             )
           }
+        {
+          hasUserCertificateIssued && (
+            <Link href={`/dashboard/challenge/my-challenges/my-achievements?challengeId=${challenge.id}`}>
+            <button className="w-full rounded-lg shadow-md  py-3 bg-fuchsia-800 text-white mt-2">My Achievements</button>
+            </Link>
+          )
+        }
 
           {/* STAT CARDS */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10 mt-8">
