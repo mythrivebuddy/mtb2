@@ -113,7 +113,7 @@ export default function CertificatesManagementPage() {
 useEffect(() => {
   const font = new FontFace(
     "MerriweatherSignature",
-    "url(/fonts/Merriweather-Regular.ttf)"
+    "url(/fonts/Merriweather.ttf)"
   );
 
   font.load().then((loadedFont) => {
@@ -200,19 +200,62 @@ useEffect(() => {
       // If later you store issued certificates in backend:
       // queryClient.invalidateQueries({ queryKey: ["certificateDetails", slug] });
     },
-    onError: (err: unknown) => {
-      setIssuingId(null);
-      console.log("Error issuing certificate:", err);
-      if (axios.isAxiosError(err)) {
-        const message =
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to issue certificate.";
-        toast.error(message);
-      } else {
-        toast.error("Failed to issue certificate.");
-      }
-    },
+   onError: (err: unknown) => {
+  setIssuingId(null);
+
+  // 1. Log full axios error object
+  console.log("Error issuing certificate (axios error):", err);
+
+  if (axios.isAxiosError(err)) {
+    // const status = err.response?.status;
+    const data = err.response?.data as
+      | {
+          error?: unknown;
+          errorDetails?: unknown;
+        }
+      | undefined;
+
+    // 2. Log full backend payload (includes our serialized error)
+    console.log("API error payload:", data);
+
+    // 3. Derive a human-readable toast message (string only)
+    let message = "Failed to issue certificate.";
+
+    const apiError = data?.error;
+
+    if (typeof apiError === "string") {
+      // e.g. { error: "Internal server error" }
+      message = apiError;
+    } else if (
+      apiError &&
+      typeof apiError === "object" &&
+      "message" in apiError
+    ) {
+      // e.g. { error: { code: "504", message: "An error occurred with your deployment" } }
+      message = (apiError as any).message ?? message;
+    } else if (err.message) {
+      // fallback to AxiosError message
+      message = err.message;
+    }
+
+    // 4. Show toast (string only → no React #31)
+    toast.error(message);
+
+    // 5. If you want to see full error details in console:
+    if (data?.errorDetails) {
+      console.log(
+        "Backend errorDetails:",
+        data.errorDetails
+      );
+      // If you REALLY want it in a toast (debug only), you *must* stringify:
+      // toast.error(JSON.stringify(data.errorDetails, null, 2));
+    }
+  } else {
+    console.log("Non-Axios error issuing certificate:", err);
+    toast.error("Failed to issue certificate.");
+  }
+},
+
   });
 
   const issueCertificate = (participantId: string) => {
