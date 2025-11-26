@@ -15,6 +15,29 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 const CERT_BUCKET = "certificates"; // make sure this bucket exists in Supabase
 
 
+function serializeError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      // Optional: only expose stack in non-production
+      stack: process.env.NODE_ENV !== "production" ? error.stack : undefined,
+    };
+  }
+
+  // non-Error thrown (string, object, etc.)
+  if (typeof error === "object" && error !== null) {
+    try {
+      // best-effort clone
+      return JSON.parse(JSON.stringify(error));
+    } catch {
+      return { message: "Non-serializable error object" };
+    }
+  }
+
+  return { message: String(error) };
+}
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -271,10 +294,14 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error issuing certificate:", error);
-    return NextResponse.json(
-      { error: "Internal server error",errorDetails: (error as Error)},
-      { status: 500 }
-    );
-  }
+  console.error("Error issuing certificate:", error);
+
+  return NextResponse.json(
+    {
+      error: "Internal server error",          // short message for UI
+      errorDetails: serializeError(error),     // full details for frontend console
+    },
+    { status: 500 }
+  );
+}
 }

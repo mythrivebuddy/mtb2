@@ -26,7 +26,6 @@ import { Loader2 } from "lucide-react";
 import SignaturePadDialog from "@/components/SignaturePadDialog";
 import { Task } from "../page";
 
-
 interface ChallengeHistory {
   date: string;
   status: string;
@@ -108,18 +107,16 @@ export default function CertificatesManagementPage() {
     },
   });
 
+  useEffect(() => {
+    const font = new FontFace(
+      "MerriweatherSignature",
+      "url(/fonts/Merriweather.ttf)"
+    );
 
-
-useEffect(() => {
-  const font = new FontFace(
-    "MerriweatherSignature",
-    "url(/fonts/Merriweather-Regular.ttf)"
-  );
-
-  font.load().then((loadedFont) => {
-    document.fonts.add(loadedFont);
-  });
-}, []);
+    font.load().then((loadedFont) => {
+      document.fonts.add(loadedFont);
+    });
+  }, []);
 
   const uploadSignatureAxios = async (
     form: FormData
@@ -202,14 +199,44 @@ useEffect(() => {
     },
     onError: (err: unknown) => {
       setIssuingId(null);
-      console.log("Error issuing certificate:", err);
+
+      // Always log full error for debugging
+      console.log("Error issuing certificate (axios error):", err);
+
       if (axios.isAxiosError(err)) {
-        const message =
-          err.response?.data?.error ||
-          err.message ||
-          "Failed to issue certificate.";
+        const data = err.response?.data as
+          | { error?: unknown; errorDetails?: unknown }
+          | undefined;
+
+        console.log("API error payload:", data);
+
+        let message = "Failed to issue certificate.";
+
+        const apiError = data?.error;
+
+        // ---- SAFE, NO .message ACCESS ----
+
+        // Case 1: backend sent { error: "string" }
+        if (typeof apiError === "string") {
+          message = apiError;
+        }
+
+        // Case 2: backend sent an object { code, message }
+        // You said: DO NOT use apiError.message
+        // So we use Axios built-in error message instead
+        else if (err.message) {
+          message = err.message;
+        }
+
+        // Always a string → safe for toast
         toast.error(message);
+
+        // Log full details ONLY to console
+        if (data?.errorDetails) {
+          console.log("Backend errorDetails:", data.errorDetails);
+        }
       } else {
+        console.log("Non-Axios error issuing certificate:", err);
         toast.error("Failed to issue certificate.");
       }
     },
@@ -490,53 +517,50 @@ useEffect(() => {
           )}
 
           {/* TEXT SIGNATURE SECTION */}
-   {showTextInput && (
-  <>
-    
+          {showTextInput && (
+            <>
+              <div className="mt-4 space-y-3">
+                <p className="text-sm font-medium text-slate-700">
+                  Type Your Signature
+                </p>
 
-    <div className="mt-4 space-y-3">
-      <p className="text-sm font-medium text-slate-700">Type Your Signature</p>
+                <input
+                  type="text"
+                  placeholder="Enter your signature text"
+                  value={signatureTextPreview || ""}
+                  disabled={isSignatureUploading}
+                  onChange={(e) => setSignatureTextPreview(e.target.value)}
+                  className="border rounded px-3 py-2 w-full text-sm"
+                />
 
-      <input
-        type="text"
-        placeholder="Enter your signature text"
-        value={signatureTextPreview || ""}
-        disabled={isSignatureUploading}
-        onChange={(e) => setSignatureTextPreview(e.target.value)}
-        className="border rounded px-3 py-2 w-full text-sm"
-      />
+                <button
+                  disabled={!signatureTextPreview || isSignatureUploading}
+                  onClick={async () => {
+                    if (!signatureTextPreview) return;
 
-      <button
-        disabled={!signatureTextPreview || isSignatureUploading}
-        onClick={async () => {
-          if (!signatureTextPreview) return;
+                    const form = new FormData();
+                    form.append("type", "TEXT");
+                    form.append("text", signatureTextPreview);
 
-          const form = new FormData();
-          form.append("type", "TEXT");
-          form.append("text", signatureTextPreview);
+                    await uploadSignatureAxios(form);
+                    toast.success("Signature text saved.");
+                  }}
+                  className="px-3 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:bg-gray-400"
+                >
+                  Save Signature
+                </button>
 
-          await uploadSignatureAxios(form);
-          toast.success("Signature text saved.");
-        }}
-        className="px-3 py-2 rounded bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:bg-gray-400"
-      >
-        Save Signature
-      </button>
-
-      {signatureTextPreview && !isSignatureUploading && (
-      <p
-  className="mt-2 text-3xl border p-3 rounded bg-white"
-  style={{ fontFamily: "MerriweatherSignature" }}
->
-  {signatureTextPreview}
-</p>
-
-      )}
-    </div>
-  </>
-)}
-
-
+                {signatureTextPreview && !isSignatureUploading && (
+                  <p
+                    className="mt-2 text-3xl border p-3 rounded bg-white"
+                    style={{ fontFamily: "MerriweatherSignature" }}
+                  >
+                    {signatureTextPreview}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
