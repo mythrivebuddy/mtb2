@@ -10,6 +10,7 @@ import type { CertificatePDFProps } from "@/lib/certificates/CertificatePDF";
 
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { generateCertificateId } from "@/lib/certificates/generateCertificateId";
+import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
 const CERT_BUCKET = "certificates"; // make sure this bucket exists in Supabase
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { user, challenge} = enrollment;
+    const { user, challenge } = enrollment;
 
     // 2. Challenge-level eligibility: duration >= 5 days & certificates enabled
     const start = new Date(challenge.startDate);
@@ -163,6 +164,48 @@ export async function POST(req: NextRequest) {
     // 7. Generate PDF (React-PDF → Buffer)
     const pdfBuffer = await generateCertificatePDF(pdfProps);
 
+    // Generate Certificate PNG via Puppeteer API
+    const pngResponse = await fetch(`${process.env.NEXT_URL}/api/challenge/certificates/generate-image`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        participantName: user.name ?? "Participant",
+        challengeName: challenge.title,
+        certificateId,
+        creatorName: challenge.creator?.name ?? "Challenge Creator",
+        signatureUrl,
+        signatureText,
+        qrCodeDataUrl
+      })
+    });
+
+    if (!pngResponse.ok) {
+      const errorText = await pngResponse.text();
+      console.error("PNG API Error:", errorText);
+      throw new Error("Failed to generate certificate PNG");
+    }
+
+
+    const pngBuffer = Buffer.from(await pngResponse.arrayBuffer());
+
+    // Upload PNG to Supabase
+    const pngPath = `certificates/${certificateId}.png`;
+
+    const { error: pngUploadError } = await supabaseAdmin.storage
+      .from(CERT_BUCKET)
+      .upload(pngPath, pngBuffer, {
+        contentType: "image/png",
+        upsert: true,
+      });
+
+    if (pngUploadError) {
+      console.error("Failed to upload PNG:", pngUploadError);
+    }
+    const {
+      data: { publicUrl: pngUrl },
+    } = supabaseAdmin.storage.from(CERT_BUCKET).getPublicUrl(pngPath);
+
+
     // 8. Upload PDF to Supabase bucket
     const filePath = `certificates/${certificateId}.pdf`;
 
@@ -210,12 +253,20 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await sendPushNotificationToUser(
+      participantId,
+      "New Certificate Issued! 🎉",
+      `Your certificate for the ${challenge.title} challenge has been successfully issued. Open to access it.`,
+      { url: `/dashboard/challenge/my-challenges/my-achievements/${challengeId}` }
+    );
+
     return NextResponse.json(
       {
         success: true,
         certificate,
         pdfUrl: publicUrl,
         completionPercentage: Math.round(completionPercentage),
+        pngUrl: pngUrl,
       },
       { status: 201 }
     );
