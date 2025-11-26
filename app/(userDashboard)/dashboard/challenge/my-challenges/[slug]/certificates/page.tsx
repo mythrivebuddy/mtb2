@@ -202,6 +202,7 @@ useEffect(() => {
     },
     onError: (err: unknown) => {
       setIssuingId(null);
+      console.log("Error issuing certificate:", err);
       if (axios.isAxiosError(err)) {
         const message =
           err.response?.data?.error ||
