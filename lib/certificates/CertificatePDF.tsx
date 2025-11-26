@@ -7,15 +7,19 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
+import path from "path";
+
 Font.register({
   family: "PinyonScript",
-  src: `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/PinyonScript-Regular.ttf`,
+  src: path.join(process.cwd(), "public/fonts/PinyonScript-Regular.ttf"),
 });
+
 Font.register({
   family: "MerriWeather",
-  src: `${process.env.NEXT_PUBLIC_BASE_URL}/fonts/Merriweather.ttf`,
+  src: path.join(process.cwd(), "public/fonts/Merriweather.ttf"),
   fontWeight: 700,
 });
+
 
 export interface CertificatePDFProps {
   participantName: string;
