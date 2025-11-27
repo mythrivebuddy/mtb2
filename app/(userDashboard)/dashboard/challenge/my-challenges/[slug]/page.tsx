@@ -729,7 +729,7 @@ const hasUserCertificateIssued = loggedInParticipant?.isCertificateIssued === tr
           }
         {
           hasUserCertificateIssued && (
-            <Link href={`/dashboard/challenge/my-challenges/my-achievements?challengeId=${challenge.id}`}>
+            <Link href={`/dashboard/challenge/my-challenges/my-achievements/${challenge.id}`}>
             <button className="w-full rounded-lg shadow-md  py-3 bg-fuchsia-800 text-white mt-2">My Achievements</button>
             </Link>
           )

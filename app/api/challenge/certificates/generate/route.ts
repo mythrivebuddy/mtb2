@@ -188,45 +188,45 @@ export async function POST(req: NextRequest) {
     const pdfBuffer = await generateCertificatePDF(pdfProps);
 
     // Generate Certificate PNG via Puppeteer API
-    const pngResponse = await fetch(`${process.env.NEXT_URL}/api/challenge/certificates/generate-image`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        participantName: user.name ?? "Participant",
-        challengeName: challenge.title,
-        certificateId,
-        creatorName: challenge.creator?.name ?? "Challenge Creator",
-        signatureUrl,
-        signatureText,
-        qrCodeDataUrl
-      })
-    });
+    // const pngResponse = await fetch(`${process.env.NEXT_URL}/api/challenge/certificates/generate-image`, {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     participantName: user.name ?? "Participant",
+    //     challengeName: challenge.title,
+    //     certificateId,
+    //     creatorName: challenge.creator?.name ?? "Challenge Creator",
+    //     signatureUrl,
+    //     signatureText,
+    //     qrCodeDataUrl
+    //   })
+    // });
 
-    if (!pngResponse.ok) {
-      const errorText = await pngResponse.text();
-      console.error("PNG API Error:", errorText);
-      throw new Error("Failed to generate certificate PNG");
-    }
+    // if (!pngResponse.ok) {
+    //   const errorText = await pngResponse.text();
+    //   console.error("PNG API Error:", errorText);
+    //   throw new Error("Failed to generate certificate PNG");
+    // }
 
 
-    const pngBuffer = Buffer.from(await pngResponse.arrayBuffer());
+    // const pngBuffer = Buffer.from(await pngResponse.arrayBuffer());
 
-    // Upload PNG to Supabase
-    const pngPath = `certificates/${certificateId}.png`;
+    // // Upload PNG to Supabase
+    // const pngPath = `certificates/${certificateId}.png`;
 
-    const { error: pngUploadError } = await supabaseAdmin.storage
-      .from(CERT_BUCKET)
-      .upload(pngPath, pngBuffer, {
-        contentType: "image/png",
-        upsert: true,
-      });
+    // const { error: pngUploadError } = await supabaseAdmin.storage
+    //   .from(CERT_BUCKET)
+    //   .upload(pngPath, pngBuffer, {
+    //     contentType: "image/png",
+    //     upsert: true,
+    //   });
 
-    if (pngUploadError) {
-      console.error("Failed to upload PNG:", pngUploadError);
-    }
-    const {
-      data: { publicUrl: pngUrl },
-    } = supabaseAdmin.storage.from(CERT_BUCKET).getPublicUrl(pngPath);
+    // if (pngUploadError) {
+    //   console.error("Failed to upload PNG:", pngUploadError);
+    // }
+    // const {
+    //   data: { publicUrl: pngUrl },
+    // } = supabaseAdmin.storage.from(CERT_BUCKET).getPublicUrl(pngPath);
 
 
     // 8. Upload PDF to Supabase bucket
@@ -260,6 +260,7 @@ export async function POST(req: NextRequest) {
         issuedById,
         certificateUrl: publicUrl,
         verificationHash,
+        qrCodeUrl: qrCodeDataUrl,
       },
     });
 
@@ -289,7 +290,6 @@ export async function POST(req: NextRequest) {
         certificate,
         pdfUrl: publicUrl,
         completionPercentage: Math.round(completionPercentage),
-        pngUrl: pngUrl,
       },
       { status: 201 }
     );
