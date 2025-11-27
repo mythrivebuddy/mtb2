@@ -577,9 +577,6 @@ model Challenge {
   social_link_task String?
   isIssuingCertificate Boolean @default(false)
 
-  creatorSignatureText  String?      // If they choose text signature
-  creatorSignatureUrl   String?       // If they upload image signature
-
   enrollments   ChallengeEnrollment[]
   templateTasks ChallengeTask[]
   creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
@@ -722,9 +719,10 @@ model ChallengeCertificate {
   issuedAt        DateTime  @default(now())
 
   // Certificate assets
-  certificateUrl  String                     // PDF/image URL
+  certificateUrl  String                     // PDF/ URL
   qrCodeUrl       String?                    // QR code file if stored
   verificationHash String                    // SHA-256 hash
+  imageUrl         String?                    // Image URL
 
   // Relations
   participant      User      @relation("CertificatesReceivedByUser", fields: [participantId], references: [id], onDelete: Cascade)
