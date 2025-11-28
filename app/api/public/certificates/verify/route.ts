@@ -40,6 +40,7 @@ export async function GET(req: Request) {
                 issuedBy: cert.issuedBy.name,
                 issuedAt: cert.issuedAt,
                 pdfUrl,
+                certificateUrl: cert.certificateUrl,
             },
         });
     } catch (err) {

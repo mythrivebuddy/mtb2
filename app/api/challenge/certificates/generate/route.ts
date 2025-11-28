@@ -1,307 +1,182 @@
-// /api/challenge/certificates/generate/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
 import { generateVerificationHash } from "@/lib/certificates/generateHash";
 import { generateQRCode } from "@/lib/certificates/generateQRCode";
-import { generateCertificatePDF } from "@/lib/certificates/generateCertificatePDF";
-import type { CertificatePDFProps } from "@/lib/certificates/CertificatePDF";
-
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { generateCertificateId } from "@/lib/certificates/generateCertificateId";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { renderCertificateImage } from "@/lib/certificates/renderCerticiate";
+import sharp from "sharp";
 
-const CERT_BUCKET = "certificates"; // make sure this bucket exists in Supabase
+const CERT_BUCKET = "certificates";
 
-
-function serializeError(error: unknown) {
-  if (error instanceof Error) {
-    return {
-      name: error.name,
-      message: error.message,
-      // Optional: only expose stack in non-production
-      stack: process.env.NODE_ENV !== "production" ? error.stack : undefined,
-    };
-  }
-
-  // non-Error thrown (string, object, etc.)
-  if (typeof error === "object" && error !== null) {
-    try {
-      // best-effort clone
-      return JSON.parse(JSON.stringify(error));
-    } catch {
-      return { message: "Non-serializable error object" };
-    }
-  }
-
-  return { message: String(error) };
+function serializeError(e: unknown) {
+  if (e instanceof Error)
+    return { name: e.name, message: e.message, stack: e.stack };
+  return { message: String(e) };
 }
 
-
 export async function POST(req: NextRequest) {
+
   try {
     const body = await req.json();
-    const { participantId, challengeId, issuedById } = body as {
-      participantId: string;
-      challengeId: string;
-      issuedById: string;
-    };
 
-    if (!participantId || !challengeId || !issuedById) {
+    const { participantId, challengeId, issuedById } = body;
+    if (!participantId || !challengeId || !issuedById)
       return NextResponse.json(
-        { error: "participantId, challengeId and issuedById are required" },
+        { error: "Missing fields" },
         { status: 400 }
       );
-    }
 
-    // 1. Check enrollment (participant must be in challenge)
+    // 1. Enrollment
     const enrollment = await prisma.challengeEnrollment.findUnique({
-      where: {
-        userId_challengeId: {
-          userId: participantId,
-          challengeId,
-        },
-      },
+      where: { userId_challengeId: { userId: participantId, challengeId } },
       include: {
         user: true,
-        challenge: {
-          include: {
-            creator: true,
-            templateTasks: true,
-          },
-        },
-        userTasks: true,
+        challenge: { include: { creator: true } },
       },
     });
 
-    if (!enrollment) {
-      return NextResponse.json(
-        { error: "Participant is not enrolled in this challenge" },
-        { status: 404 }
-      );
-    }
+    if (!enrollment)
+      return NextResponse.json({ error: "No enrollment" }, { status: 404 });
 
     const { user, challenge } = enrollment;
 
-    // 2. Challenge-level eligibility: duration >= 5 days & certificates enabled
-    const start = new Date(challenge.startDate);
-    const end = new Date(challenge.endDate);
-    const durationDays =
-      (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+    // 2. Completion
 
-    if (durationDays < 5 || !challenge.isIssuingCertificate) {
-      return NextResponse.json(
-        { error: "Certificates are not enabled for this challenge" },
-        { status: 400 }
-      );
-    }
-
-    // 3. Check if certificate already issued for this participant+challenge
-    const existingCertificate = await prisma.challengeCertificate.findFirst({
-      where: {
-        participantId,
-        challengeId,
-      },
-    });
-
-    if (existingCertificate) {
-      return NextResponse.json(
-        { error: "Certificate already issued for this participant" },
-        { status: 400 }
-      );
-    }
-
-    // 4. Participant-level eligibility
-    //    You said completion is computed on frontend, but for safety we compute here too.
-    //    We'll approximate completion as: completedTasks / totalTasks * 100
-    const totalChallengeDays =
+    const totalDays =
       Math.floor(
         (new Date(challenge.endDate).getTime() -
           new Date(challenge.startDate).getTime()) /
         (1000 * 60 * 60 * 24)
       ) + 1;
 
-    // Fetch completed days from completionRecord table
-    const completedDaysRecord = await prisma.completionRecord.count({
-      where: {
-        challengeId,
-        userId: participantId,
-      },
+    const completed = await prisma.completionRecord.count({
+      where: { challengeId, userId: participantId },
     });
 
-    // Same formula as frontend
-    const completionPercentage = Math.round(
-      (completedDaysRecord / totalChallengeDays) * 100
-    );
-
-    console.log({ completionPercentage });
+    const completionPct = Math.round((completed / totalDays) * 100);
 
 
-    if (completionPercentage < 75) {
+    if (completionPct < 75)
       return NextResponse.json(
-        { error: "Participant has not completed at least 75% of the challenge" },
+        { error: "Not eligible (<75%)" },
         { status: 400 }
       );
-    }
 
-    // 4. Fetch creator signature
-    const creatorSignature = await prisma.challengeCreatorSignature.findUnique({
+    // 3. Signature
+
+    const sig = await prisma.challengeCreatorSignature.findUnique({
       where: { userId: challenge.creatorId },
     });
 
-    let signatureUrl: string | undefined = undefined;
-    let signatureText: string | undefined = undefined;
 
-    if (creatorSignature) {
-      if (creatorSignature.type === "TEXT") {
-        signatureText = creatorSignature.text ?? undefined;
-      } else {
-        signatureUrl = creatorSignature.imageUrl ?? undefined;
-      }
-    }
+    const signatureUrl =
+      sig?.type === "IMAGE" ? sig.imageUrl ?? undefined : undefined;
 
+    const signatureText =
+      sig?.type === "TEXT" ? sig.text ?? undefined : undefined;
+      const signatureDrawn = sig?.type === "DRAWN" ? sig.imageUrl ?? undefined : undefined;
 
-    // 5. Generate certificate values
-    const certificateId = generateCertificateId();
-    const verificationHash = generateVerificationHash(
-      certificateId + participantId
+    // 4. Certificate IDs
+    const certId = generateCertificateId();
+    const verificationHash = generateVerificationHash(certId + participantId);
+
+    // 5. QR Code
+
+    const qr = await generateQRCode(
+      `${process.env.NEXT_URL}/verify/${certId}`
     );
 
-    const verificationUrl = `${process.env.NEXT_URL}/verify/${certificateId}`;
-    const qrCodeDataUrl = await generateQRCode(verificationUrl);
+    // 6. OG PNG Generation (NO FETCH)
 
-    // 6. Prepare PDF props
-    const pdfProps: CertificatePDFProps = {
+    const og = await renderCertificateImage({
       participantName: user.name ?? "Participant",
       challengeName: challenge.title,
-      issueDate: new Date().toISOString().split("T")[0],
-      creatorName: challenge.creator?.name ?? "Challenge Creator",
-      certificateId,
-      qrCodeDataUrl,
+      certificateId: certId,
+      creatorName: challenge.creator?.name ?? "",
       signatureUrl,
       signatureText,
-      signatureType: creatorSignature?.type, // optional, if your PDF component supports it
-    };
-
-    // 7. Generate PDF (React-PDF → Buffer)
-    const pdfBuffer = await generateCertificatePDF(pdfProps);
-
-    // Generate Certificate PNG via Puppeteer API
-    // const pngResponse = await fetch(`${process.env.NEXT_URL}/api/challenge/certificates/generate-image`, {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     participantName: user.name ?? "Participant",
-    //     challengeName: challenge.title,
-    //     certificateId,
-    //     creatorName: challenge.creator?.name ?? "Challenge Creator",
-    //     signatureUrl,
-    //     signatureText,
-    //     qrCodeDataUrl
-    //   })
-    // });
-
-    // if (!pngResponse.ok) {
-    //   const errorText = await pngResponse.text();
-    //   console.error("PNG API Error:", errorText);
-    //   throw new Error("Failed to generate certificate PNG");
-    // }
+      signatureDrawn,
+      qrCodeDataUrl: qr,
+      baseUrl: process.env.NEXT_PUBLIC_BASE_URL!,
+    });
 
 
-    // const pngBuffer = Buffer.from(await pngResponse.arrayBuffer());
 
-    // // Upload PNG to Supabase
-    // const pngPath = `certificates/${certificateId}.png`;
+    const pngBuffer = Buffer.from(await og.arrayBuffer());
 
-    // const { error: pngUploadError } = await supabaseAdmin.storage
-    //   .from(CERT_BUCKET)
-    //   .upload(pngPath, pngBuffer, {
-    //     contentType: "image/png",
-    //     upsert: true,
-    //   });
+    // png to webp 
 
-    // if (pngUploadError) {
-    //   console.error("Failed to upload PNG:", pngUploadError);
-    // }
-    // const {
-    //   data: { publicUrl: pngUrl },
-    // } = supabaseAdmin.storage.from(CERT_BUCKET).getPublicUrl(pngPath);
+    const webpBuffer = await sharp(pngBuffer)
+      .webp({ quality: 75 })
+      .toBuffer();
 
 
-    // 8. Upload PDF to Supabase bucket
-    const filePath = `certificates/${certificateId}.pdf`;
+    // Upload WebP instead of PNG
 
-    const { error: uploadError } = await supabaseAdmin.storage
+    const storagePath = `certificates/${certId}.webp`;
+
+
+    // 7. Upload
+
+    // const storagePath = `certificates/${certId}.png`;
+
+    const { error: uploadErr } = await supabaseAdmin.storage
       .from(CERT_BUCKET)
-      .upload(filePath, pdfBuffer, {
-        contentType: "application/pdf",
+      .upload(storagePath, webpBuffer, {
+        contentType: "image/webp",
         upsert: true,
       });
 
-    if (uploadError) {
-      console.error("Supabase upload error:", uploadError);
-      return NextResponse.json(
-        { error: "Failed to upload certificate PDF" },
-        { status: 500 }
-      );
-    }
+    if (uploadErr)
+      return NextResponse.json({ uploadErr }, { status: 500 });
 
     const {
       data: { publicUrl },
-    } = supabaseAdmin.storage.from(CERT_BUCKET).getPublicUrl(filePath);
+    } = supabaseAdmin.storage.from(CERT_BUCKET).getPublicUrl(storagePath);
 
-    // 9. Save certificate in DB
-    const certificate = await prisma.challengeCertificate.create({
-      data: {
-        certificateId,
-        participantId,
-        challengeId,
-        issuedById,
-        certificateUrl: publicUrl,
-        verificationHash,
-        qrCodeUrl: qrCodeDataUrl,
-      },
-    });
+    // 8. Save cert
 
-    // 10. Mark enrollment as having certificate issued
-    await prisma.challengeEnrollment.update({
-      where: {
-        userId_challengeId: {
-          userId: participantId,
+    // let cert = null;
+    const [cert] = await prisma.$transaction([
+      prisma.challengeCertificate.create({
+        data: {
+          certificateId: certId,
+          participantId,
           challengeId,
+          issuedById,
+          certificateUrl: publicUrl,
+          verificationHash,
+          // qrCodeUrl: qr,
         },
-      },
-      data: {
-        isCertificateIssued: true,
-      },
-    });
+      }),
 
-    await sendPushNotificationToUser(
+      prisma.challengeEnrollment.update({
+        where: { userId_challengeId: { userId: participantId, challengeId } },
+        data: { isCertificateIssued: true },
+      })
+    ]);
+
+    // 10. Push
+
+    sendPushNotificationToUser(
       participantId,
-      "New Certificate Issued! 🎉",
-      `Your certificate for the ${challenge.title} challenge has been successfully issued. Open to access it.`,
+      "New Certificate Issued!",
+      `Your certificate for ${challenge.title} is ready.`,
       { url: `/dashboard/challenge/my-challenges/my-achievements/${challengeId}` }
-    );
+    ).catch(console.error);
 
     return NextResponse.json(
-      {
-        success: true,
-        certificate,
-        pdfUrl: publicUrl,
-        completionPercentage: Math.round(completionPercentage),
-      },
+      { success: true, certificate: cert, pngUrl: publicUrl },
       { status: 201 }
     );
-  } catch (error) {
-  console.error("Error issuing certificate:", error);
+  } catch (err) {
+    console.error("ERROR:", err);
 
-  return NextResponse.json(
-    {
-      error: "Internal server error",          // short message for UI
-      errorDetails: serializeError(error),     // full details for frontend console
-    },
-    { status: 500 }
-  );
-}
+    return NextResponse.json(
+      { error: "Internal error", errorDetails: serializeError(err) },
+      { status: 500 }
+    );
+  }
 }

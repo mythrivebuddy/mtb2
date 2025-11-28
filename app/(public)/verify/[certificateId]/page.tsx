@@ -1,5 +1,6 @@
 import AppLayout from "@/components/layout/AppLayout";
 import axios from "axios";
+import { BadgeCheckIcon } from "lucide-react";
 
 export default async function VerifyChallengeCertificatePage({
   params,
@@ -40,8 +41,8 @@ export default async function VerifyChallengeCertificatePage({
         {/* VALID */}
         {data.valid && (
           <div>
-            <h1 className="text-3xl font-bold text-green-600 mb-6">
-              Certificate Verified
+            <h1 className="text-3xl font-bold text-green-600 mb-6 flex gap-1 justify-center items-center">
+            <BadgeCheckIcon className="inline-block mr-1" size={28}/>   Certificate Verified
             </h1>
 
             <p className="text-lg text-gray-800 font-medium">
@@ -61,11 +62,10 @@ export default async function VerifyChallengeCertificatePage({
             </p>
 
             {/* Certificate Image/PDF */}
-            <iframe
-              src={data.certificate.pdfUrl} 
-              className="w-full h-[600px] border"
+            <img
+              src={data.certificate.certificateUrl} 
+              className="w-full sm:h-[600px] border rounded-sm "
             />
-
           </div>
         )}
       </div>
