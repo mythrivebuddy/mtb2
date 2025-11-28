@@ -76,7 +76,7 @@ export default async function MyAchievementsPage({ params }: Props) {
   // -----------------------------------------------------------
   // Generate PNG if missing
   // -----------------------------------------------------------
-  let imageUrl = certificate.certificateUrl;
+  const imageUrl = certificate.certificateUrl;
 
   // if (!imageUrl) {
   //   // Fetch signature info
