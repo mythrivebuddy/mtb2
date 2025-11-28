@@ -6,8 +6,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import CertificateActions from "./_components/CertificateActions";
 import { Metadata } from "next";
-import { generateCertificateImage } from "@/lib/certificates/generateCertificateImage";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
 
 interface Props {
   params: Promise<{ challengeId: string }>;
@@ -77,47 +76,47 @@ export default async function MyAchievementsPage({ params }: Props) {
   // -----------------------------------------------------------
   // Generate PNG if missing
   // -----------------------------------------------------------
-  let imageUrl = certificate.imageUrl;
+  let imageUrl = certificate.certificateUrl;
 
-  if (!imageUrl) {
-    // Fetch signature info
-    const signature = await prisma.challengeCreatorSignature.findUnique({
-      where: { userId: certificate.challenge.creatorId },
-    });
+  // if (!imageUrl) {
+  //   // Fetch signature info
+  //   const signature = await prisma.challengeCreatorSignature.findUnique({
+  //     where: { userId: certificate.challenge.creatorId },
+  //   });
 
-    const pngBuffer = await generateCertificateImage({
-      participantName: certificate.participant.name,
-      challengeName: certificate.challenge.title,
-      certificateId: certificate.certificateId,
-      creatorName: certificate.challenge.creator?.name ?? "Challenge Creator",
-      qrCodeDataUrl: certificate.qrCodeUrl ?? "", // ensure your column name is correct
-      signatureUrl: signature?.imageUrl ?? null,
-      signatureText: signature?.text ?? null,
-    });
+  //   const pngBuffer = await generateCertificateImage({
+  //     participantName: certificate.participant.name,
+  //     challengeName: certificate.challenge.title,
+  //     certificateId: certificate.certificateId,
+  //     creatorName: certificate.challenge.creator?.name ?? "Challenge Creator",
+  //     qrCodeDataUrl: certificate.qrCodeUrl ?? "", // ensure your column name is correct
+  //     signatureUrl: signature?.imageUrl ?? null,
+  //     signatureText: signature?.text ?? null,
+  //   });
 
-    const pngPath = `certificates/${certificate.certificateId}.png`;
+  //   const pngPath = `certificates/${certificate.certificateId}.png`;
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from("certificates")
-      .upload(pngPath, pngBuffer, {
-        contentType: "image/png",
-        upsert: true,
-      });
+  //   const { error: uploadError } = await supabaseAdmin.storage
+  //     .from("certificates")
+  //     .upload(pngPath, pngBuffer, {
+  //       contentType: "image/png",
+  //       upsert: true,
+  //     });
 
-    if (!uploadError) {
-      const {
-        data: { publicUrl },
-      } = supabaseAdmin.storage.from("certificates").getPublicUrl(pngPath);
+  //   if (!uploadError) {
+  //     const {
+  //       data: { publicUrl },
+  //     } = supabaseAdmin.storage.from("certificates").getPublicUrl(pngPath);
 
-      imageUrl = publicUrl;
-      console.log(uploadError);
+  //     imageUrl = publicUrl;
+  //     console.log(uploadError);
       
-      await prisma.challengeCertificate.update({
-        where: { certificateId: certificate.certificateId },
-        data: { imageUrl: publicUrl,qrCodeUrl:null},
-      });
-    }
-  }
+  //     await prisma.challengeCertificate.update({
+  //       where: { certificateId: certificate.certificateId },
+  //       data: { imageUrl: publicUrl,qrCodeUrl:null},
+  //     });
+  //   }
+  // }
 
   // -----------------------------------------------------------
   // Render final UI

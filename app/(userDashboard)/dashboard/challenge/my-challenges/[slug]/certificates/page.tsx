@@ -83,7 +83,7 @@ export default function CertificatesManagementPage() {
 
   // preview dialog state
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewParticipantName, setPreviewParticipantName] = useState<
     string | null
   >(null);
@@ -105,6 +105,11 @@ export default function CertificatesManagementPage() {
       const response = await axios.get(`/api/challenge/my-challenge/${slug}`);
       return response.data;
     },
+    staleTime: Infinity, // <── don't re-fetch when tab changes
+    gcTime: Infinity, // <── keep cached forever
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
 
   useEffect(() => {
@@ -157,10 +162,9 @@ export default function CertificatesManagementPage() {
         issuedById: data?.creatorId,
       });
       return res.data as {
-        success: boolean;
-        pdfUrl: string;
+        success: true;
         certificate: unknown;
-        completionPercentage: number;
+        pngUrl: string;
       };
     },
     onSuccess: (result, participantId) => {
@@ -172,7 +176,6 @@ export default function CertificatesManagementPage() {
         ["certificateDetails", slug],
         (oldData: APIResponse | undefined) => {
           if (!oldData) return oldData;
-
           return {
             ...oldData,
             participants: oldData.participants.map((p) =>
@@ -187,7 +190,10 @@ export default function CertificatesManagementPage() {
         participants.find((p) => p.id === participantId)?.name ?? "Participant";
 
       // open preview dialog with the PDF URL
-      setPreviewPdfUrl(result.pdfUrl);
+      setPreviewUrl(result.pngUrl);
+
+      console.log("result ", result);
+
       setPreviewParticipantName(participantName);
       setPreviewOpen(true);
 
@@ -594,9 +600,9 @@ export default function CertificatesManagementPage() {
           </DialogHeader>
 
           <div className="flex-1 mt-4">
-            {previewPdfUrl ? (
-              <iframe
-                src={previewPdfUrl}
+            {previewUrl ? (
+              <img
+                src={previewUrl}
                 className="w-full h-full border rounded-md"
               />
             ) : (
