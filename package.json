@@ -12,11 +12,12 @@
     "test:watch": "jest --watch",
     "postinstall": "prisma generate",
     "migrate": "npx prisma migrate deploy",
-    "seed": "tsx prisma/seed/seed-plan.ts && tsx prisma/seed/seed-activity.ts && tsx prisma/seed/seed-magic-box-settings.ts && tsx prisma/seed/seed-templates.ts",
+    "seed": "tsx prisma/seed/seed-plan.ts && tsx prisma/seed/seed-activity.ts && tsx prisma/seed/seed-magic-box-settings.ts && tsx prisma/seed/seed-templates.ts && tsx prisma/seed/seed-new-subscription-plans.ts",
     "postbuild": "npm run migrate && npm run seed"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
+    "@cashfreepayments/cashfree-js": "^1.0.5",
     "@floating-ui/react": "^0.27.16",
     "@fullcalendar/core": "^6.1.19",
     "@fullcalendar/daygrid": "^6.1.19",
@@ -110,6 +111,7 @@
     "bcryptjs": "^3.0.2",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.3",
+    "cashfree-dropjs": "^1.1.5",
     "chrono-node": "^2.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
