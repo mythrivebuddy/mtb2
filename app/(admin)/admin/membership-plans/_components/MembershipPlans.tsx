@@ -124,7 +124,7 @@ const MembershipPlans = () => {
     setIsDialogOpen(false);
   };
 
-  // 2. Create Plan (Main)
+  // 2. Create Plan
   const createPlanMutation = useMutation({
     mutationFn: async (newPlan: NewPlanData) => {
       const payload = {
@@ -150,7 +150,7 @@ const MembershipPlans = () => {
     onError: () => toast.error("Failed to create plan."),
   });
 
-  // 3. Update Plan (Full Edit)
+  // 3. Update Plan
   const updatePlanMutation = useMutation({
     mutationFn: async (data: { id: string; plan: NewPlanData }) => {
       const payload = {
@@ -180,10 +180,9 @@ const MembershipPlans = () => {
     onError: () => toast.error("Failed to update plan."),
   });
 
-  // 4. Toggle GST (Table Switch) - Uses Separate API
+  // 4. Toggle GST
   const toggleGstMutation = useMutation({
     mutationFn: async (data: { id: string; gstEnabled: boolean }) => {
-      // Calls the dedicated API we created
       const response = await axios.patch("/api/subscription-plans/toggle-gst", data);
       return response.data;
     },
@@ -199,7 +198,7 @@ const MembershipPlans = () => {
     onError: () => toast.error("Failed to toggle GST."),
   });
 
-  // 5. Toggle Active Status (Separate API)
+  // 5. Toggle Activation
   const toggleActivationMutation = useMutation({
      mutationFn: async (data: { id: string; activeStatus: boolean }) => {
         const response = await axios.patch("/api/subscription-plans/toggle-activation", data);
@@ -215,9 +214,6 @@ const MembershipPlans = () => {
      onError: () => toast.error("Failed to toggle activation.")
   });
 
-
-  // --- Event Handlers ---
-
   const handleEditClick = (plan: Plan) => {
     setEditingId(plan.id);
     setFormData({
@@ -228,14 +224,12 @@ const MembershipPlans = () => {
       userType: plan.userType,
       description: plan.description || "",
       gstEnabled: plan.gstEnabled || false,
-      // If editing and 0, suggest 18 for UX, otherwise keep existing
       gstPercentage: plan.gstPercentage || 0,
     });
     setIsDialogOpen(true);
   };
 
   const handleGstToggleFromTable = (plan: Plan, isEnabled: boolean) => {
-    // Just send the ID and boolean. Backend handles the 18% default logic.
     toggleGstMutation.mutate({ id: plan.id, gstEnabled: isEnabled });
   };
 
@@ -261,9 +255,6 @@ const MembershipPlans = () => {
   };
 
   const isPending = createPlanMutation.isPending || updatePlanMutation.isPending;
-
-  // Combine pending states for the switches. 
-  // If GST is toggling OR Activation is toggling, disable all inputs to prevent conflicts.
   const isTableActionPending = toggleGstMutation.isPending || toggleActivationMutation.isPending;
 
   if (error) return <div className="text-red-500 p-4">Error loading plans.</div>;
@@ -408,7 +399,6 @@ const MembershipPlans = () => {
                         setFormData((prev) => ({ 
                           ...prev, 
                           gstEnabled: checked,
-                          // UX: Auto fill default 18 if checking ON and currently 0
                           gstPercentage: checked && prev.gstPercentage === 0 ? DEFAULT_GST_PERCENTAGE : prev.gstPercentage
                         }))
                       }
@@ -493,7 +483,7 @@ const MembershipPlans = () => {
                   <TableHead className="w-[200px]">Plan Name</TableHead>
                   <TableHead>User Type</TableHead>
                   <TableHead>Interval</TableHead>
-                  <TableHead>Price (INR)</TableHead>
+                  <TableHead>Total (INR)</TableHead>
                   <TableHead>Price (USD)</TableHead>
                   <TableHead>Tax (GST)</TableHead>
                   <TableHead>Status</TableHead>
@@ -501,77 +491,97 @@ const MembershipPlans = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {plans?.map((plan) => (
-                  <TableRow
-                    key={plan.id}
-                    className={`${!plan.isActive ? "bg-red-50 hover:bg-red-100" : ""} rounded-sm`}
-                  >
-                    <TableCell className="font-medium">{plan.name}</TableCell>
-                    <TableCell>
-                      <Badge variant={plan.userType === "SOLOPRENEUR" ? "default" : "secondary"}>
-                        {plan.userType === "SOLOPRENEUR" ? "Coach" : "Enthusiast"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell><Badge variant="outline">{plan.interval}</Badge></TableCell>
-                    <TableCell>{formatCurrency(plan.amountINR, "INR")}</TableCell>
-                    <TableCell>{formatCurrency(plan.amountUSD, "USD")}</TableCell>
-                    
-                    {/* --- GST COLUMN --- */}
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={plan.gstEnabled}
-                          onCheckedChange={(checked) => handleGstToggleFromTable(plan, checked)}
-                          // This disables ALL switches while ANY table action is processing
-                          disabled={isTableActionPending}
-                        />
-                         {plan.gstEnabled ? (
-                          <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50 ml-1">
-                            {plan.gstPercentage}%
-                          </Badge>
-                        ) : (
-                           <span className="text-xs text-muted-foreground ml-1">
-                             -
-                           </span>
-                        )}
-                      </div>
-                    </TableCell>
+                {plans?.map((plan) => {
+                  
+                  // --- CALCULATION LOGIC ---
+                  const taxAmount = plan.gstEnabled 
+                    ? (plan.amountINR * (plan.gstPercentage / 100)) 
+                    : 0;
+                  const finalPriceINR = plan.amountINR + taxAmount;
 
-                    <TableCell>
-                      {plan.isActive ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-400" />
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0" disabled={isTableActionPending}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEditClick(plan)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => toggleActivationMutation.mutate({ id: plan.id, activeStatus: !plan.isActive })}
-                            className={plan.isActive ? "text-red-600" : "text-green-600"}
+                  return (
+                    <TableRow
+                      key={plan.id}
+                      className={`${!plan.isActive ? "bg-red-50 hover:bg-red-100" : ""} rounded-sm`}
+                    >
+                      <TableCell className="font-medium">{plan.name}</TableCell>
+                      <TableCell>
+                        <Badge variant={plan.userType === "SOLOPRENEUR" ? "default" : "secondary"}>
+                          {plan.userType === "SOLOPRENEUR" ? "Coach" : "Enthusiast"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell><Badge variant="outline">{plan.interval}</Badge></TableCell>
+                      
+                      {/* --- INR COLUMN (SHOW TOTAL) --- */}
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold">
+                            {formatCurrency(finalPriceINR, "INR")}
+                          </span>
+                          {plan.gstEnabled && (
+                            <span className="text-[12px] text-muted-foreground">
+                              {formatCurrency(plan.amountINR, "INR")} + {plan.gstPercentage}% Tax
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>{formatCurrency(plan.amountUSD, "USD")}</TableCell>
+                      
+                      {/* --- GST TOGGLE COLUMN --- */}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={plan.gstEnabled}
+                            onCheckedChange={(checked) => handleGstToggleFromTable(plan, checked)}
                             disabled={isTableActionPending}
-                          >
-                            {plan.isActive ? (
-                              <><Trash2 className="mr-2 h-4 w-4" /> Deactivate</>
-                            ) : (
-                              <><CheckCircle2 className="mr-2 h-4 w-4" /> Activate</>
-                            )}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          />
+                           {plan.gstEnabled ? (
+                            <Badge variant="outline" className="border-green-500 text-green-700 bg-green-50 ml-1">
+                              {plan.gstPercentage}%
+                            </Badge>
+                          ) : (
+                             <span className="text-xs text-muted-foreground ml-1">-</span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        {plan.isActive ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-red-400" />
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0" disabled={isTableActionPending}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleEditClick(plan)}>
+                              <Edit className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => toggleActivationMutation.mutate({ id: plan.id, activeStatus: !plan.isActive })}
+                              className={plan.isActive ? "text-red-600" : "text-green-600"}
+                              disabled={isTableActionPending}
+                            >
+                              {plan.isActive ? (
+                                <><Trash2 className="mr-2 h-4 w-4" /> Deactivate</>
+                              ) : (
+                                <><CheckCircle2 className="mr-2 h-4 w-4" /> Activate</>
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
