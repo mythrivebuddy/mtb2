@@ -1017,6 +1017,10 @@ model SubscriptionPlan {
   amountUSD      Float
   description    String?
   isActive       Boolean   @default(true)
+
+  gstEnabled     Boolean   @default(true)
+  gstPercentage  Float     @default(18)
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

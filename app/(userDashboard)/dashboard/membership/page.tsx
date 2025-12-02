@@ -1,26 +1,36 @@
+"use client";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-export default async function MembershipPage() {
+export default  function MembershipPage() {
   // Fetch plans (server component safe)
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans`,
-    { cache: "no-store" }
-  );
+  const [plans, setPlans] = useState([]);
+  useEffect(() => {
+    const fetchPlans = async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans`,
+        { credentials: "include" }
+      );
 
-  const plans = await res.json();
+      const data = await res.json();
+      console.log(data);
+      setPlans(data);
+    };
+    fetchPlans();
+  }, []);
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Membership Plans</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {plans.map((plan: any) => {
+        {plans?.map((plan: any) => {
           const intervalLabel =
             plan.interval === "MONTHLY"
               ? "Monthly"
               : plan.interval === "YEARLY"
-              ? "Yearly"
-              : "Lifetime";
+                ? "Yearly"
+                : "Lifetime";
 
           const isLifetime = plan.interval === "LIFETIME";
 
