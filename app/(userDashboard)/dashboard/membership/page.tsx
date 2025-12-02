@@ -63,7 +63,7 @@ export default  function MembershipPage() {
               {/* Pricing */}
               <div className="mt-6">
                 <div className="text-3xl font-bold text-gray-900">
-                  ₹{plan.amountINR.toLocaleString()}
+                  ₹{plan.amountINR.toLocaleString()} + GST
                 </div>
                 <div className="text-sm text-gray-500 mt-1">
                   USD ${plan.amountUSD}

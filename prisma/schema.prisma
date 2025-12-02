@@ -110,6 +110,8 @@ model User {
 
 
   couponRedemptions  CouponRedemption[]
+  billingInformation  BillingInformation[]
+
 
   @@index([name])
 }
@@ -1120,6 +1122,9 @@ model SubscriptionInvoice {
   status           InvoiceStatus // PAID | FAILED
 
   billingDate      DateTime
+  
+  billingInformationId  String?
+
   createdAt        DateTime @default(now())
 
   subscription     Subscription @relation(fields: [subscriptionId], references: [id])
@@ -1201,6 +1206,26 @@ model CouponRedemption {
   coupon      Coupon @relation(fields: [couponId], references: [id])
   user        User   @relation(fields: [userId], references: [id])
 }
+model BillingInformation {
+  id          String   @id @default(cuid())
+  userId      String   @unique  
+  fullName    String
+  email       String
+  phone       String?
+  
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  state         String
+  postalCode    String
+  country       String   // "IN" or "US" etc.
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
 // membership model end
 // Enum for the AEO/Schema feature
 enum PageSchemaType {

@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import Link from "next/link";
 
 // --- Constants ---
 const DEFAULT_GST_PERCENTAGE = 18;
@@ -270,6 +271,11 @@ const MembershipPlans = () => {
         </div>
 
         {/* --- DIALOG --- */}
+        <div className="flex flex-col sm:flex-row gap-2">
+
+        <Button variant='outline'>
+          <Link href="/admin/coupons">Coupons Management</Link>
+          </Button>
         <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <Button onClick={() => resetForm()}>
@@ -461,6 +467,8 @@ const MembershipPlans = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
+
       </div>
 
       <Card>
