@@ -1081,6 +1081,7 @@ model Subscription {
   userId           String
   planId           String
   mandateId        String?      @unique   // null for lifetime or free trial
+  orderId          String?     // optional
   couponId         String?     // optional
   status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL
   startDate        DateTime
@@ -1102,6 +1103,7 @@ enum SubscriptionStatus {
   CANCELLED
   EXPIRED
   FREE_TRIAL
+  PENDING
 }
 
 model SubscriptionInvoice {

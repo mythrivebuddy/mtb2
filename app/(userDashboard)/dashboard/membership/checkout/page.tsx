@@ -3,9 +3,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react"; // Import session for prefilling
-// @ts-ignore
+// @ts-expect-error
 import { load } from "@cashfreepayments/cashfree-js";
 import { Check, Loader2, Tag, ShieldCheck, Globe, MapPin, User, Mail, Phone } from "lucide-react";
+import { toast } from "sonner";
 
 interface Plan {
   id: string;
@@ -14,7 +15,7 @@ interface Plan {
   amountINR?: number;
   amountUSD?: number;
   currency: string;
-  interval: "monthly" | "yearly" | "lifetime";
+  interval: "MONTHLY" | "YEARLY" | "LIFETIME";
   features?: string[];
 }
 
@@ -77,7 +78,7 @@ export default function CheckoutPage() {
           setBillingDetails((prev) => ({ ...prev, country: "IN" }));
         }
       } catch (error) {
-        console.warn("IP detection failed, defaulting to India");
+        console.warn("IP detection failed, defaulting to India", error);
       }
     };
     detectCountry();
@@ -196,6 +197,7 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       setCouponMessage({ type: "error", text: "Could not verify coupon" });
+      console.log(error);
     } finally {
       setVerifyingCoupon(false);
     }
@@ -256,42 +258,77 @@ export default function CheckoutPage() {
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
-  const handleSubscribe = async () => {
+ const handleSubscribe = async () => {
     if (!plan) return;
-    
+
     // Simple Validation
-    if(!billingDetails.addressLine1 || !billingDetails.city || !billingDetails.postalCode) {
-        alert("Please fill in all required address fields.");
-        return;
+    if (!billingDetails.addressLine1 || !billingDetails.city || !billingDetails.postalCode) {
+      toast.error("Please fill in all required address fields.");
+      return;
     }
 
     setProcessingPayment(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`, {
+      const isLifetime = plan.interval === "LIFETIME";
+
+      // 1. Determine Endpoint
+      const endpoint = isLifetime
+        ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`
+        : `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
+
+      console.log("Creating Order at:", endpoint); // DEBUG
+
+      // 2. Call Backend
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
           planId: plan.id,
           couponCode: appliedCoupon?.code || null,
-          billingDetails: billingDetails, // SEND FULL DETAILS
+          billingDetails: billingDetails,
         }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) throw new Error(data.error || "Backend creation failed");
 
+      console.log("Session Created:", data); // DEBUG: Check if ID exists
+
+      // 3. Load Cashfree SDK
+      // FORCE the mode here to match your Backend Credentials
+      const mode = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox"; 
+      
       const cf = await load({
-        mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+        mode: mode // "sandbox" or "production"
       });
 
-      await cf.subscriptionsCheckout({
-        subsSessionId: data.subscriptionSessionId,
-        redirectTarget: "_self",
-      });
+      // 4. Conditional Checkout Method
+      if (isLifetime) {
+        if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
+
+        console.log(`Starting Checkout in ${mode} mode with Session:`, data.paymentSessionId);
+
+        // CHECKOUT
+        await cf.checkout({
+          paymentSessionId: data.paymentSessionId,
+          redirectTarget: "_self", // Try "_self" first, if blocked, try "_blank"
+          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}` // Explicitly pass return URL as backup
+        });
+
+      } else {
+        if (!data.subscriptionSessionId) throw new Error("Invalid subscription session");
+
+        await cf.subscriptionsCheckout({
+          subsSessionId: data.subscriptionSessionId,
+          redirectTarget: "_self",
+        });
+      }
+
     } catch (error: any) {
-      alert(error.message);
+      console.error("Payment Error:", error);
+      toast.error(error.message || "Something went wrong initiating payment");
     } finally {
       setProcessingPayment(false);
     }

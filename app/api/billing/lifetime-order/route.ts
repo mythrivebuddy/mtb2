@@ -1,75 +1,273 @@
 import { NextResponse } from "next/server";
-import axios from "axios";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import axios from "axios"; // Using axios for consistency with previous snippet, or use fetch
+import { PlanInterval, SubscriptionStatus } from "@prisma/client";
+
+/**
+ * Calculate discount applied on base (exclusive of GST)
+ * (Identical to your mandate logic)
+ */
+function calculateDiscount(baseAmount: number, coupon: any): number {
+  if (!coupon) return 0;
+
+  switch (coupon.type) {
+    case "PERCENTAGE":
+      return (baseAmount * (coupon.discountPercentage || 0)) / 100;
+
+    case "FIXED":
+      return coupon.discountAmount || 0;
+
+    case "FREE_DURATION": // Treat free duration as 100% off for lifetime if applicable, or logic specific to you
+    case "FULL_DISCOUNT":
+      return baseAmount;
+
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Calculates Final Payable Amount for Lifetime
+ * No renewal logic needed here.
+ */
+function calculateLifetimeTotal(
+  baseExclusive: number,
+  discountValue: number,
+  isIndia: boolean,
+  gstEnabled: boolean,
+  gstRate: number
+) {
+  // 1. Apply Discount first
+  const discountedBase = Math.max(0, baseExclusive - discountValue);
+
+  // 2. If free, return 0 (or handle as free order)
+  if (discountedBase === 0) return 0;
+
+  // 3. Apply GST if applicable
+  let finalAmount = discountedBase;
+  if (isIndia && gstEnabled) {
+    finalAmount = discountedBase + (discountedBase * gstRate);
+  }
+
+  // 4. Return fixed 2 decimal number
+  return parseFloat(finalAmount.toFixed(2));
+}
 
 export async function POST(req: Request) {
   try {
-    const { userId, planId } = await req.json();
+    const { planId, couponCode, billingDetails } = await req.json();
 
-    // Fetch plan
+    // ----------------------------
+    // 1. AUTH & VALIDATION (Same as Mandate)
+    // ----------------------------
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const userId = session.user.id;
+
+    if (!billingDetails?.country)
+      return NextResponse.json({ error: "Billing details missing" }, { status: 400 });
+
+    const isIndia = billingDetails.country === "IN";
+
+    // ----------------------------
+    // 2. FETCH PLAN
+    // ----------------------------
     const plan = await prisma.subscriptionPlan.findUnique({
-      where: { id: planId }
+      where: { id: planId },
     });
-    if (!plan)
-      return NextResponse.json(
-        { error: "Plan not found" },
-        { status: 404 }
-      );
 
-    // Fetch user
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
+    if (!plan) return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+
+    const currency = isIndia ? "INR" : "USD";
+    const baseExclusive = isIndia ? plan.amountINR : plan.amountUSD;
+
+    if (!baseExclusive || baseExclusive < 1)
+      return NextResponse.json({ error: "Invalid plan amount" }, { status: 400 });
+
+    const gstEnabled = plan.gstEnabled;
+    const gstRate = plan.gstPercentage / 100;
+
+    // ----------------------------
+    // 3. COUPON VALIDATION (Same as Mandate)
+    // ----------------------------
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      appliedCoupon = await prisma.coupon.findUnique({
+        where: { couponCode },
+      });
+
+      if (!appliedCoupon)
+        return NextResponse.json({ error: "Invalid coupon" }, { status: 400 });
+
+      const now = new Date();
+
+      if (
+        appliedCoupon.startDate > now ||
+        appliedCoupon.endDate < now ||
+        appliedCoupon.status !== "ACTIVE"
+      ) {
+        return NextResponse.json({ error: "Coupon inactive or expired" }, { status: 400 });
+      }
+
+      const used = await prisma.couponRedemption.count({
+        where: { couponId: appliedCoupon.id, userId },
+      });
+
+      if (appliedCoupon.maxUsesPerUser && used >= appliedCoupon.maxUsesPerUser) {
+        return NextResponse.json({ error: "You already used this coupon" }, { status: 400 });
+      }
+
+      if (appliedCoupon.maxGlobalUses && appliedCoupon.maxGlobalUses <= 0) {
+        return NextResponse.json({ error: "Coupon usage limit reached" }, { status: 400 });
+      }
+    }
+
+    // ----------------------------
+    // 4. COMPUTE AMOUNT (Lifetime Logic)
+    // ----------------------------
+    const discountValue = calculateDiscount(baseExclusive, appliedCoupon);
+
+    const payableAmount = calculateLifetimeTotal(
+      baseExclusive,
+      discountValue,
+      isIndia,
+      gstEnabled,
+      gstRate
+    );
+
+    // If amount is 0 (100% coupon), handle strictly or ensure min amount for PG
+    // Cashfree usually needs min 1.00 INR
+    const finalOrderAmount = payableAmount <= 0 ? 1 : payableAmount; 
+
+    // ----------------------------
+    // 5. SAVE BILLING INFO (Same as Mandate)
+    // ----------------------------
+    await prisma.billingInformation.upsert({
+      where: { userId },
+      update: {
+        fullName: billingDetails.name,
+        email: billingDetails.email,
+        phone: billingDetails.phone,
+        addressLine1: billingDetails.addressLine1,
+        addressLine2: billingDetails.addressLine2 || "",
+        city: billingDetails.city,
+        state: billingDetails.state,
+        postalCode: billingDetails.postalCode,
+        country: billingDetails.country,
+      },
+      create: {
+        userId,
+        fullName: billingDetails.name,
+        email: billingDetails.email,
+        phone: billingDetails.phone,
+        addressLine1: billingDetails.addressLine1,
+        addressLine2: billingDetails.addressLine2 || "",
+        city: billingDetails.city,
+        state: billingDetails.state,
+        postalCode: billingDetails.postalCode,
+        country: billingDetails.country,
+      },
     });
-    if (!user)
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
 
-    const orderId = `lifetime_${Date.now()}_${userId}`;
+    // ----------------------------
+    // 6. RECORD COUPON USAGE
+    // ----------------------------
+    if (appliedCoupon) {
+      await prisma.couponRedemption.create({
+        data: {
+          couponId: appliedCoupon.id,
+          userId,
+          appliedPlan: plan.name,
+          discountApplied: discountValue,
+        },
+      });
+
+      if (appliedCoupon.maxGlobalUses) {
+        await prisma.coupon.update({
+          where: { id: appliedCoupon.id },
+          data: { maxGlobalUses: { decrement: 1 } },
+        });
+      }
+    }
+
+    // ----------------------------
+    // 7. CASHFREE PAYLOAD (PG API, NOT Subscription API)
+    // ----------------------------
+    const orderId = `lifetime_${Date.now()}_${userId.slice(0,5)}`;
 
     const payload = {
       order_id: orderId,
-      order_amount: plan.amountINR,
-      order_currency: "INR",
+      order_amount: finalOrderAmount,
+      order_currency: currency,
       customer_details: {
         customer_id: userId,
-        customer_email: user.email
+        customer_name: billingDetails.name,
+        customer_email: billingDetails.email,
+        customer_phone: billingDetails.phone || "9999999999",
       },
       order_meta: {
-        return_url: `${process.env.CASHFREE_RETURN_URL}?order_id=${orderId}`
-      }
+        // This return URL is where Cashfree redirects after payment
+        return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${orderId}`,
+        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/cashfree`
+      },
+      order_note: `Lifetime Plan: ${plan.name}`
     };
 
-    const resp = await axios.post(
-      `${process.env.CASHFREE_BASE_URL}/orders`,
-      payload,
-      {
-        headers: {
-          "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-          "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
-          "x-api-version": "2023-08-01",
-          "Content-Type": "application/json"
-        }
-      }
-    );
+    const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-client-id": process.env.CASHFREE_CLIENT_ID!,
+        "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+        "x-api-version": "2023-08-01", // Use PG version
+      },
+      body: JSON.stringify(payload),
+    });
 
-    // Create lifetime subscription
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      console.error("Cashfree Order Error:", data);
+      return NextResponse.json(
+        { error: data.message || "Failed to create order" },
+        { status: 500 }
+      );
+    }
+
+    // ----------------------------
+    // 8. SAVE SUBSCRIPTION (PENDING STATUS)
+    // ----------------------------
+    // Unlike mandate, we don't save a "Mandate" record.
+    // We save a Subscription record that is inactive until paid.
+    
     await prisma.subscription.create({
       data: {
         userId,
         planId,
-        status: "ACTIVE",
+        status: SubscriptionStatus.PENDING, // Wait for Webhook to turn ACTIVE
+        orderId: orderId,  // Key to match webhook
+        // paymentId: data.payment_session_id,
         startDate: new Date(),
-        endDate: new Date("2099-12-31")
-      }
+        // Set Lifetime Duration (e.g., 99 years)
+        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 99)),
+      },
     });
 
-    return NextResponse.json({ order: resp.data });
-  } catch (e: any) {
-    console.error("LIFETIME ERROR:", e.response?.data || e);
+    // Return Payment Session ID to Frontend
+    return NextResponse.json({
+      paymentSessionId: data.payment_session_id,
+      orderId: orderId,
+    });
+
+  } catch (err) {
+    console.error("Lifetime Order Error:", err);
     return NextResponse.json(
-      { error: "Lifetime order failed" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

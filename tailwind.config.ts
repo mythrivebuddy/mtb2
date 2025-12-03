@@ -20,6 +20,9 @@ module.exports = {
         'xlg':'1220px',
       },
       colors: {
+         brand: "#137fec",
+          "background-light": "#f6f7f8",
+          "background-dark": "#101922",
         "thrive-blue": "#1E2875",
         dashboard: "#E8F3FC",
         "jp-orange": "#FF7070",
