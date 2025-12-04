@@ -12,6 +12,8 @@ export default withAuth(
       redirect && redirect.startsWith("/")
         ? `${req.nextUrl.origin}${redirect}`
         : null;
+        console.log(redirectUrl);
+        
 
     // Handle authenticated users accessing /signin
     // if (token && path === "/signin" && redirectUrl) {
@@ -56,6 +58,7 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
+        const url = req.nextUrl;
         const path = req.nextUrl.pathname;
 
         // Allow public challenge pages
@@ -67,6 +70,9 @@ export default withAuth(
         if (isPublicChallengePage(path)) {
           return true;
         }
+        if (url.searchParams.has("callbackUrl") || url.searchParams.has("redirect")) {
+    return true;
+  }
 
         // Require authentication for all other pages
         return !!token;

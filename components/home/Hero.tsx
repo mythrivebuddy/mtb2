@@ -4,10 +4,14 @@ import { motion } from "framer-motion";
 import SpotlightCard from "./SpotlightCard";
 import useRedirectDashboard from "@/hooks/use-redirect-dashboard";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 
 export default function Hero() {
   useRedirectDashboard();
+  const session = useSession(); 
+  const router = useRouter();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -38,16 +42,21 @@ export default function Hero() {
         One ecosystem. Endless momentum.
       </p>
       <div className="flex flex-col pt-5 sm:flex-row gap-4 lg:justify-start">
-        <Link href="/dashboard">
-        <button className="h-12 px-5 sm:text-[12px] lg:text-sm bg-brand hover:bg-brand/90 text-white rounded-xl font-bold py-1">
+       
+        <button onClick={()=>{
+          session.status === 'authenticated' ? router.push('/dashboard') : router.push('/signup')
+        }} className="h-12 px-5 sm:text-[12px] lg:text-sm bg-brand hover:bg-brand/90 text-white rounded-xl font-bold py-1">
           I am a Coach/Solopreneur
         </button>
-        </Link>
-        <Link href="/dashboard">
-        <button className="h-12 px-5 text-sm sm:text-[12px] lg:text-sm bg-slate-200 dark:bg-slate-700 rounded-lg font-bold py-1 hover:bg-brand/10">
+        
+        
+        <button
+         onClick={()=>{
+          session.status === 'authenticated' ? router.push('/dashboard') : router.push('/signup')
+         }}
+         className="h-12 px-5 text-sm sm:text-[12px] lg:text-sm bg-slate-200 dark:bg-slate-700 rounded-lg font-bold py-1 hover:bg-brand/10">
           I am a Self Growth Enthusiast
         </button>
-        </Link>
       </div>
         <div className="pt-2">
       <p className="text-sm text-slate-500 ">Start with curiosity. Grow without hustle.</p>

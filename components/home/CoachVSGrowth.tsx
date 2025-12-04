@@ -9,6 +9,7 @@ import {
   PartyPopper,
   Handshake,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function CoachVsGrowth() {
   return (
@@ -37,10 +38,10 @@ export default function CoachVsGrowth() {
               ))}
             </ul>
 
-            <a className="group inline-flex items-center mt-8 gap-2 font-bold text-brand" href="#">
+            <Link className="group inline-flex items-center mt-8 gap-2 font-bold text-brand" href="#">
               <span>Sign Up With Curiousity, Grow without Hustle!</span>
               <ArrowRight />
-            </a>
+            </Link>
           </div>
 
           {/* SELF GROWTH */}
@@ -64,10 +65,10 @@ export default function CoachVsGrowth() {
               ))}
             </ul>
 
-            <a className="group inline-flex items-center mt-8 gap-2 font-bold text-brand" href="#">
+            <Link href="/signup" className="group inline-flex items-center mt-8 gap-2 font-bold text-brand">
               <span className="text-lg">Sign up and start your personal development journey</span>
               <ArrowRight />
-            </a>
+            </Link>
           </div>
 
         </div>
