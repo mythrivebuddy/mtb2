@@ -10,8 +10,11 @@ const SignInPageContent = () => {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard"; // Respect redirect parameter
+  const redirect = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard"; // Respect redirect parameter
+  console.log(redirect);
+  useEffect(() => console.log("SESSION:", session), [session]);
 
+  
   useEffect(() => {
     if (!session) return;
 
@@ -20,7 +23,7 @@ const SignInPageContent = () => {
     if (session?.user?.role === "ADMIN") {
       router.push("/admin/dashboard");
     } else {
-      router.push(redirect); // Use redirect parameter
+      router.replace(redirect); // Use redirect parameter
     }
   }, [session, router, redirect]);
 
