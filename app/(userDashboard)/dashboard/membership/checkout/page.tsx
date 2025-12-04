@@ -3,9 +3,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react"; // Import session for prefilling
-// @ts-expect-error
+
 import { load } from "@cashfreepayments/cashfree-js";
-import { Check, Loader2, Tag, ShieldCheck, Globe, MapPin, User, Mail, Phone } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Tag,
+  ShieldCheck,
+  Globe,
+  MapPin,
+  User,
+  Mail,
+  Phone,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Plan {
@@ -33,7 +43,7 @@ export default function CheckoutPage() {
   const planId = searchParams.get("plan");
 
   const [plan, setPlan] = useState<Plan | null>(null);
-  
+
   // Form State
   const [billingDetails, setBillingDetails] = useState({
     name: "",
@@ -47,8 +57,13 @@ export default function CheckoutPage() {
   });
 
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponResponse | null>(null);
-  const [couponMessage, setCouponMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponResponse | null>(
+    null
+  );
+  const [couponMessage, setCouponMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
@@ -92,23 +107,28 @@ export default function CheckoutPage() {
       if (!planId) return;
 
       try {
-        const planRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`);
+        const planRes = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`
+        );
         if (!planRes.ok) throw new Error("Failed to fetch plan");
         const planData = await planRes.json();
         setPlan(planData);
 
         // AUTO APPLY COUPON
         try {
-          const autoRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/auto-apply`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              planId,
-              currency: planData.currency || "INR",
-              billingCountry: billingDetails.country, // Use detected country
-              userType: "solopreneur",
-            }),
-          });
+          const autoRes = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/auto-apply`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                planId,
+                currency: planData.currency || "INR",
+                billingCountry: billingDetails.country, // Use detected country
+                userType: "solopreneur",
+              }),
+            }
+          );
 
           const text = await autoRes.text();
           const autoData = text ? JSON.parse(text) : null;
@@ -119,11 +139,13 @@ export default function CheckoutPage() {
               c.type === "FREE_DURATION"
                 ? "free_duration"
                 : c.type === "FULL_DISCOUNT"
-                ? "percentage"
-                : c.type.toLowerCase();
+                  ? "percentage"
+                  : c.type.toLowerCase();
 
             const discountValue =
-              c.type === "FULL_DISCOUNT" ? 100 : c.discountAmount || c.discountPercentage || 0;
+              c.type === "FULL_DISCOUNT"
+                ? 100
+                : c.discountAmount || c.discountPercentage || 0;
 
             setAppliedCoupon({
               valid: true,
@@ -133,7 +155,10 @@ export default function CheckoutPage() {
               message: "Best offer auto-applied",
             });
             setCouponCode(c.code);
-            setCouponMessage({ type: "success", text: `Auto-applied: ${c.code}` });
+            setCouponMessage({
+              type: "success",
+              text: `Auto-applied: ${c.code}`,
+            });
           }
         } catch (error) {
           console.warn("Auto apply failed", error);
@@ -158,16 +183,19 @@ export default function CheckoutPage() {
     setCouponMessage(null);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: couponCode,
-          planId: plan.id,
-          currency: plan.currency || "INR",
-          billingCountry: billingDetails.country,
-        }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/verify`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: couponCode,
+            planId: plan.id,
+            currency: plan.currency || "INR",
+            billingCountry: billingDetails.country,
+          }),
+        }
+      );
 
       const data = await res.json();
 
@@ -177,11 +205,13 @@ export default function CheckoutPage() {
           c.type === "FREE_DURATION"
             ? "free_duration"
             : c.type === "FULL_DISCOUNT"
-            ? "percentage"
-            : c.type.toLowerCase();
+              ? "percentage"
+              : c.type.toLowerCase();
 
         const discountValue =
-          c.type === "FULL_DISCOUNT" ? 100 : c.discountAmount || c.discountPercentage || 0;
+          c.type === "FULL_DISCOUNT"
+            ? 100
+            : c.discountAmount || c.discountPercentage || 0;
 
         setAppliedCoupon({
           valid: true,
@@ -190,10 +220,16 @@ export default function CheckoutPage() {
           discountValue,
         });
 
-        setCouponMessage({ type: "success", text: "Coupon applied successfully!" });
+        setCouponMessage({
+          type: "success",
+          text: "Coupon applied successfully!",
+        });
       } else {
         setAppliedCoupon(null);
-        setCouponMessage({ type: "error", text: data.message || "Invalid coupon" });
+        setCouponMessage({
+          type: "error",
+          text: data.message || "Invalid coupon",
+        });
       }
     } catch (error) {
       setCouponMessage({ type: "error", text: "Could not verify coupon" });
@@ -207,15 +243,23 @@ export default function CheckoutPage() {
   // 3. BILLING CALC
   // ---------------------------
   const billing = useMemo(() => {
-    if (!plan) return { base: 0, discount: 0, taxableAmount: 0, tax: 0, total: 0, currency: "INR" };
+    if (!plan)
+      return {
+        base: 0,
+        discount: 0,
+        taxableAmount: 0,
+        tax: 0,
+        total: 0,
+        currency: "INR",
+      };
 
     const isIndia = billingDetails.country === "IN";
     const currency = isIndia ? "INR" : "USD";
-    
+
     // Logic: If IN -> amountINR, else -> amountUSD (fallback to amount)
     const subtotal = isIndia
-      ? plan.amountINR ?? plan.amount ?? 0
-      : plan.amountUSD ?? plan.amount ?? 0;
+      ? (plan.amountINR ?? plan.amount ?? 0)
+      : (plan.amountUSD ?? plan.amount ?? 0);
 
     let discount = 0;
 
@@ -232,7 +276,14 @@ export default function CheckoutPage() {
     const taxableAmount = Math.max(0, subtotal - discount);
 
     if (taxableAmount === 0) {
-      return { base: subtotal, discount, taxableAmount: 0, tax: 0, total: 1, currency };
+      return {
+        base: subtotal,
+        discount,
+        taxableAmount: 0,
+        tax: 0,
+        total: 1,
+        currency,
+      };
     }
 
     const taxRate = isIndia ? 0.18 : 0;
@@ -245,12 +296,14 @@ export default function CheckoutPage() {
       taxableAmount,
       tax,
       total: parseFloat(total.toFixed(2)),
-      currency
+      currency,
     };
   }, [plan, appliedCoupon, billingDetails.country]);
 
   // Handle Input Changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setBillingDetails((prev) => ({ ...prev, [name]: value }));
   };
@@ -258,11 +311,15 @@ export default function CheckoutPage() {
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
- const handleSubscribe = async () => {
+  const handleSubscribe = async () => {
     if (!plan) return;
 
     // Simple Validation
-    if (!billingDetails.addressLine1 || !billingDetails.city || !billingDetails.postalCode) {
+    if (
+      !billingDetails.addressLine1 ||
+      !billingDetails.city ||
+      !billingDetails.postalCode
+    ) {
       toast.error("Please fill in all required address fields.");
       return;
     }
@@ -298,81 +355,98 @@ export default function CheckoutPage() {
 
       // 3. Load Cashfree SDK
       // FORCE the mode here to match your Backend Credentials
-      const mode = process.env.NEXT_PUBLIC_CASHFREE_MODE || "sandbox"; 
-      
-      const cf = await load({
-        mode: mode // "sandbox" or "production"
-      });
+      const mode = (
+        process.env.NEXT_PUBLIC_CASHFREE_MODE === "production"
+          ? "production"
+          : "sandbox"
+      ) as "sandbox" | "production";
+
+      const cf = await load({ mode });
 
       // 4. Conditional Checkout Method
       if (isLifetime) {
-        if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
+        if (!data.paymentSessionId)
+          throw new Error("Invalid payment session ID");
 
-        console.log(`Starting Checkout in ${mode} mode with Session:`, data.paymentSessionId);
+        console.log(
+          `Starting Checkout in ${mode} mode with Session:`,
+          data.paymentSessionId
+        );
 
         // CHECKOUT
         await cf.checkout({
           paymentSessionId: data.paymentSessionId,
           redirectTarget: "_self", // Try "_self" first, if blocked, try "_blank"
-          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}` // Explicitly pass return URL as backup
+          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}`, // Explicitly pass return URL as backup
         });
-
       } else {
-        if (!data.subscriptionSessionId) throw new Error("Invalid subscription session");
+        if (!data.subscriptionSessionId)
+          throw new Error("Invalid subscription session");
 
         await cf.subscriptionsCheckout({
           subsSessionId: data.subscriptionSessionId,
           redirectTarget: "_self",
         });
       }
-
-    } catch (error: any) {
+    } catch (error) {
       console.error("Payment Error:", error);
-      toast.error(error.message || "Something went wrong initiating payment");
+      toast.error("Something went wrong initiating payment");
     } finally {
       setProcessingPayment(false);
     }
   };
 
-  if (loading) return <div className="flex justify-center h-screen items-center"><Loader2 className="animate-spin w-8 h-8 text-blue-600" /></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center h-screen items-center">
+        <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
+      </div>
+    );
   if (!plan) return <div>Plan not found</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900">Complete Your Subscription</h1>
-          <p className="mt-2 text-gray-600">Unlock your potential with the {plan.name} plan.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900">
+            Complete Your Subscription
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Unlock your potential with the {plan.name} plan.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* LEFT SIDE: BILLING FORM */}
           <div className="md:col-span-2 space-y-6">
-            
             {/* PLAN SUMMARY CARD */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-               {/* ... (Existing Plan Summary UI - kept concise for brevity) ... */}
-               <div className="flex justify-between items-start">
+              {/* ... (Existing Plan Summary UI - kept concise for brevity) ... */}
+              <div className="flex justify-between items-start">
                 <div>
                   <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wide">
                     {plan.interval} Plan
                   </span>
-                  <h2 className="mt-3 text-2xl font-bold text-gray-900">{plan.name}</h2>
+                  <h2 className="mt-3 text-2xl font-bold text-gray-900">
+                    {plan.name}
+                  </h2>
                 </div>
                 <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {billing.currency} {billing.total.toLocaleString()}
                   </p>
                 </div>
               </div>
               <div className="mt-4 border-t pt-4">
                 <ul className="grid grid-cols-2 gap-2">
-                  {(plan.features || ["Access to all modules"]).map((feat, i) => (
-                    <li key={i} className="flex items-start">
-                      <Check className="h-4 w-4 text-green-500 mr-2 mt-1" />
-                      <span className="text-gray-600 text-sm">{feat}</span>
-                    </li>
-                  ))}
+                  {(plan.features || ["Access to all modules"]).map(
+                    (feat, i) => (
+                      <li key={i} className="flex items-start">
+                        <Check className="h-4 w-4 text-green-500 mr-2 mt-1" />
+                        <span className="text-gray-600 text-sm">{feat}</span>
+                      </li>
+                    )
+                  )}
                 </ul>
               </div>
             </div>
@@ -381,13 +455,17 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center gap-2 mb-4 border-b pb-2">
                 <MapPin className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">Billing Address</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Billing Address
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* NAME */}
                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Full Name</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <input
@@ -404,7 +482,9 @@ export default function CheckoutPage() {
 
                 {/* EMAIL */}
                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Email Address</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <input
@@ -419,7 +499,9 @@ export default function CheckoutPage() {
 
                 {/* PHONE */}
                 <div className="col-span-1 md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Phone Number (Optional)
+                  </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <input
@@ -435,7 +517,9 @@ export default function CheckoutPage() {
 
                 {/* ADDRESS LINE 1 */}
                 <div className="col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Address</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Address
+                  </label>
                   <input
                     type="text"
                     name="addressLine1"
@@ -447,9 +531,11 @@ export default function CheckoutPage() {
                   />
                 </div>
 
-                 {/* CITY */}
-                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">City</label>
+                {/* CITY */}
+                <div className="col-span-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    City
+                  </label>
                   <input
                     type="text"
                     name="city"
@@ -462,7 +548,9 @@ export default function CheckoutPage() {
 
                 {/* STATE */}
                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">State</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    State
+                  </label>
                   <input
                     type="text"
                     name="state"
@@ -475,7 +563,9 @@ export default function CheckoutPage() {
 
                 {/* POSTAL CODE */}
                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Postal Code</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Postal Code
+                  </label>
                   <input
                     type="text"
                     name="postalCode"
@@ -488,22 +578,23 @@ export default function CheckoutPage() {
 
                 {/* COUNTRY */}
                 <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Country</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Country
+                  </label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     <select
-                        name="country"
-                        value={billingDetails.country}
-                        onChange={handleInputChange}
-                        className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white"
+                      name="country"
+                      value={billingDetails.country}
+                      onChange={handleInputChange}
+                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white"
                     >
-                        <option value="IN">India</option>
-                        <option value="US">United States</option>
-                        <option value="OT">Other</option>
+                      <option value="IN">India</option>
+                      <option value="US">United States</option>
+                      <option value="OT">Other</option>
                     </select>
                   </div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -512,16 +603,22 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden sticky top-6">
               <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Order Summary</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Order Summary
+                </h3>
 
                 {/* COUPON INPUT */}
                 <div className="mb-6">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Promo Code</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Promo Code
+                  </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        setCouponCode(e.target.value.toUpperCase())
+                      }
                       placeholder="ENTER CODE"
                       className="flex-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border"
                     />
@@ -530,12 +627,20 @@ export default function CheckoutPage() {
                       disabled={verifyingCoupon || !couponCode}
                       className="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700"
                     >
-                      {verifyingCoupon ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+                      {verifyingCoupon ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
                     </button>
                   </div>
                   {couponMessage && (
-                    <div className={`mt-2 text-xs flex items-center gap-1 ${couponMessage.type === "success" ? "text-green-600" : "text-red-500"}`}>
-                      {couponMessage.type === "success" && <Tag className="w-3 h-3" />}
+                    <div
+                      className={`mt-2 text-xs flex items-center gap-1 ${couponMessage.type === "success" ? "text-green-600" : "text-red-500"}`}
+                    >
+                      {couponMessage.type === "success" && (
+                        <Tag className="w-3 h-3" />
+                      )}
                       {couponMessage.text}
                     </div>
                   )}
@@ -545,27 +650,43 @@ export default function CheckoutPage() {
                 <div className="space-y-3 border-t pt-4">
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>Base Price</span>
-                    <span>{billing.currency} {billing.base.toLocaleString()}</span>
+                    <span>
+                      {billing.currency} {billing.base.toLocaleString()}
+                    </span>
                   </div>
 
                   {billing.discount > 0 && (
                     <div className="flex justify-between text-sm text-green-600 font-medium">
                       <span>Discount</span>
-                      <span>- {billing.currency} {billing.discount.toLocaleString()}</span>
+                      <span>
+                        - {billing.currency} {billing.discount.toLocaleString()}
+                      </span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-sm text-gray-600">
-                    <span>{billingDetails.country === "IN" ? "GST (18%)" : "Tax"}</span>
-                    <span>+ {billing.currency} {billing.tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    <span>
+                      {billingDetails.country === "IN" ? "GST (18%)" : "Tax"}
+                    </span>
+                    <span>
+                      + {billing.currency}{" "}
+                      {billing.tax.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
                   </div>
 
                   <div className="h-px bg-gray-100 my-2"></div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-base font-bold text-gray-900">Total Payable</span>
+                    <span className="text-base font-bold text-gray-900">
+                      Total Payable
+                    </span>
                     <span className="text-xl font-bold text-gray-900">
-                      {billing.currency} {billing.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {billing.currency}{" "}
+                      {billing.total.toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                      })}
                     </span>
                   </div>
                 </div>
@@ -580,12 +701,17 @@ export default function CheckoutPage() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
-                      Pay {billing.currency} {billing.total.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      Pay {billing.currency}{" "}
+                      {billing.total.toLocaleString(undefined, {
+                        maximumFractionDigits: 2,
+                      })}
                       <ShieldCheck className="w-4 h-4" />
                     </>
                   )}
                 </button>
-                <p className="mt-4 text-center text-xs text-gray-400">Secure checkout powered by Cashfree.</p>
+                <p className="mt-4 text-center text-xs text-gray-400">
+                  Secure checkout powered by Cashfree.
+                </p>
               </div>
             </div>
           </div>

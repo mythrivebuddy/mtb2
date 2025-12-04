@@ -5,8 +5,16 @@ import { authOptions } from "@/lib/auth";
 
 /**
  * Calculate discount applied on base (exclusive of GST)
+ * 
  */
-function calculateDiscount(baseAmount: number, coupon: any): number {
+type CouponLike = {
+  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
+  discountPercentage?: number | null;
+  discountAmount?: number | null;
+  freeDays?: number | null;
+};
+
+function calculateDiscount(baseAmount: number, coupon: CouponLike | null): number {
   if (!coupon) return 0;
 
   switch (coupon.type) {

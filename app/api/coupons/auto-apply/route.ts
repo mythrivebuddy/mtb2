@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+type AutoApplyConditions = {
+  country?: string;
+  notCountry?: string;
+  userType?: string;
+  [key: string]: unknown; // allows future keys without using any
+};
+
+
 export async function POST(req: Request) {
   try {
     const { planId, currency, billingCountry, userType } = await req.json();
@@ -50,7 +58,7 @@ export async function POST(req: Request) {
 
       // D. Additional JSON conditions
       if (coupon.autoApplyConditions) {
-        const conditions = coupon.autoApplyConditions as Record<string, any>;
+        const conditions = coupon.autoApplyConditions as AutoApplyConditions;
 
         // Exact country match
         if (conditions.country && conditions.country !== billingCountry) {

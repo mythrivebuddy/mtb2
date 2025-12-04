@@ -1019,6 +1019,7 @@ model SubscriptionPlan {
   amountUSD      Float
   description    String?
   isActive       Boolean   @default(true)
+  features       Json? 
 
   gstEnabled     Boolean   @default(true)
   gstPercentage  Float     @default(18)
@@ -1046,6 +1047,7 @@ enum PlanInterval {
   MONTHLY
   YEARLY
   LIFETIME
+  FREE
 }
 
 model Mandate {
@@ -1188,6 +1190,7 @@ enum CouponType {
 enum CouponUserType {
   COACH
   ENTHUSIAST
+  SOLOPRENEUR
   ALL
 }
 

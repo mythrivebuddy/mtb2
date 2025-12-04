@@ -27,7 +27,7 @@ export default function Pillars() {
 
   return (
     <section className="py-16 sm:py-24 bg-white dark:bg-slate-800/50">
-      <div className="">
+      <div>
         {/* Heading */}
         <div className="text-center">
           <h2 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
@@ -36,10 +36,14 @@ export default function Pillars() {
         </div>
 
         {/* Pillars */}
-        <div className="mt-12 grid grid-cols-1  gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {items.map((item) => (
-            <div key={item.title} className="rounded-xl p-6 text-center">
-              {/* Icon container (matches bg-primary/10 from HTML) */}
+            <div
+              key={item.title}
+              className="rounded-xl p-6 text-center bg-white dark:bg-slate-900/20 shadow-sm h-full 
+                         flex flex-col items-center"
+            >
+              {/* Icon */}
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 dark:bg-brand/20">
                 <item.icon className="h-6 w-6 text-brand" />
               </div>
@@ -49,10 +53,12 @@ export default function Pillars() {
                 {item.title}
               </h3>
 
-              {/* Description */}
-              <p className="mt-2 text-slate-600 dark:text-slate-400">
+              {/* Description (3-line limit) */}
+              <p className="mt-3 text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
                 {item.desc}
               </p>
+
+              <div className="flex-1"></div>
             </div>
           ))}
         </div>

@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { 
   Plus, 
-  Trash2, 
   Tag, 
   Users, 
   Percent, 
@@ -26,7 +25,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -69,6 +67,26 @@ type Plan = {
   interval: string;
   userType: string;
 };
+type CouponFormPayload = {
+  couponCode: string;
+  description: string;
+  type: Coupon["type"];
+  discountPercentage: string | number;
+  discountAmount: string | number;
+  freeDays: string | number;
+  applicableUserTypes: string[];
+  applicablePlanIds: string[];
+  applicableCurrencies: string[];
+  firstCycleOnly: boolean;
+  multiCycle: boolean;
+  startDate: string;
+  endDate: string;
+  maxGlobalUses: string | number;
+  maxUsesPerUser: number;
+  autoApply: boolean;
+  autoApplyConditions?: Record<string, unknown>;
+};
+
 
 type Coupon = {
   id: string;
@@ -88,7 +106,7 @@ type Coupon = {
   applicableCurrencies: string[];
   _count?: { redemptions: number };
   autoApply: boolean;
-  autoApplyConditions?: any;
+//   autoApplyConditions?: any;
   applicablePlans: Plan[];
   description?: string;
 };
@@ -104,12 +122,12 @@ const fetchPlans = async () => {
   return response.data;
 };
 
-const createCouponApi = async (data: any) => {
+const createCouponApi = async (data:CouponFormPayload) => {
   const response = await axios.post("/api/admin/coupons", data);
   return response.data;
 };
 
-const updateCouponApi = async ({ id, data }: { id: string; data: any }) => {
+const updateCouponApi = async ({ id, data }: { id: string; data: CouponFormPayload }) => {
   const response = await axios.put(`/api/admin/coupons/${id}`, data);
   return response.data;
 };
@@ -126,26 +144,27 @@ export default function CouponsManagementPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // --- Form State ---
-  const initialFormState = {
-    couponCode: "",
-    description: "",
-    type: "PERCENTAGE",
-    discountPercentage: "",
-    discountAmount: "",
-    freeDays: "",
-    applicableUserTypes: ["ENTHUSIAST"], 
-    applicablePlanIds: [] as string[],
-    applicableCurrencies: ["INR", "USD"],
-    firstCycleOnly: false,
-    multiCycle: false,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: "",
-    maxGlobalUses: "",
-    maxUsesPerUser: 1,
-    autoApply: false,
-    autoApplyConditions: "{}", 
-  };
-  const [formData, setFormData] = useState(initialFormState);
+ const initialFormState: CouponFormPayload = {
+  couponCode: "",
+  description: "",
+  type: "PERCENTAGE", // now correctly inferred as a literal union type
+  discountPercentage: "",
+  discountAmount: "",
+  freeDays: "",
+  applicableUserTypes: ["ENTHUSIAST"],
+  applicablePlanIds: [],
+  applicableCurrencies: ["INR", "USD"],
+  firstCycleOnly: false,
+  multiCycle: false,
+  startDate: new Date().toISOString().split("T")[0],
+  endDate: "",
+  maxGlobalUses: "",
+  maxUsesPerUser: 1,
+  autoApply: false,
+  autoApplyConditions: {}, // FIXED: must be an object, not a string
+};
+
+  const [formData, setFormData] = useState<CouponFormPayload>(initialFormState);
 
   // --- React Query Hooks ---
   const { data: coupons = [], isLoading: isLoadingCoupons } = useQuery({
@@ -159,33 +178,39 @@ export default function CouponsManagementPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: createCouponApi,
+  mutationFn: (data: CouponFormPayload) => createCouponApi(data),
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       toast.success("Coupon created successfully.");
       setIsDialogOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || "Failed to create coupon");
+    onError: (error) => {
+        console.log(error);
+      toast.error("Failed to create coupon");
     }
   });
 
-  const updateMutation = useMutation({
-    mutationFn: updateCouponApi,
+ const updateMutation = useMutation({
+  mutationFn: (payload: { id: string; data: CouponFormPayload }) =>
+    updateCouponApi(payload),
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       toast.success("Coupon updated successfully.");
       setIsDialogOpen(false);
       resetForm();
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.error || "Failed to update coupon");
+    onError: (error) => {
+        console.log(error);
+      toast.error("Failed to update coupon");
     }
   });
 
   const deleteMutation = useMutation({
-    mutationFn: deleteCouponApi,
+  mutationFn: (id: string) => deleteCouponApi(id),
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       toast.success("Coupon deactivated/deleted.");
@@ -213,7 +238,7 @@ export default function CouponsManagementPage() {
     setFormData({
       couponCode: coupon.couponCode,
       description: coupon.description || "",
-      type: coupon.type as any,
+      type: coupon.type,
       discountPercentage: coupon.discountPercentage?.toString() || "",
       discountAmount: coupon.discountAmount?.toString() || "",
       freeDays: coupon.freeDays?.toString() || "",
@@ -227,7 +252,8 @@ export default function CouponsManagementPage() {
       maxGlobalUses: coupon.maxGlobalUses?.toString() || "",
       maxUsesPerUser: coupon.maxUsesPerUser || 1,
       autoApply: coupon.autoApply,
-      autoApplyConditions: JSON.stringify(coupon.autoApplyConditions || {}, null, 2),
+      autoApplyConditions:{},
+    //   autoApplyConditions: JSON.stringify(coupon.autoApplyConditions || {}, null, 2),
     });
     
     setIsDialogOpen(true);
@@ -243,17 +269,17 @@ export default function CouponsManagementPage() {
     e.preventDefault();
     
     // JSON Validation
-    let parsedConditions = {};
-    try {
-        parsedConditions = JSON.parse(formData.autoApplyConditions);
-    } catch (e) {
-        toast.error("Invalid JSON in Auto Apply logic.");
-        return;
-    }
+    // let parsedConditions = {};
+    // try {
+        // parsedConditions = JSON.parse(formData.autoApplyConditions);
+    // } catch (e) {
+    //     toast.error("Invalid JSON in Auto Apply logic.");
+    //     return;
+    // }
 
     const payload = {
         ...formData,
-        autoApplyConditions: parsedConditions
+        // autoApplyConditions: parsedConditions
     };
 
     if (editingId) {
@@ -263,7 +289,10 @@ export default function CouponsManagementPage() {
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = <K extends keyof CouponFormPayload>(
+  field: K,
+  value: CouponFormPayload[K]
+) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -323,7 +352,7 @@ export default function CouponsManagementPage() {
                             <Label>Type</Label>
                             <Select 
                                 value={formData.type} 
-                                onValueChange={(val) => handleInputChange("type", val)}
+                              onValueChange={(val: Coupon["type"]) => handleInputChange("type", val)}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select Type" />
@@ -394,14 +423,14 @@ export default function CouponsManagementPage() {
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="firstCycle" 
                                         checked={formData.firstCycleOnly}
-                                        onCheckedChange={(checked) => handleInputChange("firstCycleOnly", checked)}
+                                        onCheckedChange={(checked) => handleInputChange("firstCycleOnly", checked === true)}
                                     />
                                     <Label htmlFor="firstCycle">First Cycle Only</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <Checkbox id="multiCycle" 
                                         checked={formData.multiCycle}
-                                        onCheckedChange={(checked) => handleInputChange("multiCycle", checked)}
+                                        onCheckedChange={(checked) => handleInputChange("multiCycle", checked === true)}
                                     />
                                     <Label htmlFor="multiCycle">Multi-Cycle Renewal</Label>
                                 </div>
@@ -477,11 +506,11 @@ export default function CouponsManagementPage() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Max Global Uses</Label>
-                            <Input type="number" placeholder="Unlimited" value={formData.maxGlobalUses} onChange={(e) => handleInputChange("maxGlobalUses", e.target.value)} />
+                            <Input type="number" placeholder="50" max={50} value={formData.maxGlobalUses} onChange={(e) => handleInputChange("maxGlobalUses", e.target.value)} />
                         </div>
                         <div className="space-y-2">
                             <Label>Max Per User</Label>
-                            <Input type="number" value={formData.maxUsesPerUser} onChange={(e) => handleInputChange("maxUsesPerUser", e.target.value)} />
+                            <Input type="number" value={formData.maxUsesPerUser} onChange={(e) => handleInputChange("maxUsesPerUser", Number(e.target.value))} />
                         </div>
                     </div>
 
@@ -497,7 +526,7 @@ export default function CouponsManagementPage() {
                                 onCheckedChange={(checked) => handleInputChange("autoApply", checked)}
                             />
                         </div>
-                        {formData.autoApply && (
+                        {/* {formData.autoApply && (
                             <div className="space-y-2">
                                 <Label>Condition JSON</Label>
                                 <Textarea 
@@ -507,7 +536,7 @@ export default function CouponsManagementPage() {
                                     onChange={(e) => handleInputChange("autoApplyConditions", e.target.value)}
                                 />
                             </div>
-                        )}
+                        )} */}
                     </div>
 
                     <DialogFooter>

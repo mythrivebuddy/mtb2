@@ -1,6 +1,16 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+interface Plan {
+  id: string;
+  name: string;
+  amountINR: number;
+  amountUSD: number;
+  description?: string | null;
+  interval: "MONTHLY" | "YEARLY" | "LIFETIME";
+  userType: "COACH" | "SOLOPRENEUR" | "ENTHUSIAST";
+}
+
 
 export default  function MembershipPage() {
   // Fetch plans (server component safe)
@@ -24,7 +34,7 @@ export default  function MembershipPage() {
       <h1 className="text-2xl font-bold mb-6">Membership Plans</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {plans?.map((plan: any) => {
+        {plans?.map((plan: Plan) => {
           const intervalLabel =
             plan.interval === "MONTHLY"
               ? "Monthly"

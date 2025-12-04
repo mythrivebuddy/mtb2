@@ -5,8 +5,8 @@ import { ArrowRight } from "lucide-react";
 
 export default function ThreePillars() {
   return (
-    <section className="py-16 sm:py-24">
-      <div className="px-4 sm:px-24">
+    <section className="py-8 sm:py-16">
+      <div className="">
         <div className="max-w-3xl mx-auto text-center mt-4">
           <h2 className="text-3xl sm:text-4xl font-bold dark:text-white">
             One Ecosystem. Built for Your Growth.

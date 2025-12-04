@@ -4,19 +4,20 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkRole } from "@/lib/utils/auth";
-import { Role, SubscriptionPlan } from "@prisma/client";
+import { Role } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
-export const GET = async (req:NextRequest) => {
+
+export const GET = async () => {
     // Todo will add the user type based filtering later
   try {
     const session = await getServerSession(authOptions);
     const user = session?.user;
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (user.role === Role.USER) {
+    
+    if (user?.role === Role.USER) {
       const subscriptionPlans = await prisma.subscriptionPlan.findMany({
         where:{isActive:true},
+        orderBy: { createdAt: "desc" },
       });
   
       return NextResponse.json(subscriptionPlans);
@@ -24,7 +25,7 @@ export const GET = async (req:NextRequest) => {
     }
     // For admin, return all plans
     const subscriptionPlans = await prisma.subscriptionPlan.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
     });
 
     return NextResponse.json(subscriptionPlans);
@@ -44,8 +45,15 @@ export const POST = async (req:NextRequest) => {
       billing_cycle,
       amountINR,
       amountUSD,
-      description
+      features,
     } = await req.json();
+
+    const featureArray = typeof features === "string"
+      ? features
+          .split(/\n|,/)
+          .map(f => f.trim())
+          .filter(f => f.length > 0)
+      : [];
 
     const createdPlan = await prisma.subscriptionPlan.create({
       data:{
@@ -54,7 +62,7 @@ export const POST = async (req:NextRequest) => {
         interval: billing_cycle,
         amountINR: amountINR,
         amountUSD: amountUSD,
-        description
+        features: featureArray
       }
     })
 
@@ -77,7 +85,7 @@ export const PATCH = async (req: NextRequest) => {
       billing_cycle,
       amountINR,
       amountUSD,
-      description,
+      features,
       isActive,
       gstEnabled,
       gstPercentage,
@@ -95,15 +103,20 @@ export const PATCH = async (req: NextRequest) => {
     if (!existingPlan) {
       return NextResponse.json({ error: "Plan not found" }, { status: 404 });
     }
-
+    const featureArray = typeof features === "string"
+      ? features
+          .split(/\n|,/)
+          .map(f => f.trim())
+          .filter(f => f.length > 0)
+      : [];
     // Prepare update data object (dynamic update)
-    const updateData :any = {
+        const updateData: Prisma.SubscriptionPlanUpdateInput = {
         name: plan_name,
         userType: user_type,
         interval: billing_cycle,
         amountINR: Number(amountINR),
         amountUSD: Number(amountUSD),
-        description: description,
+        features: featureArray,
         gstEnabled: gstEnabled,
         gstPercentage: Number(gstPercentage),
     };

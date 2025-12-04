@@ -43,10 +43,22 @@ export async function POST(req: Request) {
     // CASHFREE ORDER STATUSES
     if (status === "PAID" || status === "COMPLETED") {
       // Activate Lifetime Subscription
-      await prisma.subscription.updateMany({
+      const subscription = await prisma.subscription.findFirst({
         where: { orderId },
-        data: { status: "ACTIVE" },
       });
+
+      if (subscription) {
+      console.log("subscription found");
+      
+        await prisma.subscription.updateMany({
+          where: { orderId },
+          data: { status: "ACTIVE" },
+        });
+        await prisma.user.update({
+          where: { id: subscription.userId },
+          data: { membership: "PAID" }
+        });
+      }
 
       return NextResponse.redirect(
         new URL("/dashboard/membership/success", req.url),

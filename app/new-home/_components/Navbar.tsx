@@ -1,3 +1,6 @@
+
+/* eslint-disable react/no-unescaped-entities */
+
 import Link from "next/link";
 import {
   ChevronDown,
@@ -10,7 +13,6 @@ import {
   Megaphone, // For "Campaign"
   Search, // For "BuddyLens"
   Users, // For "Groups"
-  Flower, // Using Flower as the brand logo (fits "Thrive/Blooms" theme)
 } from "lucide-react";
 
 export default function Navbar() {

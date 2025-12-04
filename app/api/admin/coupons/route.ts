@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; // Adjust path to your prisma instance
-import { CouponType, CouponUserType, CouponStatus, SubscriptionPlanCurrency } from "@prisma/client";
+import { CouponType, CouponUserType, SubscriptionPlanCurrency } from "@prisma/client";
 
 export async function GET() {
   try {

@@ -13,8 +13,8 @@ export default function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <div className="relative">
-      <div className="flex items-center justify-between">
+    <div className="sticky top-0 z-50 bg-white  ">
+      <div className="flex items-center justify-between relative py-1.5">
         {/* Logo Section */}
         <Link href="/" className="flex items-center space-x-2 relative">
           <Image
@@ -219,8 +219,8 @@ export default function Navbar() {
             </NavLink>
           <NavLink href="/dashboard/challenge" className="hover:text-brand text-sm font-medium">Challenges</NavLink>
            {/* <NavLink href="/survey">Survey</NavLink> */}
-           <NavLink href="" className="hover:text-brand text-sm font-medium" >Discovery Calls</NavLink>
-           <NavLink href="" className="hover:text-brand text-sm font-medium" >Live Webinars</NavLink>
+           <NavLink href="/discovery-calls" className="hover:text-brand text-sm font-medium" >Discovery Calls</NavLink>
+           <NavLink href="/live-webinars" className="hover:text-brand text-sm font-medium" >Live Webinars</NavLink>
           {/* <NavLink href="/blog">Blog</NavLink> */}
           {/* <NavLink href="/contact">Contact Us</NavLink> */}
           {/* <NavLink href="/about-us">About Us</NavLink> */}
@@ -235,15 +235,15 @@ export default function Navbar() {
               </Button>
             ) : (
               <>
-                <NavLink href="/signin">
-                  <button className="h-10 px-4 rounded-lg font-bold hover:bg-blue-50 transition-colors ease-linear">
+              <NavLink href="/signin">
+                  <Button className="w-full text-center px-6 py-2.5 bg-[#0A0B1C] text-white rounded-full text-[15px] font-medium hover:bg-[#0A0B1C]/90 transition-colors">
                     Sign In
-                  </button>
+                  </Button>
                 </NavLink>
                 <NavLink href="/signup">
-                  <button className="h-10 px-4 rounded-lg  text-white font-bold bg-brand hover:bg-brand/90 transition-colors ease-linear">
+                  <Button className="w-full text-center px-6 py-2.5 bg-[#1E2875] text-white rounded-full text-[15px] font-medium hover:bg-[#1E2875]/90 transition-colors">
                     Sign Up
-                  </button>
+                  </Button>
                 </NavLink>
               </>
             )}
@@ -283,14 +283,14 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white mt-2 p-4 rounded-lg shadow-lg lg:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-white mt-0 p-4 rounded-lg shadow-lg lg:hidden z-50">
           <div className="flex flex-col space-y-4">
             {session && <NavLink href="/dashboard">Dashboard</NavLink>}
             <NavLink href="/pricing">Pricing</NavLink>
              <NavLink href="/dashboard/challenge">Challenges</NavLink>
              {/* // Todo will add links on discovey calls and live webinars */}
-             <NavLink href="" className="text-slate-400">Discovery Calls (Coming Soon)</NavLink>
-             <NavLink href="" className="text-slate-400">Live Webinars (Coming Soon) </NavLink>
+             <NavLink href="/discovery-calls">Discovery Calls</NavLink>
+             <NavLink href="/live-webinars" >Live Webinars</NavLink>
             <NavLink href="/blog">Blog</NavLink>
             <NavLink href="/contact">Contact Us</NavLink>
             <NavLink href="/about-us">About Us</NavLink>

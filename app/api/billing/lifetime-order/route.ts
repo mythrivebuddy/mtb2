@@ -2,14 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import axios from "axios"; // Using axios for consistency with previous snippet, or use fetch
-import { PlanInterval, SubscriptionStatus } from "@prisma/client";
+import { SubscriptionStatus } from "@prisma/client";
 
 /**
  * Calculate discount applied on base (exclusive of GST)
  * (Identical to your mandate logic)
  */
-function calculateDiscount(baseAmount: number, coupon: any): number {
+type CouponLike = {
+  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
+  discountPercentage?: number | null;
+  discountAmount?: number | null;
+  freeDays?: number | null;
+};
+
+function calculateDiscount(baseAmount: number, coupon: CouponLike | null): number {
   if (!coupon) return 0;
 
   switch (coupon.type) {

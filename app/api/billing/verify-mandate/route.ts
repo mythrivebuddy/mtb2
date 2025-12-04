@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
+import { MandateStatus } from "@prisma/client";
 
 export async function GET(req: Request) {
   try {
@@ -22,7 +23,7 @@ export async function GET(req: Request) {
 
     const mandateStatus = resp.data?.order_status;
 
-    let status: any = "PENDING";
+    let status: MandateStatus = "PENDING";
     if (mandateStatus === "PAID") status = "ACTIVE";
     if (mandateStatus === "FAILED") status = "FAILED";
 

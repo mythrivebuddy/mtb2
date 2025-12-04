@@ -31,6 +31,8 @@ export async function PUT(
 
     return NextResponse.json(updatedCoupon);
   } catch (error) {
+    console.log(error);
+    
     return NextResponse.json({ error: "Failed to update coupon" }, { status: 500 });
   }
 }
@@ -62,6 +64,7 @@ export async function DELETE(
         return NextResponse.json({ message: "Coupon deleted permanently." });
     }
   } catch (error) {
+    console.log(error);
     return NextResponse.json({ error: "Failed to delete coupon" }, { status: 500 });
   }
 }

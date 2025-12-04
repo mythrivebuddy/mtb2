@@ -36,6 +36,10 @@ async function activateSubscription(subscriptionId: string) {
     },
     update: { status: "ACTIVE" }
   });
+  await prisma.user.update({
+    where: { id: mandate.userId },
+    data: { membership: "PAID" }
+  });
 }
 
 // ============================================================

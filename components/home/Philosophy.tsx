@@ -5,8 +5,8 @@ import { MessageSquare, Lightbulb, Flower } from "lucide-react";
 
 export default function Philosophy() {
   return (
-    <section className="py-16 sm:py-24 bg-white dark:bg-slate-800/50">
-      <div className="px-4 sm:px-24">
+    <section className="py-8 sm:py-16 bg-white dark:bg-slate-800/50">
+      <div className="">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
 
           {/* LEFT ILLUSTRATION BOX */}

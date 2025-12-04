@@ -1,3 +1,7 @@
+
+/* eslint-disable react/no-unescaped-entities */
+
+
 export default function Hero() {
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-24  bg-background-light dark:bg-background-dark">
