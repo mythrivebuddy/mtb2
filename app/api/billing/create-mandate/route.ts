@@ -7,6 +7,17 @@ import { authOptions } from "@/lib/auth";
  * Calculate discount applied on base (exclusive of GST)
  * 
  */
+const REQUIRED_ENV_VARS = [
+  "CASHFREE_BASE_URL",
+  "CASHFREE_CLIENT_ID",
+  "CASHFREE_CLIENT_SECRET",
+  "NEXT_PUBLIC_BASE_URL"
+];
+
+function checkMissingEnvVars() {
+  const missing = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
+  return missing;
+}
 type CouponLike = {
   type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
   discountPercentage?: number | null;
@@ -84,6 +95,20 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+      const missing = checkMissingEnvVars();
+
+  if (missing.length > 0) {
+    return Response.json(
+      {
+        success: false,
+        message: "Missing required environment variables",
+        missingEnvVars: missing
+      },
+      { status: 500 }
+    );
+  }
+
 
     const userId = session.user.id;
 
@@ -312,7 +337,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("Mandate error:", err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: String(err) },
       { status: 500 }
     );
   }
