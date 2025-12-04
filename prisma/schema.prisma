@@ -97,6 +97,22 @@ model User {
 
   challengeCreatorSignature ChallengeCreatorSignature?
 
+  // membership 
+  userType                      PlanUserType?        // COACH | ENTHUSIAST | SOLOPRENEUR
+  currentPlanId        String?
+  currentPlanInterval  PlanInterval?     // MONTHLY | YEARLY | LIFETIME
+  currentCurrency      SubscriptionPlanCurrency?     // INR | USD
+
+    // NEW MEMBERSHIP RELATIONS
+  mandates           Mandate[]
+  subscriptions      Subscription[]
+  invoices        SubscriptionInvoice[]          @relation("UserInvoices")
+
+
+  couponRedemptions  CouponRedemption[]
+  billingInformation  BillingInformation[]
+
+
   @@index([name])
 }
 
@@ -117,7 +133,7 @@ model Activity {
   transactionType TransactionType @default(CREDIT)
   Transaction     Transaction[]
 }
-
+// legacy plan model do not touch
 model Plan {
   id              String   @id @default(uuid())
   name            String   @unique
@@ -436,7 +452,7 @@ model UserNotification {
   link      String?
   user      User     @relation("UserNotifications", fields: [userId], references: [id])
 }
-
+// legacy plan model do not touch
 model Invoice {
   id                 String   @id @default(uuid())
   userSubscriptionId String
@@ -993,6 +1009,229 @@ model Page {
 
 }
 
+// membership model start
+model SubscriptionPlan {
+  id             String    @id @default(cuid())
+  name           String    @unique
+  userType       PlanUserType    // COACH | ENTHUSIAST
+  interval       PlanInterval    // MONTHLY | YEARLY | LIFETIME
+  amountINR      Float
+  amountUSD      Float
+  description    String?
+  isActive       Boolean   @default(true)
+  features       Json? 
+
+  gstEnabled     Boolean   @default(true)
+  gstPercentage  Float     @default(18)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  subscriptions  Subscription[]
+  mandates       Mandate[]
+  coupons        Coupon[]        @relation("PlanCoupons")
+  invoices SubscriptionInvoice[]
+}
+enum SubscriptionPlanCurrency {
+  INR
+  USD
+}
+
+enum PlanUserType {
+  COACH
+  ENTHUSIAST
+  SOLOPRENEUR
+}
+
+enum PlanInterval {
+  MONTHLY
+  YEARLY
+  LIFETIME
+  FREE
+}
+
+model Mandate {
+  id              String     @id @default(cuid())
+  mandateId       String     @unique
+  userId          String
+  planId          String
+
+  status          MandateStatus // PENDING, ACTIVE, FAILED, CANCELLED
+  currency        String        // INR | USD
+  paymentMethod   String?       // UPI, CARD
+  frequency       PlanInterval  // MONTHLY or YEARLY only
+  maxAmount       Float
+
+  nextBillingDate DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id])
+  plan            SubscriptionPlan       @relation(fields: [planId], references: [id])
+  subscriptions   Subscription[]
+}
+
+enum MandateStatus {
+  PENDING
+  ACTIVE
+  FAILED
+  CANCELLED
+}
+
+model Subscription {
+  id               String      @id @default(cuid())
+  userId           String
+  planId           String
+  mandateId        String?      @unique   // null for lifetime or free trial
+  orderId          String?     // optional
+  couponId         String?     // optional
+  status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL
+  startDate        DateTime
+  endDate          DateTime
+  renewedAt        DateTime?
+  trialEndsAt      DateTime?   // for enthusiast free trials
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  user             User        @relation(fields: [userId], references: [id])
+  plan             SubscriptionPlan        @relation(fields: [planId], references: [id])
+  mandate          Mandate?    @relation(fields: [mandateId], references: [id])
+  coupon           Coupon?     @relation(fields: [couponId], references: [id])
+  invoices         SubscriptionInvoice[]
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  FREE_TRIAL
+  PENDING
+}
+
+model SubscriptionInvoice {
+  id               String    @id @default(cuid())
+  subscriptionId   String
+  userId           String
+  planId           String
+
+  baseAmount       Float
+  gstAmount        Float      @default(0)
+  totalAmount      Float
+  currency         String     // INR | USD
+
+  serialNumberIN   Int?       // Indian GST invoice series
+  serialNumberINTL Int?       // International invoice series
+
+  transactionId    String?
+  status           InvoiceStatus // PAID | FAILED
+
+  billingDate      DateTime
+  
+  billingInformationId  String?
+
+  createdAt        DateTime @default(now())
+
+  subscription     Subscription @relation(fields: [subscriptionId], references: [id])
+  user             User         @relation("UserInvoices", fields: [userId], references: [id])
+  plan             SubscriptionPlan         @relation(fields: [planId], references: [id])
+}
+
+enum InvoiceStatus {
+  PAID
+  FAILED
+}
+
+model Coupon {
+  id                  String      @id @default(cuid())
+  couponCode          String      @unique
+  description         String?
+
+  type                CouponType
+
+  // Discount types
+  discountPercentage  Float?
+  discountAmount      Float?
+  freeDays            Int?
+
+  // Applicability
+  applicableUserTypes  CouponUserType[]
+  applicablePlans      SubscriptionPlan[]           @relation("PlanCoupons")
+  applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
+  firstCycleOnly        Boolean @default(false)
+  multiCycle            Boolean @default(false)
+
+  // Validity
+  startDate           DateTime
+  endDate             DateTime
+  maxGlobalUses       Int?
+  maxUsesPerUser      Int? @default(1)
+
+  // Auto apply
+  autoApply           Boolean @default(false)
+  autoApplyConditions Json?
+
+  status              CouponStatus
+
+  createdBy           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  subscriptions Subscription[]
+  redemptions         CouponRedemption[]
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+  FREE_DURATION
+  FULL_DISCOUNT
+  AUTO_APPLY
+}
+
+enum CouponUserType {
+  COACH
+  ENTHUSIAST
+  SOLOPRENEUR
+  ALL
+}
+
+enum CouponStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+model CouponRedemption {
+  id          String   @id @default(cuid())
+  couponId    String
+  userId      String
+  usedAt      DateTime @default(now())
+  appliedPlan String
+  discountApplied Float
+
+  coupon      Coupon @relation(fields: [couponId], references: [id])
+  user        User   @relation(fields: [userId], references: [id])
+}
+model BillingInformation {
+  id          String   @id @default(cuid())
+  userId      String   @unique  
+  fullName    String
+  email       String
+  phone       String?
+  
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  state         String
+  postalCode    String
+  country       String   // "IN" or "US" etc.
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+// membership model end
 // Enum for the AEO/Schema feature
 enum PageSchemaType {
   NONE        // Default
