@@ -10,7 +10,7 @@ export default function Footer() {
           {/* Logo + description */}
           <div>
             <div className="flex items-center gap-3">
-             <Image src="/logo.png" height={36} width={36} alt="Logo"/>
+              <Image src="/logo.png" height={36} width={36} alt="Logo" />
               <h2 className="text-xl font-bold dark:text-white">
                 MyThriveBuddy
               </h2>
@@ -26,14 +26,14 @@ export default function Footer() {
             <div>
               <h3 className="font-semibold dark:text-white">Product</h3>
               <ul className="mt-4 space-y-3">
-                {["Benefits", "Pricing", "Challenges"].map((i) => (
-                  <li key={i}>
-                    <a
+                {[{ label: "Benefits", link: "#" }, {label:"Pricing",link:"/pricing"}, {label:"Challenges",link:"/dashboard/challenge"}].map((i) => (
+                  <li key={i.label}>
+                    <Link
                       className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                      href="#"
+                      href={i.link}
                     >
-                      {i}
-                    </a>
+                      {i.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -42,14 +42,19 @@ export default function Footer() {
             <div>
               <h3 className="font-semibold dark:text-white">Learn</h3>
               <ul className="mt-4 space-y-3">
-                {["Blog", "Webinars", "FAQs", "Help Center"].map((i) => (
-                  <li key={i}>
-                    <a
+                {[
+                  { label: "Blog", link: "/blog" },
+                  { label: "Webinars", link: "/live-webinars" },
+                  { label: "FAQs", link: "#" },
+                  { label: "Help Center", link: "#" },
+                ].map((i) => (
+                  <li key={i.label}>
+                    <Link
                       className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                      href="#"
+                      href={i.link}
                     >
-                      {i}
-                    </a>
+                      {i.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -58,16 +63,30 @@ export default function Footer() {
             <div>
               <h3 className="font-semibold dark:text-white">Company</h3>
               <ul className="mt-4 space-y-3">
-                {["About", "Contact", "Future Vision"].map((i) => (
-                  <li key={i}>
-                    <a
-                      className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                      href="#"
-                    >
-                      {i}
-                    </a>
-                  </li>
-                ))}
+                <li>
+                  <Link
+                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
+                    href={`/about-us`}
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
+                    href={`/contact`}
+                  >
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
+                    href={`#`}
+                  >
+                    Future Vision
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

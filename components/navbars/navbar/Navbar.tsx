@@ -292,8 +292,8 @@ export default function Navbar() {
              <NavLink href="/discovery-calls">Discovery Calls</NavLink>
              <NavLink href="/live-webinars" >Live Webinars</NavLink>
             <NavLink href="/blog">Blog</NavLink>
-            <NavLink href="/contact">Contact Us</NavLink>
-            <NavLink href="/about-us">About Us</NavLink>
+            {/* <NavLink href="/contact">Contact Us</NavLink> */}
+            {/* <NavLink href="/about-us">About Us</NavLink> */}
             {session ? (
               <Button
                 onClick={() => signOut()}
