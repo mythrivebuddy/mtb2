@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import SpotlightCard from "./SpotlightCard";
 import useRedirectDashboard from "@/hooks/use-redirect-dashboard";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
