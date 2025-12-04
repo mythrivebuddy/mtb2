@@ -14,9 +14,9 @@ export default withAuth(
         : null;
 
     // Handle authenticated users accessing /signin
-    if (token && path === "/signin" && redirectUrl) {
-      return NextResponse.redirect(new URL(redirectUrl, req.url));
-    }
+    // if (token && path === "/signin" && redirectUrl) {
+    //   return NextResponse.redirect(new URL(redirectUrl, req.url));
+    // }
 
     // Redirect admins accessing /dashboard to /admin/dashboard
     // if (token && path.startsWith("/dashboard") && token.role === "ADMIN") {
@@ -62,6 +62,8 @@ export default withAuth(
         if (path === "/dashboard/challenge") {
           return true;
         }
+        if (path === "/signin") return true;
+
         if (isPublicChallengePage(path)) {
           return true;
         }
@@ -97,5 +99,5 @@ function isPublicChallengePage(path: string): boolean {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*", "/signin"],
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*", ],
 };
