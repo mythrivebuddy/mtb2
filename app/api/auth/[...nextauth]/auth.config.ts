@@ -308,6 +308,7 @@ export const authConfig: AuthOptions = {
 
     async redirect({ url, baseUrl }) {
       // ... (Your existing redirect logic stays the same)
+      console.log(url);
       return `${baseUrl}/dashboard`;
     },
   },
