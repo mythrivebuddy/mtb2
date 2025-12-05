@@ -13,12 +13,20 @@ export default withAuth(
         ? `${req.nextUrl.origin}${redirect}`
         : null;
         console.log(redirectUrl);
-            if (token && path === "/signin") {
-      const redirect =
-        req.nextUrl.searchParams.get("redirect") || "/dashboard";
+          if (token && path === "/signin") {
+    // 1. Get the desired redirect path from the query params, or default to /dashboard
+    const redirectPath = req.nextUrl.searchParams.get("redirect") || "/dashboard";
 
-      return NextResponse.redirect(new URL(redirect, req.url));
-    }
+    // 2. Safely construct the full absolute URL for the redirect
+    // Use req.nextUrl.origin (e.g., 'https://staging.app.com') and append the path.
+    const absoluteRedirectUrl = `${req.nextUrl.origin}${
+        redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`
+    }`;
+
+    // 3. Perform the redirect
+    console.log("Redirecting authenticated user from /signin to:", absoluteRedirectUrl);
+    return NextResponse.redirect(new URL(absoluteRedirectUrl));
+}
         
 
     // Handle authenticated users accessing /signin
