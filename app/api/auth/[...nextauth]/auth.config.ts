@@ -65,7 +65,7 @@ type UserWithPlan = Prisma.UserGetPayload<{
 
 
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
-const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
+const REMEMBER_ME_MAX_AGE = 10 * 365 * 24 * 60 * 60;
 
 export const authConfig: AuthOptions = {
   providers: [
@@ -130,12 +130,11 @@ export const authConfig: AuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role,
-            rememberMe: credentials.rememberMe === "true",
+            rememberMe: ["true", "on", "1"].includes(String(credentials.rememberMe)),
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
           };
         } catch (error) {
-          console.log("error", error);
           if (error instanceof Error) throw new Error(error.message);
           throw new Error("Something went wrong");
         }
@@ -245,6 +244,7 @@ export const authConfig: AuthOptions = {
         token.maxAge = (user.rememberMe ?? false) ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE; // <-- FIX: Added '?? false'
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
         token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
+        token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
 
       if (trigger === "update" && session) {
@@ -281,17 +281,33 @@ export const authConfig: AuthOptions = {
         session.user.name = token.name;
         session.user.image = token.picture;
       }
+        session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
 
       // --- ADD THIS LINE TO PASS THE TOKEN TO THE CLIENT ---
       session.supabaseAccessToken = token.supabaseAccessToken; // <-- This is correct now
       // --- END NEW LINE ---
+      // Persist login indefinitely for Remember Me users by updating cookie expiration
+      const cookieStore = await cookies();
+      const cookieName = process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token";
 
+      const existing = cookieStore.get(cookieName);
+
+      if (existing) {
+        cookieStore.set(cookieName, existing.value, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          expires: new Date(Date.now() + token.maxAge * 1000),
+        });
+      }
       return session;
     },
 
     async redirect({ url, baseUrl }) {
       // ... (Your existing redirect logic stays the same)
-      console.log(url);
       return `${baseUrl}/dashboard`;
     },
   },
