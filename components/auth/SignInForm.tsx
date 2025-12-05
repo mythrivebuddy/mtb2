@@ -30,7 +30,7 @@ function SignInFormContent() {
   });
 
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard";
+  const redirect = searchParams.get("redirect") || "/";
   const errorFromUrl = searchParams.get("error");
 
   useEffect(() => {
@@ -62,7 +62,7 @@ function SignInFormContent() {
       });
 
       if (response?.ok) {
-        router.replace(redirect);
+        await router.push(redirect);
         toast.success("Signin successful");
         return;
       }

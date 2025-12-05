@@ -12,27 +12,11 @@ export default withAuth(
       redirect && redirect.startsWith("/")
         ? `${req.nextUrl.origin}${redirect}`
         : null;
-        console.log(redirectUrl);
-          if (token && path === "/signin") {
-    // 1. Get the desired redirect path from the query params, or default to /dashboard
-    const redirectPath = req.nextUrl.searchParams.get("redirect") || "/dashboard";
-
-    // 2. Safely construct the full absolute URL for the redirect
-    // Use req.nextUrl.origin (e.g., 'https://staging.app.com') and append the path.
-    const absoluteRedirectUrl = `${req.nextUrl.origin}${
-        redirectPath.startsWith("/") ? redirectPath : `/${redirectPath}`
-    }`;
-
-    // 3. Perform the redirect
-    console.log("Redirecting authenticated user from /signin to:", absoluteRedirectUrl);
-    return NextResponse.redirect(new URL(absoluteRedirectUrl));
-}
-        
 
     // Handle authenticated users accessing /signin
-    // if (token && path === "/signin" && redirectUrl) {
-    //   return NextResponse.redirect(new URL(redirectUrl, req.url));
-    // }
+    if (token && path === "/signin" && redirectUrl) {
+      return NextResponse.redirect(new URL(redirectUrl, req.url));
+    }
 
     // Redirect admins accessing /dashboard to /admin/dashboard
     // if (token && path.startsWith("/dashboard") && token.role === "ADMIN") {
@@ -72,23 +56,15 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        const url = req.nextUrl;
         const path = req.nextUrl.pathname;
 
         // Allow public challenge pages
-           if (path === "/signin") {
-            return !token;  // If user already has a token, block this page and redirect
-            }
         if (path === "/dashboard/challenge") {
           return true;
         }
-
         if (isPublicChallengePage(path)) {
           return true;
         }
-        if (url.searchParams.has("callbackUrl") || url.searchParams.has("redirect")) {
-    return true;
-  }
 
         // Require authentication for all other pages
         return !!token;
@@ -121,5 +97,5 @@ function isPublicChallengePage(path: string): boolean {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*","/signin" ],
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*", "/signin"],
 };
