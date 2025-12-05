@@ -13,6 +13,12 @@ export default withAuth(
         ? `${req.nextUrl.origin}${redirect}`
         : null;
         console.log(redirectUrl);
+            if (token && path === "/signin") {
+      const redirect =
+        req.nextUrl.searchParams.get("redirect") || "/dashboard";
+
+      return NextResponse.redirect(new URL(redirect, req.url));
+    }
         
 
     // Handle authenticated users accessing /signin
@@ -62,10 +68,12 @@ export default withAuth(
         const path = req.nextUrl.pathname;
 
         // Allow public challenge pages
+           if (path === "/signin") {
+            return !token;  // If user already has a token, block this page and redirect
+            }
         if (path === "/dashboard/challenge") {
           return true;
         }
-        if (path === "/signin") return true;
 
         if (isPublicChallengePage(path)) {
           return true;
