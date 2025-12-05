@@ -7,28 +7,22 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const SignInPageContent = () => {
-  const { data: session,status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("callbackUrl") || searchParams.get("redirect") || "/dashboard"; // Respect redirect parameter
-  console.log(redirect);
-  useEffect(() => console.log("SESSION:", session), [session]);
+  const redirect = searchParams.get("redirect") || "/dashboard"; // Respect redirect parameter
 
-  
-useEffect(() => {
-  if (status === "loading") return;
+  useEffect(() => {
+    if (!session) return;
 
-  if (status === "authenticated") {
-    console.log("Redirecting", redirect);
+    console.log("SignInPageContent redirecting:", { redirect, role: session?.user?.role }); // Debug
 
     if (session?.user?.role === "ADMIN") {
       router.push("/admin/dashboard");
     } else {
-      router.replace(redirect);
+      router.push(redirect); // Use redirect parameter
     }
-  }
-}, [status, session, redirect, router]);
-
+  }, [session, router, redirect]);
 
   return (
     <AppLayout>
