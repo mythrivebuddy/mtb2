@@ -139,6 +139,14 @@ export default function SignUpForm() {
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <input
+          type="text"
+          {...register("honeypot" as never)}
+          className="hidden"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+
         <Input {...register("name")} placeholder="Your Name" />
         {errors.name && <p className="text-red-500">{errors.name.message}</p>}
 

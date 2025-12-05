@@ -15,7 +15,13 @@ import { splitFullName } from "@/lib/utils/utils";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { captchaToken, ...userInput  } = body;
+    if (body.honeypot) {
+      return NextResponse.json(
+        { error: "Invalid form submission" },
+        { status: 400 }
+      );
+    }
+    const { honeypot, captchaToken, ...userInput } = body;
 
     if (!captchaToken) {
       return NextResponse.json(
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
 
 
     // Validate input
-    
+
     const validation = signupSchema.safeParse(userInput);
     if (!validation.success) {
       return NextResponse.json(
