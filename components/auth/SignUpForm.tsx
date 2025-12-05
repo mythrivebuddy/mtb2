@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,7 @@ import GoogleIcon from "../icons/GoogleIcon";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import ReCAPTCHA from "react-google-recaptcha";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +25,10 @@ export default function SignUpForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  // Recaptcha states
+  const captchaRef = useRef<ReCAPTCHA | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
 
   const referralCodeFromURL = searchParams.get("ref");
 
@@ -46,13 +51,14 @@ export default function SignUpForm() {
 
   // ✅ React Query mutation for signup
   const signupMutation = useMutation({
-    mutationFn: async (data: SignupFormType) => {
+    mutationFn: async (data: SignupFormType & { captchaToken?: string }) => {
       const res = await axios.post("/api/auth/signup", data);
       return res.data;
     },
     onSuccess: async (data, variables) => {
       toast.success("Signup successful");
-      const referralCode = variables.referralCode || Cookies.get("referralCode");
+      const referralCode =
+        variables.referralCode || Cookies.get("referralCode");
 
       if (referralCode) {
         try {
@@ -74,28 +80,36 @@ export default function SignUpForm() {
     },
     onError: (err) => {
       toast.error(getAxiosErrorMessage(err, "Signup failed"));
+      captchaRef.current?.reset();
     },
   });
 
   const onSubmit: SubmitHandler<SignupFormType> = async (formData) => {
+    if (!captchaToken) {
+      setCaptchaError("Please complete the CAPTCHA to continue.");
+      return;
+    }
+
     setIsLoading(true);
-    signupMutation.mutate(formData, {
-      onSettled: () => setIsLoading(false),
-    });
+    signupMutation.mutate(
+      { ...formData, captchaToken: captchaToken as string },
+      {
+        onSettled: () => setIsLoading(false),
+      }
+    );
   };
 
-  
   const handleGoogleLogin = async () => {
     try {
       // Get referral code from URL or cookies
       // const referralCode = searchParams.get('ref');
-      
+
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: "/dashboard",
         // state: "gggggggggg",
       });
-      
+
       if (result?.ok) {
         console.log("herer in okay");
         router.push("/dashboard");
@@ -116,6 +130,11 @@ export default function SignUpForm() {
     }
   };
 
+  const handleCaptchaChange = (token: string | null) => {
+    // This token is what you send to your backend for verification
+    setCaptchaError(null);
+    setCaptchaToken(token);
+  };
 
   return (
     <div className="space-y-4">
@@ -173,6 +192,22 @@ export default function SignUpForm() {
             Referral code auto-filled from link
           </p>
         )}
+
+        <div className="w-full overflow-hidden flex flex-col items-center">
+          <div className="scale-[0.95] origin-top inline-block">
+            <ReCAPTCHA
+              ref={captchaRef}
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
+              onChange={handleCaptchaChange}
+            />
+          </div>
+
+          {captchaError && (
+            <p className="text-red-500 text-sm mt-2 break-words whitespace-normal text-center px-2">
+              {captchaError}
+            </p>
+          )}
+        </div>
 
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? "Creating account..." : "Sign Up"}
