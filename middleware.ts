@@ -113,5 +113,5 @@ function isPublicChallengePage(path: string): boolean {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*", ],
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*","/signin" ],
 };
