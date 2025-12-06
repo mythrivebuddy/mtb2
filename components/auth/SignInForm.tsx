@@ -30,7 +30,7 @@ function SignInFormContent() {
   });
 
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/";
   const errorFromUrl = searchParams.get("error");
 
   useEffect(() => {
@@ -60,6 +60,8 @@ function SignInFormContent() {
         rememberMe: data.rememberMe,
         callbackUrl: redirect,
       });
+      console.log("response ",response);
+      
 
       if (response?.ok) {
         await router.push(redirect);

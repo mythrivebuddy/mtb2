@@ -308,8 +308,17 @@ export const authConfig: AuthOptions = {
 
     async redirect({ url, baseUrl }) {
       // ... (Your existing redirect logic stays the same)
-      console.log(url);
-      return `${baseUrl}/dashboard`;
+     console.log("Redirect URL:", url);
+      
+      // This ensures that if 'url' is a full external URL, 
+      // you only redirect to it if it is on the same host (optional security check)
+      if (url.startsWith(baseUrl)) return url;
+
+      // If the URL is relative (e.g., '/dashboard/membership'), prepend the base URL
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      
+      // Fallback to a default if a valid URL isn't present
+      return baseUrl;
     },
   },
   session: {
