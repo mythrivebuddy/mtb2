@@ -35,6 +35,7 @@ import { getInitials } from "@/utils/getInitials";
 import { SearchUser } from "@/types/client/nav";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "./Topbar";
+import { useSession } from "next-auth/react";
 
 
 // Reusable navigation item component
@@ -112,6 +113,10 @@ const Sidebar = ({ user }: { user?: UserType }) => {
     enabled: searchTerm.length > 0,
   });
   // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
+  const session = useSession();
+  console.log("User type:", session.data?.user.userType);
+
+
 
   
 
@@ -375,12 +380,16 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               </NavSection>
               {/* Settings Section */}
               <NavSection title="Settings">
-                <NavItem
-                  href="/dashboard/business-profile"
-                  icon={<User size={20} />}
-                  label="Business Profile"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
+                 {
+                    (session.data?.user.userType != "ENTHUSIAST") && (
+                      <NavItem
+                        href="/dashboard/business-profile"
+                        icon={<User size={20} />}
+                        label="Business Profile"
+                        onLinkClick={toggleSidebar} // Pass toggleSidebar
+                      />  
+                    )
+                  }
                 <NavItem
                   href="/dashboard/faq"
                   icon={<HelpCircle size={20} />}

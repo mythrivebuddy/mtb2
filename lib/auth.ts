@@ -51,6 +51,7 @@ export const authOptions: NextAuthOptions = {
           role: existingUser.role,
           rememberMe: !!credentials.rememberMe,
           isFirstTimeSurvey: existingUser.isFirstTimeSurvey ?? false,
+          userType: existingUser.userType,    
           lastSurveyTime: existingUser.lastSurveyTime,
         };
       },
@@ -65,6 +66,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.role = user.role;
         token.rememberMe = user.rememberMe;
+         token.userType = user.userType; 
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
         token.lastSurveyTime = user.lastSurveyTime?.toISOString() || null;
       }
@@ -77,6 +79,7 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.role = token.role;
+        session.user.userType = token.userType; 
         session.user.rememberMe = token.rememberMe;
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
         session.user.lastSurveyTime = token.lastSurveyTime;

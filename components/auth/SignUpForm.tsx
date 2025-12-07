@@ -18,6 +18,7 @@ import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -29,17 +30,35 @@ export default function SignUpForm() {
   const captchaRef = useRef<ReCAPTCHA | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [prefilledTypes, setPrefilledTypes] = useState<string[]>([]);
+  const [userHasChosen, setUserHasChosen] = useState(false);
+
+  const userType = searchParams.get("user-type");
 
   const referralCodeFromURL = searchParams.get("ref");
 
   const {
     register,
     handleSubmit,
+    watch,
     setValue,
     formState: { errors },
   } = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
   });
+  useEffect(() => {
+    if (!userType) return;
+
+    // User clicked Coach/Solopreneur button
+    if (userType === "coach-solopreneur") {
+      // Show BOTH as visually selected
+      setPrefilledTypes(["solopreneur"]);
+      return;
+    }
+
+    // Single-type clicks simply pre-check that one visually
+    setPrefilledTypes([userType]);
+  }, [userType]);
 
   // ✅ Store referral code in cookie if present
   useEffect(() => {
@@ -200,6 +219,61 @@ export default function SignUpForm() {
             Referral code auto-filled from link
           </p>
         )}
+
+        {/* USER TYPE SELECTION */}
+        <div className="space-y-3">
+          <label className="font-medium text-gray-700 text-sm">
+            Select Your Type
+          </label>
+
+          {/* Enthusiast */}
+          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <Checkbox
+              checked={
+                userHasChosen
+                  ? watch("userType") === "enthusiast"
+                  : prefilledTypes.includes("enthusiast")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "enthusiast");
+              }}
+            />
+            <span className="text-sm">Self Growth Enthusiast</span>
+          </div>
+
+          {/* Coach */}
+          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <Checkbox
+              checked={
+                userHasChosen
+                  ? watch("userType") === "coach"
+                  : prefilledTypes.includes("coach")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "coach");
+              }}
+            />
+            <span className="text-sm">Coach</span>
+          </div>
+
+          {/* Solopreneur */}
+          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <Checkbox
+              checked={
+                userHasChosen
+                  ? watch("userType") === "solopreneur"
+                  : prefilledTypes.includes("solopreneur")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "solopreneur");
+              }}
+            />
+            <span className="text-sm">Solopreneur</span>
+          </div>
+        </div>
 
         <div className="w-full overflow-hidden flex flex-col items-center">
           <div className="scale-[0.95] origin-top inline-block">
