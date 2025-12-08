@@ -86,7 +86,8 @@ export async function POST(req: Request) {
         code: coupon.couponCode,
         type: coupon.type, // "PERCENTAGE" | "FIXED" | "FREE_DURATION"
         discountPercentage: coupon.discountPercentage,
-        discountAmount: coupon.discountAmount,
+        discountAmountUSD: coupon.discountAmountUSD,
+        discountAmountINR: coupon.discountAmountINR,
         freeDays: coupon.freeDays,
         description: coupon.description,
       },

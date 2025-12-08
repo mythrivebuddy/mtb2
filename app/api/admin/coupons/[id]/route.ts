@@ -6,7 +6,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
 
     // Fields allowed to update
@@ -42,7 +42,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check usage
     const redemptionCount = await prisma.couponRedemption.count({

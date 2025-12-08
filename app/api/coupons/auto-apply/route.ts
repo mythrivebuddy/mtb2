@@ -9,6 +9,18 @@ type AutoApplyConditions = {
 };
 
 
+function getFixedAmount(
+  coupon: {
+    discountAmountUSD?: number | null;
+    discountAmountINR?: number | null;
+  },
+  currency: string
+): number {
+  return currency === "USD"
+    ? coupon.discountAmountUSD || 0
+    : coupon.discountAmountINR || 0;
+}
+
 export async function POST(req: Request) {
   try {
     const { planId, currency, billingCountry, userType } = await req.json();
@@ -95,7 +107,7 @@ export async function POST(req: Request) {
 
       // Fixed discounts – higher first
       if (a.type === "FIXED" && b.type === "FIXED") {
-        return (b.discountAmount || 0) - (a.discountAmount || 0);
+       return getFixedAmount(b, currency) - getFixedAmount(a, currency);
       }
 
       return 0;
@@ -107,7 +119,8 @@ export async function POST(req: Request) {
         code: bestCoupon.couponCode,
         type: bestCoupon.type, // "PERCENTAGE" | "FIXED" | "FREE_DURATION"
         discountPercentage: bestCoupon.discountPercentage,
-        discountAmount: bestCoupon.discountAmount,
+        discountAmountUSD: bestCoupon.discountAmountUSD,
+        discountAmountINR: bestCoupon.discountAmountINR,
         freeDays: bestCoupon.freeDays,
         description: bestCoupon.description,
       },
