@@ -1150,7 +1150,8 @@ model Coupon {
 
   // Discount types
   discountPercentage  Float?
-  discountAmount      Float?
+  discountAmountUSD   Float?
+  discountAmountINR   Float?
   freeDays            Int?
 
   // Applicability

@@ -45,7 +45,7 @@ export default function Hero() {
             if (session.status === "authenticated") {
               router.push("/dashboard");
             } else {
-              router.push("/signup");
+              router.push("/signup?user-type=coach-solopreneur");
             }
           }}
           className="h-12 px-5 sm:text-[12px] lg:text-sm bg-brand hover:bg-brand/90 text-white rounded-xl font-bold py-1"
@@ -58,7 +58,7 @@ export default function Hero() {
             if (session.status === "authenticated") {
               router.push("/dashboard");
             } else {
-              router.push("/signup");
+              router.push("/signup?user-type=enthusiast");
             }
           }}
           className="h-12 px-5 text-sm sm:text-[12px] lg:text-sm bg-slate-200 dark:bg-slate-700 rounded-lg font-bold py-1 hover:bg-brand/10"

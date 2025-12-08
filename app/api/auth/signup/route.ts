@@ -15,7 +15,14 @@ import { splitFullName } from "@/lib/utils/utils";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { captchaToken, ...userInput  } = body;
+    const { honeypot, captchaToken, ...userInput } = body;
+    if (honeypot) {
+      return NextResponse.json(
+        { error: "Invalid form submission" },
+        { status: 400 }
+      );
+    }
+   
 
     if (!captchaToken) {
       return NextResponse.json(
@@ -45,7 +52,7 @@ export async function POST(request: NextRequest) {
 
 
     // Validate input
-    
+
     const validation = signupSchema.safeParse(userInput);
     if (!validation.success) {
       return NextResponse.json(
@@ -53,7 +60,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const { email, password, name } = userInput;
+    const { email, password, name, userType } = userInput;
+    const allowedTypes = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
+
+    let normalizedUserType = null;
+
+    if (userType) {
+      const upper = userType.toUpperCase();
+      normalizedUserType = allowedTypes.includes(upper) ? upper : null;
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -93,6 +108,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name,
         role: process.env.ADMIN_EMAIL === email ? "ADMIN" : "USER",
+        userType: normalizedUserType,
         emailVerificationToken: verificationToken,
         emailVerificationTokenExpires: new Date(
           Date.now() + 24 * 60 * 60 * 1000

@@ -31,7 +31,8 @@ export async function POST(req: Request) {
       couponCode,
       type,
       discountPercentage,
-      discountAmount,
+      discountAmountINR,
+      discountAmountUSD,
       freeDays,
       applicableUserTypes, // Array of ENUMs
       applicablePlanIds,   // Array of Strings (IDs)
@@ -61,7 +62,8 @@ export async function POST(req: Request) {
         
         // Discount Logic
         discountPercentage: discountPercentage ? parseFloat(discountPercentage) : null,
-        discountAmount: discountAmount ? parseFloat(discountAmount) : null,
+        discountAmountUSD: discountAmountUSD ? parseFloat(discountAmountUSD) : null,
+        discountAmountINR: discountAmountINR ? parseFloat(discountAmountINR) : null,
         freeDays: freeDays ? parseInt(freeDays) : null,
 
         // Applicability

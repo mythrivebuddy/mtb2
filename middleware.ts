@@ -7,7 +7,7 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
     const searchParams = req.nextUrl.searchParams;
-    const redirect = searchParams.get("redirect") || null;
+    const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || null;
     const redirectUrl =
       redirect && redirect.startsWith("/")
         ? `${req.nextUrl.origin}${redirect}`
@@ -97,5 +97,5 @@ function isPublicChallengePage(path: string): boolean {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*", "/signin"],
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*","/signin"],
 };

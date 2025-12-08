@@ -22,6 +22,7 @@ declare module "next-auth" {
       id: string;
       role: Role;
       rememberMe?: boolean; // <-- FIX: Made optional
+      userType: string | null;
       isFirstTimeSurvey: boolean;
       lastSurveyTime: string | null;
     } & DefaultSession["user"];
@@ -34,6 +35,7 @@ declare module "next-auth" {
     role: Role;
     rememberMe?: boolean; // <-- FIX: Made optional
     isFirstTimeSurvey: boolean;
+    userType: string | null;
     lastSurveyTime: Date | null;
   }
 }
@@ -47,6 +49,7 @@ declare module "next-auth/jwt" {
     id: string;
     rememberMe?: boolean; // <-- FIX: Made optional
     isFirstTimeSurvey: boolean;
+    userType: string | null;
     lastSurveyTime: string | null;
     maxAge: number;
     supabaseAccessToken?: string;
@@ -133,6 +136,7 @@ export const authConfig: AuthOptions = {
             rememberMe: ["true", "on", "1"].includes(String(credentials.rememberMe)),
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
+            userType:user.userType ?? null
           };
         } catch (error) {
           if (error instanceof Error) throw new Error(error.message);
@@ -244,7 +248,8 @@ export const authConfig: AuthOptions = {
         token.maxAge = (user.rememberMe ?? false) ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE; // <-- FIX: Added '?? false'
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
         token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
-        token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
+        token.userType = user.userType ?? null;
+        // token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
 
       if (trigger === "update" && session) {
@@ -277,7 +282,7 @@ export const authConfig: AuthOptions = {
         session.user.rememberMe = token.rememberMe ?? false; // <-- FIX: Added '?? false'
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
         session.user.lastSurveyTime = token.lastSurveyTime;
-
+        session.user.userType = token.userType;
         session.user.name = token.name;
         session.user.image = token.picture;
       }
@@ -308,14 +313,23 @@ export const authConfig: AuthOptions = {
 
     async redirect({ url, baseUrl }) {
       // ... (Your existing redirect logic stays the same)
-      console.log(url);
-      return `${baseUrl}/dashboard`;
+     console.log("Redirect URL:", url);
+      
+      // This ensures that if 'url' is a full external URL, 
+      // you only redirect to it if it is on the same host (optional security check)
+      if (url.startsWith(baseUrl)) return url;
+
+      // If the URL is relative (e.g., '/dashboard/membership'), prepend the base URL
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      
+      // Fallback to a default if a valid URL isn't present
+      return baseUrl;
     },
   },
   session: {
     // ... (Your existing session config stays the same)
     strategy: "jwt",
-    maxAge: DEFAULT_MAX_AGE,
+    // maxAge: DEFAULT_MAX_AGE,
   },
   pages: {
     // ... (Your existing pages config stays the same)
