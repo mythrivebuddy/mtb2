@@ -41,13 +41,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ParticipantEntry } from "./certificates/page";
 
 // --- TYPE DEFINITIONS ---
 interface CompletionRecord {
   date: string;
   status: "COMPLETED" | "MISSED";
 }
-interface Task {
+export interface Task {
   id: string;
   description: string;
   completed: boolean;
@@ -59,7 +60,7 @@ export interface LeaderboardPlayer {
   avatar: string;
   completedDays: number;
 }
-interface ChallengeDetails {
+export interface ChallengeDetails {
   id: string;
   creatorId: string;
   social_link_task: string | null;
@@ -77,6 +78,8 @@ interface ChallengeDetails {
   dailyTasks: Task[];
   leaderboard: LeaderboardPlayer[];
   history: CompletionRecord[];
+  isIssuingCertificate: boolean;
+  participants: ParticipantEntry[];
 }
 
 // --- HELPER COMPONENTS ---
@@ -377,6 +380,7 @@ export default function ChallengeManagementPage() {
   const queryClient = useQueryClient();
   const session = useSession();
 
+
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -625,7 +629,12 @@ export default function ChallengeManagementPage() {
       </div>
     );
   }
+  const loggedInParticipant = challenge.participants.find(
+  (p) => p.id === session.data?.user.id
+);
 
+// Check if their certificate has been issued
+const hasUserCertificateIssued = loggedInParticipant?.isCertificateIssued === true;
   const daysLeft = Math.ceil(
     (new Date(challenge.endDate).getTime() - new Date().getTime()) /
       (1000 * 60 * 60 * 24)
@@ -705,6 +714,26 @@ export default function ChallengeManagementPage() {
               </Link>
             </div>
           )}
+
+          {/* Certificate management page button */}
+          {
+           session.data && challenge.isIssuingCertificate && challenge.creatorId == session.data.user.id && (
+              <div className="">
+                <Link href={`/dashboard/challenge/my-challenges/${challenge.id}/certificates`}>
+                  <button className="w-full bg-indigo-600 text-white p-3 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all">
+                    Certificate Management
+                  </button>
+                </Link>
+              </div>
+            )
+          }
+        {
+          hasUserCertificateIssued && (
+            <Link href={`/dashboard/challenge/my-challenges/my-achievements/${challenge.id}`}>
+            <button className="w-full rounded-lg shadow-md  py-3 bg-fuchsia-800 text-white mt-2">My Achievements</button>
+            </Link>
+          )
+        }
 
           {/* STAT CARDS */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10 mt-8">

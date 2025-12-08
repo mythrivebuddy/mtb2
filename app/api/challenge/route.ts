@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       endDate,
       tasks,
       social_link_task,
+       isIssuingCertificate,
     } = validationResult.data;
 
     // 7️⃣ Transaction: create challenge, enroll, deduct JP
@@ -125,6 +126,7 @@ export async function POST(request: Request) {
             startDate,
             endDate,
             status: "UPCOMING",
+            isIssuingCertificate,
             creator: { connect: { id: userId } },
             templateTasks: {
               create: tasks.map((task) => ({ description: task.description })),

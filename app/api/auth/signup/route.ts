@@ -15,16 +15,60 @@ import { splitFullName } from "@/lib/utils/utils";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { honeypot, captchaToken, ...userInput } = body;
+    if (honeypot) {
+      return NextResponse.json(
+        { error: "Invalid form submission" },
+        { status: 400 }
+      );
+    }
+   
+
+    if (!captchaToken) {
+      return NextResponse.json(
+        { error: "Captcha token missing" },
+        { status: 400 }
+      );
+    }
+
+    const captchaVerifyURL = "https://www.google.com/recaptcha/api/siteverify";
+
+    const captchaResponse = await fetch(captchaVerifyURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${captchaToken}`,
+    });
+
+    const captchaData = await captchaResponse.json();
+
+    if (!captchaData.success) {
+      return NextResponse.json(
+        { error: "Captcha verification failed" },
+        { status: 400 }
+      );
+    }
+
 
     // Validate input
-    const validation = signupSchema.safeParse(body);
+
+    const validation = signupSchema.safeParse(userInput);
     if (!validation.success) {
       return NextResponse.json(
         { error: validation.error.errors[0].message },
         { status: 400 }
       );
     }
-    const { email, password, name } = body;
+    const { email, password, name, userType } = userInput;
+    const allowedTypes = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
+
+    let normalizedUserType = null;
+
+    if (userType) {
+      const upper = userType.toUpperCase();
+      normalizedUserType = allowedTypes.includes(upper) ? upper : null;
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -64,6 +108,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name,
         role: process.env.ADMIN_EMAIL === email ? "ADMIN" : "USER",
+        userType: normalizedUserType,
         emailVerificationToken: verificationToken,
         emailVerificationTokenExpires: new Date(
           Date.now() + 24 * 60 * 60 * 1000
@@ -78,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Replace your old commented-out code with this block
     // ✅ Sync contact with Brevo
-    
+
     const { firstName, lastName } = splitFullName(user.name);
 
     await addOrUpdateBrevoContact({

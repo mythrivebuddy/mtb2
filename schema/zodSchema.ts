@@ -14,6 +14,9 @@ const baseSignupSchema = z.object({
     .min(PASS_LENGTH, "Confirm Password must be at least 8 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   referralCode: z.string().optional(),
+   userType: z.enum(["enthusiast", "coach", "solopreneur"], {
+    required_error: "Kindly select one user type",
+  }),
 });
 
 // Full signup schema with password match validation
@@ -27,7 +30,7 @@ export const signupSchema = baseSignupSchema.refine(
 
 // Signin Schema (omit name and confirmPassword from the signup schema)
 export const signinSchema = baseSignupSchema
-  .omit({ name: true, confirmPassword: true })
+  .omit({ name: true, confirmPassword: true,userType: true })
   .extend({
     rememberMe: z.boolean().default(false),
   });
@@ -144,6 +147,11 @@ export const challengeSchema = z
 
 
     endDate: z.coerce.date(),
+    isIssuingCertificate: z.boolean().default(false),
+    creatorSignatureUrl: z.string().optional().nullable(),
+    creatorSignatureText: z.string().optional().nullable(),
+
+
 
     tasks: z
       .array(

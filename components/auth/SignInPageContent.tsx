@@ -10,7 +10,7 @@ const SignInPageContent = () => {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard"; // Respect redirect parameter
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/dashboard"; // Respect redirect parameter
 
   useEffect(() => {
     if (!session) return;

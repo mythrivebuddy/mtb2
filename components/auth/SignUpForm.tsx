@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,8 @@ import GoogleIcon from "../icons/GoogleIcon";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import ReCAPTCHA from "react-google-recaptcha";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,17 +26,39 @@ export default function SignUpForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  // Recaptcha states
+  const captchaRef = useRef<ReCAPTCHA | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+  const [prefilledTypes, setPrefilledTypes] = useState<string[]>([]);
+  const [userHasChosen, setUserHasChosen] = useState(false);
+
+  const userType = searchParams.get("user-type");
 
   const referralCodeFromURL = searchParams.get("ref");
 
   const {
     register,
     handleSubmit,
+    watch,
     setValue,
     formState: { errors },
   } = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
   });
+  useEffect(() => {
+    if (!userType) return;
+
+    // User clicked Coach/Solopreneur button
+    if (userType === "coach-solopreneur") {
+      // Show BOTH as visually selected
+      setPrefilledTypes(["solopreneur"]);
+      return;
+    }
+
+    // Single-type clicks simply pre-check that one visually
+    setPrefilledTypes([userType]);
+  }, [userType]);
 
   // ✅ Store referral code in cookie if present
   useEffect(() => {
@@ -46,13 +70,14 @@ export default function SignUpForm() {
 
   // ✅ React Query mutation for signup
   const signupMutation = useMutation({
-    mutationFn: async (data: SignupFormType) => {
+    mutationFn: async (data: SignupFormType & { captchaToken?: string }) => {
       const res = await axios.post("/api/auth/signup", data);
       return res.data;
     },
     onSuccess: async (data, variables) => {
       toast.success("Signup successful");
-      const referralCode = variables.referralCode || Cookies.get("referralCode");
+      const referralCode =
+        variables.referralCode || Cookies.get("referralCode");
 
       if (referralCode) {
         try {
@@ -74,28 +99,36 @@ export default function SignUpForm() {
     },
     onError: (err) => {
       toast.error(getAxiosErrorMessage(err, "Signup failed"));
+      captchaRef.current?.reset();
     },
   });
 
   const onSubmit: SubmitHandler<SignupFormType> = async (formData) => {
+    if (!captchaToken) {
+      setCaptchaError("Please complete the CAPTCHA to continue.");
+      return;
+    }
+
     setIsLoading(true);
-    signupMutation.mutate(formData, {
-      onSettled: () => setIsLoading(false),
-    });
+    signupMutation.mutate(
+      { ...formData, captchaToken: captchaToken as string },
+      {
+        onSettled: () => setIsLoading(false),
+      }
+    );
   };
 
-  
   const handleGoogleLogin = async () => {
     try {
       // Get referral code from URL or cookies
       // const referralCode = searchParams.get('ref');
-      
+
       const result = await signIn("google", {
         redirect: false,
         callbackUrl: "/dashboard",
         // state: "gggggggggg",
       });
-      
+
       if (result?.ok) {
         console.log("herer in okay");
         router.push("/dashboard");
@@ -116,10 +149,23 @@ export default function SignUpForm() {
     }
   };
 
+  const handleCaptchaChange = (token: string | null) => {
+    // This token is what you send to your backend for verification
+    setCaptchaError(null);
+    setCaptchaToken(token);
+  };
 
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <input
+          type="text"
+          {...register("honeypot" as never)}
+          className="hidden"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+
         <Input {...register("name")} placeholder="Your Name" />
         {errors.name && <p className="text-red-500">{errors.name.message}</p>}
 
@@ -173,6 +219,77 @@ export default function SignUpForm() {
             Referral code auto-filled from link
           </p>
         )}
+
+        {/* USER TYPE SELECTION */}
+        <div className="space-y-3">
+          <label className="font-medium text-gray-700 text-sm">
+            Select Your Type
+          </label>
+
+          {/* Enthusiast */}
+          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <Checkbox
+              checked={
+                userHasChosen
+                  ? watch("userType") === "enthusiast"
+                  : prefilledTypes.includes("enthusiast")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "enthusiast");
+              }}
+            />
+            <span className="text-sm">Self Growth Enthusiast</span>
+          </div>
+
+          {/* Coach */}
+          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <Checkbox
+              checked={
+                userHasChosen
+                  ? watch("userType") === "coach"
+                  : prefilledTypes.includes("coach")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "coach");
+              }}
+            />
+            <span className="text-sm">Coach</span>
+          </div>
+
+          {/* Solopreneur */}
+          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <Checkbox
+              checked={
+                userHasChosen
+                  ? watch("userType") === "solopreneur"
+                  : prefilledTypes.includes("solopreneur")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "solopreneur");
+              }}
+            />
+            <span className="text-sm">Solopreneur</span>
+          </div>
+        </div>
+
+        <div className="w-full overflow-hidden flex flex-col items-center">
+          <div className="scale-[0.95] origin-top inline-block">
+            <ReCAPTCHA
+              ref={captchaRef}
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
+              onChange={handleCaptchaChange}
+            />
+          </div>
+
+          {captchaError && (
+            <p className="text-red-500 text-sm mt-2 break-words whitespace-normal text-center px-2">
+              {captchaError}
+            </p>
+          )}
+        </div>
 
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? "Creating account..." : "Sign Up"}
