@@ -2,7 +2,7 @@
 import React from "react";
 import Navbar from "../navbars/navbar/Navbar";
 import AnnouncementBanner from "../AnnouncementBanner";
-import Footer from "@/app/new-home/_components/Footer";
+import Footer from "../footer/Footer";
 
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
