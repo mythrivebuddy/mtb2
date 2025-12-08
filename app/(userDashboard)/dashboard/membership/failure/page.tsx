@@ -1,10 +1,10 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import Link from "next/link";
 import {
   AlertCircle,
   RefreshCcw,
-  HelpCircle,
   ArrowLeft,
   Hash,
 } from "lucide-react";

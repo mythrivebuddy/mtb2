@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ReactConfetti from "react-confetti";
-import { CheckCircle2, ArrowRight, ShieldCheck, Zap } from "lucide-react";
+import { CheckCircle2, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button"; // Standard shadcn component
 import { Card, CardContent } from "@/components/ui/card";
 
