@@ -14,7 +14,7 @@ const baseSignupSchema = z.object({
     .min(PASS_LENGTH, "Confirm Password must be at least 8 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   referralCode: z.string().optional(),
-   userType: z.enum(["enthusiast", "coach", "solopreneur"], {
+   userType: z.enum(["enthusiast", "coach"], {
     required_error: "Kindly select one user type",
   }),
 });
