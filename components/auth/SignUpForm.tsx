@@ -46,19 +46,25 @@ export default function SignUpForm() {
   } = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
   });
-  useEffect(() => {
-    if (!userType) return;
+ useEffect(() => {
+  if (!userType) return;
 
-    // User clicked Coach/Solopreneur button
-    if (userType === "coach-solopreneur") {
-      // Show BOTH as visually selected
-      setPrefilledTypes(["solopreneur"]);
-      return;
-    }
+  if (userType === "coach-solopreneur") {
+    setPrefilledTypes(["coach"]);
+    setValue("userType", "coach", { shouldValidate: true });
+    setUserHasChosen(false);
+    return;
+  }
 
-    // Single-type clicks simply pre-check that one visually
+  if (userType === "coach" || userType === "enthusiast") {
     setPrefilledTypes([userType]);
-  }, [userType]);
+    setValue("userType", userType as "coach" | "enthusiast", {
+      shouldValidate: true,
+    });
+    setUserHasChosen(false);
+  }
+}, [userType, setValue]);
+
 
   // ✅ Store referral code in cookie if present
   useEffect(() => {
@@ -242,37 +248,20 @@ export default function SignUpForm() {
             <span className="text-sm">Self Growth Enthusiast</span>
           </div>
 
-          {/* Coach */}
-          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <Checkbox
-              checked={
-                userHasChosen
-                  ? watch("userType") === "coach"
-                  : prefilledTypes.includes("coach")
-              }
-              onCheckedChange={() => {
-                setUserHasChosen(true);
-                setValue("userType", "coach");
-              }}
-            />
-            <span className="text-sm">Coach</span>
-          </div>
-
-          {/* Solopreneur */}
-          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
-            <Checkbox
-              checked={
-                userHasChosen
-                  ? watch("userType") === "solopreneur"
-                  : prefilledTypes.includes("solopreneur")
-              }
-              onCheckedChange={() => {
-                setUserHasChosen(true);
-                setValue("userType", "solopreneur");
-              }}
-            />
-            <span className="text-sm">Solopreneur</span>
-          </div>
+         <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+    <Checkbox
+      checked={
+        userHasChosen
+          ? watch("userType") === "coach"
+          : prefilledTypes.includes("coach")
+      }
+      onCheckedChange={() => {
+        setUserHasChosen(true);
+        setValue("userType", "coach");  // Always store coach in backend
+      }}
+    />
+    <span className="text-sm">Coach / Solopreneur</span>
+  </div>
         </div>
 
         <div className="w-full overflow-hidden flex flex-col items-center">
