@@ -26,7 +26,11 @@ export default function Footer() {
             <div>
               <h3 className="font-semibold dark:text-white">Product</h3>
               <ul className="mt-4 space-y-3">
-                {[{ label: "Benefits", link: "#" }, {label:"Pricing",link:"/pricing"}, {label:"Challenges",link:"/dashboard/challenge"}].map((i) => (
+                {[
+                  { label: "Benefits", link: "/why-mythrivebuddy" },
+                  { label: "Pricing", link: "/pricing" },
+                  { label: "Challenges", link: "/dashboard/challenge" },
+                ].map((i) => (
                   <li key={i.label}>
                     <Link
                       className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
@@ -45,8 +49,7 @@ export default function Footer() {
                 {[
                   { label: "Blog", link: "/blog" },
                   { label: "Webinars", link: "/live-webinars" },
-                  { label: "FAQs", link: "#" },
-                  { label: "Help Center", link: "#" },
+                  { label: "FAQs", link: "/faqs" },
                 ].map((i) => (
                   <li key={i.label}>
                     <Link
@@ -82,9 +85,33 @@ export default function Footer() {
                 <li>
                   <Link
                     className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                    href={`#`}
+                    href="/future-vision-of-mythrivebuddy"
                   >
                     Future Vision
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
+                    href="/privacy-policy"
+                  >
+                    Privacy Policy 
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
+                    href="/terms-conditions"
+                  >
+                  Terms & Conditions
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
+                    href="/refund-cancellation-policy"
+                  >
+                 Refund & Cancellation Policy
                   </Link>
                 </li>
               </ul>
