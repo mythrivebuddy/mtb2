@@ -386,6 +386,7 @@ export default function CheckoutPage() {
         await cf.subscriptionsCheckout({
           subsSessionId: data.subscriptionSessionId,
           redirectTarget: "_self",
+           return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
         });
       }
     } catch (error) {

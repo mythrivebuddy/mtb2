@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
+import { extractMandateFailureReason } from "@/lib/payment/payment.utils";
 
 // --- Helper: Verify Signature (Only for Webhooks) ---
 const verifySignature = (req: Request, rawBody: string) => {
@@ -106,7 +107,15 @@ export async function POST(req: Request) {
           // Redirect to Success Page (303 See Other turns POST into GET)
           return NextResponse.redirect(new URL("/dashboard/membership/success", req.url), 303);
         } else {
-           return NextResponse.redirect(new URL(`/dashboard/membership/failure?status=${status}`, req.url), 303);
+          const reason = extractMandateFailureReason(data);
+
+return NextResponse.redirect(
+  new URL(
+    `/dashboard/membership/failure?type=mandate&sub_id=${subscriptionId}&reason=${encodeURIComponent(reason)}`,
+    req.url
+  ),
+  303
+);
         }
       }
       
@@ -126,28 +135,72 @@ export async function POST(req: Request) {
 // GET HANDLER (In case they redirect via GET in Production)
 // ============================================================
 export async function GET(req: Request) {
-  // Reuse the logic by mocking a redirect
   const url = new URL(req.url);
   const subscriptionId = url.searchParams.get("sub_id");
-  if (!subscriptionId) return NextResponse.redirect(new URL("/dashboard", req.url));
 
-  // Just do the API check and redirect
-  // (Copying logic for brevity, or you can extract to shared function)
-   const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/subscriptions/${subscriptionId}`, {
-        method: "GET",
-        headers: {
-          "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-          "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
-          "x-api-version": "2025-01-01"
-        }
-   });
-   
-   if (resp.ok) {
-        const data = await resp.json();
-        if (data.subscription_status === "ACTIVE" || data.subscription_status === "BANK_APPROVAL_PENDING") {
-             await activateSubscription(subscriptionId);
-             return NextResponse.redirect(new URL("/dashboard/membership/success", req.url));
-        }
-   }
-   return NextResponse.redirect(new URL("/dashboard/membership/failure", req.url));
+  // Case 1: No subscriptionId at all (Cashfree failed to return anything)
+  if (!subscriptionId) {
+    return NextResponse.redirect(
+      new URL(
+        `/dashboard/membership/failure?type=mandate&reason=${encodeURIComponent(
+          "Mandate was not completed. Your bank did not redirect properly."
+        )}`,
+        req.url
+      ),
+      303
+    );
+  }
+
+  // Call Cashfree API to verify mandate
+  const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/subscriptions/${subscriptionId}`, {
+    method: "GET",
+    headers: {
+      "x-client-id": process.env.CASHFREE_CLIENT_ID!,
+      "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+      "x-api-version": "2025-01-01"
+    }
+  });
+
+  if (!resp.ok) {
+    return NextResponse.redirect(
+      new URL(
+        `/dashboard/membership/failure?type=mandate&sub_id=${subscriptionId}&reason=${encodeURIComponent(
+          "Unable to verify mandate status"
+        )}`,
+        req.url
+      ),
+      303
+    );
+  }
+
+  const data = await resp.json();
+  const status = data.subscription_status;
+
+  // Case 2: Mandate Success
+  if (status === "ACTIVE" || status === "BANK_APPROVAL_PENDING") {
+    await activateSubscription(subscriptionId);
+
+    return NextResponse.redirect(
+      new URL(`/dashboard/membership/success`, req.url), 
+      303
+    );
+  }
+
+  // Case 3: Failure with details
+  const failureReason =
+    data.last_payment?.failure_reason ||
+    data.subscription_failure_reason ||
+    data.subscription_status_description ||
+    data.subscription_status ||
+    "Mandate creation failed";
+
+  return NextResponse.redirect(
+    new URL(
+      `/dashboard/membership/failure?type=mandate&sub_id=${subscriptionId}&reason=${encodeURIComponent(
+        failureReason
+      )}`,
+      req.url
+    ),
+    303
+  );
 }
