@@ -5,6 +5,7 @@ import SpotlightCard from "./SpotlightCard";
 import useRedirectDashboard from "@/hooks/use-redirect-dashboard";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function Hero() {
   useRedirectDashboard();
@@ -67,9 +68,7 @@ export default function Hero() {
         </button>
       </div>
       <div className="pt-2">
-        <p className="text-sm text-slate-500 ">
-          Start with curiosity. Grow without hustle.
-        </p>
+        <Image src="/start_with_curiosity.png" alt="start with curiosity" width={500} height={500} className="rounded-sm" />
       </div>
 
       {/* <div className="pt-2 sm:pt-4">
