@@ -23,6 +23,7 @@ declare module "next-auth" {
       role: Role;
       rememberMe?: boolean; // <-- FIX: Made optional
       userType: string | null;
+      membership: string | null;
       isFirstTimeSurvey: boolean;
       lastSurveyTime: string | null;
     } & DefaultSession["user"];
@@ -36,6 +37,7 @@ declare module "next-auth" {
     rememberMe?: boolean; // <-- FIX: Made optional
     isFirstTimeSurvey: boolean;
     userType: string | null;
+    membership: string | null;
     lastSurveyTime: Date | null;
   }
 }
@@ -50,6 +52,7 @@ declare module "next-auth/jwt" {
     rememberMe?: boolean; // <-- FIX: Made optional
     isFirstTimeSurvey: boolean;
     userType: string | null;
+    membership: string | null;
     lastSurveyTime: string | null;
     maxAge: number;
     supabaseAccessToken?: string;
@@ -136,7 +139,8 @@ export const authConfig: AuthOptions = {
             rememberMe: ["true", "on", "1"].includes(String(credentials.rememberMe)),
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
-            userType:user.userType ?? null
+            userType:user.userType ?? null,
+            membership: user.membership ?? null
           };
         } catch (error) {
           if (error instanceof Error) throw new Error(error.message);
@@ -249,6 +253,7 @@ export const authConfig: AuthOptions = {
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
         token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
         token.userType = user.userType ?? null;
+        token.membership = user.membership ?? null;
         // token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
 
@@ -283,6 +288,7 @@ export const authConfig: AuthOptions = {
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
         session.user.lastSurveyTime = token.lastSurveyTime;
         session.user.userType = token.userType;
+        session.user.membership = token.membership;
         session.user.name = token.name;
         session.user.image = token.picture;
       }

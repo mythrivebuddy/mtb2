@@ -9,12 +9,12 @@ export default function Footer() {
         <div className="grid lg:grid-cols-4 gap-12">
           {/* Logo + description */}
           <div>
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <Image src="/logo.png" height={36} width={36} alt="Logo" />
               <h2 className="text-xl font-bold dark:text-white">
                 MyThriveBuddy
               </h2>
-            </div>
+            </Link>
 
             <p className="mt-4 text-md text-slate-600 dark:text-slate-400">
               Your growth home for tools, mindset, visibility, and momentum.

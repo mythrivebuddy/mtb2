@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import ReactConfetti from "react-confetti";
 import { CheckCircle2, ArrowRight, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button"; // Standard shadcn component
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function SuccessPage() {
@@ -58,6 +58,11 @@ export default function SuccessPage() {
           </div>
 
           <div className="flex flex-col gap-3">
+             <Button asChild className="text-base">
+              <Link href="/dashboard/subscription">
+                Go to Subscription <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
+            </Button>
             <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-base">
               <Link href="/dashboard">
                 Go to Dashboard <ArrowRight className="ml-2 w-4 h-4" />
