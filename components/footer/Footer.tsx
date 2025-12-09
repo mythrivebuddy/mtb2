@@ -30,6 +30,7 @@ export default function Footer() {
                   { label: "Benefits", link: "/why-mythrivebuddy" },
                   { label: "Pricing", link: "/pricing" },
                   { label: "Challenges", link: "/dashboard/challenge" },
+                  { label: "Future Vision", link: "/future-vision-of-mythrivebuddy" },
                 ].map((i) => (
                   <li key={i.label}>
                     <Link
@@ -50,6 +51,7 @@ export default function Footer() {
                   { label: "Blog", link: "/blog" },
                   { label: "Webinars", link: "/live-webinars" },
                   { label: "FAQs", link: "/faqs" },
+                  { label: "About", link: "/about-us" },
                 ].map((i) => (
                   <li key={i.label}>
                     <Link
@@ -69,25 +71,9 @@ export default function Footer() {
                 <li>
                   <Link
                     className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                    href={`/about-us`}
-                  >
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
                     href={`/contact`}
                   >
                     Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                    href="/future-vision-of-mythrivebuddy"
-                  >
-                    Future Vision
                   </Link>
                 </li>
                 <li>
