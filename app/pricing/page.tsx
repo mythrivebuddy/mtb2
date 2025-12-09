@@ -1,7 +1,7 @@
 "use client";
 
 import Head from "next/head";
-import React, { useState } from "react";
+import React, {  useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
@@ -21,6 +21,7 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 import axios from "axios";
 import NavLink from "@/components/navbars/navbar/NavLink";
+import { useSession } from "next-auth/react";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -56,10 +57,31 @@ const fetchPlans = async (): Promise<Plan[]> => {
   return res.data;
 };
 
-type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR";
+// type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR" | "COACH";
+
 
 export default function PricingPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("ENTHUSIAST");
+ const session = useSession();
+
+type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR";
+
+const [activeTab, setActiveTab] = useState<ActiveTab>("ENTHUSIAST");
+
+useEffect(() => {
+  const userType = session?.data?.user?.userType;
+
+  if (!userType) return;
+
+  if (userType === "COACH" || userType === "SOLOPRENEUR") {
+    setActiveTab("SOLOPRENEUR");
+  } else {
+    setActiveTab("ENTHUSIAST");
+  }
+  console.log("Re rendering");
+  
+}, [session?.data?.user?.userType]);
+
+
 
   const {
     data: plans,
