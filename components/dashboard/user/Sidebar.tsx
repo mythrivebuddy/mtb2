@@ -214,7 +214,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
       <div className="h-full self-stretch">
         <aside
           className={cn(
-            "fixed lg:static top-0 left-0 h-[100vh] bg-white shadow-lg rounded-3xl custom-scroll overflow-y-scroll transition-transform duration-300 z-50",
+            "fixed lg:static top-0 left-0 h-[100vh] sm:h-[90vh] bg-white shadow-lg rounded-3xl custom-scroll overflow-y-scroll transition-transform duration-300 z-50",
             "w-64 lg:w-64",
             isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
@@ -236,12 +236,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
-                <NavItem
+                {/* <NavItem
                   href="/"
                   icon={<Home size={20} />}
                   label="Home"
                   onLinkClick={toggleSidebar}
-                />
+                /> */}
                 <NavItem
                   href="/dashboard"
                   icon={<LayoutDashboard size={20} />}
@@ -390,31 +390,31 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       />  
                     )
                   }
-                <NavItem
+                {/* <NavItem
                   href="/dashboard/faq"
                   icon={<HelpCircle size={20} />}
                   label="FAQ's"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
+                /> */}
+                {/* <NavItem
                   href="/contact"
                   icon={<Phone size={20} />}
                   label="Contact us"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
+                /> */}
+                {/* <NavItem
                   href="/blog"
                   icon={<BookOpen size={20} />}
                   label="Blog"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
+                /> */}
 
-                <NavItem
+                {/* <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}
                   label="About us"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
+                /> */}
               </NavSection>
             </div>
           </div>
