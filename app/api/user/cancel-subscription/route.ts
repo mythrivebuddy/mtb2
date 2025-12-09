@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import axios from "axios";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { SubscriptionStatus } from "@prisma/client";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
@@ -74,9 +74,9 @@ export async function POST(req: NextRequest) {
       message: "Subscription cancelled successfully."
     });
 
-  } catch (err: any) {
+  } catch (err: unknown) {
+  if (axios.isAxiosError(err)) {
     console.error("Cancel Error:", err.response?.data || err.message);
-
     return NextResponse.json(
       {
         message: "Failed to cancel Cashfree subscription.",
@@ -85,4 +85,26 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  if (err instanceof Error) {
+    console.error("Cancel Error:", err.message);
+    return NextResponse.json(
+      {
+        message: "Failed to cancel Cashfree subscription.",
+        errorDetails: err.message
+      },
+      { status: 500 }
+    );
+  }
+
+  console.error("Unknown error:", err);
+
+  return NextResponse.json(
+    {
+      message: "Failed to cancel Cashfree subscription.",
+      errorDetails: "Unknown error occurred"
+    },
+    { status: 500 }
+  );
+}
 }
