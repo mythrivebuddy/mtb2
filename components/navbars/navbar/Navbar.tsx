@@ -227,12 +227,13 @@ export default function Navbar() {
           
           <div className="flex items-center space-x-3">
             {session ? (
-              <Button
-                onClick={() => signOut()}
-                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#0A0B1C] text-white rounded-full text-[14px] sm:text-[15px] font-medium hover:bg-[#0A0B1C]/90 transition-colors"
-              >
-                Sign Out
-              </Button>
+              <NavLink href="/dashboard" className="hover:text-brand text-sm font-medium">Dashboard</NavLink>              
+              // <Button
+              //   onClick={() => signOut()}
+              //   className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#0A0B1C] text-white rounded-full text-[14px] sm:text-[15px] font-medium hover:bg-[#0A0B1C]/90 transition-colors"
+              // >
+              //   Sign Out
+              // </Button>
             ) : (
               <>
               <NavLink href="/signin">
