@@ -52,6 +52,7 @@ export const authOptions: NextAuthOptions = {
           rememberMe: !!credentials.rememberMe,
           isFirstTimeSurvey: existingUser.isFirstTimeSurvey ?? false,
           userType: existingUser.userType,    
+          membership: existingUser.membership,
           lastSurveyTime: existingUser.lastSurveyTime,
         };
       },
@@ -67,9 +68,16 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.rememberMe = user.rememberMe;
          token.userType = user.userType; 
+         token.membership = user.membership;
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
         token.lastSurveyTime = user.lastSurveyTime?.toISOString() || null;
       }
+      const dbUser = await prisma.user.findUnique({
+      where: { id: token.id },
+      select: { membership: true }
+    });
+
+    token.membership = dbUser?.membership || "FREE";
       return token;
     },
     async session({ session, token }) {
@@ -80,6 +88,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.role = token.role;
         session.user.userType = token.userType; 
+        session.user.membership = token.membership;
         session.user.rememberMe = token.rememberMe;
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
         session.user.lastSurveyTime = token.lastSurveyTime;
