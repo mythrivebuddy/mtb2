@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SubscriptionStatus } from "@prisma/client";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 /**
  * Calculate discount applied on base (exclusive of GST)
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const userId = session.user.id;
+      const { baseUrl, appId, secret } = await getCashfreeConfig();
 
     if (!billingDetails?.country)
       return NextResponse.json({ error: "Billing details missing" }, { status: 400 });
@@ -224,12 +226,12 @@ export async function POST(req: Request) {
       order_note: `Lifetime Plan: ${plan.name}`
     };
 
-    const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/orders`, {
+    const resp = await fetch(`${baseUrl}/orders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-        "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+        "x-client-id": appId,
+        "x-client-secret": secret,
         "x-api-version": "2023-08-01", // Use PG version
       },
       body: JSON.stringify(payload),

@@ -1,32 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
+import { verifySignature } from "@/lib/payment/payment.utils";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 // --- Helper for Signature Verification ---
 // You can move this to a separate utils file if you prefer
-const verifySignature = (req: Request, rawBody: string) => {
-  const timestamp = req.headers.get("x-webhook-timestamp");
-  const signature = req.headers.get("x-webhook-signature");
-  
-  if (!timestamp || !signature) return false;
 
-  const secret = process.env.CASHFREE_CLIENT_SECRET!;
-  const data = timestamp + rawBody;
-  const genSignature = crypto
-    .createHmac("sha256", secret)
-    .update(data)
-    .digest("base64");
-    
-  return genSignature === signature;
-};
 
 export async function POST(req: Request) {
   try {
     // 1. Get Raw Body for verification
     const rawBody = await req.text();
-    
+    const {secret} = await getCashfreeConfig();
     // 2. Verify Signature (CRITICAL SECURITY STEP)
-    const isValid = verifySignature(req, rawBody);
+    const isValid = verifySignature(req, rawBody,secret);
     if (!isValid) {
       console.error("Invalid Cashfree Signature");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

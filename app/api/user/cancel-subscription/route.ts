@@ -4,11 +4,13 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { SubscriptionStatus } from "@prisma/client";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id;
+    const { baseUrl, appId, secret } = await getCashfreeConfig();
 
     if (!userId) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -28,15 +30,14 @@ export async function POST() {
       where: { id: subscription.mandateId }
     })
     if (!mandate) {
-        return NextResponse.json(
-            { message: "Mandate not found" },
-            { status: 404 }
-        )
+      return NextResponse.json(
+        { message: "Mandate not found" },
+        { status: 404 }
+      )
     }
     // This is actually the Cashfree subscription_id you generated
     const subscriptionId = mandate.mandateId;
-    console.log("subscription id ",subscriptionId);
-    
+
 
     if (!subscriptionId) {
       return NextResponse.json(
@@ -45,24 +46,33 @@ export async function POST() {
       );
     }
 
-    const cancelUrl = `${process.env.CASHFREE_BASE_URL}/subscriptions/${subscriptionId}/manage`;
+    const cancelUrl = `${baseUrl}/subscriptions/${subscriptionId}/manage`;
 
     const cfResponse = await axios.post(
       cancelUrl,
-        {
-    subscription_id: subscriptionId,
-    action: "CANCEL"
-  },
+      {
+        subscription_id: subscriptionId,
+        action: "CANCEL"
+      },
       {
         headers: {
-          "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-          "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+          "x-client-id": appId,
+          "x-client-secret": secret,
           "x-api-version": "2022-09-01"
         }
       }
     );
 
-    console.log("Cashfree Cancel Response:", cfResponse.data);
+    if (cfResponse.status < 200 || cfResponse.status >= 300) {
+      return NextResponse.json(
+        {
+          message: "Failed to cancel Cashfree subscription.",
+          errorDetails: cfResponse.data
+        },
+        { status: 500 }
+      );
+    }
+
 
     await prisma.subscription.update({
       where: { id: subscription.id },
@@ -75,36 +85,36 @@ export async function POST() {
     });
 
   } catch (err: unknown) {
-  if (axios.isAxiosError(err)) {
-    console.error("Cancel Error:", err.response?.data || err.message);
+    if (axios.isAxiosError(err)) {
+      console.error("Cancel Error:", err.response?.data || err.message);
+      return NextResponse.json(
+        {
+          message: "Failed to cancel Cashfree subscription.",
+          errorDetails: err.response?.data || err.message
+        },
+        { status: 500 }
+      );
+    }
+
+    if (err instanceof Error) {
+      console.error("Cancel Error:", err.message);
+      return NextResponse.json(
+        {
+          message: "Failed to cancel Cashfree subscription.",
+          errorDetails: err.message
+        },
+        { status: 500 }
+      );
+    }
+
+    console.error("Unknown error:", err);
+
     return NextResponse.json(
       {
         message: "Failed to cancel Cashfree subscription.",
-        errorDetails: err.response?.data || err.message
+        errorDetails: "Unknown error occurred"
       },
       { status: 500 }
     );
   }
-
-  if (err instanceof Error) {
-    console.error("Cancel Error:", err.message);
-    return NextResponse.json(
-      {
-        message: "Failed to cancel Cashfree subscription.",
-        errorDetails: err.message
-      },
-      { status: 500 }
-    );
-  }
-
-  console.error("Unknown error:", err);
-
-  return NextResponse.json(
-    {
-      message: "Failed to cancel Cashfree subscription.",
-      errorDetails: "Unknown error occurred"
-    },
-    { status: 500 }
-  );
-}
 }

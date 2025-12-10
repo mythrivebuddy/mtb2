@@ -1,19 +1,10 @@
 // app/api/billing/subscription-callback/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
-import { extractMandateFailureReason } from "@/lib/payment/payment.utils";
+import { extractMandateFailureReason, verifySignature } from "@/lib/payment/payment.utils";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
-// --- Helper: Verify Signature (Only for Webhooks) ---
-const verifySignature = (req: Request, rawBody: string) => {
-  const timestamp = req.headers.get("x-webhook-timestamp");
-  const signature = req.headers.get("x-webhook-signature");
-  if (!timestamp || !signature) return false;
-  const secret = process.env.CASHFREE_CLIENT_SECRET!;
-  const data = timestamp + rawBody;
-  const genSignature = crypto.createHmac("sha256", secret).update(data).digest("base64");
-  return genSignature === signature;
-};
+
 
 // --- Helper: Activate Subscription Logic ---
 async function activateSubscription(subscriptionId: string) {
@@ -49,6 +40,7 @@ async function activateSubscription(subscriptionId: string) {
 export async function POST(req: Request) {
   try {
     const contentType = req.headers.get("content-type") || "";
+     const { baseUrl, appId, secret } = await getCashfreeConfig();
 
     // ------------------------------------------------------------
     // SCENARIO 1: IT IS A WEBHOOK (JSON)
@@ -57,7 +49,7 @@ export async function POST(req: Request) {
       const rawBody = await req.text();
       
       // 1. Security Check
-      if (!verifySignature(req, rawBody)) {
+      if (!verifySignature(req, rawBody, secret)) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
 
@@ -89,11 +81,11 @@ export async function POST(req: Request) {
       }
 
       // 1. Verify Status via API (Since we can't trust the form data fully without signature)
-      const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/subscriptions/${subscriptionId}`, {
+      const resp = await fetch(`${baseUrl}/subscriptions/${subscriptionId}`, {
         method: "GET",
         headers: {
-          "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-          "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+          "x-client-id": appId,
+          "x-client-secret": secret,
           "x-api-version": "2025-01-01"
         }
       });
@@ -137,6 +129,7 @@ return NextResponse.redirect(
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const subscriptionId = url.searchParams.get("sub_id");
+  const { baseUrl, appId, secret } = await getCashfreeConfig();
 
   // Case 1: No subscriptionId at all (Cashfree failed to return anything)
   if (!subscriptionId) {
@@ -152,11 +145,11 @@ export async function GET(req: Request) {
   }
 
   // Call Cashfree API to verify mandate
-  const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/subscriptions/${subscriptionId}`, {
+  const resp = await fetch(`${baseUrl}/subscriptions/${subscriptionId}`, {
     method: "GET",
     headers: {
-      "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-      "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+      "x-client-id": appId,
+      "x-client-secret": secret,
       "x-api-version": "2025-01-01"
     }
   });

@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractOrderFailureReason } from "@/lib/payment/payment.utils";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 export async function POST(req: Request) {
   try {
     const form = await req.formData();
+     const { baseUrl, appId, secret } = await getCashfreeConfig();
 
     const orderId =
       (form.get("orderId") as string) ||
@@ -19,12 +21,12 @@ export async function POST(req: Request) {
 
     // VERIFY ORDER STATUS VIA CASHFREE API
     const resp = await fetch(
-      `${process.env.CASHFREE_BASE_URL}/orders/${orderId}`,
+      `${baseUrl}/orders/${orderId}`,
       {
         method: "GET",
         headers: {
-          "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-          "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+          "x-client-id": appId,
+          "x-client-secret": secret,
           "x-api-version": "2023-08-01",
         },
       }
@@ -90,6 +92,7 @@ return NextResponse.redirect(
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const orderId = url.searchParams.get("order_id");
+  const { baseUrl, appId, secret, mode } = await getCashfreeConfig();
 
   // Case 1: Cashfree redirected with no order_id at all
   if (!orderId) {
@@ -106,12 +109,12 @@ export async function GET(req: Request) {
 
   // Fetch latest order status from Cashfree
   const resp = await fetch(
-    `${process.env.CASHFREE_BASE_URL}/orders/${orderId}`,
+    `${baseUrl}/orders/${orderId}`,
     {
       method: "GET",
       headers: {
-        "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-        "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+        "x-client-id": appId,
+        "x-client-secret": secret,
         "x-api-version": "2023-08-01",
       },
     }
@@ -180,7 +183,7 @@ export async function GET(req: Request) {
       reason = sandboxError;
     } else {
       reason =
-        process.env.NEXT_PUBLIC_ENV === "development"
+        mode === "sandbox"
           ? "Sandbox mode: Bank Decline simulated (Cashfree did not send real failure details)"
           : "Payment was not completed";
     }
