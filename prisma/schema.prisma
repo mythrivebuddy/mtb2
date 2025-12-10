@@ -1233,6 +1233,13 @@ model BillingInformation {
   user        User     @relation(fields: [userId], references: [id])
 }
 
+model AdminCashfreeConfigSettings {
+  id           Int      @id @default(autoincrement())
+  cashfreeMode String   @default("sandbox") // "sandbox" | "prod"
+  updatedAt    DateTime @updatedAt
+}
+
+
 // membership model end
 // Enum for the AEO/Schema feature
 enum PageSchemaType {
