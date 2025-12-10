@@ -139,7 +139,7 @@ export const authConfig: AuthOptions = {
             rememberMe: ["true", "on", "1"].includes(String(credentials.rememberMe)),
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
-            userType:user.userType ?? null,
+            userType: user.userType ?? null,
             membership: user.membership ?? null
           };
         } catch (error) {
@@ -256,10 +256,42 @@ export const authConfig: AuthOptions = {
         token.membership = user.membership ?? null;
         // token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
-
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: {
+            membership: true,
+            userType: true,
+            isFirstTimeSurvey: true,
+            lastSurveyTime: true
+          }
+        });
+        // Overwrite token with fresh DB data
+        if (dbUser) {
+          token.membership = dbUser.membership || "FREE";
+          token.userType = dbUser.userType;
+          token.isFirstTimeSurvey = dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
+          token.lastSurveyTime = dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
+        }
+      }
       if (trigger === "update" && session) {
-        token.name = session.name;
-        token.picture = session.picture;
+        // Custom fields sent from client
+        if (session.userType !== undefined) {
+          token.userType = session.userType;
+        }
+        if (session.membership !== undefined) {
+          token.membership = session.membership;
+        }
+        if (session.isFirstTimeSurvey !== undefined) {
+          token.isFirstTimeSurvey = session.isFirstTimeSurvey;
+        }
+        if (session.lastSurveyTime !== undefined) {
+          token.lastSurveyTime = session.lastSurveyTime;
+        }
+
+        // Standard fields (name/picture)
+        if (session.name !== undefined) token.name = session.name;
+        if (session.picture !== undefined) token.picture = session.picture;
       }
 
       // --- ADD THIS BLOCK TO SIGN THE SUPABASE TOKEN ---
@@ -292,7 +324,7 @@ export const authConfig: AuthOptions = {
         session.user.name = token.name;
         session.user.image = token.picture;
       }
-        session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
+      session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
 
       // --- ADD THIS LINE TO PASS THE TOKEN TO THE CLIENT ---
       session.supabaseAccessToken = token.supabaseAccessToken; // <-- This is correct now
@@ -319,17 +351,17 @@ export const authConfig: AuthOptions = {
 
     async redirect({ url, baseUrl }) {
       // ... (Your existing redirect logic stays the same)
-     console.log("Redirect URL:", url);
-      
-      // This ensures that if 'url' is a full external URL, 
-      // you only redirect to it if it is on the same host (optional security check)
-      if (url.startsWith(baseUrl)) return url;
+      console.log("Redirect URL:", url);
 
-      // If the URL is relative (e.g., '/dashboard/membership'), prepend the base URL
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      
-      // Fallback to a default if a valid URL isn't present
-      return baseUrl;
+      // This ensures that if 'url' is a full external URL, 
+      // you only redirect to it if it is on the same host (optional security check)
+      if (url.startsWith(baseUrl)) return url;
+
+      // If the URL is relative (e.g., '/dashboard/membership'), prepend the base URL
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+
+      // Fallback to a default if a valid URL isn't present
+      return baseUrl;
     },
   },
   session: {

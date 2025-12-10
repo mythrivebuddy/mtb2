@@ -16,6 +16,7 @@ import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
+import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
 
 
 export default function DashboardPage() {
@@ -75,12 +76,12 @@ export default function DashboardPage() {
       spotlight.status
     );
   });
-  console.log("currentSpotlight", currentSpotlight);
+
 
   const currentProsperity = prosperityApplications?.find((prosperity) => {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
-  console.log("currentProsperity", currentProsperity);
+ 
 
   return (
     <div className="py-6 px-4">
@@ -127,6 +128,7 @@ export default function DashboardPage() {
         </div>
       </div>
       <FirstVisitNotificationPopup/>
+      <UserTypeSelection authMethod={userData.authMethod}/>
     </div>
   );
 }
