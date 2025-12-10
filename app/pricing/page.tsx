@@ -1,7 +1,7 @@
 "use client";
 
 import Head from "next/head";
-import React, {  useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
@@ -17,11 +17,13 @@ import {
   Leaf,
   Loader2,
   Flag,
+  Info,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import axios from "axios";
 import NavLink from "@/components/navbars/navbar/NavLink";
 import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -59,34 +61,26 @@ const fetchPlans = async (): Promise<Plan[]> => {
 
 // type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR" | "COACH";
 
-
 export default function PricingPage() {
- const session = useSession();
+  const session = useSession();
 
-type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR";
+  type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR";
 
-const [activeTab, setActiveTab] = useState<ActiveTab>("ENTHUSIAST");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("ENTHUSIAST");
 
-useEffect(() => {
-  const userType = session?.data?.user?.userType;
+  useEffect(() => {
+    const userType = session?.data?.user?.userType;
 
-  if (!userType) return;
+    if (!userType) return;
 
-  if (userType === "COACH" || userType === "SOLOPRENEUR") {
-    setActiveTab("SOLOPRENEUR");
-  } else {
-    setActiveTab("ENTHUSIAST");
-  }
-  console.log("Re rendering");
-  
-}, [session?.data?.user?.userType]);
+    if (userType === "COACH" || userType === "SOLOPRENEUR") {
+      setActiveTab("SOLOPRENEUR");
+    } else {
+      setActiveTab("ENTHUSIAST");
+    }
+  }, [session?.data?.user?.userType]);
 
-
-
-  const {
-    data: plans,
-    isLoading,
-  } = useQuery<Plan[]>({
+  const { data: plans, isLoading } = useQuery<Plan[]>({
     queryKey: ["all-plans"],
     queryFn: fetchPlans,
   });
@@ -202,13 +196,35 @@ useEffect(() => {
                   ))}
                 </ul>
               </div>
-              <NavLink href="/dashboard/subscription">
+              {session.data?.user?.userType === "COACH" ||
+              session.data?.user?.userType === "SOLOPRENEUR" ? (
+                // Eligible CTA
+                <NavLink href="/dashboard/subscription">
+                  <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-colors">
+                    Get Started for FREE Now
+                  </button>
+                </NavLink>
+              ) : (
+                // Not Eligible CTA
+                <button
+                  onClick={() =>
+                    toast.warning(
+                      "You are not eligible for this plan because you are a self growth enthusiast"
+                    )
+                  }
+                  className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-gray-300 text-gray-600 "
+                >
+                  Not eligible for this plan
+                </button>
+              )}
+
+              {/* <NavLink href="/dashboard/subscription">
                 <button
                   className={`mt-8 w-full py-3 rounded-xl text-sm font-bold transition-colors ${"bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20"}`}
                 >
                   Get Started for FREE Now
                 </button>
-              </NavLink>
+              </NavLink> */}
             </div>
           );
         })}
@@ -245,11 +261,36 @@ useEffect(() => {
             <p className="mt-2 text-sm text-slate-500">
               or {priceINR}/year + GST (India)
             </p>
-            <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
+            {session.data?.user?.userType !== "ENTHUSIAST" ? (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    toast.warning(
+                      `You are a ${session.data?.user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
+                    );
+                  }}
+                  className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
+                >
+                  Not Eligible
+                </button>
+                <p className="text-sm text-red-600 flex gap-2">
+                  <Info size={32} /> You are not eligible for this plan because
+                  you are a {session.data?.user?.userType?.toLocaleLowerCase()}.
+                </p>
+              </div>
+            ) : (
+              <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
+                <button className="mt-6 w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
+                  Start Annual Membership
+                </button>
+              </NavLink>
+            )}
+
+            {/* <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
               <button className="mt-6 w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all">
                 Start Annual Membership
               </button>
-            </NavLink>
+            </NavLink> */}
           </div>
 
           {/* Features Right */}
