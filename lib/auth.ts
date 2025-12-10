@@ -74,10 +74,11 @@ export const authOptions: NextAuthOptions = {
       }
       const dbUser = await prisma.user.findUnique({
       where: { id: token.id },
-      select: { membership: true }
+      select: { membership: true,userType:true }
     });
 
     token.membership = dbUser?.membership || "FREE";
+    token.userType = dbUser?.userType || null;
       return token;
     },
     async session({ session, token }) {
@@ -95,7 +96,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Debug log (remove in production)
-      console.log("Session user:", session.user);
+      // console.log("Session user:", session.user);
 
       return session;
     },
