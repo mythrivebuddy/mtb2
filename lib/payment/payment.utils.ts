@@ -1,3 +1,4 @@
+import crypto from "crypto"
 type CashfreeOrderResponse = {
   order_status?: string;
   order_status_description?: string;
@@ -58,3 +59,14 @@ export function extractMandateFailureReason(data: unknown): string {
     "Mandate setup failed"
   );
 }
+
+
+// --- Helper: Verify Signature (Only for Webhooks) ---
+ export const verifySignature = (req: Request, rawBody: string,secret: string) => {
+  const timestamp = req.headers.get("x-webhook-timestamp");
+  const signature = req.headers.get("x-webhook-signature");
+  if (!timestamp || !signature) return false;
+  const data = timestamp + rawBody;
+  const genSignature = crypto.createHmac("sha256", secret).update(data).digest("base64");
+  return genSignature === signature;
+};

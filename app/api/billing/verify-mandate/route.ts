@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { MandateStatus } from "@prisma/client";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 export async function GET(req: Request) {
   try {
@@ -9,13 +10,14 @@ export async function GET(req: Request) {
     const orderId = searchParams.get("orderId");
 
     if (!orderId) return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
+     const { baseUrl, appId, secret } = await getCashfreeConfig();
 
     const resp = await axios.get(
-      `${process.env.CASHFREE_BASE_URL}/orders/${orderId}`,
+      `${baseUrl}/orders/${orderId}`,
       {
         headers: {
-          "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-          "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+          "x-client-id": appId,
+          "x-client-secret": secret,
           "x-api-version": "2023-08-01"
         }
       }

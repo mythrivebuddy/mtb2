@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 export async function POST() {
   try {
+     const { baseUrl, appId, secret } = await getCashfreeConfig();
     const mandates = await prisma.mandate.findMany({
       where: { status: "ACTIVE" },
       include: { plan: true, user: true }
@@ -28,12 +30,12 @@ export async function POST() {
       };
 
       const resp = await axios.post(
-        `${process.env.CASHFREE_BASE_URL}/orders`,
+        `${baseUrl}/orders`,
         payload,
         {
           headers: {
-            "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-            "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+            "x-client-id": appId,
+            "x-client-secret": secret,
             "x-api-version": "2023-08-01",
             "Content-Type": "application/json"
           }
