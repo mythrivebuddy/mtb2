@@ -1,7 +1,7 @@
 "use client";
 
 import Head from "next/head";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
@@ -17,10 +17,14 @@ import {
   Leaf,
   Loader2,
   Flag,
+  Info,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import axios from "axios";
 import NavLink from "@/components/navbars/navbar/NavLink";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -56,15 +60,29 @@ const fetchPlans = async (): Promise<Plan[]> => {
   return res.data;
 };
 
-type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR";
+// type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR" | "COACH";
 
 export default function PricingPage() {
+  const session = useSession();
+  const user = session.data?.user;
+
+  type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR";
+
   const [activeTab, setActiveTab] = useState<ActiveTab>("ENTHUSIAST");
 
-  const {
-    data: plans,
-    isLoading,
-  } = useQuery<Plan[]>({
+  useEffect(() => {
+    const userType = session?.data?.user?.userType;
+
+    if (!userType) return;
+
+    if (userType === "COACH" || userType === "SOLOPRENEUR") {
+      setActiveTab("SOLOPRENEUR");
+    } else {
+      setActiveTab("ENTHUSIAST");
+    }
+  }, [session?.data?.user?.userType]);
+
+  const { data: plans, isLoading } = useQuery<Plan[]>({
     queryKey: ["all-plans"],
     queryFn: fetchPlans,
   });
@@ -88,7 +106,7 @@ export default function PricingPage() {
         : plan.interval === "YEARLY"
           ? "/year"
           : plan.interval === "LIFETIME"
-            ? "one-time"
+            ? "One-time"
             : plan.interval === "FREE"
               ? "free"
               : "";
@@ -145,23 +163,23 @@ export default function PricingPage() {
                 {p.name.replace(" Pro", "").replace("Tier", "")}
               </h4>
 
-              <p className="mt-4 text-4xl font-bold text-slate-900 dark:text-white leading-tight">
-                {price}
-
+              <p className="mt-4 text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                {getPriceDisplay(p).priceINR} + GST
+                {/* INR DISPLAY  */}
                 {p.interval === "LIFETIME" ? (
                   <span className="block text-sm font-medium text-slate-500 mt-1">
                     {period}
                   </span>
                 ) : (
                   p.amountUSD > 0 && (
-                    <span className="text-sm font-medium text-slate-500 ml-1">
+                    <span className="text-sm font-medium text-slate-700 ml-1">
                       {period}
                     </span>
                   )
                 )}
-                {/* INR DISPLAY  */}
                 <span className="block text-sm font-medium text-slate-400 dark:text-slate-500 mt-2">
-                  {getPriceDisplay(p).priceINR} + GST (India)
+                  or {price}
+                  {period === "one-time" && " "} {period}
                 </span>
               </p>
 
@@ -180,13 +198,47 @@ export default function PricingPage() {
                   ))}
                 </ul>
               </div>
-              <NavLink href="/dashboard/subscription">
+              {session?.data?.user &&
+                (user?.userType === "COACH" ||
+                  user?.userType === "SOLOPRENEUR" || user?.role==="ADMIN") && (
+                  // Eligible CTA
+                  <ComingSoonWrapper>
+                    {/* <NavLink href="/dashboard/subscription"> */}
+                      <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+                        Get Started for FREE Now
+                      </button>
+                    {/* </NavLink> */}
+                  </ComingSoonWrapper>
+                )}
+              {!session.data?.user && (
+                // Not logged in CTA
+                <NavLink href="/signin?callbackUrl=/pricing">
+                  <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+                    Get Started for FREE Now
+                  </button>
+                </NavLink>
+              )}
+              {session.data?.user && user?.userType === "ENTHUSIAST" && (
+                // Not Eligible CTA
+                <button
+                  onClick={() =>
+                    toast.warning(
+                      "You are not eligible for this plan because you are a self growth enthusiast"
+                    )
+                  }
+                  className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-gray-300 text-gray-600 "
+                >
+                  Not eligible for this plan
+                </button>
+              )}
+
+              {/* <NavLink href="/dashboard/subscription">
                 <button
                   className={`mt-8 w-full py-3 rounded-xl text-sm font-bold transition-colors ${"bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20"}`}
                 >
                   Get Started for FREE Now
                 </button>
-              </NavLink>
+              </NavLink> */}
             </div>
           );
         })}
@@ -210,24 +262,58 @@ export default function PricingPage() {
 
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-md flex flex-col md:flex-row items-center md:items-start gap-8">
           {/* Price Left */}
-          <div className="text-center md:text-left md:w-1/3 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 pb-6 md:pb-0 md:pr-6">
+          <div className="text-center md:text-left md:w-1/2 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-800 pb-6 md:pb-0 md:pr-6">
             <h4 className="text-sm font-bold text-green-600 uppercase mb-2">
               {p.name}
             </h4>
-            <p className="text-5xl font-black text-slate-900 dark:text-white">
-              {price}
+            <p className="text-2xl font-black text-slate-900 dark:text-white">
+              {priceINR} + GST
               <span className="text-lg font-medium text-slate-500">
                 {period}
               </span>
             </p>
-            <p className="mt-2 text-sm text-slate-500">
-              or {priceINR}/year + GST (India)
-            </p>
-            <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
+            <p className="mt-2 text-sm text-slate-700">or {price}/year</p>
+            {user && (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
+            
+              <ComingSoonWrapper>
+                <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
+                  Start Annual Membership
+                </button>
+              </ComingSoonWrapper>
+            )}
+             {!user && (
+              // <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>{/* </NavLink> */}
+              // <ComingSoonWrapper>{/* </ComingSoonWrapper> */}
+              <NavLink href={`/signin?callbackUrl=/pricing`}>
+                <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
+                  Start Annual Membership
+                </button>
+              </NavLink>
+            )}
+            {session.data?.user && user?.role !=="ADMIN" && user?.userType !== "ENTHUSIAST" && (
+                <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    toast.warning(
+                      `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
+                    );
+                  }}
+                  className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
+                >
+                  Not Eligible
+                </button>
+                <p className="text-sm text-red-600 flex gap-2">
+                  <Info size={32} /> You are not eligible for this plan because
+                  you are a {user?.userType?.toLocaleLowerCase()}.
+                </p>
+              </div>
+            )}
+
+            {/* <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
               <button className="mt-6 w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all">
                 Start Annual Membership
               </button>
-            </NavLink>
+            </NavLink> */}
           </div>
 
           {/* Features Right */}

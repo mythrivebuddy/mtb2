@@ -386,6 +386,7 @@ export default function CheckoutPage() {
         await cf.subscriptionsCheckout({
           subsSessionId: data.subscriptionSessionId,
           redirectTarget: "_self",
+          return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
         });
       }
     } catch (error) {
@@ -405,7 +406,7 @@ export default function CheckoutPage() {
   if (!plan) return <div>Plan not found</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-extrabold text-gray-900">
@@ -422,7 +423,7 @@ export default function CheckoutPage() {
             {/* PLAN SUMMARY CARD */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               {/* ... (Existing Plan Summary UI - kept concise for brevity) ... */}
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                   <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wide">
                     {plan.interval} Plan
@@ -431,14 +432,14 @@ export default function CheckoutPage() {
                     {plan.name}
                   </h2>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <p className="text-2xl font-bold text-gray-900">
                     {billing.currency} {billing.total.toLocaleString()}
                   </p>
                 </div>
               </div>
               <div className="mt-4 border-t pt-4">
-                <ul className="grid grid-cols-2 gap-2">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {(plan.features || ["Access to all modules"]).map(
                     (feat, i) => (
                       <li key={i} className="flex items-start">
@@ -452,17 +453,16 @@ export default function CheckoutPage() {
             </div>
 
             {/* BILLING DETAILS FORM */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center gap-2 mb-4 border-b pb-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-4 border-b pb-2 flex-wrap">
                 <MapPin className="w-5 h-5 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Billing Address
+                  Billing Information
                 </h3>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* NAME */}
-                <div className="col-span-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
+                {/* NAME - Full width on all screens for a standard layout */}
+                <div className="col-span-full sm:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Full Name
                   </label>
@@ -480,8 +480,8 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* EMAIL */}
-                <div className="col-span-1">
+                {/* EMAIL - Full width on all screens for a standard layout */}
+                <div className="col-span-full sm:col-span-1">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Email Address
                   </label>
@@ -497,26 +497,26 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* PHONE */}
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                {/* PHONE - ALWAYS FULL WIDTH */}
+                <div className="col-span-full">
+                  <label className="block text-xs  font-medium text-gray-700 mb-1">
                     Phone Number (Optional)
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                    <Phone className="absolute left-3 top-2.5  h-4 w-4 text-gray-400" />
                     <input
                       type="tel"
                       name="phone"
                       value={billingDetails.phone}
                       onChange={handleInputChange}
-                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
+                      className="pl-9 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
                       placeholder="+91 98765 43210"
                     />
                   </div>
                 </div>
 
-                {/* ADDRESS LINE 1 */}
-                <div className="col-span-2">
+                {/* ADDRESS LINE 1 - ALWAYS FULL WIDTH */}
+                <div className="col-span-full">
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Address
                   </label>
@@ -525,74 +525,77 @@ export default function CheckoutPage() {
                     name="addressLine1"
                     value={billingDetails.addressLine1}
                     onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                    className="block w-full rounded-md bg-white border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
                     placeholder="Street Address"
                     required
                   />
                 </div>
 
-                {/* CITY */}
-                <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={billingDetails.city}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
-                    required
-                  />
-                </div>
-
-                {/* STATE */}
-                <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={billingDetails.state}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
-                    required
-                  />
-                </div>
-
-                {/* POSTAL CODE */}
-                <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={billingDetails.postalCode}
-                    onChange={handleInputChange}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
-                    required
-                  />
-                </div>
-
-                {/* COUNTRY */}
-                <div className="col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Country
-                  </label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    <select
-                      name="country"
-                      value={billingDetails.country}
+                {/* GROUP FOR CITY, STATE, POSTAL, COUNTRY - THIS IS THE CRITICAL CHANGE */}
+                <div className="col-span-full grid grid-cols-1 gap-2 md:grid-cols-2">
+                  {/* CITY */}
+                  <div className="col-span-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={billingDetails.city}
                       onChange={handleInputChange}
-                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white"
-                    >
-                      <option value="IN">India</option>
-                      <option value="US">United States</option>
-                      <option value="OT">Other</option>
-                    </select>
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                      required
+                    />
+                  </div>
+
+                  {/* STATE */}
+                  <div className="col-span-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={billingDetails.state}
+                      onChange={handleInputChange}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                      required
+                    />
+                  </div>
+
+                  {/* POSTAL CODE */}
+                  <div className="col-span-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      name="postalCode"
+                      value={billingDetails.postalCode}
+                      onChange={handleInputChange}
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                      required
+                    />
+                  </div>
+
+                  {/* COUNTRY */}
+                  <div className="col-span-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Country
+                    </label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                      <select
+                        name="country"
+                        value={billingDetails.country}
+                        onChange={handleInputChange}
+                        className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white"
+                      >
+                        <option value="IN">India</option>
+                        <option value="US">United States</option>
+                        <option value="OT">Other</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>

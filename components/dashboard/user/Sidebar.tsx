@@ -4,11 +4,7 @@ import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  Home,
-  // LayoutList,
   User,
-  HelpCircle,
-  Phone,
   Sparkles,
   ShoppingCartIcon,
   Menu,
@@ -16,16 +12,17 @@ import {
   LucideSignalHigh,
   TrendingUp,
   HomeIcon,
-  BookOpen,
-  GlobeLock,
   LayoutDashboard,
   Droplet,
   Flower,
   Swords,
- // MessageSquareShare,
+  // MessageSquareShare,
   Search,
   BellRing,
-
+  Crown,
+  PhoneCall,
+  Video,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -36,7 +33,6 @@ import { SearchUser } from "@/types/client/nav";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "./Topbar";
 import { useSession } from "next-auth/react";
-
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -49,13 +45,11 @@ type NavItemProps = {
 const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;
- 
 
   const content = (
     <>
       <div className="w-8">{icon}</div>
       <span className="font-normal text-[17px]">{label}</span>
-      
     </>
   );
 
@@ -65,7 +59,7 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
         <Link
           href={href}
           className={cn(
-            "flex items-center py-2",
+            "flex items-center py-2 ",
             isActive ? "text-jp-orange" : "text-[#6C7894]"
           )}
           onClick={onLinkClick} // Call onLinkClick when link is clicked
@@ -104,103 +98,96 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 // Main sidebar component
 const Sidebar = ({ user }: { user?: UserType }) => {
   const [isOpen, setIsOpen] = useState(false);
-   const [searchTerm, setSearchTerm] = useState("");
-     const [showDropdown, setShowDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ["users", searchTerm],
     queryFn: () => fetchUsers(searchTerm),
     enabled: searchTerm.length > 0,
   });
+  const pathname = usePathname();
   // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
   const session = useSession();
   console.log("User type:", session.data?.user.userType);
-
-
-
-  
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
   return (
     <div className="px-1 md:px-2">
       {/* Hamburger Menu Button for Mobile */}
-     <div className="flex items-center pt-1 px-4 gap-4 justify-between w-screen ">
-  <button
-    className="lg:hidden p-2 bg-white rounded-md shadow-md"
-    onClick={toggleSidebar}
-  >
-    {isOpen ? (
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    ) : (
-      <Menu size={24} />
-    )}
-  </button>
+      <div className="flex items-center pt-1 px-4 gap-4 justify-between w-screen ">
+        <button
+          className="lg:hidden p-2 bg-white rounded-md shadow-md"
+          onClick={toggleSidebar}
+        >
+          {isOpen ? (
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <Menu size={24} />
+          )}
+        </button>
 
-  {/* 🛠️ WRAP THE SEARCH BAR IN A FLEX-GROW DIV */}
-   <div className="relative w-full flex-1 lg:hidden">
-  {/* Search Icon */}
-  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-    <Search className="h-4 w-4 text-slate-400" />
-  </div>
+        {/* 🛠️ WRAP THE SEARCH BAR IN A FLEX-GROW DIV */}
+        <div className="relative w-full flex-1 lg:hidden">
+          {/* Search Icon */}
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <Search className="h-4 w-4 text-slate-400" />
+          </div>
 
-  {/* Input */}
-  <input
-    type="search"
-    className="w-[calc(100%-1.5rem)] bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
-    placeholder="Search Anything Here..."
-    value={searchTerm}
-    onChange={(e) => {
-      setSearchTerm(e.target.value);
-      setShowDropdown(true);
-    }}
-    onFocus={() => setShowDropdown(true)}
-    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-  />
+          {/* Input */}
+          <input
+            type="search"
+            className="w-[calc(100%-1.5rem)] bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
+            placeholder="Search Anything Here..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          />
 
-  {/* Dropdown */}
-  {showDropdown && searchTerm && (
-    <div className="absolute left-0 top-full mt-1 w-[calc(100%-1.5rem)] z-10 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
-      {isLoading ? (
-        <div className="p-2 text-sm text-slate-500">Loading...</div>
-      ) : users?.length === 0 ? (
-        <div className="p-2 text-sm text-slate-500">No users found</div>
-      ) : (
-        users?.map((user: SearchUser) => (
-          <Link
-            key={user.id}
-            href={`/profile/${user.id}`}
-            className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
-            target="_blank"
-            onMouseDown={(e) => e.preventDefault()} // prevents blur closing
-          >
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user.image || undefined} />
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-            </Avatar>
-            <span className="text-sm">{user.name}</span>
-          </Link>
-        ))
-      )}
-    </div>
-  )}
-</div>
-
-
-
-</div>
-
+          {/* Dropdown */}
+          {showDropdown && searchTerm && (
+            <div className="absolute left-0 top-full mt-1 w-[calc(100%-1.5rem)] z-10 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
+              {isLoading ? (
+                <div className="p-2 text-sm text-slate-500">Loading...</div>
+              ) : users?.length === 0 ? (
+                <div className="p-2 text-sm text-slate-500">No users found</div>
+              ) : (
+                users?.map((user: SearchUser) => (
+                  <Link
+                    key={user.id}
+                    href={`/profile/${user.id}`}
+                    className="flex items-center gap-2 p-2 hover:bg-slate-100 cursor-pointer"
+                    target="_blank"
+                    onMouseDown={(e) => e.preventDefault()} // prevents blur closing
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.image || undefined} />
+                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm">{user.name}</span>
+                  </Link>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Overlay for Mobile */}
       {isOpen && (
@@ -214,7 +201,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
       <div className="h-full self-stretch">
         <aside
           className={cn(
-            "fixed lg:static top-0 left-0 h-[100vh] bg-white shadow-lg rounded-3xl custom-scroll overflow-y-scroll transition-transform duration-300 z-50",
+            "fixed lg:static top-0 left-0 h-[100vh]  bg-white shadow-lg rounded-3xl custom-scroll overflow-y-scroll transition-transform duration-300 z-50",
             "w-64 lg:w-64",
             isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           )}
@@ -236,12 +223,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
-                <NavItem
+                {/* <NavItem
                   href="/"
                   icon={<Home size={20} />}
                   label="Home"
                   onLinkClick={toggleSidebar}
-                />
+                /> */}
                 <NavItem
                   href="/dashboard"
                   icon={<LayoutDashboard size={20} />}
@@ -256,43 +243,58 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 /> */}
               </NavSection>
               <NavSection title="Features">
-                 {/* <NavItem
+                {/* <NavItem
                   href="/survey"
                   icon={<MessageSquareShare size={20} />}
                   label="Survey"
                   onLinkClick={toggleSidebar}
                 /> */}
+
                 <NavItem
-                  href="/dashboard/accountability/home"
-                  icon={<LayoutDashboard size={20} />}
-                  label="Accountability Hub"
-                  onLinkClick={toggleSidebar}
+                  href="/dashboard/aligned-actions"
+                  icon={<TrendingUp size={20} />}
+                  label="Set Today's Focus"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/dashboard/daily-bloom"
                   icon={<Flower size={20} />}
-                  label="Daily Blooms"
+                  label="Plan The Day"
                   onLinkClick={toggleSidebar}
                 />
-                 <NavItem
-                  href="/dashboard/challenge"
-                  icon={<Swords size={20} />}
-                  label="Challenges"
-                  onLinkClick={toggleSidebar}
+                <NavItem
+                  href="/dashboard/reminders"
+                  icon={<BellRing />}
+                  label="Set Reminders"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+                <NavItem
+                  href="/dashboard/progress-vault"
+                  icon={<LucideSignalHigh size={20} />}
+                  label="Log Wins"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
-                  label="Miracle Log"
+                  label="Log Serendipities"
                   onLinkClick={toggleSidebar}
                 />
-
                 <NavItem
-                  href="/dashboard/progress-vault"
-                  icon={<LucideSignalHigh size={20} />}
-                  label="1% Progress Vault"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  href="/dashboard/challenge"
+                  icon={<Swords size={20} />}
+                  label="Join Challenges"
+                  onLinkClick={toggleSidebar}
                 />
+                <div className="flex items-center ">
+                  <ComingSoonWrapper>
+                    <span className="flex items-center gap-3 py-2 cursor-pointer  text-[#6C7894]">
+                      <Crown size={20} className="w-7" />
+                      2026 Complete Makeover Program
+                    </span>
+                  </ComingSoonWrapper>
+                </div>
+
                 {/* BuddyLens dropdown */}
                 {/* <div className="space-y-1">
                   <button
@@ -335,31 +337,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   )}
                 </div> */}
 
-                <NavItem
-                  href="/dashboard/buddy-lens"
-                  icon={<HomeIcon size={20} />}
-                  label="My BuddyLens"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-
-                <NavItem
-                  href="/dashboard/aligned-actions"
-                  icon={<TrendingUp size={20} />}
-                  label="1% Start"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/prosperity"
-                  icon={<Droplet size={20} />}
-                  label="Prosperity Drops"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
-                  href="/dashboard/spotlight"
-                  icon={<Sparkles size={20} />}
-                  label="Spotlight"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
                 <ComingSoonWrapper>
                   <NavItem
                     icon={<ShoppingCartIcon size={20} />}
@@ -367,55 +344,121 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
                 </ComingSoonWrapper>
-                
-              
-                 <NavItem 
-                href="/dashboard/reminders"
-                 icon={<BellRing />}
-                  label="Reminders"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-               
-
               </NavSection>
               {/* Settings Section */}
-              <NavSection title="Settings">
-                 {
-                    (session.data?.user.userType != "ENTHUSIAST") && (
-                      <NavItem
-                        href="/dashboard/business-profile"
-                        icon={<User size={20} />}
-                        label="Business Profile"
-                        onLinkClick={toggleSidebar} // Pass toggleSidebar
-                      />  
-                    )
-                  }
-                <NavItem
+              {(session.data?.user.userType == "COACH" ||
+                session.data?.user.userType == "SOLOPRENEUR") && (
+                <NavSection title="For Coach/Solopreneur">
+                  <NavItem
+                    href="/dashboard/spotlight"
+                    icon={<Sparkles size={20} />}
+                    label="Get a Spotlight"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+                  <NavItem
+                    href="/dashboard/business-profile"
+                    icon={<User size={20} />}
+                    label="Setup Business Profile"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+                  <NavItem
+                    href="/dashboard/prosperity"
+                    icon={<Droplet size={20} />}
+                    label="Apply for a Grant"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+                  <NavItem
+                    href="/dashboard/challenge"
+                    icon={<Swords size={20} />}
+                    label="Create a Challenge"
+                    onLinkClick={toggleSidebar}
+                  />
+                  {/* <NavItem
+                    href="/dashboard/accountability/home"
+                    icon={<LayoutDashboard size={20} />}
+                    label="Create Accountability Group"
+                    onLinkClick={toggleSidebar}
+                  /> */}
+                  <li>
+                    <Link
+                      href="/dashboard/accountability/home"
+                      onClick={toggleSidebar}
+                      className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/accountability/home" ? "text-jp-orange" : ""}`}
+                    >
+                      <LayoutDashboard size={20} className="w-7" />
+
+                      {/* Extra gap added here */}
+                      <span className="font-normal text-[17px] ml-2">
+                        Create Accountability Group
+                      </span>
+                    </Link>
+                  </li>
+
+                  <NavItem
+                    href="/dashboard/buddy-lens"
+                    icon={<HomeIcon size={20} />}
+                    label="Get a Profile Audit"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+                  <ComingSoonWrapper>
+                    <NavItem
+                      icon={<PhoneCall size={20} />}
+                      label="Promote Discovery Calls"
+                      onLinkClick={toggleSidebar}
+                    />
+                  </ComingSoonWrapper>
+
+                  <ComingSoonWrapper>
+                    <NavItem
+                      icon={<Video size={20} />}
+                      label="Promote Webinars"
+                      onLinkClick={toggleSidebar}
+                    />
+                  </ComingSoonWrapper>
+
+                  {/* <ComingSoonWrapper>
+                    <NavItem
+                      icon={<GraduationCap size={20} />}
+                      label="Promote Mini Mastery Programs"
+                      onLinkClick={toggleSidebar}
+                    />
+                  </ComingSoonWrapper> */}
+                  <div className="flex items-center ">
+                    <ComingSoonWrapper>
+                      <span className="flex items-center gap-2 py-2 hover:text-jp-orange cursor-pointer  text-[#6C7894]">
+                        <GraduationCap size={20} className="w-7" />
+                        Promote Mini Mastery Programs
+                      </span>
+                    </ComingSoonWrapper>
+                  </div>
+
+                  {/* <NavItem
                   href="/dashboard/faq"
                   icon={<HelpCircle size={20} />}
                   label="FAQ's"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
+                /> */}
+                  {/* <NavItem
                   href="/contact"
                   icon={<Phone size={20} />}
                   label="Contact us"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-                <NavItem
+                /> */}
+                  {/* <NavItem
                   href="/blog"
                   icon={<BookOpen size={20} />}
                   label="Blog"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
+                /> */}
 
-                <NavItem
+                  {/* <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}
                   label="About us"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
-                />
-              </NavSection>
+                /> */}
+                </NavSection>
+              )}
             </div>
           </div>
         </aside>

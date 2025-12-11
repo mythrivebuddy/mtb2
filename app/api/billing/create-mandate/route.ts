@@ -2,22 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 /**
  * Calculate discount applied on base (exclusive of GST)
  * 
  */
-const REQUIRED_ENV_VARS = [
-  "CASHFREE_BASE_URL",
-  "CASHFREE_CLIENT_ID",
-  "CASHFREE_CLIENT_SECRET",
-  "NEXT_PUBLIC_BASE_URL"
-];
 
-function checkMissingEnvVars() {
-  const missing = REQUIRED_ENV_VARS.filter(v => !process.env[v]);
-  return missing;
-}
 type CouponLike = {
   type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
   discountPercentage?: number | null;
@@ -90,24 +81,14 @@ function calculateAmounts(
 
 export async function POST(req: Request) {
   try {
-    const { planId, couponCode, billingDetails } = await req.json();
+    const body = await req.json();
+    const { planId, couponCode, billingDetails } = body;
+
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-      const missing = checkMissingEnvVars();
-
-  if (missing.length > 0) {
-    return Response.json(
-      {
-        success: false,
-        message: "Missing required environment variables",
-        missingEnvVars: missing
-      },
-      { status: 500 }
-    );
-  }
+    const { baseUrl, appId, secret } = await getCashfreeConfig();
 
 
     const userId = session.user.id;
@@ -294,27 +275,45 @@ export async function POST(req: Request) {
       subscription_expiry_time: "2100-01-01T23:00:08+05:30",
     };
 
-    const resp = await fetch(`${process.env.CASHFREE_BASE_URL}/subscriptions`, {
+    const resp = await fetch(`${baseUrl}/subscriptions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-client-id": process.env.CASHFREE_CLIENT_ID!,
-        "x-client-secret": process.env.CASHFREE_CLIENT_SECRET!,
+        "x-client-id": appId,
+        "x-client-secret": secret,
         "x-api-version": "2025-01-01",
       },
       body: JSON.stringify(payload),
     });
 
-    const data = await resp.json();
+    // Debug: read raw response
+    // const raw = await resp.text();
+    // console.log("RAW CASHFREE RESPONSE:", raw);
+
+    let data;
+    try {
+      data = await resp.json();
+    } catch (err) {
+      console.error("JSON PARSE ERROR. RAW RESPONSE WAS NOT JSON.");
+      console.error("RESPONSE: of cahsfree api ", data);
+      console.log("ERROR OBJ: of cahsfree api ", err);
+
+      return NextResponse.json(
+        {
+          error: "Cashfree returned invalid JSON",
+          // raw,
+        },
+        { status: 500 }
+      );    
+    }
 
     if (!resp.ok) {
       console.error("Cashfree error:", data);
       return NextResponse.json(
-        { error: "Failed to create subscription" },
+        { error: "Failed to create subscription", details: data },
         { status: 500 }
       );
     }
-
     // ----------------------------
     // Save Mandate
     // ----------------------------
@@ -336,6 +335,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Mandate error:", err);
+
     return NextResponse.json(
       { error: "Internal server error", details: String(err) },
       { status: 500 }

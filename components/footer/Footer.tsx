@@ -9,12 +9,12 @@ export default function Footer() {
         <div className="grid lg:grid-cols-4 gap-12">
           {/* Logo + description */}
           <div>
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <Image src="/logo.png" height={36} width={36} alt="Logo" />
               <h2 className="text-xl font-bold dark:text-white">
                 MyThriveBuddy
               </h2>
-            </div>
+            </Link>
 
             <p className="mt-4 text-md text-slate-600 dark:text-slate-400">
               Your growth home for tools, mindset, visibility, and momentum.
@@ -30,6 +30,7 @@ export default function Footer() {
                   { label: "Benefits", link: "/why-mythrivebuddy" },
                   { label: "Pricing", link: "/pricing" },
                   { label: "Challenges", link: "/dashboard/challenge" },
+                  { label: "Future Vision", link: "/future-vision-of-mythrivebuddy" },
                 ].map((i) => (
                   <li key={i.label}>
                     <Link
@@ -50,6 +51,7 @@ export default function Footer() {
                   { label: "Blog", link: "/blog" },
                   { label: "Webinars", link: "/live-webinars" },
                   { label: "FAQs", link: "/faqs" },
+                  { label: "About", link: "/about-us" },
                 ].map((i) => (
                   <li key={i.label}>
                     <Link
@@ -69,25 +71,9 @@ export default function Footer() {
                 <li>
                   <Link
                     className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                    href={`/about-us`}
-                  >
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
                     href={`/contact`}
                   >
                     Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className="text-sm hover:text-brand text-slate-600 dark:text-slate-400"
-                    href="/future-vision-of-mythrivebuddy"
-                  >
-                    Future Vision
                   </Link>
                 </li>
                 <li>

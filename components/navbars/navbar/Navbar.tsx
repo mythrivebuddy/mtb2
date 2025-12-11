@@ -61,19 +61,19 @@ export default function Navbar() {
                           icon: Calendar,
                           title: "Daily Blooms",
                           desc: "Stay organized with tasks + calendar in one place.",
-                          link:"/dashboard/daily-bloom"
+                          link:"/daily-blooms-productivity-tool"
                         },
                         {
                           icon: Rocket,
                           title: "1% Start",
                           desc: "Build habits through tiny, doable daily actions.",
-                          link:"/dashboard/aligned-actions"
+                          link:"/1-percent-start"
                         },
                         {
                           icon: Archive,
                           title: "1% Progress Vault",
                           desc: "See your progress add up and stay motivated.",
-                          link:"/dashboard/progress-vault"
+                          link:"/1-percent-progress-vault"
                         },
                       ].map((item) => (
                         <Link
@@ -124,13 +124,13 @@ export default function Navbar() {
                           icon: Sparkles,
                           title: "Miracle Log",
                           desc: "Notice daily wins & strengthen your success mindset.",
-                          link:"/dashboard/miracle-log"
+                          link:"/miracle-log-manifestation-journal"
                         },
                         {
                           icon: Gift,
                           title: "Magic Box",
                           desc: "Unlock surprise rewards & insights through giving.",
-                          link:"/dashboard"
+                          link:"/magic-box"
                         },
                       ].map((item) => (
                         <Link
@@ -161,13 +161,13 @@ export default function Navbar() {
                           icon: Megaphone,
                           title: "Spotlight",
                           desc: "Get featured and boost your visibility inside MTB.",
-                          link:"/"
+                          link:"/spotlight"
                         },
                         {
                           icon: Search,
                           title: "BuddyLens",
                           desc: "Sharpen your online presence with peer feedback.",
-                          link:"/dashboard/buddy-lens"
+                          link:"/profile-audit-buddy-lens"
                         },
                       ].map((item) => (
                         <Link
@@ -192,7 +192,7 @@ export default function Navbar() {
                       <h3 className="text-sm font-bold dark:text-white pt-2">
                         Feel Supported
                       </h3>
-                      <Link className="group/item flex items-start gap-3" href="/dashboard/prosperity">
+                      <Link className="group/item flex items-start gap-3" href="/prosperity-drops">
                         <div className="text-brand mt-0.5">
                           <Users size={20} />
                         </div>
@@ -227,12 +227,13 @@ export default function Navbar() {
           
           <div className="flex items-center space-x-3">
             {session ? (
-              <Button
-                onClick={() => signOut()}
-                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#0A0B1C] text-white rounded-full text-[14px] sm:text-[15px] font-medium hover:bg-[#0A0B1C]/90 transition-colors"
-              >
-                Sign Out
-              </Button>
+              <NavLink href="/dashboard" className="hover:text-brand text-sm font-medium">Dashboard</NavLink>              
+              // <Button
+              //   onClick={() => signOut()}
+              //   className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#0A0B1C] text-white rounded-full text-[14px] sm:text-[15px] font-medium hover:bg-[#0A0B1C]/90 transition-colors"
+              // >
+              //   Sign Out
+              // </Button>
             ) : (
               <>
               <NavLink href="/signin">

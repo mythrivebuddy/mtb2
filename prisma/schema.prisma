@@ -1085,7 +1085,7 @@ model Subscription {
   mandateId        String?      @unique   // null for lifetime or free trial
   orderId          String?     // optional
   couponId         String?     // optional
-  status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL
+  status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL | CANCELLATION_PENDING
   startDate        DateTime
   endDate          DateTime
   renewedAt        DateTime?
@@ -1106,6 +1106,7 @@ enum SubscriptionStatus {
   EXPIRED
   FREE_TRIAL
   PENDING
+  CANCELLATION_PENDING
 }
 
 model SubscriptionInvoice {
@@ -1231,6 +1232,13 @@ model BillingInformation {
 
   user        User     @relation(fields: [userId], references: [id])
 }
+
+model AdminCashfreeConfigSettings {
+  id           Int      @id @default(autoincrement())
+  cashfreeMode String   @default("sandbox") // "sandbox" | "prod"
+  updatedAt    DateTime @updatedAt
+}
+
 
 // membership model end
 // Enum for the AEO/Schema feature

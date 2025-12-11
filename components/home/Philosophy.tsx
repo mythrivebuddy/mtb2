@@ -1,35 +1,16 @@
 
 /* eslint-disable react/no-unescaped-entities */
 
-import { MessageSquare, Lightbulb, Flower } from "lucide-react";
 
 export default function Philosophy() {
   return (
-    <section className="py-8 sm:py-16 bg-white dark:bg-slate-800/50">
+    <section className="  bg-white dark:bg-slate-800/50">
       <div className="">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid gap-4 lg:grid-cols-2 lg:gap-12 items-center">
 
           {/* LEFT ILLUSTRATION BOX */}
-          <div className="relative h-96 py-12 lg:h-full w-full overflow-hidden rounded-xl bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/50 dark:to-indigo-900/50">
-         <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-blue-900/50 dark:to-indigo-900/50"></div>
-
-            {/* Center icon */}
-            <MessageSquare
-              className="text-brand/30 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-              size={96}
-            />
-
-            {/* Bottom-right icon */}
-            <Lightbulb
-              className="absolute -bottom-4 -right-4 text-brand/20 dark:text-brand/30"
-              size={72}
-            />
-
-            {/* Top-left icon */}
-            <Flower
-              className="absolute -top-5 left-5 text-brand/20 dark:text-brand/30 -rotate-12"
-              size={84}
-            />
+          <div className="relative  py-12 lg:h-full w-full overflow-hidden ">
+            <img  src="/homepage_grow_together.png" alt="Grow Together Illustration" loading="lazy"  className="object-cover rounded-md"/>
           </div>
 
           {/* RIGHT TEXT BLOCK */}
