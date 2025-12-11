@@ -2,6 +2,12 @@ import { Metadata } from "next";
 import Hero from "@/components/home/Hero";
 import SpotlightCard from "@/components/home/SpotlightCard";
 import AppLayout from "@/components/layout/AppLayout";
+import Pillars from "@/components/home/Pillars";
+import CoachVsGrowth from "@/components/home/CoachVSGrowth";
+import Features from "@/components/home/Features";
+import ThreePillars from "@/components/home/ThreePillars";
+import CTA from "@/components/home/CTA";
+import Philosophy from "@/components/home/Philosophy";
 
 
 export const metadata: Metadata = {
@@ -49,6 +55,12 @@ export default function Home() {
             
           </div>
         </div>
+         <Pillars/>
+         <CoachVsGrowth/>
+         <Features/>
+         <ThreePillars/>
+         <Philosophy/>
+         <CTA/>
       </AppLayout>
     </>
   );

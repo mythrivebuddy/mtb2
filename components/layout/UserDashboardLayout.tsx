@@ -11,6 +11,7 @@ import Sidebar from "../dashboard/user/Sidebar";
 import { User } from "@/types/types";
 import useUserPresence from "@/hooks/userUserPresence";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import Footer from "../footer/Footer";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { status: sessionStatus,data:session } = useSession();
@@ -125,6 +126,10 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
         <main className="flex-1 overflow-auto lg:pt-4 px-4 bg-transparent">
           {children}
+          <div className="px-4 sm:px-8"
+          >
+        <Footer/>
+          </div>
         </main>
       </div>
     </div>

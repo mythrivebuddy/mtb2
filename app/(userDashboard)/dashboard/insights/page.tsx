@@ -158,7 +158,7 @@ export default function DailyThriveInsights() {
         {/* Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Daily Thrive Insights
+            Daily Thrive Insights (Sample Data)
           </h1>
           <p className="text-xl flex items-center text-gray-500 max-w-3xl mx-auto">
             Track your journey across all your MyThriveBuddy features, celebrate

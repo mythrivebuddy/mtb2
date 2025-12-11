@@ -2,6 +2,7 @@
 import React from "react";
 import Navbar from "../navbars/navbar/Navbar";
 import AnnouncementBanner from "../AnnouncementBanner";
+import Footer from "../footer/Footer";
 
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -14,6 +15,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
           <Navbar />
           <AnnouncementBanner/>
           {children}
+          <div className="p-0">
+          <Footer/>
+          </div>
         </div>
       </div>
     </main>

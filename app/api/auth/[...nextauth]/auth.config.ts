@@ -22,6 +22,8 @@ declare module "next-auth" {
       id: string;
       role: Role;
       rememberMe?: boolean; // <-- FIX: Made optional
+      userType: string | null;
+      membership: string | null;
       isFirstTimeSurvey: boolean;
       lastSurveyTime: string | null;
     } & DefaultSession["user"];
@@ -34,6 +36,8 @@ declare module "next-auth" {
     role: Role;
     rememberMe?: boolean; // <-- FIX: Made optional
     isFirstTimeSurvey: boolean;
+    userType: string | null;
+    membership: string | null;
     lastSurveyTime: Date | null;
   }
 }
@@ -47,6 +51,8 @@ declare module "next-auth/jwt" {
     id: string;
     rememberMe?: boolean; // <-- FIX: Made optional
     isFirstTimeSurvey: boolean;
+    userType: string | null;
+    membership: string | null;
     lastSurveyTime: string | null;
     maxAge: number;
     supabaseAccessToken?: string;
@@ -65,7 +71,7 @@ type UserWithPlan = Prisma.UserGetPayload<{
 
 
 const DEFAULT_MAX_AGE = 24 * 60 * 60;
-const REMEMBER_ME_MAX_AGE = 7 * 24 * 60 * 60;
+const REMEMBER_ME_MAX_AGE = 10 * 365 * 24 * 60 * 60;
 
 export const authConfig: AuthOptions = {
   providers: [
@@ -130,12 +136,13 @@ export const authConfig: AuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role,
-            rememberMe: credentials.rememberMe === "true",
+            rememberMe: ["true", "on", "1"].includes(String(credentials.rememberMe)),
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
+            userType: user.userType ?? null,
+            membership: user.membership ?? null
           };
         } catch (error) {
-          console.log("error", error);
           if (error instanceof Error) throw new Error(error.message);
           throw new Error("Something went wrong");
         }
@@ -245,11 +252,46 @@ export const authConfig: AuthOptions = {
         token.maxAge = (user.rememberMe ?? false) ? REMEMBER_ME_MAX_AGE : DEFAULT_MAX_AGE; // <-- FIX: Added '?? false'
         token.isFirstTimeSurvey = user.isFirstTimeSurvey;
         token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
+        token.userType = user.userType ?? null;
+        token.membership = user.membership ?? null;
+        // token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
-
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: {
+            membership: true,
+            userType: true,
+            isFirstTimeSurvey: true,
+            lastSurveyTime: true
+          }
+        });
+        // Overwrite token with fresh DB data
+        if (dbUser) {
+          token.membership = dbUser.membership || "FREE";
+          token.userType = dbUser.userType;
+          token.isFirstTimeSurvey = dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
+          token.lastSurveyTime = dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
+        }
+      }
       if (trigger === "update" && session) {
-        token.name = session.name;
-        token.picture = session.picture;
+        // Custom fields sent from client
+        if (session.userType !== undefined) {
+          token.userType = session.userType;
+        }
+        if (session.membership !== undefined) {
+          token.membership = session.membership;
+        }
+        if (session.isFirstTimeSurvey !== undefined) {
+          token.isFirstTimeSurvey = session.isFirstTimeSurvey;
+        }
+        if (session.lastSurveyTime !== undefined) {
+          token.lastSurveyTime = session.lastSurveyTime;
+        }
+
+        // Standard fields (name/picture)
+        if (session.name !== undefined) token.name = session.name;
+        if (session.picture !== undefined) token.picture = session.picture;
       }
 
       // --- ADD THIS BLOCK TO SIGN THE SUPABASE TOKEN ---
@@ -277,28 +319,55 @@ export const authConfig: AuthOptions = {
         session.user.rememberMe = token.rememberMe ?? false; // <-- FIX: Added '?? false'
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
         session.user.lastSurveyTime = token.lastSurveyTime;
-
+        session.user.userType = token.userType;
+        session.user.membership = token.membership;
         session.user.name = token.name;
         session.user.image = token.picture;
       }
+      session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
 
       // --- ADD THIS LINE TO PASS THE TOKEN TO THE CLIENT ---
       session.supabaseAccessToken = token.supabaseAccessToken; // <-- This is correct now
       // --- END NEW LINE ---
+      // Persist login indefinitely for Remember Me users by updating cookie expiration
+      const cookieStore = await cookies();
+      const cookieName = process.env.NODE_ENV === "production"
+        ? "__Secure-next-auth.session-token"
+        : "next-auth.session-token";
 
+      const existing = cookieStore.get(cookieName);
+
+      if (existing) {
+        cookieStore.set(cookieName, existing.value, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          expires: new Date(Date.now() + token.maxAge * 1000),
+        });
+      }
       return session;
     },
 
     async redirect({ url, baseUrl }) {
       // ... (Your existing redirect logic stays the same)
-      console.log(url);
-      return `${baseUrl}/dashboard`;
+      console.log("Redirect URL:", url);
+
+      // This ensures that if 'url' is a full external URL, 
+      // you only redirect to it if it is on the same host (optional security check)
+      if (url.startsWith(baseUrl)) return url;
+
+      // If the URL is relative (e.g., '/dashboard/membership'), prepend the base URL
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+
+      // Fallback to a default if a valid URL isn't present
+      return baseUrl;
     },
   },
   session: {
     // ... (Your existing session config stays the same)
     strategy: "jwt",
-    maxAge: DEFAULT_MAX_AGE,
+    // maxAge: DEFAULT_MAX_AGE,
   },
   pages: {
     // ... (Your existing pages config stays the same)

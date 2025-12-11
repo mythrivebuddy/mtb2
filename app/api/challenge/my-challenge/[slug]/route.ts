@@ -97,6 +97,24 @@ export async function GET(
       }),
     ]);
 
+    const enrollments = await prisma.challengeEnrollment.findMany({
+      where: { challengeId },
+      include: {
+        user: { select: { id: true, name: true, image: true } }
+      }
+    });
+
+    const lastActiveMap = await prisma.userChallengeTask.groupBy({
+  by: ["enrollmentId"],
+  where: { enrollment: { challengeId } },
+  _max: { lastCompletedAt: true }
+});
+
+// Convert groupBy result to a Map for quick lookup
+const lastActiveLookup = new Map(
+  lastActiveMap.map((rec) => [rec.enrollmentId, rec._max.lastCompletedAt])
+);
+
     // Daily reset for this user
     if (enrollment?.userTasks?.length) {
       const tasksToReset = enrollment.userTasks.filter((task) => {
@@ -124,7 +142,7 @@ export async function GET(
       dailyTasks = (enrollment.userTasks || []).map((t) => ({
         id: t.id, // userChallengeTask.id
         description: t.description,
-         templateTaskId: t.templateTaskId, 
+        templateTaskId: t.templateTaskId,
         completed: t.isCompleted,
       }));
     }
@@ -150,6 +168,23 @@ export async function GET(
       status: c.status,
     }));
 
+   const participants = enrollments.map((e) => {
+  const lastActive = lastActiveLookup.get(e.id);
+
+  return {
+    id: e.user.id,
+    name: e.user.name || "Anonymous",
+    avatar: e.user.image || "",
+    joinedAt: e.joinedAt.toISOString(),
+    lastActiveDate: lastActive
+      ? lastActive.toISOString()
+      : e.joinedAt.toISOString(),
+    isCertificateIssued: e.isCertificateIssued
+  };
+});
+
+
+
     const responseData = {
       ...challenge,
       startDate: challenge.startDate.toISOString(),
@@ -161,6 +196,7 @@ export async function GET(
       dailyTasks,
       leaderboard: formattedLeaderboard,
       history,
+      participants
     };
 
     return NextResponse.json(responseData);

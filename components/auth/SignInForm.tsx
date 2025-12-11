@@ -30,7 +30,7 @@ function SignInFormContent() {
   });
 
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/";
   const errorFromUrl = searchParams.get("error");
 
   useEffect(() => {
@@ -60,6 +60,8 @@ function SignInFormContent() {
         rememberMe: data.rememberMe,
         callbackUrl: redirect,
       });
+      console.log("response ",response);
+      
 
       if (response?.ok) {
         await router.push(redirect);
@@ -194,7 +196,7 @@ function SignInFormContent() {
         </form>
 
         <div className="relative">
-          <div className="absolute inset-0 flex items-center">
+          <div className="absolute inset-0 flex items-center pointer-events-none">
             <div className="w-full border-t border-gray-200"></div>
           </div>
           <div className="relative flex justify-center text-sm">
