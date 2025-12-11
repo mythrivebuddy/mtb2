@@ -24,6 +24,7 @@ import axios from "axios";
 import NavLink from "@/components/navbars/navbar/NavLink";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -279,11 +280,13 @@ export default function PricingPage() {
                 </p>
               </div>
             ) : (
-              <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
+              // <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
+              <ComingSoonWrapper>
                 <button className="mt-6 w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
                   Start Annual Membership
                 </button>
-              </NavLink>
+              </ComingSoonWrapper>
+              // </NavLink>
             )}
 
             {/* <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>

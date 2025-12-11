@@ -17,13 +17,12 @@ import PageSkeleton from "@/components/PageSkeleton";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
-
+import Image from "next/image";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
 
   useOnlineUserLeaderBoard();
-
 
   const { data: spotlights, isLoading: spotlightLoading } = useQuery<
     Prisma.SpotlightGetPayload<{ include: { user: true } }>[]
@@ -77,11 +76,9 @@ export default function DashboardPage() {
     );
   });
 
-
   const currentProsperity = prosperityApplications?.find((prosperity) => {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
- 
 
   return (
     <div className="py-6 px-4">
@@ -93,30 +90,37 @@ export default function DashboardPage() {
             <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
             <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
           </div>
+          {session?.user.userType === "ENTHUSIAST" ? (
+            <div className="object-cover">
+            <Image src="/Enthusiast_dashboard.jpg" alt="Enthusiast Dashboard" width={1000} height={500} className="rounded-md"/>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
+                Spotlight
+              </h2>
+              <ApplicationStepper
+                steps={spotlightSteps}
+                currentStep={
+                  currentSpotlight
+                    ? SpotlightStepperMap[currentSpotlight?.status]
+                    : 0
+                }
+              />
 
-          <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
-            Spotlight
-          </h2>
-          <ApplicationStepper
-            steps={spotlightSteps}
-            currentStep={
-              currentSpotlight
-                ? SpotlightStepperMap[currentSpotlight?.status]
-                : 0
-            }
-          />
-
-          <h2 className="text-xl sm:text-2xl mt-8 mb-4 text-slate-800 font-semibold">
-            Prosperity Drop
-          </h2>
-          <ApplicationStepper
-            steps={prosperitySteps}
-            currentStep={
-              currentProsperity
-                ? ProsperityStepperMap[currentProsperity?.status]
-                : 0
-            }
-          />
+              <h2 className="text-xl sm:text-2xl mt-8 mb-4 text-slate-800 font-semibold">
+                Prosperity Drop
+              </h2>
+              <ApplicationStepper
+                steps={prosperitySteps}
+                currentStep={
+                  currentProsperity
+                    ? ProsperityStepperMap[currentProsperity?.status]
+                    : 0
+                }
+              />
+            </>
+          )}
         </div>
 
         {/* Divider */}
@@ -127,8 +131,8 @@ export default function DashboardPage() {
           <RightPanel />
         </div>
       </div>
-      <FirstVisitNotificationPopup/>
-      <UserTypeSelection authMethod={userData.authMethod}/>
+      <FirstVisitNotificationPopup />
+      <UserTypeSelection authMethod={userData.authMethod} />
     </div>
   );
 }
