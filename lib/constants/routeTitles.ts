@@ -16,7 +16,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   store: "Store",
   "progress-vault": "1% Progress Vault",
   "transactions-history": "Transactions",
-  "aligned-actions": "1% start",
+  "aligned-actions": "1% Start",
   // faq: "FAQ",
   "business-profile": "Business Profile",
   "refer-friend": "Refer a Friend",

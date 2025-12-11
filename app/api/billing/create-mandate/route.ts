@@ -81,13 +81,27 @@ function calculateAmounts(
 
 export async function POST(req: Request) {
   try {
-    const { planId, couponCode, billingDetails } = await req.json();
+    const rawBody = await req.text();
+    console.log("RAW REQUEST BODY:", rawBody);
+
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch (err) {
+      console.error("REQUEST JSON PARSE ERROR:", err);
+      return NextResponse.json(
+        { error: "Invalid JSON sent from frontend", raw: rawBody },
+        { status: 400 }
+      );
+    }
+
+    const { planId, couponCode, billingDetails } = body;
+
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-     const { baseUrl, appId, secret } = await getCashfreeConfig();
-
+    const { baseUrl, appId, secret } = await getCashfreeConfig();
 
 
     const userId = session.user.id;
@@ -285,16 +299,34 @@ export async function POST(req: Request) {
       body: JSON.stringify(payload),
     });
 
-    const data = await resp.json();
+    // Debug: read raw response
+    const raw = await resp.text();
+    console.log("RAW CASHFREE RESPONSE:", raw);
 
-    if (!resp.ok) {
-      console.error("Cashfree error:", data);
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (err) {
+      console.error("JSON PARSE ERROR. RAW RESPONSE WAS NOT JSON.");
+      console.error("RAW RESPONSE:", raw);
+      console.log("ERROR OBJ: of cahsfree api ", err);
+
       return NextResponse.json(
-        { error: "Failed to create subscription" },
+        {
+          error: "Cashfree returned invalid JSON",
+          raw,
+        },
         { status: 500 }
       );
     }
 
+    if (!resp.ok) {
+      console.error("Cashfree error:", data);
+      return NextResponse.json(
+        { error: "Failed to create subscription", details: data },
+        { status: 500 }
+      );
+    }
     // ----------------------------
     // Save Mandate
     // ----------------------------
@@ -316,6 +348,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Mandate error:", err);
+
     return NextResponse.json(
       { error: "Internal server error", details: String(err) },
       { status: 500 }
