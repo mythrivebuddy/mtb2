@@ -309,6 +309,7 @@ export async function POST(req: Request) {
     } catch (err) {
       console.error("JSON PARSE ERROR. RAW RESPONSE WAS NOT JSON.");
       console.error("RAW RESPONSE:", raw);
+      console.log("ERROR OBJ: of cahsfree api ", err);
 
       return NextResponse.json(
         {
