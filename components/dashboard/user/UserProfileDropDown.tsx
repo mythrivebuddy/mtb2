@@ -94,7 +94,11 @@ const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) =>
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer flex items-center space-x-2 text-red-500"
-            onClick={() => signOut()}
+            onSelect={async(e) => {
+              e.preventDefault()
+              await signOut()
+            }
+            }
           >
             <LogOut size={18} />
             <span>Logout</span>
