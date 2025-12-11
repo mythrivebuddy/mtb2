@@ -30,7 +30,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }) {
-  const slug = params.slug;
+  const {slug} = await params;
   const page = await fetchPage(slug);
 
   if (!page || !page.isPublished) {
@@ -60,7 +60,10 @@ export async function generateMetadata({
    PAGE COMPONENT
 ---------------------------------------------*/
 export default async function Page({ params }: { params: { slug: string } }) {
-  const slug = params.slug;
+  const {slug} = await params;
+    if (RESERVED_PUBLIC_ROUTES.includes(slug)) {
+    return null;
+  }
 
   // Direct DB query
   const page = await fetchPage(slug);
@@ -68,11 +71,14 @@ export default async function Page({ params }: { params: { slug: string } }) {
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.role === "ADMIN";
 
+  
   if (!page) {
     notFound();
   }
 
   // If page unpublished, only admin can see it
+
+
   if (!page.isPublished && !isAdmin) {
     notFound();
   }
