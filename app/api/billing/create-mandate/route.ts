@@ -81,20 +81,7 @@ function calculateAmounts(
 
 export async function POST(req: Request) {
   try {
-    const rawBody = await req.text();
-    console.log("RAW REQUEST BODY:", rawBody);
-
-    let body;
-    try {
-      body = JSON.parse(rawBody);
-    } catch (err) {
-      console.error("REQUEST JSON PARSE ERROR:", err);
-      return NextResponse.json(
-        { error: "Invalid JSON sent from frontend", raw: rawBody },
-        { status: 400 }
-      );
-    }
-
+    const body = await req.json();
     const { planId, couponCode, billingDetails } = body;
 
 
@@ -300,24 +287,24 @@ export async function POST(req: Request) {
     });
 
     // Debug: read raw response
-    const raw = await resp.text();
-    console.log("RAW CASHFREE RESPONSE:", raw);
+    // const raw = await resp.text();
+    // console.log("RAW CASHFREE RESPONSE:", raw);
 
     let data;
     try {
-      data = JSON.parse(raw);
+      data = await resp.json();
     } catch (err) {
       console.error("JSON PARSE ERROR. RAW RESPONSE WAS NOT JSON.");
-      console.error("RAW RESPONSE:", raw);
+      console.error("RESPONSE: of cahsfree api ", data);
       console.log("ERROR OBJ: of cahsfree api ", err);
 
       return NextResponse.json(
         {
           error: "Cashfree returned invalid JSON",
-          raw,
+          // raw,
         },
         { status: 500 }
-      );
+      );    
     }
 
     if (!resp.ok) {
