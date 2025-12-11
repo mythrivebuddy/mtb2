@@ -46,25 +46,24 @@ export default function SignUpForm() {
   } = useForm<SignupFormType>({
     resolver: zodResolver(signupSchema),
   });
- useEffect(() => {
-  if (!userType) return;
+  useEffect(() => {
+    if (!userType) return;
 
-  if (userType === "coach-solopreneur") {
-    setPrefilledTypes(["coach"]);
-    setValue("userType", "coach", { shouldValidate: true });
-    setUserHasChosen(false);
-    return;
-  }
+    if (userType === "coach-solopreneur") {
+      setPrefilledTypes(["coach"]);
+      setValue("userType", "coach", { shouldValidate: true });
+      setUserHasChosen(false);
+      return;
+    }
 
-  if (userType === "coach" || userType === "enthusiast") {
-    setPrefilledTypes([userType]);
-    setValue("userType", userType as "coach" | "enthusiast", {
-      shouldValidate: true,
-    });
-    setUserHasChosen(false);
-  }
-}, [userType, setValue]);
-
+    if (userType === "coach" || userType === "enthusiast") {
+      setPrefilledTypes([userType]);
+      setValue("userType", userType as "coach" | "enthusiast", {
+        shouldValidate: true,
+      });
+      setUserHasChosen(false);
+    }
+  }, [userType, setValue]);
 
   // ✅ Store referral code in cookie if present
   useEffect(() => {
@@ -233,8 +232,15 @@ export default function SignUpForm() {
           </label>
 
           {/* Enthusiast */}
-          <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+          <div
+            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
+            onClick={() => {
+              setUserHasChosen(true);
+              setValue("userType", "enthusiast",{shouldValidate:true});
+            }}
+          >
             <Checkbox
+              id="enthusiast"
               checked={
                 userHasChosen
                   ? watch("userType") === "enthusiast"
@@ -242,26 +248,59 @@ export default function SignUpForm() {
               }
               onCheckedChange={() => {
                 setUserHasChosen(true);
-                setValue("userType", "enthusiast");
+                setValue("userType", "enthusiast",{
+                  shouldValidate: true,
+    shouldTouch: true,
+                });
               }}
+              onClick={(e) => e.stopPropagation()} // prevent double toggling
             />
-            <span className="text-sm">Self Growth Enthusiast</span>
+
+            <label
+              htmlFor="enthusiast"
+              className="text-sm cursor-pointer"
+              onClick={(e) => e.stopPropagation()} // allow label to toggle without firing parent twice
+            >
+              Self Growth Enthusiast
+            </label>
           </div>
 
-         <div className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
-    <Checkbox
-      checked={
-        userHasChosen
-          ? watch("userType") === "coach"
-          : prefilledTypes.includes("coach")
-      }
-      onCheckedChange={() => {
-        setUserHasChosen(true);
-        setValue("userType", "coach");  // Always store coach in backend
-      }}
-    />
-    <span className="text-sm">Coach / Solopreneur</span>
-  </div>
+          <div
+            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
+            onClick={() => {
+              setUserHasChosen(true);
+              setValue("userType", "coach",{shouldValidate:true});
+            }}
+          >
+            <Checkbox
+              id="coach"
+              checked={
+                userHasChosen
+                  ? watch("userType") === "coach"
+                  : prefilledTypes.includes("coach")
+              }
+              onCheckedChange={() => {
+                setUserHasChosen(true);
+                setValue("userType", "coach",{
+                  shouldValidate: true,
+    shouldTouch: true,
+                });
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <label
+              htmlFor="coach"
+              className="text-sm cursor-pointer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Coach / Solopreneur
+            </label>
+          </div>
+          {/* ZOD ERROR */}
+          {errors.userType && (
+            <p className="text-red-500 text-sm">{errors.userType.message}</p>
+          )}
         </div>
 
         <div className="w-full overflow-hidden flex flex-col items-center">
