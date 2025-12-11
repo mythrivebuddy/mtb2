@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import Image from "next/image";
 import {
   CheckCircle,
@@ -10,7 +11,6 @@ import {
   Trophy,
   PartyPopper,
   Map,
-  UsersRound,
   BatteryCharging,
   ArrowRight,
   ChartNoAxesCombined,
