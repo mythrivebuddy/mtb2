@@ -329,8 +329,8 @@ export default function CheckoutPage() {
 
   try {
     let endpoint = "";
-    let isProgram = plan.isProgramPlan === true; // IMPORTANT
-    let isLifetime = plan.interval === "LIFETIME";
+    const isProgram = plan.isProgramPlan === true; // IMPORTANT
+    const isLifetime = plan.interval === "LIFETIME";
 
     // 1. Determine the correct backend endpoint
     if (isProgram) {

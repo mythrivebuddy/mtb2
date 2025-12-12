@@ -7,7 +7,13 @@ import { PaymentStatus } from "@prisma/client";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 
 // ----- Helpers -----
-function calculateDiscount(base: number, coupon: any): number {
+type CouponLike = {
+  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
+  discountPercentage?: number | null;
+  discountAmount?: number | null;
+  freeDays?: number | null;
+};
+function calculateDiscount(base: number, coupon: CouponLike | null): number {
   if (!coupon) return 0;
 
   if (coupon.type === "PERCENTAGE")

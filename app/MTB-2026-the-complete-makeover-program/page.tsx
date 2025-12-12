@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 
 import AppLayout from "@/components/layout/AppLayout";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import Link from "next/link";
 export const metadata = {
   title: "2026 Complete Makeover Program",
