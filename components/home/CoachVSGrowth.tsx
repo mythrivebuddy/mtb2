@@ -54,8 +54,8 @@ export default function CoachVsGrowth() {
               href="/signup?user-type=enthusiast"
               className="group inline-flex items-center mt-8 gap-2 font-bold text-brand"
             >
-              <span className="text-lg">
-                Sign up and start your personal development journey
+              <span className="text-md sm:text-lg">
+                Sign Up and start your personal development journey
               </span>
               <ArrowRight />
             </Link>
@@ -99,7 +99,7 @@ export default function CoachVsGrowth() {
               className="group inline-flex items-center mt-8 gap-2 font-bold text-brand"
               href="/signup?user-type=coach-solopreneur"
             >
-              <span>Sign Up With Curiousity, Grow without Hustle!</span>
+              <span className="text-md sm:text-lg">Sign Up With Curiousity, Grow without Hustle!</span>
               <ArrowRight />
             </Link>
           </div>
