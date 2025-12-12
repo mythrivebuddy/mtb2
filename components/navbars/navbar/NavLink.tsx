@@ -14,7 +14,7 @@ export const NavLink = ({
   href,
   children,
   className = "",
-  activeClassName = "font-semibold",
+  activeClassName = "text-brand",
 }: NavLinkProps) => {
   const pathname = usePathname();
   const isActive = pathname === href;

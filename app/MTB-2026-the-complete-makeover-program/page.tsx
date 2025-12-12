@@ -19,6 +19,11 @@ import {
 
 import AppLayout from "@/components/layout/AppLayout";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+export const metadata = {
+  title: "2026 Complete Makeover Program",
+  description:
+    "Finally follow through on your resolutions and transform your life with a proven system for success.",
+}
 
 const renderIcon = (name: string, hexColorClass: string) => {
   const baseIconSize = "w-6 h-6";
@@ -75,10 +80,10 @@ const CompleteMakeoverPageContent: React.FC = () => {
         <main className="flex-grow">
 
           {/* HERO */}
-          <section className="max-w-6xl mx-auto px-4 py-20 sm:py-28 text-center">
+          <section className="max-w-6xl mx-auto px-4 pt-10 pb-11 sm:pt-24 sm:pb-12  text-center">
             <div className="flex flex-col items-center gap-6">
               <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl max-w-3xl">
-                MTB Powered 2026{" "}
+                2026{" "}
                 <span className="text-[#6B8E23]">Complete Makeover</span> Program
               </h1>
 
@@ -86,16 +91,16 @@ const CompleteMakeoverPageContent: React.FC = () => {
                 Finally follow through on your resolutions and transform your life with a proven system for success.
               </h2>
 
-              <ComingSoonWrapper>
-                <button className="flex min-w-[84px] max-w-[480px] items-center justify-center rounded-full h-12 px-6 bg-[#6B8E23] text-white text-base font-bold tracking-[0.015em] hover:bg-opacity-90 transition-opacity mt-4">
-                  <span className="truncate">Join The Program</span>
+               <ComingSoonWrapper>
+                <button className="flex min-w-[84px] max-w-[480px] items-center justify-center rounded-full h-14 px-8 bg-[#6B8E23] text-white text-lg font-bold tracking-[0.015em] hover:bg-opacity-90 transform hover:scale-105 transition-all mt-4">
+                  <span className="truncate">Join The Program </span>
                 </button>
               </ComingSoonWrapper>
             </div>
           </section>
 
           {/* RESOLUTIONS PROBLEM */}
-          <section className="max-w-6xl mx-auto px-4 py-16 sm:py-24 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] rounded-xl">
+          <section className="max-w-6xl mx-auto px-4 py-0 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] rounded-xl">
             <div className="flex flex-col gap-10">
               <div className="flex flex-col gap-4 text-center items-center">
                 <h2 className="font-display text-3xl font-bold sm:text-4xl max-w-2xl">
@@ -137,7 +142,7 @@ const CompleteMakeoverPageContent: React.FC = () => {
           </section>
 
           {/* PROGRAM INTRO */}
-          <section className="max-w-4xl mx-auto px-4 py-16 sm:py-24 text-center">
+          <section className="max-w-4xl mx-auto px-4 py-16 sm:pt-20 sm:pb-4 text-center">
             <h2 className="font-display text-3xl font-bold sm:text-4xl">Introducing the Complete Makeover Program</h2>
             <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-4">
               A comprehensive, 12-month system designed to help you achieve lasting change in all areas of life.
@@ -145,8 +150,8 @@ const CompleteMakeoverPageContent: React.FC = () => {
           </section>
 
           {/* IMAGINE A YEAR */}
-          <section className="max-w-6xl mx-auto px-4 py-16 sm:py-24">
-            <div className="flex flex-col lg:flex-row items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] p-8 sm:p-12 rounded-xl">
+          <section className="max-w-6xl mx-auto px-4">
+            <div className="flex flex-col lg:flex-row items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] px-4 sm:pt-12  rounded-xl">
 
               <div className="w-full lg:w-1/2 flex justify-center">
                 <Image
@@ -182,7 +187,7 @@ const CompleteMakeoverPageContent: React.FC = () => {
           </section>
 
           {/* HOW IT WORKS */}
-          <section className="max-w-6xl mx-auto px-4 py-16 sm:py-24">
+          <section className="max-w-6xl mx-auto px-4 py-12 sm:py-20">
             <div className="text-center mb-12">
               <h2 className="font-display text-3xl font-bold sm:text-4xl">How It Works</h2>
               <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-4">Three simple, powerful steps.</p>
@@ -221,7 +226,7 @@ const CompleteMakeoverPageContent: React.FC = () => {
           </section>
 
           {/* RHYTHM */}
-          <section className="max-w-6xl mx-auto px-4 py-16 sm:py-24">
+          <section className="max-w-6xl mx-auto px-4 py-2">
             <div className="text-center mb-12">
               <h2 className="font-display text-3xl font-bold sm:text-4xl">Your Daily, Weekly, Monthly Rhythm</h2>
             </div>
@@ -250,7 +255,7 @@ const CompleteMakeoverPageContent: React.FC = () => {
           </section>
 
           {/* COMMUNITY, GAMIFICATION, EVENTS */}
-          <section className="max-w-4xl mx-auto px-4 py-16 sm:py-24">
+          <section className="max-w-4xl mx-auto px-4 py-16 sm:pt-20">
             <div className="grid grid-cols-1 gap-12">
 
               <div className="text-center flex flex-col items-center">
@@ -282,7 +287,7 @@ const CompleteMakeoverPageContent: React.FC = () => {
 
           {/* IS THIS FOR YOU */}
           <section className="max-w-6xl mx-auto px-4 rounded-2xl bg-slate-50">
-            <div className="flex flex-col lg:flex-row-reverse items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] p-8 sm:p-12 rounded-xl">
+            <div className="flex flex-col lg:flex-row-reverse items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] px-4 py-8 sm:py-8 rounded-xl">
 
               <div className="w-full lg:w-1/2 flex justify-center">
                 <img
@@ -323,7 +328,7 @@ const CompleteMakeoverPageContent: React.FC = () => {
           </section>
 
           {/* FINAL CTA */}
-          <section className="max-w-4xl mx-auto px-4 py-20 sm:py-32 text-center">
+          <section className="max-w-4xl mx-auto px-4 py-14 text-center">
             <div className="flex flex-col items-center gap-6">
               <h2 className="font-display text-4xl font-bold sm:text-5xl max-w-3xl">
                 Your Transformation Starts Now
