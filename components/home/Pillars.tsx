@@ -26,7 +26,7 @@ export default function Pillars() {
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-white dark:bg-slate-800/50">
+    <section className="py-16 sm:pt-24 sm:pb-16 bg-white dark:bg-slate-800/50">
       <div>
         {/* Heading */}
         <div className="text-center">

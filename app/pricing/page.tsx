@@ -200,13 +200,14 @@ export default function PricingPage() {
               </div>
               {session?.data?.user &&
                 (user?.userType === "COACH" ||
-                  user?.userType === "SOLOPRENEUR" || user?.role==="ADMIN") && (
+                  user?.userType === "SOLOPRENEUR" ||
+                  user?.role === "ADMIN") && (
                   // Eligible CTA
                   <ComingSoonWrapper>
                     {/* <NavLink href="/dashboard/subscription"> */}
-                      <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
-                        Get Started for FREE Now
-                      </button>
+                    <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+                      Get Started for FREE Now
+                    </button>
                     {/* </NavLink> */}
                   </ComingSoonWrapper>
                 )}
@@ -256,7 +257,7 @@ export default function PricingPage() {
         <div className="flex items-center justify-center sm:justify-start gap-2 mb-6">
           <Gem className="text-green-600" size={24} />
           <h3 className="text-lg font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Self-Growth Enthusiasts
+            Self Growth Enthusiasts
           </h3>
         </div>
 
@@ -273,15 +274,15 @@ export default function PricingPage() {
               </span>
             </p>
             <p className="mt-2 text-sm text-slate-700">or {price}/year</p>
-            {user && (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
-            
-              <ComingSoonWrapper>
-                <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
-                  Start Annual Membership
-                </button>
-              </ComingSoonWrapper>
-            )}
-             {!user && (
+            {user &&
+              (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
+                <ComingSoonWrapper>
+                  <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
+                    Start Annual Membership
+                  </button>
+                </ComingSoonWrapper>
+              )}
+            {!user && (
               // <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>{/* </NavLink> */}
               // <ComingSoonWrapper>{/* </ComingSoonWrapper> */}
               <NavLink href={`/signin?callbackUrl=/pricing`}>
@@ -290,24 +291,26 @@ export default function PricingPage() {
                 </button>
               </NavLink>
             )}
-            {session.data?.user && user?.role !=="ADMIN" && user?.userType !== "ENTHUSIAST" && (
+            {session.data?.user &&
+              user?.role !== "ADMIN" &&
+              user?.userType !== "ENTHUSIAST" && (
                 <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => {
-                    toast.warning(
-                      `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
-                    );
-                  }}
-                  className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
-                >
-                  Not Eligible
-                </button>
-                <p className="text-sm text-red-600 flex gap-2">
-                  <Info size={32} /> You are not eligible for this plan because
-                  you are a {user?.userType?.toLocaleLowerCase()}.
-                </p>
-              </div>
-            )}
+                  <button
+                    onClick={() => {
+                      toast.warning(
+                        `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
+                      );
+                    }}
+                    className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
+                  >
+                    Not Eligible
+                  </button>
+                  <p className="text-sm text-red-600 flex gap-2">
+                    <Info size={32} /> You are not eligible for this plan
+                    because you are a {user?.userType?.toLocaleLowerCase()}.
+                  </p>
+                </div>
+              )}
 
             {/* <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
               <button className="mt-6 w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all">
@@ -353,7 +356,7 @@ export default function PricingPage() {
       <AppLayout>
         <main className=" dark:bg-slate-950 bg-background-light text-slate-800 dark:text-slate-200">
           {/* HERO */}
-          <section className="py-12 sm:py-20 bg-white dark:bg-slate-900  dark:border-slate-800">
+          <section className="py-12 bg-white dark:bg-slate-900  dark:border-slate-800">
             <div className="mx-auto">
               <div className="mx-auto max-w-3xl text-center">
                 <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -361,7 +364,7 @@ export default function PricingPage() {
                 </h1>
 
                 <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-                  For Coaches, Solopreneurs & Self-Growth Enthusiasts. One
+                  For Coaches, Solopreneurs & Self Growth Enthusiasts. One
                   ecosystem. Endless momentum.
                 </p>
 
@@ -374,10 +377,79 @@ export default function PricingPage() {
           </section>
 
           {/* AUDIENCE SPLIT (Static Content) */}
-          <section className="py-12 sm:py-16">
+          <section className="py-10">
             <div className="container mx-auto px-4 max-w-6xl grid grid-cols-1 gap-8 md:grid-cols-2">
+              {/* Self-Growth */}
+              <div className="rounded-2xl border-2 border-green-700 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-green-500/10 rounded-lg text-green-600">
+                    <Sprout size={28} />
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                    For Self Growth Enthusiasts
+                  </h2>
+                </div>
+                <p className="text-md text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+                  A gentle but powerful space to build habits, track inner
+                  growth, and connect with coaches when you’re ready.
+                </p>
+                <ul className="space-y-4 text-md">
+                  <li className="flex items-start gap-3">
+                    <TrendingUp
+                      className="text-green-600 shrink-0 mt-0.5"
+                      size={18}
+                    />
+                    <span>
+                      Log wins & progress in the{" "}
+                      <span className="font-bold">Miracle Log</span>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Leaf
+                      className="text-green-600 shrink-0 mt-0.5"
+                      size={18}
+                    />
+                    <span>
+                      Build small, sustainable habits with{" "}
+                      <span className="font-bold">1% Start</span> &{" "}
+                      <span className="font-bold">1% Progress Vault</span>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Sparkles
+                      className="text-green-600 shrink-0 mt-0.5"
+                      size={18}
+                    />
+                    <span>
+                      Receive surprise nudges & rewards through the{" "}
+                      <span className="font-bold">Magic Box</span>
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Flag
+                      className="text-green-600 shrink-0 mt-0.5"
+                      size={18}
+                    />
+                    <span>
+                      Join light, supportive{" "}
+                      <span className="font-bold">Challenges</span> for
+                      accountability
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <Search
+                      className="text-green-600 shrink-0 mt-0.5"
+                      size={18}
+                    />
+                    <span>
+                      Explore and book coaches directly in{" "}
+                      <span className="font-bold">Find Your Coach</span>
+                    </span>
+                  </li>
+                </ul>
+              </div>
               {/* Coaches / Solopreneurs */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
+              <div className="rounded-2xl border-2 border-blue-700 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-brand/10 rounded-lg text-brand">
                     <Award className="text-blue-600" size={28} />
@@ -448,81 +520,11 @@ export default function PricingPage() {
                   </li>
                 </ul>
               </div>
-
-              {/* Self-Growth */}
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-sm">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-green-500/10 rounded-lg text-green-600">
-                    <Sprout size={28} />
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    For Self-Growth Enthusiasts
-                  </h2>
-                </div>
-                <p className="text-md text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-                  A gentle but powerful space to build habits, track inner
-                  growth, and connect with coaches when you’re ready.
-                </p>
-                <ul className="space-y-4 text-md">
-                  <li className="flex items-start gap-3">
-                    <TrendingUp
-                      className="text-green-600 shrink-0 mt-0.5"
-                      size={18}
-                    />
-                    <span>
-                      Log wins & progress in the{" "}
-                      <span className="font-bold">Miracle Log</span>
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Leaf
-                      className="text-green-600 shrink-0 mt-0.5"
-                      size={18}
-                    />
-                    <span>
-                      Build small, sustainable habits with{" "}
-                      <span className="font-bold">1% Start</span> &{" "}
-                      <span className="font-bold">1% Progress Vault</span>
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Sparkles
-                      className="text-green-600 shrink-0 mt-0.5"
-                      size={18}
-                    />
-                    <span>
-                      Receive surprise nudges & rewards through the{" "}
-                      <span className="font-bold">Magic Box</span>
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Flag
-                      className="text-green-600 shrink-0 mt-0.5"
-                      size={18}
-                    />
-                    <span>
-                      Join light, supportive{" "}
-                      <span className="font-bold">Challenges</span> for
-                      accountability
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Search
-                      className="text-green-600 shrink-0 mt-0.5"
-                      size={18}
-                    />
-                    <span>
-                      Explore and book coaches directly in{" "}
-                      <span className="font-bold">Find Your Coach</span>
-                    </span>
-                  </li>
-                </ul>
-              </div>
             </div>
           </section>
 
           {/* PRICING CARDS (Dynamic & Tabbed) */}
-          <section className="py-8 sm:py-16 bg-slate-50 dark:bg-slate-950">
+          <section className="py-4 bg-slate-50 dark:bg-slate-950">
             <div className="container mx-auto px-4 max-w-7xl">
               <div className="mx-auto max-w-3xl text-center mb-0 sm:mb-8">
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
@@ -548,7 +550,7 @@ export default function PricingPage() {
         }
       `}
                   >
-                    Self-Growth Enthusiast
+                    Self Growth Enthusiast
                   </button>
 
                   {/* Coach + Solopreneur Tab */}
@@ -599,7 +601,7 @@ export default function PricingPage() {
                   <p className="mt-2 text-slate-600 dark:text-slate-400 leading-relaxed">
                     Coaches/Solopreneurs get business-building features like
                     Spotlight, Find Your Coach visibility, Discovery Call
-                    promotion, and BuddyLens. Self-Growth Enthusiasts get full
+                    promotion, and BuddyLens. Self Growth Enthusiasts get full
                     access to habit, mindset, and reflection tools at a very
                     accessible price.
                   </p>
