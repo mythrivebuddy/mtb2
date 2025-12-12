@@ -15,7 +15,6 @@ import {
   Award,
   Info,
 } from 'lucide-react';
-import AppLayout from '@/components/layout/AppLayout';
 import Link from 'next/link';
 
 

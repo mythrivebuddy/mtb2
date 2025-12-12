@@ -1,4 +1,5 @@
-// DiscoveryCallMarketplaceContent.tsx
+/* eslint-disable react/no-unescaped-entities */
+
 import AppLayout from "@/components/layout/AppLayout";
 import { Award, Calendar, Hourglass, Info } from "lucide-react";
 import Link from "next/link";
