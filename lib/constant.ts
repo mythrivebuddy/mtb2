@@ -9,5 +9,5 @@ export  const RESERVED_PUBLIC_ROUTES = [
     "about-us",
     "contact",
     "blog",
-    "complete-makeover-program"
+    "makeover"
   ];
