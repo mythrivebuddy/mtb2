@@ -41,19 +41,7 @@ export default function Hero() {
         One ecosystem. Endless momentum.
       </p>
       <div className="flex flex-col pt-5 sm:flex-row gap-4 lg:justify-start">
-        <button
-          onClick={() => {
-            if (session.status === "authenticated") {
-              router.push("/dashboard");
-            } else {
-              router.push("/signup?user-type=coach-solopreneur");
-            }
-          }}
-          className="h-12 px-5 sm:text-[12px] lg:text-sm bg-brand hover:bg-brand/90 text-white rounded-xl font-bold py-1"
-        >
-          I am a Coach/Solopreneur
-        </button>
-
+        {/* Self Growth Enthusiast button */}
         <button
           onClick={() => {
             if (session.status === "authenticated") {
@@ -62,13 +50,33 @@ export default function Hero() {
               router.push("/signup?user-type=enthusiast");
             }
           }}
-          className="h-12 px-5 text-sm sm:text-[12px] lg:text-sm bg-slate-200 dark:bg-slate-700 rounded-lg font-bold py-1 hover:bg-brand/10"
+          className="h-12 px-5 text-sm sm:text-[12px] lg:text-sm bg-green-600 text-white rounded-lg font-bold py-1 hover:bg-green-700 transition-all ease-in-out"
         >
           I am a Self Growth Enthusiast
         </button>
+
+        {/* Coach/Solopreneur button */}
+        <button
+          onClick={() => {
+            if (session.status === "authenticated") {
+              router.push("/dashboard");
+            } else {
+              router.push("/signup?user-type=coach-solopreneur");
+            }
+          }}
+          className="h-12 px-5 sm:text-[12px] lg:text-sm bg-blue-600 text-white hover:bg-blue-700 transition-all ease-in-out rounded-xl font-bold py-1"
+        >
+          I am a Coach/Solopreneur
+        </button>
       </div>
       <div className="pt-2">
-        <Image src="/start_with_curiosity.png" alt="start with curiosity" width={500} height={500} className="rounded-sm" />
+        <Image
+          src="/start_with_curiosity.png"
+          alt="start with curiosity"
+          width={500}
+          height={500}
+          className="rounded-sm"
+        />
       </div>
 
       {/* <div className="pt-2 sm:pt-4">
