@@ -330,22 +330,22 @@ export const authConfig: AuthOptions = {
       session.supabaseAccessToken = token.supabaseAccessToken; // <-- This is correct now
       // --- END NEW LINE ---
       // Persist login indefinitely for Remember Me users by updating cookie expiration
-      const cookieStore = await cookies();
-      const cookieName = process.env.NODE_ENV === "production"
-        ? "__Secure-next-auth.session-token"
-        : "next-auth.session-token";
+      // const cookieStore = await cookies();
+      // const cookieName = process.env.NODE_ENV === "production"
+      //   ? "__Secure-next-auth.session-token"
+      //   : "next-auth.session-token";
 
-      const existing = cookieStore.get(cookieName);
+      // const existing = cookieStore.get(cookieName);
 
-      if (existing) {
-        cookieStore.set(cookieName, existing.value, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          expires: new Date(Date.now() + token.maxAge * 1000),
-        });
-      }
+      // if (existing) {
+      //   cookieStore.set(cookieName, existing.value, {
+      //     httpOnly: true,
+      //     secure: process.env.NODE_ENV === "production",
+      //     sameSite: "lax",
+      //     path: "/",
+      //     expires: new Date(Date.now() + token.maxAge * 1000),
+      //   });
+      // }
       return session;
     },
 
