@@ -20,7 +20,7 @@ export default function CTA() {
               className="w-full sm:w-auto"
             >
               <button className="w-full sm:w-auto max-sm:text-sm h-12 px-5 bg-green-600 hover:bg-green-700 text-white rounded-2xl transition-colors ease-in-out py-1 font-bold">
-                Sign up as Self Growth Enthusiast
+                Sign Up as Self Growth Enthusiast
               </button>
             </Link>
 
