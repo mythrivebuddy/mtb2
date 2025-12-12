@@ -18,6 +18,7 @@ module.exports = {
     extend: {
       screens:{
         'xlg':'1220px',
+        'x1260':'1260px'
       },
       colors: {
          brand: "#137fec",

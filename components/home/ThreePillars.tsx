@@ -2,10 +2,11 @@
 /* eslint-disable react/no-unescaped-entities */
 
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function ThreePillars() {
   return (
-    <section className="py-8 sm:py-16">
+    <section className="py-9">
       <div className="">
         <div className="max-w-3xl mx-auto text-center mt-4">
           <h2 className="text-3xl sm:text-4xl font-bold dark:text-white">
@@ -51,15 +52,15 @@ export default function ThreePillars() {
         </div>
 
         <div className="mt-12 text-center text-lg">
-          <a
+          <Link
             className="group font-bold text-brand inline-flex gap-2 items-center"
-            href="#"
+            href="/explore-the-mythrivebuddy-ecosystem-your-complete-growth-experience"
           >
             Explore the Full Ecosystem
             <span className="transition-transform group-hover:translate-x-1">
               <ArrowRight />
             </span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
