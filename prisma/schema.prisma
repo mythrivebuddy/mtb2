@@ -112,6 +112,8 @@ model User {
   couponRedemptions  CouponRedemption[]
   billingInformation  BillingInformation[]
 
+  oneTimePurchases OneTimeProgramPurchase[]
+
 
   @@index([name])
 }
@@ -1012,6 +1014,7 @@ model Page {
 // membership model start
 model SubscriptionPlan {
   id             String    @id @default(cuid())
+  programId      String?
   name           String    @unique
   userType       PlanUserType    // COACH | ENTHUSIAST
   interval       PlanInterval    // MONTHLY | YEARLY | LIFETIME
@@ -1020,17 +1023,19 @@ model SubscriptionPlan {
   description    String?
   isActive       Boolean   @default(true)
   features       Json? 
-
+  isProgramPlan  Boolean @default(false) // hide from normal pricing
   gstEnabled     Boolean   @default(true)
   gstPercentage  Float     @default(18)
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  program         Program?              @relation("ProgramPlans", fields: [programId], references: [id])
   subscriptions  Subscription[]
   mandates       Mandate[]
   coupons        Coupon[]        @relation("PlanCoupons")
   invoices SubscriptionInvoice[]
+  oneTimePurchases OneTimeProgramPurchase[]
 }
 enum SubscriptionPlanCurrency {
   INR
@@ -1041,6 +1046,7 @@ enum PlanUserType {
   COACH
   ENTHUSIAST
   SOLOPRENEUR
+  ALL
 }
 
 enum PlanInterval {
@@ -1048,6 +1054,7 @@ enum PlanInterval {
   YEARLY
   LIFETIME
   FREE
+  ONE_TIME
 }
 
 model Mandate {
@@ -1085,6 +1092,8 @@ model Subscription {
   mandateId        String?      @unique   // null for lifetime or free trial
   orderId          String?     // optional
   couponId         String?     // optional
+
+  grantedByPurchaseId String?   @unique// if the user purchase our program we grant them membership
   status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL | CANCELLATION_PENDING
   startDate        DateTime
   endDate          DateTime
@@ -1098,6 +1107,7 @@ model Subscription {
   mandate          Mandate?    @relation(fields: [mandateId], references: [id])
   coupon           Coupon?     @relation(fields: [couponId], references: [id])
   invoices         SubscriptionInvoice[]
+grantedByPurchase OneTimeProgramPurchase? @relation("FreeSubscriptionGrant", fields: [grantedByPurchaseId], references: [id])
 }
 
 enum SubscriptionStatus {
@@ -1105,6 +1115,7 @@ enum SubscriptionStatus {
   CANCELLED
   EXPIRED
   FREE_TRIAL
+  FREE_GRANT
   PENDING
   CANCELLATION_PENDING
 }
@@ -1179,6 +1190,7 @@ model Coupon {
   updatedAt           DateTime @updatedAt
   subscriptions Subscription[]
   redemptions         CouponRedemption[]
+  oneTimePurchases OneTimeProgramPurchase[]
 }
 
 enum CouponType {
@@ -1241,6 +1253,65 @@ model AdminCashfreeConfigSettings {
 
 
 // membership model end
+
+// program models start
+model Program {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  slug             String   @unique
+  description      String?
+  durationDays     Int?
+  isOneTimeProduct Boolean  @default(true)
+  isActive         Boolean  @default(true)
+
+  // Optional: assign a plan to grant
+  grantsFreeSubscriptionToPlanId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  plans              SubscriptionPlan[] @relation("ProgramPlans")
+  purchases          OneTimeProgramPurchase[]
+}
+model OneTimeProgramPurchase {
+  id                 String   @id @default(cuid())
+
+  productId          String
+  planId             String
+  userId             String
+  orderId            String?
+  cashfreeOrderId    String?
+
+  baseAmount         Float
+  gstAmount          Float @default(0)
+  discountApplied    Float @default(0)
+  totalAmount        Float
+  currency           String
+  couponId           String?
+
+  status             PaymentStatus
+  purchasedAt        DateTime @default(now())
+
+  freeSubscriptionId String? @unique
+
+  // Correct: this side defines the FK
+  freeSubscription   Subscription?  @relation("FreeSubscriptionGrant")
+
+  // Relations
+  product Program            @relation(fields: [productId], references: [id])
+  plan    SubscriptionPlan   @relation(fields: [planId], references: [id])
+  user    User               @relation(fields: [userId], references: [id])
+  coupon  Coupon?            @relation(fields: [couponId], references: [id])
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+}
+
+// program models end
 // Enum for the AEO/Schema feature
 enum PageSchemaType {
   NONE        // Default

@@ -1,5 +1,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import Image from "next/image";
+import {prisma} from "@/lib/prisma"
 import {
   CheckCircle,
   Target,
@@ -19,6 +20,7 @@ import {
 
 import AppLayout from "@/components/layout/AppLayout";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+import Link from "next/link";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
@@ -73,7 +75,10 @@ const renderIcon = (name: string, hexColorClass: string) => {
   }
 };
 
-const CompleteMakeoverPageContent: React.FC = () => {
+const CompleteMakeoverPageContent = async() => {
+  const program = await prisma.program.findFirst({ where: { name: "2026 Complete Makeover Program" } });
+  const plan = await prisma.subscriptionPlan.findFirst({ where: { programId: program?.id }, select: { id: true } });
+
   return (
     <AppLayout>
       <div className="bg-[#FFFFFF] dark:bg-[#1F2937] font-body text-[#333333] dark:text-[#E5E7EB]">
@@ -91,11 +96,12 @@ const CompleteMakeoverPageContent: React.FC = () => {
                 Finally follow through on your resolutions and transform your life with a proven system for success.
               </h2>
 
-               <ComingSoonWrapper>
+              <Link href={`${process.env.NEXT_URL}/dashboard/membership/checkout?plan=${plan?.id}`}>
                 <button className="flex min-w-[84px] max-w-[480px] items-center justify-center rounded-full h-14 px-8 bg-[#6B8E23] text-white text-lg font-bold tracking-[0.015em] hover:bg-opacity-90 transform hover:scale-105 transition-all mt-4">
                   <span className="truncate">Join The Program </span>
                 </button>
-              </ComingSoonWrapper>
+              </Link>
+              
             </div>
           </section>
 
@@ -338,11 +344,11 @@ const CompleteMakeoverPageContent: React.FC = () => {
                 Stop waiting for someday. The 2026 Complete Makeover Program is your roadmap to becoming your best self.
               </p>
 
-              <ComingSoonWrapper>
+              <Link href={`${process.env.NEXT_URL}/dashboard/membership/checkout?plan=${plan?.id}`}>
                 <button className="flex min-w-[84px] max-w-[480px] items-center justify-center rounded-full h-14 px-8 bg-[#6B8E23] text-white text-lg font-bold tracking-[0.015em] hover:bg-opacity-90 transform hover:scale-105 transition-all mt-4">
                   <span className="truncate">Join The Program Today</span>
                 </button>
-              </ComingSoonWrapper>
+            </Link>
             </div>
           </section>
 
