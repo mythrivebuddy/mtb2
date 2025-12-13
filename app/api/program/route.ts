@@ -1,7 +1,7 @@
 import {prisma} from "@/lib/prisma"
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export const GET = async (req: NextRequest) => {
+export const GET = async () => {
     try {
         const program = await prisma.program.findFirst({ where: { name: "2026 Complete Makeover Program" } });
         if (!program) {
@@ -13,6 +13,7 @@ export const GET = async (req: NextRequest) => {
         }
         return NextResponse.json({ program, plan });
     } catch (error) {
+        console.error("Error fetching program:", error);
         NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
