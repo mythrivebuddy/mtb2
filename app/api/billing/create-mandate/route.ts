@@ -82,7 +82,7 @@ function calculateAmounts(
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { planId, couponCode, billingDetails } = body;
+    const { planId, couponCode, billingDetails,mode } = body;
 
 
     const session = await getServerSession(authOptions);
@@ -332,6 +332,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       subscriptionId: data.subscription_id,
       subscriptionSessionId: data.subscription_session_id,
+      mode
     });
   } catch (err) {
     console.error("Mandate error:", err);
