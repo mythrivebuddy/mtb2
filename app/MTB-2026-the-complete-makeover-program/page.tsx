@@ -1,6 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
-import {prisma} from "@/lib/prisma"
+
 import {
   CheckCircle,
   Target,
@@ -20,6 +22,7 @@ import {
 
 import AppLayout from "@/components/layout/AppLayout";
 import Link from "next/link";
+import axios from "axios";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
@@ -75,8 +78,8 @@ const renderIcon = (name: string, hexColorClass: string) => {
 };
 
 const CompleteMakeoverPageContent = async() => {
-  const program = await prisma.program.findFirst({ where: { name: "2026 Complete Makeover Program" } });
-  const plan = await prisma.subscriptionPlan.findFirst({ where: { programId: program?.id }, select: { id: true } });
+  const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
+  const plan = res.data.plan;
 
   return (
     <AppLayout>

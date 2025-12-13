@@ -32,7 +32,7 @@ async function main() {
   // -----------------------------------------------------------
   // 2. CHECK IF PURCHASE PLAN EXISTS
   // -----------------------------------------------------------
-  const purchasePlanName = 'Makeover Program Purchase - Multi-Currency';
+  const purchasePlanName = 'Makeover Program Purchase Plan';
 
   let existingPlan = await prisma.subscriptionPlan.findUnique({
     where: { name: purchasePlanName },
@@ -46,7 +46,10 @@ async function main() {
         interval: PlanInterval.ONE_TIME,
         isActive: true,
         isProgramPlan: true,
-
+        features:[
+          "Access all features of the 2026 Complete Makeover Program",
+          "1 year free subscription"
+        ],
         amountINR: 999.0,
         amountUSD: 19.99,
 
