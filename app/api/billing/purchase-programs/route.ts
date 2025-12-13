@@ -43,7 +43,7 @@ function calculateFinal(
 // ----- MAIN -----
 export async function POST(req: Request) {
   try {
-    const { planId, couponCode, billingDetails } = await req.json();
+    const { planId, couponCode, billingDetails,mode } = await req.json();
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id)
@@ -184,8 +184,11 @@ export async function POST(req: Request) {
       where: { id: internalId },
       data: { orderId, cashfreeOrderId: cf.order_id }
     });
+    
+
 
     return NextResponse.json({
+      mode,
       paymentSessionId: cf.payment_session_id,
       orderId
     });

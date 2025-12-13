@@ -363,11 +363,10 @@ export default function CheckoutPage() {
     if (!res.ok) throw new Error(data.error || "Backend creation failed");
 
     // 3. Load Cashfree SDK
-    const mode = (
-      process.env.NEXT_PUBLIC_CASHFREE_MODE === "production"
-        ? "production"
-        : "sandbox"
-    ) as "sandbox" | "production";
+    const mode =
+  data.mode === "prod"
+    ? "production"
+    : "sandbox";
 
     const cf = await load({ mode });
 

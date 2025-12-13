@@ -64,7 +64,7 @@ function calculateLifetimeTotal(
 
 export async function POST(req: Request) {
   try {
-    const { planId, couponCode, billingDetails } = await req.json();
+    const { planId, couponCode, billingDetails,mode } = await req.json();
 
     // ----------------------------
     // 1. AUTH & VALIDATION (Same as Mandate)
@@ -270,6 +270,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       paymentSessionId: data.payment_session_id,
       orderId: orderId,
+      mode
     });
 
   } catch (err) {
