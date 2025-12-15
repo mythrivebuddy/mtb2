@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { code, planId, currency, billingCountry } = await req.json();
+    const { code, planId, currency, billingCountry,userId } = await req.json();
 
     if (!code || !planId) {
       return NextResponse.json(
@@ -27,6 +27,21 @@ export async function POST(req: Request) {
     if (!coupon) {
       return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
     }
+
+    const alreadyRedeemed = await prisma.couponRedemption.findFirst({
+      where: {
+        couponId: coupon.id,
+        userId,
+      },
+    });
+
+if (alreadyRedeemed) {
+  return NextResponse.json({
+    valid: false,
+    message: "You have already used this coupon."
+  }, { status: 400 });
+}
+
 
     if (coupon.status !== "ACTIVE") {
       return NextResponse.json(
