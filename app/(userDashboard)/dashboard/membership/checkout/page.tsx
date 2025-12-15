@@ -27,6 +27,7 @@ interface Plan {
   currency: string;
   interval: "MONTHLY" | "YEARLY" | "LIFETIME";
   features?: string[];
+  isProgramPlan: boolean
 }
 
 interface CouponResponse {
@@ -125,7 +126,8 @@ export default function CheckoutPage() {
                 planId,
                 currency: planData.currency || "INR",
                 billingCountry: billingDetails.country, // Use detected country
-                userType: "solopreneur",
+                userType: session?.user.userType,
+                userId: session?.user?.id,
               }),
             }
           );
@@ -193,6 +195,8 @@ export default function CheckoutPage() {
             planId: plan.id,
             currency: plan.currency || "INR",
             billingCountry: billingDetails.country,
+            userType: session?.user.userType,
+            userId: session?.user?.id,
           }),
         }
       );
@@ -230,6 +234,8 @@ export default function CheckoutPage() {
           type: "error",
           text: data.message || "Invalid coupon",
         });
+        setCouponCode("")
+        setAppliedCoupon(null)
       }
     } catch (error) {
       setCouponMessage({ type: "error", text: "Could not verify coupon" });
@@ -311,91 +317,166 @@ export default function CheckoutPage() {
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
-  const handleSubscribe = async () => {
-    if (!plan) return;
+  const persistCheckoutState = (payload: Record<string, unknown>) => {
+  try {
+    localStorage.setItem(
+      "checkout_state",
+      JSON.stringify({
+        ...payload,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (e) {
+    console.error("Failed to persist checkout state", e);
+  }
+};
 
-    // Simple Validation
-    if (
-      !billingDetails.addressLine1 ||
-      !billingDetails.city ||
-      !billingDetails.postalCode
-    ) {
-      toast.error("Please fill in all required address fields.");
+ const handleSubscribe = async () => {
+  if (!plan) return;
+
+  // Basic Validation
+  if (
+    !billingDetails.addressLine1 ||
+    !billingDetails.city ||
+    !billingDetails.postalCode
+  ) {
+    toast.error("Please fill in all required address fields.");
+    return;
+  }
+
+  setProcessingPayment(true);
+
+  try {
+    let endpoint = "";
+    const isProgram = plan.isProgramPlan === true; // IMPORTANT
+    const isLifetime = plan.interval === "LIFETIME";
+
+    // 1. Determine the correct backend endpoint
+    if (isProgram) {
+      // PURCHASE PROGRAM (One-time purchase)
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/purchase-programs`;
+      console.log("Subscribing to Program (ONE_TIME purchase) →", endpoint);
+    } else if (isLifetime) {
+      // LIFETIME SUBSCRIPTION
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
+      console.log("Subscribing to Lifetime Plan →", endpoint);
+    } else {
+      // MONTHLY / YEARLY RECURRING PLAN
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
+      console.log("Subscribing to Recurring Plan →", endpoint);
+    }
+
+    // 2. Call Backend
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        planId: plan.id,
+        couponCode: appliedCoupon?.code || null,
+        billingDetails: billingDetails,
+      }),
+    });
+
+    const data = await res.json();
+    console.log("cashfree api data ",data);
+    persistCheckoutState({
+  plan,
+  billingDetails,
+  appliedCoupon,
+  backendResponse: {
+    orderId: data.orderId,
+    purchaseId: data.purchaseId,
+    subscriptionId: data.subscriptionId,
+    paymentSessionId: data.paymentSessionId,
+    subscriptionSessionId: data.subscriptionSessionId,
+    mode: data.mode,
+    settings: data.settings,
+  },
+  checkoutType: isProgram
+    ? "PROGRAM"
+    : isLifetime
+    ? "LIFETIME"
+    : "RECURRING",
+});
+
+    
+    if (!res.ok){
+      throw new Error(data.error || "Backend creation failed");
+
+    }
+
+    // 3. Load Cashfree SDK
+    const mode =
+  data.mode === "prod"
+    ? "production"
+    : "sandbox";
+    console.log("We are at this cashfree mode ",mode);
+    
+    const cf = await load({ mode });
+    console.log("cashfree env settings ",data.settings);
+    
+    // 4A. Program Purchase Checkout
+    if (isProgram) {
+      if (!data.paymentSessionId) throw new Error("Invalid payment session for program");
+
+      console.log(`Starting Program Checkout`, data.paymentSessionId);
+
+      await cf.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: "_self",
+        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?order_id=${data.orderId}&purchase_id=${data.purchaseId}`,
+      });
+
       return;
     }
 
-    setProcessingPayment(true);
+    // 4B. Lifetime Checkout
+    if (isLifetime) {
+      if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
 
-    try {
-      const isLifetime = plan.interval === "LIFETIME";
+      console.log(`Starting Lifetime Checkout`, data.paymentSessionId);
 
-      // 1. Determine Endpoint
-      const endpoint = isLifetime
-        ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`
-        : `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
-
-      console.log("Creating Order at:", endpoint); // DEBUG
-
-      // 2. Call Backend
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          planId: plan.id,
-          couponCode: appliedCoupon?.code || null,
-          billingDetails: billingDetails,
-        }),
+      await cf.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: "_self",
+        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}`,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Backend creation failed");
-
-      console.log("Session Created:", data); // DEBUG: Check if ID exists
-
-      // 3. Load Cashfree SDK
-      // FORCE the mode here to match your Backend Credentials
-      const mode = (
-        process.env.NEXT_PUBLIC_CASHFREE_MODE === "production"
-          ? "production"
-          : "sandbox"
-      ) as "sandbox" | "production";
-
-      const cf = await load({ mode });
-
-      // 4. Conditional Checkout Method
-      if (isLifetime) {
-        if (!data.paymentSessionId)
-          throw new Error("Invalid payment session ID");
-
-        console.log(
-          `Starting Checkout in ${mode} mode with Session:`,
-          data.paymentSessionId
-        );
-
-        // CHECKOUT
-        await cf.checkout({
-          paymentSessionId: data.paymentSessionId,
-          redirectTarget: "_self", // Try "_self" first, if blocked, try "_blank"
-          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}`, // Explicitly pass return URL as backup
-        });
-      } else {
-        if (!data.subscriptionSessionId)
-          throw new Error("Invalid subscription session");
-
-        await cf.subscriptionsCheckout({
-          subsSessionId: data.subscriptionSessionId,
-          redirectTarget: "_self",
-          return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
-        });
-      }
-    } catch (error) {
-      console.error("Payment Error:", error);
-      toast.error("Something went wrong initiating payment");
-    } finally {
-      setProcessingPayment(false);
+      return;
     }
-  };
+
+    // 4C. Recurring Checkout
+    if (!data.subscriptionSessionId)
+      throw new Error("Invalid subscription session");
+
+    await cf.subscriptionsCheckout({
+      subsSessionId: data.subscriptionSessionId,
+      redirectTarget: "_self",
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
+    });
+  } catch (error) {
+    console.error("Payment Error:", error);
+    toast.error("Something went wrong initiating payment");
+  } finally {
+    setProcessingPayment(false);
+  }
+};
+useEffect(() => {
+  const raw = localStorage.getItem("checkout_state");
+  if (!raw) return;
+
+  try {
+    const checkoutState = JSON.parse(raw);
+    console.log("Recovered checkout state:", checkoutState);
+
+    // Use it for UI recovery, retry logic, analytics, etc.
+  } catch (e) {
+    console.error("Failed to parse checkout state", e);
+  }
+}, []);
+
+
 
   if (loading)
     return (
@@ -510,7 +591,7 @@ export default function CheckoutPage() {
                       value={billingDetails.phone}
                       onChange={handleInputChange}
                       className="pl-9 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
-                      placeholder="+91 98765 43210"
+                      placeholder="9876543210"
                     />
                   </div>
                 </div>

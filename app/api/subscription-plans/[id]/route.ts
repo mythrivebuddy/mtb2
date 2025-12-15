@@ -7,7 +7,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const planId = await params.id;
+    const {id} = await params;
+    const planId = id;
 
     const plan = await prisma.subscriptionPlan.findUnique({
       where: { id: planId },
