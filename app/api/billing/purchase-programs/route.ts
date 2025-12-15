@@ -43,14 +43,14 @@ function calculateFinal(
 // ----- MAIN -----
 export async function POST(req: Request) {
   try {
-    const { planId, couponCode, billingDetails,mode } = await req.json();
+    const { planId, couponCode, billingDetails } = await req.json();
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const userId = session.user.id;
-    const { baseUrl, appId, secret,settings } = await getCashfreeConfig();
+    const { baseUrl, appId, secret,settings,mode } = await getCashfreeConfig();
 
     if (!billingDetails?.country)
       return NextResponse.json({ error: "Billing details missing" }, { status: 400 });
