@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const userId = session.user.id;
-    const { baseUrl, appId, secret } = await getCashfreeConfig();
+    const { baseUrl, appId, secret,settings } = await getCashfreeConfig();
 
     if (!billingDetails?.country)
       return NextResponse.json({ error: "Billing details missing" }, { status: 400 });
@@ -191,7 +191,8 @@ export async function POST(req: Request) {
       mode,
       paymentSessionId: cf.payment_session_id,
       orderId,
-      purchaseId: internalId
+      purchaseId: internalId,
+      settings
     });
 
   } catch (err) {
