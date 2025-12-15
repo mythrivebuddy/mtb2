@@ -126,7 +126,8 @@ export default function CheckoutPage() {
                 planId,
                 currency: planData.currency || "INR",
                 billingCountry: billingDetails.country, // Use detected country
-                userType: "solopreneur",
+                userType: session?.user.userType,
+                userId: session?.user?.id,
               }),
             }
           );
@@ -194,6 +195,8 @@ export default function CheckoutPage() {
             planId: plan.id,
             currency: plan.currency || "INR",
             billingCountry: billingDetails.country,
+            userType: session?.user.userType,
+            userId: session?.user?.id,
           }),
         }
       );
@@ -231,6 +234,8 @@ export default function CheckoutPage() {
           type: "error",
           text: data.message || "Invalid coupon",
         });
+        setCouponCode("")
+        setAppliedCoupon(null)
       }
     } catch (error) {
       setCouponMessage({ type: "error", text: "Could not verify coupon" });

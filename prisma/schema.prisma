@@ -1306,9 +1306,15 @@ model OneTimeProgramPurchase {
 }
 
 enum PaymentStatus {
-  PAID
-  PENDING
-  FAILED
+  CREATED           // Order created in DB, payment not started
+  PENDING           // User in checkout OR payment authorization pending
+  AUTHORIZED        // Amount authorized but not captured (eNACH, cards)
+  PAID              // Fully paid & captured
+  DROPPED           // User abandoned checkout
+  FAILED            // Explicit failure from gateway
+  CANCELLED         // User or system cancelled before payment
+  REFUNDED          // Fully refunded after payment
+  PARTIALLY_REFUNDED
 }
 
 // program models end

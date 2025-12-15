@@ -23,7 +23,7 @@ export async function getCashfreeConfig() {
     where: { id: 1 }
   });
 
-  const mode = settings?.cashfreeMode;
+  const mode = settings?.cashfreeMode ?? "sandbox";
   if (!mode) {
     throw new Error("Cashfree mode is not set");
   }
