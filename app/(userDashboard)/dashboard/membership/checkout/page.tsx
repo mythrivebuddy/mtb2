@@ -312,7 +312,7 @@ export default function CheckoutPage() {
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
-  const persistCheckoutState = (payload: Record<string, any>) => {
+  const persistCheckoutState = (payload: Record<string, unknown>) => {
   try {
     localStorage.setItem(
       "checkout_state",
