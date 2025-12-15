@@ -1,112 +1,262 @@
+// /api/billing/webhook/cashfree-programs/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { PaymentStatus, PlanUserType, SubscriptionStatus } from "@prisma/client";
+import {
+  PaymentStatus,
+  PlanInterval,
+  PlanUserType,
+  Prisma,
+  SubscriptionStatus
+} from "@prisma/client";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 import { verifySignature } from "@/lib/payment/payment.utils";
 
-// ----- Helper: Find 1-Year Plan Automatically -----
-async function findGrantedPlan(userType: PlanUserType) {
-  return prisma.subscriptionPlan.findFirst({
-    where: {
-      userType,
-      interval: "YEARLY",
-      isActive: true
-    }
-  });
+/* ------------------------------------------------------------------ */
+/* Types */
+/* ------------------------------------------------------------------ */
+
+type CashfreeWebhookPayload = {
+  type?: string;
+  data?: {
+    order?: {
+      order_id?: string;
+      cf_order_id?: string;
+      order_status?: string;
+    };
+  };
+};
+
+/* ------------------------------------------------------------------ */
+/* Helpers */
+/* ------------------------------------------------------------------ */
+
+function extractPurchaseId(orderId?: string): string | null {
+  // Expected format: prog_<purchaseId>_<timestamp>
+  if (!orderId) return null;
+  if (!orderId.startsWith("prog_")) return null;
+
+  const parts = orderId.split("_");
+  return parts.length >= 3 ? parts[1] : null;
 }
 
-// ----- Grant Free Subscription -----
-async function grantProgramAccess(purchaseId: string, cashfreeOrderId: string) {
+function isPaymentSuccessEvent(type?: string): boolean {
+  if (!type) return false;
+
+  const normalized = type.toUpperCase();
+
+  return (
+    normalized.includes("SUCCESS") ||
+    normalized.includes("PAID") ||
+    normalized.includes("CAPTURED") ||
+    normalized.includes("COMPLETED")
+  );
+}
+
+function isPaymentFailureEvent(type?: string): boolean {
+  if (!type) return false;
+
+  const normalized = type.toUpperCase();
+
+  return (
+    normalized.includes("FAILED") ||
+    normalized.includes("CANCELLED")
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Core Business Logic */
+/* ------------------------------------------------------------------ */
+
+
+async function grantProgramAccess(
+  purchaseId: string,
+  orderId?: string
+) {
+
   const purchase = await prisma.oneTimeProgramPurchase.findUnique({
     where: { id: purchaseId },
-    include: { plan: true }
-  });
-
-  if (!purchase || purchase.status === PaymentStatus.PAID) return;
-
-  // 1. Update purchase to PAID
-  await prisma.oneTimeProgramPurchase.update({
-    where: { id: purchaseId },
-    data: {
-      status: PaymentStatus.PAID,
-      cashfreeOrderId
+    include: {
+      plan: true,
+      user: true
     }
   });
 
-  // 2. Get correct granted plan by userType
-  const grantedPlan = await findGrantedPlan(purchase.plan.userType);
-
-  if (!grantedPlan) {
-    console.error(`No yearly plan found for userType=${purchase.plan.userType}`);
+  if (!purchase) {
+    console.error("❌ Purchase not found:", purchaseId);
     return;
   }
 
-  // 3. Create subscription
-  const start = new Date();
-  const end = new Date(start);
-  end.setFullYear(end.getFullYear() + 1);
+  // Fast idempotency guard (non-transactional, best effort)
+  if (purchase.freeSubscriptionId) {
+    return;
+  }
 
-  const subscription = await prisma.subscription.create({
-    data: {
-      userId: purchase.userId,
-      planId: grantedPlan.id,
-      status: SubscriptionStatus.FREE_GRANT,
-      startDate: start,
-      endDate: end,
-      grantedByPurchaseId: purchase.id
+  // Resolve effective userType
+  const planUserType = purchase.plan.userType;
+  const userUserType = purchase.user.userType;
+
+  let effectiveUserType: PlanUserType | undefined;
+
+  if (planUserType && planUserType !== "ALL") {
+    effectiveUserType = planUserType;
+  } else if (userUserType) {
+    effectiveUserType = userUserType;
+  }
+
+  if (!effectiveUserType) {
+    console.error("❌ Unable to resolve effective userType", {
+      planUserType,
+      userUserType
+    });
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    /**
+     * 1️⃣ Ensure purchase is PAID
+     * Safe to run multiple times
+     */
+    if (purchase.status !== PaymentStatus.PAID) {
+      await tx.oneTimeProgramPurchase.update({
+        where: { id: purchaseId },
+        data: {
+          status: PaymentStatus.PAID,
+          orderId: orderId
+        }
+      });
     }
-  });
 
-  // 4. Link subscription
-  await prisma.oneTimeProgramPurchase.update({
-    where: { id: purchaseId },
-    data: { freeSubscriptionId: subscription.id }
-  });
+    /**
+     * 2️⃣ Find yearly plan
+     */
+    const yearlyPlan = await tx.subscriptionPlan.findFirst({
+      where: {
+        interval: PlanInterval.YEARLY,
+        userType: effectiveUserType,
+        isActive: true
+      }
+    });
 
-  // 5. Update user membership
-  await prisma.user.update({
-    where: { id: purchase.userId },
-    data: { membership: "PAID" }
+    if (!yearlyPlan) {
+      console.error(
+        "❌ No YEARLY plan found for userType:",
+        effectiveUserType
+      );
+      return;
+    }
+
+    /**
+     * 3️⃣ Create subscription
+     * DB uniqueness is the final authority
+     */
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setFullYear(endDate.getFullYear() + 1);
+    endDate.setHours(23, 59, 59, 999);
+
+    try {
+      const subscription = await tx.subscription.create({
+        data: {
+          userId: purchase.userId,
+          planId: yearlyPlan.id,
+          status: SubscriptionStatus.FREE_GRANT,
+          startDate,
+          endDate,
+          grantedByPurchaseId: purchase.id,
+          orderId: orderId,
+          couponId: purchase.couponId,
+        }
+      });
+
+      if (purchase.couponId) {
+        await tx.couponRedemption.create({
+          data: {
+            couponId: purchase.couponId,
+            userId: purchase.userId,
+            appliedPlan: yearlyPlan.id,
+            discountApplied: purchase.discountApplied
+          }
+        });
+      }
+
+      /**
+       * 4️⃣ Link purchase → subscription
+       * Runs ONLY for the first successful webhook
+       */
+      await tx.oneTimeProgramPurchase.update({
+        where: { id: purchaseId },
+        data: { freeSubscriptionId: subscription.id }
+      });
+
+      /**
+       * 5️⃣ Upgrade user membership
+       */
+      await tx.user.update({
+        where: { id: purchase.userId },
+        data: {
+           membership: "PAID",
+           currentPlanId: yearlyPlan.id,
+           currentPlanInterval: PlanInterval.YEARLY,
+           planStart: startDate,
+           planEnd:endDate,
+        }
+      });
+
+    } catch (err: unknown) {
+      /**
+       * Duplicate webhook → unique constraint hit
+       * MUST exit transaction immediately
+       */
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        return;
+      }
+
+      throw err;
+    }
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* Webhook Handler */
+/* ------------------------------------------------------------------ */
+
 export async function POST(req: Request) {
-  try {
-    const raw = await req.text();
-    const { secret } = await getCashfreeConfig();
+  const rawBody = await req.text();
+  const { secret } = await getCashfreeConfig();
 
-    if (!verifySignature(req, raw, secret)) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-
-    const body = JSON.parse(raw);
-    const event = body.type;
-
-    if (event === "ORDER_SUCCESS" || event === "PAYMENT_SUCCESS") {
-      const order = body.data.order;
-      const orderId = order.order_id;
-      const cfId = order.cf_order_id;
-      const internalId = orderId.split("_")[1];
-
-      if (internalId) await grantProgramAccess(internalId, cfId);
-    }
-
-    if (event === "ORDER_FAILED" || event === "PAYMENT_FAILED") {
-      const order = body.data.order;
-      const orderId = order.order_id;
-      const internalId = orderId.split("_")[1];
-
-      if (internalId) {
-        await prisma.oneTimeProgramPurchase.update({
-          where: { id: internalId },
-          data: { status: PaymentStatus.FAILED }
-        });
-      }
-    }
-
+  if (!verifySignature(req, rawBody, secret)) {
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("Program Webhook Error:", err);
-    return NextResponse.json({ error: "Webhook error" }, { status: 500 });
   }
+
+  const body = JSON.parse(rawBody) as CashfreeWebhookPayload;
+  const orderId = body.data?.order?.order_id;
+  const purchaseId = extractPurchaseId(orderId);
+
+  // ACK IMMEDIATELY (Vercel-safe)
+  const response = NextResponse.json({ ok: true });
+
+  if (purchaseId && isPaymentSuccessEvent(body.type)) {
+    // fire-and-forget (DO NOT await)
+    setImmediate(() => {
+      grantProgramAccess(purchaseId, orderId).catch(console.error);
+    });
+  }
+
+  if (purchaseId && isPaymentFailureEvent(body.type)) {
+    setImmediate(() => {
+      prisma.oneTimeProgramPurchase.updateMany({
+        where: {
+          id: purchaseId,
+          status: { not: PaymentStatus.PAID }
+        },
+        data: { status: PaymentStatus.FAILED }
+      }).catch(console.error);
+    });
+  }
+
+  return response;
 }

@@ -23,7 +23,7 @@ function getFixedAmount(
 
 export async function POST(req: Request) {
   try {
-    const { planId, currency, billingCountry, userType } = await req.json();
+    const { planId, currency, billingCountry, userType,userId } = await req.json();
 
     if (!planId) {
       return NextResponse.json({ coupon: null, message: "Plan ID required" }, { status: 400 });
@@ -38,6 +38,9 @@ export async function POST(req: Request) {
         status: "ACTIVE",
         startDate: { lte: now },
         endDate: { gte: now },
+           redemptions: {
+      none: { userId } // 👈 key line
+    }
       },
       include: {
         applicablePlans: { select: { id: true } },

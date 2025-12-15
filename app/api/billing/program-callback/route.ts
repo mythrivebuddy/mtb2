@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
-import { extractOrderFailureReason } from "@/lib/payment/payment.utils";
 import { PaymentStatus } from "@prisma/client";
 
 export async function GET(req: Request) {
@@ -10,15 +9,16 @@ export async function GET(req: Request) {
     const orderId = url.searchParams.get("order_id");
     const purchaseId = url.searchParams.get("purchase_id");
 
-    const { baseUrl, appId, secret } = await getCashfreeConfig();
-
     if (!orderId || !purchaseId) {
-      return NextResponse.redirect(new URL("/dashboard/membership/failure?reason=missing_ids", req.url), 303);
+      return NextResponse.redirect(
+        new URL("/dashboard/membership/failure?reason=missing_ids", req.url),
+        303
+      );
     }
 
-    // verify with cashfree
+    const { baseUrl, appId, secret } = await getCashfreeConfig();
+
     const resp = await fetch(`${baseUrl}/orders/${orderId}`, {
-      method: "GET",
       headers: {
         "x-client-id": appId,
         "x-client-secret": secret,
@@ -26,27 +26,48 @@ export async function GET(req: Request) {
       }
     });
 
-    const data = await resp.json();
-    const status = data.order_status;
+    const data: {
+      order_status?: string;
+      cf_order_id?: string;
+    } = await resp.json();
 
-    if (status === "PAID" || status === "COMPLETED") {
-      return NextResponse.redirect(new URL("/dashboard/membership/success?program=true", req.url), 303);
+    if (data.order_status === "PAID" || data.order_status === "COMPLETED") {
+      await prisma.oneTimeProgramPurchase.updateMany({
+        where: {
+          id: purchaseId,
+          status: { not: PaymentStatus.PAID }
+        },
+        data: {
+          status: PaymentStatus.PAID,
+          cashfreeOrderId: data.cf_order_id ?? undefined
+        }
+      });
+
+      return NextResponse.redirect(
+        new URL("/dashboard/membership/success?program=true", req.url),
+        303
+      );
     }
 
-    const reason = extractOrderFailureReason(data);
-
-    await prisma.oneTimeProgramPurchase.update({
-      where: { id: purchaseId },
-      data: { status: PaymentStatus.FAILED }
-    });
+    if (data.order_status === "FAILED" || data.order_status === "CANCELLED") {
+      await prisma.oneTimeProgramPurchase.updateMany({
+        where: {
+          id: purchaseId,
+          status: { in: [PaymentStatus.CREATED, PaymentStatus.PENDING] }
+        },
+        data: { status: PaymentStatus.FAILED }
+      });
+    }
 
     return NextResponse.redirect(
-      new URL(`/dashboard/membership/failure?type=program&orderId=${orderId}&reason=${encodeURIComponent(reason)}`, req.url),
+      new URL("/dashboard/membership/failure", req.url),
       303
     );
-
   } catch (err) {
     console.error("Program Callback Error:", err);
-    return NextResponse.redirect(new URL("/dashboard/membership/failure?reason=server_error", req.url), 303);
+    return NextResponse.redirect(
+      new URL("/dashboard/membership/failure?reason=server_error", req.url),
+      303
+    );
   }
 }

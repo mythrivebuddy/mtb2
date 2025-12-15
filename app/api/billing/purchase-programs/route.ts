@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const userId = session.user.id;
-    const { baseUrl, appId, secret,settings,mode } = await getCashfreeConfig();
+    const { baseUrl, appId, secret, settings, mode } = await getCashfreeConfig();
 
     if (!billingDetails?.country)
       return NextResponse.json({ error: "Billing details missing" }, { status: 400 });
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
         productId: plan.programId,
         planId: plan.id,
         userId,
-        status: PaymentStatus.PENDING,
+        status: PaymentStatus.CREATED,
         baseAmount,
         gstAmount:
           isIndia && plan.gstEnabled
@@ -154,6 +154,7 @@ export async function POST(req: Request) {
         customer_phone: billingDetails.phone || "9999999999"
       },
       order_meta: {
+        purchase_id: internalId,
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?purchase_id=${internalId}&order_id=${orderId}`,
         notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/webhook/cashfree-programs`
       },
@@ -182,10 +183,12 @@ export async function POST(req: Request) {
 
     await prisma.oneTimeProgramPurchase.update({
       where: { id: internalId },
-      data: { orderId, cashfreeOrderId: cf.order_id }
+      data: {
+        orderId,
+        cashfreeOrderId: cf.order_id,
+        status: PaymentStatus.PENDING
+      }
     });
-    
-
 
     return NextResponse.json({
       mode,
