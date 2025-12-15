@@ -591,7 +591,7 @@ useEffect(() => {
                       value={billingDetails.phone}
                       onChange={handleInputChange}
                       className="pl-9 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
-                      placeholder="+91 98765 43210"
+                      placeholder="9876543210"
                     />
                   </div>
                 </div>
