@@ -367,7 +367,8 @@ export default function CheckoutPage() {
   data.mode === "prod"
     ? "production"
     : "sandbox";
-
+    console.log("We are at this cashfree mode ",mode);
+    
     const cf = await load({ mode });
 
     // 4A. Program Purchase Checkout

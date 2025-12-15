@@ -190,7 +190,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       mode,
       paymentSessionId: cf.payment_session_id,
-      orderId
+      orderId,
+      purchaseId: internalId
     });
 
   } catch (err) {
