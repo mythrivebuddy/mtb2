@@ -23,7 +23,14 @@ export async function getCashfreeConfig() {
     where: { id: 1 }
   });
 
-  const mode = settings?.cashfreeMode || "sandbox";
+  const mode = settings?.cashfreeMode;
+  if (!mode) {
+    throw new Error("Cashfree mode is not set");
+  }
+  console.log("Settings of admin for this cashfree ",settings);
+  
+  console.log("mode at getcashfreeeConfig util function ",mode);
+  
 
   const prodURL = process.env.CASHFREE_PROD_BASE_URL;
   const sandboxURL = process.env.CASHFREE_SANDBOX_BASE_URL;
@@ -59,6 +66,7 @@ export async function getCashfreeConfig() {
     baseUrl,
     mode,
     appId,
-    secret
+    secret,
+    settings
   };
 }

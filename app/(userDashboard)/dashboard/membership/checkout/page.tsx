@@ -312,6 +312,20 @@ export default function CheckoutPage() {
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
+  const persistCheckoutState = (payload: Record<string, unknown>) => {
+  try {
+    localStorage.setItem(
+      "checkout_state",
+      JSON.stringify({
+        ...payload,
+        timestamp: Date.now(),
+      })
+    );
+  } catch (e) {
+    console.error("Failed to persist checkout state", e);
+  }
+};
+
  const handleSubscribe = async () => {
   if (!plan) return;
 
@@ -360,7 +374,32 @@ export default function CheckoutPage() {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Backend creation failed");
+    console.log("cashfree api data ",data);
+    persistCheckoutState({
+  plan,
+  billingDetails,
+  appliedCoupon,
+  backendResponse: {
+    orderId: data.orderId,
+    purchaseId: data.purchaseId,
+    subscriptionId: data.subscriptionId,
+    paymentSessionId: data.paymentSessionId,
+    subscriptionSessionId: data.subscriptionSessionId,
+    mode: data.mode,
+    settings: data.settings,
+  },
+  checkoutType: isProgram
+    ? "PROGRAM"
+    : isLifetime
+    ? "LIFETIME"
+    : "RECURRING",
+});
+
+    
+    if (!res.ok){
+      throw new Error(data.error || "Backend creation failed");
+
+    }
 
     // 3. Load Cashfree SDK
     const mode =
@@ -370,7 +409,8 @@ export default function CheckoutPage() {
     console.log("We are at this cashfree mode ",mode);
     
     const cf = await load({ mode });
-
+    console.log("cashfree env settings ",data.settings);
+    
     // 4A. Program Purchase Checkout
     if (isProgram) {
       if (!data.paymentSessionId) throw new Error("Invalid payment session for program");
@@ -417,6 +457,20 @@ export default function CheckoutPage() {
     setProcessingPayment(false);
   }
 };
+useEffect(() => {
+  const raw = localStorage.getItem("checkout_state");
+  if (!raw) return;
+
+  try {
+    const checkoutState = JSON.parse(raw);
+    console.log("Recovered checkout state:", checkoutState);
+
+    // Use it for UI recovery, retry logic, analytics, etc.
+  } catch (e) {
+    console.error("Failed to parse checkout state", e);
+  }
+}, []);
+
 
 
   if (loading)
