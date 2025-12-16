@@ -44,7 +44,7 @@ export default function CoachVsGrowth() {
                 },
               ].map((item) => (
                 <li key={item.text} className="flex items-start gap-3">
-                  <item.icon className="h-5 w-5 text-brand mt-0.5" />
+                  <item.icon className="h-5 w-5 text-green-600 mt-0.5" />
                   <span className="text-lg">{item.text}</span>
                 </li>
               ))}
@@ -52,7 +52,7 @@ export default function CoachVsGrowth() {
 
             <Link
               href="/signup?user-type=enthusiast"
-              className="group inline-flex items-center mt-8 gap-2 font-bold text-brand"
+              className="group inline-flex items-center mt-8 gap-2 font-bold text-green-600"
             >
               <span className="text-md sm:text-lg">
                 Sign Up and start your personal development journey
