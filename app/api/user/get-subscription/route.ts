@@ -13,18 +13,12 @@ export async function GET() {
     }
 
     const userId = session.user.id;
-    
-    // Calculate the current date at the start of the day for comparison
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
 
-    // Fetch the most relevant subscription that is either ACTIVE or PENDING CANCELLATION.
-    // Ensure 'mandate' is included as it holds the payment details.
     const subscription = await prisma.subscription.findFirst({
       where: {
         userId,
         status: {
-          in: ["ACTIVE", "CANCELLATION_PENDING"],
+          in: ["ACTIVE", "CANCELLATION_PENDING", "FREE_GRANT"],
         },
       },
       orderBy: {
@@ -32,38 +26,59 @@ export async function GET() {
       },
       include: {
         plan: true,
-        mandate: true, // Mandate included here
+        mandate: true,
       },
     });
 
-    
     const hasActiveSubscription = Boolean(subscription);
 
-    // --- Prepare the response data ---
     let currentSubscriptionResponse = null;
+    let grantedByProgram: null | {
+      id: string;
+      name: string;
+    } = null;
 
     if (subscription) {
       const { mandate, plan, ...subDetails } = subscription;
-      
-      // Merge Subscription details with Mandate details for the frontend
-      // The frontend can now access these fields directly on 'currentSubscription'
+
+      // 🔑 If this subscription was FREE_GRANT, fetch the source program
+      if (
+        subscription.status === "FREE_GRANT" &&
+        subscription.grantedByPurchaseId
+      ) {
+        const purchase = await prisma.oneTimeProgramPurchase.findUnique({
+          where: { id: subscription.grantedByPurchaseId },
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        });
+
+        if (purchase?.product) {
+          grantedByProgram = purchase.product;
+        }
+      }
+
       currentSubscriptionResponse = {
         ...subDetails,
-        plan: plan, // Keep the plan nested
-        // MANDATE DETAILS MAPPED TO SUBSCRIPTION OBJECT:
-        maxAmount: mandate?.maxAmount || null, // maxAmount from mandate
-        frequency: mandate?.frequency || null, // frequency from mandate
-        currency: mandate?.currency || null,   // currency from mandate
-        paymentMethod: mandate?.paymentMethod || null, // paymentMethod from mandate
+        plan,
+        maxAmount: mandate?.maxAmount || null,
+        frequency: mandate?.frequency || null,
+        currency: mandate?.currency || null,
+        paymentMethod: mandate?.paymentMethod || null,
       };
     }
-    // --- End preparation ---
 
     return NextResponse.json({
       message: "Subscription fetched",
-      hasActiveSubscription: hasActiveSubscription,
-      currentSubscription: currentSubscriptionResponse, // Use the enriched object
+      hasActiveSubscription,
+      currentSubscription: currentSubscriptionResponse,
       currentPlan: subscription?.plan || null,
+      grantedByProgram, // ✅ NEW
       userType: session.user.userType,
       membership: session.user.membership,
     });
