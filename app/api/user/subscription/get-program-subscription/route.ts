@@ -1,10 +1,10 @@
 // /api/user/subscription/get-program-subscription
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {prisma} from "@/lib/prisma"
 
-export const GET = async(req:NextRequest) => {
+export const GET = async() => {
   try {
     const session = await getServerSession(authOptions);
     if(!session?.user){
