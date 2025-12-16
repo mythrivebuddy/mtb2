@@ -1,6 +1,8 @@
 import {prisma} from "@/lib/prisma"
 import { NextResponse } from "next/server";
 
+// to get program details at the home page of the program
+
 export const GET = async () => {
     try {
         const program = await prisma.program.findFirst({ where: { name: "2026 Complete Makeover Program" } });
