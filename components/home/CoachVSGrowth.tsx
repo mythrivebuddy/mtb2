@@ -17,7 +17,7 @@ export default function CoachVsGrowth() {
       <div className="">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
           {/* SELF GROWTH */}
-          <div className="rounded-2xl border bg-white border-slate-200 dark:border-slate-700 p-8">
+          <div className="rounded-2xl bg-white border-2 border-green-700 p-8">
             <h3 className="text-2xl font-bold">For Self-Growth Enthusiasts</h3>
             <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
               A dedicated space to track your journey, build habits, and connect
@@ -62,7 +62,7 @@ export default function CoachVsGrowth() {
           </div>
 
           {/* COACHES */}
-          <div className="rounded-2xl border bg-white border-slate-200 dark:border-slate-700 p-8">
+          <div className="rounded-2xl bg-white border-2 border-blue-600  p-8">
             <h3 className="text-2xl font-bold">For Coaches & Solopreneurs</h3>
             <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
               An all-in-one system to manage your business and personal growth,
