@@ -287,12 +287,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   onLinkClick={toggleSidebar}
                 />
                 <div className="flex items-center ">
-                  <ComingSoonWrapper>
+                  <Link href='/MTB-2026-the-complete-makeover-program'>
                     <span className="flex items-center gap-3 py-2 cursor-pointer  text-[#6C7894]">
                       <Crown size={20} className="w-7" />
                       2026 Complete Makeover Program
                     </span>
-                  </ComingSoonWrapper>
+                  </Link>
                 </div>
 
                 {/* BuddyLens dropdown */}

@@ -350,10 +350,7 @@ export const authConfig: AuthOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // ... (Your existing redirect logic stays the same)
-      console.log("Redirect URL:", url);
-
-      // This ensures that if 'url' is a full external URL, 
+      
       // you only redirect to it if it is on the same host (optional security check)
       if (url.startsWith(baseUrl)) return url;
 
