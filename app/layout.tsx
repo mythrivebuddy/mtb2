@@ -1,7 +1,8 @@
 import { Inter } from "next/font/google";
 import "./globals.scss";
 import Provider from "@/providers/Provider";
-import { Analytics } from "@vercel/analytics/react"; 
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
 import { Toaster } from "sonner";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
@@ -60,6 +61,7 @@ export default function RootLayout({
 
             {/* Analytics */}
             <Analytics />
+             <SpeedInsights/>
             </SupabaseClientProvider>
           </Provider>
         </div>
