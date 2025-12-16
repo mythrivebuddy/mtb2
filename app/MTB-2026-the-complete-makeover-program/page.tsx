@@ -21,13 +21,13 @@ import {
 } from "lucide-react";
 
 import AppLayout from "@/components/layout/AppLayout";
-import Link from "next/link";
 import axios from "axios";
+import JoinProgram from "./_components/JoinProgram";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
     "Finally follow through on your resolutions and transform your life with a proven system for success.",
-}
+};
 
 const renderIcon = (name: string, hexColorClass: string) => {
   const baseIconSize = "w-6 h-6";
@@ -39,9 +39,15 @@ const renderIcon = (name: string, hexColorClass: string) => {
     case "map":
       return <Map className={`${hexColorClass} ${largeFeatureIconSize}`} />;
     case "group_off":
-      return <UserRoundX className={`${hexColorClass} ${largeFeatureIconSize}`} />;
+      return (
+        <UserRoundX className={`${hexColorClass} ${largeFeatureIconSize}`} />
+      );
     case "battery_alert":
-      return <BatteryCharging className={`${hexColorClass} ${largeFeatureIconSize}`} />;
+      return (
+        <BatteryCharging
+          className={`${hexColorClass} ${largeFeatureIconSize}`}
+        />
+      );
 
     case "check_circle":
       return <CheckCircle className={`${baseIconSize} ${hexColorClass}`} />;
@@ -54,7 +60,9 @@ const renderIcon = (name: string, hexColorClass: string) => {
       return <TrendingUp className={`${hexColorClass} ${stepIconSize} mt-1`} />;
 
     case "today":
-      return <CalendarDays className={`${hexColorClass} ${stepIconSize} mb-4`} />;
+      return (
+        <CalendarDays className={`${hexColorClass} ${stepIconSize} mb-4`} />
+      );
     case "calendar_view_week":
       return <Calendar className={`${hexColorClass} ${stepIconSize} mb-4`} />;
     case "calendar_month":
@@ -70,14 +78,18 @@ const renderIcon = (name: string, hexColorClass: string) => {
     case "arrow_forward":
       return <ArrowRight className={`${baseIconSize} ${hexColorClass} mt-1`} />;
     case "chart_no_axes":
-      return <ChartNoAxesCombined className={`${baseIconSize} ${hexColorClass} mt-1`} />;
+      return (
+        <ChartNoAxesCombined
+          className={`${baseIconSize} ${hexColorClass} mt-1`}
+        />
+      );
 
     default:
       return null;
   }
 };
 
-const CompleteMakeoverPageContent = async() => {
+const CompleteMakeoverPageContent = async () => {
   const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
   const plan = res.data.plan;
 
@@ -85,25 +97,21 @@ const CompleteMakeoverPageContent = async() => {
     <AppLayout>
       <div className="bg-[#FFFFFF] dark:bg-[#1F2937] font-body text-[#333333] dark:text-[#E5E7EB]">
         <main className="flex-grow">
-
           {/* HERO */}
           <section className="max-w-6xl mx-auto px-4 pt-10 pb-11 sm:pt-24 sm:pb-12  text-center">
             <div className="flex flex-col items-center gap-6">
               <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl max-w-3xl">
-                2026{" "}
-                <span className="text-[#6B8E23]">Complete Makeover</span> Program
+                2026 <span className="text-[#6B8E23]">Complete Makeover</span>{" "}
+                Program
               </h1>
 
               <h2 className="text-[#6B7280] dark:text-[#9CA3AF] text-lg font-normal leading-normal max-w-2xl">
-                Finally follow through on your resolutions and transform your life with a proven system for success.
+                Finally follow through on your resolutions and transform your
+                life with a proven system for success.
               </h2>
-
-              <Link href={`${process.env.NEXT_URL}/dashboard/membership/checkout?plan=${plan?.id}`}>
-                <button className="flex min-w-[84px] max-w-[480px] items-center justify-center rounded-full h-14 px-8 bg-[#6B8E23] text-white text-lg font-bold tracking-[0.015em] hover:bg-opacity-90 transform hover:scale-105 transition-all mt-4">
-                  <span className="truncate">Join The Program </span>
-                </button>
-              </Link>
-              
+              <JoinProgram
+                url={`/dashboard/membership/checkout?plan=${plan.id}`}
+              />
             </div>
           </section>
 
@@ -115,23 +123,29 @@ const CompleteMakeoverPageContent = async() => {
                   New Year's Resolutions Don't Stick. It’s Not Your Fault.
                 </h2>
                 <p className="text-[#6B7280] dark:text-[#9CA3AF] text-base max-w-3xl">
-                  Every year, millions set ambitious goals, only to see them fade by February. The problem isn't desire, it's the lack of a system.
+                  Every year, millions set ambitious goals, only to see them
+                  fade by February. The problem isn't desire, it's the lack of a
+                  system.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
                 <div className="flex flex-1 flex-col items-center gap-4 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563] bg-[#FFFFFF] dark:bg-[#1F2937] p-6 text-center">
                   {renderIcon("map", "text-[#CD853F]")}
-                  <h3 className="font-display text-lg font-bold">No Clear Path</h3>
+                  <h3 className="font-display text-lg font-bold">
+                    No Clear Path
+                  </h3>
                   <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">
-                    Without a step-by-step guide, it's easy to get lost and give up.
+                    Without a step-by-step guide, it's easy to get lost and give
+                    up.
                   </p>
                 </div>
 
                 <div className="flex flex-1 flex-col items-center gap-4 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563] bg-[#FFFFFF] dark:bg-[#1F2937] p-6 text-center">
                   {renderIcon("group_off", "text-[#CD853F]")}
-                  <h3 className="font-display text-lg font-bold">Lack of Accountability</h3>
+                  <h3 className="font-display text-lg font-bold">
+                    Lack of Accountability
+                  </h3>
                   <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                     Going it alone makes it easy to slip into old habits.
                   </p>
@@ -139,28 +153,31 @@ const CompleteMakeoverPageContent = async() => {
 
                 <div className="flex flex-1 flex-col items-center gap-4 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563] bg-[#FFFFFF] dark:bg-[#1F2937] p-6 text-center">
                   {renderIcon("battery_alert", "text-[#CD853F]")}
-                  <h3 className="font-display text-lg font-bold">Motivation Burnout</h3>
+                  <h3 className="font-display text-lg font-bold">
+                    Motivation Burnout
+                  </h3>
                   <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                     Excitement fades quickly without the right support systems.
                   </p>
                 </div>
-
               </div>
             </div>
           </section>
 
           {/* PROGRAM INTRO */}
           <section className="max-w-4xl mx-auto px-4 py-16 sm:pt-20 sm:pb-4 text-center">
-            <h2 className="font-display text-3xl font-bold sm:text-4xl">Introducing the Complete Makeover Program</h2>
+            <h2 className="font-display text-3xl font-bold sm:text-4xl">
+              Introducing the Complete Makeover Program
+            </h2>
             <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-4">
-              A comprehensive, 12-month system designed to help you achieve lasting change in all areas of life.
+              A comprehensive, 12-month system designed to help you achieve
+              lasting change in all areas of life.
             </p>
           </section>
 
           {/* IMAGINE A YEAR */}
           <section className="max-w-6xl mx-auto px-4">
             <div className="flex flex-col lg:flex-row items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] px-4 sm:pt-12  rounded-xl">
-
               <div className="w-full lg:w-1/2 flex justify-center">
                 <Image
                   className="rounded-lg object-cover w-full h-80 lg:h-96"
@@ -173,43 +190,57 @@ const CompleteMakeoverPageContent = async() => {
               </div>
 
               <div className="w-full lg:w-1/2 flex flex-col gap-6 text-center lg:text-left">
-                <h2 className="font-display text-3xl font-bold sm:text-4xl">Imagine a Year From Now...</h2>
+                <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                  Imagine a Year From Now...
+                </h2>
 
                 <ul className="space-y-4 text-left">
                   <li className="flex items-start gap-3">
                     {renderIcon("check_circle", "text-[#6B8E23] mt-1")}
-                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">You've achieved your biggest goals.</p>
+                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">
+                      You've achieved your biggest goals.
+                    </p>
                   </li>
                   <li className="flex items-start gap-3">
                     {renderIcon("check_circle", "text-[#6B8E23] mt-1")}
-                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">You feel energized and in control.</p>
+                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">
+                      You feel energized and in control.
+                    </p>
                   </li>
                   <li className="flex items-start gap-3">
                     {renderIcon("check_circle", "text-[#6B8E23] mt-1")}
-                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">You’re part of a thriving community.</p>
+                    <p className="text-[#6B7280] dark:text-[#9CA3AF]">
+                      You’re part of a thriving community.
+                    </p>
                   </li>
                 </ul>
               </div>
-
             </div>
           </section>
 
           {/* HOW IT WORKS */}
           <section className="max-w-6xl mx-auto px-4 py-12 sm:py-20">
             <div className="text-center mb-12">
-              <h2 className="font-display text-3xl font-bold sm:text-4xl">How It Works</h2>
-              <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-4">Three simple, powerful steps.</p>
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                How It Works
+              </h2>
+              <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-4">
+                Three simple, powerful steps.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
               <div className="flex flex-col items-center p-8 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563] bg-[#FFFFFF] dark:bg-[#1F2937] text-center">
                 <div className="flex flex-col items-center justify-center size-24 rounded-full bg-[#6B8E23] bg-opacity-20 text-[#6B8E23] font-display font-bold text-5xl mb-4">
                   <span>1</span>
                   {renderIcon("chart_no_axes", "text-[#6B8E23]")}
                 </div>
-                <h3 className="font-display text-xl font-bold">Foundation & Goal Setting</h3>
-                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">Define a powerful vision and clear, meaningful goals.</p>
+                <h3 className="font-display text-xl font-bold">
+                  Foundation & Goal Setting
+                </h3>
+                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">
+                  Define a powerful vision and clear, meaningful goals.
+                </p>
               </div>
 
               <div className="flex flex-col items-center p-8 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563] bg-[#FFFFFF] dark:bg-[#1F2937] text-center">
@@ -217,8 +248,12 @@ const CompleteMakeoverPageContent = async() => {
                   <span>2</span>
                   {renderIcon("checklist", "text-[#6B8E23]")}
                 </div>
-                <h3 className="font-display text-xl font-bold">Habit Integration</h3>
-                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">Build daily actions that compound into massive change.</p>
+                <h3 className="font-display text-xl font-bold">
+                  Habit Integration
+                </h3>
+                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">
+                  Build daily actions that compound into massive change.
+                </p>
               </div>
 
               <div className="flex flex-col items-center p-8 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563] bg-[#FFFFFF] dark:bg-[#1F2937] text-center">
@@ -226,77 +261,91 @@ const CompleteMakeoverPageContent = async() => {
                   <span>3</span>
                   {renderIcon("timeline", "text-[#6B8E23]")}
                 </div>
-                <h3 className="font-display text-xl font-bold">Continuous Growth</h3>
-                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">Adapt, overcome obstacles, and stay aligned year-round.</p>
+                <h3 className="font-display text-xl font-bold">
+                  Continuous Growth
+                </h3>
+                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">
+                  Adapt, overcome obstacles, and stay aligned year-round.
+                </p>
               </div>
-
             </div>
           </section>
 
           {/* RHYTHM */}
           <section className="max-w-6xl mx-auto px-4 py-2">
             <div className="text-center mb-12">
-              <h2 className="font-display text-3xl font-bold sm:text-4xl">Your Daily, Weekly, Monthly Rhythm</h2>
+              <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                Your Daily, Weekly, Monthly Rhythm
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-
               <div className="bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] p-8 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563]">
                 {renderIcon("today", "text-[#CD853F]")}
                 <h3 className="font-display text-xl font-bold">Daily</h3>
-                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">Quick, energizing check-ins and habit tracking.</p>
+                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">
+                  Quick, energizing check-ins and habit tracking.
+                </p>
               </div>
 
               <div className="bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] p-8 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563]">
                 {renderIcon("calendar_view_week", "text-[#CD853F]")}
                 <h3 className="font-display text-xl font-bold">Weekly</h3>
-                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">Review, celebrate, and plan ahead with guided reflections.</p>
+                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">
+                  Review, celebrate, and plan ahead with guided reflections.
+                </p>
               </div>
 
               <div className="bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] p-8 rounded-lg border border-[#D1D5DB] dark:border-[#4B5563]">
                 {renderIcon("calendar_month", "text-[#CD853F]")}
                 <h3 className="font-display text-xl font-bold">Monthly</h3>
-                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">Workshops, long-term reviews, and fresh alignment.</p>
+                <p className="text-[#6B7280] dark:text-[#9CA3AF] mt-2">
+                  Workshops, long-term reviews, and fresh alignment.
+                </p>
               </div>
-
             </div>
           </section>
 
           {/* COMMUNITY, GAMIFICATION, EVENTS */}
           <section className="max-w-4xl mx-auto px-4 py-16 sm:pt-20">
             <div className="grid grid-cols-1 gap-12">
-
               <div className="text-center flex flex-col items-center">
                 {renderIcon("groups", "text-[#6B8E23]")}
-                <h2 className="font-display text-3xl font-bold mt-4">Accountability & Community</h2>
+                <h2 className="font-display text-3xl font-bold mt-4">
+                  Accountability & Community
+                </h2>
                 <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-3 max-w-2xl">
-                  Private community + dedicated coaching to ensure follow-through.
+                  Private community + dedicated coaching to ensure
+                  follow-through.
                 </p>
               </div>
 
               <div className="text-center flex flex-col items-center">
                 {renderIcon("emoji_events", "text-[#6B8E23]")}
-                <h2 className="font-display text-3xl font-bold mt-4">Gamification</h2>
+                <h2 className="font-display text-3xl font-bold mt-4">
+                  Gamification
+                </h2>
                 <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-3 max-w-2xl">
-                  Earn points, unlock badges, climb leaderboards, and stay motivated.
+                  Earn points, unlock badges, climb leaderboards, and stay
+                  motivated.
                 </p>
               </div>
 
               <div className="text-center flex flex-col items-center">
                 {renderIcon("celebration", "text-[#6B8E23]")}
-                <h2 className="font-display text-3xl font-bold mt-4">Exclusive Events</h2>
+                <h2 className="font-display text-3xl font-bold mt-4">
+                  Exclusive Events
+                </h2>
                 <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg mt-3 max-w-2xl">
                   Members-only workshops, Q&A sessions, and virtual retreats.
                 </p>
               </div>
-
             </div>
           </section>
 
           {/* IS THIS FOR YOU */}
           <section className="max-w-6xl mx-auto px-4 rounded-2xl bg-slate-50">
             <div className="flex flex-col lg:flex-row-reverse items-center gap-12 bg-[#F0F8E6] bg-opacity-30 dark:bg-[#1F2937] px-4 py-8 sm:py-8 rounded-xl">
-
               <div className="w-full lg:w-1/2 flex justify-center">
                 <img
                   className="rounded-2xl object-cover w-full"
@@ -306,7 +355,9 @@ const CompleteMakeoverPageContent = async() => {
               </div>
 
               <div className="w-full lg:w-1/2 flex flex-col gap-6 text-center lg:text-left">
-                <h2 className="font-display text-3xl font-bold sm:text-4xl">Is This Program For You?</h2>
+                <h2 className="font-display text-3xl font-bold sm:text-4xl">
+                  Is This Program For You?
+                </h2>
 
                 <p className="text-[#6B7280] dark:text-[#9CA3AF]">
                   This program is ideal for individuals who are:
@@ -331,7 +382,6 @@ const CompleteMakeoverPageContent = async() => {
                   </li>
                 </ul>
               </div>
-
             </div>
           </section>
 
@@ -343,17 +393,14 @@ const CompleteMakeoverPageContent = async() => {
               </h2>
 
               <p className="text-[#6B7280] dark:text-[#9CA3AF] text-lg max-w-2xl">
-                Stop waiting for someday. The 2026 Complete Makeover Program is your roadmap to becoming your best self.
+                Stop waiting for someday. The 2026 Complete Makeover Program is
+                your roadmap to becoming your best self.
               </p>
-
-              <Link href={`${process.env.NEXT_URL}/dashboard/membership/checkout?plan=${plan?.id}`}>
-                <button className="flex min-w-[84px] max-w-[480px] items-center justify-center rounded-full h-14 px-8 bg-[#6B8E23] text-white text-lg font-bold tracking-[0.015em] hover:bg-opacity-90 transform hover:scale-105 transition-all mt-4">
-                  <span className="truncate">Join The Program Today</span>
-                </button>
-            </Link>
+              <JoinProgram
+                url={`/dashboard/membership/checkout?plan=${plan.id}`}
+              />
             </div>
           </section>
-
         </main>
       </div>
     </AppLayout>
