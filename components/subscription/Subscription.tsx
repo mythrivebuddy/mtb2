@@ -10,7 +10,6 @@ import {
   Star,
   AlertTriangle,
   TrendingUp,
-  Calendar,
   DollarSign,
   Repeat,
   Gift, // New Icon for Free Grant/Program
@@ -217,7 +216,7 @@ const SubscriptionPage: React.FC = () => {
   const formatAmount = (amount: number | null, currency: string | null) => {
     if (!amount || !currency) return "N/A";
     try {
-      // Use toLocaleString for better formatting if currency is ISO 4217 code
+      
       return amount.toLocaleString(undefined, {
         style: "currency",
         currency: currency,

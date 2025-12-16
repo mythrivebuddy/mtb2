@@ -1,4 +1,3 @@
-import { Zap } from "lucide-react";
 
 export default function InfoRow({ text }: { text: string }) {
   return (
