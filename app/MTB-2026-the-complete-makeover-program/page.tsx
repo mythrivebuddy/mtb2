@@ -23,6 +23,10 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 import axios from "axios";
 import JoinProgram from "./_components/JoinProgram";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
+import { AuthMethod } from "@prisma/client";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
@@ -90,6 +94,9 @@ const renderIcon = (name: string, hexColorClass: string) => {
 };
 
 const CompleteMakeoverPageContent = async () => {
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+  
   const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
   const plan = res.data.plan;
 
@@ -402,6 +409,12 @@ const CompleteMakeoverPageContent = async () => {
             </div>
           </section>
         </main>
+        {
+          user?.authMethod && user.authMethod === AuthMethod.GOOGLE && user.userType == null && (
+            <UserTypeSelection authMethod={user.authMethod} />
+          )
+        }
+        
       </div>
     </AppLayout>
   );

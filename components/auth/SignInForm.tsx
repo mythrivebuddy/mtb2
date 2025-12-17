@@ -30,7 +30,8 @@ function SignInFormContent() {
   });
 
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/";
+  const redirect = "/MTB-2026-the-complete-makeover-program"  // high priority to makeover program we will change this in future
+  // || searchParams.get("redirect") || searchParams.get("callbackUrl");
   const errorFromUrl = searchParams.get("error");
 
   useEffect(() => {
