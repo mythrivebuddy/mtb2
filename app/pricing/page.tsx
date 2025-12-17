@@ -278,7 +278,7 @@ export default function PricingPage() {
             {user &&
               (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
                 // <Link href={`/dashboard/membership/checkout?plan=${enthusiastPlan.id}`}>
-                <Link href={`/MTB-2026-the-complete-makeover-programc`}>
+                <Link href={`/MTB-2026-the-complete-makeover-program`}>
                   <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
                     Start Annual Membership
                   </button>
