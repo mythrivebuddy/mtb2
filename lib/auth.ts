@@ -54,6 +54,7 @@ export const authOptions: NextAuthOptions = {
           userType: existingUser.userType,    
           membership: existingUser.membership,
           lastSurveyTime: existingUser.lastSurveyTime,
+          authMethod: existingUser.authMethod
         };
       },
     }),
@@ -74,11 +75,12 @@ export const authOptions: NextAuthOptions = {
       }
       const dbUser = await prisma.user.findUnique({
       where: { id: token.id },
-      select: { membership: true,userType:true }
+      select: { membership: true,userType:true,authMethod:true }
     });
 
     token.membership = dbUser?.membership || "FREE";
     token.userType = dbUser?.userType || null;
+    token.authMetho = dbUser?.authMethod
       return token;
     },
     async session({ session, token }) {
@@ -93,6 +95,7 @@ export const authOptions: NextAuthOptions = {
         session.user.rememberMe = token.rememberMe;
         session.user.isFirstTimeSurvey = token.isFirstTimeSurvey;
         session.user.lastSurveyTime = token.lastSurveyTime;
+        session.user.authMethod = token.authMethod
       }
 
       // Debug log (remove in production)

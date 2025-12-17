@@ -26,6 +26,7 @@ declare module "next-auth" {
       membership: string | null;
       isFirstTimeSurvey: boolean;
       lastSurveyTime: string | null;
+      authMethod: AuthMethod;
     } & DefaultSession["user"];
   }
 
@@ -39,6 +40,7 @@ declare module "next-auth" {
     userType: string | null;
     membership: string | null;
     lastSurveyTime: Date | null;
+    authMethod: AuthMethod;
   }
 }
 
@@ -56,6 +58,7 @@ declare module "next-auth/jwt" {
     lastSurveyTime: string | null;
     maxAge: number;
     supabaseAccessToken?: string;
+     authMethod: AuthMethod;
   }
 }
 // --- END AUGMENTATION ---
@@ -140,7 +143,8 @@ export const authConfig: AuthOptions = {
             isFirstTimeSurvey: user.isFirstTimeSurvey ?? false,
             lastSurveyTime: user.lastSurveyTime ?? null,
             userType: user.userType ?? null,
-            membership: user.membership ?? null
+            membership: user.membership ?? null,
+            authMethod: user.authMethod
           };
         } catch (error) {
           if (error instanceof Error) throw new Error(error.message);
@@ -254,6 +258,7 @@ export const authConfig: AuthOptions = {
         token.lastSurveyTime = user.lastSurveyTime ? user.lastSurveyTime.toISOString() : null;
         token.userType = user.userType ?? null;
         token.membership = user.membership ?? null;
+        token.authMethod = user.authMethod
         // token.exp = Math.floor(Date.now() / 1000) + token.maxAge;
       }
       if (token.id) {
@@ -263,13 +268,15 @@ export const authConfig: AuthOptions = {
             membership: true,
             userType: true,
             isFirstTimeSurvey: true,
-            lastSurveyTime: true
+            lastSurveyTime: true,
+            authMethod: true
           }
         });
         // Overwrite token with fresh DB data
         if (dbUser) {
           token.membership = dbUser.membership || "FREE";
           token.userType = dbUser.userType;
+          token.authMethod = dbUser.authMethod
           token.isFirstTimeSurvey = dbUser.isFirstTimeSurvey ?? token.isFirstTimeSurvey;
           token.lastSurveyTime = dbUser.lastSurveyTime?.toISOString() || token.lastSurveyTime;
         }
@@ -292,6 +299,7 @@ export const authConfig: AuthOptions = {
         // Standard fields (name/picture)
         if (session.name !== undefined) token.name = session.name;
         if (session.picture !== undefined) token.picture = session.picture;
+        if (session.authMethod !== undefined) token.authMethod = session.authMethod
       }
 
       // --- ADD THIS BLOCK TO SIGN THE SUPABASE TOKEN ---
@@ -323,6 +331,7 @@ export const authConfig: AuthOptions = {
         session.user.membership = token.membership;
         session.user.name = token.name;
         session.user.image = token.picture;
+        session.user.authMethod = token.authMethod
       }
       session.expires = new Date(Date.now() + token.maxAge * 1000).toISOString();
 
