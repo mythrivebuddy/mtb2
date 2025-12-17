@@ -113,6 +113,7 @@ model User {
   billingInformation  BillingInformation[]
 
   oneTimePurchases OneTimeProgramPurchase[]
+  paymentOrders PaymentOrder[] 
 
 
   @@index([name])
@@ -1036,6 +1037,7 @@ model SubscriptionPlan {
   coupons        Coupon[]        @relation("PlanCoupons")
   invoices SubscriptionInvoice[]
   oneTimePurchases OneTimeProgramPurchase[]
+  paymentOrders PaymentOrder[] 
 }
 enum SubscriptionPlanCurrency {
   INR
@@ -1092,6 +1094,7 @@ model Subscription {
   mandateId        String?      @unique   // null for lifetime or free trial
   orderId          String?     // optional
   couponId         String?     // optional
+  paymentOrderId String?  
 
   grantedByPurchaseId String?   @unique// if the user purchase our program we grant them membership
   status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL | CANCELLATION_PENDING
@@ -1118,7 +1121,39 @@ enum SubscriptionStatus {
   FREE_GRANT
   PENDING
   CANCELLATION_PENDING
+  CREATED 
+  AUTHORIZED        // Amount authorized but not captured (eNACH, cards)
+  DROPPED           // User abandoned checkout
 }
+
+model PaymentOrder {
+  id            String   @id @default(cuid())
+  userId        String
+  planId        String
+
+  orderId       String?   @unique
+  cashfreeOrderId    String?
+  baseAmount         Float
+  gstAmount          Float @default(0)
+  discountApplied    Float @default(0)
+  totalAmount        Float
+  currency      String
+
+  status        PaymentStatus
+  paymentMethod String?
+  paymentId     String?
+
+  couponId      String?
+  billingInfoId String?
+
+  createdAt     DateTime @default(now())
+  paidAt        DateTime?
+
+  user          User             @relation(fields: [userId], references: [id])
+  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
+  coupon        Coupon?           @relation(fields: [couponId], references: [id])
+}
+
 
 model SubscriptionInvoice {
   id               String    @id @default(cuid())
@@ -1191,6 +1226,7 @@ model Coupon {
   subscriptions Subscription[]
   redemptions         CouponRedemption[]
   oneTimePurchases OneTimeProgramPurchase[]
+  paymentOrders PaymentOrder[] 
 }
 
 enum CouponType {
