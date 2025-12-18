@@ -82,7 +82,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isLoggedIn = sessionStatus === "authenticated" && !!user;
 
   return (
-    <div className={`w-full min-h-screen bg-dashboard ${shouldUseInheritBg ? 'bg-inherit':'bg-dashboard' } max-w-full overflow-hidden`}>
+    <div className={`w-full min-h-screen  ${shouldUseInheritBg ? 'bg-inherit':'bg-dashboard' } max-w-full overflow-hidden`}>
       {isLoggedIn  && (session.user.role === "USER") && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">
           <Sidebar user={user} />
