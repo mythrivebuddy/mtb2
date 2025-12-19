@@ -4,7 +4,14 @@ import { useEffect, useRef, useState, ChangeEvent, KeyboardEvent } from "react";
 import axios from "axios";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useSession } from "next-auth/react";
-import { Send, ArrowDown, SmilePlus, Reply, X, BarChartHorizontal } from "lucide-react";
+import {
+  Send,
+  ArrowDown,
+  SmilePlus,
+  Reply,
+  X,
+  BarChartHorizontal,
+} from "lucide-react";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -42,9 +49,17 @@ type Reaction = {
 };
 
 // ✅ New Poll Types
-type PollVote = { userId: string; user: { name: string | null; image: string | null } };
+type PollVote = {
+  userId: string;
+  user: { name: string | null; image: string | null };
+};
 type PollOption = { id: string; text: string; votes: PollVote[] };
-type PollData = { id: string; question: string; allowMultiple: boolean; options: PollOption[] };
+type PollData = {
+  id: string;
+  question: string;
+  allowMultiple: boolean;
+  options: PollOption[];
+};
 
 type Msg = {
   id: string;
@@ -85,7 +100,7 @@ const getInitials = (name: string | null | undefined) => {
 const renderMentions = (
   content: string,
   allMembers: MentionSuggestion[],
-  isMe:boolean
+  isMe: boolean
 ) => {
   const mentionRegex = /@(\w+)\b/g;
   const parts = content.split(mentionRegex);
@@ -100,7 +115,7 @@ const renderMentions = (
         <Link
           key={`${member.id}-${index}`}
           href={`/profile/${member.id}`}
-          className={`${isMe ? "text-blue-300":"text-blue-500"} font-semibold`}
+          className={`${isMe ? "text-blue-300" : "text-blue-500"} font-semibold`}
         >
           @{displayName}
         </Link>
@@ -111,9 +126,13 @@ const renderMentions = (
 };
 
 // --- Text Parser ---
-function renderMessageText(text: string | null, isMe: boolean, allMembers: MentionSuggestion[]) {
+function renderMessageText(
+  text: string | null,
+  isMe: boolean,
+  allMembers: MentionSuggestion[]
+) {
   if (!text) return null;
-   
+
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = text.split(urlRegex);
 
@@ -133,7 +152,11 @@ function renderMessageText(text: string | null, isMe: boolean, allMembers: Menti
             </Link>
           );
         }
-        return <span key={`text-${index}`}>{renderMentions(part, allMembers,isMe)}</span>;
+        return (
+          <span key={`text-${index}`}>
+            {renderMentions(part, allMembers, isMe)}
+          </span>
+        );
       })}
     </span>
   );
@@ -153,7 +176,9 @@ export default function ChallengeChat({
   const [whoIsTyping, setWhoIsTyping] = useState<string | null>(null);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Msg | null>(null);
-  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<
+    string | null
+  >(null);
 
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
 
@@ -171,7 +196,6 @@ export default function ChallengeChat({
   const isTypingSentRef = useRef(false);
   const typingSentResetRef = useRef<number | null>(null);
   const isAutoScrollingRef = useRef(false);
-
 
   // --- Mention state ---
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
@@ -194,8 +218,8 @@ export default function ChallengeChat({
       typeof mm.id === "string" && mm.id.length > 0
         ? mm.id
         : typeof mm.userId === "string" && mm.userId.length > 0
-        ? mm.userId
-        : mm.user?.id ?? "";
+          ? mm.userId
+          : (mm.user?.id ?? "");
 
     const display = mm.name ?? mm.user?.name ?? "User";
     const image = mm.image ?? mm.user?.image ?? null;
@@ -205,41 +229,40 @@ export default function ChallengeChat({
 
   // --- Scrolling logic ---
   const scrollBottom = () => {
-      const viewport = scrollRef.current?.querySelector(
-    "[data-radix-scroll-area-viewport]"
-  ) as HTMLElement | null;
+    const viewport = scrollRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
 
-  if (viewport) {
-    viewport.scrollTo({
-      top: viewport.scrollHeight,
-      behavior: "smooth",
-    });
-  } else {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }
+    if (viewport) {
+      viewport.scrollTo({
+        top: viewport.scrollHeight,
+        behavior: "smooth",
+      });
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const isAtBottom = () => {
-  const viewport = scrollRef.current?.querySelector(
-    "[data-radix-scroll-area-viewport]"
-  ) as HTMLElement | null;
+    const viewport = scrollRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement | null;
 
-  if (!viewport) return false;
+    if (!viewport) return false;
 
-  return (
-    viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 50
-  );
-};
+    return (
+      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 50
+    );
+  };
 
-  const handleScroll = () => {
-  if (isAtBottom()) {
-    setShowScrollArrow(false);
-    setHasNewMessages(false);
-  } else {
-    setShowScrollArrow(true);
-  }
-};
-
+  //   const handleScroll = () => {
+  //   if (isAtBottom()) {
+  //     setShowScrollArrow(false);
+  //     setHasNewMessages(false);
+  //   } else {
+  //     setShowScrollArrow(true);
+  //   }
+  // };
 
   const scrollToMessage = (msgId: string) => {
     const el = document.getElementById(`msg-${msgId}`);
@@ -282,7 +305,10 @@ export default function ChallengeChat({
           if (currentEmoji === emoji) {
             newReactions.splice(myExistingIndex, 1);
           } else {
-            newReactions[myExistingIndex] = { ...newReactions[myExistingIndex], emoji };
+            newReactions[myExistingIndex] = {
+              ...newReactions[myExistingIndex],
+              emoji,
+            };
           }
         } else {
           newReactions.push({
@@ -310,23 +336,27 @@ export default function ChallengeChat({
   };
 
   // ✅ FIXED: POLL HANDLER (Now updates state immediately)
-  const handleCreatePoll = async (question: string, options: string[], allowMultiple: boolean) => {
+  const handleCreatePoll = async (
+    question: string,
+    options: string[],
+    allowMultiple: boolean
+  ) => {
     try {
-       const res = await axios.post("/api/challenge/chat/poll/create", {
-         challengeId,
-         question,
-         options,
-         allowMultiple
-       });
-       
-       // ✅ FIX: Manually add the new poll to state (since no optimistic UI)
-       const newPollMsg = res.data;
-       setMessages(prev => [...prev, newPollMsg]);
-       toast.success("Poll created successfully!")
-       setTimeout(() => scrollBottom(), 100);
+      const res = await axios.post("/api/challenge/chat/poll/create", {
+        challengeId,
+        question,
+        options,
+        allowMultiple,
+      });
+
+      // ✅ FIX: Manually add the new poll to state (since no optimistic UI)
+      const newPollMsg = res.data;
+      setMessages((prev) => [...prev, newPollMsg]);
+      toast.success("Poll created successfully!");
+      setTimeout(() => scrollBottom(), 100);
     } catch (error) {
       console.error("Poll creation failed", error);
-      toast.error("Failed to create poll!")
+      toast.error("Failed to create poll!");
     }
   };
 
@@ -334,49 +364,66 @@ export default function ChallengeChat({
     if (!currentUserId) return;
 
     // Optimistic Update
-    setMessages(prev => prev.map(msg => {
-      if (msg.poll?.id !== pollId) return msg;
-       
-      const poll = msg.poll;
-      const myId = currentUserId;
-       
-      const newOptions = poll.options.map(opt => {
-        const hasVoted = opt.votes.some(v => v.userId === myId);
-        
-        if (opt.id === optionId) {
-          if (hasVoted) {
-             return { ...opt, votes: opt.votes.filter(v => v.userId !== myId) };
-          } else {
-             return { 
-               ...opt, 
-               votes: [...opt.votes, { userId: myId, user: { name: session.data?.user?.name ?? "You", image: session.data?.user?.image ?? null } }] 
-             };
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.poll?.id !== pollId) return msg;
+
+        const poll = msg.poll;
+        const myId = currentUserId;
+
+        const newOptions = poll.options.map((opt) => {
+          const hasVoted = opt.votes.some((v) => v.userId === myId);
+
+          if (opt.id === optionId) {
+            if (hasVoted) {
+              return {
+                ...opt,
+                votes: opt.votes.filter((v) => v.userId !== myId),
+              };
+            } else {
+              return {
+                ...opt,
+                votes: [
+                  ...opt.votes,
+                  {
+                    userId: myId,
+                    user: {
+                      name: session.data?.user?.name ?? "You",
+                      image: session.data?.user?.image ?? null,
+                    },
+                  },
+                ],
+              };
+            }
           }
-        }
-        
-        if (!poll.allowMultiple && hasVoted) {
-           return { ...opt, votes: opt.votes.filter(v => v.userId !== myId) };
-        }
-        
-        return opt;
-      });
-      
-      return { ...msg, poll: { ...poll, options: newOptions } };
-    }));
+
+          if (!poll.allowMultiple && hasVoted) {
+            return {
+              ...opt,
+              votes: opt.votes.filter((v) => v.userId !== myId),
+            };
+          }
+
+          return opt;
+        });
+
+        return { ...msg, poll: { ...poll, options: newOptions } };
+      })
+    );
 
     // API Call
     try {
       await axios.post("/api/challenge/chat/poll/vote", {
         challengeId,
         pollId,
-        optionId
+        optionId,
       });
     } catch (e) {
       console.error("Vote failed", e);
       loadMessages(); // Revert on error
     }
   };
-// Scroll listener effect (Down Arrow visibility)
+  // Scroll listener effect (Down Arrow visibility)
   useEffect(() => {
     const viewport = scrollRef.current?.querySelector(
       "[data-radix-scroll-area-viewport]"
@@ -385,7 +432,7 @@ export default function ChallengeChat({
     if (!viewport) return;
 
     const onScroll = () => {
-        if (isAutoScrollingRef.current) return;
+      if (isAutoScrollingRef.current) return;
       if (isAtBottom()) {
         setShowScrollArrow(false);
         setHasNewMessages(false);
@@ -422,7 +469,9 @@ export default function ChallengeChat({
         });
       })
       .on("broadcast", { event: "typing" }, (payload) => {
-        const p = payload.payload as { name?: string; userId?: string } | undefined;
+        const p = payload.payload as
+          | { name?: string; userId?: string }
+          | undefined;
         if (!p) return;
         if (p.userId === currentUserId) return;
         if (!p.name) return;
@@ -430,10 +479,16 @@ export default function ChallengeChat({
         if (typingTimeoutRef.current) {
           window.clearTimeout(typingTimeoutRef.current);
         }
-        typingTimeoutRef.current = window.setTimeout(() => setWhoIsTyping(null), 2500);
+        typingTimeoutRef.current = window.setTimeout(
+          () => setWhoIsTyping(null),
+          2500
+        );
       })
       .on("broadcast", { event: "reaction_update" }, (payload) => {
-        const { messageId, reactions } = payload.payload as { messageId: string; reactions: Reaction[] };
+        const { messageId, reactions } = payload.payload as {
+          messageId: string;
+          reactions: Reaction[];
+        };
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === messageId ? { ...msg, reactions } : msg
@@ -442,19 +497,22 @@ export default function ChallengeChat({
       })
       // ✅ Poll Realtime Listener (Updates the poll when ANYONE votes)
       .on("broadcast", { event: "poll_update" }, (payload) => {
-        const { messageId, poll } = payload.payload as { messageId: string, poll: PollData };
+        const { messageId, poll } = payload.payload as {
+          messageId: string;
+          poll: PollData;
+        };
         setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === messageId ? { ...msg, poll } : msg
-          )
+          prev.map((msg) => (msg.id === messageId ? { ...msg, poll } : msg))
         );
       })
       .subscribe();
 
     return () => {
       supabaseClient.removeChannel(channel);
-      if (typingTimeoutRef.current) window.clearTimeout(typingTimeoutRef.current);
-      if (typingSentResetRef.current) window.clearTimeout(typingSentResetRef.current);
+      if (typingTimeoutRef.current)
+        window.clearTimeout(typingTimeoutRef.current);
+      if (typingSentResetRef.current)
+        window.clearTimeout(typingSentResetRef.current);
     };
   }, [challengeId, currentUserId]);
 
@@ -633,7 +691,9 @@ export default function ChallengeChat({
         return;
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        setActiveSuggestionIndex((prev) => (prev - 1 + suggestions.length) % suggestions.length);
+        setActiveSuggestionIndex(
+          (prev) => (prev - 1 + suggestions.length) % suggestions.length
+        );
         return;
       } else if (e.key === "Enter" || e.key === "Tab") {
         if (e.shiftKey && e.key === "Enter") return;
@@ -658,7 +718,10 @@ export default function ChallengeChat({
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(textareaRef.current.value.length, textareaRef.current.value.length);
+        textareaRef.current.setSelectionRange(
+          textareaRef.current.value.length,
+          textareaRef.current.value.length
+        );
       }
     }, 0);
   };
@@ -702,7 +765,6 @@ export default function ChallengeChat({
       </CardHeader>
       <ScrollArea ref={scrollRef} className="flex-1 w-full overflow-x-auto">
         <CardContent
-          
           // onScroll={handleScroll}
           className="flex flex-col justify-end min-h-[350px] h-full  overflow-x-auto p-4 space-y-6 bg-muted/20 w-full"
         >
@@ -744,8 +806,8 @@ export default function ChallengeChat({
                     )}
 
                     {/* ✅ FIX: Adjusted widths. Mobile max-w-[70%] allows room for avatar + padding. */}
-<div
-  className="
+                    <div
+                      className="
     relative
     max-w-max
     flex flex-col
@@ -754,10 +816,7 @@ export default function ChallengeChat({
     whitespace-pre-wrap
     break-words
   "
->
-
-
-
+                    >
                       <div
                         className={`px-4 py-2 rounded-lg shadow-sm z-10 relative ${
                           isMe
@@ -768,7 +827,9 @@ export default function ChallengeChat({
                         {/* Reply Context */}
                         {msg.replyTo && (
                           <div
-                            onClick={() => msg.replyTo && scrollToMessage(msg.replyTo.id)}
+                            onClick={() =>
+                              msg.replyTo && scrollToMessage(msg.replyTo.id)
+                            }
                             className={`mb-2 rounded-md overflow-hidden border-l-4 bg-black/10 p-1.5 cursor-pointer hover:opacity-80 transition-opacity ${
                               isMe
                                 ? "border-emerald-300/70 text-white/90"
@@ -797,16 +858,22 @@ export default function ChallengeChat({
                         {/* ✅ FIX: Added break-words, break-all and whitespace-pre-wrap for safety */}
                         {msg.poll ? (
                           <div className="w-full overflow-hidden">
-                             <PollBubble 
-                              poll={msg.poll} 
-                              currentUserId={currentUserId} 
-                              onVote={(optId) => handleVote(msg.poll!.id, optId)} 
+                            <PollBubble
+                              poll={msg.poll}
+                              currentUserId={currentUserId}
+                              onVote={(optId) =>
+                                handleVote(msg.poll!.id, optId)
+                              }
                             />
                           </div>
                         ) : (
                           <p className="break-words whitespace-pre-wrap w-full max-w-full overflow-visible">
-                             {renderMessageText(msg.message, isMe, allMembersData)}
-                           </p>
+                            {renderMessageText(
+                              msg.message,
+                              isMe,
+                              allMembersData
+                            )}
+                          </p>
                         )}
 
                         <p
@@ -957,7 +1024,7 @@ export default function ChallengeChat({
         </CardContent>
       </ScrollArea>
 
-      {!isChatDisabled && showScrollArrow  && (
+      {!isChatDisabled && showScrollArrow && (
         <Button
           size="sm"
           onClick={() => {
@@ -966,8 +1033,8 @@ export default function ChallengeChat({
             setHasNewMessages(false);
             setShowScrollArrow(false);
             setTimeout(() => {
-      isAutoScrollingRef.current = false;
-    }, 400);
+              isAutoScrollingRef.current = false;
+            }, 400);
           }}
           className="absolute bottom-36 z-50 left-1/2 -translate-x-1/2 rounded-full bg-gray-700 shadow-lg"
         >
@@ -1008,7 +1075,6 @@ export default function ChallengeChat({
             )}
 
             <div className="w-full flex items-end gap-2 relative">
-              
               <div className="relative w-full flex-1 overflow-visible">
                 {showSuggestions && suggestions.length > 0 && (
                   <div className="absolute -bottom-full left-0 right-0 mb-2 z-50 max-h-60 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md outline-none p-1">
@@ -1022,7 +1088,9 @@ export default function ChallengeChat({
                         }}
                         onMouseEnter={() => setActiveSuggestionIndex(index)}
                         className={`flex w-full items-center gap-2 relative cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${
-                          index === activeSuggestionIndex ? "bg-accent text-accent-foreground" : ""
+                          index === activeSuggestionIndex
+                            ? "bg-accent text-accent-foreground"
+                            : ""
                         }`}
                       >
                         <Avatar className="h-6 w-6">
@@ -1031,22 +1099,23 @@ export default function ChallengeChat({
                             {suggestion.display.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium">{suggestion.display}</span>
+                        <span className="font-medium">
+                          {suggestion.display}
+                        </span>
                       </button>
                     ))}
                   </div>
                 )}
 
-      <div className="relative w-full">
-
-  {/* ✅ FIX: Added w-full to Textarea */}
-  <Textarea
-    ref={textareaRef}
-    value={input}
-    onChange={handleInputChange}
-    onKeyDown={handleKeyDownOnTextarea}
-    placeholder="Type a message... @ to mention."
-    className="
+                <div className="relative w-full">
+                  {/* ✅ FIX: Added w-full to Textarea */}
+                  <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDownOnTextarea}
+                    placeholder="Type a message... @ to mention."
+                    className="
       min-h-[45px] 
       max-h-[150px] 
       py-8 
@@ -1056,54 +1125,58 @@ export default function ChallengeChat({
       w-full 
       rounded-xl
     "
-    style={{ lineHeight: "1.4" }} // fixes cursor alignment when wrapping
-  />
+                    style={{ lineHeight: "1.4" }} // fixes cursor alignment when wrapping
+                  />
 
-  {/* Poll Button - align to TOP instead of bottom */}
-  <button
-    onClick={() => setIsPollModalOpen(true)}
-    className="
+                  {/* Poll Button - align to TOP instead of bottom */}
+                  <button
+                    onClick={() => setIsPollModalOpen(true)}
+                    className="
       absolute left-3 top-1
       text-gray-500 hover:text-indigo-600
       h-7 w-7 flex items-center justify-center
     "
-  >
-    <BarChartHorizontal className="w-5 h-5" />
-  </button>
+                  >
+                    <BarChartHorizontal className="w-5 h-5" />
+                  </button>
 
-  {/* Emoji Button - align to TOP */}
-  <Popover>
-    <PopoverTrigger asChild>
-      <button
-        className="
+                  {/* Emoji Button - align to TOP */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="
           absolute left-12 top-1
           text-gray-500 hover:text-indigo-600
           h-7 w-7 flex items-center justify-center
         "
-      >
-        <SmilePlus className="w-5 h-5" />
-      </button>
-    </PopoverTrigger>
-    <PopoverContent className="w-64 p-2" side="top" align="start">
-      <div className="grid grid-cols-4 gap-2">
-        {QUICK_REACTIONS.map((emoji) => (
-          <button
-            key={emoji}
-            onClick={() => handleInsertEmoji(emoji)}
-            className="text-2xl hover:bg-gray-100 p-2 rounded"
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-    </PopoverContent>
-  </Popover>
+                      >
+                        <SmilePlus className="w-5 h-5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-64 p-2"
+                      side="top"
+                      align="start"
+                    >
+                      <div className="grid grid-cols-4 gap-2">
+                        {QUICK_REACTIONS.map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => handleInsertEmoji(emoji)}
+                            className="text-2xl hover:bg-gray-100 p-2 rounded"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
 
-  {/* Send Button */}
-  <button
-    onClick={sendMessage}
-    disabled={!input.trim()}
-    className="
+                  {/* Send Button */}
+                  <button
+                    onClick={sendMessage}
+                    disabled={!input.trim()}
+                    className="
       absolute right-3 top-2
       bg-indigo-600 hover:bg-indigo-700 
       text-white rounded-full 
@@ -1111,10 +1184,10 @@ export default function ChallengeChat({
       flex items-center justify-center
       disabled:opacity-50
     "
-  >
-    <Send className="w-5 h-5" />
-  </button>
-</div>
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </>
@@ -1122,12 +1195,11 @@ export default function ChallengeChat({
       </CardFooter>
 
       {/* ✅ Render Poll Creation Modal */}
-      <PollCreationModal 
-        isOpen={isPollModalOpen} 
+      <PollCreationModal
+        isOpen={isPollModalOpen}
         onOpenChange={setIsPollModalOpen}
         onCreatePoll={handleCreatePoll}
       />
     </Card>
   );
 }
-
