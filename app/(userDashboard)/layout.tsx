@@ -6,8 +6,7 @@ import UserDashboardLayout from "@/components/layout/UserDashboardLayout";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import { useSession } from "next-auth/react";
 import { Toaster } from "sonner";
-import React, { useEffect } from "react"; // Import useEffect
-import { Session } from "next-auth";
+import React from "react"; 
 
 export default function Layout({
   children,
