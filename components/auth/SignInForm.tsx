@@ -88,9 +88,7 @@ function SignInFormContent() {
     try {
       if (isInAppBrowser()) {
         toast.info("Opening secure browser for Google sign-in");
-          setTimeout(() => {
-                  openInExternalBrowser("/signin");
-                }, 100);
+        openInExternalBrowser("/signin");
         return;
       }
        signIn("google", {

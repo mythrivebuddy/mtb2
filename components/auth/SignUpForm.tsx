@@ -133,9 +133,7 @@ export default function SignUpForm() {
       // const referralCode = searchParams.get('ref');
       if (isInAppBrowser()) {
         toast.info("Opening secure browser for Google sign-in");
-        setTimeout(() => {
-          openInExternalBrowser("/signin");
-        }, 100);
+        openInExternalBrowser("/signin");    
         return;
       }
 
