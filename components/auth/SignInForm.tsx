@@ -88,19 +88,15 @@ function SignInFormContent() {
     try {
       if (isInAppBrowser()) {
         toast.info("Opening secure browser for Google sign-in");
-        openInExternalBrowser("/signin");
+          setTimeout(() => {
+                  openInExternalBrowser("/signin");
+                }, 100);
         return;
       }
-      const result = await signIn("google", {
-        redirect: false,
+       signIn("google", {
+        // redirect: false,
         callbackUrl: redirect,
       });
-
-      if (result?.ok) {
-        await router.push(redirect);
-        toast.success("Signed in successfully");
-        return;
-      }
     } catch (error) {
       console.error("Error signing in with Google:", error);
       toast.error(
