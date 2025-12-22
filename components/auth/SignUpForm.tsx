@@ -19,6 +19,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Checkbox } from "@/components/ui/checkbox";
+import { isInAppBrowser } from "@/lib/utils/isInAppBrowser";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -127,6 +128,11 @@ export default function SignUpForm() {
     try {
       // Get referral code from URL or cookies
       // const referralCode = searchParams.get('ref');
+      if (isInAppBrowser()) {
+        toast.info("Opening secure browser for Google sign-in");
+        window.open(`${window.location.origin}/signin`, "_blank");
+        return;
+      }
 
       const result = await signIn("google", {
         redirect: false,
@@ -135,7 +141,6 @@ export default function SignUpForm() {
       });
 
       if (result?.ok) {
-        console.log("herer in okay");
         router.push("/dashboard");
         toast.success("Signed in successfully");
         return;
@@ -236,7 +241,7 @@ export default function SignUpForm() {
             className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
             onClick={() => {
               setUserHasChosen(true);
-              setValue("userType", "enthusiast",{shouldValidate:true});
+              setValue("userType", "enthusiast", { shouldValidate: true });
             }}
           >
             <Checkbox
@@ -248,9 +253,9 @@ export default function SignUpForm() {
               }
               onCheckedChange={() => {
                 setUserHasChosen(true);
-                setValue("userType", "enthusiast",{
+                setValue("userType", "enthusiast", {
                   shouldValidate: true,
-    shouldTouch: true,
+                  shouldTouch: true,
                 });
               }}
               onClick={(e) => e.stopPropagation()} // prevent double toggling
@@ -269,7 +274,7 @@ export default function SignUpForm() {
             className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
             onClick={() => {
               setUserHasChosen(true);
-              setValue("userType", "coach",{shouldValidate:true});
+              setValue("userType", "coach", { shouldValidate: true });
             }}
           >
             <Checkbox
@@ -281,9 +286,9 @@ export default function SignUpForm() {
               }
               onCheckedChange={() => {
                 setUserHasChosen(true);
-                setValue("userType", "coach",{
+                setValue("userType", "coach", {
                   shouldValidate: true,
-    shouldTouch: true,
+                  shouldTouch: true,
                 });
               }}
               onClick={(e) => e.stopPropagation()}
