@@ -13,7 +13,7 @@ import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
-import { isInAppBrowser } from "@/lib/utils/isInAppBrowser";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/isInAppBrowser";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +88,7 @@ function SignInFormContent() {
     try {
       if (isInAppBrowser()) {
         toast.info("Opening secure browser for Google sign-in");
-        window.open(`${window.location.origin}/signin`, "_blank");
+        openInExternalBrowser("/signin");
         return;
       }
       const result = await signIn("google", {
