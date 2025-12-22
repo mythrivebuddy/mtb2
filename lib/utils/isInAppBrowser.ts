@@ -23,6 +23,7 @@ export function openInExternalBrowser(path: string = "/signin") {
     try {
       window.location.href = androidIntent;
     } catch (e) {
+        console.error(e);
       // Fallback: If blocked, try to force a normal location change 
       // though Google might still show the 403 error here.
       window.location.assign(url);
