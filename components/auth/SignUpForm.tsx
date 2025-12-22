@@ -19,7 +19,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Checkbox } from "@/components/ui/checkbox";
-import { isInAppBrowser } from "@/lib/utils/isInAppBrowser";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/isInAppBrowser";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -130,7 +130,7 @@ export default function SignUpForm() {
       // const referralCode = searchParams.get('ref');
       if (isInAppBrowser()) {
         toast.info("Opening secure browser for Google sign-in");
-        window.open(`${window.location.origin}/signin`, "_blank");
+        openInExternalBrowser("/signin");
         return;
       }
 
