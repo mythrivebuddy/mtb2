@@ -1396,6 +1396,7 @@ enum PaymentStatus {
 model MakeoverArea {
   id   Int    @id
   name String @unique
+  description  String
 
   userAreas        UserMakeoverArea[]
   challengeMaps    MakeoverAreaChallengeMap[]

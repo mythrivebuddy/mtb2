@@ -1,0 +1,203 @@
+"use client";
+
+import React, { useState } from "react";
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Edit3, 
+  Image as ImageIcon, 
+  UploadCloud, 
+  Lightbulb, 
+  Sparkles, 
+  Zap, 
+  Heart, 
+  Info,
+  Leaf
+} from "lucide-react";
+
+interface Step4Props {
+  onBack: () => void;
+  onNext: (vision: string) => void;
+}
+
+const EXAMPLES = [
+  {
+    id: "leader",
+    title: "The High-Growth Leader",
+    icon: Sparkles,
+    text: "I am scaling my company to market dominance while maintaining peak physical vitality and cultivating deep, joyful connections with my family every single day."
+  },
+  {
+    id: "creator",
+    title: "The Holistic Creator",
+    icon: Zap,
+    text: "My creative business flows effortlessly, funding a life of global travel and vibrant health, where my work is my passion and my downtime is sacred."
+  },
+  {
+    id: "professional",
+    title: "The Purpose-Driven Professional",
+    icon: Heart,
+    text: "I lead with empathy and impact in my career, fueled by a rigorous fitness routine and a calm mind, ensuring I am the best version of myself for my community."
+  }
+];
+
+const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
+  const [vision, setVision] = useState("");
+  const maxLength = 500;
+
+  const handleExampleClick = (text: string) => {
+    setVision(text);
+  };
+
+  return (
+    <div className="min-h-screen w-full bg-[#f8fcf9] font-sans text-[#0d1b12]">
+     
+
+      <main className="flex justify-center py-8 sm:py-12 px-4 sm:px-6">
+        <div className="flex w-full max-w-[1024px] flex-col gap-8">
+          
+          {/* Progress Bar */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold uppercase tracking-wider text-[#4c9a66]">Step 4 of 5</p>
+              <span className="text-sm font-medium text-[#11d452]">80% Completed</span>
+            </div>
+            <div className="h-2.5 w-full rounded-full bg-[#cfe7d7] overflow-hidden">
+              <div 
+                className="h-full rounded-full bg-[#11d452] transition-all duration-500 ease-out" 
+                style={{ width: "80%" }}
+              />
+            </div>
+          </div>
+
+          {/* Title Section */}
+          <div className="flex flex-col gap-3 md:pr-20 text-left">
+            <h1 className="text-3xl md:text-4xl font-black leading-tight tracking-tight">
+              What is your Unified Vision for 2026?
+            </h1>
+            <p className="text-lg text-[#4c9a66] max-w-2xl">
+              Draft one combined statement that weaves together your career, health, and personal goals into a single narrative. Keep it bold and cohesive.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            {/* Input Column */}
+            <div className="lg:col-span-7 flex flex-col gap-8">
+              <div className="flex flex-col gap-2 group">
+                <label className="text-base font-semibold flex items-center justify-between" htmlFor="vision-statement">
+                  <span className="flex items-center gap-2">
+                    <Edit3 size={20} className="text-[#11d452]" />
+                    Your Unified Vision Statement
+                  </span>
+                  <span className="hidden sm:inline-block text-xs font-normal text-[#4c9a66] bg-[#11d452]/5 px-2 py-0.5 rounded">
+                    Includes all 3 areas
+                  </span>
+                </label>
+                <div className="relative">
+                  <textarea 
+                    id="vision-statement"
+                    value={vision}
+                    onChange={(e) => setVision(e.target.value.slice(0, maxLength))}
+                    className="w-full min-h-[240px] resize-none rounded-2xl border-2 border-[#cfe7d7] bg-white p-6 text-lg leading-relaxed placeholder:text-[#4c9a66]/60 focus:border-[#11d452] focus:ring-0 focus:outline-none shadow-sm transition-all duration-200"
+                    placeholder="In 2026, I am an energetic leader growing my startup..."
+                  />
+                  <div className="absolute bottom-4 right-4 text-xs font-medium text-[#4c9a66] bg-[#f8fcf9] px-2 py-1 rounded">
+                    {vision.length}/{maxLength} characters
+                  </div>
+                </div>
+                <p className="text-sm text-[#4c9a66] mt-1 px-1">
+                  Aim for a sentence or two that captures the feeling of your whole life working in harmony.
+                </p>
+              </div>
+
+              {/* Upload Section */}
+              <div className="flex flex-col gap-4 pt-4 border-t border-dashed border-[#cfe7d7]">
+                <div className="flex flex-col gap-1 text-left">
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <ImageIcon size={20} className="text-[#11d452]" />
+                    Visualize it (Optional)
+                  </h3>
+                  <p className="text-sm text-[#4c9a66]">
+                    Upload your digital vision board or a motivational photo.
+                  </p>
+                </div>
+                <div className="relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cfe7d7] bg-white py-10 hover:border-[#11d452]/50 hover:bg-[#11d452]/5 transition-colors group">
+                  <div className="flex flex-col items-center justify-center gap-3 text-center">
+                    <div className="rounded-full bg-[#11d452]/10 p-4 text-[#11d452] group-hover:bg-[#11d452] group-hover:text-white transition-colors">
+                      <UploadCloud size={30} />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-semibold">Click to upload or drag and drop</p>
+                      <p className="text-xs text-[#4c9a66]">SVG, PNG, JPG or GIF (max. 5MB)</p>
+                    </div>
+                  </div>
+                  <input className="hidden" type="file" />
+                </div>
+              </div>
+            </div>
+
+            {/* Inspiration Column */}
+            <div className="lg:col-span-5 flex flex-col gap-6 text-left">
+              <div className="rounded-2xl bg-white p-6 shadow-sm border border-[#cfe7d7]">
+                <h3 className="flex items-center gap-2 text-lg font-bold mb-4">
+                  <Lightbulb size={22} className="text-yellow-500 fill-current" />
+                  Spark Inspiration
+                </h3>
+                <p className="text-sm text-[#4c9a66] mb-5">
+                  See how a unified vision brings everything together. Click any example to use it as a starting point.
+                </p>
+                <div className="flex flex-col gap-3">
+                  {EXAMPLES.map((example) => (
+                    <button 
+                      key={example.id}
+                      onClick={() => handleExampleClick(example.text)}
+                      className="text-left group flex flex-col gap-3 rounded-xl border border-[#cfe7d7] bg-[#f8fcf9] p-4 hover:border-[#11d452] hover:shadow-md transition-all active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <example.icon size={16} className="text-[#11d452]" />
+                        <span className="text-xs font-bold text-[#11d452] tracking-wide uppercase">
+                          {example.title}
+                        </span>
+                      </div>
+                      <p className="text-sm leading-relaxed">
+                        "{example.text}"
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 rounded-xl bg-[#11d452]/10 p-4 border border-[#11d452]/20">
+                <Info size={20} className="text-[#11d452] shrink-0" />
+                <p className="text-sm">
+                  <span className="font-bold">Pro Tip:</span> Don't worry about perfection. A unified vision helps you see the big picture.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Footer */}
+          <div className="mt-8 flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[#cfe7d7]">
+            <button 
+              onClick={onBack}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg border border-[#cfe7d7] px-8 py-3 text-base font-semibold hover:bg-black/5 transition-colors"
+            >
+              <ArrowLeft size={20} />
+              Back
+            </button>
+            <button 
+              onClick={() => onNext(vision)}
+              disabled={!vision.trim()}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-[#11d452] hover:bg-[#0ea641] px-10 py-3 text-base font-bold text-white shadow-lg shadow-[#11d452]/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              Save Vision & Continue
+              <ArrowRight size={20} />
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Step4UnifiedVision;

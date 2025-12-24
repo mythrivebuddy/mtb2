@@ -38,14 +38,14 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ───────────── PROGRAM OWNERSHIP (CORRECT) ───────────── */
+    /* ───────────── PROGRAM OWNERSHIP ───────────── */
     const purchase = await prisma.oneTimeProgramPurchase.findFirst({
       where: {
         userId,
         status: PaymentStatus.PAID,
       },
       select: {
-        productId: true, // Program ID
+        productId: true,
       },
     });
 
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     }
 
     const programId = purchase.productId;
-    const quarter = "Q1"; // system controlled
+    const quarter = "Q1";
     const year = 2026;
 
     /* ───────────── TRANSACTION ───────────── */
@@ -79,14 +79,25 @@ export async function POST(req: Request) {
         let goalId = g.goalId;
 
         if (!goalId && g.customText) {
-          const goal = await tx.makeoverGoalLibrary.create({
-            data: {
+          const existingGoal = await tx.makeoverGoalLibrary.findFirst({
+            where: {
               areaId: g.areaId,
               title: g.customText,
-              isCustom: true,
             },
           });
-          goalId = goal.id;
+
+          if (existingGoal) {
+            goalId = existingGoal.id;
+          } else {
+            const goal = await tx.makeoverGoalLibrary.create({
+              data: {
+                areaId: g.areaId,
+                title: g.customText,
+                isCustom: true,
+              },
+            });
+            goalId = goal.id;
+          }
         }
 
         await tx.userMakeoverGoal.create({
@@ -100,19 +111,31 @@ export async function POST(req: Request) {
         });
       }
 
-      /* 3️⃣ IDENTITIES */
+      /* 3️⃣ IDENTITIES (FIXED) */
       for (const i of identities) {
         let identityId = i.identityId;
 
         if (!identityId && i.customText) {
-          const identity = await tx.makeoverIdentityLibrary.create({
-            data: {
-              areaId: i.areaId,
-              statement: i.customText,
-              isCustom: true,
-            },
-          });
-          identityId = identity.id;
+          const existingIdentity =
+            await tx.makeoverIdentityLibrary.findFirst({
+              where: {
+                areaId: i.areaId,
+                statement: i.customText,
+              },
+            });
+
+          if (existingIdentity) {
+            identityId = existingIdentity.id;
+          } else {
+            const identity = await tx.makeoverIdentityLibrary.create({
+              data: {
+                areaId: i.areaId,
+                statement: i.customText,
+                isCustom: true,
+              },
+            });
+            identityId = identity.id;
+          }
         }
 
         await tx.userMakeoverIdentity.create({
@@ -126,19 +149,31 @@ export async function POST(req: Request) {
         });
       }
 
-      /* 4️⃣ DAILY ACTIONS */
+      /* 4️⃣ DAILY ACTIONS (FIXED) */
       for (const a of dailyActions) {
         let actionId = a.actionId;
 
         if (!actionId && a.customText) {
-          const action = await tx.makeoverDailyActionLibrary.create({
-            data: {
-              areaId: a.areaId,
-              title: a.customText,
-              isCustom: true,
-            },
-          });
-          actionId = action.id;
+          const existingAction =
+            await tx.makeoverDailyActionLibrary.findFirst({
+              where: {
+                areaId: a.areaId,
+                title: a.customText,
+              },
+            });
+
+          if (existingAction) {
+            actionId = existingAction.id;
+          } else {
+            const action = await tx.makeoverDailyActionLibrary.create({
+              data: {
+                areaId: a.areaId,
+                title: a.customText,
+                isCustom: true,
+              },
+            });
+            actionId = action.id;
+          }
         }
 
         await tx.userMakeoverDailyAction.create({
@@ -152,7 +187,7 @@ export async function POST(req: Request) {
         });
       }
 
-      /* 5️⃣ VISION STATEMENT (CORRECT FIELD) */
+      /* 5️⃣ VISION STATEMENT */
       await tx.user.update({
         where: { id: userId },
         data: {
@@ -160,7 +195,7 @@ export async function POST(req: Request) {
         },
       });
 
-      /* 6️⃣ AUTO ENROLL IN CHALLENGES */
+      /* 6️⃣ AUTO-ENROLL CHALLENGES */
       const mappings = await tx.makeoverAreaChallengeMap.findMany({
         where: {
           programId,
