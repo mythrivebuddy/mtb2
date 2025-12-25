@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -145,29 +145,28 @@ const MakeoverOnboardingParent = () => {
             {STEP_LABELS.map((label, index) => {
               const currentStep = index + 1;
 
-              if (currentStep === step) {
-                return (
-                  <BreadcrumbItem key={label}>
-                    <BreadcrumbPage>{label}</BreadcrumbPage>
-                  </BreadcrumbItem>
-                );
-              }
+              if (currentStep > step) return null;
 
-              if (currentStep < step) {
-                return (
-                  <BreadcrumbItem key={label}>
-                    <BreadcrumbLink
-                      onClick={() => setStep(currentStep)}
-                      className="cursor-pointer"
-                    >
-                      {label}
-                    </BreadcrumbLink>
-                    <BreadcrumbSeparator />
-                  </BreadcrumbItem>
-                );
-              }
+              const isCurrent = currentStep === step;
 
-              return null;
+              return (
+                <Fragment key={label}>
+                  <BreadcrumbItem>
+                    {isCurrent ? (
+                      <BreadcrumbPage>{label}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink
+                        onClick={() => setStep(currentStep)}
+                        className="cursor-pointer"
+                      >
+                        {label}
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+
+                  {!isCurrent && <BreadcrumbSeparator />}
+                </Fragment>
+              );
             })}
           </BreadcrumbList>
         </Breadcrumb>
