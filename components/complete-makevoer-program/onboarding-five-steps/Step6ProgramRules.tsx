@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
+import OnboardingStickyFooter from "../OnboardingStickyFooter";
 
 interface Step6Props {
   onBack: () => void;
@@ -57,7 +58,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
 
   return (
     <div className="min-h-screen w-full font-sans text-slate-900">
-      <main className="mx-auto flex w-full max-w-[800px] flex-col gap-8 py-8 px-4 md:px-10">
+      <main className="mx-auto flex w-full max-w-[1024px] flex-col gap-8 py-8 px-4 md:px-10">
         {/* Progress Bar
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-end">
@@ -70,11 +71,11 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
         </div> */}
 
         {/* Heading */}
-        <div className="flex flex-col gap-4 text-center md:text-left">
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+        <div className="flex items-center flex-col gap-4 text-center md:text-left">
+          <h1 className="text-3xl text-center md:text-4xl font-black tracking-tight">
             Program Rules & Commitment
           </h1>
-          <p className="text-slate-500 text-lg leading-relaxed max-w-2xl">
+          <p className="text-slate-500 text-center text-lg leading-relaxed max-w-2xl">
             Transformation requires discipline. Please review the core
             guidelines for the 2026 cohort to ensure a supportive environment
             for your growth journey.
@@ -85,16 +86,16 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
         <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
             <h3 className="text-lg font-bold">Code of Conduct</h3>
-            <ShieldCheck className="text-[#0f2cbd]" size={24} />
+            <ShieldCheck className="text-[#10b981]" size={24} />
           </div>
 
-          <div className="custom-scrollbar max-h-[400px] overflow-y-auto p-2">
+          <div className="p-2">
             {RULES.map((rule, idx) => (
               <div
                 key={idx}
                 className="flex gap-4 p-4 hover:bg-slate-50 rounded-lg transition-colors group"
               >
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#0f2cbd]/10 text-[#0f2cbd]">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#0f2cbd]/10 text-[#10b981]">
                   <rule.icon size={24} />
                 </div>
                 <div className="flex flex-1 flex-col justify-center gap-1">
@@ -120,7 +121,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
                 type="checkbox"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="peer size-6 cursor-pointer appearance-none rounded border border-slate-300 bg-white checked:bg-[#0f2cbd] checked:border-[#0f2cbd] focus:ring-0 transition-all"
+                className="peer size-6 cursor-pointer appearance-none rounded border border-slate-300 bg-white checked:bg-[#10b981] checked:border-[#10b981] focus:ring-0 transition-all"
               />
               <CheckCircle2
                 className="pointer-events-none absolute left-0 text-white opacity-0 peer-checked:opacity-100 transition-opacity"
@@ -128,7 +129,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-base font-semibold group-hover:text-[#0f2cbd] transition-colors">
+              <span className="text-base font-semibold group-hover:text-[#10b981] transition-colors">
                 I have read and agree to the MTB 2026 Program Rules
               </span>
               <span className="text-xs text-slate-500 mt-1">
@@ -138,36 +139,12 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
             </div>
           </label>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200">
-            <button
-              onClick={onBack}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-6 py-3 font-medium text-slate-700 hover:bg-slate-50 transition-all group"
-            >
-              <ArrowLeft
-                className="group-hover:-translate-x-1 transition-transform"
-                size={20}
-              />
-              Back
-            </button>
-
-            <div className="flex items-center gap-6 w-full sm:w-auto">
-              <a
-                className="hidden sm:block text-sm font-medium text-slate-500 underline hover:text-[#0f2cbd]"
-                href="#"
-              >
-                Terms of Service
-              </a>
-              <button
-                disabled={!agreed || isSubmitting}
-                onClick={onConfirm}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg bg-[#0f2cbd] px-8 py-3 font-bold text-white disabled:opacity-50"
-              >
-                {isSubmitting ? "Submitting..." : "I Commit"}
-                <CheckCircle2 size={20} />
-              </button>
-            </div>
-          </div>
+          <OnboardingStickyFooter
+            onBack={onBack}
+            onNext={onConfirm}
+            nextLabel={isSubmitting ? "Submitting..." : "I Commit"}
+            disabled={!agreed || isSubmitting}
+          />
         </div>
       </main>
 

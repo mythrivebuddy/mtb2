@@ -15,6 +15,15 @@ import Step4UnifiedVision from "./onboarding-five-steps/Step4UnifiedVision";
 import Step5VisionSummary from "./onboarding-five-steps/Step5VisionSummary";
 import Step6ProgramRules from "./onboarding-five-steps/Step6ProgramRules";
 
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+
 const MakeoverOnboardingParent = () => {
   const [step, setStep] = useState(1);
 
@@ -52,15 +61,12 @@ const MakeoverOnboardingParent = () => {
   const identitiesByArea = useMemo(() => {
     if (!data?.identities) return {};
 
-    return data.identities.reduce(
-      (acc: Record<string, string[]>, i: any) => {
-        const key = String(i.areaId);
-        acc[key] ??= [];
-        acc[key].push(i.statement);
-        return acc;
-      },
-      {}
-    );
+    return data.identities.reduce((acc: Record<string, string[]>, i: any) => {
+      const key = String(i.areaId);
+      acc[key] ??= [];
+      acc[key].push(i.statement);
+      return acc;
+    }, {});
   }, [data]);
 
   /* ───────────── FORM STATE ───────────── */
@@ -111,17 +117,66 @@ const MakeoverOnboardingParent = () => {
   const nextStep = () => setStep((p) => p + 1);
   const prevStep = () => setStep((p) => p - 1);
 
+  const STEP_LABELS = [
+    "Thrive Areas",
+    "Goals",
+    "Identity",
+    "Vision",
+    "Summary",
+    "Rules",
+  ];
+
   if (isLoading) return null;
 
   return (
     <div className="min-h-screen">
+      {/* ───────────── Breadcrumbs ───────────── */}
+      <div className="px-4 py-4 lg:px-52">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink className="text-muted-foreground">
+                Makeover Program
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+
+            <BreadcrumbSeparator />
+
+            {STEP_LABELS.map((label, index) => {
+              const currentStep = index + 1;
+
+              if (currentStep === step) {
+                return (
+                  <BreadcrumbItem key={label}>
+                    <BreadcrumbPage>{label}</BreadcrumbPage>
+                  </BreadcrumbItem>
+                );
+              }
+
+              if (currentStep < step) {
+                return (
+                  <BreadcrumbItem key={label}>
+                    <BreadcrumbLink
+                      onClick={() => setStep(currentStep)}
+                      className="cursor-pointer"
+                    >
+                      {label}
+                    </BreadcrumbLink>
+                    <BreadcrumbSeparator />
+                  </BreadcrumbItem>
+                );
+              }
+
+              return null;
+            })}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
       {step === 1 && (
         <Step1ThriveAreas
           areas={areas}
           selectedIds={formData.selectedAreas}
-          onUpdate={(ids) =>
-            setFormData((p) => ({ ...p, selectedAreas: ids }))
-          }
+          onUpdate={(ids) => setFormData((p) => ({ ...p, selectedAreas: ids }))}
           onNext={nextStep}
         />
       )}

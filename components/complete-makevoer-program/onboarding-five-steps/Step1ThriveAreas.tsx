@@ -131,7 +131,7 @@ const Step1ThriveAreas = ({ selectedIds, onUpdate, onNext,areas }: StepOneProps)
               isComplete ? "bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95" : "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed opacity-50"
             }`}
           >
-            <span>Continue to Step 2</span>
+            <span>Next Step</span>
             <ArrowRight size={18} />
           </button>
         </div>

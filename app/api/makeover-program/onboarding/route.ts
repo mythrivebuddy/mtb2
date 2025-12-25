@@ -59,6 +59,13 @@ export async function POST(req: Request) {
     const programId = purchase.productId;
     const quarter = "Q1";
     const year = 2026;
+    const exists = await prisma.userMakeoverArea.findFirst({
+      where: { userId, programId },
+    });
+    if (exists) {
+      return NextResponse.json(
+        { error: "User has already completed this program onboarding" }, { status: 400 });
+    }
 
     /* ───────────── TRANSACTION ───────────── */
     await prisma.$transaction(async (tx) => {
@@ -211,7 +218,7 @@ export async function POST(req: Request) {
           },
         });
       }
-    });
+    }); 
 
     return NextResponse.json({
       success: true,

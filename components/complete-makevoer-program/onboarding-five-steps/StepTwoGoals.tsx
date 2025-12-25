@@ -16,6 +16,8 @@ import {
   Plus,
   ArrowRight,
 } from "lucide-react";
+import * as ScrollArea from "@radix-ui/react-scroll-area";
+import OnboardingStickyFooter from "../OnboardingStickyFooter";
 
 interface StepTwoProps {
   selectedAreas: string[];
@@ -124,10 +126,10 @@ const StepTwoGoals = ({
   const isLast = activeIndex === selectedAreas.length - 1;
 
   return (
-    <main className="flex-1 flex justify-center py-8 px-4 sm:px-6 lg:px-8 font-display bg-[059669] min-h-screen">
-      <div className="flex flex-col max-w-[960px] w-full gap-8">
+    <main className="flex-1 flex justify-center py-8  font-display bg-[059669] min-h-screen">
+      <div className="flex flex-col max-w-[1024px] w-full gap-8">
         {/* Progress */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col  gap-3">
           <div className="flex items-center justify-between">
             <p className="text-text-main dark:text-emerald-100 text-sm font-semibold uppercase tracking-wider">
               Step 2 of 5
@@ -143,8 +145,7 @@ const StepTwoGoals = ({
           </div>
         </div>
 
-        {/* Header */}
-        <div className="flex flex-col gap-2 text-center max-w-3xl mx-auto">
+        <div className="flex flex-col gap-2 text-center  mx-auto">
           <h1 className="text-text-main dark:text-white text-3xl md:text-4xl font-bold leading-tight tracking-tight">
             Define Your Quarterly Targets
           </h1>
@@ -169,7 +170,7 @@ const StepTwoGoals = ({
         </div>
 
         {/* Carousel */}
-        <div className="relative w-full max-w-4xl mx-auto mt-4">
+        <div className="relative w-full mx-auto mt-4">
           {/* Nav */}
           <button
             disabled={activeIndex === 0}
@@ -232,26 +233,45 @@ const StepTwoGoals = ({
                       What is your main goal?
                     </label>
 
-                    <textarea
+                    <input
                       value={goals[id] || ""}
                       onChange={(e) =>
                         setGoals((p) => ({ ...p, [id]: e.target.value }))
                       }
                       placeholder="In the next 90 days, I want to..."
-                      className="w-full min-h-[160px] resize-none rounded-xl border border-emerald-100  bg-emerald-50/20 dark:bg-[#033026] p-5 text-base text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-[#059669] focus:ring-2 focus:ring-[#059669] transition-all"
+                      className="w-full resize-none rounded-xl border border-emerald-600  bg-emerald-50/20  p-5 text-base text-slate-900 dark:text-white placeholder:text-slate-500 focus:border-[#059669] focus:ring-2 focus:ring-[#059669] transition-all"
                     />
 
-                    <div className="flex flex-wrap gap-2 mt-6">
-                      {suggestions.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => setGoals((p) => ({ ...p, [id]: s }))}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-emerald-900/20 border border-emerald-100 dark:border-[059669] px-4 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/40"
-                        >
-                          <Plus size={14} /> {s}
-                        </button>
-                      ))}
-                    </div>
+                    <ScrollArea.Root className="mt-6 h-[75px] overflow-hidden">
+                      <ScrollArea.Viewport className="h-full w-full">
+                        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-3 gap-2 pr-2">
+                          {suggestions.map((s) => (
+                            <button
+                              key={s}
+                              onClick={() =>
+                                setGoals((p) => ({ ...p, [id]: s }))
+                              }
+                              className="inline-flex items-center justify-center gap-1.5
+                              rounded-full bg-white dark:bg-emerald-900/20
+                              border border-emerald-100 dark:border-emerald-700
+                              px-3 py-1.5 text-xs font-medium
+                              text-emerald-700 dark:text-emerald-200
+                              hover:bg-emerald-50 dark:hover:bg-emerald-900/40
+                              whitespace-nowrap"
+                            >
+                              <Plus size={14} /> {s}
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea.Viewport>
+
+                      <ScrollArea.Scrollbar
+                        orientation="vertical"
+                        className="flex touch-none select-none p-0.5"
+                      >
+                        <ScrollArea.Thumb className="relative flex-1 rounded-full bg-emerald-400/60" />
+                      </ScrollArea.Scrollbar>
+                    </ScrollArea.Root>
                   </div>
                 </div>
               );
@@ -275,22 +295,11 @@ const StepTwoGoals = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 -mx-4 sm:-mx-6 lg:-mx-8 px-4 py-6 border-t border-emerald-100 dark:border-emerald-900/50 bg-white/90 dark:bg-[#022c22]/90 backdrop-blur flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="px-6 py-3 text-sm font-semibold text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded-lg"
-          >
-            Back
-          </button>
-
-          <button
-            onClick={() => (isLast ? onNext(goals) : scrollTo(activeIndex + 1))}
-            className="flex items-center gap-2 rounded-lg bg-[#059669] px-8 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-[#059669]-hover transition-all"
-          >
-            {isLast ? "Complete Step 2" : "Next Area"}
-            <ArrowRight size={18} />
-          </button>
-        </div>
+        <OnboardingStickyFooter
+          onBack={onBack}
+          onNext={() => (isLast ? onNext(goals) : scrollTo(activeIndex + 1))}
+          nextLabel={isLast ? "Next Step" : "Next Area"}
+        />
       </div>
     </main>
   );

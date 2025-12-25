@@ -7,10 +7,10 @@ import {
   Flag,
   ArrowRight,
   Edit3,
-  Quote,
   Lightbulb,
-  Leaf,
 } from "lucide-react";
+import * as ScrollArea from "@radix-ui/react-scroll-area";
+import OnboardingStickyFooter from "../OnboardingStickyFooter";
 
 interface Step3Props {
   selectedAreas: string[];
@@ -67,12 +67,11 @@ const Step3IdentitySelection = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f8f9fc] font-['Inter'] text-[#0d101b]">
-      <main className="mx-auto max-w-7xl px-4 lg:px-10 py-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
+    <div className="min-h-screen w-full  font-['Inter'] text-[#0d101b]">
+      <main className="mx-auto px-4  lg:px-10 py-8">
+        <div className="grid grid-cols-1 mx-auto max-w-[1024px] gap-8 lg:grid-cols-12 lg:gap-12">
           {/* Left Column */}
-          <div className="lg:col-span-8 flex flex-col gap-6">
-            {/* Progress */}
+          <div className="lg:col-span-12 flex flex-col gap-6">
             <div className="flex flex-col gap-3">
               <div className="flex justify-between items-end">
                 <p className="text-sm font-semibold uppercase tracking-wide opacity-80">
@@ -91,13 +90,22 @@ const Step3IdentitySelection = ({
             </div>
 
             {/* Title */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col items-center gap-2">
               <h1 className="text-3xl lg:text-4xl font-black tracking-tight">
                 Define Your 2026 Identity
               </h1>
               <p className="max-w-2xl text-base text-[#4c599a] lg:text-lg">
                 Goals are what you want to achieve. Identity is who you become.
               </p>
+            </div>
+            {/* Right Sidebar (unchanged) */}
+            <div className="hidden lg:col-span-4 lg:flex flex-col  items-center gap-6">
+              <div className="rounded-xl flex items-center justify-center border bg-white p-5">
+                <Lightbulb className="text-[#059669]" size={24} />
+                <p className="text-sm mt-2">
+                  Identity change is the foundation of lasting behavior change.
+                </p>
+              </div>
             </div>
 
             {/* Card */}
@@ -132,9 +140,7 @@ const Step3IdentitySelection = ({
                   <span className="w-fit rounded bg-[#059669]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#059669]">
                     Area {activeIndex + 1} of {selectedAreas.length}
                   </span>
-                  <h3 className="text-xl font-bold">
-                    {areaMeta?.title}
-                  </h3>
+                  <h3 className="text-xl font-bold">{areaMeta?.title}</h3>
                 </div>
               </div>
 
@@ -156,26 +162,40 @@ const Step3IdentitySelection = ({
                 </div>
 
                 {/* Options */}
-                <div className="grid grid-cols-1 gap-3">
-                  {options.map((option) => (
-                    <label
-                      key={option}
-                      className={`flex cursor-pointer items-center gap-4 rounded-xl border-2 p-5 transition-all ${
-                        identities[currentAreaId] === option
-                          ? "border-[#059669] bg-[#059669]/5"
-                          : "border-[#e7e9f3] bg-white hover:border-[#059669]/50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        checked={identities[currentAreaId] === option}
-                        onChange={() => handleSelect(option)}
-                        className="size-5"
-                      />
-                      <p className="text-lg font-medium">{option}</p>
-                    </label>
-                  ))}
-                </div>
+                <ScrollArea.Root className="h-[200px] overflow-hidden">
+                  <ScrollArea.Viewport className="h-full w-full">
+                    <div className="grid grid-cols-3 gap-4 pr-2">
+                      {options.map((option) => (
+                        <label
+                          key={option}
+                          className={`flex h-full cursor-pointer items-start gap-4
+            rounded-xl border-2 p-5 transition-all ${
+              identities[currentAreaId] === option
+                ? "border-[#059669] bg-[#059669]/5"
+                : "border-[#e7e9f3] bg-white hover:border-[#059669]/50"
+            }`}
+                        >
+                          <input
+                            type="radio"
+                            checked={identities[currentAreaId] === option}
+                            onChange={() => handleSelect(option)}
+                            className="mt-1 size-5"
+                          />
+                          <p className="text-base font-medium leading-snug">
+                            {option}
+                          </p>
+                        </label>
+                      ))}
+                    </div>
+                  </ScrollArea.Viewport>
+
+                  <ScrollArea.Scrollbar
+                    orientation="vertical"
+                    className="flex touch-none select-none p-0.5"
+                  >
+                    <ScrollArea.Thumb className="flex-1 rounded-full bg-emerald-400/60" />
+                  </ScrollArea.Scrollbar>
+                </ScrollArea.Root>
 
                 {/* Custom */}
                 <div className="border-t border-[#e7e9f3] pt-4">
@@ -205,26 +225,12 @@ const Step3IdentitySelection = ({
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex justify-end pt-4">
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-2 rounded-xl bg-[#059669] px-8 py-3 text-white font-bold"
-              >
-                {isLastArea ? "Finish Step 3" : "Next Area"}
-                <ArrowRight size={20} />
-              </button>
-            </div>
-          </div>
-
-          {/* Right Sidebar (unchanged) */}
-          <div className="hidden lg:col-span-4 lg:flex flex-col gap-6">
-            <div className="rounded-xl border bg-white p-5">
-              <Lightbulb className="text-[#059669]" size={24} />
-              <p className="text-sm mt-2">
-                Identity change is the foundation of lasting behavior change.
-              </p>
-            </div>
+            {/* Sticky Footer */}
+            <OnboardingStickyFooter
+              onBack={onBack}
+              onNext={handleNext}
+              nextLabel={isLastArea ? "Next Step" : "Next Area"}
+            />
           </div>
         </div>
       </main>

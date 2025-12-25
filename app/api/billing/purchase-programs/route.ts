@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       order_meta: {
         purchase_id: internalId,
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?purchase_id=${internalId}&order_id=${orderId}`,
-        notify_url: `https://ee004622b7fc.ngrok-free.app/api/billing/webhook/cashfree-programs`
+        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/webhook/cashfree-programs`
       },
       order_note: `Program Purchase: ${plan.program.name}`
     };
