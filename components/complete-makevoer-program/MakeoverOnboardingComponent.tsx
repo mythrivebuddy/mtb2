@@ -23,6 +23,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useRouter } from "next/navigation";
 
 /* ───────────── TYPES ───────────── */
 
@@ -63,6 +64,7 @@ type FormState = {
 };
 
 const MakeoverOnboardingParent = () => {
+  const router = useRouter();
   const [step, setStep] = useState<number>(1);
 
   /* ───────────── FETCH FORM OPTIONS ───────────── */
@@ -146,6 +148,7 @@ const MakeoverOnboardingParent = () => {
 
     onSuccess: () => {
       toast.success("🎉 Makeover Program onboarding completed!");
+      router.push("/dashboard/complete-makeover-program/makeover-dashboard");
     },
 
     onError: (err: AxiosError<{ error?: string }>) => {
