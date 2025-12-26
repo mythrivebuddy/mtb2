@@ -38,10 +38,16 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
-    
+    if (challengeToJoin.joinMode === "SYSTEM_ONLY") {
+      return NextResponse.json(
+        { error: "This challenge can only be joined via program onboarding." },
+        { status: 403 }
+      );
+    }
+
     // Fetch the template tasks associated with this challenge.
     const templateTasks = await prisma.challengeTask.findMany({
-        where: { challengeId: challengeId },
+      where: { challengeId: challengeId },
     });
 
     if (challengeToJoin.creatorId === joinerId) {
@@ -77,9 +83,9 @@ export async function POST(request: Request) {
     const creator =
       challengeToJoin.cost > 0
         ? await prisma.user.findUnique({
-            where: { id: challengeToJoin.creatorId },
-            include: { plan: true }, // Required for assignJp
-          })
+          where: { id: challengeToJoin.creatorId },
+          include: { plan: true }, // Required for assignJp
+        })
         : null;
 
     if (challengeToJoin.cost > 0 && !creator) {
@@ -123,7 +129,7 @@ export async function POST(request: Request) {
             })),
           });
         }
-        
+
         // Return the enrollment data so we can use it after the transaction
         return enrollment;
       },
@@ -151,8 +157,8 @@ export async function POST(request: Request) {
 
   } catch (error) {
     // ✅ IMPROVEMENT: Log the full error object for better debugging insights.
-    console.error("Enrollment transaction failed:", error); 
-    
+    console.error("Enrollment transaction failed:", error);
+
     if (error instanceof Error) {
       if (error.message.includes("Insufficient JP balance")) {
         return NextResponse.json(

@@ -115,6 +115,18 @@ model User {
   oneTimePurchases OneTimeProgramPurchase[]
   paymentOrders PaymentOrder[] 
 
+    // Makeover relations ===============================
+  makeoverAreas        UserMakeoverArea[]
+  makeoverCommitments  UserMakeoverCommitment[]
+  makeoverProgressLogs MakeoverProgressLog[]
+  makeoverLevels       UserMakeoverLevel[]
+  makeoverBadges       UserMakeoverBadge[]
+  makeoverChallengeEnrollments UserMakeoverChallengeEnrollment[]
+
+  //Makeover Accountability Buddy
+  buddyDoer    MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyOwner")
+  buddyChecker MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyTarget")
+
 
   @@index([name])
 }
@@ -602,7 +614,16 @@ model Challenge {
   messages ChallengeMessage[]         @relation("ChallengeMessages")
   certificates  ChallengeCertificate[]
 
+  makeoverAreaMaps        MakeoverAreaChallengeMap[]
+  makeoverEnrollments     UserMakeoverChallengeEnrollment[]
+  joinMode    ChallengeJoinMode @default(MANUAL)
+
   @@map("challenges")
+}
+
+enum ChallengeJoinMode {
+  MANUAL        // User can join freely
+  SYSTEM_ONLY   // ❌ User cannot join manually
 }
 
 model ChallengeTask {
@@ -641,6 +662,8 @@ model ChallengeEnrollment {
   challenge        Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   userTasks        UserChallengeTask[]
+
+ makeoverLinks UserMakeoverChallengeEnrollment[]
 
   @@unique([userId, challengeId])
   @@map("challenge_enrollments")
@@ -1354,6 +1377,221 @@ enum PaymentStatus {
 }
 
 // program models end
+// makeover programs feature for user starts
+
+
+model MakeoverArea {
+  id          Int    @id
+  name        String @unique
+  description String
+
+  challengeMaps MakeoverAreaChallengeMap[]
+  userAreas     UserMakeoverArea[]
+  commitments   UserMakeoverCommitment[]
+  progressLogs  MakeoverProgressLog[]
+}
+
+// Program → Area → Challenge
+model MakeoverAreaChallengeMap {
+  id          String @id @default(cuid())
+  programId   String
+  areaId      Int
+  challengeId String
+  area      MakeoverArea @relation(fields: [areaId], references: [id])
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  
+
+  @@unique([programId, areaId])
+}
+
+// User onboarding (area selection)
+model UserMakeoverArea {
+  id        String @id @default(cuid())
+  userId    String
+  programId String
+  areaId    Int
+  year      Int
+  area MakeoverArea @relation(fields: [areaId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId])
+}
+
+// Libraries
+model MakeoverGoalLibrary {
+  id       String @id @default(cuid())
+  areaId   Int
+  title    String
+  isCustom Boolean @default(false)
+
+  @@unique([areaId, title])
+}
+
+model MakeoverIdentityLibrary {
+  id        String @id @default(cuid())
+  areaId    Int
+  statement String
+  isCustom  Boolean @default(false)
+
+  @@unique([areaId, statement])
+}
+
+model MakeoverDailyActionLibrary {
+  id       String @id @default(cuid())
+  areaId   Int
+  title    String
+  isCustom Boolean @default(false)
+
+  @@unique([areaId, title])
+}
+
+// User commitment (quarter locked)
+model UserMakeoverCommitment {
+  id        String @id @default(cuid())
+  userId    String
+  programId String
+  areaId    Int?
+  quarter   String
+
+  goalId   String?
+  goalText String?
+
+  identityId   String?
+  identityText String?
+
+  actionId   String?
+  actionText String?
+  visionStatement String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area   MakeoverArea? @relation(fields: [areaId], references: [id])
+
+
+  @@unique([userId, programId, areaId, quarter])
+}
+
+// Daily + weekly execution log
+model MakeoverProgressLog {
+  id        String   @id @default(cuid())
+  userId    String
+  programId String
+  areaId    Int
+  date      DateTime @db.Date
+
+  identityDone Boolean?
+  actionDone   Boolean?
+  winLogged    Boolean?
+
+  weeklyWin     String?
+  identityShift String?
+  nextWeekFocus String?
+  sharedInGroup Boolean @default(false)
+
+  pointsEarned Int @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area MakeoverArea @relation(fields: [areaId], references: [id])
+
+  @@unique([userId, programId, areaId, date])
+}
+
+// Derived data
+model MakeoverCompletionSnapshot {
+  id        String @id @default(cuid())
+  userId    String
+  programId String
+  areaId    Int
+  month     String
+  completionPercentage Float
+
+  @@unique([userId, programId, areaId, month])
+}
+
+model MakeoverPointsSummary {
+  id          String @id @default(cuid())
+  userId      String
+  programId   String
+  areaId      Int
+  totalPoints Int @default(0)
+
+  @@unique([userId, programId, areaId])
+}
+
+// Levels
+model MakeoverLevel {
+  id        Int @id
+  name      String
+  minPoints Int
+  users UserMakeoverLevel[]
+}
+
+model UserMakeoverLevel {
+  id         String @id @default(cuid())
+  userId     String
+  programId  String
+  levelId    Int
+  achievedAt DateTime @default(now())
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level MakeoverLevel @relation(fields: [levelId], references: [id])
+
+  @@unique([userId, programId])
+}
+
+// Badges
+model MakeoverBadge {
+  id              String @id @default(cuid())
+  name            String
+  type            String
+  thresholdPoints Int?
+  users UserMakeoverBadge[]
+}
+
+model UserMakeoverBadge {
+  id        String @id @default(cuid())
+  userId    String
+  programId String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge MakeoverBadge @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, programId, badgeId])
+}
+
+// Accountability buddy
+model MakeoverAccountabilityBuddy {
+  id          String @id @default(cuid())
+  userId      String
+  buddyUserId String
+  programId   String
+  areaId      Int
+  quarter     String
+
+  user      User @relation("MakeoverBuddyOwner", fields: [userId], references: [id], onDelete: Cascade)
+  buddyUser User @relation("MakeoverBuddyTarget", fields: [buddyUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId, quarter])
+}
+
+// 🔥 Makeover ↔ Challenge enrollment link
+model UserMakeoverChallengeEnrollment {
+  id           String @id @default(cuid())
+  userId       String
+  programId    String
+  areaId       Int
+  challengeId  String
+  enrollmentId String
+
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge  Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  enrollment ChallengeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId])
+}
+
+
+// makeover programs feature for user ends
 // Enum for the AEO/Schema feature
 enum PageSchemaType {
   NONE        // Default
@@ -1570,4 +1808,3 @@ enum SignatureType {
   TEXT
   DRAWN
 }
-

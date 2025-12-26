@@ -12,7 +12,7 @@
     "test:watch": "jest --watch",
     "postinstall": "prisma generate",
     "migrate": "npx prisma migrate deploy",
-    "seed": "tsx prisma/seed/seed-plan.ts && tsx prisma/seed/seed-activity.ts && tsx prisma/seed/seed-magic-box-settings.ts && tsx prisma/seed/seed-templates.ts && tsx prisma/seed/seed-new-subscription-plans.ts && tsx prisma/seed/seed-programs.ts",
+    "seed": "tsx prisma/seed/seed-plan.ts && tsx prisma/seed/seed-activity.ts && tsx prisma/seed/seed-magic-box-settings.ts && tsx prisma/seed/seed-templates.ts && tsx prisma/seed/seed-new-subscription-plans.ts && tsx prisma/seed/seed-programs.ts && tsx prisma/seed/makover-program/index.ts",
     "postbuild": "npm run migrate && npm run seed"
   },
   "dependencies": {
