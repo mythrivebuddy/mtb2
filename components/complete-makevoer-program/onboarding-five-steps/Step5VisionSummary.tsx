@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+
 "use client";
 
 import React from "react";
@@ -5,12 +7,8 @@ import {
   Rocket,
   Activity,
   Wallet,
-  Edit2,
   CheckCircle2,
-  ArrowRight,
-  ArrowLeft,
   Quote,
-  Flag,
   Brain,
   Hash,
   Leaf,
@@ -194,12 +192,11 @@ const Step5VisionSummary = ({ formData, onBack, onComplete }: Step5Props) => {
           </div>
         </div>
 
-       <OnboardingStickyFooter
-  onBack={onBack}
-  onNext={onComplete}
-  nextLabel="Confirm & Proceed"
-/>
-
+        <OnboardingStickyFooter
+          onBack={onBack}
+          onNext={onComplete}
+          nextLabel="Confirm & Proceed"
+        />
       </main>
     </div>
   );

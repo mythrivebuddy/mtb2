@@ -14,7 +14,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  ArrowRight,
 } from "lucide-react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";

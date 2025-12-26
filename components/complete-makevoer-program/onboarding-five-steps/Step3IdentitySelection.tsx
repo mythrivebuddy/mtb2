@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useState } from "react";
@@ -5,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Flag,
-  ArrowRight,
   Edit3,
   Lightbulb,
 } from "lucide-react";

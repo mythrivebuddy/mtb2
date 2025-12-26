@@ -2,10 +2,10 @@
 
 import { useState, useMemo, Fragment } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
-import { Leaf } from "lucide-react";
+import { Leaf, type LucideIcon } from "lucide-react";
 import { AREA_ICON_MAP } from "@/lib/utils/makeover-program/makeover-icons";
 
 import Step1ThriveAreas from "./onboarding-five-steps/Step1ThriveAreas";
@@ -24,33 +24,73 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
+/* ───────────── TYPES ───────────── */
+
+type ApiArea = {
+  id: number;
+  name: string;
+  description?: string | null;
+};
+
+type ApiGoal = {
+  areaId: number;
+  title: string;
+};
+
+type ApiIdentity = {
+  areaId: number;
+  statement: string;
+};
+
+type FormOptionsResponse = {
+  areas: ApiArea[];
+  goals: ApiGoal[];
+  identities: ApiIdentity[];
+};
+
+type NormalizedArea = {
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+type FormState = {
+  selectedAreas: string[];
+  areaGoals: Record<string, string>;
+  identities: Record<string, string>;
+  vision: string;
+};
+
 const MakeoverOnboardingParent = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<number>(1);
 
   /* ───────────── FETCH FORM OPTIONS ───────────── */
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<FormOptionsResponse>({
     queryKey: ["makeover-formOptions"],
     queryFn: async () =>
-      (await axios.get("/api/makeover-program/onboarding/form-options")).data,
+      (await axios.get<FormOptionsResponse>(
+        "/api/makeover-program/onboarding/form-options"
+      )).data,
   });
 
-  /* ───────────── NORMALIZATION (CRITICAL FIX) ───────────── */
+  /* ───────────── NORMALIZATION ───────────── */
 
-  const areas = useMemo(() => {
+  const areas = useMemo<NormalizedArea[]>(() => {
     if (!data?.areas) return [];
 
-    return data.areas.map((a: any) => ({
+    return data.areas.map((a) => ({
       id: String(a.id),
       title: a.name,
       description: a.description ?? "",
-      icon: AREA_ICON_MAP[a.id] ?? Leaf, // ✅ NEVER undefined
+      icon: (AREA_ICON_MAP[a.id] ?? Leaf) as LucideIcon,
     }));
   }, [data]);
 
-  const goalsByArea = useMemo(() => {
+  const goalsByArea = useMemo<Record<string, string[]>>(() => {
     if (!data?.goals) return {};
 
-    return data.goals.reduce((acc: Record<string, string[]>, g: any) => {
+    return data.goals.reduce<Record<string, string[]>>((acc, g) => {
       const key = String(g.areaId);
       acc[key] ??= [];
       acc[key].push(g.title);
@@ -58,10 +98,10 @@ const MakeoverOnboardingParent = () => {
     }, {});
   }, [data]);
 
-  const identitiesByArea = useMemo(() => {
+  const identitiesByArea = useMemo<Record<string, string[]>>(() => {
     if (!data?.identities) return {};
 
-    return data.identities.reduce((acc: Record<string, string[]>, i: any) => {
+    return data.identities.reduce<Record<string, string[]>>((acc, i) => {
       const key = String(i.areaId);
       acc[key] ??= [];
       acc[key].push(i.statement);
@@ -70,10 +110,10 @@ const MakeoverOnboardingParent = () => {
   }, [data]);
 
   /* ───────────── FORM STATE ───────────── */
-  const [formData, setFormData] = useState({
-    selectedAreas: [] as string[],
-    areaGoals: {} as Record<string, string>,
-    identities: {} as Record<string, string>,
+  const [formData, setFormData] = useState<FormState>({
+    selectedAreas: [],
+    areaGoals: {},
+    identities: {},
     vision: "",
   });
 
@@ -83,10 +123,12 @@ const MakeoverOnboardingParent = () => {
       const payload = {
         areas: formData.selectedAreas.map(Number),
 
-        goals: Object.entries(formData.areaGoals).map(([areaId, text]) => ({
-          areaId: Number(areaId),
-          customText: text,
-        })),
+        goals: Object.entries(formData.areaGoals).map(
+          ([areaId, text]) => ({
+            areaId: Number(areaId),
+            customText: text,
+          })
+        ),
 
         identities: Object.entries(formData.identities).map(
           ([areaId, text]) => ({
@@ -95,7 +137,7 @@ const MakeoverOnboardingParent = () => {
           })
         ),
 
-        dailyActions: [], // future step
+        dailyActions: [],
         visionStatement: formData.vision,
       };
 
@@ -104,12 +146,11 @@ const MakeoverOnboardingParent = () => {
 
     onSuccess: () => {
       toast.success("🎉 Makeover Program onboarding completed!");
-      // router.push("/dashboard");
     },
 
-    onError: (err: any) => {
+    onError: (err: AxiosError<{ error?: string }>) => {
       toast.error(
-        err?.response?.data?.error ?? "Something went wrong. Try again."
+        err.response?.data?.error ?? "Something went wrong. Try again."
       );
     },
   });
@@ -144,7 +185,6 @@ const MakeoverOnboardingParent = () => {
 
             {STEP_LABELS.map((label, index) => {
               const currentStep = index + 1;
-
               if (currentStep > step) return null;
 
               const isCurrent = currentStep === step;
@@ -171,11 +211,14 @@ const MakeoverOnboardingParent = () => {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+
       {step === 1 && (
         <Step1ThriveAreas
           areas={areas}
           selectedIds={formData.selectedAreas}
-          onUpdate={(ids) => setFormData((p) => ({ ...p, selectedAreas: ids }))}
+          onUpdate={(ids: string[]) =>
+            setFormData((p) => ({ ...p, selectedAreas: ids }))
+          }
           onNext={nextStep}
         />
       )}
@@ -186,7 +229,7 @@ const MakeoverOnboardingParent = () => {
           areasMeta={areas}
           goalsByArea={goalsByArea}
           onBack={prevStep}
-          onNext={(goals) => {
+          onNext={(goals: Record<string, string>) => {
             setFormData((p) => ({ ...p, areaGoals: goals }));
             nextStep();
           }}
@@ -200,7 +243,7 @@ const MakeoverOnboardingParent = () => {
           areasMeta={areas}
           identitiesByArea={identitiesByArea}
           onBack={prevStep}
-          onNext={(ids) => {
+          onNext={(ids: Record<string, string>) => {
             setFormData((p) => ({ ...p, identities: ids }));
             nextStep();
           }}
@@ -210,7 +253,7 @@ const MakeoverOnboardingParent = () => {
       {step === 4 && (
         <Step4UnifiedVision
           onBack={prevStep}
-          onNext={(vision) => {
+          onNext={(vision: string) => {
             setFormData((p) => ({ ...p, vision }));
             nextStep();
           }}

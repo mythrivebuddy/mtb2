@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import React from "react";
 import {
   Sparkles,
@@ -17,7 +18,7 @@ import {
   Users,
   MessageSquare,
   Eye,
-  Leaf,
+
 } from "lucide-react";
 
 const DashboardPage = () => {

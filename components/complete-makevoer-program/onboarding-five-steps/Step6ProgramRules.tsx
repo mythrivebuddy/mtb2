@@ -8,9 +8,7 @@ import {
   Users,
   Video,
   ShieldCheck,
-  ArrowLeft,
   CheckCircle2,
-  ChevronRight,
 } from "lucide-react";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
 

@@ -4,6 +4,38 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@prisma/client";
 
+/* ───────────────── TYPES ───────────────── */
+
+type AreaId = number;
+
+interface GoalInput {
+  areaId: AreaId;
+  goalId?: string;
+  customText?: string;
+}
+
+interface IdentityInput {
+  areaId: AreaId;
+  identityId?: string;
+  customText?: string;
+}
+
+interface DailyActionInput {
+  areaId: AreaId;
+  actionId?: string;
+  customText?: string;
+}
+
+interface OnboardingPayload {
+  areas: AreaId[];
+  goals: GoalInput[];
+  identities: IdentityInput[];
+  dailyActions: DailyActionInput[];
+  visionStatement: string;
+}
+
+/* ───────────────── API ───────────────── */
+
 export async function POST(req: Request) {
   try {
     /* ───────────── AUTH ───────────── */
@@ -21,7 +53,7 @@ export async function POST(req: Request) {
       identities,
       dailyActions,
       visionStatement,
-    } = await req.json();
+    } = (await req.json()) as OnboardingPayload;
 
     /* ───────────── VALIDATION ───────────── */
     if (!Array.isArray(areas) || areas.length !== 3) {
@@ -59,17 +91,22 @@ export async function POST(req: Request) {
     const programId = purchase.productId;
     const quarter = "Q1";
     const year = 2026;
+
+    /* ───────────── DUPLICATE ONBOARDING CHECK ───────────── */
     const exists = await prisma.userMakeoverArea.findFirst({
       where: { userId, programId },
     });
+
     if (exists) {
       return NextResponse.json(
-        { error: "User has already completed this program onboarding" }, { status: 400 });
+        { error: "User has already completed onboarding" },
+        { status: 400 }
+      );
     }
 
     /* ───────────── TRANSACTION ───────────── */
     await prisma.$transaction(async (tx) => {
-      /* 1️⃣ AREAS */
+      /* 1️⃣ SAVE SELECTED AREAS */
       for (const areaId of areas) {
         await tx.userMakeoverArea.create({
           data: {
@@ -81,128 +118,41 @@ export async function POST(req: Request) {
         });
       }
 
-      /* 2️⃣ GOALS */
-      for (const g of goals) {
-        let goalId = g.goalId;
+      /* 2️⃣ CREATE USER COMMITMENTS (CORE TABLE) */
+      for (const areaId of areas) {
+        const goal = goals.find(
+          (g: GoalInput) => g.areaId === areaId
+        );
+        const identity = identities.find(
+          (i: IdentityInput) => i.areaId === areaId
+        );
+        const action = dailyActions.find(
+          (a: DailyActionInput) => a.areaId === areaId
+        );
 
-        if (!goalId && g.customText) {
-          const existingGoal = await tx.makeoverGoalLibrary.findFirst({
-            where: {
-              areaId: g.areaId,
-              title: g.customText,
-            },
-          });
-
-          if (existingGoal) {
-            goalId = existingGoal.id;
-          } else {
-            const goal = await tx.makeoverGoalLibrary.create({
-              data: {
-                areaId: g.areaId,
-                title: g.customText,
-                isCustom: true,
-              },
-            });
-            goalId = goal.id;
-          }
-        }
-
-        await tx.userMakeoverGoal.create({
+        await tx.userMakeoverCommitment.create({
           data: {
             userId,
             programId,
-            areaId: g.areaId,
-            goalId,
+            areaId,
             quarter,
+
+            goalId: goal?.goalId ?? null,
+            goalText: goal?.customText ?? null,
+
+            identityId: identity?.identityId ?? null,
+            identityText: identity?.customText ?? null,
+
+            actionId: action?.actionId ?? null,
+            actionText: action?.customText ?? null,
+
+            // Same vision statement stored for all 3 areas
+            visionStatement,
           },
         });
       }
 
-      /* 3️⃣ IDENTITIES (FIXED) */
-      for (const i of identities) {
-        let identityId = i.identityId;
-
-        if (!identityId && i.customText) {
-          const existingIdentity =
-            await tx.makeoverIdentityLibrary.findFirst({
-              where: {
-                areaId: i.areaId,
-                statement: i.customText,
-              },
-            });
-
-          if (existingIdentity) {
-            identityId = existingIdentity.id;
-          } else {
-            const identity = await tx.makeoverIdentityLibrary.create({
-              data: {
-                areaId: i.areaId,
-                statement: i.customText,
-                isCustom: true,
-              },
-            });
-            identityId = identity.id;
-          }
-        }
-
-        await tx.userMakeoverIdentity.create({
-          data: {
-            userId,
-            programId,
-            areaId: i.areaId,
-            identityId,
-            quarter,
-          },
-        });
-      }
-
-      /* 4️⃣ DAILY ACTIONS (FIXED) */
-      for (const a of dailyActions) {
-        let actionId = a.actionId;
-
-        if (!actionId && a.customText) {
-          const existingAction =
-            await tx.makeoverDailyActionLibrary.findFirst({
-              where: {
-                areaId: a.areaId,
-                title: a.customText,
-              },
-            });
-
-          if (existingAction) {
-            actionId = existingAction.id;
-          } else {
-            const action = await tx.makeoverDailyActionLibrary.create({
-              data: {
-                areaId: a.areaId,
-                title: a.customText,
-                isCustom: true,
-              },
-            });
-            actionId = action.id;
-          }
-        }
-
-        await tx.userMakeoverDailyAction.create({
-          data: {
-            userId,
-            programId,
-            areaId: a.areaId,
-            actionId,
-            quarter,
-          },
-        });
-      }
-
-      /* 5️⃣ VISION STATEMENT */
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          achievements: visionStatement,
-        },
-      });
-
-      /* 6️⃣ AUTO-ENROLL CHALLENGES */
+      /* 3️⃣ AUTO-ENROLL USER INTO AREA CHALLENGES */
       const mappings = await tx.makeoverAreaChallengeMap.findMany({
         where: {
           programId,
@@ -211,23 +161,65 @@ export async function POST(req: Request) {
       });
 
       for (const map of mappings) {
-        await tx.challengeEnrollment.create({
+        const alreadyEnrolled =
+          await tx.userMakeoverChallengeEnrollment.findFirst({
+            where: {
+              userId,
+              programId,
+              areaId: map.areaId,
+            },
+          });
+
+        if (alreadyEnrolled) continue;
+
+        // 1️⃣ Fetch challenge template tasks
+        const templateTasks = await tx.challengeTask.findMany({
+          where: { challengeId: map.challengeId },
+        });
+
+        // 2️⃣ Create enrollment
+        const enrollment = await tx.challengeEnrollment.create({
           data: {
             userId,
             challengeId: map.challengeId,
+            status: "IN_PROGRESS",
+          },
+        });
+
+        // 3️⃣ Create user tasks from templates
+        if (templateTasks.length > 0) {
+          await tx.userChallengeTask.createMany({
+            data: templateTasks.map((task) => ({
+              description: task.description,
+              enrollmentId: enrollment.id,
+              templateTaskId: task.id,
+            })),
+          });
+        }
+        await tx.userMakeoverChallengeEnrollment.create({
+          data: {
+            userId,
+            programId,
+            areaId: map.areaId,
+            challengeId: map.challengeId,
+            enrollmentId: enrollment.id,
           },
         });
       }
-    }); 
 
+
+
+    });
+
+    /* ───────────── RESPONSE ───────────── */
     return NextResponse.json({
       success: true,
-      message: "Makeover onboarding completed successfully",
+      message: "Makeover onboarding completed challenges joined successfully",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("MAKEOVER ONBOARDING ERROR:", error);
     return NextResponse.json(
-      { error: error.message ?? "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

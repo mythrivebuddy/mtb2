@@ -1,9 +1,9 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useState } from "react";
 import {
-  ArrowLeft,
-  ArrowRight,
+
   Edit3,
   Image as ImageIcon,
   UploadCloud,
@@ -12,7 +12,6 @@ import {
   Zap,
   Heart,
   Info,
-  Leaf,
 } from "lucide-react";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
 
