@@ -56,7 +56,7 @@ const Step1ThriveAreas = ({
   const isComplete = selectedIds.length === 3;
 
   return (
-    <main className="flex-1 flex justify-center py-8 px-4 sm:px-8 font-display relative">
+    <main className="flex-1 flex justify-center py-6 px-4 sm:px-8 font-display relative">
       {/* Toast Notification */}
       <div
         className={`fixed top-20 right-4 z-[100] transition-all duration-300 transform ${showToast ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0 pointer-events-none"}`}
@@ -168,7 +168,12 @@ const Step1ThriveAreas = ({
           </div>
           <button
             disabled={!isComplete}
-            onClick={onNext}
+            onClick={()=>{
+              onNext();
+               requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+            }}
             className={`w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg px-8 py-3 font-bold transition-all ${
               isComplete
                 ? "bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95"

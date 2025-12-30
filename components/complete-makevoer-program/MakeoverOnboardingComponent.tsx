@@ -71,9 +71,11 @@ const MakeoverOnboardingParent = () => {
   const { data, isLoading } = useQuery<FormOptionsResponse>({
     queryKey: ["makeover-formOptions"],
     queryFn: async () =>
-      (await axios.get<FormOptionsResponse>(
-        "/api/makeover-program/onboarding/form-options"
-      )).data,
+      (
+        await axios.get<FormOptionsResponse>(
+          "/api/makeover-program/onboarding/form-options"
+        )
+      ).data,
   });
 
   /* ───────────── NORMALIZATION ───────────── */
@@ -125,12 +127,10 @@ const MakeoverOnboardingParent = () => {
       const payload = {
         areas: formData.selectedAreas.map(Number),
 
-        goals: Object.entries(formData.areaGoals).map(
-          ([areaId, text]) => ({
-            areaId: Number(areaId),
-            customText: text,
-          })
-        ),
+        goals: Object.entries(formData.areaGoals).map(([areaId, text]) => ({
+          areaId: Number(areaId),
+          customText: text,
+        })),
 
         identities: Object.entries(formData.identities).map(
           ([areaId, text]) => ({
@@ -162,7 +162,7 @@ const MakeoverOnboardingParent = () => {
   const prevStep = () => setStep((p) => p - 1);
 
   const STEP_LABELS = [
-    "Thrive Areas",
+    "Makeover Areas",
     "Goals",
     "Identity",
     "Vision",
@@ -173,111 +173,113 @@ const MakeoverOnboardingParent = () => {
   if (isLoading) return null;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col items-center">
       {/* ───────────── Breadcrumbs ───────────── */}
-      <div className="px-4 py-4 lg:px-52">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink className="text-muted-foreground">
-                Makeover Program
-              </BreadcrumbLink>
-            </BreadcrumbItem>
+      <div className="flex flex-col items-start">
+        <div className="px-4 py-4 sm:px-8">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink className="text-muted-foreground">
+                  Makeover Program
+                </BreadcrumbLink>
+              </BreadcrumbItem>
 
-            <BreadcrumbSeparator />
+              <BreadcrumbSeparator />
 
-            {STEP_LABELS.map((label, index) => {
-              const currentStep = index + 1;
-              if (currentStep > step) return null;
+              {STEP_LABELS.map((label, index) => {
+                const currentStep = index + 1;
+                if (currentStep > step) return null;
 
-              const isCurrent = currentStep === step;
+                const isCurrent = currentStep === step;
 
-              return (
-                <Fragment key={label}>
-                  <BreadcrumbItem>
-                    {isCurrent ? (
-                      <BreadcrumbPage>{label}</BreadcrumbPage>
-                    ) : (
-                      <BreadcrumbLink
-                        onClick={() => setStep(currentStep)}
-                        className="cursor-pointer"
-                      >
-                        {label}
-                      </BreadcrumbLink>
-                    )}
-                  </BreadcrumbItem>
+                return (
+                  <Fragment key={label}>
+                    <BreadcrumbItem>
+                      {isCurrent ? (
+                        <BreadcrumbPage>{label}</BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink
+                          onClick={() => setStep(currentStep)}
+                          className="cursor-pointer"
+                        >
+                          {label}
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
 
-                  {!isCurrent && <BreadcrumbSeparator />}
-                </Fragment>
-              );
-            })}
-          </BreadcrumbList>
-        </Breadcrumb>
+                    {!isCurrent && <BreadcrumbSeparator />}
+                  </Fragment>
+                );
+              })}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+
+        {step === 1 && (
+          <Step1ThriveAreas
+            areas={areas}
+            selectedIds={formData.selectedAreas}
+            onUpdate={(ids: string[]) =>
+              setFormData((p) => ({ ...p, selectedAreas: ids }))
+            }
+            onNext={nextStep}
+          />
+        )}
+
+        {step === 2 && (
+          <StepTwoGoals
+            selectedAreas={formData.selectedAreas}
+            areasMeta={areas}
+            goalsByArea={goalsByArea}
+            onBack={prevStep}
+            onNext={(goals: Record<string, string>) => {
+              setFormData((p) => ({ ...p, areaGoals: goals }));
+              nextStep();
+            }}
+          />
+        )}
+
+        {step === 3 && (
+          <Step3IdentitySelection
+            selectedAreas={formData.selectedAreas}
+            areaGoals={formData.areaGoals}
+            areasMeta={areas}
+            identitiesByArea={identitiesByArea}
+            onBack={prevStep}
+            onNext={(ids: Record<string, string>) => {
+              setFormData((p) => ({ ...p, identities: ids }));
+              nextStep();
+            }}
+          />
+        )}
+
+        {step === 4 && (
+          <Step4UnifiedVision
+            onBack={prevStep}
+            onNext={(vision: string) => {
+              setFormData((p) => ({ ...p, vision }));
+              nextStep();
+            }}
+          />
+        )}
+
+        {step === 5 && (
+          <Step5VisionSummary
+            formData={formData}
+            onBack={prevStep}
+            onComplete={nextStep}
+          />
+        )}
+
+        {step === 6 && (
+          <Step6ProgramRules
+            onBack={prevStep}
+            onConfirm={() => submitMutation.mutate()}
+            isSubmitting={submitMutation.isPending}
+          />
+        )}
       </div>
-
-      {step === 1 && (
-        <Step1ThriveAreas
-          areas={areas}
-          selectedIds={formData.selectedAreas}
-          onUpdate={(ids: string[]) =>
-            setFormData((p) => ({ ...p, selectedAreas: ids }))
-          }
-          onNext={nextStep}
-        />
-      )}
-
-      {step === 2 && (
-        <StepTwoGoals
-          selectedAreas={formData.selectedAreas}
-          areasMeta={areas}
-          goalsByArea={goalsByArea}
-          onBack={prevStep}
-          onNext={(goals: Record<string, string>) => {
-            setFormData((p) => ({ ...p, areaGoals: goals }));
-            nextStep();
-          }}
-        />
-      )}
-
-      {step === 3 && (
-        <Step3IdentitySelection
-          selectedAreas={formData.selectedAreas}
-          areaGoals={formData.areaGoals}
-          areasMeta={areas}
-          identitiesByArea={identitiesByArea}
-          onBack={prevStep}
-          onNext={(ids: Record<string, string>) => {
-            setFormData((p) => ({ ...p, identities: ids }));
-            nextStep();
-          }}
-        />
-      )}
-
-      {step === 4 && (
-        <Step4UnifiedVision
-          onBack={prevStep}
-          onNext={(vision: string) => {
-            setFormData((p) => ({ ...p, vision }));
-            nextStep();
-          }}
-        />
-      )}
-
-      {step === 5 && (
-        <Step5VisionSummary
-          formData={formData}
-          onBack={prevStep}
-          onComplete={nextStep}
-        />
-      )}
-
-      {step === 6 && (
-        <Step6ProgramRules
-          onBack={prevStep}
-          onConfirm={() => submitMutation.mutate()}
-          isSubmitting={submitMutation.isPending}
-        />
-      )}
     </div>
   );
 };
