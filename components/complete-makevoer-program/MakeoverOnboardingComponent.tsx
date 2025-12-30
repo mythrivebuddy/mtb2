@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Fragment } from "react";
+import { useState, useMemo, Fragment, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
@@ -66,6 +66,15 @@ type FormState = {
 const MakeoverOnboardingParent = () => {
   const router = useRouter();
   const [step, setStep] = useState<number>(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      containerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [step]);
 
   /* ───────────── FETCH FORM OPTIONS ───────────── */
   const { data, isLoading } = useQuery<FormOptionsResponse>({
@@ -174,6 +183,8 @@ const MakeoverOnboardingParent = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center">
+      <div ref={containerRef} />
+
       {/* ───────────── Breadcrumbs ───────────── */}
       <div className="flex flex-col items-start">
         <div className="px-4 py-4 sm:px-8">

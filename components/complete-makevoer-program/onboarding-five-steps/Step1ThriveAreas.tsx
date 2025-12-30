@@ -168,12 +168,7 @@ const Step1ThriveAreas = ({
           </div>
           <button
             disabled={!isComplete}
-            onClick={()=>{
-              onNext();
-               requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-            }}
+            onClick={onNext}
             className={`w-full sm:w-auto flex items-center justify-center gap-2 rounded-lg px-8 py-3 font-bold transition-all ${
               isComplete
                 ? "bg-emerald-500 text-white hover:bg-emerald-600 active:scale-95"
