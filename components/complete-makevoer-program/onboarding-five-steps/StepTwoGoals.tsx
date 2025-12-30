@@ -226,7 +226,7 @@ const StepTwoGoals = ({
                             setGoals((p) => ({ ...p, [id]: value }))
                           }
                         >
-                          <SelectTrigger className="w-full bg-inherit border border-emerald-600 rounded-xl">
+                          <SelectTrigger className="w-full bg-inherit border border-emerald-600 rounded-lg">
                             <SelectValue placeholder="Choose a suggestion" />
                           </SelectTrigger>
                           <SelectContent>
