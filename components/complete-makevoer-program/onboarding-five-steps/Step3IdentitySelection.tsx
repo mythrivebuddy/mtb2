@@ -1,6 +1,7 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef } from "react";
 import { ChevronLeft, ChevronRight, Plus, Flag } from "lucide-react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
@@ -40,12 +41,12 @@ const Step3IdentitySelection = ({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Helper to get titles for the header summary
-  const labels = useMemo(() => {
-    return selectedAreas.map((id) => {
-      const area = areasMeta.find((a) => a.id === id);
-      return area?.title ?? id;
-    });
-  }, [selectedAreas, areasMeta]);
+  // const labels = useMemo(() => {
+  //   return selectedAreas.map((id) => {
+  //     const area = areasMeta.find((a) => a.id === id);
+  //     return area?.title ?? id;
+  //   });
+  // }, [selectedAreas, areasMeta]);
 
   // 1. Detect manual swiping on mobile
   const handleScroll = () => {

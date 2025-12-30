@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useMemo, useEffect } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
