@@ -56,7 +56,7 @@ const Step1ThriveAreas = ({
   const isComplete = selectedIds.length === 3;
 
   return (
-    <main className="flex-1 flex justify-center py-8 px-4 sm:px-8 font-display relative">
+    <main className="flex-1 flex justify-center py-6 px-4 sm:px-8 font-display relative">
       {/* Toast Notification */}
       <div
         className={`fixed top-20 right-4 z-[100] transition-all duration-300 transform ${showToast ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0 pointer-events-none"}`}

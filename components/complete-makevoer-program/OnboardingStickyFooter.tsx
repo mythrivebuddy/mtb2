@@ -33,8 +33,8 @@ const OnboardingStickyFooter = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="px-6 py-3 text-sm font-semibold text-emerald-700
-                         hover:bg-emerald-50 rounded-lg transition-colors"
+              className="px-6 py-3 text-sm font-semibold text-white
+                          bg-[#059669]  hover:bg-emerald-700 rounded-lg transition-colors"
             >
               {backLabel}
             </button>
