@@ -1,9 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
-
   Edit3,
   Image as ImageIcon,
   UploadCloud,
@@ -44,9 +43,27 @@ const EXAMPLES = [
 const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
   const [vision, setVision] = useState("");
   const maxLength = 500;
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleExampleClick = (text: string) => {
     setVision(text);
+
+    // Give React a tick to update the value
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+
+        // Mobile-friendly scroll
+        textareaRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+        // Optional: move cursor to end
+        const length = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(length, length);
+      }
+    });
   };
 
   return (
@@ -101,6 +118,7 @@ const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
                 </label>
                 <div className="relative">
                   <textarea
+                    ref={textareaRef}
                     id="vision-statement"
                     value={vision}
                     onChange={(e) =>

@@ -195,7 +195,7 @@ const Step5VisionSummary = ({ formData, onBack, onComplete }: Step5Props) => {
         <OnboardingStickyFooter
           onBack={onBack}
           onNext={onComplete}
-          nextLabel="Confirm & Proceed"
+          nextLabel="Proceed"
         />
       </main>
     </div>
