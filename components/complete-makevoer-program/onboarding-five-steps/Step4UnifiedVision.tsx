@@ -204,7 +204,7 @@ const handleNext = () => {
                       </div>
                       <div className="flex flex-col gap-1">
                         <p className="text-sm font-semibold">
-                          Click to upload or drag and drop
+                          Click to upload 
                         </p>
                         <p className="text-xs text-[#4c9a66]">
                           PNG, JPG, GIF (max. 5MB)

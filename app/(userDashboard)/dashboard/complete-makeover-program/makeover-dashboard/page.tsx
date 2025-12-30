@@ -20,6 +20,7 @@ import {
   Eye,
 } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
+import Link from "next/link";
 
 const DashboardPage = () => {
   return (
@@ -36,10 +37,12 @@ const DashboardPage = () => {
               <span>18 days left in this quarter</span>
             </div>
           </div>
+          <Link href="/dashboard/complete-makeover-program/daily-actions-task-for-quarter">
           <button className="mt-3 md:mt-0 inline-flex items-center gap-2 h-11 px-5  bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg transition group-invalid:">
             <Sparkles className="w-4 h-4" />
             Set this quarter’s actions
           </button>
+          </Link>
           <div className="text-right hidden md:block">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium italic">
               "Keep showing up. You're building the new you."
