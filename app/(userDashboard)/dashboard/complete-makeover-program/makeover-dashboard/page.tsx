@@ -18,8 +18,8 @@ import {
   Users,
   MessageSquare,
   Eye,
-
 } from "lucide-react";
+import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 
 const DashboardPage = () => {
   return (
@@ -36,6 +36,10 @@ const DashboardPage = () => {
               <span>18 days left in this quarter</span>
             </div>
           </div>
+          <button className="mt-3 md:mt-0 inline-flex items-center gap-2 h-11 px-5  bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg transition group-invalid:">
+            <Sparkles className="w-4 h-4" />
+            Set this quarter’s actions
+          </button>
           <div className="text-right hidden md:block">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium italic">
               "Keep showing up. You're building the new you."
@@ -46,7 +50,8 @@ const DashboardPage = () => {
         {/* Top Section: Actions & Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Dominant Action Card */}
-          <div className="lg:col-span-2 bg-white dark:bg-[#1a2630] rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col sm:flex-row group transition-all hover:shadow-md">
+
+          <div className="lg:col-span-2 relative bg-white dark:bg-[#1a2630] rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none border border-slate-200 dark:border-slate-700  flex flex-col sm:flex-row group transition-all hover:shadow-md">
             <div
               className="sm:w-1/3 h-48 sm:h-auto bg-cover bg-center relative"
               style={{
@@ -56,7 +61,8 @@ const DashboardPage = () => {
             >
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-black/10"></div>
             </div>
-            <div className="p-6 sm:p-8 flex flex-col justify-center flex-1">
+            <StaticDataBadge className="w-fit absolute -top-2 -left-4 " />
+            <div className="p-6 sm:p-8  flex flex-col justify-center flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className="size-2 rounded-full bg-[#FBBF24] animate-pulse"></span>
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -85,7 +91,8 @@ const DashboardPage = () => {
           </div>
 
           {/* Insight Card */}
-          <div className="bg-gradient-to-br from-slate-50 to-white dark:from-[#1a2630] dark:to-slate-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative overflow-hidden">
+          <div className="bg-gradient-to-br from-slate-50 to-white dark:from-[#1a2630] dark:to-slate-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative ">
+            <StaticDataBadge className="w-fit relative -top-8 -left-8 " />
             <div className="absolute top-0 right-0 p-4 opacity-5 text-slate-900 dark:text-white">
               <Lightbulb className="w-24 h-24" />
             </div>
@@ -108,6 +115,7 @@ const DashboardPage = () => {
 
         {/* Global Progress Section */}
         <div className="bg-white dark:bg-[#1a2630] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+          <StaticDataBadge className="w-fit relative -top-10 -left-12 " />
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <PlaneTakeoff className="w-6 h-6 text-[#1183d4]" />
@@ -199,6 +207,7 @@ const DashboardPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Bonus & Rewards */}
           <div className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col">
+            <StaticDataBadge className="w-fit relative -top-8 -left-8 " />
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#F59E0B]" />
@@ -249,6 +258,7 @@ const DashboardPage = () => {
 
           {/* Accountability Pod */}
           <div className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col">
+            <StaticDataBadge className="w-fit relative -top-8 -left-8 " />
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
                 <Users className="w-5 h-5 text-[#1183d4]" />
@@ -299,6 +309,7 @@ const AreaCard = ({
   icon,
 }: AreaCardProps) => (
   <div className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-[#1183d4]/30 transition-colors group">
+    <StaticDataBadge className="w-fit relative -top-8 -left-8 " />
     <div className="flex justify-between items-start mb-4">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${bgColor}`} style={{ color }}>

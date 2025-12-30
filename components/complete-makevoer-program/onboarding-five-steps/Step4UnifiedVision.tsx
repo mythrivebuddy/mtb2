@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Edit3,
   Image as ImageIcon,
@@ -44,6 +44,45 @@ const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
   const [vision, setVision] = useState("");
   const maxLength = 500;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // basic validation
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 5 * 1024 * 1024) return; // 5MB
+
+    setSelectedImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+const handleNext = () => {
+  if (selectedImage) {
+    const formData = new FormData();
+    formData.append("image", selectedImage);
+
+    // fire-and-forget
+    fetch("/api/makeover-program/onboarding/step-4-vision-images", {
+      method: "POST",
+      body: formData,
+    }).catch(() => {
+      // optional: silent fail or log
+      console.warn("Vision image upload failed");
+    });
+  }
+
+  // immediately move to next step
+  onNext(vision);
+};
+
 
   const handleExampleClick = (text: string) => {
     setVision(text);
@@ -148,21 +187,39 @@ const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
                     Upload your digital vision board or a motivational photo.
                   </p>
                 </div>
-                <div className="relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cfe7d7] bg-white py-10 hover:border-[#11d452]/50 hover:bg-[#11d452]/5 transition-colors group">
-                  <div className="flex flex-col items-center justify-center gap-3 text-center">
-                    <div className="rounded-full bg-[#11d452]/10 p-4 text-[#11d452] group-hover:bg-[#11d452] group-hover:text-white transition-colors">
-                      <UploadCloud size={30} />
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="relative flex h-[20rem] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cfe7d7] bg-white  hover:border-[#11d452]/50 hover:bg-[#11d452]/5 transition-colors group"
+                >
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Vision preview"
+                      className="h-full w-full rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-3 text-center">
+                      <div className="rounded-full bg-[#11d452]/10 p-4 text-[#11d452] group-hover:bg-[#11d452] group-hover:text-white transition-colors">
+                        <UploadCloud size={30} />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <p className="text-sm font-semibold">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-xs text-[#4c9a66]">
+                          PNG, JPG, GIF (max. 5MB)
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-semibold">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-[#4c9a66]">
-                        SVG, PNG, JPG or GIF (max. 5MB)
-                      </p>
-                    </div>
-                  </div>
-                  <input className="hidden" type="file" />
+                  )}
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
                 </div>
               </div>
             </div>
@@ -214,7 +271,7 @@ const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
 
           <OnboardingStickyFooter
             onBack={onBack}
-            onNext={() => onNext(vision)}
+            onNext={handleNext}
             nextLabel="Next Step"
             disabled={!vision.trim()}
           />

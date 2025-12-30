@@ -122,6 +122,7 @@ model User {
   makeoverLevels       UserMakeoverLevel[]
   makeoverBadges       UserMakeoverBadge[]
   makeoverChallengeEnrollments UserMakeoverChallengeEnrollment[]
+  visionImages UserVisionImage[]
 
   //Makeover Accountability Buddy
   buddyDoer    MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyOwner")
@@ -1462,11 +1463,31 @@ model UserMakeoverCommitment {
   actionId   String?
   actionText String?
   visionStatement String?
+  isLocked Boolean @default(false)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   area   MakeoverArea? @relation(fields: [areaId], references: [id])
 
 
   @@unique([userId, programId, areaId, quarter])
+}
+
+model UserVisionImage {
+  id        String @id @default(cuid())
+
+  userId    String
+  programId String
+  quarter   String
+
+  imageUrl  String
+
+  isLocked  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, quarter])
 }
 
 // Daily + weekly execution log
