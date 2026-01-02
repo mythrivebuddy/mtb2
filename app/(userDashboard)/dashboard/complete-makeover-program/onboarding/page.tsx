@@ -38,14 +38,13 @@ export default async function MakeoverOnboardingPage() {
     select: { id: true, startDate: true },
   });
 
-
-
   /* ───────────── REDIRECT IF ALREADY STARTED ───────────── */
-  if (
+  const programStarted =
     programState?.onboarded &&
-    programState.program?.startDate &&
-    new Date() >= programState.program.startDate
-  ) {
+    programState?.program?.startDate &&
+    new Date() >= new Date(programState.program.startDate);
+
+  if (programStarted) {
     redirect("/dashboard/complete-makeover-program/makeover-dashboard");
   }
 
@@ -64,7 +63,7 @@ export default async function MakeoverOnboardingPage() {
   ]);
 
   const formOptions = { areas, goals, identities };
-    if (!program) {
+  if (!program) {
     return (
       <MakeoverOnboardingComponent
         initialData={null}

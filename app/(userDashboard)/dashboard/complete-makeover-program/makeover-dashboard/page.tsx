@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const DashboardPage = async () => {
   const session = await getServerSession(authOptions);
@@ -40,22 +41,40 @@ const DashboardPage = async () => {
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-slate-900 dark:text-white text-3xl font-bold tracking-tight mb-2">
-              Week 12 of 51 • Quarter 1
-            </h1>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-100 dark:border-blue-800">
-              <Clock className="w-4 h-4" />
-              <span>18 days left in this quarter</span>
+        <div className="flex flex-col gap-4">
+          {/* Top row */}
+          <div className="flex flex-col md:flex-row md:items-center">
+            {/* Left content */}
+            <div>
+              <h1 className="text-slate-900 dark:text-white text-3xl font-bold tracking-tight mb-2">
+                Week 12 of 51 • Quarter 1
+              </h1>
+
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-100 dark:border-blue-800">
+                <Clock className="w-4 h-4" />
+                <span>18 days left in this quarter</span>
+              </div>
+            </div>
+
+            {/* Right buttons */}
+            <div className="flex gap-3 mt-4 md:mt-0 md:ml-auto items-center">
+              <Link href="/dashboard/complete-makeover-program/daily-actions-task-for-quarter">
+                <Button className="inline-flex items-center gap-2  bg-[#1183d4] font-medium hover:bg-[#0c62a0] ">
+                  <Sparkles className="w-4 h-4" />
+                  Set this quarter’s actionsp
+                </Button>
+              </Link>
+
+              <Link href="/dashboard/complete-makeover-program/onboarding">
+                <Button className="inline-flex items-center gap-2  bg-[#059669] font-medium  hover:bg-emerald-700">
+                  <Sparkles className="w-4 h-4" />
+                  Edit onboarding
+                </Button>
+              </Link>
             </div>
           </div>
-          <Link href="/dashboard/complete-makeover-program/daily-actions-task-for-quarter">
-            <button className="mt-3 md:mt-0 inline-flex items-center gap-2 h-11 px-5  bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg transition group-invalid:">
-              <Sparkles className="w-4 h-4" />
-              Set this quarter’s actions
-            </button>
-          </Link>
+
+          {/* Quote */}
           <div className="text-right hidden md:block">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium italic">
               "Keep showing up. You're building the new you."
@@ -331,7 +350,7 @@ const AreaCard = ({
         <div className={`p-2 rounded-lg ${bgColor}`} style={{ color }}>
           {icon}
         </div>
-        <div>
+        <div>         
           <h4 className="font-bold text-slate-900 dark:text-white">{title}</h4>
           <span className="text-xs text-slate-500 font-medium">
             Q1 Goal: {goal}
