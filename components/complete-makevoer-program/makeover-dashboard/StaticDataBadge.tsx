@@ -10,9 +10,9 @@ const StaticDataBadge = ({
 }: StaticDataBadgeProps) => {
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full  bg-[#059669] px-2.5 py-1 text-xs font-semibold text-white ${className}`}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-50" />
+      <span className="h-1.5 w-1.5 rounded-full font-medium bg-slate-50" />
       {label}
     </span>
   );
