@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unescaped-entities */
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -44,24 +43,23 @@ const DashboardPage = async () => {
       actionText: c.actionText ?? "",
       isLocked: c.isLocked,
     }));
-    const makeoverChallenges = await prisma.makeoverAreaChallengeMap.findMany({
-      where:{areaId: {in: userMakeoverCommitments.map(c=>c.areaId)}},
-      select:{
-        id:true,
-        areaId:true,
-        challengeId:true,
-      }
-    });
-    const challengesByArea = makeoverChallenges.reduce<
-  Record<number, string[]>
->((acc, curr) => {
-  if (!acc[curr.areaId]) acc[curr.areaId] = [];
-  acc[curr.areaId].push(curr.challengeId);
-  return acc;
-}, {});
+  const makeoverChallenges = await prisma.makeoverAreaChallengeMap.findMany({
+    where: { areaId: { in: userMakeoverCommitments.map((c) => c.areaId) } },
+    select: {
+      id: true,
+      areaId: true,
+      challengeId: true,
+    },
+  });
+  const challengesByArea = makeoverChallenges.reduce<Record<number, string[]>>(
+    (acc, curr) => {
+      if (!acc[curr.areaId]) acc[curr.areaId] = [];
+      acc[curr.areaId].push(curr.challengeId);
+      return acc;
+    },
+    {}
+  );
 
-    console.log(makeoverChallenges);
-    
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -78,7 +76,10 @@ const DashboardPage = async () => {
         <GlobalProgress />
 
         {/* Area Snapshots */}
-        <AreaSnapshots commitments={userMakeoverCommitments}  challengesByArea={challengesByArea} />
+        <AreaSnapshots
+          commitments={userMakeoverCommitments}
+          challengesByArea={challengesByArea}
+        />
 
         {/* Bottom Grid: Bonus & Community */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">

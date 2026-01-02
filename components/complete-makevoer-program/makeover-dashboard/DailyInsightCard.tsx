@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { BookOpen, Lightbulb } from "lucide-react";
 
 const DailyInsightCard = () => {

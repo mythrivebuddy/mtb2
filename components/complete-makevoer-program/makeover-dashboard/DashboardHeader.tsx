@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Sparkles, Clock, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ const DashboardHeader = () => {
         {/* LEFT: Week + Quarter */}
         <div className="flex flex-col flex-wrap items-start gap-3">
           <h1 className="text-3xl font-bold whitespace-nowrap">
-            Week 12 of 51 • Quarter 1
+            Week 0 of 51 • Quarter 1
           </h1>
 
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border whitespace-nowrap">

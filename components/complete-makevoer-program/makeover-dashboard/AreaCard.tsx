@@ -42,8 +42,13 @@ const AreaCard = ({
 
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${bgColor}`} style={{ color }}>
-            {icon}
+          <div
+            className={`p-2 rounded-lg  ${bgColor} ring-1 ring-white/10`}
+            style={{ color }}
+          >
+            <span className="w-16 h-16">
+              {icon}
+              </span>
           </div>
 
           <div>
@@ -70,7 +75,7 @@ const AreaCard = ({
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex justify-between items-center mt-8">
         <div className="flex flex-col gap-2">
           <div>
             <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">

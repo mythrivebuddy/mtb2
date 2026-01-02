@@ -1,4 +1,6 @@
+/* eslint-disable react/no-unescaped-entities */
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const TodayActionsCard = ({
   isProgramStarted,
@@ -44,12 +46,14 @@ const TodayActionsCard = ({
             Your daily actions will start soon. Get ready to build momentum.
           </p>
         )}
-        <button
-          className={`w-full sm:w-fit h-11 px-6 ${!isProgramStarted ? "opacity-70" : "opacity-100"} bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg font-semibold shadow-sm transition-all flex items-center justify-center gap-2 group`}
-        >
-          <span>Open Today's Actions</span>
-          <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-        </button>
+        <Link href="/dashboard/complete-makeover-program/todays-actions">
+          <button
+            className={`w-full sm:w-fit h-11 px-6 ${!isProgramStarted ? "opacity-70" : "opacity-100"} bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg font-semibold shadow-sm transition-all flex items-center justify-center gap-2 group`}
+          >
+            <span>Open Today's Actions</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </button>
+        </Link>
       </div>
     </section>
   );

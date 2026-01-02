@@ -15,9 +15,13 @@ export interface AreaConfig {
   title: string;
   label: string;
   color: string;
+  iconColor: string;
   bgColor: string;
   Icon: React.ElementType;
 }
+
+const DARK_ICON_BG =
+  "bg-slate-100";
 
 export const AREAS: Record<number, AreaConfig> = {
   1: {
@@ -25,7 +29,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Physical Vitality",
     label: "Area 1",
     color: "#22C55E",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
+    iconColor: "#166534", // green-800
+    bgColor: DARK_ICON_BG,
     Icon: Activity,
   },
   2: {
@@ -33,7 +38,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Mental Clarity",
     label: "Area 2",
     color: "#6366F1",
-    bgColor: "bg-indigo-50 dark:bg-indigo-900/20",
+    iconColor: "#3730A3", // indigo-800
+    bgColor: DARK_ICON_BG,
     Icon: Brain,
   },
   3: {
@@ -41,7 +47,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Relationships",
     label: "Area 3",
     color: "#EC4899",
-    bgColor: "bg-pink-50 dark:bg-pink-900/20",
+    iconColor: "#9D174D", // pink-800
+    bgColor: DARK_ICON_BG,
     Icon: Users,
   },
   4: {
@@ -49,7 +56,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Career Growth",
     label: "Area 4",
     color: "#F59E0B",
-    bgColor: "bg-amber-50 dark:bg-amber-900/20",
+    iconColor: "#92400E", // amber-800
+    bgColor: DARK_ICON_BG,
     Icon: Briefcase,
   },
   5: {
@@ -57,7 +65,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Financial Health",
     label: "Area 5",
     color: "#10B981",
-    bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
+    iconColor: "#065F46", // emerald-800
+    bgColor: DARK_ICON_BG,
     Icon: Wallet,
   },
   6: {
@@ -65,7 +74,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Contribution",
     label: "Area 6",
     color: "#0EA5E9",
-    bgColor: "bg-sky-50 dark:bg-sky-900/20",
+    iconColor: "#075985", // sky-800
+    bgColor: DARK_ICON_BG,
     Icon: Share2,
   },
   7: {
@@ -73,7 +83,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Wisdom & Learning",
     label: "Area 7",
     color: "#8B5CF6",
-    bgColor: "bg-violet-50 dark:bg-violet-900/20",
+    iconColor: "#5B21B6", // violet-800
+    bgColor: DARK_ICON_BG,
     Icon: Lightbulb,
   },
   8: {
@@ -81,7 +92,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Self-Worth",
     label: "Area 8",
     color: "#EAB308",
-    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+    iconColor: "#854D0E", // yellow-800
+    bgColor: DARK_ICON_BG,
     Icon: Gem,
   },
   9: {
@@ -89,7 +101,8 @@ export const AREAS: Record<number, AreaConfig> = {
     title: "Inner Peace",
     label: "Area 9",
     color: "#14B8A6",
-    bgColor: "bg-teal-50 dark:bg-teal-900/20",
+    iconColor: "#115E59", // teal-800
+    bgColor: DARK_ICON_BG,
     Icon: Flower2,
   },
 };

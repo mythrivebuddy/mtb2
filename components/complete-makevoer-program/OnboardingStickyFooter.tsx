@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface OnboardingStickyFooterProps {
   onBack?: () => void;
@@ -33,9 +33,10 @@ const OnboardingStickyFooter = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="px-6 py-3 text-sm font-semibold text-white
+              className="px-4 flex items-center gap-2 py-3 text-sm font-semibold text-white
                           bg-[#059669]  hover:bg-emerald-700 rounded-lg transition-colors"
             >
+              <ArrowLeft size={18} />
               {backLabel}
             </button>
           )}
