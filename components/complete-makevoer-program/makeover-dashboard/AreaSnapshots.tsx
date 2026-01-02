@@ -1,39 +1,48 @@
+import { AREAS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
 import AreaCard from "./AreaCard";
-import { Footprints, Landmark, BookOpen } from "lucide-react";
 
-const AreaSnapshots = () => {
+interface AreaSnapshotsProps {
+  commitments: {
+    id: string;
+    areaId: number;
+    goalText: string;
+    identityText: string;
+    actionText: string;
+    isLocked: boolean;
+  }[];
+  challengesByArea: Record<number, string[]>;
+}
+
+const AreaSnapshots = ({
+  commitments,
+  challengesByArea,
+}: AreaSnapshotsProps) => {
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <AreaCard
-        title="Health & Vitality"
-        label="Area 1"
-        goal="Run 50km"
-        progress={0}
-        points={0}
-        color="#10B981"
-        bgColor="bg-emerald-50 dark:bg-emerald-900/20"
-        icon={<Footprints className="w-5 h-5" />}
-      />
-      <AreaCard
-        title="Wealth & Career"
-        label="Area 2"
-        goal="Launch MVP"
-        progress={0}
-        points={0}
-        color="#F59E0B"
-        bgColor="bg-amber-50 dark:bg-amber-900/20"
-        icon={<Landmark className="w-5 h-5" />}
-      />
-      <AreaCard
-        title="Wisdom & Peace"
-        label="Area 3"
-        goal="Read 3 Books"
-        progress={0}
-        points={0}
-        color="#1183d4"
-        bgColor="bg-indigo-50 dark:bg-indigo-900/20"
-        icon={<BookOpen className="w-5 h-5" />}
-      />
+      {commitments.map((commitment) => {
+        const area = AREAS[commitment.areaId];
+        const challenges = challengesByArea[commitment.areaId] ?? [];
+
+        // Safety check (in case DB has unexpected areaId)
+        if (!area) return null;
+
+        const Icon = area.Icon;
+
+        return (
+          <AreaCard
+            key={commitment.id}
+            title={area.title}
+            label={area.label}
+            goal={commitment.goalText}
+            progress={0}
+            points={0}
+            color={area.color}
+            bgColor={area.bgColor}
+            icon={<Icon className="w-5 h-5" />}
+            challengeIds={challenges}
+          />
+        );
+      })}
     </section>
   );
 };

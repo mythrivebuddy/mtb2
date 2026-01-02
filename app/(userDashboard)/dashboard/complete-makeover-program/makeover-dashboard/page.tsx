@@ -30,6 +30,38 @@ const DashboardPage = async () => {
   if (isProgramStarted == null) {
     isProgramStarted = false;
   }
+  const rawCommitments = await prisma.userMakeoverCommitment.findMany({
+    where: { userId, programId: programState.programId },
+  });
+
+  const userMakeoverCommitments = rawCommitments
+    .filter((c) => c.areaId !== null)
+    .map((c) => ({
+      id: c.id,
+      areaId: c.areaId!, // safe after filter
+      goalText: c.goalText ?? "",
+      identityText: c.identityText ?? "",
+      actionText: c.actionText ?? "",
+      isLocked: c.isLocked,
+    }));
+    const makeoverChallenges = await prisma.makeoverAreaChallengeMap.findMany({
+      where:{areaId: {in: userMakeoverCommitments.map(c=>c.areaId)}},
+      select:{
+        id:true,
+        areaId:true,
+        challengeId:true,
+      }
+    });
+    const challengesByArea = makeoverChallenges.reduce<
+  Record<number, string[]>
+>((acc, curr) => {
+  if (!acc[curr.areaId]) acc[curr.areaId] = [];
+  acc[curr.areaId].push(curr.challengeId);
+  return acc;
+}, {});
+
+    console.log(makeoverChallenges);
+    
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -46,12 +78,12 @@ const DashboardPage = async () => {
         <GlobalProgress />
 
         {/* Area Snapshots */}
-        <AreaSnapshots />
+        <AreaSnapshots commitments={userMakeoverCommitments}  challengesByArea={challengesByArea} />
 
         {/* Bottom Grid: Bonus & Community */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Bonus & Rewards */}
-          <BonusRewards isProgramStarted={isProgramStarted}/>
+          <BonusRewards isProgramStarted={isProgramStarted} />
           {/* Accountability Pod */}
           <AccountabilityBuddy isProgramStarted={isProgramStarted} />
         </section>
