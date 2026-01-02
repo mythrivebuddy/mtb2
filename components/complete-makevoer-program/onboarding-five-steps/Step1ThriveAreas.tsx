@@ -18,15 +18,19 @@ interface StepOneProps {
     icon: React.ElementType;
   }[];
   selectedIds: string[];
+  isEditMode?: boolean;
   onUpdate: (ids: string[]) => void;
   onNext: () => void;
+  setStep?: (step: number) => void;
 }
 
 const Step1ThriveAreas = ({
   selectedIds,
   onUpdate,
   onNext,
+  isEditMode,
   areas,
+  setStep,
 }: StepOneProps) => {
   const [showToast, setShowToast] = useState(false);
 
@@ -54,7 +58,11 @@ const Step1ThriveAreas = ({
   };
 
   const isComplete = selectedIds.length === 3;
-
+  useEffect(() => {
+    if (isEditMode && setStep) {
+      setStep(2);
+    }
+  }, [isEditMode, setStep]);
   return (
     <main className="flex-1 flex justify-center py-6 px-4 sm:px-8 font-display relative">
       {/* Toast Notification */}

@@ -21,8 +21,21 @@ import {
 } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-const DashboardPage = () => {
+const DashboardPage = async () => {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) redirect("/login");
+  const userId = session.user.id;
+  const programState = await prisma.userProgramState.findFirst({
+    where: { userId },
+  });
+  if (!programState || !programState?.onboarded) {
+    redirect("/dashboard/complete-makeover-program/onboarding");
+  }
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -38,10 +51,10 @@ const DashboardPage = () => {
             </div>
           </div>
           <Link href="/dashboard/complete-makeover-program/daily-actions-task-for-quarter">
-          <button className="mt-3 md:mt-0 inline-flex items-center gap-2 h-11 px-5  bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg transition group-invalid:">
-            <Sparkles className="w-4 h-4" />
-            Set this quarter’s actions
-          </button>
+            <button className="mt-3 md:mt-0 inline-flex items-center gap-2 h-11 px-5  bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg transition group-invalid:">
+              <Sparkles className="w-4 h-4" />
+              Set this quarter’s actions
+            </button>
           </Link>
           <div className="text-right hidden md:block">
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium italic">

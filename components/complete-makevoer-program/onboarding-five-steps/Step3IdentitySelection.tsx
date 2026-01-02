@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Plus, Flag } from "lucide-react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
@@ -18,6 +18,7 @@ interface Step3Props {
   // This prop receives the goals created in Step 2
   areaGoals: Record<string, string>;
   identitiesByArea: Record<string, string[]>;
+  initialIdentities: Record<string, string>;
   areasMeta: {
     id: string;
     title: string;
@@ -32,12 +33,16 @@ const Step3IdentitySelection = ({
   selectedAreas = [],
   areaGoals = {},
   identitiesByArea = {},
+  initialIdentities,
   areasMeta = [],
   onBack,
   onNext,
 }: Step3Props) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [identities, setIdentities] = useState<Record<string, string>>({});
+  useEffect(() => {
+    setIdentities(initialIdentities);
+  }, [initialIdentities]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Helper to get titles for the header summary
