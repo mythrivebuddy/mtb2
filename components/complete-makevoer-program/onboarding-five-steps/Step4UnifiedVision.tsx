@@ -17,6 +17,7 @@ import OnboardingStickyFooter from "../OnboardingStickyFooter";
 interface Step4Props {
   onBack: () => void;
   onNext: (vision: string) => void;
+  initialVision: string;
 }
 
 const EXAMPLES = [
@@ -40,7 +41,7 @@ const EXAMPLES = [
   },
 ];
 
-const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
+const Step4UnifiedVision = ({ onBack, onNext,initialVision }: Step4Props) => {
   const [vision, setVision] = useState("");
   const maxLength = 500;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -58,7 +59,9 @@ const Step4UnifiedVision = ({ onBack, onNext }: Step4Props) => {
     setSelectedImage(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
-
+  useEffect(() => {
+    setVision(initialVision);
+  }, [initialVision]);
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);

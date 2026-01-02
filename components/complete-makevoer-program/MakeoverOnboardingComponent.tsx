@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, Fragment, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
@@ -43,12 +43,6 @@ type ApiIdentity = {
   statement: string;
 };
 
-type FormOptionsResponse = {
-  areas: ApiArea[];
-  goals: ApiGoal[];
-  identities: ApiIdentity[];
-};
-
 type NormalizedArea = {
   id: string;
   title: string;
@@ -62,10 +56,31 @@ type FormState = {
   identities: Record<string, string>;
   vision: string;
 };
+type InitialOnboardingData = {
+  programId?: string;
+  onboarded: boolean;
+  selectedAreas: string[];
+  areaGoals: Record<string, string>;
+  identities: Record<string, string>;
+  vision: string;
+} | null;
+type FormOptionsResponse = {
+  areas: ApiArea[];
+  goals: ApiGoal[];
+  identities: ApiIdentity[];
+};
 
-const MakeoverOnboardingParent = () => {
+const MakeoverOnboardingParent = ({
+  initialData,
+  formOptions,
+}: {
+  initialData: InitialOnboardingData;
+  formOptions: FormOptionsResponse;
+}) => {
+  const isEditMode = initialData?.onboarded === true;
   const router = useRouter();
-  const [step, setStep] = useState<number>(1);
+
+  const [step, setStep] = useState<number>(isEditMode ? 2 : 1);
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -76,58 +91,47 @@ const MakeoverOnboardingParent = () => {
     });
   }, [step]);
 
-  /* ───────────── FETCH FORM OPTIONS ───────────── */
-  const { data, isLoading } = useQuery<FormOptionsResponse>({
-    queryKey: ["makeover-formOptions"],
-    queryFn: async () =>
-      (
-        await axios.get<FormOptionsResponse>(
-          "/api/makeover-program/onboarding/form-options"
-        )
-      ).data,
-  });
-
   /* ───────────── NORMALIZATION ───────────── */
 
   const areas = useMemo<NormalizedArea[]>(() => {
-    if (!data?.areas) return [];
-
-    return data.areas.map((a) => ({
+    return formOptions.areas.map((a) => ({
       id: String(a.id),
       title: a.name,
       description: a.description ?? "",
       icon: (AREA_ICON_MAP[a.id] ?? Leaf) as LucideIcon,
     }));
-  }, [data]);
+  }, [formOptions.areas]);
 
   const goalsByArea = useMemo<Record<string, string[]>>(() => {
-    if (!data?.goals) return {};
-
-    return data.goals.reduce<Record<string, string[]>>((acc, g) => {
-      const key = String(g.areaId);
-      acc[key] ??= [];
-      acc[key].push(g.title);
-      return acc;
-    }, {});
-  }, [data]);
+    return formOptions.goals.reduce(
+      (acc, g) => {
+        const key = String(g.areaId);
+        acc[key] ??= [];
+        acc[key].push(g.title);
+        return acc;
+      },
+      {} as Record<string, string[]>
+    );
+  }, [formOptions.goals]);
 
   const identitiesByArea = useMemo<Record<string, string[]>>(() => {
-    if (!data?.identities) return {};
-
-    return data.identities.reduce<Record<string, string[]>>((acc, i) => {
-      const key = String(i.areaId);
-      acc[key] ??= [];
-      acc[key].push(i.statement);
-      return acc;
-    }, {});
-  }, [data]);
+    return formOptions.identities.reduce(
+      (acc, i) => {
+        const key = String(i.areaId);
+        acc[key] ??= [];
+        acc[key].push(i.statement);
+        return acc;
+      },
+      {} as Record<string, string[]>
+    );
+  }, [formOptions.identities]);
 
   /* ───────────── FORM STATE ───────────── */
   const [formData, setFormData] = useState<FormState>({
-    selectedAreas: [],
-    areaGoals: {},
-    identities: {},
-    vision: "",
+    selectedAreas: initialData?.selectedAreas ?? [],
+    areaGoals: initialData?.areaGoals ?? {},
+    identities: initialData?.identities ?? {},
+    vision: initialData?.vision ?? "",
   });
 
   /* ───────────── SUBMIT MUTATION ───────────── */
@@ -155,8 +159,32 @@ const MakeoverOnboardingParent = () => {
       return axios.post("/api/makeover-program/onboarding", payload);
     },
 
-    onSuccess: () => {
-      toast.success("🎉 Makeover Program onboarding completed!");
+    onSuccess: (res) => {
+      const mode = res.data?.mode;
+
+      if (mode === "edited") {
+        toast.success("Changes saved successfully");
+      } else {
+        toast.success("🎉 Makeover Program onboarding completed!");
+        console.log("ENROLL PAYLOAD", {
+          programId: initialData?.programId,
+          areaIds: formData.selectedAreas,
+        });
+
+        axios
+          .post("/api/makeover-program/onboarding/enroll", {
+            programId: initialData?.programId,
+            areaIds: formData.selectedAreas.map(Number),
+          })
+          .catch((error) => {
+            toast.error("Some challenges may take time to appear");
+            console.error(
+              "Error enrolling user into challenges after onboarding ",
+              error
+            );
+          });
+      }
+
       router.push("/dashboard/complete-makeover-program/makeover-dashboard");
     },
 
@@ -178,8 +206,6 @@ const MakeoverOnboardingParent = () => {
     "Summary",
     "Rules",
   ];
-
-  if (isLoading) return null;
 
   return (
     <div className="min-h-screen flex flex-col items-center">
@@ -230,8 +256,10 @@ const MakeoverOnboardingParent = () => {
         {step === 1 && (
           <Step1ThriveAreas
             areas={areas}
+            isEditMode={isEditMode}
+            setStep={setStep}
             selectedIds={formData.selectedAreas}
-            onUpdate={(ids: string[]) =>
+            onUpdate={(ids) =>
               setFormData((p) => ({ ...p, selectedAreas: ids }))
             }
             onNext={nextStep}
@@ -243,6 +271,7 @@ const MakeoverOnboardingParent = () => {
             selectedAreas={formData.selectedAreas}
             areasMeta={areas}
             goalsByArea={goalsByArea}
+            initialGoals={formData.areaGoals}
             onBack={prevStep}
             onNext={(goals: Record<string, string>) => {
               setFormData((p) => ({ ...p, areaGoals: goals }));
@@ -257,6 +286,7 @@ const MakeoverOnboardingParent = () => {
             areaGoals={formData.areaGoals}
             areasMeta={areas}
             identitiesByArea={identitiesByArea}
+            initialIdentities={formData.identities}
             onBack={prevStep}
             onNext={(ids: Record<string, string>) => {
               setFormData((p) => ({ ...p, identities: ids }));
@@ -268,6 +298,7 @@ const MakeoverOnboardingParent = () => {
         {step === 4 && (
           <Step4UnifiedVision
             onBack={prevStep}
+            initialVision={formData.vision}
             onNext={(vision: string) => {
               setFormData((p) => ({ ...p, vision }));
               nextStep();
