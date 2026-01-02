@@ -9,7 +9,6 @@ import DailyInsightCard from "@/components/complete-makevoer-program/makeover-da
 import GlobalProgress from "@/components/complete-makevoer-program/makeover-dashboard/GlobalProgress";
 import AreaSnapshots from "@/components/complete-makevoer-program/makeover-dashboard/AreaSnapshots";
 import BonusRewards from "@/components/complete-makevoer-program/makeover-dashboard/BonusRewards";
-import AccountabilityPod from "@/components/complete-makevoer-program/makeover-dashboard/AccountabilityBuddy";
 import AccountabilityBuddy from "@/components/complete-makevoer-program/makeover-dashboard/AccountabilityBuddy";
 
 const DashboardPage = async () => {
@@ -18,9 +17,18 @@ const DashboardPage = async () => {
   const userId = session.user.id;
   const programState = await prisma.userProgramState.findFirst({
     where: { userId },
+    include: {
+      program: true,
+    },
   });
   if (!programState || !programState?.onboarded) {
     redirect("/dashboard/complete-makeover-program/onboarding");
+  }
+  let isProgramStarted =
+    programState.program?.startDate &&
+    programState.program?.startDate <= new Date();
+  if (isProgramStarted == null) {
+    isProgramStarted = false;
   }
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
@@ -30,7 +38,7 @@ const DashboardPage = async () => {
 
         {/* Top Section: Actions & Insights */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <TodayActionsCard />
+          <TodayActionsCard isProgramStarted={isProgramStarted} />
           <DailyInsightCard />
         </section>
 
@@ -43,9 +51,9 @@ const DashboardPage = async () => {
         {/* Bottom Grid: Bonus & Community */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Bonus & Rewards */}
-          <BonusRewards />
+          <BonusRewards isProgramStarted={isProgramStarted}/>
           {/* Accountability Pod */}
-          <AccountabilityBuddy/>
+          <AccountabilityBuddy isProgramStarted={isProgramStarted} />
         </section>
       </main>
     </div>
