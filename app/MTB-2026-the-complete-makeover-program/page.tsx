@@ -27,6 +27,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
 import { AuthMethod } from "@prisma/client";
+import { redirect } from "next/navigation";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
@@ -96,10 +97,15 @@ const renderIcon = (name: string, hexColorClass: string) => {
 const CompleteMakeoverPageContent = async () => {
   const session = await getServerSession(authOptions);
   const user = session?.user;
-  
+
   const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
   const plan = res.data.plan;
+  // const isProgramStarted = res.data.isProgramStarted;
+  const isProgramOnboardingStarted = res.data.isProgramOnboardingStarted;
 
+  if (isProgramOnboardingStarted) {
+    redirect("/dashboard/complete-makeover-program/makeover-dashboard");
+  }
   return (
     <AppLayout>
       <div className="bg-[#FFFFFF] dark:bg-[#1F2937] font-body text-[#333333] dark:text-[#E5E7EB]">
@@ -409,12 +415,11 @@ const CompleteMakeoverPageContent = async () => {
             </div>
           </section>
         </main>
-        {
-          user?.authMethod && user.authMethod === AuthMethod.GOOGLE && user.userType == null && (
+        {user?.authMethod &&
+          user.authMethod === AuthMethod.GOOGLE &&
+          user.userType == null && (
             <UserTypeSelection authMethod={user.authMethod} />
-          )
-        }
-        
+          )}
       </div>
     </AppLayout>
   );

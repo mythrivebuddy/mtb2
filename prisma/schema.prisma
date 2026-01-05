@@ -1331,6 +1331,8 @@ model Program {
    // 🔐 Program lifecycle
   startDate        DateTime?  
   endDate          DateTime?
+  onboardingStartDate DateTime?
+  onboardingEndDate  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
