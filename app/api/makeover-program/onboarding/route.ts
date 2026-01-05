@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@prisma/client";
+import { CURRENT_MAKEOVER_PROGRAM_QUARTER } from "@/lib/constant";
 
 /* ───────────────── TYPES ───────────────── */
 
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
     }
 
     const programId = purchase.productId;
-    const quarter = "Q1";
+    const quarter = CURRENT_MAKEOVER_PROGRAM_QUARTER;
     const year = 2026;
 
     /* ───────────── PROGRAM STATE ───────────── */

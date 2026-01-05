@@ -54,10 +54,10 @@ const GlobalProgress = () => {
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide">
-              Current Identity State
+              Current Level Identity
             </p>
             <p className="text-lg font-bold text-slate-900 dark:text-white">
-              The Consistent Creator
+              Initiator
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Focus: Daily small wins over big leaps.

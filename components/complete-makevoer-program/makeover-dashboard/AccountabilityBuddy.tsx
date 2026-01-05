@@ -18,7 +18,7 @@ const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-bold text-lg flex items-center gap-2">
           <Users className="w-5 h-5 text-[#1183d4]" />
-          Accountability Pod
+          Accountability Buddies
         </h3>
 
         {isProgramStarted && (

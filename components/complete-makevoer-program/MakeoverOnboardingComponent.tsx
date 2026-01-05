@@ -63,6 +63,7 @@ type InitialOnboardingData = {
   areaGoals: Record<string, string>;
   identities: Record<string, string>;
   vision: string;
+  visionImageUrl?: string;
 } | null;
 type FormOptionsResponse = {
   areas: ApiArea[];
@@ -299,6 +300,7 @@ const MakeoverOnboardingParent = ({
           <Step4UnifiedVision
             onBack={prevStep}
             initialVision={formData.vision}
+            visionImageUrl={initialData?.visionImageUrl}
             onNext={(vision: string) => {
               setFormData((p) => ({ ...p, vision }));
               nextStep();

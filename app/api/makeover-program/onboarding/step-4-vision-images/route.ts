@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { CURRENT_MAKEOVER_PROGRAM_QUARTER } from "@/lib/constant";
 
 
 
@@ -29,17 +30,19 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const subscription = await prisma.subscription.findFirst({
-      where: { userId },
+    const program = await prisma.program.findFirst({
+      where: {
+        slug: '2026-complete-makeover'
+      }
     });
-    const programId = subscription?.grantedByPurchaseId;
-    if (!programId ) {
+    const programId = program?.id;
+    if (!programId) {
       return NextResponse.json(
         { error: "Missing programId" },
         { status: 400 }
       );
     }
-    const quarter = "Q1";
+    const quarter = CURRENT_MAKEOVER_PROGRAM_QUARTER;
 
     if (!image.type.startsWith("image/")) {
       return NextResponse.json(

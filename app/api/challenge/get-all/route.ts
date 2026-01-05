@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ChallengeJoinMode } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -34,6 +35,9 @@ export async function GET() {
 
     // --- Fetch all challenges ---
     const challengesFromDb = await prisma.challenge.findMany({
+      where:{
+        joinMode:ChallengeJoinMode.MANUAL
+      },
       include: {
         _count: {
           select: { enrollments: true },

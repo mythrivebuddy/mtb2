@@ -90,7 +90,7 @@ export default async function MakeoverOnboardingPage() {
   }
 
   /* ───────────── EDIT MODE DATA ───────────── */
-  const [userAreas, commitments] = await Promise.all([
+  const [userAreas, commitments, visionImage] = await Promise.all([
     prisma.userMakeoverArea.findMany({
       where: { userId, programId: program.id },
       select: { areaId: true },
@@ -104,6 +104,9 @@ export default async function MakeoverOnboardingPage() {
         visionStatement: true,
       },
     }),
+    prisma.userVisionImage.findFirst({
+      where: { userId, programId: program.id },
+    })
   ]);
 
   const initialData = {
@@ -117,6 +120,7 @@ export default async function MakeoverOnboardingPage() {
       commitments.map((c) => [String(c.areaId), c.identityText ?? ""])
     ),
     vision: commitments[0]?.visionStatement ?? "",
+    visionImageUrl: visionImage?.imageUrl || "",
   };
 
   return (

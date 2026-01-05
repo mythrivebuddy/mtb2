@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   Flame,
@@ -376,6 +376,8 @@ const socialLinksData = [
 export default function ChallengeManagementPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const from_where_user_came = searchParams.get("from");
   const slug = params.slug as string;
   const queryClient = useQueryClient();
   const session = useSession();
@@ -643,6 +645,15 @@ export default function ChallengeManagementPage() {
     (day) => day.status === "COMPLETED"
   ).length;
 
+  const handleBack = () => {
+    if (from_where_user_came != "") {
+      router.push(`/${from_where_user_came}`);
+    }
+    else{
+      router.push(`/dashboard/challenge`)
+    }
+  };
+
   return (
     <>
       <div className="min-h-screen font-sans">
@@ -651,7 +662,7 @@ export default function ChallengeManagementPage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-4">
               <button
-                onClick={() => router.push(`/dashboard/challenge`)}
+                onClick={handleBack}
                 className="flex items-center gap-1 text-gray-600 hover:text-indigo-600 transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
