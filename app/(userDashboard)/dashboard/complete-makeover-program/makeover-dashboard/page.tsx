@@ -31,6 +31,7 @@ const DashboardPage = async () => {
   }
   const rawCommitments = await prisma.userMakeoverCommitment.findMany({
     where: { userId, programId: programState.programId },
+    include: { area: { select: { name: true } } },
   });
 
   const userMakeoverCommitments = rawCommitments
@@ -38,6 +39,7 @@ const DashboardPage = async () => {
     .map((c) => ({
       id: c.id,
       areaId: c.areaId!, // safe after filter
+      areaName: c.area?.name ?? "",
       goalText: c.goalText ?? "",
       identityText: c.identityText ?? "",
       actionText: c.actionText ?? "",
