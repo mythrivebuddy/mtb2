@@ -41,9 +41,9 @@ const AreaCard = ({
       />
 
       <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <div
-            className={`p-2 rounded-lg  ${bgColor} ring-1 ring-white/10`}
+            className={`p-2 rounded-lg  ${bgColor} ring-1 ring-white/10 mt-1`}
             style={{ color }}
           >
             <span className="w-16 h-16">
@@ -100,7 +100,7 @@ const AreaCard = ({
         <div className="flex flex-col items-start gap-6">
           {hasChallenges ? (
             <Link
-              href={challengeLink}
+              href={`${challengeLink}?from=dashboard/complete-makeover-program/makeover-dashboard`}
               className="text-sm text-[#1183d4] font-medium hover:underline flex items-center gap-1"
             >
               View Group

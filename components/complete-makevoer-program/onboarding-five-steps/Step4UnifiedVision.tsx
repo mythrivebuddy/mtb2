@@ -18,6 +18,7 @@ interface Step4Props {
   onBack: () => void;
   onNext: (vision: string) => void;
   initialVision: string;
+  visionImageUrl?: string;
 }
 
 const EXAMPLES = [
@@ -41,7 +42,7 @@ const EXAMPLES = [
   },
 ];
 
-const Step4UnifiedVision = ({ onBack, onNext,initialVision }: Step4Props) => {
+const Step4UnifiedVision = ({ onBack, onNext,initialVision,visionImageUrl }: Step4Props) => {
   const [vision, setVision] = useState("");
   const maxLength = 500;
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -194,9 +195,9 @@ const handleNext = () => {
                   onClick={() => fileInputRef.current?.click()}
                   className="relative flex h-[20rem] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#cfe7d7] bg-white  hover:border-[#11d452]/50 hover:bg-[#11d452]/5 transition-colors group"
                 >
-                  {previewUrl ? (
+                  {(previewUrl || visionImageUrl) ? (
                     <img
-                      src={previewUrl}
+                      src={previewUrl || visionImageUrl}
                       alt="Vision preview"
                       className="h-full w-full rounded-xl object-cover"
                     />
@@ -210,7 +211,7 @@ const handleNext = () => {
                           Click to upload 
                         </p>
                         <p className="text-xs text-[#4c9a66]">
-                          PNG, JPG, GIF (max. 5MB)
+                          PNG, JPG (max. 5MB)
                         </p>
                       </div>
                     </div>
