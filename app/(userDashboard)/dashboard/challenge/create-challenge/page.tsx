@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
@@ -125,6 +125,7 @@ const formatDateForInput = (date: Date | null | undefined): string => {
 
 export default function CreateChallenge({}: CreateChallengeProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [modalContent, setModalContent] = useState<{
     title: string;
     message: string;
@@ -197,6 +198,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       if (challengeId && challengeTitle) {
         const slug = generateSlug(challengeTitle);
         toast.success(data.data?.message || "Challenge created successfully");
+        queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] });
         router.push(
           `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`
         );
