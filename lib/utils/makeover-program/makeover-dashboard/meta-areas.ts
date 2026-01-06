@@ -106,3 +106,17 @@ export const AREAS: Record<number, AreaConfig> = {
     Icon: Flower2,
   },
 };
+
+
+// meta-areas.ts
+export const AREA_BACKGROUNDS: Record<number, string> = {
+  1: "#064E3B", // emerald-900
+  2: "#312E81", // indigo-900
+  3: "#831843", // pink-900
+  4: "#78350F", // amber-900
+  5: "#134E4A", // teal-900
+  6: "#0C4A6E", // sky-900
+  7: "#4C1D95", // violet-900
+  8: "#713F12", // yellow-900
+  9: "#042F2E", // teal-950
+};

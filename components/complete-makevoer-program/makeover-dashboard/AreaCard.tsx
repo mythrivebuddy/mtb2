@@ -40,29 +40,27 @@ const AreaCard = ({
         className="w-fit relative -top-5 -left-8"
       />
 
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start gap-3 lg:gap-6 mb-4 min-h-[72px]">
         <div className="flex items-start gap-3">
           <div
             className={`p-2 rounded-lg  ${bgColor} ring-1 ring-white/10 mt-1`}
             style={{ color }}
           >
-            <span className="w-16 h-16">
-              {icon}
-              </span>
+            <span className="w-16 h-16">{icon}</span>
           </div>
 
-          <div>
-            <h4 className="font-bold text-slate-900 dark:text-white">
+          <div className="min-h-[48px]">
+            <h4 className="font-bold text-slate-900 dark:text-white leading-tight">
               {title}
             </h4>
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="block text-xs text-slate-500 font-medium leading-snug">
               Q1 Goal: {goal}
             </span>
           </div>
         </div>
 
         <div
-          className="relative size-12 rounded-full flex items-center justify-center"
+          className="relative size-12 flex-shrink-0 rounded-full flex items-center justify-center"
           style={{
             background: `conic-gradient(${color} ${progress}%, #e2e8f0 0)`,
           }}

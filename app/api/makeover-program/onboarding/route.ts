@@ -64,9 +64,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!visionStatement || visionStatement.trim().length < 20) {
+    if (!visionStatement || visionStatement.trim().length < 10) {
       return NextResponse.json(
-        { error: "Vision statement is required" },
+        { error: "Vision statement must be at least 10 characters" },
         { status: 400 }
       );
     }

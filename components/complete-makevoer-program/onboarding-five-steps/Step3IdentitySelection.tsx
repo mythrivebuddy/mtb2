@@ -79,6 +79,25 @@ const Step3IdentitySelection = ({
   };
 
   const isLast = activeIndex === selectedAreas.length - 1;
+  const MIN_IDENTITY_LENGTH = 10;
+
+  const isCurrentIdentityValid = () => {
+    const areaId = selectedAreas[activeIndex];
+    const identity = identities[areaId];
+    return Boolean(identity && identity.trim().length >= MIN_IDENTITY_LENGTH);
+  };
+  const goToIndex = (nextIndex: number) => {
+    // allow backward navigation always
+    if (nextIndex <= activeIndex) {
+      scrollTo(nextIndex);
+      return;
+    }
+
+    // block forward navigation if identity invalid
+    if (!isCurrentIdentityValid()) return;
+
+    scrollTo(nextIndex);
+  };
 
   return (
     <div className="min-h-screen font-['Inter'] text-[#0d101b]">
@@ -132,8 +151,8 @@ const Step3IdentitySelection = ({
             </button>
 
             <button
-              disabled={isLast}
-              onClick={() => scrollTo(activeIndex + 1)}
+              disabled={isLast || !isCurrentIdentityValid()}
+              onClick={() => goToIndex(activeIndex + 1)}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 z-20 size-12
             rounded-full bg-white dark:bg-card-dark
             border border-border-light dark:border-border-dark
@@ -299,7 +318,8 @@ const Step3IdentitySelection = ({
               {selectedAreas.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => scrollTo(i)}
+                  onClick={() => goToIndex(i)}
+                  disabled={i > activeIndex && !isCurrentIdentityValid()}
                   className={`h-2 rounded-full transition-all ${
                     i === activeIndex
                       ? "w-8 bg-[#059669]"
@@ -313,8 +333,9 @@ const Step3IdentitySelection = ({
           {/* Sticky Footer */}
           <OnboardingStickyFooter
             onBack={onBack}
+            disabled={!isCurrentIdentityValid()}
             onNext={() =>
-              isLast ? onNext(identities) : scrollTo(activeIndex + 1)
+              isLast ? onNext(identities) : goToIndex(activeIndex + 1)
             }
             nextLabel={isLast ? "Next Step" : "Next Area"}
           />

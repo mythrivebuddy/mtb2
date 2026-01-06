@@ -9,6 +9,7 @@ import {
   AlertCircle,
   X,
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface StepOneProps {
   areas: {
@@ -18,19 +19,19 @@ interface StepOneProps {
     icon: React.ElementType;
   }[];
   selectedIds: string[];
-  isEditMode?: boolean;
+  // isEditMode?: boolean;
   onUpdate: (ids: string[]) => void;
   onNext: () => void;
-  setStep?: (step: number) => void;
+  // setStep?: (step: number) => void;
 }
 
 const Step1ThriveAreas = ({
   selectedIds,
   onUpdate,
   onNext,
-  isEditMode,
+  // isEditMode,
   areas,
-  setStep,
+  // setStep,
 }: StepOneProps) => {
   const [showToast, setShowToast] = useState(false);
 
@@ -58,11 +59,11 @@ const Step1ThriveAreas = ({
   };
 
   const isComplete = selectedIds.length === 3;
-  useEffect(() => {
-    if (isEditMode && setStep) {
-      setStep(2);
-    }
-  }, [isEditMode, setStep]);
+  // useEffect(() => {
+  //   if (isEditMode && setStep) {
+  //     setStep(2);
+  //   }
+  // }, [isEditMode, setStep]);
   return (
     <main className="flex-1 flex justify-center py-6 px-4 sm:px-8 font-display relative">
       {/* Toast Notification */}
@@ -84,6 +85,19 @@ const Step1ThriveAreas = ({
       </div>
 
       <div className="w-full max-w-[1024px] flex flex-col gap-8">
+        <Alert className="bg-muted/40 border-muted-foreground/40">
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <AlertDescription className="text-sm leading-relaxed">
+            You may select up to{" "}
+            <span className="font-medium">3 makeover areas</span> during
+            onboarding. To maintain consistency, these selections{" "}
+            <span className="font-medium">
+              cannot be modified once onboarding is complete
+            </span>
+            .
+          </AlertDescription>
+        </Alert>
+
         {/* Progress Bar */}
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-end">

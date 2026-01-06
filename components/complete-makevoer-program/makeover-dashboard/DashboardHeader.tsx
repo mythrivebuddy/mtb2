@@ -3,11 +3,15 @@ import { Sparkles, Clock, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-const DashboardHeader = () => {
+const DashboardHeader = ({
+  isProgramStarted,
+}: {
+  isProgramStarted: boolean;
+}) => {
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-start gap-4">
-        {/* LEFT: Week + Quarter */}
+        {/* LEFT: Week + Month */}
         <div className="flex flex-col flex-wrap items-start gap-3">
           <h1 className="text-3xl font-bold whitespace-nowrap">
             Week 0 of 51 • Quarter 1
@@ -15,7 +19,26 @@ const DashboardHeader = () => {
 
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border whitespace-nowrap">
             <Clock className="w-4 h-4" />
-            <span>18 days left in this quarter</span>
+            <span>
+              {(() => {
+                const today = new Date();
+
+                // Last day of current month
+                const lastDayOfMonth = new Date(
+                  today.getFullYear(),
+                  today.getMonth() + 1,
+                  0
+                );
+
+                // Difference in days
+                const daysLeft = Math.ceil(
+                  (lastDayOfMonth.getTime() - today.getTime()) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+                return `${daysLeft} days left in this month`;
+              })()}
+            </span>
           </div>
         </div>
 
@@ -32,15 +55,17 @@ const DashboardHeader = () => {
               </Button>
             </Link>
 
-            <Link
-              href="/dashboard/complete-makeover-program/onboarding"
-              className="w-full sm:w-auto"
-            >
-              <Button className="w-full sm:w-auto bg-[#059669] hover:bg-emerald-700 flex items-center justify-center">
-                <Settings2 className="w-4 h-4 mr-2" />
-                Edit onboarding
-              </Button>
-            </Link>
+            {!isProgramStarted && (
+              <Link
+                href="/dashboard/complete-makeover-program/onboarding"
+                className="w-full sm:w-auto"
+              >
+                <Button className="w-full sm:w-auto bg-[#059669] hover:bg-emerald-700 flex items-center justify-center">
+                  <Settings2 className="w-4 h-4 mr-2" />
+                  Edit onboarding
+                </Button>
+              </Link>
+            )}
           </div>
 
           <p className="hidden md:block text-sm italic text-slate-500 text-right">
