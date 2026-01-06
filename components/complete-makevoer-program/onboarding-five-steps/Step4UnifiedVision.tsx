@@ -163,6 +163,7 @@ const handleNext = () => {
                   <textarea
                     ref={textareaRef}
                     id="vision-statement"
+                    minLength={10}
                     value={vision}
                     onChange={(e) =>
                       setVision(e.target.value.slice(0, maxLength))
@@ -277,7 +278,7 @@ const handleNext = () => {
             onBack={onBack}
             onNext={handleNext}
             nextLabel="Next Step"
-            disabled={!vision.trim()}
+            disabled={!vision.trim().length || vision.trim().length < 10}
           />
         </div>
       </main>

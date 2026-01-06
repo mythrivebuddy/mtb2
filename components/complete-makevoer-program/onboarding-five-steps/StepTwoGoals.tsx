@@ -32,11 +32,11 @@ const StepTwoGoals = ({
   onNext,
   areasMeta,
   goalsByArea,
-  initialGoals
+  initialGoals,
 }: StepTwoProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [goals, setGoals] = useState<Record<string, string>>({});
-   useEffect(() => {
+  useEffect(() => {
     setGoals(initialGoals);
   }, [initialGoals]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -78,6 +78,24 @@ const StepTwoGoals = ({
   };
 
   const isLast = activeIndex === selectedAreas.length - 1;
+  const MIN_GOAL_LENGTH = 5;
+  const isCurrentGoalValid = () => {
+    const areaId = selectedAreas[activeIndex];
+    const goal = goals[areaId];
+    return Boolean(goal && goal.trim().length > MIN_GOAL_LENGTH);
+  };
+  const goToIndex = (nextIndex: number) => {
+    // allow backward movement always
+    if (nextIndex <= activeIndex) {
+      scrollTo(nextIndex);
+      return;
+    }
+
+    // block forward movement if current goal invalid
+    if (!isCurrentGoalValid()) return;
+
+    scrollTo(nextIndex);
+  };
 
   return (
     <div className="min-h-screen font-['Inter'] text-[#0d101b]">
@@ -143,7 +161,7 @@ const StepTwoGoals = ({
             </button>
 
             <button
-              disabled={isLast}
+              disabled={isLast || !isCurrentGoalValid()}
               onClick={() => scrollTo(activeIndex + 1)}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 z-20 size-12
             rounded-full bg-white dark:bg-card-dark
@@ -288,7 +306,7 @@ const StepTwoGoals = ({
               {selectedAreas.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => scrollTo(i)}
+                  onClick={() => goToIndex(i)}
                   className={`h-2 rounded-full transition-all ${
                     i === activeIndex
                       ? "w-8 bg-[#059669]"
@@ -302,6 +320,7 @@ const StepTwoGoals = ({
           {/* Footer */}
           <OnboardingStickyFooter
             onBack={onBack}
+            disabled={!isCurrentGoalValid()}
             onNext={() => (isLast ? onNext(goals) : scrollTo(activeIndex + 1))}
             nextLabel={isLast ? "Next Step" : "Next Area"}
           />
