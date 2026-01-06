@@ -4,41 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { SubscriptionStatus } from "@prisma/client";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
+import { calculateDiscount } from "@/lib/payment/payment.utils";
 
-/**
- * Calculate discount applied on base (exclusive of GST)
- * (Identical to your mandate logic)
- */
-type CouponLike = {
-  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
-  discountPercentage?: number | null;
-  discountAmount?: number | null;
-  freeDays?: number | null;
-};
 
-function calculateDiscount(baseAmount: number, coupon: CouponLike | null): number {
-  if (!coupon) return 0;
-
-  switch (coupon.type) {
-    case "PERCENTAGE":
-      return (baseAmount * (coupon.discountPercentage || 0)) / 100;
-
-    case "FIXED":
-      return coupon.discountAmount || 0;
-
-    case "FREE_DURATION": // Treat free duration as 100% off for lifetime if applicable, or logic specific to you
-    case "FULL_DISCOUNT":
-      return baseAmount;
-
-    default:
-      return 0;
-  }
-}
-
-/**
- * Calculates Final Payable Amount for Lifetime
- * No renewal logic needed here.
- */
 function calculateLifetimeTotal(
   baseExclusive: number,
   discountValue: number,

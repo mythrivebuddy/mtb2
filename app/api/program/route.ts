@@ -1,4 +1,4 @@
-import {prisma} from "@/lib/prisma"
+import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server";
 
 // to get program details at the home page of the program

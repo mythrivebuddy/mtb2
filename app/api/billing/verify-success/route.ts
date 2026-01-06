@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     if (type === "membership") {
         const sub = await prisma.subscription.findFirst({
             where: {
-                grantedByPurchaseId: pid,
+                paymentOrderId: pid,
                 userId: session.user.id,
                 status: SubscriptionStatus.ACTIVE
             },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react"; // Import session for prefilling
+import { useSession } from "next-auth/react"; 
 
 import { load } from "@cashfreepayments/cashfree-js";
 import {
@@ -317,19 +317,7 @@ export default function CheckoutPage() {
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
-  const persistCheckoutState = (payload: Record<string, unknown>) => {
-  try {
-    localStorage.setItem(
-      "checkout_state",
-      JSON.stringify({
-        ...payload,
-        timestamp: Date.now(),
-      })
-    );
-  } catch (e) {
-    console.error("Failed to persist checkout state", e);
-  }
-};
+
 
  const handleSubscribe = async () => {
   if (!plan) return;
@@ -355,15 +343,16 @@ export default function CheckoutPage() {
     if (isProgram) {
       // PURCHASE PROGRAM (One-time purchase)
       endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/purchase-programs`;
-      console.log("Subscribing to Program (ONE_TIME purchase) →", endpoint);
     } else if (isLifetime) {
       // LIFETIME SUBSCRIPTION
-      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
-      console.log("Subscribing to Lifetime Plan →", endpoint);
+      // As our cashfree recurring application rejected  we will create one time payment order with all plan as same 
+      // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
     } else {
       // MONTHLY / YEARLY RECURRING PLAN
-      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
-      console.log("Subscribing to Recurring Plan →", endpoint);
+      // As our cashfree recurring application rejected  we will create one time payment order
+      // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
     }
 
     // 2. Call Backend
@@ -379,27 +368,6 @@ export default function CheckoutPage() {
     });
 
     const data = await res.json();
-    console.log("cashfree api data ",data);
-    persistCheckoutState({
-  plan,
-  billingDetails,
-  appliedCoupon,
-  backendResponse: {
-    orderId: data.orderId,
-    purchaseId: data.purchaseId,
-    subscriptionId: data.subscriptionId,
-    paymentSessionId: data.paymentSessionId,
-    subscriptionSessionId: data.subscriptionSessionId,
-    mode: data.mode,
-    settings: data.settings,
-  },
-  checkoutType: isProgram
-    ? "PROGRAM"
-    : isLifetime
-    ? "LIFETIME"
-    : "RECURRING",
-});
-
     
     if (!res.ok){
       throw new Error(data.error || "Backend creation failed");
@@ -411,10 +379,8 @@ export default function CheckoutPage() {
   data.mode === "prod"
     ? "production"
     : "sandbox";
-    console.log("We are at this cashfree mode ",mode);
     
     const cf = await load({ mode });
-    console.log("cashfree env settings ",data.settings);
     
     // 4A. Program Purchase Checkout
     if (isProgram) {
@@ -440,21 +406,30 @@ export default function CheckoutPage() {
       await cf.checkout({
         paymentSessionId: data.paymentSessionId,
         redirectTarget: "_self",
-        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}`,
+        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}&purchase_id=${data.purchaseId}`,
       });
 
       return;
     }
+      if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
+
+      console.log(`Starting plan Checkout`, data.paymentSessionId);
+
+      await cf.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: "_self",
+        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-plan-callback?purchase_id=${data.purchaseId}&order_id=${data.orderId}`,
+      });
 
     // 4C. Recurring Checkout
-    if (!data.subscriptionSessionId)
-      throw new Error("Invalid subscription session");
+    // if (!data.subscriptionSessionId)
+    //   throw new Error("Invalid subscription session");
 
-    await cf.subscriptionsCheckout({
-      subsSessionId: data.subscriptionSessionId,
-      redirectTarget: "_self",
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
-    });
+    // await cf.subscriptionsCheckout({
+    //   subsSessionId: data.subscriptionSessionId,
+    //   redirectTarget: "_self",
+    //   return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
+    // });
   } catch (error) {
     console.error("Payment Error:", error);
     toast.error("Something went wrong initiating payment");

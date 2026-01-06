@@ -15,8 +15,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
@@ -125,6 +125,7 @@ const formatDateForInput = (date: Date | null | undefined): string => {
 
 export default function CreateChallenge({}: CreateChallengeProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [modalContent, setModalContent] = useState<{
     title: string;
     message: string;
@@ -197,6 +198,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       if (challengeId && challengeTitle) {
         const slug = generateSlug(challengeTitle);
         toast.success(data.data?.message || "Challenge created successfully");
+        queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] });
         router.push(
           `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`
         );
@@ -209,15 +211,27 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       }
     },
     onError: (error) => {
-      const errorMessage =
-        error instanceof AxiosError
-          ? error.response?.data?.error || error.message
-          : error.message;
-      setModalContent({
-        title: "Challenge Creation Failed",
-        message: errorMessage,
-      });
-    },
+  let message = "Something went wrong. Please try again.";
+
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+
+    if (typeof data === "string") {
+      message = data;
+    } else if (typeof data?.message === "string") {
+      message = data.message;
+    } else if (typeof error.message === "string") {
+      message = error.message;
+    }
+  } else if (error instanceof Error) {
+    message = error.message;
+  }
+
+  setModalContent({
+    title: "Challenge Creation Failed",
+    message,
+  });
+},
   });
 
   const onSubmit: SubmitHandler<challengeSchemaFormType> = (data) => {
