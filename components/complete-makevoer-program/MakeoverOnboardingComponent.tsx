@@ -208,6 +208,11 @@ const MakeoverOnboardingParent = ({
     "Rules",
   ];
 
+  const handleBreadcrumbClick = (targetStep: number) => {
+    if (isEditMode && targetStep === 1) return; // block step 1 in edit mode
+    setStep(targetStep);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center">
       <div ref={containerRef} />
@@ -218,7 +223,7 @@ const MakeoverOnboardingParent = ({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink className="text-muted-foreground">
+                <BreadcrumbLink className="text-muted-foreground pointer-events-none">
                   Makeover Program
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -245,8 +250,12 @@ const MakeoverOnboardingParent = ({
                         </BreadcrumbPage>
                       ) : (
                         <BreadcrumbLink
-                          onClick={() => setStep(currentStep)}
-                          className="cursor-pointer"
+                          onClick={() => handleBreadcrumbClick(currentStep)}
+                          className={`cursor-pointer ${
+                            isEditMode && currentStep === 1
+                              ? "pointer-events-none opacity-60"
+                              : ""
+                          }`}
                         >
                           <span className="flex items-center gap-1">
                             {isEditMode && label === "Makeover Areas" && (

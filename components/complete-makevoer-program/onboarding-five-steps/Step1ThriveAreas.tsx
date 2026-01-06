@@ -59,11 +59,11 @@ const Step1ThriveAreas = ({
   };
 
   const isComplete = selectedIds.length === 3;
-  useEffect(() => {
-    if (isEditMode && setStep) {
-      setStep(2);
-    }
-  }, [isEditMode, setStep]);
+  // useEffect(() => {
+  //   if (isEditMode && setStep) {
+  //     setStep(2);
+  //   }
+  // }, [isEditMode, setStep]);
   return (
     <main className="flex-1 flex justify-center py-6 px-4 sm:px-8 font-display relative">
       {/* Toast Notification */}
