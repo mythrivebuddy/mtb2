@@ -235,13 +235,25 @@ const MakeoverOnboardingParent = ({
                   <Fragment key={label}>
                     <BreadcrumbItem>
                       {isCurrent ? (
-                        <BreadcrumbPage>{label}</BreadcrumbPage>
+                        <BreadcrumbPage>
+                          <span className="flex items-center gap-1">
+                            {isEditMode && label === "Makeover Areas" && (
+                              <span>🔒</span>
+                            )}
+                            {label}
+                          </span>
+                        </BreadcrumbPage>
                       ) : (
                         <BreadcrumbLink
                           onClick={() => setStep(currentStep)}
                           className="cursor-pointer"
                         >
-                          {label}
+                          <span className="flex items-center gap-1">
+                            {isEditMode && label === "Makeover Areas" && (
+                              <span>🔒</span>
+                            )}
+                            {label}
+                          </span>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
