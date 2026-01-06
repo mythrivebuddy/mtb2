@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import { type ContactForm, contactFormSchems } from "@/schema/zodSchema";
+import ReCAPTCHA from "react-google-recaptcha";
+import { useRef } from "react";
 
 declare global {
   interface Window {
@@ -27,6 +29,14 @@ declare global {
 function ContactFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
+  const captchaRef = useRef<ReCAPTCHA | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string | null>(null);
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaError(null);
+    setCaptchaToken(token);
+  };
 
   const {
     register,
@@ -44,14 +54,13 @@ function ContactFormContent() {
     const response = await axios.get("/api/contactus/joy-pearls");
     console.log("Activity response:", response.data); //?dev
     return response.data;
-  }
+  };
 
-  const {data:activityData} = useQuery({
-    queryKey: ["activity"], 
+  const { data: activityData } = useQuery({
+    queryKey: ["activity"],
     queryFn: fetchActivity,
     enabled: !!session?.user,
   });
-
 
   useEffect(() => {
     if (session?.user) {
@@ -60,60 +69,46 @@ function ContactFormContent() {
     }
   }, [session, setValue]);
 
-  useEffect(() => {
-    const loadRecaptcha = async () => {
-      const script = document.createElement("script");
-      script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
-      script.id = "recaptcha-script";
-      document.head.appendChild(script);
-    };
-    loadRecaptcha();
+  // useEffect(() => {
+  //   const loadRecaptcha = async () => {
+  //     const script = document.createElement("script");
+  //     script.src = `https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`;
+  //     script.id = "recaptcha-script";
+  //     document.head.appendChild(script);
+  //   };
+  //   loadRecaptcha();
 
-    return () => {
-      // Remove script tag
-      const script = document.getElementById("recaptcha-script");
-      if (script) {
-        document.head.removeChild(script);
-      }
+  //   return () => {
+  //     // Remove script tag
+  //     const script = document.getElementById("recaptcha-script");
+  //     if (script) {
+  //       document.head.removeChild(script);
+  //     }
 
-      // Remove badge
-      const badges = document.getElementsByClassName("grecaptcha-badge");
-      while (badges.length > 0) {
-        badges[0].remove();
-      }
-    };
-  }, []);
-
-  const executeRecaptcha = async () => {
-    try {
-      await window.grecaptcha.ready(() => {});
-      return await window.grecaptcha.execute(
-        process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string,
-        { action: "contact_submit" }
-      );
-    } catch (error) {
-      console.error("reCAPTCHA error:", error);
-      return null;
-    }
-  };
+  //     // Remove badge
+  //     const badges = document.getElementsByClassName("grecaptcha-badge");
+  //     while (badges.length > 0) {
+  //       badges[0].remove();
+  //     }
+  //   };
+  // }, []);
 
   const onSubmit: SubmitHandler<ContactForm> = async (formData) => {
+    if (!captchaToken) {
+      setCaptchaError("Please complete the CAPTCHA to continue.");
+      return;
+    }
     setIsLoading(true);
     try {
-      const token = await executeRecaptcha();
-      console.log("reCAPTCHA token:", token); //?dev
-      if (!token) {
-        toast.error("Failed to verify reCAPTCHA");
-        return;
-      }
-
       const response = await axios.post("/api/contactus", {
         formData,
-        captchaToken: token,
+        captchaToken,
       });
 
       toast.success(response.data.message);
       reset();
+      captchaRef.current?.reset();
+      setCaptchaToken(null);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         toast.error(
@@ -123,6 +118,7 @@ function ContactFormContent() {
       } else {
         toast.error("An unexpected error occurred. Please try again.");
       }
+      captchaRef.current?.reset();
     } finally {
       setIsLoading(false);
     }
@@ -134,18 +130,24 @@ function ContactFormContent() {
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
           <div className="text-green-700 flex items-center justify-center gap-4 text-xs font-medium">
             <span>
-              • General <span className="font-bold">{activityData?.generalFeedbackJp
-              } Joy Pearls 🪙</span>
+              • General{" "}
+              <span className="font-bold">
+                {activityData?.generalFeedbackJp} Joy Pearls 🪙
+              </span>
             </span>
             <span className="text-green-400">|</span>
             <span>
-              • Feature <span className="font-bold">{activityData?.featureRequestJp
-              } Joy Pearls 🪙</span>
+              • Feature{" "}
+              <span className="font-bold">
+                {activityData?.featureRequestJp} Joy Pearls 🪙
+              </span>
             </span>
             <span className="text-green-400">|</span>
             <span>
-              • Bug <span className="font-bold">{activityData?.bugReportJp
-              } Joy Pearls 🪙</span>
+              • Bug{" "}
+              <span className="font-bold">
+                {activityData?.bugReportJp} Joy Pearls 🪙
+              </span>
             </span>
           </div>
         </div>
@@ -214,7 +216,7 @@ function ContactFormContent() {
               </label>
             </div>
 
-            <div className="flex items-center gap-2 w-full" >
+            <div className="flex items-center gap-2 w-full">
               <input
                 type="radio"
                 id="feature"
@@ -262,6 +264,21 @@ function ContactFormContent() {
           />
           {errors.message && (
             <p className="text-red-500 text-sm">{errors.message.message}</p>
+          )}
+        </div>
+        <div className="w-full overflow-hidden flex flex-col items-center">
+          <div className="scale-[0.95] origin-top inline-block">
+            <ReCAPTCHA
+              ref={captchaRef}
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
+              onChange={handleCaptchaChange}
+            />
+          </div>
+
+          {captchaError && (
+            <p className="text-red-500 text-sm mt-2 text-center px-2">
+              {captchaError}
+            </p>
           )}
         </div>
 

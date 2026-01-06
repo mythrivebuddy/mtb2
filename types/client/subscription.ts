@@ -47,3 +47,21 @@ export interface PaymentModalProps {
   isSubscription: boolean;
   onSuccess: (paidAmount: string) => void;
 }
+
+export type CouponLike = {
+  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
+  discountPercentage?: number | null;
+  discountAmount?: number | null;
+  freeDays?: number | null;
+};
+
+export type CashfreeWebhookPayload = {
+  type?: string;
+  data?: {
+    order?: {
+      order_id?: string;
+      cf_order_id?: string;
+      order_status?: string;
+    };
+  };
+};

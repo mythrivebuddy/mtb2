@@ -43,6 +43,8 @@ export default function DashboardPage() {
       return response.data.user;
     },
     retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: prosperityApplications, isLoading: prosperityLoading } =

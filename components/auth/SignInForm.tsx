@@ -13,12 +13,13 @@ import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
+import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/isInAppBrowser";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState(""); // For backend error
   const router = useRouter();
-   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const {
     register,
@@ -30,7 +31,7 @@ function SignInFormContent() {
   });
 
   const searchParams = useSearchParams();
-  const redirect = "/MTB-2026-the-complete-makeover-program"  // high priority to makeover program we will change this in future
+  const redirect = "/MTB-2026-the-complete-makeover-program"; // high priority to makeover program we will change this in future
   // || searchParams.get("redirect") || searchParams.get("callbackUrl");
   const errorFromUrl = searchParams.get("error");
 
@@ -61,8 +62,6 @@ function SignInFormContent() {
         rememberMe: data.rememberMe,
         callbackUrl: redirect,
       });
-      console.log("response ",response);
-      
 
       if (response?.ok) {
         await router.push(redirect);
@@ -87,16 +86,15 @@ function SignInFormContent() {
 
   const handleGoogleLogin = async () => {
     try {
-      const result = await signIn("google", {
-        redirect: false,
-        callbackUrl: redirect,
-      });
-
-      if (result?.ok) {
-        await router.push(redirect);
-        toast.success("Signed in successfully");
+      if (isInAppBrowser()) {
+        toast.info("Opening secure browser for Google sign-in");
+        openInExternalBrowser("/signin");
         return;
       }
+       signIn("google", {
+        // redirect: false,
+        callbackUrl: redirect,
+      });
     } catch (error) {
       console.error("Error signing in with Google:", error);
       toast.error(
@@ -109,14 +107,13 @@ function SignInFormContent() {
   };
   const handlePasswordToggle = () => {
     setShowPassword((prev) => !prev);
-  }
+  };
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-6 mt-4 sm:mt-8 shadow-sm">
       <div className="space-y-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-          
             <Input
               type="email"
               placeholder="Email"
@@ -126,12 +123,12 @@ function SignInFormContent() {
                 setLoginError(""); // Clear error on change
               }}
               className={`h-12  ${errors.email || loginError ? "border-red-500" : ""} relative`}
-              />
-             
-            
-              
+            />
+
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
             {!errors.email && loginError && (
               <p className="text-red-500 text-sm mt-1">{loginError}</p>
@@ -139,26 +136,29 @@ function SignInFormContent() {
           </div>
 
           <div>
-             <div className="relative">
-              
-            <Input
-              type={`${showPassword ? "text" : "password"}`}
-              placeholder="Password"
-              {...register("password")}
-              onChange={(e) => {
-                setValue("password", e.target.value);
-                setLoginError(""); // Clear error on change
-              }}
-              className={`h-12 ${errors.password || loginError ? "border-red-500" : ""}`}
+            <div className="relative">
+              <Input
+                type={`${showPassword ? "text" : "password"}`}
+                placeholder="Password"
+                {...register("password")}
+                onChange={(e) => {
+                  setValue("password", e.target.value);
+                  setLoginError(""); // Clear error on change
+                }}
+                className={`h-12 ${errors.password || loginError ? "border-red-500" : ""}`}
               />
-             <button className="absolute right-2 top-3 cursor-pointer" type="button" onClick={handlePasswordToggle}>
-              {
-                showPassword ? <EyeOffIcon />: <EyeIcon/>
-              }
+              <button
+                className="absolute right-2 top-3 cursor-pointer"
+                type="button"
+                onClick={handlePasswordToggle}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
               </button>
-              </div>
+            </div>
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
             )}
             {!errors.password && loginError && (
               <p className="text-red-500 text-sm mt-1">{loginError}</p>

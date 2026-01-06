@@ -25,6 +25,7 @@ import NavLink from "@/components/navbars/navbar/NavLink";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+import Link from "next/link";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -276,11 +277,12 @@ export default function PricingPage() {
             <p className="mt-2 text-sm text-slate-700">or {price}/year</p>
             {user &&
               (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
-                <ComingSoonWrapper>
+                // <Link href={`/dashboard/membership/checkout?plan=${enthusiastPlan.id}`}>
+                <Link href={`/MTB-2026-the-complete-makeover-program`}>
                   <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
                     Start Annual Membership
                   </button>
-                </ComingSoonWrapper>
+                </Link>
               )}
             {!user && (
               // <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>{/* </NavLink> */}
@@ -292,25 +294,30 @@ export default function PricingPage() {
               </NavLink>
             )}
             {session.data?.user &&
-              user?.role !== "ADMIN" &&
-              user?.userType !== "ENTHUSIAST" && (
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => {
-                      toast.warning(
-                        `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
-                      );
-                    }}
-                    className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
-                  >
-                    Not Eligible
-                  </button>
-                  <p className="text-sm text-red-600 flex gap-2">
-                    <Info size={32} /> You are not eligible for this plan
-                    because you are a {user?.userType?.toLocaleLowerCase()}.
-                  </p>
-                </div>
-              )}
+            user?.role !== "ADMIN" &&
+            user?.userType !== "ENTHUSIAST" ? (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    toast.warning(
+                      `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
+                    );
+                  }}
+                  className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
+                >
+                  Not Eligible
+                </button>
+                <p className="text-sm text-red-600 flex gap-2">
+                  <Info size={32} /> You are not eligible for this plan because
+                  you are a {user?.userType?.toLocaleLowerCase()}.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm mt-2 ml-1">
+                Get this plan free with enrollment in the 2026 Complete Makeover
+                Program.
+              </p>
+            )}
 
             {/* <NavLink href={`/dashboard/membership/checkout?plan=${p.id}`}>
               <button className="mt-6 w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all">
