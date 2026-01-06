@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Hourglass } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 /* ---------------- Types ---------------- */
 type TimeLeft = {
@@ -17,7 +16,7 @@ type ProgramLockedViewProps = {
   startDate?: Date | null;
   title?: string;
   description?: React.ReactNode;
-  onBack?: () => void;
+  // onBack?: () => void;
 };
 
 /* ---------------- Sub Component ---------------- */
@@ -44,10 +43,7 @@ export default function NotStartedYetTasks({
       Get ready to start.
     </>
   ),
-  onBack,
 }: ProgramLockedViewProps) {
-  const router = useRouter();
-
   return (
     <div className="flex-1 flex flex-col  items-center justify-center min-h-[60vh]">
       <div className="w-full  bg-white shadow-xl shadow-slate-200/50 border border-slate-100 p-8 text-center">
