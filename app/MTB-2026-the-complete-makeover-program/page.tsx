@@ -96,7 +96,7 @@ const renderIcon = (name: string, hexColorClass: string) => {
 const CompleteMakeoverPageContent = async () => {
   const session = await getServerSession(authOptions);
   const user = session?.user;
-  
+
   const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
   const plan = res.data.plan;
 
@@ -409,12 +409,11 @@ const CompleteMakeoverPageContent = async () => {
             </div>
           </section>
         </main>
-        {
-          user?.authMethod && user.authMethod === AuthMethod.GOOGLE && user.userType == null && (
+        {user?.authMethod &&
+          user.authMethod === AuthMethod.GOOGLE &&
+          user.userType == null && (
             <UserTypeSelection authMethod={user.authMethod} />
-          )
-        }
-        
+          )}
       </div>
     </AppLayout>
   );
