@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Hourglass, ArrowRight } from "lucide-react";
+import { Hourglass } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /* ---------------- Types ---------------- */
