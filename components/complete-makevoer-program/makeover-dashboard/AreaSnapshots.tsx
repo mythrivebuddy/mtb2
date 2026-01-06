@@ -19,7 +19,7 @@ const AreaSnapshots = ({
   challengesByArea,
 }: AreaSnapshotsProps) => {
   return (
-    <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {commitments.map((commitment, index) => {
         const area = AREAS[commitment.areaId];
         const challenges = challengesByArea[commitment.areaId] ?? [];
