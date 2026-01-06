@@ -70,7 +70,7 @@ const DashboardPage = async () => {
 
         {/* Top Section: Actions & Insights */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <TodayActionsCard isProgramStarted={isProgramStarted} />
+          <TodayActionsCard startDate={programState.program?.startDate} />
           <DailyInsightCard />
         </section>
 

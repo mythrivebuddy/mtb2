@@ -1,12 +1,22 @@
 /* eslint-disable react/no-unescaped-entities */
+"use client";
+import { useProgramCountdown } from "@/hooks/useProgramCountdown";
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import NotStartedYetTasks from "../TodaysActions/NotStartedYetTasks";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
-const TodayActionsCard = ({
-  isProgramStarted,
-}: {
-  isProgramStarted: boolean;
-}) => {
+const TodayActionsCard = ({ startDate }: { startDate: Date | null }) => {
+  const router = useRouter();
+
+  const { isProgramStarted, timeLeft } = useProgramCountdown(startDate);
+
   return (
     <section className="lg:col-span-2 relative bg-white dark:bg-[#1a2630] rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none border border-slate-200 dark:border-slate-700  flex flex-col sm:flex-row group transition-all hover:shadow-md">
       <div
@@ -46,14 +56,46 @@ const TodayActionsCard = ({
             Your daily actions will start soon. Get ready to build momentum.
           </p>
         )}
-        <Link href="/dashboard/complete-makeover-program/todays-actions">
+        {/* <Link href="/dashboard/complete-makeover-program/todays-actions">
           <button
             className={`w-full sm:w-fit h-11 px-6 ${!isProgramStarted ? "opacity-70" : "opacity-100"} bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg font-semibold shadow-sm transition-all flex items-center justify-center gap-2 group`}
           >
             <span>Open Today's Actions</span>
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
           </button>
-        </Link>
+        </Link> */}
+        {isProgramStarted ? (
+          <div
+            onClick={() =>
+              router.push("/dashboard/complete-makeover-program/todays-actions")
+            }
+          >
+            <button
+              className={`w-full sm:w-fit h-11 px-6 ${!isProgramStarted ? "opacity-70" : "opacity-100"} bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg font-semibold shadow-sm transition-all flex items-center justify-center gap-2 group`}
+            >
+              <span>Open Today's Actions</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
+        ) : (
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                className={`w-full sm:w-fit h-11 px-6 ${!isProgramStarted ? "opacity-70" : "opacity-100"} bg-[#1183d4] hover:bg-[#0c62a0] text-white rounded-lg font-semibold shadow-sm transition-all flex items-center justify-center gap-2 group`}
+              >
+                <span>Open Today's Actions</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </button>
+            </DialogTrigger>
+
+            <DialogContent className="p-0 overflow-hidden">
+              <VisuallyHidden>
+                <DialogTitle>Today's Actions Not Started</DialogTitle>
+              </VisuallyHidden>
+              <NotStartedYetTasks timeLeft={timeLeft} startDate={startDate} />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </section>
   );
