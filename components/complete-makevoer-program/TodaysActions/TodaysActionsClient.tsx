@@ -109,10 +109,6 @@ export default function TodaysActionsClient({
   const activeSlide = commitments[currentSlideIndex] || commitments[0];
   const areaBg = AREA_BACKGROUNDS[activeSlide.areaId] ?? "bg-slate-800";
 
-  // Helper to generate image URL based on area name
-  const getAreaImageUrl = (areaName: string) => {
-    return `https://picsum.photos/seed/${encodeURIComponent(areaName)}/600/600`;
-  };
 
   // Handlers for Carousel
   const handleNext = () => {

@@ -278,8 +278,8 @@ const MakeoverOnboardingParent = ({
         {step === 1 && (
           <Step1ThriveAreas
             areas={areas}
-            isEditMode={isEditMode}
-            setStep={setStep}
+            // isEditMode={isEditMode}
+            // setStep={setStep}
             selectedIds={formData.selectedAreas}
             onUpdate={(ids) =>
               setFormData((p) => ({ ...p, selectedAreas: ids }))

@@ -19,19 +19,19 @@ interface StepOneProps {
     icon: React.ElementType;
   }[];
   selectedIds: string[];
-  isEditMode?: boolean;
+  // isEditMode?: boolean;
   onUpdate: (ids: string[]) => void;
   onNext: () => void;
-  setStep?: (step: number) => void;
+  // setStep?: (step: number) => void;
 }
 
 const Step1ThriveAreas = ({
   selectedIds,
   onUpdate,
   onNext,
-  isEditMode,
+  // isEditMode,
   areas,
-  setStep,
+  // setStep,
 }: StepOneProps) => {
   const [showToast, setShowToast] = useState(false);
 
