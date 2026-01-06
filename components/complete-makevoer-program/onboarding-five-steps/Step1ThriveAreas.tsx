@@ -9,6 +9,7 @@ import {
   AlertCircle,
   X,
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface StepOneProps {
   areas: {
@@ -84,6 +85,19 @@ const Step1ThriveAreas = ({
       </div>
 
       <div className="w-full max-w-[1024px] flex flex-col gap-8">
+        <Alert className="bg-muted/40 border-muted-foreground/40">
+          <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          <AlertDescription className="text-sm leading-relaxed">
+            You may select up to{" "}
+            <span className="font-medium">3 makeover areas</span> during
+            onboarding. To maintain consistency, these selections{" "}
+            <span className="font-medium">
+              cannot be modified once onboarding is complete
+            </span>
+            .
+          </AlertDescription>
+        </Alert>
+
         {/* Progress Bar */}
         <div className="flex flex-col gap-3">
           <div className="flex justify-between items-end">

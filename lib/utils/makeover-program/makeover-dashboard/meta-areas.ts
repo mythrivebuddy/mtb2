@@ -108,8 +108,6 @@ export const AREAS: Record<number, AreaConfig> = {
 };
 
 
-
-
 // meta-areas.ts
 export const AREA_BACKGROUNDS: Record<number, string> = {
   1: "#064E3B", // emerald-900
