@@ -68,11 +68,10 @@ const DashboardPage = async () => {
   );
 
   const validActionCommitments = rawCommitments.filter(
-    (c) => c.actionId !== null && c.actionText !== null
+    (c) => c.actionText !== null
   );
 
   const hasThreeActions = validActionCommitments.length === 3;
-  console.log({ hasThreeActions });
 
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
