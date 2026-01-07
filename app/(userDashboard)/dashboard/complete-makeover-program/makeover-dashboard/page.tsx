@@ -15,10 +15,10 @@ const DashboardPage = async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
-   const { isPurchased } = await grantProgramAccessToPage();
-    if (!isPurchased) {
-      redirect("/MTB-2026-the-complete-makeover-program");
-    }
+  const { isPurchased } = await grantProgramAccessToPage();
+  if (!isPurchased) {
+    redirect("/MTB-2026-the-complete-makeover-program");
+  }
   const programState = await prisma.userProgramState.findFirst({
     where: { userId },
     include: {
@@ -67,6 +67,12 @@ const DashboardPage = async () => {
     {}
   );
 
+  const validActionCommitments = rawCommitments.filter(
+    (c) => c.actionText !== null
+  );
+
+  const hasThreeActions = validActionCommitments.length === 3;
+
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -75,7 +81,10 @@ const DashboardPage = async () => {
 
         {/* Top Section: Actions & Insights */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <TodayActionsCard startDate={programState.program?.startDate} />
+          <TodayActionsCard
+            startDate={programState.program?.startDate}
+            hasThreeActions={hasThreeActions}
+          />
           <DailyInsightCard />
         </section>
 

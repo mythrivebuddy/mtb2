@@ -1,24 +1,27 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Hourglass,
   ChevronLeft,
   ChevronRight,
   Heart,
   Activity,
   Check,
-  ArrowRight,
-  Calendar,
-  HistoryIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { AREA_BACKGROUNDS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
+import HeaderOfDailyTodaysActions from "./HeaderOfDailyTodaysActions";
+import PaginationIndicatorsDailyActions from "./PaginationIndicatorsDailyActions";
+import { useProgramCountdown } from "@/hooks/useProgramCountdown";
+import NotStartedYetTasks from "./NotStartedYetTasks";
+import OnboardingStickyFooter from "../OnboardingStickyFooter";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
 
 /* ---------------- Types ---------------- */
-type Commitment = {
+export type Commitment = {
   id: string;
   areaId: number;
   areaName: string; // Added
@@ -28,32 +31,11 @@ type Commitment = {
   actionText: string;
   isLocked: boolean;
 };
-
-/* ---------------- Helpers ---------------- */
-function TimeBox({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 min-w-[80px]">
-      <div className="text-2xl font-bold text-slate-900">{value}</div>
-      <div className="text-xs uppercase tracking-wide text-slate-400">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function getRemainingTime(targetDate: Date | null) {
-  if (!targetDate) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
-
-  const now = new Date();
-  const diff = Math.max(targetDate.getTime() - now.getTime(), 0);
-
-  return {
-    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((diff / (1000 * 60)) % 60),
-    seconds: Math.floor((diff / 1000) % 60),
-  };
-}
+type ChecklistState = {
+  identityDone: boolean;
+  actionDone: boolean;
+  winLogged: boolean;
+};
 
 /* ---------------- Main Component ---------------- */
 export default function TodaysActionsClient({
@@ -66,48 +48,56 @@ export default function TodaysActionsClient({
   // State 1: Current Slide Index
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const router = useRouter();
+  const { mounted, timeLeft, isProgramStarted } =
+    useProgramCountdown(startDate);
 
-  // State 2: Countdown Logic
-  const [timeLeft, setTimeLeft] = useState(getRemainingTime(startDate));
-  const [isProgramStarted, setIsProgramStarted] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Initialize Timer
-  useEffect(() => {
-    setMounted(true);
-
-    // Initial check
-    const now = new Date();
-    const target = startDate ? new Date(startDate) : null;
-    const isStarted = target ? target <= now : false;
-
-    setIsProgramStarted(isStarted);
-
-    if (!isStarted && target) {
-      const timer = setInterval(() => {
-        const remaining = getRemainingTime(target);
-        setTimeLeft(remaining);
-
-        // Timer finish check
-        if (
-          remaining.days <= 0 &&
-          remaining.hours <= 0 &&
-          remaining.minutes <= 0 &&
-          remaining.seconds <= 0
-        ) {
-          setIsProgramStarted(true);
-          clearInterval(timer);
-        }
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [startDate]);
+  const [checklistByArea, setChecklistByArea] = useState<
+    Record<number, ChecklistState>
+  >({});
 
   // Derived state for Carousel
   const totalSlides = commitments.length;
-  const activeSlide = commitments[currentSlideIndex] || commitments[0];
+  const activeSlide = commitments[currentSlideIndex];
   const areaBg = AREA_BACKGROUNDS[activeSlide.areaId] ?? "bg-slate-800";
+  const areaIds = React.useMemo(
+    () => commitments.map((c) => c.areaId),
+    [commitments]
+  );
+
+  useEffect(() => {
+    if (!activeSlide) return;
+
+    setChecklistByArea((prev) => {
+      if (prev[activeSlide.areaId]) return prev;
+
+      return {
+        ...prev,
+        [activeSlide.areaId]: {
+          identityDone: false,
+          actionDone: false,
+          winLogged: false,
+        },
+      };
+    });
+  }, [activeSlide?.areaId]);
+
+  const currentChecklist: ChecklistState = checklistByArea[
+    activeSlide.areaId
+  ] ?? {
+    identityDone: false,
+    actionDone: false,
+    winLogged: false,
+  };
+
+  const updateChecklist = (field: keyof ChecklistState, value: boolean) => {
+    setChecklistByArea((prev) => ({
+      ...prev,
+      [activeSlide.areaId]: {
+        ...prev[activeSlide.areaId],
+        [field]: value,
+      },
+    }));
+  };
 
   // Handlers for Carousel
   const handleNext = () => {
@@ -117,54 +107,42 @@ export default function TodaysActionsClient({
   const handlePrev = () => {
     setCurrentSlideIndex((prev) => (prev > 0 ? prev - 1 : totalSlides - 1));
   };
-
+  const actionDoneMutation = useMutation({
+    mutationFn: async () => {
+      return axios.post("/api/makeover-program/makeover-daily-tasks", {
+        areaIds,
+        date: new Date().toISOString(),
+      });
+    },
+    onSuccess: (res) => {
+      toast.success(
+        `Daily Action completed (+${res.data.totalPointsAwarded} points)`
+      );
+    },
+    onError: () => {
+      toast.error("Failed to complete Daily Action");
+    },
+  });
   // Prevent hydration mismatch
   if (!mounted) return null;
 
   // VIEW 1: Waiting Room (Timer)
   if (!isProgramStarted) {
     return (
-      <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 items-center justify-center min-h-[60vh]">
-        <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8 text-center">
-          <div className="bg-[#1990e6]/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Hourglass className="text-[#1990e6] w-9 h-9" />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Program Locked
-          </h1>
-          <p className="text-slate-500 mb-8">
-            Your transformation journey is being prepared. <br />
-            Get ready to start.
-          </p>
-
-          <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 mb-8">
-            <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-4">
-              Starts In
-            </p>
-
-            {/* Interactive TimeBoxes */}
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <TimeBox label="Days" value={timeLeft.days} />
-              <TimeBox label="Hours" value={timeLeft.hours} />
-              <TimeBox label="Mins" value={timeLeft.minutes} />
-              <TimeBox label="Secs" value={timeLeft.seconds} />
-            </div>
-
-            {startDate && (
-              <p className="text-sm text-[#1990e6] font-medium mt-6">
-                {new Date(startDate).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            )}
-          </div>
-
-          <Button onClick={() => router.back()} className="w-full">
-            Go Back <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
-        </div>
+      <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+        <NotStartedYetTasks
+          timeLeft={timeLeft}
+          isBack={true}
+          startDate={startDate}
+          title="Program Locked"
+          description={
+            <>
+              Your transformation journey is being prepared.
+              <br />
+              Get ready to start.
+            </>
+          }
+        />
       </main>
     );
   }
@@ -177,46 +155,34 @@ export default function TodaysActionsClient({
       </div>
     );
   }
+  const isLast = currentSlideIndex === totalSlides - 1;
+
+  const handleSubmitDailyActions = () => {
+    // block progression unless action is done
+    if (actionDoneMutation.isPending) return;
+    if (!currentChecklist.actionDone) {
+      toast.error("Please complete the Daily Action first");
+      return;
+    }
+
+    // NOT last slide → just move forward
+    if (!isLast) {
+      setCurrentSlideIndex((i) => i + 1);
+      return;
+    }
+
+    // LAST slide → fire API
+    actionDoneMutation.mutate(undefined, {
+      onSuccess: () => {
+        router.push("/dashboard/complete-makeover-program/makeover-dashboard");
+      },
+    });
+  };
 
   // VIEW 2: Main Carousel Page
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-2 mb-8 animate-fade-in-up">
-        <div>
-          <div className="flex items-center gap-2 text-primary font-medium mb-1">
-            <span className="material-symbols-outlined text-xl">
-              <Calendar />
-            </span>
-            <span className="text-sm uppercase tracking-wide">
-              {new Date().toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Today's Focus
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 text-base">
-            You have 3 core areas to conquer today. Make them count.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
-            <span className="material-symbols-outlined text-[18px]">
-              <HistoryIcon />
-            </span>
-            History
-          </button>
-          <button className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-lg shadow-blue-500/30">
-            <span className="material-symbols-outlined text-[18px]">
-              <Calendar />
-            </span>
-            Calendar
-          </button>
-        </div>
-      </header>
+      <HeaderOfDailyTodaysActions />
       {/* Main Carousel Area */}
       <section className="flex-1 flex items-center justify-center w-full mb-8">
         {/* Previous Button */}
@@ -325,6 +291,10 @@ export default function TodaysActionsClient({
                 <div className="relative flex items-center mt-0.5">
                   <input
                     type="checkbox"
+                    checked={currentChecklist.identityDone}
+                    onChange={(e) =>
+                      updateChecklist("identityDone", e.target.checked)
+                    }
                     className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
                   />
                   <Check
@@ -344,6 +314,10 @@ export default function TodaysActionsClient({
                 <div className="relative flex items-center">
                   <input
                     type="checkbox"
+                    checked={currentChecklist.actionDone}
+                    onChange={(e) =>
+                      updateChecklist("actionDone", e.target.checked)
+                    }
                     className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
                   />
                   <Check
@@ -364,6 +338,10 @@ export default function TodaysActionsClient({
                   <div className="relative flex items-start pt-3 pl-3">
                     <input
                       type="checkbox"
+                      checked={currentChecklist.winLogged}
+                      onChange={(e) =>
+                        updateChecklist("winLogged", e.target.checked)
+                      }
                       className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
                     />
                     <Check
@@ -403,20 +381,23 @@ export default function TodaysActionsClient({
       </section>
 
       {/* Pagination Indicators */}
-      <div className="flex items-center justify-center gap-3 mb-8">
-        {commitments.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlideIndex(index)}
-            aria-label={`Go to slide ${index + 1}`}
-            className={`h-2 rounded-full transition-all ${
-              index === currentSlideIndex
-                ? "w-8 bg-[#1990e6]"
-                : "w-2 bg-slate-300 hover:bg-slate-400"
-            }`}
-          />
-        ))}
-      </div>
+      <PaginationIndicatorsDailyActions
+        commitments={commitments}
+        setCurrentSlideIndex={setCurrentSlideIndex}
+        currentSlideIndex={currentSlideIndex}
+      />
+      <OnboardingStickyFooter
+        onBack={() => {
+          if (currentSlideIndex === 0) {
+            router.back();
+          } else {
+            setCurrentSlideIndex((i) => i - 1);
+          }
+        }}
+        onNext={handleSubmitDailyActions}
+        nextLabel={isLast ? "Proceed" : "Next"}
+        disabled={!currentChecklist.actionDone || actionDoneMutation.isPending}
+      />
     </main>
   );
 }
