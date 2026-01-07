@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 import MakeoverOnboardingComponent from "@/components/complete-makevoer-program/MakeoverOnboardingComponent";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 
 export const metadata = {
   title: "Makeover Onboarding | Complete Your Setup",
@@ -17,6 +18,10 @@ export default async function MakeoverOnboardingPage() {
   if (!session?.user?.id) redirect("/login");
 
   const userId = session.user.id;
+  const { isPurchased } = await grantProgramAccessToPage();
+  if (!isPurchased) {
+    redirect("/MTB-2026-the-complete-makeover-program");
+  }
 
   /* ───────────── PROGRAM STATE ───────────── */
   const programState = await prisma.userProgramState.findFirst({
@@ -71,7 +76,7 @@ export default async function MakeoverOnboardingPage() {
       />
     );
   }
-
+  
   /* ───────────── NEW USER ───────────── */
   if (!programState) {
     return (

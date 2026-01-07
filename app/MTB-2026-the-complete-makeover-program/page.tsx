@@ -27,6 +27,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
 import { AuthMethod } from "@prisma/client";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
+import { redirect } from "next/navigation";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
@@ -99,6 +101,18 @@ const CompleteMakeoverPageContent = async () => {
 
   const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
   const plan = res.data.plan;
+  const program = res.data.program;
+  const { isPurchased } = await grantProgramAccessToPage();
+  console.log({isPurchased});
+  
+    if (
+    isPurchased &&
+    program.onboardingStartDate &&
+    new Date(program?.onboardingStartDate).getTime() <= Date.now()
+  ) {
+    redirect("/dashboard/complete-makeover-program/makeover-dashboard");
+  }
+
 
   return (
     <AppLayout>
