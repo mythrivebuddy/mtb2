@@ -6,6 +6,11 @@ import { AccessError } from "./AccessError";
 
 export interface ProgramAccess {
   userId: string;
+  programId: string;
+}
+
+export interface ProgramAccessToPage {
+  userId: string;
   programId: string | null;
   isPurchased?: boolean;
 }
@@ -39,7 +44,7 @@ export async function grantProgramAccess(): Promise<ProgramAccess> {
   };
 }
 
-export async function grantProgramAccessToPage(): Promise<ProgramAccess> {
+export async function grantProgramAccessToPage(): Promise<ProgramAccessToPage> {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
