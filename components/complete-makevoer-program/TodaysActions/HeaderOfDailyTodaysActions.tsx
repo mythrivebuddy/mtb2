@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { Calendar, HistoryIcon } from "lucide-react";
 import React from "react";
 
