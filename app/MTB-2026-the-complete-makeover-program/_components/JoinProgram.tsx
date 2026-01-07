@@ -56,7 +56,9 @@ export default function JoinProgram({ url }: JoinProgramProps) {
         isLoading || isFetching || session.status === "loading";
 
     // Program start time: 7 Jan 2026, 12:00 PM (Ensure this is in the user's local timezone or adjust for UTC)
-    const programStartDate = new Date("2026-01-07T12:00:00");
+    // 7 Jan 2026, 12:00 PM — USER LOCAL TIME
+    const programStartDate = new Date(2026, 0, 7, 0, 0, 0);
+
 
     /* -------------------------------------
        Manage Countdown Timer (Enrolled only)
@@ -98,7 +100,7 @@ export default function JoinProgram({ url }: JoinProgramProps) {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [isEnrolled]);
+    }, [isEnrolled,programStartDate]);
 
     /* -----------------------------
         Determine Button Text

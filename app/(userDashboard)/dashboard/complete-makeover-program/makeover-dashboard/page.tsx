@@ -9,11 +9,16 @@ import GlobalProgress from "@/components/complete-makevoer-program/makeover-dash
 import AreaSnapshots from "@/components/complete-makevoer-program/makeover-dashboard/AreaSnapshots";
 import BonusRewards from "@/components/complete-makevoer-program/makeover-dashboard/BonusRewards";
 import AccountabilityBuddy from "@/components/complete-makevoer-program/makeover-dashboard/AccountabilityBuddy";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 
 const DashboardPage = async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
+   const { isPurchased } = await grantProgramAccessToPage();
+    if (!isPurchased) {
+      redirect("/MTB-2026-the-complete-makeover-program");
+    }
   const programState = await prisma.userProgramState.findFirst({
     where: { userId },
     include: {

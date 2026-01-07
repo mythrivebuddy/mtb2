@@ -109,7 +109,6 @@ export default function TodaysActionsClient({
   const activeSlide = commitments[currentSlideIndex] || commitments[0];
   const areaBg = AREA_BACKGROUNDS[activeSlide.areaId] ?? "bg-slate-800";
 
-
   // Handlers for Carousel
   const handleNext = () => {
     setCurrentSlideIndex((prev) => (prev < totalSlides - 1 ? prev + 1 : 0));
@@ -232,7 +231,7 @@ export default function TodaysActionsClient({
         {/* Active Card Container */}
         <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col md:flex-row">
           {/* Left Side: Visual & High Level Context */}
-          <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden">
+          <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col max-sm:gap-4 justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden">
             {/* Decorative Background element */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1990e6] to-blue-300"></div>
             <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#1990e6]/5 rounded-full blur-3xl"></div>
@@ -256,18 +255,18 @@ export default function TodaysActionsClient({
             </div>
 
             <div
-              className="w-full h-full rounded-xl mb-4 p-5 flex flex-col justify-center items-center"
+              className="aspect-square rounded-xl mb-4 p-5 flex flex-col justify-center items-center"
               style={{ backgroundColor: areaBg }}
             >
-              <div className="text-start">
-                <h3 className="text-white text-lg font-bold leading-tight mb-1">
+              <div className="text-center">
+                <h3 className="text-white text-xl font-bold leading-tight mb-1">
                   {activeSlide.areaName}
                 </h3>
-                <p className="text-white/80 text-xs leading-snug line-clamp-3">
-                  {activeSlide.areaDescription}
-                </p>
               </div>
             </div>
+            <p className="text-lg leading-snug line-clamp-5">
+              {activeSlide.areaDescription}
+            </p>
 
             <div className="mt-auto">
               <div className="flex items-center justify-between mb-2">
