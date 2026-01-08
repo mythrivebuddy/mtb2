@@ -417,9 +417,7 @@ export default function DailyActionsTaskForQuarterComponent() {
             }
             nextLabel={isLast ? "Proceed" : "Next Area"}
             disabled={
-              updateDailyActionsMutation.isPending ||
-              (!isLast && !hasCurrentAreaAction) ||
-              (isLast && !hasAnyAction)
+              updateDailyActionsMutation.isPending || !hasCurrentAreaAction
             }
           />
         </div>
