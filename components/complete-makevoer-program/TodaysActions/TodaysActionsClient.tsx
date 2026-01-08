@@ -8,6 +8,7 @@ import {
   Heart,
   Activity,
   Check,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AREA_BACKGROUNDS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
@@ -16,7 +17,7 @@ import PaginationIndicatorsDailyActions from "./PaginationIndicatorsDailyActions
 import { useProgramCountdown } from "@/hooks/useProgramCountdown";
 import NotStartedYetTasks from "./NotStartedYetTasks";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -63,6 +64,47 @@ export default function TodaysActionsClient({
     () => commitments.map((c) => c.areaId),
     [commitments]
   );
+  const lockQuery = useQuery({
+    queryKey: ["today-lock-status"],
+    queryFn: async () => {
+      const res = await axios.get(
+        "/api/makeover-program/makeover-daily-tasks/today-lock"
+      );
+      return res.data as {
+        isDayLocked: boolean;
+        unlockAt?: string;
+      };
+    },
+
+    // 🔒 DO NOT refetch during the day
+    staleTime: Infinity,
+    // cacheTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  console.log(lockQuery.data);
+
+  // ✅ NEW: derive unlockDate safely
+  const unlockDate = lockQuery.data?.unlockAt
+    ? new Date(lockQuery.data.unlockAt)
+    : null;
+  const { timeLeft: dayUnlockTimeLeft, isProgramStarted: isDayUnlocked } =
+    useProgramCountdown(unlockDate);
+  useEffect(() => {
+    if (!lockQuery.data?.unlockAt) return;
+
+    const unlockTime = new Date(lockQuery.data.unlockAt).getTime();
+    const now = Date.now();
+    const delay = unlockTime - now;
+
+    if (delay <= 0) return;
+
+    const timer = setTimeout(() => {
+      lockQuery.refetch();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [lockQuery.data?.unlockAt]);
 
   useEffect(() => {
     if (!activeSlide) return;
@@ -140,6 +182,38 @@ export default function TodaysActionsClient({
               Your transformation journey is being prepared.
               <br />
               Get ready to start.
+            </>
+          }
+        />
+      </main>
+    );
+  }
+  if (lockQuery.isLoading) {
+    return (
+      <div className="w-full min-h-screen bg-dashboard flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+  // 🔒 Day locked → show countdown till midnight
+  if (
+    isProgramStarted &&
+    lockQuery.data?.isDayLocked &&
+    unlockDate &&
+    !isDayUnlocked
+  ) {
+    return (
+      <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+        <NotStartedYetTasks
+          timeLeft={dayUnlockTimeLeft}
+          startDate={unlockDate}
+          isBack={true}
+          title="All Tasks Completed 🎉"
+          description={
+            <>
+              You’ve completed all your tasks for today.
+              <br />
+              Come back tomorrow to continue.
             </>
           }
         />

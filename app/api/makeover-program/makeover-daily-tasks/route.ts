@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   const today = normalizeDate();
-  
+
 
   /* -------------------------------------------------
      1️⃣ Resolve Program
@@ -87,12 +87,12 @@ export async function POST(req: Request) {
 
   for (const areaId of areaIds) {
     const alreadyDone = existingLogs.some(
-  (log: MakeoverProgressLog) =>
-    log.areaId === areaId &&
-    log.identityDone === true &&
-    log.actionDone === true &&
-    log.winLogged === true
-);
+      (log: MakeoverProgressLog) =>
+        log.areaId === areaId &&
+        log.identityDone === true &&
+        log.actionDone === true &&
+        log.winLogged === true
+    );
 
 
     if (alreadyDone) continue;
@@ -203,6 +203,6 @@ export async function POST(req: Request) {
     success: true,
     completedAreas,
     totalPointsAwarded,
-    date:today,
+    date: today,
   });
 }
