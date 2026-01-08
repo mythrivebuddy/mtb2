@@ -110,6 +110,8 @@ export async function POST(req: Request) {
         },
         update: {
           actionDone: true,
+          identityDone: true,
+          winLogged:true,
           pointsEarned: { increment: 25 },
         },
         create: {
@@ -118,6 +120,8 @@ export async function POST(req: Request) {
           areaId,
           date: today,
           actionDone: true,
+           identityDone: true,
+          winLogged:true,
           pointsEarned: 25,
         },
       }),

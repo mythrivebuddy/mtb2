@@ -230,9 +230,6 @@ export default function DailyActionsTaskForQuarterComponent() {
     !!actions[currentAreaId] &&
     actions[currentAreaId].trim().length >= MIN_ACTION_LENGTH;
 
-  const hasAnyAction = Object.values(actions).some(
-    (v) => v && v.trim().length >= MIN_ACTION_LENGTH
-  );
 
   return (
     <div className="min-h-screen font-['Inter'] text-[#0d101b]">
