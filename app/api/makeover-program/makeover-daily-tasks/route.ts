@@ -8,7 +8,7 @@ import type {
   MakeoverProgressLog,
   UserMakeoverChallengeEnrollment,
 } from "@prisma/client";
-import { normalizeDate } from "@/lib/utils/normalizeDate";
+import { normalizeDate, normalizeDateUTC } from "@/lib/utils/normalizeDate";
 
 interface RequestBody {
   areaIds: number[];
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const today = normalizeDate();
+  const today = normalizeDateUTC();
 
 
   /* -------------------------------------------------

@@ -2,13 +2,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { grantProgramAccess } from "@/lib/utils/makeover-program/access/grantProgramAccess";
-import { normalizeDate } from "@/lib/utils/normalizeDate";
+import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 
 export const GET = async () => {
   try {
     const { userId, programId } = await grantProgramAccess();
 
-    const today = normalizeDate();
+    const today = normalizeDateUTC();
 
     /* ----------------------------------
        1️⃣ Fetch user areas

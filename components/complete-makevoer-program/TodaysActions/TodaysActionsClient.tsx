@@ -324,7 +324,7 @@ export default function TodaysActionsClient({
             <div className="mt-auto">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-slate-500">
-                  Card Progress
+                  Area Progress
                 </span>
                 <span className="text-xs font-bold text-[#1990e6]">0%</span>
               </div>
