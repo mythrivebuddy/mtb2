@@ -13,7 +13,7 @@ const DashboardHeader = ({
       <div className="flex flex-col md:flex-row md:items-start gap-4">
         {/* LEFT: Week + Month */}
         <div className="flex flex-col flex-wrap items-start gap-3">
-          <h1 className="text-3xl font-bold whitespace-nowrap">
+          <h1 className="text-2xl sm:text-3xl font-bold whitespace-nowrap">
             Week 0 of 51 • Quarter 1
           </h1>
 
