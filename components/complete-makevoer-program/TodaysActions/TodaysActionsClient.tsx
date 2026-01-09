@@ -77,26 +77,29 @@ export default function TodaysActionsClient({
     },
 
     // 🔒 DO NOT refetch during the day
-    staleTime: Infinity,
+    // staleTime: Infinity,
     // cacheTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
   console.log(lockQuery.data);
 
- const unlockDate = React.useMemo(() => {
-  if (!lockQuery.data?.unlockAt) return null;
+  const unlockDate = React.useMemo(() => {
+    if (!lockQuery.data?.unlockAt) return null;
 
-  const now = new Date();
+    const now = new Date();
 
-  // next LOCAL midnight
-  return new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + 1,
-    0, 0, 0, 0
-  );
-}, [lockQuery.data?.unlockAt]);
+    // next LOCAL midnight
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0,
+      0,
+      0,
+      0
+    );
+  }, [lockQuery.data?.unlockAt]);
 
   const { timeLeft: dayUnlockTimeLeft, isProgramStarted: isDayUnlocked } =
     useProgramCountdown(unlockDate);
@@ -268,7 +271,7 @@ export default function TodaysActionsClient({
     // LAST slide → fire API
     actionDoneMutation.mutate(undefined, {
       onSuccess: () => {
-       void axios.post("/api/makeover-program/makeover-daily-tasks/log-win", {
+        void axios.post("/api/makeover-program/makeover-daily-tasks/log-win", {
           contents,
         });
         router.push("/dashboard/complete-makeover-program/makeover-dashboard");

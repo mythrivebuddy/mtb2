@@ -112,7 +112,7 @@ export async function POST(req: Request) {
           actionDone: true,
           identityDone: true,
           winLogged:true,
-          pointsEarned: { increment: 25 },
+          pointsEarned: { increment: 75 },
         },
         create: {
           userId: user.id,
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
           actionDone: true,
            identityDone: true,
           winLogged:true,
-          pointsEarned: 25,
+          pointsEarned: 75,
         },
       }),
 
@@ -135,18 +135,18 @@ export async function POST(req: Request) {
           },
         },
         update: {
-          totalPoints: { increment: 25 },
+          totalPoints: { increment:75 },
         },
         create: {
           userId: user.id,
           programId,
           areaId,
-          totalPoints: 25,
+          totalPoints: 75,
         },
       })
     );
 
-    totalPointsAwarded += 25;
+    totalPointsAwarded += 75;
     completedAreas.push(areaId);
 
     /* ---- Challenge Progress ---- */
