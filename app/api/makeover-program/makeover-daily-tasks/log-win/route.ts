@@ -6,6 +6,23 @@ import { checkRole } from "@/lib/utils/auth";
 /* ---------------------------------- */
 /* POST: Save up to 3 log wins         */
 /* ---------------------------------- */
+function formatDayWithOrdinal(date: Date) {
+  const day = date.getDate();
+
+  const suffix =
+    day % 10 === 1 && day !== 11
+      ? "st"
+      : day % 10 === 2 && day !== 12
+      ? "nd"
+      : day % 10 === 3 && day !== 13
+      ? "rd"
+      : "th";
+
+  const month = date.toLocaleString("en-US", { month: "short" });
+
+  return `${day}${suffix} ${month}`;
+}
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +32,9 @@ export async function POST(req: NextRequest) {
     /** 2️⃣ Parse body */
     const body = await req.json();
     const contents: string[] = body?.contents;
-
+    const date = body.date
+      const logDate = date ? new Date(date) : new Date();
+    const prettyDate = formatDayWithOrdinal(logDate);
     if (!Array.isArray(contents) || contents.length === 0) {
       return NextResponse.json(
         { error: "contents must be a non-empty array" },
@@ -38,7 +57,7 @@ export async function POST(req: NextRequest) {
 
       const result = await createLogWin({
         userId: session.user.id,
-        content: content.trim(),
+        content: `Done ${content.trim()} on ${prettyDate}`,
       });
 
       results.push(result);

@@ -2,13 +2,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { grantProgramAccess } from "@/lib/utils/makeover-program/access/grantProgramAccess";
-import { normalizeDate } from "@/lib/utils/normalizeDate";
+import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 
 export const GET = async () => {
   try {
     const { userId, programId } = await grantProgramAccess();
 
-    const today = normalizeDate();
+    const today = normalizeDateUTC();
 
     /* ----------------------------------
        1️⃣ Fetch user areas
@@ -71,8 +71,13 @@ export const GET = async () => {
     /* ----------------------------------
        4️⃣ Compute unlock time (next 00:00)
     ---------------------------------- */
-    const unlockAt = new Date(today);
-    unlockAt.setDate(unlockAt.getDate() + 1); // next day midnight
+    const now = new Date();
+    const unlockAt = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0, 0, 0, 0
+    );
 
     return NextResponse.json({
       success: true,

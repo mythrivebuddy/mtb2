@@ -1,17 +1,11 @@
 // /api/makeover-program/makeover-daily-tasks
-// Handles: Mark Daily Action Done (MULTI-AREA, SINGLE REQUEST)
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import type {
-  MakeoverProgressLog,
-  UserMakeoverChallengeEnrollment,
-} from "@prisma/client";
-import { normalizeDate } from "@/lib/utils/normalizeDate";
+import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 
 interface RequestBody {
-  areaIds: number[];
+  areaId: number;
   date: string;
 }
 
@@ -23,17 +17,16 @@ export async function POST(req: Request) {
   const user = session.user;
 
   const body = (await req.json()) as RequestBody;
-  const { areaIds, date } = body;
+  const { areaId, date } = body;
 
-  if (!Array.isArray(areaIds) || areaIds.length === 0 || !date) {
+  if (!areaId || !date) {
     return NextResponse.json(
-      { error: "areaIds[] and date are required" },
+      { error: "areaId and date are required" },
       { status: 400 }
     );
   }
 
-  const today = normalizeDate();
-
+  const today = normalizeDateUTC();
 
   /* -------------------------------------------------
      1️⃣ Resolve Program
@@ -53,160 +46,144 @@ export async function POST(req: Request) {
   const programId = program.id;
 
   /* -------------------------------------------------
-     2️⃣ Preload all required data (ONE roundtrip)
+     2️⃣ Check if already completed today (GUARD)
   ------------------------------------------------- */
-  const [existingLogs, enrollments] = await prisma.$transaction([
-    prisma.makeoverProgressLog.findMany({
-      where: {
+  const existingLog = await prisma.makeoverProgressLog.findUnique({
+    where: {
+      userId_programId_areaId_date: {
         userId: user.id,
         programId,
-        areaId: { in: areaIds },
+        areaId,
         date: today,
+      },
+    },
+  });
+
+  if (
+    existingLog &&
+    existingLog.identityDone &&
+    existingLog.actionDone &&
+    existingLog.winLogged &&
+    existingLog.pointsEarned > 0
+  ) {
+    return NextResponse.json({
+      success: true,
+      alreadyCompleted: true,
+      pointsAwarded: 0,
+    });
+  }
+
+  /* -------------------------------------------------
+     3️⃣ Fetch enrollment (for challenge sync)
+  ------------------------------------------------- */
+  const enrollment = await prisma.userMakeoverChallengeEnrollment.findFirst({
+    where: {
+      userId: user.id,
+      programId,
+      areaId,
+    },
+    include: {
+      enrollment: true,
+    },
+  });
+
+  /* -------------------------------------------------
+     4️⃣ Atomic transaction
+  ------------------------------------------------- */
+  await prisma.$transaction([
+    // Progress log
+    prisma.makeoverProgressLog.upsert({
+      where: {
+        userId_programId_areaId_date: {
+          userId: user.id,
+          programId,
+          areaId,
+          date: today,
+        },
+      },
+      update: {
+        identityDone: true,
+        actionDone: true,
+        winLogged: true,
+        pointsEarned: 75,
+      },
+      create: {
+        userId: user.id,
+        programId,
+        areaId,
+        date: today,
+        identityDone: true,
+        actionDone: true,
+        winLogged: true,
+        pointsEarned: 75,
       },
     }),
 
-    prisma.userMakeoverChallengeEnrollment.findMany({
+    // Lifetime area points
+    prisma.makeoverPointsSummary.upsert({
       where: {
+        userId_programId_areaId: {
+          userId: user.id,
+          programId,
+          areaId,
+        },
+      },
+      update: {
+        totalPoints: { increment: 75 },
+      },
+      create: {
         userId: user.id,
         programId,
-        areaId: { in: areaIds },
-      },
-      include: {
-        enrollment: true,
+        areaId,
+        totalPoints: 75,
       },
     }),
+
+    // Challenge sync (if enrolled)
+    ...(enrollment
+      ? [
+          prisma.userChallengeTask.updateMany({
+            where: {
+              enrollmentId: enrollment.enrollmentId,
+              isCompleted: false,
+            },
+            data: {
+              isCompleted: true,
+              lastCompletedAt: new Date(),
+            },
+          }),
+
+          prisma.challengeEnrollment.update({
+            where: { id: enrollment.enrollmentId },
+            data: {
+              currentStreak: enrollment.enrollment.currentStreak + 1,
+              longestStreak: Math.max(
+                enrollment.enrollment.longestStreak,
+                enrollment.enrollment.currentStreak + 1
+              ),
+              lastStreakUpdate: new Date(),
+            },
+          }),
+
+          prisma.completionRecord.create({
+            data: {
+              userId: user.id,
+              challengeId: enrollment.challengeId,
+              date: today,
+              status: "COMPLETED",
+            },
+          }),
+        ]
+      : []),
   ]);
 
   /* -------------------------------------------------
-     3️⃣ Build write operations
-  ------------------------------------------------- */
-  const operations = [];
-
-  let totalPointsAwarded = 0;
-  const completedAreas: number[] = [];
-
-  for (const areaId of areaIds) {
-    const alreadyDone = existingLogs.some(
-      (log: MakeoverProgressLog) =>
-        log.areaId === areaId &&
-        log.identityDone === true &&
-        log.actionDone === true &&
-        log.winLogged === true
-    );
-
-
-    if (alreadyDone) continue;
-
-    /* ---- Progress Log + Points ---- */
-    operations.push(
-      prisma.makeoverProgressLog.upsert({
-        where: {
-          userId_programId_areaId_date: {
-            userId: user.id,
-            programId,
-            areaId,
-            date: today,
-          },
-        },
-        update: {
-          actionDone: true,
-          identityDone: true,
-          winLogged:true,
-          pointsEarned: { increment: 25 },
-        },
-        create: {
-          userId: user.id,
-          programId,
-          areaId,
-          date: today,
-          actionDone: true,
-           identityDone: true,
-          winLogged:true,
-          pointsEarned: 25,
-        },
-      }),
-
-      prisma.makeoverPointsSummary.upsert({
-        where: {
-          userId_programId_areaId: {
-            userId: user.id,
-            programId,
-            areaId,
-          },
-        },
-        update: {
-          totalPoints: { increment: 25 },
-        },
-        create: {
-          userId: user.id,
-          programId,
-          areaId,
-          totalPoints: 25,
-        },
-      })
-    );
-
-    totalPointsAwarded += 25;
-    completedAreas.push(areaId);
-
-    /* ---- Challenge Progress ---- */
-    const enrollment = enrollments.find(
-      (e: UserMakeoverChallengeEnrollment) => e.areaId === areaId
-    );
-
-    if (!enrollment) continue;
-
-    const nextStreak = enrollment.enrollment.currentStreak + 1;
-
-    operations.push(
-      prisma.userChallengeTask.updateMany({
-        where: {
-          enrollmentId: enrollment.enrollmentId,
-          isCompleted: false,
-        },
-        data: {
-          isCompleted: true,
-          lastCompletedAt: new Date(),
-        },
-      }),
-
-      prisma.challengeEnrollment.update({
-        where: { id: enrollment.enrollmentId },
-        data: {
-          currentStreak: nextStreak,
-          longestStreak: Math.max(
-            enrollment.enrollment.longestStreak,
-            nextStreak
-          ),
-          lastStreakUpdate: new Date(),
-        },
-      }),
-
-      prisma.completionRecord.create({
-        data: {
-          userId: user.id,
-          challengeId: enrollment.challengeId,
-          date: today,
-          status: "COMPLETED",
-        },
-      })
-    );
-  }
-
-  /* -------------------------------------------------
-     4️⃣ Execute ONE atomic transaction
-  ------------------------------------------------- */
-  if (operations.length > 0) {
-    await prisma.$transaction(operations);
-  }
-
-  /* -------------------------------------------------
-     5️⃣ Final Response
+     5️⃣ Response
   ------------------------------------------------- */
   return NextResponse.json({
     success: true,
-    completedAreas,
-    totalPointsAwarded,
+    areaId,
+    pointsAwarded: 75,
     date: today,
   });
 }
