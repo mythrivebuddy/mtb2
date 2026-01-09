@@ -1,4 +1,4 @@
-import { Sparkles, Gift, Lock } from "lucide-react";
+import { Sparkles, Lock } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 
 interface BonusRewardsProps {
@@ -28,25 +28,25 @@ const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
       </div>
 
       {/* Content */}
-      {!isProgramStarted ? (
-        <div className="flex flex-col items-center justify-start gap-3 py-2 text-slate-500 text-center">
-          <div className="size-12 rounded-full bg-slate-100  flex items-center justify-center">
-            <Lock className="w-6 h-6 opacity-60" />
-          </div>
-
-          <p className="text-md font-medium">
-            Rewards unlock after the program starts
-          </p>
-
-          <p className="text-md italic max-w-xs">
-            Complete daily actions and stay consistent to earn rewards once the
-            program begins.
-          </p>
+      {/* {!isProgramStarted ? ( */}
+      <div className="flex flex-col items-center justify-start gap-3 py-2 text-slate-500 text-center">
+        <div className="size-12 rounded-full bg-slate-100  flex items-center justify-center">
+          <Lock className="w-6 h-6 opacity-60" />
         </div>
-      ) : (
-        <div className="space-y-4">
-          {/* Active Reward */}
-          <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
+
+        <p className="text-md font-medium">
+          Rewards unlock after the program starts
+        </p>
+
+        <p className="text-md italic max-w-xs">
+          Complete daily actions and stay consistent to earn rewards once the
+          program begins.
+        </p>
+      </div>
+      {/*  ) : (
+         <div className="space-y-4"> */}
+      {/* // Active Reward */}
+      {/* <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
             <div className="size-10 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-[#10B981]">
               <Gift className="w-5 h-5" />
             </div>
@@ -67,10 +67,10 @@ const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
                 Unlock at 500 total points (420 / 500)
               </p>
             </div>
-          </div>
+          </div> */}
 
-          {/* Locked Reward */}
-          <div className="flex items-center gap-4 p-3 rounded-lg opacity-70">
+      {/* //Locked Reward */}
+      {/* <div className="flex items-center gap-4 p-3 rounded-lg opacity-70">
             <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
               <Lock className="w-5 h-5" />
             </div>
@@ -87,9 +87,9 @@ const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
             <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-500 text-[10px] font-bold rounded uppercase">
               Locked
             </span>
-          </div>
-        </div>
-      )}
+          </div> */}
+      {/* </div> 
+      )}*/}
     </section>
   );
 };
