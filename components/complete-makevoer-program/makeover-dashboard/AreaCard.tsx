@@ -85,7 +85,6 @@ const AreaCard = ({
   }
 
   const points = data?.find((p) => p.areaId === areaId)?.totalPoints ?? 0;
-  console.log({points});
   
 
   const challengeLink = hasChallenges
