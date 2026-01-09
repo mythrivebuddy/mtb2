@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         content: content.trim(),
       });
+      console.log({result});
+      
 
       results.push(result);
     }

@@ -84,10 +84,20 @@ export default function TodaysActionsClient({
   });
   console.log(lockQuery.data);
 
-  // ✅ NEW: derive unlockDate safely
-  const unlockDate = lockQuery.data?.unlockAt
-    ? new Date(lockQuery.data.unlockAt)
-    : null;
+ const unlockDate = React.useMemo(() => {
+  if (!lockQuery.data?.unlockAt) return null;
+
+  const now = new Date();
+
+  // next LOCAL midnight
+  return new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+    0, 0, 0, 0
+  );
+}, [lockQuery.data?.unlockAt]);
+
   const { timeLeft: dayUnlockTimeLeft, isProgramStarted: isDayUnlocked } =
     useProgramCountdown(unlockDate);
   useEffect(() => {

@@ -71,8 +71,13 @@ export const GET = async () => {
     /* ----------------------------------
        4️⃣ Compute unlock time (next 00:00)
     ---------------------------------- */
-    const unlockAt = new Date(today);
-    unlockAt.setDate(unlockAt.getDate() + 1); // next day midnight
+    const now = new Date();
+    const unlockAt = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1,
+      0, 0, 0, 0
+    );
 
     return NextResponse.json({
       success: true,
