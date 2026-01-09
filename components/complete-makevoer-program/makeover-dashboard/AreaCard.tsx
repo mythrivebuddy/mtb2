@@ -1,34 +1,92 @@
+"use client";
+
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 interface AreaCardProps {
   title: string;
   label: string;
   goal: string;
   progress: number;
-  points: number;
+  // points: number; // kept for compatibility
   color: string;
   bgColor: string;
   icon: React.ReactNode;
   challengeIds: string[];
+  areaId: number;
 }
 
+interface MakeoverPointsSummary {
+  areaId: number;
+  totalPoints: number;
+}
+
+/* ---------------- Skeleton ---------------- */
+const AreaCardSkeleton = () => {
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 py-2 px-5 animate-pulse">
+      <div className="h-5 w-24 bg-slate-200 rounded mb-4" />
+
+      <div className="flex justify-between items-start gap-6 mb-6">
+        <div className="flex gap-3">
+          <div className="w-16 h-16 bg-slate-200 rounded-lg" />
+          <div className="space-y-2">
+            <div className="h-4 w-32 bg-slate-200 rounded" />
+            <div className="h-3 w-40 bg-slate-200 rounded" />
+          </div>
+        </div>
+
+        <div className="w-12 h-12 rounded-full bg-slate-200" />
+      </div>
+
+      <div className="flex justify-between items-center mt-8">
+        <div className="space-y-2">
+          <div className="h-3 w-20 bg-slate-200 rounded" />
+          <div className="h-6 w-16 bg-slate-200 rounded" />
+        </div>
+
+        <div className="h-4 w-24 bg-slate-200 rounded" />
+      </div>
+    </div>
+  );
+};
+
+/* ---------------- Main Card ---------------- */
 const AreaCard = ({
   title,
   label,
   goal,
   progress,
-  points,
   color,
   bgColor,
   icon,
   challengeIds,
+  areaId,
 }: AreaCardProps) => {
   const hasChallenges = challengeIds.length > 0;
 
-  // Build URL: /dashboard/challenge/id1,id2,id3
+  const { data, isLoading } = useQuery({
+    queryKey: ["makeover-points-summary"],
+    queryFn: async () => {
+      const res = await axios.get(
+        "/api/makeover-program/points-summary"
+      );
+      return res.data.data as MakeoverPointsSummary[];
+    },
+  });
+
+  if (isLoading) {
+    return <AreaCardSkeleton />;
+  }
+
+  const points = data?.find((p) => p.areaId === areaId)?.totalPoints ?? 0;
+  console.log({points});
+  
+
   const challengeLink = hasChallenges
     ? `/dashboard/challenge/my-challenges/${challengeIds.join(",")}`
     : "#";
@@ -43,7 +101,7 @@ const AreaCard = ({
       <div className="flex justify-between items-start gap-3 lg:gap-6 mb-4 min-h-[72px]">
         <div className="flex items-start gap-3">
           <div
-            className={`p-2 rounded-lg  ${bgColor} ring-1 ring-white/10 mt-1`}
+            className={`p-2 rounded-lg ${bgColor} ring-1 ring-white/10 mt-1`}
             style={{ color }}
           >
             <span className="w-16 h-16">{icon}</span>
