@@ -1,4 +1,4 @@
-import { Sparkles, Gift, Lock } from "lucide-react";
+import { Sparkles, Lock } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 
 interface BonusRewardsProps {
