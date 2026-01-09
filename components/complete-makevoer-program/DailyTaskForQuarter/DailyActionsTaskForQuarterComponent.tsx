@@ -230,9 +230,6 @@ export default function DailyActionsTaskForQuarterComponent() {
     !!actions[currentAreaId] &&
     actions[currentAreaId].trim().length >= MIN_ACTION_LENGTH;
 
-  const hasAnyAction = Object.values(actions).some(
-    (v) => v && v.trim().length >= MIN_ACTION_LENGTH
-  );
 
   return (
     <div className="min-h-screen font-['Inter'] text-[#0d101b]">
@@ -417,9 +414,7 @@ export default function DailyActionsTaskForQuarterComponent() {
             }
             nextLabel={isLast ? "Proceed" : "Next Area"}
             disabled={
-              updateDailyActionsMutation.isPending ||
-              (!isLast && !hasCurrentAreaAction) ||
-              (isLast && !hasAnyAction)
+              updateDailyActionsMutation.isPending || !hasCurrentAreaAction
             }
           />
         </div>

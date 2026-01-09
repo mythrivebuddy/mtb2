@@ -8,6 +8,7 @@ import {
   Heart,
   Activity,
   Check,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AREA_BACKGROUNDS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
@@ -16,7 +17,7 @@ import PaginationIndicatorsDailyActions from "./PaginationIndicatorsDailyActions
 import { useProgramCountdown } from "@/hooks/useProgramCountdown";
 import NotStartedYetTasks from "./NotStartedYetTasks";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -63,6 +64,47 @@ export default function TodaysActionsClient({
     () => commitments.map((c) => c.areaId),
     [commitments]
   );
+  const lockQuery = useQuery({
+    queryKey: ["today-lock-status"],
+    queryFn: async () => {
+      const res = await axios.get(
+        "/api/makeover-program/makeover-daily-tasks/today-lock"
+      );
+      return res.data as {
+        isDayLocked: boolean;
+        unlockAt?: string;
+      };
+    },
+
+    // 🔒 DO NOT refetch during the day
+    staleTime: Infinity,
+    // cacheTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  console.log(lockQuery.data);
+
+  // ✅ NEW: derive unlockDate safely
+  const unlockDate = lockQuery.data?.unlockAt
+    ? new Date(lockQuery.data.unlockAt)
+    : null;
+  const { timeLeft: dayUnlockTimeLeft, isProgramStarted: isDayUnlocked } =
+    useProgramCountdown(unlockDate);
+  useEffect(() => {
+    if (!lockQuery.data?.unlockAt) return;
+
+    const unlockTime = new Date(lockQuery.data.unlockAt).getTime();
+    const now = Date.now();
+    const delay = unlockTime - now;
+
+    if (delay <= 0) return;
+
+    const timer = setTimeout(() => {
+      lockQuery.refetch();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [lockQuery.data?.unlockAt]);
 
   useEffect(() => {
     if (!activeSlide) return;
@@ -146,6 +188,38 @@ export default function TodaysActionsClient({
       </main>
     );
   }
+  if (lockQuery.isLoading) {
+    return (
+      <div className="w-full min-h-screen bg-dashboard flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+  // 🔒 Day locked → show countdown till midnight
+  if (
+    isProgramStarted &&
+    lockQuery.data?.isDayLocked &&
+    unlockDate &&
+    !isDayUnlocked
+  ) {
+    return (
+      <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+        <NotStartedYetTasks
+          timeLeft={dayUnlockTimeLeft}
+          startDate={unlockDate}
+          isBack={true}
+          title="All Tasks Completed 🎉"
+          description={
+            <>
+              You’ve completed all your tasks for today.
+              <br />
+              Come back tomorrow to continue.
+            </>
+          }
+        />
+      </main>
+    );
+  }
 
   // Fallback if no data
   if (totalSlides === 0) {
@@ -170,10 +244,23 @@ export default function TodaysActionsClient({
       setCurrentSlideIndex((i) => i + 1);
       return;
     }
+    const today = new Date().toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+    });
+
+    const contents = commitments
+      .slice(0, 3)
+      .map((c) => c.actionText)
+      .filter(Boolean)
+      .map((actionText) => `Done ${actionText} on ${today}`);
 
     // LAST slide → fire API
     actionDoneMutation.mutate(undefined, {
       onSuccess: () => {
+       void axios.post("/api/makeover-program/makeover-daily-tasks/log-win", {
+          contents,
+        });
         router.push("/dashboard/complete-makeover-program/makeover-dashboard");
       },
     });
@@ -333,39 +420,31 @@ export default function TodaysActionsClient({
               </label>
 
               {/* Item 3: Log Win */}
-              <div className="relative mt-2">
-                <div className="flex gap-2">
-                  <div className="relative flex items-start pt-3 pl-3">
-                    <input
-                      type="checkbox"
-                      checked={currentChecklist.winLogged}
-                      onChange={(e) =>
-                        updateChecklist("winLogged", e.target.checked)
-                      }
-                      className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
-                    />
-                    <Check
-                      className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-[14px] top-[14px]"
-                      strokeWidth={3}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="relative">
-                      <textarea
-                        className="block w-full rounded-lg border-slate-300 bg-white text-slate-900 shadow-sm focus:border-[#1990e6] focus:ring-[#1990e6] sm:text-sm pl-3 pr-12 py-3"
-                        placeholder="Log your 1% win for today..."
-                        rows={1}
-                      />
-                      <button className="absolute right-2 top-2 bottom-2 bg-[#1990e6]/10 hover:bg-[#1990e6] hover:text-white text-[#1990e6] rounded-md px-3 text-xs font-bold transition-all uppercase tracking-wide">
-                        Save
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-1 pl-1">
-                      Documenting small wins compounds over time.
-                    </p>
-                  </div>
+              <label className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-all cursor-pointer">
+                <div className="relative flex items-center mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={currentChecklist.winLogged}
+                    onChange={(e) =>
+                      updateChecklist("winLogged", e.target.checked)
+                    }
+                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
+                  />
+                  <Check
+                    className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
+                    strokeWidth={3}
+                  />
                 </div>
-              </div>
+
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
+                    Log today’s 1% win
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Documenting small wins compounds over time.
+                  </p>
+                </div>
+              </label>
             </div>
           </div>
         </div>

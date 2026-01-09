@@ -70,7 +70,7 @@ const TodayActionsCard = ({
 
         {isProgramStarted ? (
           <p className="text-slate-600 dark:text-slate-300 mb-6 text-base leading-relaxed">
-            You have{" "}
+            {/* You have{" "}
             <span className="font-semibold text-[#1183d4]">
               3 pending tasks
             </span>{" "}
@@ -78,7 +78,8 @@ const TodayActionsCard = ({
             <span className="font-semibold text-[#10B981]">
               2 completed tasks
             </span>{" "}
-            today. Stay consistent.
+            today. */}
+            Stay consistent.
           </p>
         ) : (
           <p className="text-slate-600 dark:text-slate-300 mb-6 text-base leading-relaxed">
