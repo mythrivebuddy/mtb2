@@ -129,7 +129,7 @@ export async function createLogWin({
       }
 
       return { log, warning, notification };
-    });
+    } ,{timeout: 10_000} );
 
   // 🔔 SAFE: outside transaction
   if (txResult.notification) {
@@ -150,12 +150,20 @@ export async function createLogWin({
 /* Streak Logic                       */
 /* ---------------------------------- */
 
+type StreakResult = {
+  rewardNotification?: {
+    userId: string;
+    jp: number;
+    activity: ActivityType;
+  };
+};
+
 async function handleStreak(
   tx: PrismaTx,
   userId: string,
   today: Date,
   streakType: StreakType
-): Promise<void> {
+): Promise<StreakResult> {
   const streak = await tx.streak.findUnique({
     where: {
       userId_type: { userId, type: streakType },
@@ -164,7 +172,7 @@ async function handleStreak(
 
   if (!streak) {
     await createOrResetStreak(tx, userId, today, streakType, 1);
-    return;
+    return {};
   }
 
   const lastDay = startOfDay(new Date(streak.progress_vault_last_at!));
@@ -173,7 +181,7 @@ async function handleStreak(
 
   if (dayDiff > 1) {
     await createOrResetStreak(tx, userId, today, streakType, 1);
-    return;
+    return {};
   }
 
   if (dayDiff === 1) {
@@ -206,14 +214,19 @@ async function handleStreak(
         tx
       );
 
-      await createJPEarnedNotification(
-        userId,
-        jpResult.jpAdded,
-        jpResult.activity
-      );
+      return {
+        rewardNotification: {
+          userId,
+          jp: jpResult.jpAdded,
+          activity: jpResult.activity,
+        },
+      };
     }
   }
+
+  return {};
 }
+
 
 /* ---------------------------------- */
 /* Streak Creator / Reset             */
