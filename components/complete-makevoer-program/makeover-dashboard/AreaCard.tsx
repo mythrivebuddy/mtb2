@@ -77,6 +77,7 @@ const AreaCard = ({
       );
       return res.data.data as MakeoverPointsSummary[];
     },
+    retryOnMount:true
   });
 
   if (isLoading) {

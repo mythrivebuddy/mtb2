@@ -21,7 +21,6 @@ export async function POST(req: Request) {
   const body = (await req.json()) as RequestBody;
   const { areaId, field, value, date } = body;
 
-  console.log("CHECKBOX API:", { areaId, field, value, date });
 
   if (!areaId || !field || typeof value !== "boolean" || !date) {
     return NextResponse.json(
