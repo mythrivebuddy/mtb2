@@ -219,7 +219,7 @@ export default function TodaysActionsClient({
         date: new Date().toISOString(),
       });
     },
-    onSuccess: (res) => {
+    onSuccess: () => {
       toast.success("+75 points added 🎉");
     },
     onError: () => {
@@ -331,7 +331,7 @@ export default function TodaysActionsClient({
   const handleSubmitDailyActions = () => {
     if (areaCompletionMutation.isPending) return;
 
-    const checklist = checklistByArea[activeSlide.areaId];
+    // const checklist = checklistByArea[activeSlide.areaId];
 
     if (!isAreaCompleted) {
       toast.error("Complete all tasks in this area to continue");
