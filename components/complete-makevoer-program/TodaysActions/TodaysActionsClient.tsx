@@ -83,6 +83,40 @@ export default function TodaysActionsClient({
     refetchOnReconnect: true,
   });
   console.log(lockQuery.data);
+  const todayProgressQuery = useQuery({
+    queryKey: ["today-progress"],
+    queryFn: async () => {
+      const res = await axios.get(
+        "/api/makeover-program/makeover-daily-tasks/today-progress"
+      );
+      return res.data.data as {
+        areaId: number;
+        identityDone: boolean;
+        actionDone: boolean;
+        winLogged: boolean;
+      }[];
+    },
+    enabled: isProgramStarted,
+  });
+
+  useEffect(() => {
+    if (!todayProgressQuery.data) return;
+
+    const mapped: Record<number, ChecklistState> = {};
+
+    todayProgressQuery.data.forEach((log) => {
+      mapped[log.areaId] = {
+        identityDone: log.identityDone,
+        actionDone: log.actionDone,
+        winLogged: log.winLogged,
+      };
+    });
+
+    setChecklistByArea((prev) => ({
+      ...prev,
+      ...mapped,
+    }));
+  }, [todayProgressQuery.data]);
 
   const unlockDate = React.useMemo(() => {
     if (!lockQuery.data?.unlockAt) return null;
@@ -120,64 +154,109 @@ export default function TodaysActionsClient({
   }, [lockQuery.data?.unlockAt]);
 
   useEffect(() => {
-    if (!activeSlide) return;
+    if (!todayProgressQuery.data || commitments.length === 0) return;
 
-    setChecklistByArea((prev) => {
-      if (prev[activeSlide.areaId]) return prev;
+    // map areaId → checklist
+    const progressMap = new Map(
+      todayProgressQuery.data.map((log) => [
+        log.areaId,
+        log.identityDone && log.actionDone && log.winLogged,
+      ])
+    );
 
-      return {
-        ...prev,
-        [activeSlide.areaId]: {
-          identityDone: false,
-          actionDone: false,
-          winLogged: false,
-        },
-      };
-    });
-  }, [activeSlide?.areaId]);
+    // find first incomplete area in commitments order
+   const firstIncompleteIndex = commitments.findIndex((c) => {
+  return progressMap.get(c.areaId) !== true;
+});
 
-  const currentChecklist: ChecklistState = checklistByArea[
-    activeSlide.areaId
-  ] ?? {
-    identityDone: false,
-    actionDone: false,
-    winLogged: false,
+
+    if (firstIncompleteIndex !== -1) {
+      setCurrentSlideIndex(firstIncompleteIndex);
+    }
+  }, [todayProgressQuery.data, commitments]);
+
+  const currentChecklist: ChecklistState = {
+    identityDone: checklistByArea[activeSlide.areaId]?.identityDone ?? false,
+    actionDone: checklistByArea[activeSlide.areaId]?.actionDone ?? false,
+    winLogged: checklistByArea[activeSlide.areaId]?.winLogged ?? false,
   };
 
   const updateChecklist = (field: keyof ChecklistState, value: boolean) => {
+    const areaId = activeSlide.areaId;
+
+    // optimistic UI
     setChecklistByArea((prev) => ({
       ...prev,
-      [activeSlide.areaId]: {
-        ...prev[activeSlide.areaId],
+      [areaId]: {
+        ...prev[areaId],
         [field]: value,
       },
     }));
+
+    checkboxMutation.mutate({
+      areaId,
+      field,
+      value,
+    });
   };
 
   // Handlers for Carousel
   const handleNext = () => {
+    if (!isAreaCompleted) {
+      toast.error("Complete all tasks in this area before moving forward");
+      return;
+    }
     setCurrentSlideIndex((prev) => (prev < totalSlides - 1 ? prev + 1 : 0));
   };
 
   const handlePrev = () => {
     setCurrentSlideIndex((prev) => (prev > 0 ? prev - 1 : totalSlides - 1));
   };
-  const actionDoneMutation = useMutation({
-    mutationFn: async () => {
+  const areaCompletionMutation = useMutation({
+    mutationFn: async (areaId: number) => {
       return axios.post("/api/makeover-program/makeover-daily-tasks", {
-        areaIds,
+        areaId,
         date: new Date().toISOString(),
       });
     },
     onSuccess: (res) => {
-      toast.success(
-        `Daily Action completed (+${res.data.totalPointsAwarded} points)`
-      );
+      toast.success("+75 points added 🎉");
     },
     onError: () => {
-      toast.error("Failed to complete Daily Action");
+      toast.error("Failed to complete area");
     },
   });
+
+  const checkboxMutation = useMutation({
+    mutationFn: async ({
+      areaId,
+      field,
+      value,
+    }: {
+      areaId: number;
+      field: "identityDone" | "actionDone" | "winLogged";
+      value: boolean;
+    }) => {
+      return axios.post(
+        "/api/makeover-program/makeover-daily-tasks/checkboxes",
+        {
+          areaId,
+          field,
+          value,
+          date: new Date().toISOString(),
+        }
+      );
+    },
+  });
+  const isDayLocked = lockQuery.data?.isDayLocked;
+
+  const isAreaCompleted =
+    currentChecklist.identityDone &&
+    currentChecklist.actionDone &&
+    currentChecklist.winLogged;
+
+  const isCheckboxDisabled = isDayLocked || isAreaCompleted;
+
   // Prevent hydration mismatch
   if (!mounted) return null;
 
@@ -243,37 +322,43 @@ export default function TodaysActionsClient({
     );
   }
   const isLast = currentSlideIndex === totalSlides - 1;
+  const completedActionWins = commitments
+  .filter((c) => checklistByArea[c.areaId]?.actionDone)
+  .slice(0, 3)
+  .map((c) => c.actionText);
+
 
   const handleSubmitDailyActions = () => {
-    // block progression unless action is done
-    if (actionDoneMutation.isPending) return;
-    if (!currentChecklist.actionDone) {
-      toast.error("Please complete the Daily Action first");
+    if (areaCompletionMutation.isPending) return;
+
+    const checklist = checklistByArea[activeSlide.areaId];
+
+    if (!isAreaCompleted) {
+      toast.error("Complete all tasks in this area to continue");
       return;
     }
 
-    // NOT last slide → just move forward
-    if (!isLast) {
-      setCurrentSlideIndex((i) => i + 1);
-      return;
-    }
-    const today = new Date().toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-    });
-
-    const contents = commitments
-      .slice(0, 3)
-      .map((c) => c.actionText)
-      .filter(Boolean)
-      .map((actionText) => `Done ${actionText} on ${today}`);
-
-    // LAST slide → fire API
-    actionDoneMutation.mutate(undefined, {
+    // fire AREA completion
+    areaCompletionMutation.mutate(activeSlide.areaId, {
       onSuccess: () => {
-        void axios.post("/api/makeover-program/makeover-daily-tasks/log-win", {
-          contents,
-        });
+        if (!isLast) {
+          setCurrentSlideIndex((i) => i + 1);
+          return;
+        }
+
+        // 🔥 fire-and-forget (intentionally not awaited)
+        axios
+          .post("/api/makeover-program/makeover-daily-tasks/log-win", {
+            areaIds,
+             contents:completedActionWins,
+            date: new Date().toISOString(),
+          })
+          .catch((err) => {
+            // optional logging only
+            console.error("Log win failed", err);
+          });
+
+        // 🚀 immediately move user forward
         router.push("/dashboard/complete-makeover-program/makeover-dashboard");
       },
     });
@@ -391,6 +476,7 @@ export default function TodaysActionsClient({
                 <div className="relative flex items-center mt-0.5">
                   <input
                     type="checkbox"
+                    disabled={isCheckboxDisabled}
                     checked={currentChecklist.identityDone}
                     onChange={(e) =>
                       updateChecklist("identityDone", e.target.checked)
@@ -414,6 +500,7 @@ export default function TodaysActionsClient({
                 <div className="relative flex items-center">
                   <input
                     type="checkbox"
+                    disabled={isCheckboxDisabled}
                     checked={currentChecklist.actionDone}
                     onChange={(e) =>
                       updateChecklist("actionDone", e.target.checked)
@@ -438,6 +525,7 @@ export default function TodaysActionsClient({
                   <input
                     type="checkbox"
                     checked={currentChecklist.winLogged}
+                    disabled={isCheckboxDisabled}
                     onChange={(e) =>
                       updateChecklist("winLogged", e.target.checked)
                     }
@@ -467,6 +555,7 @@ export default function TodaysActionsClient({
           onClick={handleNext}
           className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group"
           aria-label="Next Slide"
+          disabled={!isAreaCompleted}
         >
           <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
         </button>
@@ -488,7 +577,8 @@ export default function TodaysActionsClient({
         }}
         onNext={handleSubmitDailyActions}
         nextLabel={isLast ? "Proceed" : "Next"}
-        disabled={!currentChecklist.actionDone || actionDoneMutation.isPending}
+      disabled={!isAreaCompleted || areaCompletionMutation.isPending}
+
       />
     </main>
   );
