@@ -1,7 +1,10 @@
 "use client";
 
 import React from "react";
-import { Hourglass } from "lucide-react";
+import { ArrowRight, Hourglass } from "lucide-react";
+
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 /* ---------------- Types ---------------- */
 type TimeLeft = {
@@ -16,6 +19,7 @@ type ProgramLockedViewProps = {
   startDate?: Date | null;
   title?: string;
   description?: React.ReactNode;
+  isBack?: boolean;
   // onBack?: () => void;
 };
 
@@ -35,6 +39,7 @@ function TimeBox({ label, value }: { label: string; value: number }) {
 export default function NotStartedYetTasks({
   timeLeft,
   startDate,
+  isBack,
   title = "Program Locked",
   description = (
     <>
@@ -44,6 +49,7 @@ export default function NotStartedYetTasks({
     </>
   ),
 }: ProgramLockedViewProps) {
+  const router = useRouter();
   return (
     <div className="flex-1 flex flex-col  items-center justify-center min-h-[60vh]">
       <div className="w-full  bg-white shadow-xl shadow-slate-200/50 border border-slate-100 p-8 text-center">
@@ -82,10 +88,12 @@ export default function NotStartedYetTasks({
           )}
         </div>
 
-        {/* Back Button
-        <Button onClick={onBack ?? (() => router.back())} className="w-full">
-          Go Back <ArrowRight className="ml-2 w-4 h-4" />
-        </Button> */}
+        {/*  Back Button */}
+        {isBack && (
+          <Button onClick={() => router.back()} className="w-full">
+            Go Back <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        )}
       </div>
     </div>
   );

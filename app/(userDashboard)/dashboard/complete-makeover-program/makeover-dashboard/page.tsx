@@ -10,15 +10,16 @@ import AreaSnapshots from "@/components/complete-makevoer-program/makeover-dashb
 import BonusRewards from "@/components/complete-makevoer-program/makeover-dashboard/BonusRewards";
 import AccountabilityBuddy from "@/components/complete-makevoer-program/makeover-dashboard/AccountabilityBuddy";
 import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
+import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 
 const DashboardPage = async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
-   const { isPurchased } = await grantProgramAccessToPage();
-    if (!isPurchased) {
-      redirect("/MTB-2026-the-complete-makeover-program");
-    }
+  const { isPurchased } = await grantProgramAccessToPage();
+  if (!isPurchased) {
+    redirect("/MTB-2026-the-complete-makeover-program");
+  }
   const programState = await prisma.userProgramState.findFirst({
     where: { userId },
     include: {
@@ -67,15 +68,68 @@ const DashboardPage = async () => {
     {}
   );
 
+  const validActionCommitments = rawCommitments.filter(
+    (c) => c.actionText !== null
+  );
+
+  const hasThreeActions = validActionCommitments.length === 3;
+  if (!hasThreeActions) {
+    redirect(`/dashboard/complete-makeover-program/daily-actions-task-for-quarter`);
+  }
+
+ 
+  const areaIds = validActionCommitments
+  .filter((a): a is typeof a & { areaId: number } => a.areaId !== null)
+  .map((a) => a.areaId);
+
+  let isDayLocked = true;
+  const today = normalizeDateUTC();
+  if (areaIds) {
+    const logs = await prisma.makeoverProgressLog.findMany({
+      where: {
+        userId,
+        programId: programState.programId,
+        areaId: { in: areaIds },
+        date: today,
+      },
+      select: {
+        identityDone: true,
+        actionDone: true,
+        winLogged: true,
+      },
+    });
+      /* ----------------------------------
+       3️⃣ Compute lock
+    ---------------------------------- */
+     isDayLocked =
+      logs.length === areaIds.length &&
+      logs.every(
+        (l) =>
+          l.identityDone === true &&
+          l.actionDone === true &&
+          l.winLogged === true
+      );
+  }
+     
+
+  
+       
+  if (!isDayLocked) {
+    redirect(`/dashboard/complete-makeover-program/todays-actions`);
+  }
+  
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Page Header */}
-        <DashboardHeader isProgramStarted={isProgramStarted} />
+        <DashboardHeader isProgramStarted={isProgramStarted} hasThreeActions={hasThreeActions}/>
 
         {/* Top Section: Actions & Insights */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <TodayActionsCard startDate={programState.program?.startDate} />
+          <TodayActionsCard
+            startDate={programState.program?.startDate}
+            hasThreeActions={hasThreeActions}
+          />
           <DailyInsightCard />
         </section>
 

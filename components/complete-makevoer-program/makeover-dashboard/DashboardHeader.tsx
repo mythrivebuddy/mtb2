@@ -5,15 +5,18 @@ import { Button } from "@/components/ui/button";
 
 const DashboardHeader = ({
   isProgramStarted,
+  hasThreeActions,
 }: {
   isProgramStarted: boolean;
+  hasThreeActions: boolean;
 }) => {
+  const isDailyActionsSettingLocked = hasThreeActions && isProgramStarted;
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-start gap-4">
         {/* LEFT: Week + Month */}
         <div className="flex flex-col flex-wrap items-start gap-3">
-          <h1 className="text-3xl font-bold whitespace-nowrap">
+          <h1 className="text-2xl sm:text-3xl font-bold whitespace-nowrap">
             Week 0 of 51 • Quarter 1
           </h1>
 
@@ -45,15 +48,17 @@ const DashboardHeader = ({
         {/* RIGHT: Buttons + Quote */}
         <div className="flex flex-col md:ml-auto items-end gap-2">
           <div className="flex flex-col sm:flex-row w-full gap-3 sm:justify-end">
-            <Link
-              href="/dashboard/complete-makeover-program/daily-actions-task-for-quarter"
-              className="w-full sm:w-auto"
-            >
-              <Button className="w-full sm:w-auto bg-[#1183d4] hover:bg-[#0c62a0] flex items-center justify-center">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Set this quarter’s actions
-              </Button>
-            </Link>
+            {!isDailyActionsSettingLocked && (
+              <Link
+                href="/dashboard/complete-makeover-program/daily-actions-task-for-quarter"
+                className="w-full sm:w-auto"
+              >
+                <Button className="w-full sm:w-auto bg-[#1183d4] hover:bg-[#0c62a0] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Set this quarter’s actions
+                </Button>
+              </Link>
+            )}
 
             {!isProgramStarted && (
               <Link
