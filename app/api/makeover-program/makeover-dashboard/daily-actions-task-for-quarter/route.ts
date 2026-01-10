@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { grantProgramAccess } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 import { AccessError } from "@/lib/utils/makeover-program/access/AccessError";
+import { CURRENT_MAKEOVER_PROGRAM_QUARTER } from "@/lib/constant";
 
 export const GET = async () => {
     try {
@@ -17,7 +18,7 @@ export const GET = async () => {
                 area: {
                     select: {
                         name: true,
-                        description:true
+                        description: true
                     },
                 },
             },
@@ -37,7 +38,7 @@ export const GET = async () => {
             name: a.area?.name || `Area ${a.areaId}`, // Safety fallback
             description: a.area?.description || "",
         }));
-        
+
         // 2. Extract IDs specifically for the next query
         const areaIds = selectedAreas.map((a) => a.areaId);
         // --- FIX ENDS HERE ---
@@ -50,10 +51,25 @@ export const GET = async () => {
                 },
             },
         });
+        const userDailyActions = await prisma.userMakeoverCommitment.findMany({
+            where: {
+                userId,
+                programId,
+                quarter: CURRENT_MAKEOVER_PROGRAM_QUARTER,
+                areaId: {
+                    in: areaIds,
+                },
+            },
+            select: {
+                areaId: true,
+                actionId: true,
+                actionText:true,
+            },
+        });
 
         return NextResponse.json(
             // 3. Return 'areas' (with names) instead of just 'areaIds'
-            { success: true, areas, dailyActions }, 
+            { success: true, areas, dailyActions, userDailyActions },
             { status: 200 }
         );
     } catch (error: unknown) {

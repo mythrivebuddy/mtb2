@@ -1525,6 +1525,7 @@ model MakeoverProgressLog {
   programId String
   areaId    Int
   date      DateTime @db.Date
+  completedAt DateTime @default(now())
 
   identityDone Boolean?
   actionDone   Boolean?

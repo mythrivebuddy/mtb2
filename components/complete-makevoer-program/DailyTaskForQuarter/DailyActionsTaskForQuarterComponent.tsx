@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import {
   ChevronLeft,
@@ -35,6 +35,11 @@ interface Area {
   name: string;
   description: string;
 }
+interface UserDailyAction {
+  areaId: number;
+  actionId: string;
+  actionText: string;
+}
 
 interface DailyAction {
   id: string;
@@ -53,13 +58,18 @@ interface ApiResponse {
   success: boolean;
   areas: Area[];
   dailyActions: DailyAction[];
+  userDailyActions?: UserDailyAction[];
 }
 
 /* ───────────── COMPONENT ───────────── */
 
 export default function DailyActionsTaskForQuarterComponent() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [actions, setActions] = useState<Record<number, string>>({});
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-    const router = useRouter();
   const { data, isLoading, isError, error, refetch } = useQuery<ApiResponse>({
     queryKey: ["daily-actions-for-quarter"],
     queryFn: async () => {
@@ -69,6 +79,7 @@ export default function DailyActionsTaskForQuarterComponent() {
       return res.data;
     },
   });
+
   const areas = useMemo<NormalizedArea[]>(() => {
     if (!data?.areas) return [];
 
@@ -79,10 +90,6 @@ export default function DailyActionsTaskForQuarterComponent() {
       icon: (AREA_ICON_MAP[a.id] ?? Leaf) as LucideIcon,
     }));
   }, [data]);
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [actions, setActions] = useState<Record<number, string>>({});
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Updated mutation to accept actionId
   const updateDailyActionsMutation = useMutation({
@@ -121,6 +128,17 @@ export default function DailyActionsTaskForQuarterComponent() {
   };
 
   const isLast = data ? activeIndex === data.areas.length - 1 : false;
+  useEffect(() => {
+    if (!data?.userDailyActions?.length) return;
+
+    const initialActions: Record<number, string> = {};
+
+    data.userDailyActions.forEach((item) => {
+      initialActions[item.areaId] = item.actionText;
+    });
+
+    setActions(initialActions);
+  }, [data]);
 
   /* ───────────── ERROR STATE ───────────── */
 
@@ -190,15 +208,28 @@ export default function DailyActionsTaskForQuarterComponent() {
         dailyActions: dailyActionsPayload,
       });
 
-      // 👉 move to next step / route
+      //  move to next step / route
       toast.success("Daily actions saved successfully!");
-     await router.push("/dashboard/complete-makeover-program/makeover-dashboard");
+      await queryClient.invalidateQueries({
+        queryKey: ["daily-actions-for-quarter"],
+      });
+      await router.push(
+        "/dashboard/complete-makeover-program/makeover-dashboard"
+      );
     } catch (err) {
       console.error("Failed to save daily actions", err);
     }
   };
 
   /* ───────────── MAIN UI ───────────── */
+  const currentAreaId = Number(areas[activeIndex]?.id);
+
+  const MIN_ACTION_LENGTH = 5;
+
+  const hasCurrentAreaAction =
+    !!actions[currentAreaId] &&
+    actions[currentAreaId].trim().length >= MIN_ACTION_LENGTH;
+
 
   return (
     <div className="min-h-screen font-['Inter'] text-[#0d101b]">
@@ -227,9 +258,13 @@ export default function DailyActionsTaskForQuarterComponent() {
             </button>
 
             <button
-              disabled={isLast}
+              disabled={!hasCurrentAreaAction || isLast}
               onClick={() => scrollTo(activeIndex + 1)}
-              className="hidden lg:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 size-12 rounded-full bg-white border shadow text-[#059669]"
+              className={`hidden lg:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 size-12 rounded-full bg-white border shadow text-[#059669] ${
+                !hasCurrentAreaAction || isLast
+                  ? "opacity-40 pointer-events-none"
+                  : ""
+              }`}
             >
               <ChevronRight size={28} />
             </button>
@@ -290,6 +325,13 @@ export default function DailyActionsTaskForQuarterComponent() {
                         placeholder="Type or choose below…"
                         className="w-full rounded-xl border bg-inherit border-emerald-600 p-4 focus:ring-2 focus:ring-[#059669]"
                       />
+                      {actions[Number(area.id)] &&
+                        actions[Number(area.id)].trim().length <
+                          MIN_ACTION_LENGTH && (
+                          <span className="ml-2 text-xs text-red-500">
+                            Minimum {MIN_ACTION_LENGTH} characters required.
+                          </span>
+                        )}
 
                       {/* Mobile Select */}
                       <div className="mt-6 sm:hidden">
@@ -360,12 +402,20 @@ export default function DailyActionsTaskForQuarterComponent() {
 
           {/* Footer */}
           <OnboardingStickyFooter
-            onBack={() => scrollTo(activeIndex - 1)}
+            onBack={() => {
+              if (activeIndex === 0) {
+                router.back(); //  leave onboarding
+              } else {
+                scrollTo(activeIndex - 1); //  previous slide
+              }
+            }}
             onNext={() =>
               isLast ? handleSubmitDailyActions() : scrollTo(activeIndex + 1)
             }
             nextLabel={isLast ? "Proceed" : "Next Area"}
-            disabled={updateDailyActionsMutation.isPending}
+            disabled={
+              updateDailyActionsMutation.isPending || !hasCurrentAreaAction
+            }
           />
         </div>
       </main>

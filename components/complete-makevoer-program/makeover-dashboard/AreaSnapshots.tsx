@@ -36,11 +36,12 @@ const AreaSnapshots = ({
             label={`Area ${index + 1}`}
             goal={commitment.goalText}
             progress={0}
-            points={0}
+            // points={0}
             color={area.color}
             bgColor={area.bgColor}
             icon={<Icon className="w-5 h-5" />}
             challengeIds={challenges}
+            areaId={commitment.areaId}
           />
         );
       })}
