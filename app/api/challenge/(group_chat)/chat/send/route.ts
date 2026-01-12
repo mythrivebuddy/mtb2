@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { notifyUsersExcept } from "@/lib/utils/pushNotifications";
+import { ChallengeJoinMode } from "@prisma/client";
 
 // 1. Create an Admin Supabase client
 
@@ -36,6 +38,7 @@ export async function POST(req: Request) {
       },
       include: {
         user: { select: { id: true, name: true, image: true } },
+        challenge: { select: { title: true, joinMode: true } },
         replyTo: {
           select: {
             id: true,
@@ -54,6 +57,24 @@ export async function POST(req: Request) {
       event: "new_message",
       payload: newMessage, // Send the full message with user data
     });
+
+    let from = "";
+    if (newMessage.challenge.joinMode === ChallengeJoinMode.SYSTEM_ONLY) {
+      from = "?from=dashboard%2Fcomplete-makeover-program%2Fmakeover-dashboard";
+    }
+
+    const senderName = newMessage.user?.name ?? "Someone";
+    const body =
+      message.length > 120 ? message.slice(0, 117) + "…" : message;
+
+    void notifyUsersExcept({
+      challengeId,
+      title: `${senderName} in ${newMessage.challenge.title}`,
+      message: body,
+      url: `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challengeId}${from}`,
+      notTosendUserItself: user.id,
+    });
+
 
     // 4. Return the new message to the sender
     return NextResponse.json(newMessage);
