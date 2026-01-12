@@ -11,6 +11,7 @@ import BonusRewards from "@/components/complete-makevoer-program/makeover-dashbo
 import AccountabilityBuddy from "@/components/complete-makevoer-program/makeover-dashboard/AccountabilityBuddy";
 import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
+import MakeoverDashboardClientGate from "@/components/complete-makevoer-program/makeover-dashboard/DashboardRedirectClient";
 
 const DashboardPage = async () => {
   const session = await getServerSession(authOptions);
@@ -114,12 +115,14 @@ const DashboardPage = async () => {
 
   
        
-  if (!isDayLocked) {
-    redirect(`/dashboard/complete-makeover-program/todays-actions`);
-  }
+  // if (!isDayLocked) {
+  //   redirect(`/dashboard/complete-makeover-program/todays-actions`);
+  // }
   
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
+      <MakeoverDashboardClientGate isDayLocked={isDayLocked} />
+
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Page Header */}
         <DashboardHeader isProgramStarted={isProgramStarted} hasThreeActions={hasThreeActions}/>
@@ -147,7 +150,7 @@ const DashboardPage = async () => {
           {/* Bonus & Rewards */}
           <BonusRewards isProgramStarted={isProgramStarted} />
           {/* Accountability Pod */}
-          <AccountabilityBuddy isProgramStarted={isProgramStarted} />
+          <AccountabilityBuddy />
         </section>
       </main>
     </div>
