@@ -17,7 +17,7 @@ import PaginationIndicatorsDailyActions from "./PaginationIndicatorsDailyActions
 import { useProgramCountdown } from "@/hooks/useProgramCountdown";
 import NotStartedYetTasks from "./NotStartedYetTasks";
 import OnboardingStickyFooter from "../OnboardingStickyFooter";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 
@@ -49,6 +49,7 @@ export default function TodaysActionsClient({
   // State 1: Current Slide Index
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { mounted, timeLeft, isProgramStarted } =
     useProgramCountdown(startDate);
 
@@ -165,10 +166,9 @@ export default function TodaysActionsClient({
     );
 
     // find first incomplete area in commitments order
-   const firstIncompleteIndex = commitments.findIndex((c) => {
-  return progressMap.get(c.areaId) !== true;
-});
-
+    const firstIncompleteIndex = commitments.findIndex((c) => {
+      return progressMap.get(c.areaId) !== true;
+    });
 
     if (firstIncompleteIndex !== -1) {
       setCurrentSlideIndex(firstIncompleteIndex);
@@ -323,10 +323,9 @@ export default function TodaysActionsClient({
   }
   const isLast = currentSlideIndex === totalSlides - 1;
   const completedActionWins = commitments
-  .filter((c) => checklistByArea[c.areaId]?.actionDone)
-  .slice(0, 3)
-  .map((c) => c.actionText);
-
+    .filter((c) => checklistByArea[c.areaId]?.actionDone)
+    .slice(0, 3)
+    .map((c) => c.actionText);
 
   const handleSubmitDailyActions = () => {
     if (areaCompletionMutation.isPending) return;
@@ -350,14 +349,16 @@ export default function TodaysActionsClient({
         axios
           .post("/api/makeover-program/makeover-daily-tasks/log-win", {
             areaIds,
-             contents:completedActionWins,
+            contents: completedActionWins,
             date: new Date().toISOString(),
           })
           .catch((err) => {
             // optional logging only
             console.error("Log win failed", err);
           });
-
+        queryClient.invalidateQueries({
+          queryKey: ["makeover-points-summary"],
+        });
         // 🚀 immediately move user forward
         router.push("/dashboard/complete-makeover-program/makeover-dashboard");
       },
@@ -373,7 +374,8 @@ export default function TodaysActionsClient({
         {/* Previous Button */}
         <button
           onClick={handlePrev}
-          className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group"
+          disabled={currentSlideIndex === 0}
+          className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
           aria-label="Previous Slide"
         >
           <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
@@ -553,7 +555,7 @@ export default function TodaysActionsClient({
         {/* Next Button */}
         <button
           onClick={handleNext}
-          className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group"
+          className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
           aria-label="Next Slide"
           disabled={!isAreaCompleted}
         >
@@ -566,19 +568,18 @@ export default function TodaysActionsClient({
         commitments={commitments}
         setCurrentSlideIndex={setCurrentSlideIndex}
         currentSlideIndex={currentSlideIndex}
+        disabled={!isAreaCompleted}
       />
       <OnboardingStickyFooter
         onBack={() => {
-          if (currentSlideIndex === 0) {
-            router.back();
-          } else {
+          if (currentSlideIndex !== 0) {
             setCurrentSlideIndex((i) => i - 1);
           }
         }}
         onNext={handleSubmitDailyActions}
         nextLabel={isLast ? "Proceed" : "Next"}
-      disabled={!isAreaCompleted || areaCompletionMutation.isPending}
-
+        backDisabled={currentSlideIndex === 0}
+        disabled={!isAreaCompleted || areaCompletionMutation.isPending}
       />
     </main>
   );

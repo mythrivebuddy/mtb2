@@ -11,6 +11,7 @@ interface OnboardingStickyFooterProps {
   disabled?: boolean;
   maxWidth?: string; // optional override
   children?: React.ReactNode; // optional left-side content
+   backDisabled?: boolean;
 }
 
 const OnboardingStickyFooter = ({
@@ -19,6 +20,7 @@ const OnboardingStickyFooter = ({
   nextLabel = "Next Step",
   backLabel = "Back",
   disabled = false,
+  backDisabled = false,
   maxWidth = "1024px",
   children,
 }: OnboardingStickyFooterProps) => {
@@ -33,8 +35,9 @@ const OnboardingStickyFooter = ({
           {onBack && (
             <button
               onClick={onBack}
+              disabled={backDisabled}
               className="px-4 flex items-center gap-2 py-3 text-sm font-semibold text-white
-                          bg-[#059669]  hover:bg-emerald-700 rounded-lg transition-colors"
+                          bg-[#059669]  hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-55 disabled:pointer-events-none"
             >
               <ArrowLeft size={18} />
               {backLabel}

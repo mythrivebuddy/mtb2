@@ -1,5 +1,6 @@
 import { Sparkles, Lock } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 interface BonusRewardsProps {
   isProgramStarted: boolean;
@@ -21,9 +22,11 @@ const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
         </h3>
 
         {isProgramStarted && (
+          <ComingSoonWrapper>
           <button className="text-xs font-semibold text-[#1183d4] hover:underline">
             View All
           </button>
+          </ComingSoonWrapper>
         )}
       </div>
 
@@ -35,7 +38,7 @@ const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
         </div>
 
         <p className="text-md font-medium">
-          Rewards unlock after the program starts
+          Rewards unlock very soon
         </p>
 
         <p className="text-md italic max-w-xs">
