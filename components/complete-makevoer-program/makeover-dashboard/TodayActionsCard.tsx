@@ -34,8 +34,12 @@ const TodayActionsCard = ({
       const res = await axios.get(
         "/api/makeover-program/makeover-dashboard/vision-images"
       );
-      return res.data; // 🔥 THIS WAS MISSING
+      return res.data; 
     },
+      staleTime: Infinity,
+      gcTime: Infinity,
+      refetchOnWindowFocus: false,
+      refetchOnMount:false
   });
   const [openImage, setOpenImage] = useState(false);
   useEffect(() => {
