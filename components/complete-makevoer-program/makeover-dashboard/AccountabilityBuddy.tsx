@@ -2,11 +2,11 @@ import { Users } from "lucide-react";
 // import BuddyItem from "./BuddyItem";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 
-interface AccountabilityPodProps {
-  isProgramStarted: boolean;
-}
+// interface AccountabilityPodProps {
+//   isProgramStarted: boolean;
+// }
 
-const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
+const AccountabilityPod = () => {
   return (
     <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative">
       <StaticDataBadge
@@ -21,11 +21,6 @@ const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
           Accountability Buddies
         </h3>
 
-        {isProgramStarted && (
-          <button className="text-xs font-semibold text-[#1183d4] hover:underline">
-            Find Buddies
-          </button>
-        )}
       </div>
 
       {/* Content */}
@@ -35,7 +30,7 @@ const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
           <Users className="w-6 h-6 opacity-60" />
         </div>
         <p className="text-md font-medium italic text-center max-w-xs">
-          Your accountability buddies will be assigned once the program starts.
+          Your accountability buddies will be assigned very soon.
         </p>
       </div>
       {/*  ) : (
