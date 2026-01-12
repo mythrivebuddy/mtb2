@@ -93,70 +93,7 @@ export default function DashboardPage() {
             <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
           </div>
           {session?.user.userType === "ENTHUSIAST" ? (
-            <div className="bg-zinc-950 flex flex-col items-center justify-center px-4 h-[500px] sm:h-[600px] rounded-md">
-              <h1
-                style={{
-                  fontSize: "32px",
-                  fontWeight: "600", // Semi-bold for the main title
-                  marginBottom: "10px",
-                  color: "#ffffff",
-                }}
-                className="flex "
-              >
-                ✨ 
-                <span className="sm:text-center">
-                The Complete Makeover Program
-                <br />
-                <span className="text-center">
-                Begins Soon...
-                </span>
-                </span>
-              </h1>
-
-              <p
-                style={{
-                  fontSize: "18px",
-                  color: "#b0b8c4", // Lighter grey for subtext
-                  marginBottom: "20px",
-                }}
-              >
-                A guided transformation. A fresh start. A new you.
-              </p>
-
-              <p
-                style={{
-                  fontSize: "14px",
-                  color: "#848a97", // Fainter grey for the status text
-                  marginBottom: "40px",
-                }}
-              >
-                No tasks yet. No actions needed. Just be here. Your countdown
-                has quietly begun.
-              </p>
-
-              <button
-                style={{
-                  padding: "10px 20px",
-                  fontSize: "14px",
-                  backgroundColor: "transparent",
-                  color: "#ffffff",
-                  border: "1px solid #4a5568", // Subtle border color
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontWeight: "500",
-                  transition: "background-color 0.3s",
-                }}
-                // Optional: Add a hover effect for better user experience
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.backgroundColor = "#1f2937")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
-              >
-                Stay Tuned
-              </button>
-            </div>
+          <div className=""></div>
           ) : (
             <>
               <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
