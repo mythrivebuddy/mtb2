@@ -150,7 +150,7 @@ const DashboardPage = async () => {
           {/* Bonus & Rewards */}
           <BonusRewards isProgramStarted={isProgramStarted} />
           {/* Accountability Pod */}
-          <AccountabilityBuddy isProgramStarted={isProgramStarted} />
+          <AccountabilityBuddy />
         </section>
       </main>
     </div>

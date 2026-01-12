@@ -2,11 +2,11 @@ import { Users } from "lucide-react";
 // import BuddyItem from "./BuddyItem";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 
-interface AccountabilityPodProps {
-  isProgramStarted: boolean;
-}
+// interface AccountabilityPodProps {
+//   isProgramStarted: boolean;
+// }
 
-const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
+const AccountabilityPod = () => {
   return (
     <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative">
       <StaticDataBadge
