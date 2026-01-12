@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ArrowRight, Hourglass } from "lucide-react";
+import { ArrowLeft, ArrowRight, Hourglass } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -90,8 +90,8 @@ export default function NotStartedYetTasks({
 
         {/*  Back Button */}
         {isBack && (
-          <Button onClick={() => router.back()} className="w-full">
-            Go Back <ArrowRight className="ml-2 w-4 h-4" />
+          <Button onClick={() => router.push(`/dashboard/complete-makeover-program/makeover-dashboard`)} className="w-full">
+            <ArrowLeft className="ml-2 w-4 h-4" /> Go Back 
           </Button>
         )}
       </div>
