@@ -35,7 +35,7 @@ const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
         </div>
 
         <p className="text-md font-medium">
-          Rewards unlock after the program starts
+          Rewards unlock very soon
         </p>
 
         <p className="text-md italic max-w-xs">

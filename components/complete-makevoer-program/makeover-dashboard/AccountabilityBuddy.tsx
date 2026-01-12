@@ -21,11 +21,6 @@ const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
           Accountability Buddies
         </h3>
 
-        {isProgramStarted && (
-          <button className="text-xs font-semibold text-[#1183d4] hover:underline">
-            Find Buddies
-          </button>
-        )}
       </div>
 
       {/* Content */}
@@ -35,7 +30,7 @@ const AccountabilityPod = ({ isProgramStarted }: AccountabilityPodProps) => {
           <Users className="w-6 h-6 opacity-60" />
         </div>
         <p className="text-md font-medium italic text-center max-w-xs">
-          Your accountability buddies will be assigned once the program starts.
+          Your accountability buddies will be assigned very soon.
         </p>
       </div>
       {/*  ) : (
