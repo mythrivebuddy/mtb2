@@ -7,6 +7,7 @@ import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
 
 
 export const maxDuration = 60; // 60 seconds
@@ -139,6 +140,8 @@ export async function POST(request: Request) {
     // --- ⚠️ REFACTOR: Perform External API Calls AFTER the transaction succeeds ---
     // This ensures the database is not locked while waiting for the network.
     // This is a "fire-and-forget" call; we don't need to `await` it to send the response to the user.
+    const userName = session?.user?.name || "Someone"
+    void sendMessageForJoining(challengeId,userName,null,"SYSTEM");
     sendPushNotificationToUser(
       challengeToJoin.creatorId,
       "New challenger alert 🚀",

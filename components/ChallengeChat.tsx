@@ -65,8 +65,9 @@ type Msg = {
   id: string;
   message: string | null;
   createdAt: string;
-  userId: string;
+  userId: string | null;
   challengeId: string;
+  type?: "USER" | "SYSTEM";
   user?: { id: string; name: string; image: string | null };
   reactions?: Reaction[];
   poll?: PollData;
@@ -453,7 +454,9 @@ export default function ChallengeChat({
     channel
       .on("broadcast", { event: "new_message" }, (payload) => {
         const incoming = payload.payload as Msg;
-        if (incoming.userId === currentUserId) return;
+        
+        if (incoming.type === "USER" && incoming.userId === currentUserId)
+          return;
         setMessages((prev) => {
           if (prev.some((m) => m.id === incoming.id)) return prev;
           const updated = [...prev, incoming];
@@ -775,6 +778,28 @@ export default function ChallengeChat({
           ) : (
             <div className="space-y-6 pb-2 w-full">
               {messages.map((msg) => {
+                if (msg.type === "SYSTEM") {
+                  return (
+                    <div
+                      key={msg.id}
+                      className="w-full flex justify-center my-2"
+                    >
+                      <div
+                        className="
+        px-3 py-1.5
+        text-xs
+        text-gray-600
+        bg-gray-200
+        rounded-full
+        shadow-sm
+        animate-in fade-in slide-in-from-top-1
+      "
+                      >
+                        {msg.message}
+                      </div>
+                    </div>
+                  );
+                }
                 const isMe = msg.userId === currentUserId;
                 const hasReactions = msg.reactions && msg.reactions.length > 0;
                 const { uniqueEmojis, allReactions } = getReactionTabs(
@@ -889,7 +914,7 @@ export default function ChallengeChat({
                         </p>
                       </div>
 
-                      {!isChatDisabled && !msg.__optimistic && (
+                      {msg.type === "USER" && !isChatDisabled && !msg.__optimistic && (
                         <div
                           className={`absolute -top-2 flex gap-1 z-20    ${isMe ? "left-2 sm:-left-1" : "right-2 sm:-right-1"}`}
                         >

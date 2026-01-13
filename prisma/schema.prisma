@@ -675,10 +675,11 @@ model ChallengeMessage {
   message     String?
   createdAt   DateTime @default(now())
 
-  userId      String
+  userId      String?
+  type        MessageType @default(USER)
   challengeId String
 
-  user        User      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
+  user        User?      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
   challenge   Challenge @relation("ChallengeMessages", fields: [challengeId], references: [id], onDelete: Cascade)
 
   reactions ChallengeMessageReaction[]
@@ -694,6 +695,10 @@ model ChallengeMessage {
   @@index([challengeId, createdAt])
   @@map("challenge_messages")
 
+}
+enum MessageType {
+  USER
+  SYSTEM
 }
 
 model ChallengeMessagePoll {
