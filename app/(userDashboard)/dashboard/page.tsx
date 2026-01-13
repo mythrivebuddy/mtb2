@@ -15,7 +15,6 @@ import {
 import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
-import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
 
 
@@ -131,7 +130,7 @@ export default function DashboardPage() {
           <RightPanel />
         </div>
       </div>
-      <FirstVisitNotificationPopup />
+      
       <UserTypeSelection authMethod={userData.authMethod} />
     </div>
   );
