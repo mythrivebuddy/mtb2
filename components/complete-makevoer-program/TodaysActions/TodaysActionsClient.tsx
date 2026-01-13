@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,6 +20,7 @@ import OnboardingStickyFooter from "../OnboardingStickyFooter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
+import { MakeoverPointsSummary } from "../makeover-dashboard/AreaCard";
 
 /* ---------------- Types ---------------- */
 export type Commitment = {
@@ -37,6 +38,12 @@ type ChecklistState = {
   actionDone: boolean;
   winLogged: boolean;
 };
+const TASK_LABEL: Record<"identityDone" | "actionDone" | "winLogged", string> =
+  {
+    identityDone: "Identity task",
+    actionDone: "Action task",
+    winLogged: "Win log",
+  };
 
 /* ---------------- Main Component ---------------- */
 export default function TodaysActionsClient({
@@ -61,10 +68,8 @@ export default function TodaysActionsClient({
   const totalSlides = commitments.length;
   const activeSlide = commitments[currentSlideIndex];
   const areaBg = AREA_BACKGROUNDS[activeSlide.areaId] ?? "bg-slate-800";
-  const areaIds = React.useMemo(
-    () => commitments.map((c) => c.areaId),
-    [commitments]
-  );
+  const hasRedirectedRef = useRef(false);
+
   const lockQuery = useQuery({
     queryKey: ["today-lock-status"],
     queryFn: async () => {
@@ -197,67 +202,132 @@ export default function TodaysActionsClient({
       areaId,
       field,
       value,
+      actionText: activeSlide.actionText,
     });
   };
 
   // Handlers for Carousel
   const handleNext = () => {
-    if (!isAreaCompleted) {
-      toast.error("Complete all tasks in this area before moving forward");
-      return;
-    }
     setCurrentSlideIndex((prev) => (prev < totalSlides - 1 ? prev + 1 : 0));
   };
 
   const handlePrev = () => {
     setCurrentSlideIndex((prev) => (prev > 0 ? prev - 1 : totalSlides - 1));
   };
-  const areaCompletionMutation = useMutation({
-    mutationFn: async (areaId: number) => {
-      return axios.post("/api/makeover-program/makeover-daily-tasks", {
-        areaId,
-        date: new Date().toISOString(),
-      });
-    },
-    onSuccess: () => {
-      toast.success("+75 points added 🎉");
-    },
-    onError: () => {
-      toast.error("Failed to complete area");
-    },
-  });
 
-  const checkboxMutation = useMutation({
+  const checkboxMutation = useMutation<
+    { success: boolean; pointsAwarded: number },
+    unknown,
+    {
+      areaId: number;
+      field: "identityDone" | "actionDone" | "winLogged";
+      value: boolean;
+      actionText: string;
+    }
+  >({
     mutationFn: async ({
       areaId,
       field,
       value,
+      actionText,
     }: {
       areaId: number;
       field: "identityDone" | "actionDone" | "winLogged";
       value: boolean;
+      actionText: string;
     }) => {
-      return axios.post(
-        "/api/makeover-program/makeover-daily-tasks/checkboxes",
+      const res = await axios.post(
+        "/api/makeover-program/makeover-daily-tasks",
         {
           areaId,
           field,
           value,
+          actionText,
           date: new Date().toISOString(),
         }
       );
+
+      return res.data as {
+        success: boolean;
+        pointsAwarded: number;
+      };
+    },
+
+    onSuccess: (data, variables) => {
+      if (data?.success && data.pointsAwarded > 0) {
+        const { field } = variables;
+
+        toast.success(
+          `${TASK_LABEL[field]} completed in "${activeSlide.areaName}" — +${data.pointsAwarded} points 🎉`
+        );
+
+        queryClient.setQueryData(
+          ["makeover-points-summary"],
+          (oldData: MakeoverPointsSummary[] | undefined) => {
+            const safeData = oldData ?? [];
+
+            const exists = safeData.some(
+              (item) => item.areaId === activeSlide.areaId
+            );
+
+            if (!exists) {
+              return [
+                ...safeData,
+                {
+                  areaId: activeSlide.areaId,
+                  totalPoints: data.pointsAwarded,
+                },
+              ];
+            }
+
+            return safeData.map((item) =>
+              item.areaId === activeSlide.areaId
+                ? {
+                    ...item,
+                    totalPoints: item.totalPoints + data.pointsAwarded,
+                  }
+                : item
+            );
+          }
+        );
+      }
+    },
+
+    onError: () => {
+      toast.error("Something went wrong. Please try again.");
     },
   });
+
   const isDayLocked = lockQuery.data?.isDayLocked;
 
-  const isAreaCompleted =
-    currentChecklist.identityDone &&
-    currentChecklist.actionDone &&
-    currentChecklist.winLogged;
+  const areAllAreasCompleted = React.useMemo(() => {
+    if (!commitments.length) return false;
+
+    return commitments.every((c) => {
+      const checklist = checklistByArea[c.areaId];
+      return (
+        checklist?.identityDone && checklist?.actionDone && checklist?.winLogged
+      );
+    });
+  }, [commitments, checklistByArea]);
 
   const isIdentityDisabled = isDayLocked || currentChecklist.identityDone;
   const isActionDisabled = isDayLocked || currentChecklist.actionDone;
   const isWinDisabled = isDayLocked || currentChecklist.winLogged;
+
+  const isLockResolved = lockQuery.isSuccess;
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (!isLockResolved) return; // ⛔ wait for lock state
+    if (hasRedirectedRef.current) return;
+    if (isDayLocked) return;
+
+    if (areAllAreasCompleted) {
+      hasRedirectedRef.current = true;
+      router.push("/dashboard/complete-makeover-program/makeover-dashboard");
+    }
+  }, [areAllAreasCompleted, isDayLocked, isLockResolved, mounted, router]);
 
   // Prevent hydration mismatch
   if (!mounted) return null;
@@ -324,47 +394,16 @@ export default function TodaysActionsClient({
     );
   }
   const isLast = currentSlideIndex === totalSlides - 1;
-  const completedActionWins = commitments
-    .filter((c) => checklistByArea[c.areaId]?.actionDone)
-    .slice(0, 3)
-    .map((c) => c.actionText);
 
   const handleSubmitDailyActions = () => {
-    if (areaCompletionMutation.isPending) return;
-
-    // const checklist = checklistByArea[activeSlide.areaId];
-
-    if (!isAreaCompleted) {
-      toast.error("Complete all tasks in this area to continue");
+    if (!isLast) {
+      setCurrentSlideIndex((i) => i + 1);
       return;
     }
 
-    // fire AREA completion
-    areaCompletionMutation.mutate(activeSlide.areaId, {
-      onSuccess: () => {
-        if (!isLast) {
-          setCurrentSlideIndex((i) => i + 1);
-          return;
-        }
-
-        // 🔥 fire-and-forget (intentionally not awaited)
-        axios
-          .post("/api/makeover-program/makeover-daily-tasks/log-win", {
-            areaIds,
-            contents: completedActionWins,
-            date: new Date().toISOString(),
-          })
-          .catch((err) => {
-            // optional logging only
-            console.error("Log win failed", err);
-          });
-        queryClient.invalidateQueries({
-          queryKey: ["makeover-points-summary"],
-        });
-        // 🚀 immediately move user forward
-        router.push("/dashboard/complete-makeover-program/makeover-dashboard");
-      },
-    });
+    if (areAllAreasCompleted) {
+      router.push("/dashboard/complete-makeover-program/makeover-dashboard");
+    }
   };
 
   // VIEW 2: Main Carousel Page
@@ -566,9 +605,9 @@ export default function TodaysActionsClient({
         {/* Next Button */}
         <button
           onClick={handleNext}
+          disabled={isLast}
           className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
           aria-label="Next Slide"
-          disabled={!isAreaCompleted}
         >
           <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
         </button>
@@ -579,7 +618,7 @@ export default function TodaysActionsClient({
         commitments={commitments}
         setCurrentSlideIndex={setCurrentSlideIndex}
         currentSlideIndex={currentSlideIndex}
-        disabled={!isAreaCompleted}
+        // disabled={!isAreaCompleted}
       />
       <OnboardingStickyFooter
         onBack={() => {
@@ -588,9 +627,9 @@ export default function TodaysActionsClient({
           }
         }}
         onNext={handleSubmitDailyActions}
-        nextLabel={isLast ? "Proceed" : "Next"}
+        nextLabel={"Next"}
         backDisabled={currentSlideIndex === 0}
-        disabled={!isAreaCompleted || areaCompletionMutation.isPending}
+        disabled={isLast}
       />
     </main>
   );

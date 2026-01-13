@@ -20,7 +20,7 @@ interface AreaCardProps {
   areaId: number;
 }
 
-interface MakeoverPointsSummary {
+export interface MakeoverPointsSummary {
   areaId: number;
   totalPoints: number;
 }
