@@ -83,7 +83,7 @@ export default function TodaysActionsClient({
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
   });
-  console.log(lockQuery.data);
+
   const todayProgressQuery = useQuery({
     queryKey: ["today-progress"],
     queryFn: async () => {
@@ -255,7 +255,9 @@ export default function TodaysActionsClient({
     currentChecklist.actionDone &&
     currentChecklist.winLogged;
 
-  const isCheckboxDisabled = isDayLocked || isAreaCompleted;
+  const isIdentityDisabled = isDayLocked || currentChecklist.identityDone;
+  const isActionDisabled = isDayLocked || currentChecklist.actionDone;
+  const isWinDisabled = isDayLocked || currentChecklist.winLogged;
 
   // Prevent hydration mismatch
   if (!mounted) return null;
@@ -474,16 +476,19 @@ export default function TodaysActionsClient({
             {/* Checklist Actions */}
             <div className="flex-1 flex flex-col justify-end space-y-3">
               {/* Item 1 */}
-              <label className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-all cursor-pointer">
+              <label
+                className={`group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all 
+                 ${isIdentityDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
+              >
                 <div className="relative flex items-center mt-0.5">
                   <input
                     type="checkbox"
-                    disabled={isCheckboxDisabled}
+                    disabled={isDayLocked || currentChecklist.identityDone}
                     checked={currentChecklist.identityDone}
                     onChange={(e) =>
                       updateChecklist("identityDone", e.target.checked)
                     }
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
+                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all disabled:opacity-90 disabled:cursor-not-allowed"
                   />
                   <Check
                     className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
@@ -498,16 +503,19 @@ export default function TodaysActionsClient({
               </label>
 
               {/* Item 2 */}
-              <label className="group flex items-center gap-3 p-3 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-all cursor-pointer">
+              <label
+                className={`group flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all
+  ${isActionDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
+              >
                 <div className="relative flex items-center">
                   <input
                     type="checkbox"
-                    disabled={isCheckboxDisabled}
+                    disabled={isDayLocked || currentChecklist.actionDone}
                     checked={currentChecklist.actionDone}
                     onChange={(e) =>
                       updateChecklist("actionDone", e.target.checked)
                     }
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
+                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all disabled:opacity-90 disabled:cursor-not-allowed"
                   />
                   <Check
                     className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
@@ -522,16 +530,19 @@ export default function TodaysActionsClient({
               </label>
 
               {/* Item 3: Log Win */}
-              <label className="group flex items-start gap-3 p-3 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-100 transition-all cursor-pointer">
+              <label
+                className={`group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all
+  ${isWinDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
+              >
                 <div className="relative flex items-center mt-0.5">
                   <input
                     type="checkbox"
                     checked={currentChecklist.winLogged}
-                    disabled={isCheckboxDisabled}
+                    disabled={isDayLocked || currentChecklist.winLogged}
                     onChange={(e) =>
                       updateChecklist("winLogged", e.target.checked)
                     }
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all"
+                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all disabled:opacity-90 disabled:cursor-not-allowed"
                   />
                   <Check
                     className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
