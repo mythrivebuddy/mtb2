@@ -179,24 +179,24 @@ export async function sendPushNotification(
 ) {
   try {
     const payload = JSON.stringify({
-    title,
-    body, // ✅ always "body"
-    icon,
-    url: data.url || "/dashboard/notifications", // pass URL here
-    data,
-  });
+      title,
+      body, // ✅ always "body"
+      icon,
+      url: data.url || "/dashboard/notifications", // pass URL here
+      data,
+    });
 
     return await webpush.sendNotification(subscription, payload);
   } catch (error: unknown) {
-  console.error("Error sending push notification:", error);
+    console.error("Error sending push notification:", error);
 
-  if (error instanceof Error && hasStatusCode(error) && error.statusCode === 410) {
-    // Subscription expired or invalid; delete from DB
-    throw new Error("Subscription expired");
+    if (error instanceof Error && hasStatusCode(error) && error.statusCode === 410) {
+      // Subscription expired or invalid; delete from DB
+      throw new Error("Subscription expired");
+    }
+
+    throw error;
   }
-
-  throw error;
-}
 
 }
 
@@ -211,7 +211,7 @@ export async function sendPushNotificationToUser(
     where: { userId },
   });
 
-  
+
   if (subscriptions.length === 0) {
     console.log("No push subscriptions for user", userId);
     return;
@@ -240,4 +240,51 @@ export async function sendPushNotificationToUser(
   });
 
   return Promise.allSettled(promises);
+}
+
+
+export async function notifyUsersExcept({
+  challengeId,
+  message,
+  title,
+  url,
+  notTosendUserItself
+}: {
+  challengeId: string;
+  message: string;
+  title: string;
+  url: string;
+  notTosendUserItself: string;
+}) {
+  try {
+    // 1️⃣ Get all participants except excluded ones
+    const participants = await prisma.challengeEnrollment.findMany({
+      where: {
+        challengeId,
+        userId: { not: notTosendUserItself },
+      },
+      select: {
+        userId: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    // 2️⃣ Send push to each user
+    for (const p of participants) {
+      await sendPushNotificationToUser(
+        p.userId,
+        title,
+        message,
+        { url }
+      );
+    }
+  } catch (err) {
+    console.error("Push notification error (ignored):", err);
+  }
 }
