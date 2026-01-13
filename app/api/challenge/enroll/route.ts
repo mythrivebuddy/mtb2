@@ -141,7 +141,10 @@ export async function POST(request: Request) {
     // This ensures the database is not locked while waiting for the network.
     // This is a "fire-and-forget" call; we don't need to `await` it to send the response to the user.
     const userName = session?.user?.name || "Someone"
-    void sendMessageForJoining(challengeId,userName,null,"SYSTEM");
+    const joinedUserId = session.user.id;
+
+    void sendMessageForJoining(challengeId,userName,null,"SYSTEM",joinedUserId);
+    
     sendPushNotificationToUser(
       challengeToJoin.creatorId,
       "New challenger alert 🚀",

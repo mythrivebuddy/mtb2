@@ -679,6 +679,8 @@ model ChallengeMessage {
   type        MessageType @default(USER)
   challengeId String
 
+  // ✅ NEW: metadata for SYSTEM messages (joins, leaves, admin actions, etc.)
+  meta        Json?
   user        User?      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
   challenge   Challenge @relation("ChallengeMessages", fields: [challengeId], references: [id], onDelete: Cascade)
 

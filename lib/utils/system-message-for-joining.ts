@@ -5,7 +5,8 @@ export const sendMessageForJoining = async (
     challengeId: string,
     userName: string,
     userId: string | null = null,
-    type: "SYSTEM" | "USER" = "SYSTEM"
+    type: "SYSTEM" | "USER" = "SYSTEM",
+    joinedUserId: string | null = null
 ) => {
     try {
         const systemMessage = await prisma.challengeMessage.create({
@@ -14,6 +15,11 @@ export const sendMessageForJoining = async (
                 type,
                 message: `${userName} joined the challenge 🎉`,
                 userId,
+                meta: {
+                    action: "JOIN",
+                    joinedUserId,
+                    joinedUserName: userName,
+                },
             },
         });
         await supabaseAdmin.channel(`challenge-chat-${challengeId}`).send({
