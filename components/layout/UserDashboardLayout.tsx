@@ -13,6 +13,7 @@ import useUserPresence from "@/hooks/userUserPresence";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import Footer from "../footer/Footer";
 import { usePathname } from "next/navigation";
+import FirstVisitNotificationPopup from "../dashboard/user/FirstNotificationPopUp";
 
 const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { status: sessionStatus,data:session } = useSession();
@@ -146,6 +147,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </main>
       </div>
+      <FirstVisitNotificationPopup/>
     </div>
   );
 };

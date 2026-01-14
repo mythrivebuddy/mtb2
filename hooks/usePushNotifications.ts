@@ -23,10 +23,11 @@ export default function usePushNotifications() {
         return;
       }
 
-      const hasAsked = localStorage.getItem("notif_permission_asked");
-      if (!hasAsked) setShowFirstVisitPopup(true);
+      const supported =
+        "serviceWorker" in navigator &&
+        "PushManager" in window &&
+        window.isSecureContext;
 
-      const supported = "serviceWorker" in navigator && "PushManager" in window && window.isSecureContext;
       setIsPushSupported(supported);
 
       if (!supported) {
@@ -35,14 +36,27 @@ export default function usePushNotifications() {
       }
 
       try {
-        // Ensure the SW file is in /public/service-worker.js
+        // Register service worker
         await navigator.serviceWorker.register("/service-worker.js", { scope: "/" });
-        // Wait until it's ACTIVE (fixes mobile/PWA race)
+
+        // Wait until active
         const readyReg = await navigator.serviceWorker.ready;
         swRegRef.current = readyReg;
 
+        // Check existing subscription
         const sub = await readyReg.pushManager.getSubscription();
-        setIsSubscribed(!!sub);
+        const subscribed = !!sub;
+
+        setIsSubscribed(subscribed);
+
+        const hasAsked = sessionStorage.getItem("notif_permission_asked");
+
+        // ✅ SHOW POPUP ONLY IF:
+        // - not subscribed
+        // - not asked in this session
+        if (!subscribed && !hasAsked) {
+          setShowFirstVisitPopup(true);
+        }
       } catch (e) {
         console.error("Service Worker setup failed:", e);
         toast.error("Failed to set up notifications");
@@ -53,6 +67,7 @@ export default function usePushNotifications() {
 
     init();
   }, [status]);
+
 
   const subscribe = async () => {
     try {
@@ -77,7 +92,7 @@ export default function usePushNotifications() {
       if (!subscription) {
         subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey:applicationServerKey as BufferSource
+          applicationServerKey: applicationServerKey as BufferSource
         });
       }
 
@@ -117,7 +132,7 @@ export default function usePushNotifications() {
         return;
       }
 
-      await axios.post("/api/push/unsubscribe", { endpoint: subscription.endpoint }).catch(() => {});
+      await axios.post("/api/push/unsubscribe", { endpoint: subscription.endpoint }).catch(() => { });
       await subscription.unsubscribe();
 
       setIsSubscribed(false);
@@ -146,13 +161,13 @@ export default function usePushNotifications() {
   };
 
   const handleFirstVisitAllow = async () => {
-    localStorage.setItem("notif_permission_asked", "true");
+    sessionStorage.setItem("notif_permission_asked", "true");
     setShowFirstVisitPopup(false);
     await subscribe(); // user gesture context
   };
 
   const handleFirstVisitLater = () => {
-    localStorage.setItem("notif_permission_asked", "true");
+    sessionStorage.setItem("notif_permission_asked", "true");
     setShowFirstVisitPopup(false);
   };
 

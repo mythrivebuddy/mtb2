@@ -19,7 +19,10 @@ export default function FirstVisitNotificationPopup() {
            max-sm:max-w-xs sm:max-w-sm 
           p-4 sm:p-6
           rounded-lg
+          [&>button]:hidden
         "
+         onEscapeKeyDown={(e) => e.preventDefault()}
+         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="space-y-2">
            <DialogTitle
