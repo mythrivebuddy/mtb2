@@ -65,8 +65,14 @@ type Msg = {
   id: string;
   message: string | null;
   createdAt: string;
-  userId: string;
+  userId: string | null;
   challengeId: string;
+  type?: "USER" | "SYSTEM";
+  meta?: {
+    action?: "JOIN" | "LEAVE";
+    joinedUserId?: string;
+    joinedUserName?: string;
+  };
   user?: { id: string; name: string; image: string | null };
   reactions?: Reaction[];
   poll?: PollData;
@@ -453,7 +459,9 @@ export default function ChallengeChat({
     channel
       .on("broadcast", { event: "new_message" }, (payload) => {
         const incoming = payload.payload as Msg;
-        if (incoming.userId === currentUserId) return;
+
+        if (incoming.type === "USER" && incoming.userId === currentUserId)
+          return;
         setMessages((prev) => {
           if (prev.some((m) => m.id === incoming.id)) return prev;
           const updated = [...prev, incoming];
@@ -775,6 +783,49 @@ export default function ChallengeChat({
           ) : (
             <div className="space-y-6 pb-2 w-full">
               {messages.map((msg) => {
+                if (msg.type === "SYSTEM") {
+                  const joinedUserId = msg.meta?.joinedUserId;
+                  const joinedUserName = msg.meta?.joinedUserName;
+
+                  const remainingMessage =
+                    joinedUserName && msg.message
+                      ? msg.message.replace(joinedUserName, "").trim()
+                      : msg.message;
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className="w-full flex justify-center my-2"
+                    >
+                      <div
+                        className="
+          px-3 py-1.5
+          text-xs
+          text-gray-700
+          bg-gray-200
+          rounded-full
+          shadow-sm
+        "
+                      >
+                        {joinedUserId && joinedUserName ? (
+                          <>
+                            <Link
+                              href={`/profile/${joinedUserId}`}
+                              target="_blank"
+                              className="font-semibold hover:underline cursor-pointer"
+                            >
+                              {joinedUserName}
+                            </Link>
+                            <span className="ml-1">{remainingMessage}</span>
+                          </>
+                        ) : (
+                          msg.message
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+
                 const isMe = msg.userId === currentUserId;
                 const hasReactions = msg.reactions && msg.reactions.length > 0;
                 const { uniqueEmojis, allReactions } = getReactionTabs(
@@ -889,57 +940,59 @@ export default function ChallengeChat({
                         </p>
                       </div>
 
-                      {!isChatDisabled && !msg.__optimistic && (
-                        <div
-                          className={`absolute -top-2 flex gap-1 z-20    ${isMe ? "left-2 sm:-left-1" : "right-2 sm:-right-1"}`}
-                        >
-                          {/* Hide Reply button for polls for simplicity */}
-                          {!msg.poll && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 rounded-full bg-white border shadow-sm"
-                              onClick={() => {
-                                setReplyingTo(msg);
-                                setTimeout(() => {
-                                  textareaRef.current?.focus();
-                                }, 50);
-                              }}
-                            >
-                              <Reply className="w-3 h-3 text-gray-500" />
-                            </Button>
-                          )}
-
-                          <Popover>
-                            <PopoverTrigger asChild>
+                      {msg.type === "USER" &&
+                        !isChatDisabled &&
+                        !msg.__optimistic && (
+                          <div
+                            className={`absolute -top-2 flex gap-1 z-20    ${isMe ? "left-2 sm:-left-1" : "right-2 sm:-right-1"}`}
+                          >
+                            {/* Hide Reply button for polls for simplicity */}
+                            {!msg.poll && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-6 w-6 rounded-full bg-white border shadow-sm"
+                                onClick={() => {
+                                  setReplyingTo(msg);
+                                  setTimeout(() => {
+                                    textareaRef.current?.focus();
+                                  }, 50);
+                                }}
                               >
-                                <SmilePlus className="w-3 h-3 text-gray-500" />
+                                <Reply className="w-3 h-3 text-gray-500" />
                               </Button>
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-auto p-1 flex gap-1 rounded-full shadow-md bg-white"
-                              side="top"
-                            >
-                              {QUICK_REACTIONS.map((emoji) => (
-                                <PopoverClose key={emoji} asChild>
-                                  <button
-                                    onClick={() =>
-                                      handleReaction(msg.id, emoji)
-                                    }
-                                    className="hover:bg-gray-100 p-2 rounded-full text-lg transition-transform active:scale-110"
-                                  >
-                                    {emoji}
-                                  </button>
-                                </PopoverClose>
-                              ))}
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      )}
+                            )}
+
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 rounded-full bg-white border shadow-sm"
+                                >
+                                  <SmilePlus className="w-3 h-3 text-gray-500" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-1 flex gap-1 rounded-full shadow-md bg-white"
+                                side="top"
+                              >
+                                {QUICK_REACTIONS.map((emoji) => (
+                                  <PopoverClose key={emoji} asChild>
+                                    <button
+                                      onClick={() =>
+                                        handleReaction(msg.id, emoji)
+                                      }
+                                      className="hover:bg-gray-100 p-2 rounded-full text-lg transition-transform active:scale-110"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  </PopoverClose>
+                                ))}
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        )}
 
                       {hasReactions && (
                         <div

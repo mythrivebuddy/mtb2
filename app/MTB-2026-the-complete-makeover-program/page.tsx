@@ -29,6 +29,7 @@ import UserTypeSelection from "@/components/dashboard/user/UserTypeSelection";
 import { AuthMethod } from "@prisma/client";
 import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 import { redirect } from "next/navigation";
+import FirstVisitNotificationPopup from "@/components/dashboard/user/FirstNotificationPopUp";
 export const metadata = {
   title: "2026 Complete Makeover Program",
   description:
@@ -429,6 +430,7 @@ const CompleteMakeoverPageContent = async () => {
             <UserTypeSelection authMethod={user.authMethod} />
           )}
       </div>
+      <FirstVisitNotificationPopup/>
     </AppLayout>
   );
 };

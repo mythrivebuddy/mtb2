@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
 
 export async function POST(req: NextRequest) {
   try {
@@ -137,6 +138,11 @@ export async function POST(req: NextRequest) {
         challengeId: map.challengeId,
         enrollmentId,
       });
+      const userName = session?.user?.name || "Someone";
+      const joinedUserId = session.user.id;
+
+      void sendMessageForJoining(map.challengeId,userName,null,"SYSTEM",joinedUserId);
+      
     }
 
     if (makeoverEnrollmentData.length) {
