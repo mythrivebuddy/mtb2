@@ -1578,6 +1578,9 @@ model MakeoverLevel {
   id        Int @id
   name      String
   minPoints Int
+
+  icon      String? // lucide-react icon name
+
   users UserMakeoverLevel[]
 }
 
@@ -1598,9 +1601,15 @@ model UserMakeoverLevel {
 model MakeoverBadge {
   id              String @id @default(cuid())
   name            String
-  type            String
+  type            MakeoverBadgeType?  // LEVEL | MILESTONE
   thresholdPoints Int?
+  icon            String? // lucide-react icon name
   users UserMakeoverBadge[]
+}
+
+enum MakeoverBadgeType {
+  LEVEL
+  MILESTONE
 }
 
 model UserMakeoverBadge {
