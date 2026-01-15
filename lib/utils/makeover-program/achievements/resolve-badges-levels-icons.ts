@@ -142,9 +142,9 @@ export function getBadgeStyles(
   }
 
   // 🛟 Safe fallback
-  return {
-    colorClass: "text-blue-600 dark:text-blue-400",
-    bgClass: "bg-blue-100 dark:bg-blue-900/40",
-    ringClass: "ring-2 ring-blue-300/40 dark:ring-blue-500/30",
-  };
+ return {
+  colorClass: "text-slate-500 dark:text-slate-400",
+  bgClass: "bg-slate-100 dark:bg-slate-800/50",
+  ringClass: "ring-1 ring-slate-300 dark:ring-slate-600",
+};
 }

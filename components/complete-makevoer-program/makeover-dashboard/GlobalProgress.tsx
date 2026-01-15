@@ -99,7 +99,8 @@ const GlobalProgress = async ({
     },
   });
 
-  console.log({ unlockedBadges });
+  const levelInBadges = `${currentLevel?.name} Badge`;
+
   const LevelIcon = currentLevel?.icon
     ? resolveLevelIcon(currentLevel.icon)
     : Medal;
@@ -108,7 +109,7 @@ const GlobalProgress = async ({
     bgClass: levelBg,
     ringClass: levelRing,
   } = getBadgeStyles(
-    currentLevel?.name ?? "Initiator",
+    levelInBadges ?? "Initiator",
     "LEVEL",
     true // current level is always unlocked
   );
@@ -142,7 +143,10 @@ const GlobalProgress = async ({
         </span>
       </div>
 
-      <Link href={`/dashboard/complete-makeover-program/achievements`} className="flex flex-col sm:flex-row sm:justify-between gap-6 pt-2 border-t border-slate-100 ">
+      <Link
+        href={`/dashboard/complete-makeover-program/achievements`}
+        className="flex flex-col sm:flex-row sm:justify-between gap-6 pt-2 border-t border-slate-100 "
+      >
         <div className="flex items-start gap-4">
           <div
             className={`size-12 rounded-full flex items-center justify-center shrink-0 ring-2 mt-2
@@ -165,13 +169,11 @@ const GlobalProgress = async ({
           </div>
         </div>
         <div className="flex flex-col gap-2 max-w-[560px] w-full">
-
           <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide text-center">
-
             Badges Unlocked
           </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+          <div className="flex flex-wrap justify-center gap-3">
             {unlockedBadges.map((badge) => {
               // const isUnlocked = true;
               // const isUnlocked = badge.users.length > 0;
@@ -186,17 +188,13 @@ const GlobalProgress = async ({
               return (
                 <div
                   key={badge.id}
-                  className="group relative flex flex-col items-center gap-2 py-2 rounded-xl bg-gradient-to-b from-white to-gray-50  border border-gray-200  hover:shadow-md transition-all cursor-pointer"
+                  className="group relative flex flex-col items-center gap-2"
                 >
                   <div
-                    className={`size-12 rounded-full flex items-center justify-center mb-1 ring-2 ${bgClass} ${colorClass} ${ringClass}`}
+                    className={`size-12 rounded-full flex items-center justify-center mb-1 ${bgClass} ${colorClass} ${ringClass}`}
                   >
                     <BadgeIcon size={24} />
                   </div>
-                  <span className="text-xs font-bold text-center text-[#0d101b] dark:text-gray-200 leading-tight">
-                    {badge.name.replace(/badge/gi, "").trim()}
-                  </span>
-
                   {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
                     {badge.name}
