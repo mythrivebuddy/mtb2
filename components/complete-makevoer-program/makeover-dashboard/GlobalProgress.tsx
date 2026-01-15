@@ -1,10 +1,13 @@
-import { PlaneTakeoff, Medal, Brain } from "lucide-react";
+import { PlaneTakeoff, Medal } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { evaluateLevel } from "@/lib/utils/makeover-program/awards/evaluateLevel";
 import { awardMilestoneBadges } from "@/lib/utils/makeover-program/awards/awardMilestoneBadges";
+import {
+  getBadgeStyles,
+  resolveLevelIcon,
+} from "@/lib/utils/makeover-program/achievements/resolve-badges-levels-icons";
+import Link from "next/link";
 
 const GlobalProgress = async ({
   userId,
@@ -14,7 +17,7 @@ const GlobalProgress = async ({
   programId: string;
 }) => {
   const progressPercentage = 0; // Example static value
-  const session = await getServerSession(authOptions);
+
   const aggregate = await prisma.makeoverPointsSummary.aggregate({
     where: {
       userId,
@@ -32,6 +35,83 @@ const GlobalProgress = async ({
 
   // 3️⃣ Evaluate MILESTONE BADGES (guarded internally)
   await awardMilestoneBadges(userId, programId, globalPoints);
+  const currentLevel = await prisma.makeoverLevel.findFirst({
+    where: {
+      users: {
+        some: {
+          userId,
+          programId,
+        },
+      },
+    },
+    orderBy: {
+      minPoints: "desc", // IMPORTANT: highest unlocked level
+    },
+  });
+
+  const allLevels = await prisma.makeoverLevel.findMany({
+    orderBy: { minPoints: "asc" },
+  });
+
+  const currentLevelIndex = allLevels.findIndex(
+    (l) => l.id === currentLevel?.id
+  );
+
+  const nextLevel = allLevels[currentLevelIndex + 1] ?? null;
+
+  // Calculate progress to next level
+  const currentMin = currentLevel?.minPoints ?? 0;
+  const nextMin = nextLevel?.minPoints ?? currentMin;
+
+  const completedPercent =
+    nextLevel && nextMin > currentMin
+      ? ((globalPoints - currentMin) / (nextMin - currentMin)) * 100
+      : 100;
+
+  const remainingToNextLevel = Math.max(
+    0,
+    Math.min(100, 100 - Math.floor(completedPercent))
+  );
+
+  // Calculate remaining points (nice UX)
+  const nextLevelXPNeeded =
+    nextLevel && globalPoints < nextMin
+      ? `${nextMin - globalPoints} MoS`
+      : "Completed";
+
+  const levelName = currentLevel?.name ?? "Initiator";
+  const levelId = currentLevel?.id ?? 0;
+  const unlockedBadges = await prisma.makeoverBadge.findMany({
+    where: {
+      users: {
+        some: {
+          userId,
+          programId,
+        },
+      },
+    },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      description: true,
+      icon: true,
+    },
+  });
+
+  console.log({ unlockedBadges });
+  const LevelIcon = currentLevel?.icon
+    ? resolveLevelIcon(currentLevel.icon)
+    : Medal;
+  const {
+    colorClass: levelColor,
+    bgClass: levelBg,
+    ringClass: levelRing,
+  } = getBadgeStyles(
+    currentLevel?.name ?? "Initiator",
+    "LEVEL",
+    true // current level is always unlocked
+  );
 
   return (
     <section className="bg-white dark:bg-[#1a2630] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
@@ -61,40 +141,73 @@ const GlobalProgress = async ({
           {progressPercentage}%
         </span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-800">
+
+      <Link href={`/dashboard/complete-makeover-program/achievements`} className="flex flex-col sm:flex-row sm:justify-between gap-6 pt-2 border-t border-slate-100 ">
         <div className="flex items-start gap-4">
-          <div className="size-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shrink-0 border border-indigo-100 dark:border-indigo-800">
-            <Medal className="w-6 h-6 fill-current" />
+          <div
+            className={`size-12 rounded-full flex items-center justify-center shrink-0 ring-2 mt-2
+      ${levelBg} ${levelRing}`}
+          >
+            <LevelIcon className={levelColor} size={26} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide">
+            <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide mb-1">
               Current Level
             </p>
             <p className="text-lg font-bold text-slate-900 dark:text-white">
-              Level 0
+              Level {levelId} {levelName}
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Next level at 30% completion
+              {nextLevel
+                ? `${remainingToNextLevel}% remaining to unlock next level`
+                : "Final level reached 🎉"}
             </p>
           </div>
         </div>
-        <div className="flex items-start gap-4">
-          <div className="size-12 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300 flex items-center justify-center shrink-0 border border-teal-100 dark:border-teal-800">
-            <Brain className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide">
-              Current Level Identity
-            </p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white">
-              Initiator
-            </p>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Focus: Daily small wins over big leaps.
-            </p>
+        <div className="flex flex-col gap-2 max-w-[560px] w-full">
+
+          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide text-center">
+
+            Badges Unlocked
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            {unlockedBadges.map((badge) => {
+              // const isUnlocked = true;
+              // const isUnlocked = badge.users.length > 0;
+              const BadgeIcon = resolveLevelIcon(badge.icon);
+
+              const { colorClass, bgClass, ringClass } = getBadgeStyles(
+                badge.name,
+                badge.type,
+                true
+              );
+
+              return (
+                <div
+                  key={badge.id}
+                  className="group relative flex flex-col items-center gap-2 py-2 rounded-xl bg-gradient-to-b from-white to-gray-50  border border-gray-200  hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div
+                    className={`size-12 rounded-full flex items-center justify-center mb-1 ring-2 ${bgClass} ${colorClass} ${ringClass}`}
+                  >
+                    <BadgeIcon size={24} />
+                  </div>
+                  <span className="text-xs font-bold text-center text-[#0d101b] dark:text-gray-200 leading-tight">
+                    {badge.name.replace(/badge/gi, "").trim()}
+                  </span>
+
+                  {/* Tooltip */}
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 text-center">
+                    {badge.name}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-white"></div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      </Link>
     </section>
   );
 };
