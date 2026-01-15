@@ -1,8 +1,38 @@
 import { PlaneTakeoff, Medal, Brain } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { evaluateLevel } from "@/lib/utils/makeover-program/awards/evaluateLevel";
+import { awardMilestoneBadges } from "@/lib/utils/makeover-program/awards/awardMilestoneBadges";
 
-const GlobalProgress = () => {
+const GlobalProgress = async ({
+  userId,
+  programId,
+}: {
+  userId: string;
+  programId: string;
+}) => {
   const progressPercentage = 0; // Example static value
+  const session = await getServerSession(authOptions);
+  const aggregate = await prisma.makeoverPointsSummary.aggregate({
+    where: {
+      userId,
+      programId,
+    },
+    _sum: {
+      totalPoints: true,
+    },
+  });
+
+  const globalPoints = aggregate._sum.totalPoints ?? 0;
+
+  // 2️⃣ Evaluate LEVEL (guarded internally)
+  await evaluateLevel(userId, programId, globalPoints);
+
+  // 3️⃣ Evaluate MILESTONE BADGES (guarded internally)
+  await awardMilestoneBadges(userId, programId, globalPoints);
+
   return (
     <section className="bg-white dark:bg-[#1a2630] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
       <StaticDataBadge
