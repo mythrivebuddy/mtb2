@@ -495,7 +495,7 @@ export default function TodaysActionsClient({
   // VIEW 2: Main Carousel Page
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
-      <HeaderOfDailyTodaysActions />
+      <HeaderOfDailyTodaysActions isTodaySunday={isTodaySunday}/>
       {/* Main Carousel Area */}
 
       {isTodaySunday ? (

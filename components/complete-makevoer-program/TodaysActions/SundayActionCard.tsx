@@ -254,11 +254,8 @@ export default function SundayActionCard({
         weeklyShowUpDays: weeklyShowUp?.days ?? 0,
       },
       {
-        onSuccess:()=>{
-          toast.success("Mark task completed")
-        },
         onError: () => {
-          toast.error("Something went wrong try again!")
+          toast.error("Something went wrong try again!");
           setCheckedTasks((prev) => ({
             ...prev,
             [taskId]: false,
@@ -273,13 +270,25 @@ export default function SundayActionCard({
       card: 1 | 2 | 3;
       taskId: string;
       areaId: number;
-      weeklyShowUpDays?:string | number;
+      weeklyShowUpDays?: string | number;
     }) => {
       const res = await axios.post(
         "/api/makeover-program/makeover-sunday-tasks",
         payload
       );
       return res.data;
+    },
+
+    onSuccess: (_data, variables) => {
+      //?  CARD 1 → +50 points (every successful POST)
+      if (variables.card === 1) {
+        toast.success("+50 points 🎉");
+      }
+
+      //? CARD 2 → +150 points (only first time, API already guarded)
+      if (variables.card === 2) {
+        toast.success("+150 points 🎉");
+      }
     },
   });
 
@@ -335,7 +344,7 @@ export default function SundayActionCard({
     activeArea.id === 1
       ? isLoading
         ? "Checking your consistency…"
-        : `You showed up ${weeklyShowUp?.days ?? 0} days this week`
+        : `You showed up for ${weeklyShowUp?.days ?? 0} day(s) this week`
       : activeArea.contextText;
 
   return (
@@ -428,7 +437,7 @@ export default function SundayActionCard({
           {/* RIGHT CONTENT BODY */}
           {currentSlideIndex === 2 ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-sm text-rose-400 font-medium">Coming soon</p>
+              <p className="text-xl  italic">Coming soon</p>
             </div>
           ) : (
             <div className="flex-1 flex flex-col justify-center space-y-1">
