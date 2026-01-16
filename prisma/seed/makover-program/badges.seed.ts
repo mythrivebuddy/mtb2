@@ -113,17 +113,20 @@ const BADGES = [
 
 export async function seedMakeoverBadges() {
   for (const badge of BADGES) {
-    await prisma.makeoverBadge.upsert({
+     const exists = await prisma.makeoverBadge.findFirst({
       where: { name: badge.name },
-      update: {
-        description: badge.description,
-        type: badge.type,
-        thresholdPoints: badge.thresholdPoints,
-        icon: badge.icon,
-      },
-      create: badge,
+      select: { id: true },
+    });
+
+    if (exists) {
+      // 🚫 DO NOT overwrite admin changes
+      continue;
+    }
+
+    await prisma.makeoverBadge.create({
+      data: badge,
     });
   }
 
-  console.log("✅ MTB 2026 CMP badges seeded (overwrite mode)");
+  console.log("✅ MTB 2026 CMP badges seeded");
 }

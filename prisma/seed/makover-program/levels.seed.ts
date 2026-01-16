@@ -47,18 +47,20 @@ const LEVELS = [
 
 export async function seedMakeoverLevels() {
   for (const level of LEVELS) {
-    await prisma.makeoverLevel.upsert({
+      const exists = await prisma.makeoverLevel.findUnique({
       where: { id: level.id },
-      update: {
-        name: level.name,
-        minPoints: level.minPoints,
-        icon: level.icon,
-        levelTheme: level.levelTheme,
-        identityState: level.identityState,
-      },
-      create: level,
+      select: { id: true },
+    });
+
+    if (exists) {
+      // 🚫 Preserve admin edits
+      continue;
+    }
+
+    await prisma.makeoverLevel.create({
+      data: level,
     });
   }
 
-  console.log("✅ MTB 2026 CMP levels seeded (overwrite mode)");
+  console.log("✅ MTB 2026 CMP levels seeded");
 }
