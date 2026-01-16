@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { MakeoverPointsSummary } from "../makeover-dashboard/AreaCard";
 import { isSunday } from "date-fns";
 import WeekdayActionCard from "./WeekDayActionCard";
+import SundayActionCard from "./SundayActionCard";
+
 
 /* ---------------- Types ---------------- */
 export type Commitment = {
@@ -49,7 +51,7 @@ export default function TodaysActionsClient({
 }) {
   // State 1: Current Slide Index
   // const isTodaySunday = isSunday();
-  const isTodaySunday = isSunday(new Date());
+  const isTodaySunday = isSunday(new Date("2026-01-18"));
   console.log({ isTodaySunday });
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
@@ -321,11 +323,11 @@ export default function TodaysActionsClient({
     if (hasRedirectedRef.current) return;
     if (isDayLocked) return;
 
-    if (areAllAreasCompleted ) {
+    if (areAllAreasCompleted) {
       hasRedirectedRef.current = true;
       queryClient.invalidateQueries({
-    queryKey: ["today-lock-status"],
-  });
+        queryKey: ["today-lock-status"],
+      });
       router.push("/dashboard/complete-makeover-program/makeover-dashboard");
     }
   }, [areAllAreasCompleted, isDayLocked, isLockResolved, mounted, router]);
@@ -407,13 +409,28 @@ export default function TodaysActionsClient({
     }
   };
 
+  const allIdentityStatements = commitments.map(c => ({
+  title: c.areaName,
+  text: c.identityText,
+}));
+
   // VIEW 2: Main Carousel Page
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
       <HeaderOfDailyTodaysActions />
       {/* Main Carousel Area */}
 
-      {!isTodaySunday && (
+      {isTodaySunday ? (
+        <SundayActionCard
+          // commitments={commitments}
+          currentSlideIndex={currentSlideIndex}
+          handlePrev={handlePrev}
+          handleNext={handleNext}
+          // activeSlide={activeSlide}
+          isLast={isLast}
+          identityStatements={allIdentityStatements} 
+        />
+      ) : (
         <WeekdayActionCard
           commitments={commitments}
           currentSlideIndex={currentSlideIndex}
