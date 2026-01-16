@@ -2,16 +2,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Heart,
-  Activity,
-  Check,
-  Loader2,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { AREA_BACKGROUNDS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
 import HeaderOfDailyTodaysActions from "./HeaderOfDailyTodaysActions";
 import PaginationIndicatorsDailyActions from "./PaginationIndicatorsDailyActions";
 import { useProgramCountdown } from "@/hooks/useProgramCountdown";
@@ -21,6 +13,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { MakeoverPointsSummary } from "../makeover-dashboard/AreaCard";
+import { isSunday } from "date-fns";
+import WeekdayActionCard from "./WeekDayActionCard";
+import SundayActionCard from "./SundayActionCard";
+
 
 /* ---------------- Types ---------------- */
 export type Commitment = {
@@ -33,7 +29,7 @@ export type Commitment = {
   actionText: string;
   isLocked: boolean;
 };
-type ChecklistState = {
+export type ChecklistState = {
   identityDone: boolean;
   actionDone: boolean;
   winLogged: boolean;
@@ -54,6 +50,10 @@ export default function TodaysActionsClient({
   commitments: Commitment[];
 }) {
   // State 1: Current Slide Index
+  // const isTodaySunday = isSunday();
+  const isTodaySunday = isSunday(new Date("2026-01-18"));
+  console.log({ isTodaySunday });
+
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -67,7 +67,7 @@ export default function TodaysActionsClient({
   // Derived state for Carousel
   const totalSlides = commitments.length;
   const activeSlide = commitments[currentSlideIndex];
-  const areaBg = AREA_BACKGROUNDS[activeSlide.areaId] ?? "bg-slate-800";
+
   const hasRedirectedRef = useRef(false);
 
   const lockQuery = useQuery({
@@ -85,8 +85,8 @@ export default function TodaysActionsClient({
     // 🔒 DO NOT refetch during the day
     // staleTime: Infinity,
     // cacheTime: Infinity,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    // refetchOnWindowFocus: true,
+    // refetchOnReconnect: true,
   });
 
   const todayProgressQuery = useQuery({
@@ -102,10 +102,27 @@ export default function TodaysActionsClient({
         winLogged: boolean;
       }[];
     },
-    enabled: isProgramStarted,
+    enabled: isProgramStarted && !isTodaySunday,
   });
 
+  const sundayProgressQuery = useQuery({
+  queryKey: ["sunday-progress"],
+  queryFn: async () => {
+    const res = await axios.get(
+      "/api/makeover-program/makeover-sunday-tasks/today-progress"
+    );
+    return res.data.data as {
+      card: 1 | 2 | 3;
+      taskId: string;
+      done: true;
+    }[];
+  },
+  enabled: isProgramStarted && isTodaySunday,
+});
+
+
   useEffect(() => {
+    if(isTodaySunday) return;
     if (!todayProgressQuery.data) return;
 
     const mapped: Record<number, ChecklistState> = {};
@@ -160,6 +177,7 @@ export default function TodaysActionsClient({
   }, [lockQuery.data?.unlockAt]);
 
   useEffect(() => {
+    if (isTodaySunday) return;
     if (!todayProgressQuery.data || commitments.length === 0) return;
 
     // map areaId → checklist
@@ -302,6 +320,7 @@ export default function TodaysActionsClient({
 
   const areAllAreasCompleted = React.useMemo(() => {
     if (!commitments.length) return false;
+    if (isTodaySunday) return false;
 
     return commitments.every((c) => {
       const checklist = checklistByArea[c.areaId];
@@ -311,6 +330,39 @@ export default function TodaysActionsClient({
     });
   }, [commitments, checklistByArea]);
 
+//  const isSundayCompleted = React.useMemo(() => {
+//   if (!isTodaySunday) return false;
+//   if (!sundayProgressQuery.data) return false;
+
+//   const byCard = new Map<number, Set<string>>();
+
+//   sundayProgressQuery.data.forEach((p) => {
+//     if (!byCard.has(p.card)) {
+//       byCard.set(p.card, new Set());
+//     }
+//     byCard.get(p.card)!.add(p.taskId);
+//   });
+
+//   /** CARD 1 RULE */
+//   const card1 = byCard.get(1) ?? new Set();
+//   const card1Completed =
+//     card1.has("weekly-win") &&
+//     card1.has("daily-win") &&
+//     card1.has("next-week"); // 👈 GROUP FLAG FROM BACKEND
+
+//   /** CARD 2 RULE */
+//   const card2 = byCard.get(2) ?? new Set();
+//   const card2Completed = card2.size > 0; // 👈 ANY TASK
+
+//   /** CARD 3 RULE */
+//   const card3 = byCard.get(3) ?? new Set();
+//   const card3Completed = card3.has("accountability");
+
+//   return card1Completed && card2Completed && card3Completed;
+// }, [isTodaySunday, sundayProgressQuery.data]);
+
+
+
   const isIdentityDisabled = isDayLocked || currentChecklist.identityDone;
   const isActionDisabled = isDayLocked || currentChecklist.actionDone;
   const isWinDisabled = isDayLocked || currentChecklist.winLogged;
@@ -319,12 +371,15 @@ export default function TodaysActionsClient({
 
   useEffect(() => {
     if (!mounted) return;
-    if (!isLockResolved) return; // ⛔ wait for lock state
+    if (!isLockResolved) return; //  wait for lock state
     if (hasRedirectedRef.current) return;
     if (isDayLocked) return;
 
     if (areAllAreasCompleted) {
       hasRedirectedRef.current = true;
+      queryClient.invalidateQueries({
+        queryKey: ["today-lock-status"],
+      });
       router.push("/dashboard/complete-makeover-program/makeover-dashboard");
     }
   }, [areAllAreasCompleted, isDayLocked, isLockResolved, mounted, router]);
@@ -359,6 +414,32 @@ export default function TodaysActionsClient({
       </div>
     );
   }
+
+  // 🟦 SUNDAY — all cards completed
+// if (
+//   isTodaySunday &&
+//   isProgramStarted &&
+//   isSundayCompleted
+// ) {
+//   return (
+//     <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+//       <NotStartedYetTasks
+//         timeLeft={dayUnlockTimeLeft}
+//         startDate={unlockDate}
+//         isBack={true}
+//         title="Sunday Reflection Completed 🌱"
+//         description={
+//           <>
+//             You’ve completed all your Sunday reflection tasks.
+//             <br />
+//             Come back tomorrow to continue your journey.
+//           </>
+//         }
+//       />
+//     </main>
+//   );
+// }
+
   // 🔒 Day locked → show countdown till midnight
   if (
     isProgramStarted &&
@@ -406,213 +487,44 @@ export default function TodaysActionsClient({
     }
   };
 
+  const allIdentityStatements = commitments.map(c => ({
+  title: c.areaName,
+  text: c.identityText,
+}));
+
   // VIEW 2: Main Carousel Page
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
       <HeaderOfDailyTodaysActions />
       {/* Main Carousel Area */}
-      <section className="flex-1 flex items-center justify-center w-full mb-8">
-        {/* Previous Button */}
-        <button
-          onClick={handlePrev}
-          disabled={currentSlideIndex === 0}
-          className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
-          aria-label="Previous Slide"
-        >
-          <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
-        </button>
 
-        {/* Active Card Container */}
-        <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col md:flex-row">
-          {/* Left Side: Visual & High Level Context */}
-          <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col max-sm:gap-4 justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden">
-            {/* Decorative Background element */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1990e6] to-blue-300"></div>
-            <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#1990e6]/5 rounded-full blur-3xl"></div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <span className="bg-blue-100 text-[#1990e6] p-1.5 rounded-md">
-                  <Heart className="w-5 h-5" />
-                </span>
-                <span className="text-xs font-bold text-[#1990e6] uppercase tracking-widest">
-                  Area {currentSlideIndex + 1} of {totalSlides}
-                </span>
-              </div>
-
-              {/* <h2 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">
-                {activeSlide.areaName || "Focus Area"}
-              </h2>
-              <p className="text-xs text-slate-500 mb-4 line-clamp-2">
-                {activeSlide.areaDescription}
-              </p> */}
-            </div>
-
-            <div
-              className="aspect-square rounded-xl mb-4 p-5 flex flex-col justify-center items-center"
-              style={{ backgroundColor: areaBg }}
-            >
-              <div className="text-center">
-                <h3 className="text-white text-xl font-bold leading-tight mb-1">
-                  {activeSlide.areaName}
-                </h3>
-              </div>
-            </div>
-            <p className="text-lg leading-snug line-clamp-5">
-              {activeSlide.areaDescription}
-            </p>
-
-            <div className="mt-auto">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-slate-500">
-                  Area Progress
-                </span>
-                <span className="text-xs font-bold text-[#1990e6]">0%</span>
-              </div>
-              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div className="bg-[#1990e6] h-2 rounded-full w-0 transition-all duration-500"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side: Actionable Content */}
-          <div className="md:w-2/3 p-6 md:p-8 flex flex-col h-full bg-white">
-            {/* Read-Only Context Block */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 mb-6">
-              <div className="mb-3 pb-3 border-b border-slate-200/50">
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                  Quarterly Goal
-                </p>
-                <p className="text-slate-800 font-medium text-sm leading-relaxed">
-                  {activeSlide.goalText}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                  Identity Statement
-                </p>
-                <p className="text-slate-800 font-medium text-sm leading-relaxed italic">
-                  "{activeSlide.identityText}"
-                </p>
-              </div>
-            </div>
-
-            {/* Daily Action Block */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-shrink-0 bg-[#1990e6]/10 rounded-full p-3 flex items-center justify-center text-[#1990e6]">
-                <Activity className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
-                  Today's Action
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {activeSlide.actionText}
-                </p>
-              </div>
-            </div>
-
-            {/* Checklist Actions */}
-            <div className="flex-1 flex flex-col justify-end space-y-3">
-              {/* Item 1 */}
-              <label
-                className={`group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all 
-                 ${isIdentityDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
-              >
-                <div className="relative flex items-center mt-0.5">
-                  <input
-                    type="checkbox"
-                    disabled={isDayLocked || currentChecklist.identityDone}
-                    checked={currentChecklist.identityDone}
-                    onChange={(e) =>
-                      updateChecklist("identityDone", e.target.checked)
-                    }
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all disabled:opacity-90 disabled:cursor-not-allowed"
-                  />
-                  <Check
-                    className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
-                    strokeWidth={3}
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
-                    Complete Identity Practice
-                  </p>
-                </div>
-              </label>
-
-              {/* Item 2 */}
-              <label
-                className={`group flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all
-  ${isActionDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
-              >
-                <div className="relative flex items-center">
-                  <input
-                    type="checkbox"
-                    disabled={isDayLocked || currentChecklist.actionDone}
-                    checked={currentChecklist.actionDone}
-                    onChange={(e) =>
-                      updateChecklist("actionDone", e.target.checked)
-                    }
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all disabled:opacity-90 disabled:cursor-not-allowed"
-                  />
-                  <Check
-                    className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
-                    strokeWidth={3}
-                  />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
-                    Mark Daily Action Done
-                  </p>
-                </div>
-              </label>
-
-              {/* Item 3: Log Win */}
-              <label
-                className={`group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all
-  ${isWinDisabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-slate-50 hover:border-slate-100"}`}
-              >
-                <div className="relative flex items-center mt-0.5">
-                  <input
-                    type="checkbox"
-                    checked={currentChecklist.winLogged}
-                    disabled={isDayLocked || currentChecklist.winLogged}
-                    onChange={(e) =>
-                      updateChecklist("winLogged", e.target.checked)
-                    }
-                    className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 checked:border-[#1990e6] checked:bg-[#1990e6] transition-all disabled:opacity-90 disabled:cursor-not-allowed"
-                  />
-                  <Check
-                    className="absolute pointer-events-none opacity-0 peer-checked:opacity-100 text-white w-3.5 h-3.5 left-0.5 top-0.5"
-                    strokeWidth={3}
-                  />
-                </div>
-
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
-                    Log today’s 1% win
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Documenting small wins compounds over time.
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        {/* Next Button */}
-        <button
-          onClick={handleNext}
-          disabled={isLast}
-          className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:hover:bg-white disabled:hover:text-slate-400 disabled:cursor-not-allowed"
-          aria-label="Next Slide"
-        >
-          <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />
-        </button>
-      </section>
-
+      {isTodaySunday ? (
+        <SundayActionCard
+          // commitments={commitments}
+          currentSlideIndex={currentSlideIndex}
+          handlePrev={handlePrev}
+          handleNext={handleNext}
+          // activeSlide={activeSlide}
+          isLast={isLast}
+          identityStatements={allIdentityStatements} 
+          areaId={activeSlide.areaId} 
+          progress={sundayProgressQuery.data ?? []}
+        />
+      ) : (
+        <WeekdayActionCard
+          commitments={commitments}
+          currentSlideIndex={currentSlideIndex}
+          handlePrev={handlePrev}
+          handleNext={handleNext}
+          activeSlide={activeSlide}
+          checklist={currentChecklist}
+          isIdentityDisabled={isIdentityDisabled}
+          isActionDisabled={isActionDisabled}
+          isWinDisabled={isWinDisabled}
+          updateChecklist={updateChecklist}
+          isLast={isLast}
+        />
+      )}
       {/* Pagination Indicators */}
       <PaginationIndicatorsDailyActions
         commitments={commitments}

@@ -137,7 +137,7 @@ const DashboardPage = async () => {
         </section>
 
         {/* Global Progress Section */}
-        <GlobalProgress />
+        <GlobalProgress userId={userId} programId={programState.programId}/>
 
         {/* Area Snapshots */}
         <AreaSnapshots
