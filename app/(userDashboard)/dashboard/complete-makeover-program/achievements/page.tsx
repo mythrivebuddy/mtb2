@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TrendingUp, Medal, Brain, Lightbulb } from "lucide-react";

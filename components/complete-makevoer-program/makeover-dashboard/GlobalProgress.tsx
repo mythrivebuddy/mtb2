@@ -74,10 +74,7 @@ const GlobalProgress = async ({
   );
 
   // Calculate remaining points (nice UX)
-  const nextLevelXPNeeded =
-    nextLevel && globalPoints < nextMin
-      ? `${nextMin - globalPoints} MoS`
-      : "Completed";
+ 
 
   const levelName = currentLevel?.name ?? "Initiator";
   const levelId = currentLevel?.id ?? 0;

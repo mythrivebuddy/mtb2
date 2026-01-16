@@ -429,6 +429,7 @@ export default function TodaysActionsClient({
           // activeSlide={activeSlide}
           isLast={isLast}
           identityStatements={allIdentityStatements} 
+          areaId={activeSlide.areaId} 
         />
       ) : (
         <WeekdayActionCard

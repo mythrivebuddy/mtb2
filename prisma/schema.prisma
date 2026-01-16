@@ -119,6 +119,7 @@ model User {
   makeoverAreas        UserMakeoverArea[]
   makeoverCommitments  UserMakeoverCommitment[]
   makeoverProgressLogs MakeoverProgressLog[]
+  sundayProgressLogs SundayProgressLog[]
   makeoverLevels       UserMakeoverLevel[]
   makeoverBadges       UserMakeoverBadge[]
   makeoverChallengeEnrollments UserMakeoverChallengeEnrollment[]
@@ -1549,6 +1550,37 @@ model MakeoverProgressLog {
   area MakeoverArea @relation(fields: [areaId], references: [id])
 
   @@unique([userId, programId, areaId, date])
+}
+
+model SundayProgressLog {
+  id String @id @default(cuid())
+
+  userId    String
+  programId String
+  sundayCardId    Int
+  date      DateTime
+
+  // ---------- Card 1 ----------
+  card1WeeklyWin     Boolean @default(false)
+  card1DailyWin      Boolean @default(false)
+  card1NextWeekDone  Boolean @default(false)
+
+  // ---------- Card 2 ----------
+  card2Done Boolean @default(false)
+
+  // ---------- Card 3 ----------
+  card3Done Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ---------- Relations ----------
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // ---------- Guards ----------
+  @@unique([userId, programId, sundayCardId, date], name: "uniq_sunday_progress")
+  @@index([userId])
+  @@index([programId])
 }
 
 // Derived data

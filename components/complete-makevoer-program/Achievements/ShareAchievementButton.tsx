@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Share2 } from "lucide-react";
 import ShareDialog from "./ShareDialog";
 
 interface Props {

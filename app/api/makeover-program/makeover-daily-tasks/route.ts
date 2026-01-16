@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 import { createLogWin } from "@/lib/utils/makeover-program/makeover-daily-tasks/createLogWin";
-import { evaluateLevel } from "@/lib/utils/makeover-program/awards/evaluateLevel";
-import { awardMilestoneBadges } from "@/lib/utils/makeover-program/awards/awardMilestoneBadges";
+
 
 /* ---------------- CONSTANTS ---------------- */
 const POINTS = {

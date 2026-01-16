@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import {
@@ -8,7 +9,7 @@ import {
   Check,
 } from "lucide-react";
 import { AREA_BACKGROUNDS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
-import { ChecklistState, Commitment } from "./TodaysActionsClient";
+import { Commitment } from "./TodaysActionsClient";
 
 type Props = {
   commitments: Commitment[];

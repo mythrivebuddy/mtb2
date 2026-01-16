@@ -1,6 +1,9 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { Check, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useState } from "react";
 
@@ -26,6 +29,7 @@ type Props = {
   handleNext: () => void;
   isLast: boolean;
   identityStatements?: { title: string; text: string }[]; // ✅ ADD
+  areaId: number;
 };
 
 const sundayAreas: SundayArea[] = [
@@ -102,20 +106,59 @@ export default function SundayActionCard({
   handleNext,
   isLast,
   identityStatements,
+  areaId,
 }: Props) {
   const totalSlides = sundayAreas.length;
   const activeArea = sundayAreas[currentSlideIndex];
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
-  console.log({ identityStatements });
+  console.log({ areaId });
 
   const toggleTask = (taskId: string) => {
+    const alreadyChecked = checkedTasks[taskId];
+
+    // ⛔ Do nothing on uncheck (Sunday tasks are one-way)
+    if (alreadyChecked) return;
+
+    // Optimistic UI
     setCheckedTasks((prev) => ({
       ...prev,
-      [taskId]: !prev[taskId],
+      [taskId]: true,
     }));
+
+    sundayTaskMutation.mutate(
+      {
+        card: activeArea.id as 1 | 2 | 3,
+        taskId,
+        areaId,
+      },
+      {
+        onError: () => {
+          // rollback on failure
+          setCheckedTasks((prev) => ({
+            ...prev,
+            [taskId]: false,
+          }));
+        },
+      }
+    );
   };
-  const thisWeekTasks = activeArea.tasks.filter((t) => t.group === "thisWeek");
-  const nextWeekTasks = activeArea.tasks.filter((t) => t.group === "nextWeek");
+
+  const sundayTaskMutation = useMutation({
+    mutationFn: async (payload: {
+      card: 1 | 2 | 3;
+      taskId: string;
+      areaId: number;
+    }) => {
+      const res = await axios.post(
+        "/api/makeover-program/makeover-sunday-tasks",
+        payload
+      );
+      return res.data;
+    },
+  });
+
+
+
   return (
     <section className="flex-1 flex items-center justify-center w-full mb-8">
       {/* Previous Button */}

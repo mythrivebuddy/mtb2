@@ -1,11 +1,13 @@
-
 import * as Icons from "lucide-react";
-export function resolveLevelIcon(icon: string | null) {
+import type { LucideIcon } from "lucide-react";
+
+export function resolveLevelIcon(icon: string | null): LucideIcon {
   if (!icon) return Icons.Award;
 
-  const Icon = (Icons as Record<string, any>)[icon];
-  return Icon ?? Icons.Award;
+  const icons = Icons as unknown as Record<string, LucideIcon>;
+  return icons[icon] ?? Icons.Award;
 }
+
 
 export function getBadgeStyles(
   name: string,
@@ -22,7 +24,7 @@ export function getBadgeStyles(
   }
 
   // 🧬 LEVEL BADGES — identity, grounded, premium
-  if (type === "LEVEL") {
+  if (type === "LEVEL") { 
     switch (name) {
       case "Initiator Badge":
         return {
