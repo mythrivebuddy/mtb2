@@ -51,8 +51,7 @@ export default function TodaysActionsClient({
 }) {
   // State 1: Current Slide Index
   // const isTodaySunday = isSunday();
-  const isTodaySunday = isSunday(new Date("2026-01-18"));
-  console.log({ isTodaySunday });
+  const isTodaySunday = isSunday(new Date());
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const router = useRouter();
