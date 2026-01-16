@@ -1564,6 +1564,7 @@ model SundayProgressLog {
   card1WeeklyWin     Boolean @default(false)
   card1DailyWin      Boolean @default(false)
   card1NextWeekDone  Boolean @default(false)
+  card1NextWeekTaskId   String? 
 
   // ---------- Card 2 ----------
   card2Done Boolean @default(false)

@@ -102,10 +102,27 @@ export default function TodaysActionsClient({
         winLogged: boolean;
       }[];
     },
-    enabled: isProgramStarted,
+    enabled: isProgramStarted && !isTodaySunday,
   });
 
+  const sundayProgressQuery = useQuery({
+  queryKey: ["sunday-progress"],
+  queryFn: async () => {
+    const res = await axios.get(
+      "/api/makeover-program/makeover-sunday-tasks/today-progress"
+    );
+    return res.data.data as {
+      card: 1 | 2 | 3;
+      taskId: string;
+      done: true;
+    }[];
+  },
+  enabled: isProgramStarted && isTodaySunday,
+});
+
+
   useEffect(() => {
+    if(isTodaySunday) return;
     if (!todayProgressQuery.data) return;
 
     const mapped: Record<number, ChecklistState> = {};
@@ -160,6 +177,7 @@ export default function TodaysActionsClient({
   }, [lockQuery.data?.unlockAt]);
 
   useEffect(() => {
+    if (isTodaySunday) return;
     if (!todayProgressQuery.data || commitments.length === 0) return;
 
     // map areaId → checklist
@@ -302,6 +320,7 @@ export default function TodaysActionsClient({
 
   const areAllAreasCompleted = React.useMemo(() => {
     if (!commitments.length) return false;
+    if (isTodaySunday) return false;
 
     return commitments.every((c) => {
       const checklist = checklistByArea[c.areaId];
@@ -310,6 +329,39 @@ export default function TodaysActionsClient({
       );
     });
   }, [commitments, checklistByArea]);
+
+ const isSundayCompleted = React.useMemo(() => {
+  if (!isTodaySunday) return false;
+  if (!sundayProgressQuery.data) return false;
+
+  const byCard = new Map<number, Set<string>>();
+
+  sundayProgressQuery.data.forEach((p) => {
+    if (!byCard.has(p.card)) {
+      byCard.set(p.card, new Set());
+    }
+    byCard.get(p.card)!.add(p.taskId);
+  });
+
+  /** CARD 1 RULE */
+  const card1 = byCard.get(1) ?? new Set();
+  const card1Completed =
+    card1.has("weekly-win") &&
+    card1.has("daily-win") &&
+    card1.has("next-week"); // 👈 GROUP FLAG FROM BACKEND
+
+  /** CARD 2 RULE */
+  const card2 = byCard.get(2) ?? new Set();
+  const card2Completed = card2.size > 0; // 👈 ANY TASK
+
+  /** CARD 3 RULE */
+  const card3 = byCard.get(3) ?? new Set();
+  const card3Completed = card3.has("accountability");
+
+  return card1Completed && card2Completed && card3Completed;
+}, [isTodaySunday, sundayProgressQuery.data]);
+
+
 
   const isIdentityDisabled = isDayLocked || currentChecklist.identityDone;
   const isActionDisabled = isDayLocked || currentChecklist.actionDone;
@@ -362,6 +414,32 @@ export default function TodaysActionsClient({
       </div>
     );
   }
+
+  // 🟦 SUNDAY — all cards completed
+// if (
+//   isTodaySunday &&
+//   isProgramStarted &&
+//   isSundayCompleted
+// ) {
+//   return (
+//     <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+//       <NotStartedYetTasks
+//         timeLeft={dayUnlockTimeLeft}
+//         startDate={unlockDate}
+//         isBack={true}
+//         title="Sunday Reflection Completed 🌱"
+//         description={
+//           <>
+//             You’ve completed all your Sunday reflection tasks.
+//             <br />
+//             Come back tomorrow to continue your journey.
+//           </>
+//         }
+//       />
+//     </main>
+//   );
+// }
+
   // 🔒 Day locked → show countdown till midnight
   if (
     isProgramStarted &&
@@ -430,6 +508,7 @@ export default function TodaysActionsClient({
           isLast={isLast}
           identityStatements={allIdentityStatements} 
           areaId={activeSlide.areaId} 
+          progress={sundayProgressQuery.data ?? []}
         />
       ) : (
         <WeekdayActionCard

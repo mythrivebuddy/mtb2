@@ -5,7 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Check, ChevronLeft, ChevronRight, Heart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type SundayTask = {
   id: string;
@@ -30,6 +31,11 @@ type Props = {
   isLast: boolean;
   identityStatements?: { title: string; text: string }[]; // ✅ ADD
   areaId: number;
+  progress: {
+  card: 1 | 2 | 3;
+  taskId: string;
+  done: true;
+}[];
 };
 
 const sundayAreas: SundayArea[] = [
@@ -107,6 +113,7 @@ export default function SundayActionCard({
   isLast,
   identityStatements,
   areaId,
+  progress
 }: Props) {
   const totalSlides = sundayAreas.length;
   const activeArea = sundayAreas[currentSlideIndex];
@@ -114,34 +121,52 @@ export default function SundayActionCard({
   console.log({ areaId });
 
   const toggleTask = (taskId: string) => {
-    const alreadyChecked = checkedTasks[taskId];
+  const alreadyChecked = checkedTasks[taskId];
+  if (alreadyChecked) return;
 
-    // ⛔ Do nothing on uncheck (Sunday tasks are one-way)
-    if (alreadyChecked) return;
+  let finalTaskId = taskId;
 
-    // Optimistic UI
-    setCheckedTasks((prev) => ({
-      ...prev,
-      [taskId]: true,
-    }));
+  // ✅ CARD 1: nextWeek group → single logical task
+  if (
+    activeArea.id === 1 &&
+    activeArea.tasks.find(
+      (t) => t.id === taskId && t.group === "nextWeek"
+    )
+  ) {
+    finalTaskId = "next-week";
+  }
 
-    sundayTaskMutation.mutate(
-      {
-        card: activeArea.id as 1 | 2 | 3,
-        taskId,
-        areaId,
+  // ✅ CARD 2: any task → identity
+  if (activeArea.id === 2) {
+    finalTaskId = "identity";
+  }
+
+  // Optimistic UI
+  setCheckedTasks((prev) => ({
+    ...prev,
+    [taskId]: true,
+  }));
+
+  sundayTaskMutation.mutate(
+    {
+      card: activeArea.id as 1 | 2 | 3,
+      taskId: finalTaskId,
+      areaId,
+    },
+    {
+      onSuccess:()=>{
+        toast.success("done");
       },
-      {
-        onError: () => {
-          // rollback on failure
-          setCheckedTasks((prev) => ({
-            ...prev,
-            [taskId]: false,
-          }));
-        },
-      }
-    );
-  };
+      onError: () => {
+        setCheckedTasks((prev) => ({
+          ...prev,
+          [taskId]: false,
+        }));
+      },
+    }
+  );
+};
+
 
   const sundayTaskMutation = useMutation({
     mutationFn: async (payload: {
@@ -156,6 +181,38 @@ export default function SundayActionCard({
       return res.data;
     },
   });
+ 
+  useEffect(() => {
+  if (!progress.length) return;
+
+  const mapped: Record<string, boolean> = {};
+
+  progress
+    .filter((p) => p.card === activeArea.id)
+    .forEach((p) => {
+      // ✅ CARD 1: next-week group → mark ALL nextWeek tasks
+      if (p.taskId === "next-week") {
+        activeArea.tasks
+          .filter((t) => t.group === "nextWeek")
+          .forEach((t) => {
+            mapped[t.id] = true;
+          });
+      }
+      // ✅ CARD 2: identity → mark all tasks
+      else if (p.taskId === "identity") {
+        activeArea.tasks.forEach((t) => {
+          mapped[t.id] = true;
+        });
+      }
+      // ✅ normal tasks
+      else {
+        mapped[p.taskId] = true;
+      }
+    });
+
+  setCheckedTasks(mapped);
+}, [progress, activeArea.id]);
+
 
 
 
@@ -274,18 +331,25 @@ export default function SundayActionCard({
             cursor-pointer hover:bg-slate-50 hover:border-slate-100"
                     >
                       <div className="relative flex items-center mt-0.5">
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleTask(task.id)}
-                          className="peer h-5 w-5 rounded border border-slate-300
-                data-[state=checked]:bg-[#1990e6]
-                data-[state=checked]:border-[#1990e6]"
-                        />
-                        <Check
-                          className={`absolute pointer-events-none text-white w-3.5 h-3.5 left-[3px] top-[3px]
-                transition-opacity ${checked ? "opacity-100" : "opacity-0"}`}
-                          strokeWidth={3}
-                        />
+                       <input
+  type="checkbox"
+  checked={checked}
+  disabled={checked}
+  onChange={() => toggleTask(task.id)}
+  className="peer h-5 w-5 cursor-pointer appearance-none rounded 
+    border border-slate-300 
+    checked:border-[#1990e6] 
+    checked:bg-[#1990e6] 
+    transition-all"
+/>
+
+<Check
+  className="absolute pointer-events-none opacity-0 
+    peer-checked:opacity-100 
+    text-white w-3.5 h-3.5 left-0.5 top-0.5"
+  strokeWidth={3}
+/>
+
                       </div>
 
                       <div className="flex-1">
