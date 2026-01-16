@@ -330,36 +330,36 @@ export default function TodaysActionsClient({
     });
   }, [commitments, checklistByArea]);
 
- const isSundayCompleted = React.useMemo(() => {
-  if (!isTodaySunday) return false;
-  if (!sundayProgressQuery.data) return false;
+//  const isSundayCompleted = React.useMemo(() => {
+//   if (!isTodaySunday) return false;
+//   if (!sundayProgressQuery.data) return false;
 
-  const byCard = new Map<number, Set<string>>();
+//   const byCard = new Map<number, Set<string>>();
 
-  sundayProgressQuery.data.forEach((p) => {
-    if (!byCard.has(p.card)) {
-      byCard.set(p.card, new Set());
-    }
-    byCard.get(p.card)!.add(p.taskId);
-  });
+//   sundayProgressQuery.data.forEach((p) => {
+//     if (!byCard.has(p.card)) {
+//       byCard.set(p.card, new Set());
+//     }
+//     byCard.get(p.card)!.add(p.taskId);
+//   });
 
-  /** CARD 1 RULE */
-  const card1 = byCard.get(1) ?? new Set();
-  const card1Completed =
-    card1.has("weekly-win") &&
-    card1.has("daily-win") &&
-    card1.has("next-week"); // 👈 GROUP FLAG FROM BACKEND
+//   /** CARD 1 RULE */
+//   const card1 = byCard.get(1) ?? new Set();
+//   const card1Completed =
+//     card1.has("weekly-win") &&
+//     card1.has("daily-win") &&
+//     card1.has("next-week"); // 👈 GROUP FLAG FROM BACKEND
 
-  /** CARD 2 RULE */
-  const card2 = byCard.get(2) ?? new Set();
-  const card2Completed = card2.size > 0; // 👈 ANY TASK
+//   /** CARD 2 RULE */
+//   const card2 = byCard.get(2) ?? new Set();
+//   const card2Completed = card2.size > 0; // 👈 ANY TASK
 
-  /** CARD 3 RULE */
-  const card3 = byCard.get(3) ?? new Set();
-  const card3Completed = card3.has("accountability");
+//   /** CARD 3 RULE */
+//   const card3 = byCard.get(3) ?? new Set();
+//   const card3Completed = card3.has("accountability");
 
-  return card1Completed && card2Completed && card3Completed;
-}, [isTodaySunday, sundayProgressQuery.data]);
+//   return card1Completed && card2Completed && card3Completed;
+// }, [isTodaySunday, sundayProgressQuery.data]);
 
 
 

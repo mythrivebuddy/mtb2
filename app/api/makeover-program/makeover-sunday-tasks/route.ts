@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 import { createLogWin } from "@/lib/utils/makeover-program/makeover-daily-tasks/createLogWin";
+import { createWeeklyWinMessage } from "@/lib/utils/system-message-for-joining";
 
 /* ---------------- Types ---------------- */
 interface RequestBody {
     card: 1 | 2 | 3;
     taskId: string;
     areaId: number;
+    weeklyShowUpDays?: number | string;
 }
 
 /* ---------------- Constants ---------------- */
@@ -24,8 +26,7 @@ export async function POST(req: Request) {
     const session = await checkRole("USER");
     const user = session.user;
 
-    const body = (await req.json()) as RequestBody;
-    const { card, taskId, areaId } = body;
+    const { card, taskId, areaId, weeklyShowUpDays } = (await req.json()) as RequestBody;
 
     if (!card || !taskId || !areaId) {
         return NextResponse.json(
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
 
     const programId = program.id;
 
-    // 🔐 Validate area ownership
+    /* ---------- Validate area ownership ---------- */
     const ownsArea = await prisma.userMakeoverArea.findFirst({
         where: { userId: user.id, programId, areaId },
     });
@@ -55,6 +56,14 @@ export async function POST(req: Request) {
     if (!ownsArea) {
         return NextResponse.json({ error: "Invalid areaId" }, { status: 403 });
     }
+
+    /* ---------- Get all user areaIds ---------- */
+    const userAreas = await prisma.userMakeoverArea.findMany({
+        where: { userId: user.id, programId },
+        select: { areaId: true },
+    });
+
+    const areaIds = userAreas.map((a) => a.areaId);
 
     /* ================= TRANSACTION ================= */
     const result = await prisma.$transaction(async (tx) => {
@@ -77,6 +86,11 @@ export async function POST(req: Request) {
                     date: today,
                 },
             }));
+
+        let pointsAwarded = 0;
+        let shouldPostWeeklyWinMessage = false;
+        let shouldCreateDailyWinLog = false;
+
         const isFirstSundayTask =
             !progress.card1WeeklyWin &&
             !progress.card1DailyWin &&
@@ -84,15 +98,11 @@ export async function POST(req: Request) {
             !progress.card2Done &&
             !progress.card3Done;
 
-
-
-        let pointsAwarded = 0;
         if (isFirstSundayTask && !progress.card3Done) {
             await tx.sundayProgressLog.update({
                 where: { id: progress.id },
                 data: { card3Done: true },
             });
-
             pointsAwarded += POINTS.CARD_3_TOTAL;
         }
 
@@ -104,6 +114,7 @@ export async function POST(req: Request) {
                     data: { card1WeeklyWin: true },
                 });
                 pointsAwarded = POINTS.CARD_1_TASK;
+                shouldPostWeeklyWinMessage = true;
             }
 
             if (taskId === "daily-win" && !progress.card1DailyWin) {
@@ -112,11 +123,7 @@ export async function POST(req: Request) {
                     data: { card1DailyWin: true },
                 });
                 pointsAwarded = POINTS.CARD_1_TASK;
-
-                await createLogWin({
-                    userId: user.id,
-                    content: "Done Sunday tasks",
-                });
+                shouldCreateDailyWinLog = true;
             }
 
             if (
@@ -170,14 +177,51 @@ export async function POST(req: Request) {
             });
         }
 
-        return pointsAwarded;
+        return {
+            pointsAwarded,
+            shouldPostWeeklyWinMessage,
+            shouldCreateDailyWinLog,
+        };
     });
+
+    /* ================= SIDE EFFECTS (AFTER COMMIT) ================= */
+
+    if (result.shouldCreateDailyWinLog) {
+        await createLogWin({
+            userId: user.id,
+            content: "Done Sunday tasks",
+        });
+    }
+
+    if (result.shouldPostWeeklyWinMessage) {
+        const areaChallengeMaps =
+            await prisma.makeoverAreaChallengeMap.findMany({
+                where: {
+                    programId,
+                    areaId: { in: areaIds },
+                },
+                select: { challengeId: true },
+            });
+
+        if (areaChallengeMaps.length > 0) {
+            await Promise.all(
+                areaChallengeMaps.map(({ challengeId }) =>
+                    createWeeklyWinMessage(
+                        user.id,
+                        challengeId,
+                        `I showed up for ${weeklyShowUpDays} day${weeklyShowUpDays === 1 ? "" : "s"} this week 🎉`,
+                        "USER"
+                    )
+                )
+            );
+        }
+    }
 
     return NextResponse.json({
         success: true,
         card,
         taskId,
         areaId,
-        pointsAwarded: result,
+        pointsAwarded: result.pointsAwarded,
     });
 }

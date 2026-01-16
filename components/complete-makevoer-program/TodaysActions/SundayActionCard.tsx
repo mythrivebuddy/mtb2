@@ -1,12 +1,14 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Check, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+const NEXT_WEEK_STORAGE_KEY = "sunday_card1_next_week";
+const CARD2_STORAGE_KEY = "sunday_card2_identity";
 
 type SundayTask = {
   id: string;
@@ -32,10 +34,10 @@ type Props = {
   identityStatements?: { title: string; text: string }[]; // ✅ ADD
   areaId: number;
   progress: {
-  card: 1 | 2 | 3;
-  taskId: string;
-  done: true;
-}[];
+    card: 1 | 2 | 3;
+    taskId: string;
+    done: true;
+  }[];
 };
 
 const sundayAreas: SundayArea[] = [
@@ -44,7 +46,7 @@ const sundayAreas: SundayArea[] = [
     title: "Self Reflection",
     description: "Reflect how your week was",
     contextTitle: "This Week",
-    contextText: "You showed up 5 days",
+    contextText: "",
     tasks: [
       {
         id: "weekly-win",
@@ -113,66 +115,165 @@ export default function SundayActionCard({
   isLast,
   identityStatements,
   areaId,
-  progress
+  progress,
 }: Props) {
   const totalSlides = sundayAreas.length;
   const activeArea = sundayAreas[currentSlideIndex];
   const [checkedTasks, setCheckedTasks] = useState<Record<string, boolean>>({});
+  const { data: weeklyShowUp, isLoading } = useQuery({
+    queryKey: ["weekly-showup"],
+    queryFn: async () => {
+      const res = await axios.get(`/api/makeover-program/weekly-showup`);
+      return res.data as {
+        days: number;
+        range: { start: string; end: string };
+      };
+    },
+  });
+  console.log({ weeklyShowUp });
+
   console.log({ areaId });
 
   const toggleTask = (taskId: string) => {
-  const alreadyChecked = checkedTasks[taskId];
-  if (alreadyChecked) return;
+    if (checkedTasks[taskId]) return;
 
-  let finalTaskId = taskId;
+    // ---------- CARD 1 : NEXT WEEK GROUP ----------
+    if (
+      activeArea.id === 1 &&
+      activeArea.tasks.find((t) => t.id === taskId && t.group === "nextWeek")
+    ) {
+      // read localStorage
+      let stored: { taskIds: string[]; expiresAt: number } | null = null;
 
-  // ✅ CARD 1: nextWeek group → single logical task
-  if (
-    activeArea.id === 1 &&
-    activeArea.tasks.find(
-      (t) => t.id === taskId && t.group === "nextWeek"
-    )
-  ) {
-    finalTaskId = "next-week";
-  }
+      const raw = localStorage.getItem(NEXT_WEEK_STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Date.now() < parsed.expiresAt) {
+            stored = parsed;
+          } else {
+            localStorage.removeItem(NEXT_WEEK_STORAGE_KEY);
+          }
+        } catch {}
+      }
 
-  // ✅ CARD 2: any task → identity
-  if (activeArea.id === 2) {
-    finalTaskId = "identity";
-  }
+      const existingTaskIds = stored?.taskIds ?? [];
 
-  // Optimistic UI
-  setCheckedTasks((prev) => ({
-    ...prev,
-    [taskId]: true,
-  }));
+      // 👉 FIRST selection → backend + points
+      if (existingTaskIds.length === 0) {
+        sundayTaskMutation.mutate({
+          card: 1,
+          taskId: "next-week",
+          areaId,
+          weeklyShowUpDays: weeklyShowUp?.days ?? 0,
+        });
+      }
 
-  sundayTaskMutation.mutate(
-    {
-      card: activeArea.id as 1 | 2 | 3,
-      taskId: finalTaskId,
-      areaId,
-    },
-    {
-      onSuccess:()=>{
-        toast.success("done");
-      },
-      onError: () => {
-        setCheckedTasks((prev) => ({
-          ...prev,
-          [taskId]: false,
-        }));
-      },
+      // store/update locally
+      const updatedTaskIds = [...new Set([...existingTaskIds, taskId])];
+      const expiresAt = new Date().setHours(23, 59, 59, 999);
+
+      localStorage.setItem(
+        NEXT_WEEK_STORAGE_KEY,
+        JSON.stringify({
+          taskIds: updatedTaskIds,
+          expiresAt,
+        })
+      );
+
+      // update UI
+      setCheckedTasks((prev) => ({
+        ...prev,
+        [taskId]: true,
+      }));
+
+      return;
     }
-  );
-};
 
+    // ---------- CARD 2 ----------
+    // ---------- CARD 2 : IDENTITY ----------
+    if (activeArea.id === 2) {
+      // read localStorage
+      let stored: { taskIds: string[]; expiresAt: number } | null = null;
+
+      const raw = localStorage.getItem(CARD2_STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Date.now() < parsed.expiresAt) {
+            stored = parsed;
+          } else {
+            localStorage.removeItem(CARD2_STORAGE_KEY);
+          }
+        } catch {}
+      }
+
+      const existingTaskIds = stored?.taskIds ?? [];
+
+      // 👉 FIRST identity selection → backend + points
+      if (existingTaskIds.length === 0) {
+        sundayTaskMutation.mutate({
+          card: 2,
+          taskId: "identity",
+          areaId,
+        });
+      }
+
+      // store locally
+      const updatedTaskIds = [...new Set([...existingTaskIds, taskId])];
+      const expiresAt = new Date().setHours(23, 59, 59, 999);
+
+      localStorage.setItem(
+        CARD2_STORAGE_KEY,
+        JSON.stringify({
+          taskIds: updatedTaskIds,
+          expiresAt,
+        })
+      );
+
+      // update UI
+      setCheckedTasks((prev) => ({
+        ...prev,
+        [taskId]: true,
+      }));
+
+      return; // ⛔ STOP here → no further API call
+    }
+
+    // optimistic UI
+    setCheckedTasks((prev) => ({
+      ...prev,
+      [taskId]: true,
+    }));
+
+    sundayTaskMutation.mutate(
+      {
+        card: activeArea.id as 1 | 2 | 3,
+        taskId,
+        areaId,
+        weeklyShowUpDays: weeklyShowUp?.days ?? 0,
+      },
+      {
+        onSuccess:()=>{
+          toast.success("Mark task completed")
+        },
+        onError: () => {
+          toast.error("Something went wrong try again!")
+          setCheckedTasks((prev) => ({
+            ...prev,
+            [taskId]: false,
+          }));
+        },
+      }
+    );
+  };
 
   const sundayTaskMutation = useMutation({
     mutationFn: async (payload: {
       card: 1 | 2 | 3;
       taskId: string;
       areaId: number;
+      weeklyShowUpDays?:string | number;
     }) => {
       const res = await axios.post(
         "/api/makeover-program/makeover-sunday-tasks",
@@ -181,40 +282,61 @@ export default function SundayActionCard({
       return res.data;
     },
   });
- 
+
   useEffect(() => {
-  if (!progress.length) return;
+    if (!progress.length) return;
 
-  const mapped: Record<string, boolean> = {};
+    const mapped: Record<string, boolean> = {};
 
-  progress
-    .filter((p) => p.card === activeArea.id)
-    .forEach((p) => {
-      // ✅ CARD 1: next-week group → mark ALL nextWeek tasks
-      if (p.taskId === "next-week") {
-        activeArea.tasks
-          .filter((t) => t.group === "nextWeek")
-          .forEach((t) => {
-            mapped[t.id] = true;
-          });
+    progress
+      .filter((p) => p.card === activeArea.id)
+      .forEach((p) => {
+        if (p.taskId !== "next-week" && p.taskId !== "identity") {
+          mapped[p.taskId] = true;
+        }
+      });
+
+    // 👇 merge localStorage selections
+    if (activeArea.id === 1) {
+      const raw = localStorage.getItem(NEXT_WEEK_STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Date.now() < parsed.expiresAt) {
+            parsed.taskIds.forEach((id: string) => {
+              mapped[id] = true;
+            });
+          } else {
+            localStorage.removeItem(NEXT_WEEK_STORAGE_KEY);
+          }
+        } catch {}
       }
-      // ✅ CARD 2: identity → mark all tasks
-      else if (p.taskId === "identity") {
-        activeArea.tasks.forEach((t) => {
-          mapped[t.id] = true;
-        });
+    }
+    if (activeArea.id === 2) {
+      const raw = localStorage.getItem(CARD2_STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Date.now() < parsed.expiresAt) {
+            parsed.taskIds.forEach((id: string) => {
+              mapped[id] = true;
+            });
+          } else {
+            localStorage.removeItem(CARD2_STORAGE_KEY);
+          }
+        } catch {}
       }
-      // ✅ normal tasks
-      else {
-        mapped[p.taskId] = true;
-      }
-    });
+    }
 
-  setCheckedTasks(mapped);
-}, [progress, activeArea.id]);
+    setCheckedTasks(mapped);
+  }, [progress, activeArea.id]);
 
-
-
+  const contextText =
+    activeArea.id === 1
+      ? isLoading
+        ? "Checking your consistency…"
+        : `You showed up ${weeklyShowUp?.days ?? 0} days this week`
+      : activeArea.contextText;
 
   return (
     <section className="flex-1 flex items-center justify-center w-full mb-8">
@@ -259,12 +381,12 @@ export default function SundayActionCard({
           <div className="mt-auto">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-slate-500">
-                Weekly Reset
+                Area Progress
               </span>
-              <span className="text-xs font-bold text-[#1990e6]">Sunday</span>
+              {/* <span className="text-xs font-bold text-[#1990e6]">Sunday</span> */}
             </div>
             <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-              <div className="bg-[#1990e6] h-2 rounded-full w-full" />
+              <div className="bg-[#1990e6]  h-2 rounded-full w-[0%]" />
             </div>
           </div>
         </div>
@@ -298,7 +420,7 @@ export default function SundayActionCard({
                 )}
 
               <p className="text-slate-800 font-medium text-sm leading-relaxed">
-                {activeArea.contextText}
+                {contextText}
               </p>
             </div>
           )}
@@ -309,7 +431,12 @@ export default function SundayActionCard({
               <p className="text-sm text-rose-400 font-medium">Coming soon</p>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col justify-center space-y-3">
+            <div className="flex-1 flex flex-col justify-center space-y-1">
+              {activeArea.id === 2 && (
+                <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">
+                  This week I lived by
+                </p>
+              )}
               {activeArea.tasks.map((task, index) => {
                 const checked = checkedTasks[task.id] ?? false;
 
@@ -331,25 +458,24 @@ export default function SundayActionCard({
             cursor-pointer hover:bg-slate-50 hover:border-slate-100"
                     >
                       <div className="relative flex items-center mt-0.5">
-                       <input
-  type="checkbox"
-  checked={checked}
-  disabled={checked}
-  onChange={() => toggleTask(task.id)}
-  className="peer h-5 w-5 cursor-pointer appearance-none rounded 
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={checked}
+                          onChange={() => toggleTask(task.id)}
+                          className="peer h-5 w-5 cursor-pointer appearance-none rounded 
     border border-slate-300 
     checked:border-[#1990e6] 
     checked:bg-[#1990e6] 
     transition-all"
-/>
+                        />
 
-<Check
-  className="absolute pointer-events-none opacity-0 
+                        <Check
+                          className="absolute pointer-events-none opacity-0 
     peer-checked:opacity-100 
     text-white w-3.5 h-3.5 left-0.5 top-0.5"
-  strokeWidth={3}
-/>
-
+                          strokeWidth={3}
+                        />
                       </div>
 
                       <div className="flex-1">
