@@ -34,3 +34,23 @@ export const sendMessageForJoining = async (
         console.error("Failed to send join message", error);
     }
 };
+
+export async function createWeeklyWinMessage(
+userId: string,
+  challengeId: string,
+  message: string,
+  type: "SYSTEM" | "USER" = "USER",
+) {
+  return prisma.challengeMessage.create({
+    data: {
+      message,
+      challengeId,
+      userId,
+      type
+    },
+    include: {
+      user: { select: { id: true, name: true, image: true } },
+      challenge: { select: { title: true, joinMode: true } },
+    },
+  });
+}

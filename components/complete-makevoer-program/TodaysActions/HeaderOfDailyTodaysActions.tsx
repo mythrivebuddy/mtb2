@@ -5,7 +5,7 @@ import { Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React from "react";
 
-export default function HeaderOfDailyTodaysActions() {
+export default function HeaderOfDailyTodaysActions({isTodaySunday}:{isTodaySunday:boolean}) {
   const router = useRouter();
 
   return (
@@ -24,7 +24,7 @@ export default function HeaderOfDailyTodaysActions() {
           </span>
         </div>
         <h1 className="text-3xl text-start md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-          Today's Focus
+          {isTodaySunday ? `Sunday's Focus` : `Today's Focus`}
         </h1>
         <p className="text-slate-500  text-start dark:text-slate-400 mt-2 text-base">
           You have 3 core areas to conquer today. Make them count.
