@@ -400,6 +400,8 @@ export default function ChallengeManagementPage() {
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const streakCardRef = useRef<HTMLDivElement>(null);
 
+  const SHOULD_REFETCH_FROM =
+  "dashboard/complete-makeover-program/makeover-dashboard";
   const {
     data: challenge,
     isLoading,
@@ -407,12 +409,12 @@ export default function ChallengeManagementPage() {
     error,
     refetch,
   } = useQuery<ChallengeDetails, AxiosError<{ error?: string }>>({
-    queryKey: ["getChallengeDetails", slug],
+    queryKey: ["getChallengeDetails", slug,from_where_user_came],
     queryFn: async () => {
       const response = await axios.get(`/api/challenge/my-challenge/${slug}`);
       return response.data;
     },
-    enabled: !!slug,
+    enabled: !!slug && from_where_user_came === SHOULD_REFETCH_FROM,
   });
 
   const handleCalendarToggle = () => {
