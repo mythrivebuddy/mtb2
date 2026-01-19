@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 import { createLogWin } from "@/lib/utils/makeover-program/makeover-daily-tasks/createLogWin";
-
+function normalizeToUTCStartOfDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+}
 
 /* ---------------- CONSTANTS ---------------- */
 const POINTS = {
@@ -47,11 +51,11 @@ export async function POST(req: Request) {
   if (!areaId || !date || !field || typeof value !== "boolean") {
     return NextResponse.json(
       { error: "areaId, date, field and value are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const today = normalizeDateUTC();
+  const today = normalizeDateUTC(new Date(date));
 
   /* 1️⃣ Resolve Program */
   const program = await prisma.program.findFirst({
@@ -81,7 +85,6 @@ export async function POST(req: Request) {
 
   const wasAlreadyChecked = existing ? existing[field] === true : false;
 
-
   /* -------------------------------------------------
      3️⃣ Upsert progress (checkbox state)
   ------------------------------------------------- */
@@ -106,6 +109,17 @@ export async function POST(req: Request) {
       actionDone: field === "actionDone" ? value : false,
       winLogged: field === "winLogged" ? value : false,
       pointsEarned: 0,
+    },
+  });
+
+  const enrollment = await prisma.userMakeoverChallengeEnrollment.findFirst({
+    where: {
+      userId: user.id,
+      programId,
+      areaId,
+    },
+    include: {
+      enrollment: true,
     },
   });
 
@@ -138,15 +152,6 @@ export async function POST(req: Request) {
   }
   // completes challenge tasks
   if (value === true && !wasAlreadyChecked) {
-    const enrollment =
-      await prisma.userMakeoverChallengeEnrollment.findFirst({
-        where: {
-          userId: user.id,
-          programId,
-          areaId,
-        },
-      });
-
     if (enrollment) {
       // 🎯 Map checkbox → description keyword
       const descriptionMap: Record<typeof field, string> = {
@@ -182,19 +187,106 @@ export async function POST(req: Request) {
           },
         });
 
-        // 3️⃣ Update streak ONCE
-        await tx.challengeEnrollment.update({
-          where: { id: enrollment.enrollmentId },
-          data: {
-            currentStreak: { increment: 1 },
-            longestStreak: {
-              increment: 1,
+
+      });
+    }
+  }
+
+  const startOfToday = normalizeDateUTC(today);
+
+  const incompleteTasks = await prisma.userChallengeTask.count({
+    where: {
+      enrollmentId: enrollment?.enrollmentId,
+      OR: [
+        { isCompleted: false },
+        {
+          lastCompletedAt: {
+            lt: startOfToday,
+          },
+        },
+      ],
+    },
+  });
+
+  const isDayComplete = incompleteTasks === 0;
+
+
+  if (isDayComplete) {
+    if (enrollment) {
+      await prisma.$transaction(async (tx) => {
+        // 🔒 Guard: already counted today?
+       
+
+        const alreadyCompleted = await tx.completionRecord.findUnique({
+          where: {
+            userId_challengeId_date: {
+              userId: user.id,
+              challengeId: enrollment.challengeId,
+              date: today,
             },
-            lastStreakUpdate: new Date(),
           },
         });
 
-        // 4️⃣ Completion record
+        if (alreadyCompleted) {
+          return;
+        }
+
+        // ✅ Increment streak ONCE
+        const now = new Date();
+        const todayStart = normalizeToUTCStartOfDay(now);
+
+        const yesterday = new Date(todayStart);
+        yesterday.setUTCDate(todayStart.getUTCDate() - 1);
+
+        const lastUpdateDate = enrollment.enrollment.lastStreakUpdate
+          ? normalizeToUTCStartOfDay(
+            new Date(enrollment.enrollment.lastStreakUpdate),
+          )
+          : null;
+
+        let newStreak = enrollment.enrollment.currentStreak;
+
+        // 🔴 Reset streak if missed a day
+        if (newStreak > 0 && lastUpdateDate && lastUpdateDate < yesterday) {
+          newStreak = 0;
+        }
+
+        // 🟢 Continue or start streak
+        if (
+          lastUpdateDate &&
+          lastUpdateDate.getTime() === yesterday.getTime()
+        ) {
+          newStreak += 1; // continue streak
+        } else if (!lastUpdateDate || lastUpdateDate < yesterday) {
+          newStreak = 1; // start new streak
+        }
+
+        // 🧠 If already updated today → do nothing
+        if (
+          lastUpdateDate &&
+          lastUpdateDate.getTime() === todayStart.getTime()
+        ) {
+          return;
+        }
+
+        // console.log("[STREAK] Updating streak", {
+        //   newStreak,
+        // });
+
+        await tx.challengeEnrollment.update({
+          where: { id: enrollment.enrollmentId },
+          data: {
+            currentStreak: newStreak,
+            longestStreak: Math.max(
+              enrollment.enrollment.longestStreak,
+              newStreak,
+            ),
+            lastStreakUpdate: now,
+          },
+        });
+
+        // ✅ Mark day completed
+
         await tx.completionRecord.upsert({
           where: {
             userId_challengeId_date: {
@@ -203,9 +295,7 @@ export async function POST(req: Request) {
               date: today,
             },
           },
-          update: {
-            status: "COMPLETED",
-          },
+          update: { status: "COMPLETED" },
           create: {
             userId: user.id,
             challengeId: enrollment.challengeId,
@@ -213,11 +303,9 @@ export async function POST(req: Request) {
             status: "COMPLETED",
           },
         });
-
       });
     }
   }
-
 
   /* -------------------------------------------------
      5️⃣ Log WIN (only when winLogged checked first time)
@@ -258,194 +346,3 @@ export async function POST(req: Request) {
 }
 
 
-
-
-//! /api/makeover-program/makeover-daily-tasks
-// import { NextResponse } from "next/server";
-// import { prisma } from "@/lib/prisma";
-// import { checkRole } from "@/lib/utils/auth";
-// import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
-
-// interface RequestBody {
-//   areaId: number;
-//   date: string;
-// }
-
-// export async function POST(req: Request) {
-//   /* -------------------------------------------------
-//      0️⃣ Auth
-//   ------------------------------------------------- */
-//   const session = await checkRole("USER");
-//   const user = session.user;
-
-//   const body = (await req.json()) as RequestBody;
-//   const { areaId, date } = body;
-
-//   if (!areaId || !date) {
-//     return NextResponse.json(
-//       { error: "areaId and date are required" },
-//       { status: 400 }
-//     );
-//   }
-
-//   const today = normalizeDateUTC();
-
-//   /* -------------------------------------------------
-//      1️⃣ Resolve Program
-//   ------------------------------------------------- */
-//   const program = await prisma.program.findFirst({
-//     where: { slug: "2026-complete-makeover" },
-//     select: { id: true },
-//   });
-
-//   if (!program) {
-//     return NextResponse.json(
-//       { error: "Program not found" },
-//       { status: 404 }
-//     );
-//   }
-
-//   const programId = program.id;
-
-//   /* -------------------------------------------------
-//      2️⃣ Check if already completed today (GUARD)
-//   ------------------------------------------------- */
-//   const existingLog = await prisma.makeoverProgressLog.findUnique({
-//     where: {
-//       userId_programId_areaId_date: {
-//         userId: user.id,
-//         programId,
-//         areaId,
-//         date: today,
-//       },
-//     },
-//   });
-
-//   if (
-//     existingLog &&
-//     existingLog.identityDone &&
-//     existingLog.actionDone &&
-//     existingLog.winLogged &&
-//     existingLog.pointsEarned > 0
-//   ) {
-//     return NextResponse.json({
-//       success: true,
-//       alreadyCompleted: true,
-//       pointsAwarded: 0,
-//     });
-//   }
-
-//   /* -------------------------------------------------
-//      3️⃣ Fetch enrollment (for challenge sync)
-//   ------------------------------------------------- */
-//   const enrollment = await prisma.userMakeoverChallengeEnrollment.findFirst({
-//     where: {
-//       userId: user.id,
-//       programId,
-//       areaId,
-//     },
-//     include: {
-//       enrollment: true,
-//     },
-//   });
-
-//   /* -------------------------------------------------
-//      4️⃣ Atomic transaction
-//   ------------------------------------------------- */
-//   await prisma.$transaction([
-//     // Progress log
-//     prisma.makeoverProgressLog.upsert({
-//       where: {
-//         userId_programId_areaId_date: {
-//           userId: user.id,
-//           programId,
-//           areaId,
-//           date: today,
-//         },
-//       },
-//       update: {
-//         identityDone: true,
-//         actionDone: true,
-//         winLogged: true,
-//         pointsEarned: 75,
-//       },
-//       create: {
-//         userId: user.id,
-//         programId,
-//         areaId,
-//         date: today,
-//         identityDone: true,
-//         actionDone: true,
-//         winLogged: true,
-//         pointsEarned: 75,
-//       },
-//     }),
-
-//     // Lifetime area points
-//     prisma.makeoverPointsSummary.upsert({
-//       where: {
-//         userId_programId_areaId: {
-//           userId: user.id,
-//           programId,
-//           areaId,
-//         },
-//       },
-//       update: {
-//         totalPoints: { increment: 75 },
-//       },
-//       create: {
-//         userId: user.id,
-//         programId,
-//         areaId,
-//         totalPoints: 75,
-//       },
-//     }),
-
-//     // Challenge sync (if enrolled)
-//     ...(enrollment
-//       ? [
-//           prisma.userChallengeTask.updateMany({
-//             where: {
-//               enrollmentId: enrollment.enrollmentId,
-//               isCompleted: false,
-//             },
-//             data: {
-//               isCompleted: true,
-//               lastCompletedAt: new Date(),
-//             },
-//           }),
-
-//           prisma.challengeEnrollment.update({
-//             where: { id: enrollment.enrollmentId },
-//             data: {
-//               currentStreak: enrollment.enrollment.currentStreak + 1,
-//               longestStreak: Math.max(
-//                 enrollment.enrollment.longestStreak,
-//                 enrollment.enrollment.currentStreak + 1
-//               ),
-//               lastStreakUpdate: new Date(),
-//             },
-//           }),
-
-//           prisma.completionRecord.create({
-//             data: {
-//               userId: user.id,
-//               challengeId: enrollment.challengeId,
-//               date: today,
-//               status: "COMPLETED",
-//             },
-//           }),
-//         ]
-//       : []),
-//   ]);
-
-//   /* -------------------------------------------------
-//      5️⃣ Response
-//   ------------------------------------------------- */
-//   return NextResponse.json({
-//     success: true,
-//     areaId,
-//     pointsAwarded: 75,
-//     date: today,
-//   });
-// }
