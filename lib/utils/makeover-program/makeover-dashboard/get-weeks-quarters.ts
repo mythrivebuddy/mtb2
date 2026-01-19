@@ -1,10 +1,10 @@
 /* =========================================================
-   MTB 2026 – Program-Aware Week & Quarter Resolver
+   2026 Complete Makeover Program Weeks & Quarters
    Uses Program.startDate / endDate if present,
-   otherwise falls back to MTB default dates.
+   otherwise falls back to the default dates.
    ========================================================= */
 
-/* ---------- MTB DEFAULTS (FALLBACK) ---------- */
+/* ----------  DEFAULTS (FALLBACK) ---------- */
 
 const MTB_DEFAULT_START = new Date("2026-01-12T00:00:00"); // Monday
 const MTB_DEFAULT_END = new Date("2026-12-27T23:59:59");   // Sunday
@@ -30,12 +30,9 @@ export type MTBProgramResult = {
   status: string;
 };
 
-/* ---------- INTERNAL HELPERS ---------- */
+/* ---------- HELPERS ---------- */
 
-/**
- * Resolves effective program start/end dates
- * Priority: DB → Fallback
- */
+
 function resolveProgramDates(program?: ProgramLike) {
   return {
     startDate: program?.startDate ?? MTB_DEFAULT_START,
@@ -46,7 +43,7 @@ function resolveProgramDates(program?: ProgramLike) {
 /**
  * Calculates current week number from a date + program window
  */
-function getMTBWeekNumber(
+function getMakeoverWeekNumber(
   date: Date,
   startDate: Date,
   endDate: Date
@@ -75,7 +72,7 @@ function getMTBWeekNumber(
 /**
  * Resolves quarter number from week
  */
-function getMTBQuarterNumberFromWeek(
+function getMakeoverQuarterNumberFromWeek(
   week: number
 ): 1 | 2 | 3 | 4 | null {
   if (week >= 1 && week <= 11) return 1;
@@ -88,16 +85,16 @@ function getMTBQuarterNumberFromWeek(
 /**
  * Resolves quarter label from quarter number
  */
-function getMTBQuarterLabel(
+function getMakeoverQuarterLabel(
   quarterNumber: 1 | 2 | 3 | 4
 ): "Q1" | "Q2" | "Q3" | "Q4" {
   return `Q${quarterNumber}` as "Q1" | "Q2" | "Q3" | "Q4";
 }
 
-/* ---------- PUBLIC API ---------- */
+/* ---------- PUBLIC function  ---------- */
 
 /**
- * Single function to get:
+ *  function to get:
  * - totalWeeks (always 51)
  * - currentWeekNumber (0 | 1–51 | null)
  * - quarterNumber (1–4)
@@ -112,16 +109,16 @@ export function getMakeoverProgramWeeksAndQuarters(
 
   const { startDate, endDate } = resolveProgramDates(program);
 
-  const weekResult = getMTBWeekNumber(date, startDate, endDate);
+  const weekResult = getMakeoverWeekNumber(date, startDate, endDate);
 
   const quarterNumber =
     typeof weekResult.week === "number" && weekResult.week > 0
-      ? getMTBQuarterNumberFromWeek(weekResult.week)
+      ? getMakeoverQuarterNumberFromWeek(weekResult.week)
       : null;
 
   const quarterLabel =
     quarterNumber !== null
-      ? getMTBQuarterLabel(quarterNumber)
+      ? getMakeoverQuarterLabel(quarterNumber)
       : null;
 
   return {
