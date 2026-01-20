@@ -22,7 +22,7 @@ const AreaSnapshots = ({
   commitments,
   challengesByArea,
 }: AreaSnapshotsProps) => {
-  const { data: areaProgress, isLoading } = useQuery({
+  const { data: areaProgress } = useQuery({
     queryKey: ["area-progress"],
     queryFn: async () => {
       const res = await axios.get("/api/makeover-program/area-progress");
