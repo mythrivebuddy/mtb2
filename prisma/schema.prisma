@@ -126,6 +126,8 @@ model User {
   visionImages UserVisionImage[]
   programStates UserProgramState[]
 
+  selfRewards UserMakeoverSelfReward[]
+
   //Makeover Accountability Buddy
   buddyDoer    MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyOwner")
   buddyChecker MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyTarget")
@@ -1692,6 +1694,66 @@ model UserMakeoverChallengeEnrollment {
   @@unique([userId, programId, areaId])
 }
 
+// self rewards
+model MakeoverSelfRewardLibrary {
+  id          String @id @default(cuid())
+
+  title       String
+  description String?
+
+  levelId     Int        
+  levelName   String
+  minPoints   Int      
+
+  isActive    Boolean @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+model MakeoverSelfRewardCheckpoint {
+  id              String @id @default(cuid())
+
+  levelId         Int
+  minPoints  Int   // GLOBAL points
+  orderIndex      Int
+
+  createdAt       DateTime @default(now())
+
+  @@unique([levelId, minPoints])
+  @@index([levelId])
+}
+
+
+model UserMakeoverSelfReward {
+  id              String @id @default(cuid())
+
+  userId          String
+  programId       String
+
+  // snapshot at unlock time
+  levelId         Int
+  levelName       String
+
+  checkpointId    String      // MakeoverSelfRewardCheckpoint.id
+
+  // 🔑 reward selection
+  rewardId        String?     // null if custom reward
+  isCustom        Boolean @default(false)
+
+  // 🧠 custom reward data
+  customTitle     String?
+  customDescription String?
+
+  pointsAtUnlock  Int
+  unlockedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, checkpointId])
+  @@index([userId, programId, levelId])
+}
 
 // makeover programs feature for user ends
 // Enum for the AEO/Schema feature
