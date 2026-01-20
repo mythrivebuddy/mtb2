@@ -8,6 +8,7 @@ import {
   resolveLevelIcon,
 } from "@/lib/utils/makeover-program/achievements/resolve-badges-levels-icons";
 import Link from "next/link";
+import { calculateGoaProgressPercentage } from "@/lib/utils/makeover-program/makeover-dashboard/goa";
 
 const GlobalProgress = async ({
   userId,
@@ -16,7 +17,7 @@ const GlobalProgress = async ({
   userId: string;
   programId: string;
 }) => {
-  const progressPercentage = 0; // Example static value
+ 
 
   const aggregate = await prisma.makeoverPointsSummary.aggregate({
     where: {
@@ -95,6 +96,13 @@ const GlobalProgress = async ({
       icon: true,
     },
   });
+
+  const progressPercentage = calculateGoaProgressPercentage({
+  totalPoints: globalPoints,
+  levelId,
+  earnedBadgesCount: unlockedBadges.length,
+});
+
 
   const levelInBadges = `${currentLevel?.name} Badge`;
 
