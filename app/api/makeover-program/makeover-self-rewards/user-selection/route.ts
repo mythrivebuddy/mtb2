@@ -1,4 +1,3 @@
-// app/api/self-rewards/select/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -10,52 +9,75 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
   const {
     programId,
     checkpointId,
-    rewardId,
+    rewardOptionId,
     isCustom,
     customTitle,
     customDescription,
-  } = body;
+  } = await req.json();
 
-  // 1️⃣ Get checkpoint
+  if (!programId || !checkpointId) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  // 1️⃣ checkpoint
   const checkpoint = await prisma.makeoverSelfRewardCheckpoint.findUnique({
     where: { id: checkpointId },
+    include: { rewardLibrary: true },
   });
 
   if (!checkpoint) {
     return NextResponse.json({ error: "Invalid checkpoint" }, { status: 400 });
   }
 
-  // 2️⃣ Get level snapshot
-  const level = await prisma.makeoverLevel.findUnique({
-    where: { id: checkpoint.levelId },
+  // 2️⃣ prevent re-claim
+  const existing = await prisma.userMakeoverSelfReward.findFirst({
+    where: {
+      userId: session.user.id,
+      programId,
+      checkpointId,
+    },
   });
 
-  if (!level) {
-    return NextResponse.json({ error: "Level not found" }, { status: 400 });
+  if (existing) {
+    return NextResponse.json(
+      { error: "Reward already claimed" },
+      { status: 400 }
+    );
   }
 
-  // 3️⃣ Create selection
+  // 3️⃣ validate option
+  if (!isCustom && rewardOptionId) {
+    const option = await prisma.makeoverSelfRewardOption.findUnique({
+      where: { id: rewardOptionId },
+    });
+
+    if (!option || option.libraryId !== checkpoint.rewardLibraryId) {
+      return NextResponse.json({ error: "Invalid reward option" }, { status: 400 });
+    }
+  }
+
+  // 4️⃣ create reward (CLAIM)
   const reward = await prisma.userMakeoverSelfReward.create({
     data: {
       userId: session.user.id,
       programId,
 
-      levelId: level.id,
-      levelName: level.name,
+      levelId: checkpoint.levelId,
+      levelName: checkpoint.rewardLibrary.levelName,
 
       checkpointId,
 
-      rewardId: isCustom ? null : rewardId,
+      rewardOptionId: isCustom ? null : rewardOptionId,
       isCustom: !!isCustom,
 
       customTitle: isCustom ? customTitle : null,
       customDescription: isCustom ? customDescription : null,
 
       pointsAtUnlock: checkpoint.minPoints,
+      completedAt: new Date(),
     },
   });
 

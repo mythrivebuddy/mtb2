@@ -1,98 +1,203 @@
+"use client";
+
 import { Sparkles, Lock } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
+
+import axios from "axios";
+import { InfiniteData, useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { SelfRewardsListView } from "./SelfRewardsListView";
+import { SelfRewardsCustomizeView } from "./SelfRewardsCustomizeView";
+import SelfRewardsSkeleton from "./SelfRewardsSkeleton";
+
+/* ---------------- types ---------------- */
+
+type RewardStatus = "locked" | "unlocked" | "completed";
+type ViewMode = "list" | "customize";
+
+export interface RewardItem {
+  checkpointId: string;
+  minPoints: number;
+  groupTitle: string;
+  groupDescription?: string;
+  status: RewardStatus;
+  canEdit: boolean;
+}
+
+interface RewardsResponse {
+  items: RewardItem[];
+  nextCursor: number | null;
+}
+
+/* ---------------- axios ---------------- */
+
+const api = axios.create({
+  baseURL: "/api",
+  withCredentials: true,
+});
+
+/* ---------------- props ---------------- */
 
 interface BonusRewardsProps {
   isProgramStarted: boolean;
+  programId: string;
 }
 
-const BonusRewards = ({ isProgramStarted }: BonusRewardsProps) => {
+/* ======================================================
+   MAIN COMPONENT (SCROLL + OBSERVER LIVE HERE)
+====================================================== */
+
+const BonusRewards = ({ isProgramStarted, programId }: BonusRewardsProps) => {
+  const [view, setView] = useState<ViewMode>("list");
+
+  /* ---------- react-query (UNCHANGED) ---------- */
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery<
+      RewardsResponse,
+      Error,
+      InfiniteData<RewardsResponse, number | null>,
+      string[],
+      number | null
+    >({
+      queryKey: ["bonus-rewards", programId],
+      initialPageParam: null,
+      queryFn: async ({ pageParam }) => {
+        const res = await api.get<RewardsResponse>(
+          "/makeover-program/makeover-self-rewards/predefined-library",
+          {
+            params: {
+              programId,
+              cursor: pageParam ?? undefined,
+            },
+          },
+        );
+        return res.data;
+      },
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      enabled: !!programId && isProgramStarted,
+    });
+
+  /* ---------- infinite scroll (UNCHANGED) ---------- */
+
+  const observerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!observerRef.current || !hasNextPage) return;
+    const scrollArea = document.querySelector(
+      "[data-radix-scroll-area-viewport]",
+    ) as HTMLElement | null;
+
+    if (!scrollArea) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { root: scrollArea, rootMargin: "40px" },
+    );
+
+    observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage]);
+
+  /* ---------- flatten pages ---------- */
+
+  const rewards: RewardItem[] = data?.pages.flatMap((p) => p.items) ?? [];
+
+  /* ---------------- UI ---------------- */
+  if (isLoading) {
+    return (
+      <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative h-[320px]">
+        <StaticDataBadge
+          label="Your rewards"
+          className="w-fit absolute -top-1.5 -left-3"
+        />
+
+        {/* Header stays visible */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-[#F59E0B]" />
+            Self Rewards
+          </h3>
+        </div>
+
+        {/* Skeleton list */}
+        <div className="flex flex-col gap-3">
+          <SelfRewardsSkeleton />
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative">
+    <section className="bg-white dark:bg-[#1a2630] rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col relative h-[320px]">
       <StaticDataBadge
         label="Your rewards"
         className="w-fit absolute -top-1.5 -left-3"
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-[#F59E0B]" />
-          Bonus & Rewards
+          {view === "list" ? "Self Rewards" : "Customize Rewards"}
         </h3>
 
-        {isProgramStarted && (
-          <ComingSoonWrapper>
-          <button className="text-xs font-semibold text-[#1183d4] hover:underline">
-            View All
-          </button>
-          </ComingSoonWrapper>
-        )}
+        {isProgramStarted &&
+          (view === "list" ? (
+            <button
+              onClick={() => setView("customize")}
+              className="text-xs font-semibold text-[#1183d4] hover:underline"
+            >
+              Customize Rewards
+            </button>
+          ) : (
+            <button
+              onClick={() => setView("list")}
+              className="text-xs font-semibold text-[#1183d4] hover:underline"
+            >
+              ← Back
+            </button>
+          ))}
       </div>
 
       {/* Content */}
-      {/* {!isProgramStarted ? ( */}
-      <div className="flex flex-col items-center justify-start gap-3 py-2 text-slate-500 text-center">
-        <div className="size-12 rounded-full bg-slate-100  flex items-center justify-center">
-          <Lock className="w-6 h-6 opacity-60" />
+      {!isProgramStarted ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-6 text-slate-500 text-center flex-1">
+          <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center">
+            <Lock className="w-6 h-6 opacity-60" />
+          </div>
+
+          <p className="text-md font-medium">Rewards unlock very soon</p>
+          <p className="text-md italic max-w-xs">
+            Complete daily actions and stay consistent to earn rewards once the
+            program begins.
+          </p>
         </div>
+      ) : (
+        <ScrollArea className="flex-1 min-h-0 pr-2">
+          <div className="flex flex-col gap-3">
+            {view === "list" ? (
+              <SelfRewardsListView rewards={rewards} />
+            ) : (
+              <SelfRewardsCustomizeView rewards={rewards} />
+            )}
 
-        <p className="text-md font-medium">
-          Rewards unlock very soon
-        </p>
+            {/* infinite scroll trigger — DO NOT MOVE */}
+            <div ref={observerRef} />
 
-        <p className="text-md italic max-w-xs">
-          Complete daily actions and stay consistent to earn rewards once the
-          program begins.
-        </p>
-      </div>
-      {/*  ) : (
-         <div className="space-y-4"> */}
-      {/* // Active Reward */}
-      {/* <div className="flex items-center gap-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50">
-            <div className="size-10 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-[#10B981]">
-              <Gift className="w-5 h-5" />
-            </div>
-
-            <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 dark:text-white">
-                Next Self-Reward: Spa Weekend
+            {isFetchingNextPage && (
+              <p className="text-xs text-center text-slate-400">
+                Loading more…
               </p>
-
-              <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="bg-[#10B981] h-1.5 rounded-full"
-                  style={{ width: "80%" }}
-                />
-              </div>
-
-              <p className="text-[10px] text-slate-500 mt-1">
-                Unlock at 500 total points (420 / 500)
-              </p>
-            </div>
-          </div> */}
-
-      {/* //Locked Reward */}
-      {/* <div className="flex items-center gap-4 p-3 rounded-lg opacity-70">
-            <div className="size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-              <Lock className="w-5 h-5" />
-            </div>
-
-            <div className="flex-1">
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                Monthly Bonus: 1:1 Coaching Call
-              </p>
-              <p className="text-[10px] text-slate-500 mt-0.5">
-                Complete 90% of habit logs to unlock
-              </p>
-            </div>
-
-            <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-500 text-[10px] font-bold rounded uppercase">
-              Locked
-            </span>
-          </div> */}
-      {/* </div> 
-      )}*/}
+            )}
+          </div>
+        </ScrollArea>
+      )}
     </section>
   );
 };
