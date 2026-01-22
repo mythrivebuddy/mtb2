@@ -56,6 +56,14 @@ export async function GET(req: Request) {
         select: {
           title: true,
           description: true,
+          options: {
+        where: { isActive: true },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+        },
+      },
         },
       },
     },
@@ -82,14 +90,17 @@ export async function GET(req: Request) {
       groupDescription: cp.rewardLibrary.description,
       status,
       canEdit,
+      options: cp.rewardLibrary.options || [],
     };
   });
 
   return NextResponse.json({
     items,
+    
     nextCursor:
       checkpoints.length === PAGE_SIZE
         ? checkpoints[checkpoints.length - 1].minPoints
         : null,
+        
   });
 }

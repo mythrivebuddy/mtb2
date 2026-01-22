@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Lock } from "lucide-react";
+import { Sparkles, Lock, ArrowLeft } from "lucide-react";
 import StaticDataBadge from "@/components/complete-makevoer-program/makeover-dashboard/StaticDataBadge";
 
 import axios from "axios";
@@ -23,6 +23,13 @@ export interface RewardItem {
   groupDescription?: string;
   status: RewardStatus;
   canEdit: boolean;
+  options:[
+    {
+      id:string;
+      title: string;
+      description: string;
+    }
+  ]
 }
 
 interface RewardsResponse {
@@ -158,9 +165,9 @@ const BonusRewards = ({ isProgramStarted, programId }: BonusRewardsProps) => {
           ) : (
             <button
               onClick={() => setView("list")}
-              className="text-xs font-semibold text-[#1183d4] hover:underline"
+              className=" flex items-center text-xs font-semibold text-[#1183d4] hover:underline"
             >
-              ← Back
+              <ArrowLeft size={14}/> Back
             </button>
           ))}
       </div>
