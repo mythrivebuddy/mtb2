@@ -253,7 +253,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const startOfToday = normalizeDateUTC(today);
+  // const startOfToday = normalizeDateUTC(today);
 
   // const incompleteTasks = await prisma.userChallengeTask.count({
   //   where: {
