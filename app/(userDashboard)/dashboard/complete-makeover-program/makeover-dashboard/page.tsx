@@ -148,7 +148,7 @@ const DashboardPage = async () => {
         {/* Bottom Grid: Bonus & Community */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Bonus & Rewards */}
-          <BonusRewards isProgramStarted={isProgramStarted} />
+          <BonusRewards isProgramStarted={isProgramStarted} programId={programState.programId}/>
           {/* Accountability Pod */}
           <AccountabilityBuddy />
         </section>

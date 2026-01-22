@@ -5,18 +5,19 @@ import { seedMakeoverGoals } from "./goals.seed";
 import { seedMakeoverIdentities } from "./identities.seed";
 import { seedMakeoverDailyActions } from "./dailyActions.seed";
 import { seedMakeoverBadges } from "./badges.seed";
-import { seedMakeoverSelfRewardLibrary } from "./self-rewards.seed";
+import { seedMakeoverSelfRewards } from "./self-rewards.seed";
+
 
 async function main() {
   console.log("🌱 Seeding Makeover Program data...");
-
+  await seedMakeoverSelfRewards()
   await seedMakeoverAreas();
   await seedMakeoverLevels();
   await seedMakeoverGoals();
   await seedMakeoverIdentities();
   await seedMakeoverDailyActions();
   await seedMakeoverBadges();
-  await seedMakeoverSelfRewardLibrary()
+  // await seedMakeoverSelfRewards()
 
   console.log("✅ Makeover Program seed completed");
 }

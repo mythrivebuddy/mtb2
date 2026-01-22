@@ -1,4 +1,4 @@
-// app/api/self-rewards/select/route.ts
+// /api/makeover-program/makeover-self-rewards/user-selection
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -10,54 +10,98 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
   const {
     programId,
     checkpointId,
-    rewardId,
-    isCustom,
+    rewardOptionId,
+    // isCustom,
     customTitle,
     customDescription,
-  } = body;
+  } = await req.json();
 
-  // 1️⃣ Get checkpoint
+  if (!programId || !checkpointId) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  }
+
+  const resolvedIsCustom = !rewardOptionId;
+
+  // 1️⃣ checkpoint
   const checkpoint = await prisma.makeoverSelfRewardCheckpoint.findUnique({
     where: { id: checkpointId },
+    include: { rewardLibrary: true },
   });
 
   if (!checkpoint) {
     return NextResponse.json({ error: "Invalid checkpoint" }, { status: 400 });
   }
 
-  // 2️⃣ Get level snapshot
-  const level = await prisma.makeoverLevel.findUnique({
-    where: { id: checkpoint.levelId },
+  // 2️⃣ prevent re-claim
+  const existing = await prisma.userMakeoverSelfReward.findFirst({
+    where: {
+      userId: session.user.id,
+      programId,
+      checkpointId,
+      completedAt: { not: null }, // ✅ ONLY BLOCK IF ACTUALLY CLAIMED
+    },
   });
 
-  if (!level) {
-    return NextResponse.json({ error: "Level not found" }, { status: 400 });
+
+  if (existing) {
+    return NextResponse.json(
+      { error: "Reward already claimed" },
+      { status: 400 }
+    );
   }
 
-  // 3️⃣ Create selection
-  const reward = await prisma.userMakeoverSelfReward.create({
-    data: {
+  // 3️⃣ validate option
+  if (!resolvedIsCustom && rewardOptionId) {
+    const option = await prisma.makeoverSelfRewardOption.findUnique({
+      where: { id: rewardOptionId },
+    });
+
+    if (!option || option.libraryId !== checkpoint.rewardLibraryId) {
+      return NextResponse.json({ error: "Invalid reward option" }, { status: 400 });
+    }
+  }
+
+  // 4️⃣ create reward (CLAIM)
+  const reward = await prisma.userMakeoverSelfReward.upsert({
+    where: {
+      userId_programId_checkpointId: {
+        userId: session.user.id,
+        programId,
+        checkpointId,
+      },
+    },
+    update: {
+      rewardOptionId: resolvedIsCustom ? null : rewardOptionId,
+      isCustom: resolvedIsCustom,
+
+      customTitle: resolvedIsCustom ? customTitle : null,
+      customDescription: resolvedIsCustom ? customDescription : null,
+
+      completedAt: new Date(), // ✅ CLAIM happens here
+    },
+    create: {
       userId: session.user.id,
       programId,
 
-      levelId: level.id,
-      levelName: level.name,
+      levelId: checkpoint.levelId,
+      levelName: checkpoint.rewardLibrary.levelName,
 
       checkpointId,
 
-      rewardId: isCustom ? null : rewardId,
-      isCustom: !!isCustom,
+      rewardOptionId: resolvedIsCustom ? null : rewardOptionId,
+      isCustom: resolvedIsCustom,
 
-      customTitle: isCustom ? customTitle : null,
-      customDescription: isCustom ? customDescription : null,
+      customTitle: resolvedIsCustom ? customTitle : null,
+      customDescription: resolvedIsCustom ? customDescription : null,
 
       pointsAtUnlock: checkpoint.minPoints,
+      completedAt: new Date(),
     },
   });
+
 
   return NextResponse.json(reward);
 }

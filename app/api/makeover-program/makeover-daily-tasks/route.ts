@@ -39,6 +39,13 @@ function formatDayWithOrdinal(date: Date) {
   return `${day}${suffix} ${month}`;
 }
 
+// const TASK_TYPE_MAP = {
+//   identityDone: "Affirm / Script / Visualize",
+//   actionDone: "Daily Action",
+//   winLogged: "Record the win",
+// } as const;
+
+
 /* ---------------- POST ---------------- */
 export async function POST(req: Request) {
   /* 0️⃣ Auth */
@@ -56,6 +63,15 @@ export async function POST(req: Request) {
   }
 
   const today = normalizeDateUTC(new Date(date));
+  // console.log("[API] Incoming request", {
+  //   userId: user.id,
+  //   areaId,
+  //   rawDate: date,
+  //   parsedDate: new Date(date),
+  //   normalizedToday: today,
+  //   field,
+  //   value,
+  // });
 
   /* 1️⃣ Resolve Program */
   const program = await prisma.program.findFirst({
@@ -83,7 +99,14 @@ export async function POST(req: Request) {
     },
   });
 
+
   const wasAlreadyChecked = existing ? existing[field] === true : false;
+  // console.log("[PROGRESS] Existing progress", {
+  //   exists: !!existing,
+  //   existingValue: existing ? existing[field] : null,
+  //   wasAlreadyChecked,
+  // });
+
 
   /* -------------------------------------------------
      3️⃣ Upsert progress (checkbox state)
@@ -123,10 +146,23 @@ export async function POST(req: Request) {
     },
   });
 
+  // console.log("[ENROLLMENT]", {
+  //   found: !!enrollment,
+  //   enrollmentId: enrollment?.enrollmentId,
+  //   challengeId: enrollment?.challengeId,
+  // });
+
+
   /* -------------------------------------------------
      4️⃣ Award +25 points (ONLY first time)
   ------------------------------------------------- */
   let pointsAwarded = 0;
+  // console.log("[TASK CHECK] Should attempt task completion?", {
+  //   value,
+  //   wasAlreadyChecked,
+  //   willRun: value === true && !wasAlreadyChecked,
+  // });
+
 
   if (value === true && !wasAlreadyChecked) {
     pointsAwarded = POINTS.PER_TASK;
@@ -161,6 +197,11 @@ export async function POST(req: Request) {
       };
 
       const keyword = descriptionMap[field];
+      // console.log("[TASK CHECK] Field → keyword mapping", {
+      //   field,
+      //   keyword,
+      // });
+
 
       await prisma.$transaction(async (tx) => {
         // 1️⃣ Find EXACT matching task (still incomplete)
@@ -174,48 +215,86 @@ export async function POST(req: Request) {
             },
           },
         });
+        // const allTasks = await tx.userChallengeTask.findMany({
+        //   where: { enrollmentId: enrollment.enrollmentId },
+        //   select: { id: true, description: true, isCompleted: true },
+        // });
+
+        // console.log("[TASK DEBUG] Existing tasks", allTasks);
+
+        // console.log("[TASK LOOKUP]", {
+        //   enrollmentId: enrollment.enrollmentId,
+        //   keyword,
+        //   taskFound: !!task,
+        //   taskId: task?.id,
+        //   taskDescription: task?.description,
+        //   taskIsCompleted: task?.isCompleted,
+        // });
 
         // ⛔ No matching task → do nothing
         if (!task) return;
 
         // 2️⃣ Complete ONLY this task
-        await tx.userChallengeTask.update({
-          where: { id: task.id },
-          data: {
-            isCompleted: true,
-            lastCompletedAt: new Date(),
-          },
-        });
+        // await tx.userChallengeTask.update({
+        //   where: { id: task.id },
+        //   data: {
+        //     isCompleted: true,
+        //     lastCompletedAt: new Date(),
+        //   },
+        // });
+
+        // console.log("[TASK UPDATE] Task marked completed", {
+        //   taskId: task.id,
+        //   completedAt: new Date(),
+        // });
 
 
       });
     }
   }
 
-  const startOfToday = normalizeDateUTC(today);
+  // const startOfToday = normalizeDateUTC(today);
 
-  const incompleteTasks = await prisma.userChallengeTask.count({
-    where: {
-      enrollmentId: enrollment?.enrollmentId,
-      OR: [
-        { isCompleted: false },
-        {
-          lastCompletedAt: {
-            lt: startOfToday,
-          },
-        },
-      ],
-    },
-  });
+  // const incompleteTasks = await prisma.userChallengeTask.count({
+  //   where: {
+  //     enrollmentId: enrollment?.enrollmentId,
+  //     OR: [
+  //       { isCompleted: false },
+  //       {
+  //         lastCompletedAt: {
+  //           lt: startOfToday,
+  //         },
+  //       },
+  //     ],
+  //   },
+  // });
 
-  const isDayComplete = incompleteTasks === 0;
+
+
+  const isDayComplete =
+    progress.identityDone &&
+    progress.actionDone &&
+    progress.winLogged;
+
+
 
 
   if (isDayComplete) {
+
+
     if (enrollment) {
       await prisma.$transaction(async (tx) => {
         // 🔒 Guard: already counted today?
-       
+
+        await tx.userChallengeTask.updateMany({
+          where: {
+            enrollmentId: enrollment.enrollmentId,
+          },
+          data: {
+            isCompleted: true,
+            lastCompletedAt: today,
+          },
+        });
 
         const alreadyCompleted = await tx.completionRecord.findUnique({
           where: {

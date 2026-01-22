@@ -1709,17 +1709,39 @@ model MakeoverSelfRewardLibrary {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  options     MakeoverSelfRewardOption[]
+  checkpoints MakeoverSelfRewardCheckpoint[]
 }
 
+model MakeoverSelfRewardOption {
+  id            String @id @default(cuid())
+
+  libraryId      String
+
+  title         String
+  description   String?
+
+  isActive      Boolean @default(true)
+
+  createdAt     DateTime @default(now())
+
+  library       MakeoverSelfRewardLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  userRewards UserMakeoverSelfReward[] 
+}
 
 model MakeoverSelfRewardCheckpoint {
   id              String @id @default(cuid())
 
   levelId         Int
+  rewardLibraryId String   
   minPoints  Int   // GLOBAL points
   orderIndex      Int
 
   createdAt       DateTime @default(now())
+  rewardLibrary   MakeoverSelfRewardLibrary  @relation(fields: [rewardLibraryId], references: [id])
+
+  userRewards     UserMakeoverSelfReward[]
 
   @@unique([levelId, minPoints])
   @@index([levelId])
@@ -1738,8 +1760,12 @@ model UserMakeoverSelfReward {
 
   checkpointId    String      // MakeoverSelfRewardCheckpoint.id
 
+  checkpoint      MakeoverSelfRewardCheckpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+
   // 🔑 reward selection
-  rewardId        String?     // null if custom reward
+  rewardOptionId          String?     // null if custom reward
+  rewardOption    MakeoverSelfRewardOption? @relation(fields: [rewardOptionId], references: [id])
+
   isCustom        Boolean @default(false)
 
   // 🧠 custom reward data
@@ -1748,6 +1774,7 @@ model UserMakeoverSelfReward {
 
   pointsAtUnlock  Int
   unlockedAt      DateTime @default(now())
+  completedAt     DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
