@@ -31,16 +31,16 @@ export async function GET(req: Request) {
   const totalPoints = pointsAgg._sum.totalPoints ?? 0;
 
   // 2️⃣ user claimed rewards
-  const userRewards = await prisma.userMakeoverSelfReward.findMany({
-    where: {
-      userId: session.user.id,
-      programId,
-    },
-    select: {
-      checkpointId: true,
-      completedAt: true,
-    },
-  });
+  // const userRewards = await prisma.userMakeoverSelfReward.findMany({
+  //   where: {
+  //     userId: session.user.id,
+  //     programId,
+  //   },
+  //   select: {
+  //     checkpointId: true,
+  //     completedAt: true,
+  //   },
+  // });
 
   // const rewardMap = new Map(
   //   userRewards.map(r => [r.checkpointId, !!r.completedAt])
