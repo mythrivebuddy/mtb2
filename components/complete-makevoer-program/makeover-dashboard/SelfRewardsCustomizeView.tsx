@@ -1,4 +1,4 @@
-import { Gift } from "lucide-react";
+import { CheckCircle, Gift } from "lucide-react";
 import { RewardItem } from "./BonusRewards";
 
 export const SelfRewardsCustomizeView = ({
@@ -34,6 +34,9 @@ export const SelfRewardsCustomizeView = ({
                 </p>
               </div>
             </div>
+            {reward.status === "completed" && (
+              <CheckCircle className="w-5 h-5 text-green-500" />
+            )}
 
             {reward.canEdit && (
               <span className="text-xs font-semibold text-[#1183d4]">Edit</span>

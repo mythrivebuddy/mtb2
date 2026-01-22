@@ -189,7 +189,7 @@ const BonusRewards = ({ isProgramStarted, programId }: BonusRewardsProps) => {
         <ScrollArea className="flex-1 min-h-0 pr-2">
           <div className="flex flex-col gap-3">
             {view === "list" ? (
-              <SelfRewardsListView rewards={rewards} />
+              <SelfRewardsListView rewards={rewards} programId={programId}/>
             ) : (
               <SelfRewardsCustomizeView rewards={rewards} />
             )}

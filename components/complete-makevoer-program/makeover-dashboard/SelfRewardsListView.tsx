@@ -1,11 +1,81 @@
 "use client";
+
 import { CheckCircle, Gift, Lock } from "lucide-react";
 import { RewardItem } from "./BonusRewards";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
 
-export const SelfRewardsListView = ({ rewards }: { rewards: RewardItem[] }) => {
+type ClaimPayload = {
+  programId: string;
+  checkpointId: string;
+  rewardOptionId: string;
+};
+
+export const SelfRewardsListView = ({
+  rewards,
+  programId,
+}: {
+  rewards: RewardItem[];
+  programId: string;
+}) => {
   const [selected, setSelected] = useState<Record<string, string>>({});
+
+  const queryClient = useQueryClient();
+
+  const claimMutation = useMutation({
+    mutationFn: async (payload: ClaimPayload) => {
+      const { data } = await axios.post(
+        "/api/makeover-program/makeover-self-rewards/user-selection",
+        payload,
+        {
+          withCredentials: true,
+        },
+      );
+      return data;
+    },
+
+    onSuccess: (_data, variables) => {
+      queryClient.setQueryData(["bonus-rewards", programId], (oldData: any) => {
+        if (!oldData) return oldData;
+
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            items: page.items.map((item: RewardItem) =>
+              item.checkpointId === variables.checkpointId
+                ? { ...item, status: "completed" }
+                : item,
+            ),
+          })),
+        };
+      });
+
+      const claimedReward = rewards.find(
+        (r) => r.checkpointId === variables.checkpointId,
+      );
+
+      const optionTitle = claimedReward?.options?.find(
+        (o) => o.id === variables.rewardOptionId,
+      )?.title;
+
+      toast.success(
+        optionTitle
+          ? `${optionTitle} reward claimed`
+          : "Your reward has been marked as claimed",
+      );
+      //clearing selected option for this checkpoint
+      setSelected((prev) => {
+        const next = { ...prev };
+        delete next[variables.checkpointId];
+        return next;
+      });
+    },
+  });
+
   return (
     <>
       {rewards.map((reward) => {
@@ -62,14 +132,28 @@ export const SelfRewardsListView = ({ rewards }: { rewards: RewardItem[] }) => {
 
                       {/* Claim button */}
                       <Button
-                        disabled={!selected[reward.checkpointId]}
+                        disabled={
+                          !selected[reward.checkpointId] ||
+                          claimMutation.isPending
+                        }
+                        onClick={() =>
+                          claimMutation.mutate({
+                            programId,
+                            checkpointId: reward.checkpointId,
+                            rewardOptionId: selected[reward.checkpointId],
+                          })
+                        }
                         className={`mt-2 w-full text-xs font-semibold px-3 py-1 rounded-md ${
                           selected[reward.checkpointId]
-                            ? "bg-[#1183d4] text-white"
+                            ? "bg-[#1183d4] hover:bg-[#0c62a0] text-white"
                             : "bg-slate-200 text-slate-400 cursor-not-allowed"
                         }`}
                       >
-                        Claim
+                        {claimMutation.isPending &&
+                        claimMutation.variables?.checkpointId ===
+                          reward.checkpointId
+                          ? "Claiming..."
+                          : "Claim"}
                       </Button>
                     </div>
                   )}
