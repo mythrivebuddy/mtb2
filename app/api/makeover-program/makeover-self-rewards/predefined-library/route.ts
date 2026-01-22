@@ -42,9 +42,9 @@ export async function GET(req: Request) {
     },
   });
 
-  const rewardMap = new Map(
-    userRewards.map(r => [r.checkpointId, !!r.completedAt])
-  );
+  // const rewardMap = new Map(
+  //   userRewards.map(r => [r.checkpointId, !!r.completedAt])
+  // );
 
   // 3️⃣ checkpoints + group
   const checkpoints = await prisma.makeoverSelfRewardCheckpoint.findMany({
@@ -57,13 +57,25 @@ export async function GET(req: Request) {
           title: true,
           description: true,
           options: {
-        where: { isActive: true },
-        select: {
-          id: true,
-          title: true,
-          description: true,
+            where: { isActive: true },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+            },
+          },
         },
       },
+      userRewards: {
+        where: {
+          userId: session.user.id,
+          programId,
+        },
+        select: {
+          customTitle: true,
+          customDescription: true,
+          completedAt: true,
+          isCustom: true,
         },
       },
     },
@@ -71,36 +83,45 @@ export async function GET(req: Request) {
   // ok from this 
 
   const items = checkpoints.map(cp => {
-    let status: "locked" | "unlocked" | "completed" = "locked";
-    let canEdit = false;
 
-    if (rewardMap.get(cp.id)) {
-      status = "completed";
-    } else if (cp.minPoints <= totalPoints) {
-      status = "unlocked";
-    } else {
-      status = "locked";
-      canEdit = true; // 👈 ONLY locked rewards editable
-    }
+    const userReward = cp.userRewards[0];
+    const isCustom = userReward?.isCustom === true;
 
     return {
       checkpointId: cp.id,
       minPoints: cp.minPoints,
-      groupTitle: cp.rewardLibrary.title,
-      groupDescription: cp.rewardLibrary.description,
-      status,
-      canEdit,
-      options: cp.rewardLibrary.options || [],
+
+      groupTitle: userReward?.customTitle ?? cp.rewardLibrary.title,
+      groupDescription:
+        userReward?.customDescription ?? cp.rewardLibrary.description,
+
+      status: userReward?.completedAt
+        ? "completed"
+        : cp.minPoints <= totalPoints
+          ? "unlocked"
+          : "locked",
+
+      canEdit: cp.minPoints > totalPoints,
+
+
+      options: isCustom
+        ? []
+        : cp.rewardLibrary.options.map((opt) => ({
+          id: opt.id,
+          title: opt.title,
+          description: opt.description,
+        })),
     };
+
   });
 
   return NextResponse.json({
     items,
-    
+
     nextCursor:
       checkpoints.length === PAGE_SIZE
         ? checkpoints[checkpoints.length - 1].minPoints
         : null,
-        
+
   });
 }

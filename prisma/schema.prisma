@@ -1741,6 +1741,8 @@ model MakeoverSelfRewardCheckpoint {
   createdAt       DateTime @default(now())
   rewardLibrary   MakeoverSelfRewardLibrary  @relation(fields: [rewardLibraryId], references: [id])
 
+  userRewards     UserMakeoverSelfReward[]
+
   @@unique([levelId, minPoints])
   @@index([levelId])
 }
@@ -1757,6 +1759,8 @@ model UserMakeoverSelfReward {
   levelName       String
 
   checkpointId    String      // MakeoverSelfRewardCheckpoint.id
+
+  checkpoint      MakeoverSelfRewardCheckpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
 
   // 🔑 reward selection
   rewardOptionId          String?     // null if custom reward

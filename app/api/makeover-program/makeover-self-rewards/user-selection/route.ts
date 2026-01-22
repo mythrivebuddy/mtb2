@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     programId,
     checkpointId,
     rewardOptionId,
-    isCustom,
+    // isCustom,
     customTitle,
     customDescription,
   } = await req.json();
@@ -22,6 +22,8 @@ export async function POST(req: Request) {
   if (!programId || !checkpointId) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
+
+  const resolvedIsCustom = !rewardOptionId;
 
   // 1️⃣ checkpoint
   const checkpoint = await prisma.makeoverSelfRewardCheckpoint.findUnique({
@@ -39,8 +41,10 @@ export async function POST(req: Request) {
       userId: session.user.id,
       programId,
       checkpointId,
+      completedAt: { not: null }, // ✅ ONLY BLOCK IF ACTUALLY CLAIMED
     },
   });
+
 
   if (existing) {
     return NextResponse.json(
@@ -50,7 +54,7 @@ export async function POST(req: Request) {
   }
 
   // 3️⃣ validate option
-  if (!isCustom && rewardOptionId) {
+  if (!resolvedIsCustom && rewardOptionId) {
     const option = await prisma.makeoverSelfRewardOption.findUnique({
       where: { id: rewardOptionId },
     });
@@ -61,8 +65,24 @@ export async function POST(req: Request) {
   }
 
   // 4️⃣ create reward (CLAIM)
-  const reward = await prisma.userMakeoverSelfReward.create({
-    data: {
+  const reward = await prisma.userMakeoverSelfReward.upsert({
+    where: {
+      userId_programId_checkpointId: {
+        userId: session.user.id,
+        programId,
+        checkpointId,
+      },
+    },
+    update: {
+      rewardOptionId: resolvedIsCustom ? null : rewardOptionId,
+      isCustom: resolvedIsCustom,
+
+      customTitle: resolvedIsCustom ? customTitle : null,
+      customDescription: resolvedIsCustom ? customDescription : null,
+
+      completedAt: new Date(), // ✅ CLAIM happens here
+    },
+    create: {
       userId: session.user.id,
       programId,
 
@@ -71,16 +91,17 @@ export async function POST(req: Request) {
 
       checkpointId,
 
-      rewardOptionId: isCustom ? null : rewardOptionId,
-      isCustom: !!isCustom,
+      rewardOptionId: resolvedIsCustom ? null : rewardOptionId,
+      isCustom: resolvedIsCustom,
 
-      customTitle: isCustom ? customTitle : null,
-      customDescription: isCustom ? customDescription : null,
+      customTitle: resolvedIsCustom ? customTitle : null,
+      customDescription: resolvedIsCustom ? customDescription : null,
 
       pointsAtUnlock: checkpoint.minPoints,
       completedAt: new Date(),
     },
   });
+
 
   return NextResponse.json(reward);
 }

@@ -191,7 +191,7 @@ const BonusRewards = ({ isProgramStarted, programId }: BonusRewardsProps) => {
             {view === "list" ? (
               <SelfRewardsListView rewards={rewards} programId={programId}/>
             ) : (
-              <SelfRewardsCustomizeView rewards={rewards} />
+              <SelfRewardsCustomizeView rewards={rewards} programId={programId}/>
             )}
 
             {/* infinite scroll trigger — DO NOT MOVE */}
