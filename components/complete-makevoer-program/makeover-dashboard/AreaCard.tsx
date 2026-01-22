@@ -80,6 +80,8 @@ const AreaCard = ({
     retryOnMount:true
   });
 
+  
+
   if (isLoading) {
     return <AreaCardSkeleton />;
   }

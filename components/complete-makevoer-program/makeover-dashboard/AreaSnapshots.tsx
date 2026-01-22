@@ -1,5 +1,8 @@
+"use client";
 import { AREAS } from "@/lib/utils/makeover-program/makeover-dashboard/meta-areas";
 import AreaCard from "./AreaCard";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 interface AreaSnapshotsProps {
   commitments: {
@@ -13,11 +16,19 @@ interface AreaSnapshotsProps {
   }[];
   challengesByArea: Record<number, string[]>;
 }
+type AreaProgressMap = Record<number, number>;
 
 const AreaSnapshots = ({
   commitments,
   challengesByArea,
 }: AreaSnapshotsProps) => {
+  const { data: areaProgress } = useQuery({
+    queryKey: ["area-progress"],
+    queryFn: async () => {
+      const res = await axios.get("/api/makeover-program/area-progress");
+      return res.data.data as AreaProgressMap;
+    },
+  });
   return (
     <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {commitments.map((commitment, index) => {
@@ -35,7 +46,7 @@ const AreaSnapshots = ({
             title={commitment.areaName}
             label={`Area ${index + 1}`}
             goal={commitment.goalText}
-            progress={0}
+            progress={areaProgress?.[area.id] ?? 0}
             // points={0}
             color={area.color}
             bgColor={area.bgColor}
