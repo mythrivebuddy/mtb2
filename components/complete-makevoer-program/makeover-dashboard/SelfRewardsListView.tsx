@@ -89,8 +89,7 @@ export const SelfRewardsListView = ({
         const isUnlocked =
           reward.status === "unlocked" || reward.status === "completed";
         const isHighlightedUnlocked = reward.status === "unlocked";
-        
-        // This variable prevents the TypeScript strict-comparison error
+
         const requiresOption = (reward.options?.length ?? 0) > 0;
 
         return (
@@ -121,7 +120,6 @@ export const SelfRewardsListView = ({
                   {reward.status === "unlocked" ? (
                     <div className="flex flex-col md:flex-row w-full mt-3 gap-3">
                       {/* Left Column: Options */}
-                      {/* CHANGED: Replaced 'sm:max-w-[60%]' with 'w-full md:w-[60%] flex-shrink-0' to lock the width and align all buttons */}
                       <div className="space-y-3 w-full md:w-[60%] flex-shrink-0">
                         {reward.options?.map((opt) => (
                           <label
@@ -165,7 +163,7 @@ export const SelfRewardsListView = ({
                                 : undefined,
                             })
                           }
-                          className={`w-full text-sm font-semibold px-4 py-2.5 rounded-lg transition-all ${
+                          className={`w-full text-sm font-semibold px-2 py-2 sm:py-4 rounded-lg transition-all ${
                             (requiresOption && selected[reward.checkpointId]) || !requiresOption
                               ? "bg-[#1183d4] hover:bg-[#0c62a0] text-white shadow-md"
                               : "bg-[#1183d4] hover:bg-[#0c62a0] text-white opacity-80 cursor-not-allowed"
@@ -175,7 +173,7 @@ export const SelfRewardsListView = ({
                           claimMutation.variables?.checkpointId ===
                             reward.checkpointId
                             ? "Claiming..."
-                            : "Claim"}
+                            : "Claim Now"}
                         </button>
                         <p className="text-xs text-slate-500 text-center md:text-left">
                           Unlocked at {reward.minPoints} points

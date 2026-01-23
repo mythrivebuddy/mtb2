@@ -137,7 +137,7 @@ const DashboardPage = async () => {
         </section>
 
         {/* Global Progress Section */}
-        <GlobalProgress userId={userId} programId={programState.programId}/>
+        <GlobalProgress userId={userId} programId={programState.programId} programMaxPoints={programState.program.max_golbal_points ?? 0}/>
 
         {/* Area Snapshots */}
         <AreaSnapshots

@@ -13,9 +13,11 @@ import { calculateGoaProgressPercentage } from "@/lib/utils/makeover-program/mak
 const GlobalProgress = async ({
   userId,
   programId,
+  programMaxPoints,
 }: {
   userId: string;
   programId: string;
+  programMaxPoints: number;
 }) => {
   const aggregate = await prisma.makeoverPointsSummary.aggregate({
     where: {
@@ -98,6 +100,7 @@ const GlobalProgress = async ({
     totalPoints: globalPoints,
     // levelId,
     // earnedBadgesCount: unlockedBadges.length,
+    programMaxPoints,
   });
 
   const levelInBadges = `${currentLevel?.name} Badge`;
@@ -121,27 +124,19 @@ const GlobalProgress = async ({
         label="Progress Journey "
         className="w-fit relative -top-10 -left-11 "
       />
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-8 sm:mb-4 gap-2">
         <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <PlaneTakeoff className="w-6 h-6 text-[#1183d4]" />
           Goa Journey Progress
         </h3>
-        <div className="flex flex-col">
-          <p className="text-sm font-bold text-[#0f2cbd] dark:text-white">
-            {globalPoints ?? 0} MoS
-          </p>
-          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-            Target: December 2026
-          </span>
-        </div>
       </div>
-      <div className="relative h-6 bg-slate-100 dark:bg-slate-700 rounded-full mb-6 shadow-inner">
+      <div className="relative h-6 bg-[#059669] dark:bg-slate-700 rounded-full mb-6 shadow-inner">
         {/* Wide eligibility threshold with label */}
-        <div className="absolute top-0 h-full z-20" style={{ left: "75%" }}>
+        <div className="absolute  top-0 h-full z-20" style={{ left: "75%" }}>
           <div className="relative -translate-x-1/2 h-full flex flex-col items-center">
             {/* Label */}
             <span
-              className="absolute  -top-7 max-sm:left-[3px] whitespace-nowrap text-[8px] sm:text-[10px] font-semibold
+              className="absolute  -top-7  whitespace-nowrap text-[8px] sm:text-[10px] font-semibold
   text-white bg-[#1183d4]  px-2 py-0.5 rounded-full shadow-sm"
             >
               75% Min Eligibility
@@ -164,7 +159,18 @@ const GlobalProgress = async ({
           {progressPercentage}%
         </span>
       </div>
-
+      <div className="flex gap-6 justify-between items-center w-full mb-6 px-1">
+        <p className="text-sm font-bold text-[#0f2cbd] dark:text-white">
+          {(globalPoints ?? 0).toLocaleString()} MoS
+        </p>
+        <span className="flex flex-col sm:flex-row text-sm font-medium text-slate-500 dark:text-slate-400">
+          <span>Target:</span>
+          <span>December 2026</span>
+        </span>
+        <p className="text-sm font-bold text-[#0f2cbd] dark:text-white">
+          Max: {programMaxPoints.toLocaleString()} MoS
+        </p>
+      </div>
       <Link
         href={`/dashboard/complete-makeover-program/achievements`}
         className="flex flex-col sm:flex-row sm:justify-between gap-6 pt-2 border-t border-slate-100 "
