@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  InfiniteData,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { CheckCircle, Gift } from "lucide-react";
+import { CheckCircle, Gift, Star } from "lucide-react";
 import { RewardItem } from "./BonusRewards";
 
 export type RewardsResponse = {
   items: RewardItem[];
   nextCursor: number | null;
 };
-
 
 export const SelfRewardsCustomizeView = ({
   rewards,
@@ -77,14 +80,20 @@ export const SelfRewardsCustomizeView = ({
         const isEditing = editingId === reward.checkpointId;
         const isUnlocked =
           reward.status === "unlocked" || reward.status === "completed";
+        const isHighlightedUnlocked = reward.status === "unlocked";
 
         return (
           <div
             key={reward.checkpointId}
-            className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 px-4 py-3"
+            className={`rounded-lg border flex justify-between  px-4 py-3 space-y-3
+            ${
+              isHighlightedUnlocked
+                ? "bg-gradient-to-r from-yellow-300 to-amber-100"
+                : "border-slate-200 dark:border-slate-700"
+            }`}
           >
             {/* LEFT */}
-            <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-start gap-3 flex-1">
               <Gift
                 className={`w-5 h-5 ${
                   isUnlocked ? "text-[#1183d4]" : "text-slate-400"
@@ -156,13 +165,17 @@ export const SelfRewardsCustomizeView = ({
                 )}
 
                 <p className="text-xs text-slate-500">
-                  Unlocks at {reward.minPoints} pts
+                  {reward.status === "completed" ? "Claimed" : "Unlocks"} at{" "}
+                  {reward.minPoints} points
                 </p>
               </div>
             </div>
 
             {/* RIGHT */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              {isHighlightedUnlocked && (
+                <Star className="w-6 h-6  text-amber-400  fill-current" />
+              )}
               {reward.status === "completed" && (
                 <CheckCircle className="w-5 h-5 text-green-500" />
               )}
