@@ -1343,6 +1343,7 @@ model Program {
   endDate          DateTime?
   onboardingStartDate DateTime?
   onboardingEndDate  DateTime?
+  max_golbal_points  Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
