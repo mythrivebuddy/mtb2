@@ -85,7 +85,7 @@ export const SelfRewardsCustomizeView = ({
         return (
           <div
             key={reward.checkpointId}
-            className={`rounded-lg border flex justify-between  px-4 py-3 space-y-3
+            className={`rounded-lg border flex items-start justify-between  px-4 py-3 
             ${
               isHighlightedUnlocked
                 ? "bg-gradient-to-r from-yellow-300 to-amber-100"
@@ -172,7 +172,7 @@ export const SelfRewardsCustomizeView = ({
             </div>
 
             {/* RIGHT */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-start mt-0.5 gap-2">
               {isHighlightedUnlocked && (
                 <Star className="w-6 h-6  text-amber-400  fill-current" />
               )}
