@@ -1,10 +1,13 @@
 "use client";
 
-import { CheckCircle, Gift, Lock } from "lucide-react";
+import { CheckCircle, Gift, Lock, Star } from "lucide-react";
 import { RewardItem } from "./BonusRewards";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { InfiniteData, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  InfiniteData,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { RewardsResponse } from "./SelfRewardsCustomizeView";
@@ -39,21 +42,24 @@ export const SelfRewardsListView = ({
     },
 
     onSuccess: (_data, variables) => {
-      queryClient.setQueryData(["bonus-rewards", programId], (oldData: InfiniteData<RewardsResponse> | undefined) => {
-        if (!oldData) return oldData;
+      queryClient.setQueryData(
+        ["bonus-rewards", programId],
+        (oldData: InfiniteData<RewardsResponse> | undefined) => {
+          if (!oldData) return oldData;
 
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page) => ({
-            ...page,
-            items: page.items.map((item: RewardItem) =>
-              item.checkpointId === variables.checkpointId
-                ? { ...item, status: "completed" }
-                : item,
-            ),
-          })),
-        };
-      });
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              items: page.items.map((item: RewardItem) =>
+                item.checkpointId === variables.checkpointId
+                  ? { ...item, status: "completed" }
+                  : item,
+              ),
+            })),
+          };
+        },
+      );
 
       const claimedReward = rewards.find(
         (r) => r.checkpointId === variables.checkpointId,
@@ -65,7 +71,7 @@ export const SelfRewardsListView = ({
 
       toast.success(
         optionTitle
-          ? `${optionTitle} reward claimed`
+          ? `${optionTitle} reward has been claimed`
           : "Your reward has been marked as claimed",
       );
       //clearing selected option for this checkpoint
@@ -82,11 +88,17 @@ export const SelfRewardsListView = ({
       {rewards.map((reward) => {
         const isUnlocked =
           reward.status === "unlocked" || reward.status === "completed";
+        const isHighlightedUnlocked = reward.status === "unlocked";
 
         return (
           <div
             key={reward.checkpointId}
-            className="rounded-lg border flex justify-between border-slate-200 dark:border-slate-700 px-4 py-3 space-y-3"
+            className={`rounded-lg border flex justify-between  px-4 py-3 space-y-3
+            ${
+              isHighlightedUnlocked
+                ? "bg-gradient-to-r from-yellow-300 to-amber-100"
+                : "border-slate-200 dark:border-slate-700"
+            }`}
           >
             {/* Left side: Gift + text */}
             <div className="flex items-start justify-between">
@@ -136,7 +148,7 @@ export const SelfRewardsListView = ({
                           ))}
 
                           {/* Claim button */}
-                          <Button
+                          <button
                             disabled={
                               (requiresOption &&
                                 !selected[reward.checkpointId]) ||
@@ -151,12 +163,12 @@ export const SelfRewardsListView = ({
                                   : undefined,
                               })
                             }
-                            className={`mt-2 w-full text-xs font-semibold px-3 py-1 rounded-md ${
+                            className={`mt-2 w-full text-xs font-semibold px-3 py-1.5 rounded-md ${
                               requiresOption && selected[reward.checkpointId]
                                 ? "bg-[#1183d4] hover:bg-[#0c62a0] text-white"
                                 : !requiresOption
                                   ? "bg-[#1183d4] hover:bg-[#0c62a0] text-white"
-                                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                  : "bg-[#1183d4] hover:bg-[#0c62a0] text-white opacity-80 cursor-not-allowed"
                             }`}
                           >
                             {claimMutation.isPending &&
@@ -164,18 +176,20 @@ export const SelfRewardsListView = ({
                               reward.checkpointId
                               ? "Claiming..."
                               : "Claim"}
-                          </Button>
+                          </button>
                         </div>
                       );
                     })()}
-
                   <p className="text-xs text-slate-500">
-                    Unlocks at {reward.minPoints} pts
+                    {reward.status === "completed" ? "Claimed" : "Unlocks"} at{" "}
+                    {reward.minPoints} points
                   </p>
                 </div>
               </div>
             </div>
-
+            {isHighlightedUnlocked && (
+              <Star className="w-6 h-6  text-amber-400  fill-current"/>
+            )}
             {/* Right side: status */}
             {reward.status === "completed" && (
               <CheckCircle className="w-5 h-5 text-green-500" />
