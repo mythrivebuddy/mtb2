@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
 import { createLogWin } from "@/lib/utils/makeover-program/makeover-daily-tasks/createLogWin";
-
+function normalizeToUTCStartOfDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+}
 
 /* ---------------- CONSTANTS ---------------- */
 const POINTS = {
@@ -35,6 +39,13 @@ function formatDayWithOrdinal(date: Date) {
   return `${day}${suffix} ${month}`;
 }
 
+// const TASK_TYPE_MAP = {
+//   identityDone: "Affirm / Script / Visualize",
+//   actionDone: "Daily Action",
+//   winLogged: "Record the win",
+// } as const;
+
+
 /* ---------------- POST ---------------- */
 export async function POST(req: Request) {
   /* 0️⃣ Auth */
@@ -47,11 +58,20 @@ export async function POST(req: Request) {
   if (!areaId || !date || !field || typeof value !== "boolean") {
     return NextResponse.json(
       { error: "areaId, date, field and value are required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
-  const today = normalizeDateUTC();
+  const today = normalizeDateUTC(new Date(date));
+  // console.log("[API] Incoming request", {
+  //   userId: user.id,
+  //   areaId,
+  //   rawDate: date,
+  //   parsedDate: new Date(date),
+  //   normalizedToday: today,
+  //   field,
+  //   value,
+  // });
 
   /* 1️⃣ Resolve Program */
   const program = await prisma.program.findFirst({
@@ -79,7 +99,13 @@ export async function POST(req: Request) {
     },
   });
 
+
   const wasAlreadyChecked = existing ? existing[field] === true : false;
+  // console.log("[PROGRESS] Existing progress", {
+  //   exists: !!existing,
+  //   existingValue: existing ? existing[field] : null,
+  //   wasAlreadyChecked,
+  // });
 
 
   /* -------------------------------------------------
@@ -109,10 +135,34 @@ export async function POST(req: Request) {
     },
   });
 
+  const enrollment = await prisma.userMakeoverChallengeEnrollment.findFirst({
+    where: {
+      userId: user.id,
+      programId,
+      areaId,
+    },
+    include: {
+      enrollment: true,
+    },
+  });
+
+  // console.log("[ENROLLMENT]", {
+  //   found: !!enrollment,
+  //   enrollmentId: enrollment?.enrollmentId,
+  //   challengeId: enrollment?.challengeId,
+  // });
+
+
   /* -------------------------------------------------
      4️⃣ Award +25 points (ONLY first time)
   ------------------------------------------------- */
   let pointsAwarded = 0;
+  // console.log("[TASK CHECK] Should attempt task completion?", {
+  //   value,
+  //   wasAlreadyChecked,
+  //   willRun: value === true && !wasAlreadyChecked,
+  // });
+
 
   if (value === true && !wasAlreadyChecked) {
     pointsAwarded = POINTS.PER_TASK;
@@ -138,15 +188,6 @@ export async function POST(req: Request) {
   }
   // completes challenge tasks
   if (value === true && !wasAlreadyChecked) {
-    const enrollment =
-      await prisma.userMakeoverChallengeEnrollment.findFirst({
-        where: {
-          userId: user.id,
-          programId,
-          areaId,
-        },
-      });
-
     if (enrollment) {
       // 🎯 Map checkbox → description keyword
       const descriptionMap: Record<typeof field, string> = {
@@ -156,6 +197,11 @@ export async function POST(req: Request) {
       };
 
       const keyword = descriptionMap[field];
+      // console.log("[TASK CHECK] Field → keyword mapping", {
+      //   field,
+      //   keyword,
+      // });
+
 
       await prisma.$transaction(async (tx) => {
         // 1️⃣ Find EXACT matching task (still incomplete)
@@ -169,32 +215,157 @@ export async function POST(req: Request) {
             },
           },
         });
+        // const allTasks = await tx.userChallengeTask.findMany({
+        //   where: { enrollmentId: enrollment.enrollmentId },
+        //   select: { id: true, description: true, isCompleted: true },
+        // });
+
+        // console.log("[TASK DEBUG] Existing tasks", allTasks);
+
+        // console.log("[TASK LOOKUP]", {
+        //   enrollmentId: enrollment.enrollmentId,
+        //   keyword,
+        //   taskFound: !!task,
+        //   taskId: task?.id,
+        //   taskDescription: task?.description,
+        //   taskIsCompleted: task?.isCompleted,
+        // });
 
         // ⛔ No matching task → do nothing
         if (!task) return;
 
         // 2️⃣ Complete ONLY this task
-        await tx.userChallengeTask.update({
-          where: { id: task.id },
+        // await tx.userChallengeTask.update({
+        //   where: { id: task.id },
+        //   data: {
+        //     isCompleted: true,
+        //     lastCompletedAt: new Date(),
+        //   },
+        // });
+
+        // console.log("[TASK UPDATE] Task marked completed", {
+        //   taskId: task.id,
+        //   completedAt: new Date(),
+        // });
+
+
+      });
+    }
+  }
+
+  // const startOfToday = normalizeDateUTC(today);
+
+  // const incompleteTasks = await prisma.userChallengeTask.count({
+  //   where: {
+  //     enrollmentId: enrollment?.enrollmentId,
+  //     OR: [
+  //       { isCompleted: false },
+  //       {
+  //         lastCompletedAt: {
+  //           lt: startOfToday,
+  //         },
+  //       },
+  //     ],
+  //   },
+  // });
+
+
+
+  const isDayComplete =
+    progress.identityDone &&
+    progress.actionDone &&
+    progress.winLogged;
+
+
+
+
+  if (isDayComplete) {
+
+
+    if (enrollment) {
+      await prisma.$transaction(async (tx) => {
+        // 🔒 Guard: already counted today?
+
+        await tx.userChallengeTask.updateMany({
+          where: {
+            enrollmentId: enrollment.enrollmentId,
+          },
           data: {
             isCompleted: true,
-            lastCompletedAt: new Date(),
+            lastCompletedAt: today,
           },
         });
 
-        // 3️⃣ Update streak ONCE
+        const alreadyCompleted = await tx.completionRecord.findUnique({
+          where: {
+            userId_challengeId_date: {
+              userId: user.id,
+              challengeId: enrollment.challengeId,
+              date: today,
+            },
+          },
+        });
+
+        if (alreadyCompleted) {
+          return;
+        }
+
+        // ✅ Increment streak ONCE
+        const now = new Date();
+        const todayStart = normalizeToUTCStartOfDay(now);
+
+        const yesterday = new Date(todayStart);
+        yesterday.setUTCDate(todayStart.getUTCDate() - 1);
+
+        const lastUpdateDate = enrollment.enrollment.lastStreakUpdate
+          ? normalizeToUTCStartOfDay(
+            new Date(enrollment.enrollment.lastStreakUpdate),
+          )
+          : null;
+
+        let newStreak = enrollment.enrollment.currentStreak;
+
+        // 🔴 Reset streak if missed a day
+        if (newStreak > 0 && lastUpdateDate && lastUpdateDate < yesterday) {
+          newStreak = 0;
+        }
+
+        // 🟢 Continue or start streak
+        if (
+          lastUpdateDate &&
+          lastUpdateDate.getTime() === yesterday.getTime()
+        ) {
+          newStreak += 1; // continue streak
+        } else if (!lastUpdateDate || lastUpdateDate < yesterday) {
+          newStreak = 1; // start new streak
+        }
+
+        // 🧠 If already updated today → do nothing
+        if (
+          lastUpdateDate &&
+          lastUpdateDate.getTime() === todayStart.getTime()
+        ) {
+          return;
+        }
+
+        // console.log("[STREAK] Updating streak", {
+        //   newStreak,
+        // });
+
         await tx.challengeEnrollment.update({
           where: { id: enrollment.enrollmentId },
           data: {
-            currentStreak: { increment: 1 },
-            longestStreak: {
-              increment: 1,
-            },
-            lastStreakUpdate: new Date(),
+            currentStreak: newStreak,
+            longestStreak: Math.max(
+              enrollment.enrollment.longestStreak,
+              newStreak,
+            ),
+            lastStreakUpdate: now,
           },
         });
 
-        // 4️⃣ Completion record
+        // ✅ Mark day completed
+
         await tx.completionRecord.upsert({
           where: {
             userId_challengeId_date: {
@@ -203,9 +374,7 @@ export async function POST(req: Request) {
               date: today,
             },
           },
-          update: {
-            status: "COMPLETED",
-          },
+          update: { status: "COMPLETED" },
           create: {
             userId: user.id,
             challengeId: enrollment.challengeId,
@@ -213,11 +382,9 @@ export async function POST(req: Request) {
             status: "COMPLETED",
           },
         });
-
       });
     }
   }
-
 
   /* -------------------------------------------------
      5️⃣ Log WIN (only when winLogged checked first time)
@@ -258,194 +425,3 @@ export async function POST(req: Request) {
 }
 
 
-
-
-//! /api/makeover-program/makeover-daily-tasks
-// import { NextResponse } from "next/server";
-// import { prisma } from "@/lib/prisma";
-// import { checkRole } from "@/lib/utils/auth";
-// import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
-
-// interface RequestBody {
-//   areaId: number;
-//   date: string;
-// }
-
-// export async function POST(req: Request) {
-//   /* -------------------------------------------------
-//      0️⃣ Auth
-//   ------------------------------------------------- */
-//   const session = await checkRole("USER");
-//   const user = session.user;
-
-//   const body = (await req.json()) as RequestBody;
-//   const { areaId, date } = body;
-
-//   if (!areaId || !date) {
-//     return NextResponse.json(
-//       { error: "areaId and date are required" },
-//       { status: 400 }
-//     );
-//   }
-
-//   const today = normalizeDateUTC();
-
-//   /* -------------------------------------------------
-//      1️⃣ Resolve Program
-//   ------------------------------------------------- */
-//   const program = await prisma.program.findFirst({
-//     where: { slug: "2026-complete-makeover" },
-//     select: { id: true },
-//   });
-
-//   if (!program) {
-//     return NextResponse.json(
-//       { error: "Program not found" },
-//       { status: 404 }
-//     );
-//   }
-
-//   const programId = program.id;
-
-//   /* -------------------------------------------------
-//      2️⃣ Check if already completed today (GUARD)
-//   ------------------------------------------------- */
-//   const existingLog = await prisma.makeoverProgressLog.findUnique({
-//     where: {
-//       userId_programId_areaId_date: {
-//         userId: user.id,
-//         programId,
-//         areaId,
-//         date: today,
-//       },
-//     },
-//   });
-
-//   if (
-//     existingLog &&
-//     existingLog.identityDone &&
-//     existingLog.actionDone &&
-//     existingLog.winLogged &&
-//     existingLog.pointsEarned > 0
-//   ) {
-//     return NextResponse.json({
-//       success: true,
-//       alreadyCompleted: true,
-//       pointsAwarded: 0,
-//     });
-//   }
-
-//   /* -------------------------------------------------
-//      3️⃣ Fetch enrollment (for challenge sync)
-//   ------------------------------------------------- */
-//   const enrollment = await prisma.userMakeoverChallengeEnrollment.findFirst({
-//     where: {
-//       userId: user.id,
-//       programId,
-//       areaId,
-//     },
-//     include: {
-//       enrollment: true,
-//     },
-//   });
-
-//   /* -------------------------------------------------
-//      4️⃣ Atomic transaction
-//   ------------------------------------------------- */
-//   await prisma.$transaction([
-//     // Progress log
-//     prisma.makeoverProgressLog.upsert({
-//       where: {
-//         userId_programId_areaId_date: {
-//           userId: user.id,
-//           programId,
-//           areaId,
-//           date: today,
-//         },
-//       },
-//       update: {
-//         identityDone: true,
-//         actionDone: true,
-//         winLogged: true,
-//         pointsEarned: 75,
-//       },
-//       create: {
-//         userId: user.id,
-//         programId,
-//         areaId,
-//         date: today,
-//         identityDone: true,
-//         actionDone: true,
-//         winLogged: true,
-//         pointsEarned: 75,
-//       },
-//     }),
-
-//     // Lifetime area points
-//     prisma.makeoverPointsSummary.upsert({
-//       where: {
-//         userId_programId_areaId: {
-//           userId: user.id,
-//           programId,
-//           areaId,
-//         },
-//       },
-//       update: {
-//         totalPoints: { increment: 75 },
-//       },
-//       create: {
-//         userId: user.id,
-//         programId,
-//         areaId,
-//         totalPoints: 75,
-//       },
-//     }),
-
-//     // Challenge sync (if enrolled)
-//     ...(enrollment
-//       ? [
-//           prisma.userChallengeTask.updateMany({
-//             where: {
-//               enrollmentId: enrollment.enrollmentId,
-//               isCompleted: false,
-//             },
-//             data: {
-//               isCompleted: true,
-//               lastCompletedAt: new Date(),
-//             },
-//           }),
-
-//           prisma.challengeEnrollment.update({
-//             where: { id: enrollment.enrollmentId },
-//             data: {
-//               currentStreak: enrollment.enrollment.currentStreak + 1,
-//               longestStreak: Math.max(
-//                 enrollment.enrollment.longestStreak,
-//                 enrollment.enrollment.currentStreak + 1
-//               ),
-//               lastStreakUpdate: new Date(),
-//             },
-//           }),
-
-//           prisma.completionRecord.create({
-//             data: {
-//               userId: user.id,
-//               challengeId: enrollment.challengeId,
-//               date: today,
-//               status: "COMPLETED",
-//             },
-//           }),
-//         ]
-//       : []),
-//   ]);
-
-//   /* -------------------------------------------------
-//      5️⃣ Response
-//   ------------------------------------------------- */
-//   return NextResponse.json({
-//     success: true,
-//     areaId,
-//     pointsAwarded: 75,
-//     date: today,
-//   });
-// }

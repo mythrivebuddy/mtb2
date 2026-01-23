@@ -2,22 +2,33 @@
 import { Sparkles, Clock, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getMakeoverProgramWeeksAndQuarters } from "@/lib/utils/makeover-program/makeover-dashboard/get-weeks-quarters";
 
 const DashboardHeader = ({
   isProgramStarted,
   hasThreeActions,
+  programStartDate,
+  programEndDate,
 }: {
   isProgramStarted: boolean;
   hasThreeActions: boolean;
+  programStartDate: Date | null;
+  programEndDate: Date | null;
 }) => {
   const isDailyActionsSettingLocked = hasThreeActions && isProgramStarted;
+  const { currentWeekNumber, quarterNumber } =
+    getMakeoverProgramWeeksAndQuarters({
+      startDate: programStartDate,
+      endDate: programEndDate,
+    });
+
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-col md:flex-row md:items-start gap-4">
         {/* LEFT: Week + Month */}
         <div className="flex flex-col flex-wrap items-start gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold whitespace-nowrap">
-            Week 1 of 51 • Quarter 1
+            Week {currentWeekNumber} of 51 • Quarter {quarterNumber}
           </h1>
 
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border whitespace-nowrap">
@@ -30,13 +41,13 @@ const DashboardHeader = ({
                 const lastDayOfMonth = new Date(
                   today.getFullYear(),
                   today.getMonth() + 1,
-                  0
+                  0,
                 );
 
                 // Difference in days
                 const daysLeft = Math.ceil(
                   (lastDayOfMonth.getTime() - today.getTime()) /
-                    (1000 * 60 * 60 * 24)
+                    (1000 * 60 * 60 * 24),
                 );
 
                 return `${daysLeft} days left in this month`;

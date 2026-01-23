@@ -8,6 +8,7 @@ import {
   resolveLevelIcon,
 } from "@/lib/utils/makeover-program/achievements/resolve-badges-levels-icons";
 import Link from "next/link";
+import { calculateGoaProgressPercentage } from "@/lib/utils/makeover-program/makeover-dashboard/goa";
 
 const GlobalProgress = async ({
   userId,
@@ -16,8 +17,6 @@ const GlobalProgress = async ({
   userId: string;
   programId: string;
 }) => {
-  const progressPercentage = 0; // Example static value
-
   const aggregate = await prisma.makeoverPointsSummary.aggregate({
     where: {
       userId,
@@ -54,7 +53,7 @@ const GlobalProgress = async ({
   });
 
   const currentLevelIndex = allLevels.findIndex(
-    (l) => l.id === currentLevel?.id
+    (l) => l.id === currentLevel?.id,
   );
 
   const nextLevel = allLevels[currentLevelIndex + 1] ?? null;
@@ -70,11 +69,10 @@ const GlobalProgress = async ({
 
   const remainingToNextLevel = Math.max(
     0,
-    Math.min(100, 100 - Math.floor(completedPercent))
+    Math.min(100, 100 - Math.floor(completedPercent)),
   );
 
   // Calculate remaining points (nice UX)
- 
 
   const levelName = currentLevel?.name ?? "Initiator";
   const levelId = currentLevel?.id ?? 0;
@@ -96,6 +94,12 @@ const GlobalProgress = async ({
     },
   });
 
+  const progressPercentage = calculateGoaProgressPercentage({
+    totalPoints: globalPoints,
+    // levelId,
+    // earnedBadgesCount: unlockedBadges.length,
+  });
+
   const levelInBadges = `${currentLevel?.name} Badge`;
 
   const LevelIcon = currentLevel?.icon
@@ -108,7 +112,7 @@ const GlobalProgress = async ({
   } = getBadgeStyles(
     levelInBadges ?? "Initiator",
     "LEVEL",
-    true // current level is always unlocked
+    true, // current level is always unlocked
   );
 
   return (
@@ -117,25 +121,46 @@ const GlobalProgress = async ({
         label="Progress Journey "
         className="w-fit relative -top-10 -left-11 "
       />
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 gap-2">
         <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <PlaneTakeoff className="w-6 h-6 text-[#1183d4]" />
           Goa Journey Progress
         </h3>
-        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-          Target: December 2026
-        </span>
+        <div className="flex flex-col">
+          <p className="text-sm font-bold text-[#0f2cbd] dark:text-white">
+            {globalPoints ?? 0} MoS
+          </p>
+          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Target: December 2026
+          </span>
+        </div>
       </div>
-      <div className="relative h-6 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-6 shadow-inner">
+      <div className="relative h-6 bg-slate-100 dark:bg-slate-700 rounded-full mb-6 shadow-inner">
+        {/* Wide eligibility threshold with label */}
+        <div className="absolute top-0 h-full z-20" style={{ left: "75%" }}>
+          <div className="relative -translate-x-1/2 h-full flex flex-col items-center">
+            {/* Label */}
+            <span
+              className="absolute  -top-7 max-sm:left-[3px] whitespace-nowrap text-[8px] sm:text-[10px] font-semibold
+  text-white bg-[#1183d4]  px-2 py-0.5 rounded-full shadow-sm"
+            >
+              75% Min Eligibility
+            </span>
+
+            {/* Threshold bar */}
+            <div className="h-full w-1 bg-amber-500  shadow-inner" />
+          </div>
+        </div>
+        {/* Progress fill */}
         <div
           className="absolute top-0 left-0 h-full bg-[#1183d4] rounded-full transition-all duration-1000 ease-out"
           style={{ width: `${progressPercentage}%` }}
         >
-          <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]"></div>
+          <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]" />
         </div>
-        <span
-          className={`absolute top-0 left-2 h-full flex items-center text-xs font-bold ${progressPercentage === 0 ? "text-slate-500" : "text-white"} pl-1 drop-shadow-md`}
-        >
+
+        {/* Percentage */}
+        <span className="absolute top-0 left-2 h-full flex items-center text-xs font-bold text-white pl-1 drop-shadow-md">
           {progressPercentage}%
         </span>
       </div>
@@ -179,7 +204,7 @@ const GlobalProgress = async ({
               const { colorClass, bgClass, ringClass } = getBadgeStyles(
                 badge.name,
                 badge.type,
-                true
+                true,
               );
 
               return (
