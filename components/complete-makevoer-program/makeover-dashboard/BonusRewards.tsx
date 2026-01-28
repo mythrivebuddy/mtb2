@@ -111,6 +111,23 @@ const BonusRewards = ({ isProgramStarted, programId }: BonusRewardsProps) => {
     return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage]);
 
+const unlockCalledRef = useRef(false);
+
+useEffect(() => {
+  if (!isProgramStarted || !programId) return;
+  if (unlockCalledRef.current) return;
+
+  unlockCalledRef.current = true;
+
+  api.get("/makeover-program/makeover-self-rewards/unlock-reward", {
+    params: { programId },
+  }).catch(() => {
+    console.log("failed to unlock new reward");
+  });
+}, [isProgramStarted, programId]);
+
+
+
   /* ---------- flatten pages ---------- */
 
   const rewards: RewardItem[] = data?.pages.flatMap((p) => p.items) ?? [];

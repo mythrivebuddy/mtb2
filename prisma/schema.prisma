@@ -1780,6 +1780,8 @@ model UserMakeoverSelfReward {
   pointsAtUnlock  Int
   unlockedAt      DateTime @default(now())
   completedAt     DateTime?
+  unclaimedReminderSentAt DateTime?
+
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

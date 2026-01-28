@@ -42,14 +42,14 @@ export const CMP_NOTIFICATIONS = {
     title: "🧭 Sunday Reflection Day",
     description:
       "Review your week & set next week’s focus.",
-    url: "/dashboard/complete-makeover-program/sunday-card",
+    url: "/dashboard/complete-makeover-program/todays-actions",
   },
 
   SUNDAY_EVENING_PENDING: {
     title: "📝 Don’t miss your weekly reflection",
     description:
       "This unlocks your full weekly points.",
-    url: "/dashboard/complete-makeover-program/sunday-card",
+    url: "/dashboard/complete-makeover-program/todays-actions",
   },
 
   /* =====================================================
@@ -60,14 +60,14 @@ export const CMP_NOTIFICATIONS = {
     title: "🔄 Quarter ending soon",
     description:
       "Get ready to review & reset your identity.",
-    url: "/dashboard/quarter/summary",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   QUARTER_RESET: {
     title: "🚀 New Quarter, New Identity",
     description:
       "Choose your identity & action for this quarter.",
-    url: "/dashboard/quarter/reset",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   /* =====================================================
@@ -78,14 +78,14 @@ export const CMP_NOTIFICATIONS = {
     title: "🎉 You unlocked a Self-Reward!",
     description:
       "Claim it and celebrate your progress.",
-    url: "/dashboard/rewards",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   REWARD_UNCLAIMED: {
     title: "🎁 Your reward is still waiting",
     description:
       "Take a moment to celebrate.",
-    url: "/dashboard/rewards",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   /* =====================================================
@@ -96,7 +96,7 @@ export const CMP_NOTIFICATIONS = {
     title: "🏅 You reached a new level",
     description:
       "Your consistency is paying off.",
-    url: "/dashboard/level",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   /* =====================================================
@@ -107,14 +107,14 @@ export const CMP_NOTIFICATIONS = {
     title: "🌴 You’re making real progress",
     description:
       "You’re closer to the Goa journey than you think.",
-    url: "/dashboard/goa-journey",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   GOA_ELIGIBLE: {
     title: "🌟 You’re now eligible for the Goa Event!",
     description:
       "What a journey this has been.",
-    url: "/dashboard/goa-journey/details",
+    url: "/dashboard/complete-makeover-program/makeover-dashboard",
   },
 
   /* =====================================================
@@ -132,7 +132,7 @@ export const CMP_NOTIFICATIONS = {
     title: "🔁 Your CMP journey is still open",
     description:
       "It’s never about perfection — just restart.",
-    url: "/dashboard/complete-makeover-program",
+    url: "/dashboard/complete-makeover-program/todays-actions",
   },
 
   /* =====================================================

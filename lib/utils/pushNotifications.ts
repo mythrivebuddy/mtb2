@@ -311,7 +311,6 @@ export async function sendPushNotificationMultipleUsers(
     },
   });
 
-  console.log({subscriptions});
   
   // 2️⃣ If no subscriptions → exit early
   if (!subscriptions.length) return;
