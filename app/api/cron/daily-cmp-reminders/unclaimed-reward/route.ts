@@ -4,7 +4,7 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { CMP_NOTIFICATIONS } from "@/lib/constant";
 
 
-export async function GET(req: Request) {
+export async function GET() {
 
   const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
   const cutoff = new Date(Date.now() - FORTY_EIGHT_HOURS);

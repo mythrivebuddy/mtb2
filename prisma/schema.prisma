@@ -1525,6 +1525,9 @@ model UserProgramState {
   inactivity3DayNotified  DateTime?
   inactivity7DayNotified  DateTime?
 
+  // Goa milestone guard
+  lastGoaMilestoneNotified Int @default(0)
+
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   program Program @relation(fields: [programId], references: [id])
 

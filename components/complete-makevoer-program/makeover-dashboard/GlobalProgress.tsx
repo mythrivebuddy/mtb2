@@ -9,15 +9,18 @@ import {
 } from "@/lib/utils/makeover-program/achievements/resolve-badges-levels-icons";
 import Link from "next/link";
 import { calculateGoaProgressPercentage } from "@/lib/utils/makeover-program/makeover-dashboard/goa";
+import GoaProgressClientEvaluator from "./GoaProgressClientNotifier";
 
 const GlobalProgress = async ({
   userId,
   programId,
   programMaxPoints,
+  lastGoaMileStoneNotified,
 }: {
   userId: string;
   programId: string;
   programMaxPoints: number;
+  lastGoaMileStoneNotified: number;
 }) => {
   const aggregate = await prisma.makeoverPointsSummary.aggregate({
     where: {
@@ -96,11 +99,12 @@ const GlobalProgress = async ({
     },
   });
 
-  const progressPercentage = calculateGoaProgressPercentage({
+  const { progressPercentage } = calculateGoaProgressPercentage({
     totalPoints: globalPoints,
     // levelId,
     // earnedBadgesCount: unlockedBadges.length,
     programMaxPoints,
+    lastGoaMileStoneNotified,
   });
 
   const levelInBadges = `${currentLevel?.name} Badge`;
@@ -120,6 +124,8 @@ const GlobalProgress = async ({
 
   return (
     <section className="bg-white dark:bg-[#1a2630] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+      <GoaProgressClientEvaluator programId={programId} />
+
       <StaticDataBadge
         label="Progress Journey "
         className="w-fit relative -top-10 -left-11 "

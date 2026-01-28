@@ -93,7 +93,7 @@ export const CMP_NOTIFICATIONS = {
   ===================================================== */
 
   LEVEL_UP: {
-    title: "🏅 You reached a new level",
+    title: "🏅 You reached Level {{levelId}} - {{levelName}}",
     description:
       "Your consistency is paying off.",
     url: "/dashboard/complete-makeover-program/makeover-dashboard",

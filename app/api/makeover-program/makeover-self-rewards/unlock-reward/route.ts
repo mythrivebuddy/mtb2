@@ -71,14 +71,15 @@ export async function GET(req: Request) {
   // 5️⃣ notify (fire & forget)
   const { title, description, url } = CMP_NOTIFICATIONS.REWARD_UNLOCKED;
 
-  for (const cp of newlyUnlocked) {
-    void sendPushNotificationToUser(
-      session.user.id,
-      title,
-      description,
-      { url }
-    );
-  }
+ newlyUnlocked.forEach(() => {
+  void sendPushNotificationToUser(
+    session.user.id,
+    title,
+    description,
+    { url }
+  );
+});
+
 
   return NextResponse.json({
     unlocked: newlyUnlocked.length,
