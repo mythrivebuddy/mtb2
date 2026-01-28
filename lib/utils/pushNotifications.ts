@@ -288,3 +288,59 @@ export async function notifyUsersExcept({
     console.error("Push notification error (ignored):", err);
   }
 }
+
+// optimized function to send push notifications to multiple users
+
+export async function sendPushNotificationMultipleUsers(
+  userIds: string[],
+  title: string,
+  body: string,
+  data: Record<string, unknown> = {}
+) {
+  if (!userIds.length) return;
+
+  // 1️⃣ Fetch subscriptions ONCE
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: {
+      userId: { in: userIds },
+    },
+    select: {
+      endpoint: true,
+      p256dh: true,
+      auth: true,
+    },
+  });
+
+  console.log({subscriptions});
+  
+  // 2️⃣ If no subscriptions → exit early
+  if (!subscriptions.length) return;
+
+  // 3️⃣ Build payload ONCE
+  const payload = JSON.stringify({
+    title,
+    body,
+    icon: "/logo.png",
+    url: data.url || "/dashboard",
+    data,
+  });
+
+  // 4️⃣ Send pushes in parallel
+  await Promise.allSettled(
+    subscriptions.map((sub) =>
+      webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          expirationTime: null,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth,
+          },
+        },
+        payload
+      )
+    )
+  );
+}
+
+
