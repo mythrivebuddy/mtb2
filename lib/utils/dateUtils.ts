@@ -20,3 +20,42 @@ export const combineDateAndTime = (date: string | Date, time: string): Date => {
   
   return newDate;
 };
+
+
+/* ---------------- HELPERS ---------------- */
+
+export function getISTStartOfWeek(): Date {
+  const d = getNowInIST();
+  const day = d.getDay(); // 0 = Sunday
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function getISTEndOfWeek(): Date {
+  const d = getISTStartOfWeek();
+  d.setDate(d.getDate() + 7);
+  return d;
+}
+
+export function getNowInIST(): Date {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utc + 5.5 * 60 * 60 * 1000);
+}
+
+
+/* ---------------- HELPERS ---------------- */
+
+export function getISTStartOfDay(): Date {
+  const d = getNowInIST();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+export function getISTEndOfDay(): Date {
+  const d = getNowInIST();
+  d.setHours(24, 0, 0, 0);
+  return d;
+}
+

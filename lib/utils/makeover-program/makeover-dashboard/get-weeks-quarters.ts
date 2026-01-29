@@ -6,9 +6,9 @@
 
 /* ----------  DEFAULTS (FALLBACK) ---------- */
 
-const MTB_DEFAULT_START = new Date("2026-01-12T00:00:00"); // Monday
-const MTB_DEFAULT_END = new Date("2026-12-27T23:59:59");   // Sunday
-const TOTAL_WEEKS = 51;
+export const MTB_DEFAULT_START = new Date("2026-01-12T00:00:00"); // Monday
+export const MTB_DEFAULT_END = new Date("2026-12-27T23:59:59");   // Sunday
+export const TOTAL_WEEKS = 51;
 
 /* ---------- TYPES (Derived from Program model) ---------- */
 
@@ -128,4 +128,51 @@ export function getMakeoverProgramWeeksAndQuarters(
     quarterLabel,
     status: weekResult.status,
   };
+}
+
+const MS_IN_DAY = 1000 * 60 * 60 * 24;
+
+const QUARTER_WEEK_RANGES = {
+  1: { startWeek: 1, endWeek: 11 },
+  2: { startWeek: 12, endWeek: 24 },
+  3: { startWeek: 25, endWeek: 37 },
+  4: { startWeek: 38, endWeek: 51 },
+} as const;
+
+/* ---------- Helpers ---------- */
+
+export function getActiveQuarterAndDaysLeft(date: Date, startDate: Date, endDate: Date) {
+  if (date < startDate || date > endDate) return null;
+
+  const diffInDays = Math.floor(
+    (date.getTime() - startDate.getTime()) / MS_IN_DAY
+  );
+
+  const currentWeek = Math.floor(diffInDays / 7) + 1;
+
+  let quarter: 1 | 2 | 3 | 4 | null = null;
+
+  if (currentWeek <= 11) quarter = 1;
+  else if (currentWeek <= 24) quarter = 2;
+  else if (currentWeek <= 37) quarter = 3;
+  else if (currentWeek <= 51) quarter = 4;
+
+  if (!quarter) return null;
+
+  const { endWeek } = QUARTER_WEEK_RANGES[quarter];
+
+  const quarterEndDate = new Date(
+    startDate.getTime() + endWeek * 7 * MS_IN_DAY - MS_IN_DAY
+  );
+
+  let daysLeft = Math.ceil(
+  (quarterEndDate.getTime() - date.getTime()) / MS_IN_DAY
+);
+
+if (Object.is(daysLeft, -0)) {
+  daysLeft = 0;
+}
+
+
+  return { quarter, daysLeft };
 }

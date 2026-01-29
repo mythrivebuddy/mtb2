@@ -97,6 +97,7 @@ const handleEnroll = async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["myChallenges", "hosted"] }),
       queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
+      queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
     ]);
     toast.success("You have successfully enrolled in this challenge.");
     router.push(`/dashboard/challenge/my-challenges/${challenge.id}`);

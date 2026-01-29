@@ -14,7 +14,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import PageLoader from "@/components/PageLoader";
 import { type BusinessProfile } from "@/types/client/business-profile";
 
-
 // Fallback profile object to use when API returns no profile
 const defaultProfile: BusinessProfile = {
   name: "",
@@ -55,25 +54,31 @@ const BusinessProfile = () => {
     queryKey: ["profile", userId],
     queryFn: async () => {
       const res = await axios.get(
-        `/api/user/profile/getProfile?userId=${userId}`
+        `/api/user/profile/getProfile?userId=${userId}`,
       );
       // If API returns no profile, fallback to defaultProfile
       return res.data.profile ?? defaultProfile;
     },
     enabled: !!userId, // Only fetch when userId is available
-    initialData: defaultProfile,
+    placeholderData: defaultProfile,
+  });
+  console.log({
+    profile,
   });
 
   // Automatically switch to edit mode if profile.name is empty
   useEffect(() => {
-    console.log("profile", profile);
-    if (!queryLoading) {
-      if (profile?.name) {
-        setIsEditing(false);
-      } else {
-        setIsEditing(true);
-      }
-    }
+    if (queryLoading) return;
+
+    const hasExistingSpotlight =
+      !!profile?.featuredWorkTitle ||
+      !!profile?.featuredWorkDesc ||
+      !!profile?.featuredWorkImage;
+
+    // Requirement:
+    // If spotlight exists → open edit with pre-filled data
+    // If not → also open edit (new user)
+    setIsEditing(hasExistingSpotlight);
   }, [profile, queryLoading]);
 
   // Update profile data with useMutation
@@ -107,22 +112,23 @@ const BusinessProfile = () => {
 
   // Reset form with fetched profile data
   useEffect(() => {
-    if (profile) {
-      reset({
-        ...profile,
-        socialHandles: Object.fromEntries(
-          Object.entries(profile.socialHandles || {}).map(([platform, url]) => [
-            platform,
-            typeof url === "string" ? url.replace(/^https?:\/\//, "") : "",
-          ])
-        ),
-        priorityContactLink: profile.priorityContactLink
-          ? profile.priorityContactLink.replace(/^https?:\/\//, "")
-          : "",
-      });
-      setImagePreview(profile.featuredWorkImage || null);
-    }
-  }, [profile, reset]);
+    if (!profile) return;
+
+    reset({
+      ...profile,
+      socialHandles: Object.fromEntries(
+        Object.entries(profile.socialHandles || {}).map(([platform, url]) => [
+          platform,
+          typeof url === "string" ? url.replace(/^https?:\/\//, "") : "",
+        ]),
+      ),
+      priorityContactLink: profile.priorityContactLink
+        ? profile.priorityContactLink.replace(/^https?:\/\//, "")
+        : "",
+    });
+
+    setImagePreview(profile.featuredWorkImage || null);
+  }, [profile, reset]); 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -184,6 +190,7 @@ const BusinessProfile = () => {
       </div>
     );
   }
+  const safeProfile: BusinessProfile | null = profile ?? null;
 
   return (
     <div className="flex-1 px-4 md:py-8">
@@ -198,7 +205,7 @@ const BusinessProfile = () => {
       )}
       {!isEditing ? (
         <ProfileDisplay
-          profileData={profile}
+          profileData={safeProfile}
           onEditClick={() => setIsEditing(true)}
         />
       ) : (
