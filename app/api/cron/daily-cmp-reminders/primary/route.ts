@@ -1,11 +1,11 @@
-// /api/cron/daily-cmp-reminders/primary with post
+// /api/cron/daily-cmp-reminders/primary with get
 import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfDay, getISTStartOfDay } from "@/lib/utils/dateUtils";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function GET() {
   const istStart = getISTStartOfDay();
   const istEnd = getISTEndOfDay();
 

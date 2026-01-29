@@ -78,7 +78,7 @@ const BusinessProfile = () => {
     // Requirement:
     // If spotlight exists → open edit with pre-filled data
     // If not → also open edit (new user)
-    setIsEditing(true);
+    setIsEditing(hasExistingSpotlight);
   }, [profile, queryLoading]);
 
   // Update profile data with useMutation

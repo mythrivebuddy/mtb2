@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { supabaseClient } from "@/lib/supabase";
 import calculateProfileCompletion from "@/utils/calculateProfileCompletion";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";

@@ -1,10 +1,10 @@
-// /api/cron/daily-cmp-reminders/sunday-evening with post
+// /api/cron/daily-cmp-reminders/sunday-evening with get
 import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfWeek, getISTStartOfWeek } from "@/lib/utils/dateUtils";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
-export async function POST() {
+export async function GET() {
   const weekStart = getISTStartOfWeek();
   const weekEnd = getISTEndOfWeek();
 

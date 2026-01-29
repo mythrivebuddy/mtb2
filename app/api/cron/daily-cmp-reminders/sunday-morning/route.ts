@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function GET() {
   const users = await prisma.userProgramState.findMany({
     where: { onboarded: true },
     select: { userId: true },
