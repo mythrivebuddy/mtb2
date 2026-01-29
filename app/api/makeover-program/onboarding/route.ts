@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PaymentStatus } from "@prisma/client";
 import { CURRENT_MAKEOVER_PROGRAM_QUARTER } from "@/lib/constant";
+import { inngest } from "@/lib/inngest";
 
 /* ───────────────── TYPES ───────────────── */
 
@@ -167,6 +168,16 @@ export async function POST(req: Request) {
         where: { userId_programId: { userId, programId } },
         data: { onboarded: true, onboardedAt: new Date() },
       });
+      if (!isEdit) {
+        await inngest.send({
+        name: "user.onboarding.completed",
+        data: {
+          userId,
+          programId,
+        },
+      });
+      }
+      
     });
 
     /* ───────────── PHASE 2: CHALLENGE ENROLLMENT (NO TX) ───────────── */
