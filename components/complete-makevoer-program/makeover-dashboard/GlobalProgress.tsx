@@ -130,35 +130,39 @@ const GlobalProgress = async ({
           Goa Journey Progress
         </h3>
       </div>
-      <div className="relative h-6 bg-[#059669] dark:bg-slate-700 rounded-full mb-6 shadow-inner">
-        {/* Wide eligibility threshold with label */}
-        <div className="absolute  top-0 h-full z-20" style={{ left: "75%" }}>
+      {/* Wrapper*/}
+      <div className="relative mb-6">
+        {/* 75% Eligibility Marker (OUTSIDE clipped bar) */}
+        <div
+          className="absolute top-0 h-6 z-30 pointer-events-none"
+          style={{ left: "75%" }}
+        >
           <div className="relative -translate-x-1/2 h-full flex flex-col items-center">
-            {/* Label */}
             <span
-              className="absolute  -top-7  whitespace-nowrap text-[8px] sm:text-[10px] font-semibold
-  text-white bg-[#1183d4]  px-2 py-0.5 rounded-full shadow-sm"
+              className="absolute -top-7 whitespace-nowrap text-[8px] sm:text-[10px]
+        font-semibold text-white bg-[#1183d4] px-2 py-0.5 rounded-full shadow-sm"
             >
               75% Min Eligibility
             </span>
-
-            {/* Threshold bar */}
-            <div className="h-full w-1 bg-amber-500  shadow-inner" />
+            <div className="h-full w-1 bg-amber-500 shadow-inner" />
           </div>
         </div>
-        {/* Progress fill */}
-        <div
-          className="absolute top-0 left-0 h-full bg-[#1183d4] rounded-full transition-all duration-1000 ease-out"
-          style={{ width: `${progressPercentage}%` }}
-        >
-          <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]" />
-        </div>
 
-        {/* Percentage */}
-        <span className="absolute top-0 left-2 h-full flex items-center text-xs font-bold text-white pl-1 drop-shadow-md">
-          {progressPercentage}%
-        </span>
+        {/* Progress Bar — clipped */}
+        <div className="relative h-6 bg-[#059669] dark:bg-slate-700 rounded-full overflow-hidden shadow-inner">
+          {/* Progress fill */}
+          <div
+            className="absolute top-0 left-0 h-full bg-[#1183d4] rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${progressPercentage}%` }}
+          />
+
+          {/* Percentage */}
+          <span className="absolute top-0 left-2 h-full flex items-center text-xs font-bold text-white">
+            {progressPercentage}%
+          </span>
+        </div>
       </div>
+
       <div className="flex gap-6 justify-between items-center w-full mb-6 px-1">
         <p className="text-sm font-bold text-[#0f2cbd] dark:text-white">
           {(globalPoints ?? 0).toLocaleString()} MoS
