@@ -1522,6 +1522,11 @@ model UserProgramState {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   lastReminderDate DateTime?
+  inactivity3DayNotified  DateTime?
+  inactivity7DayNotified  DateTime?
+
+  // Goa milestone guard
+  lastGoaMilestoneNotified Int @default(0)
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   program Program @relation(fields: [programId], references: [id])
@@ -1606,6 +1611,7 @@ model MakeoverPointsSummary {
   programId   String
   areaId      Int
   totalPoints Int @default(0)
+  lastUpdated DateTime?
 
   @@unique([userId, programId, areaId])
 }
@@ -1777,6 +1783,8 @@ model UserMakeoverSelfReward {
   pointsAtUnlock  Int
   unlockedAt      DateTime @default(now())
   completedAt     DateTime?
+  unclaimedReminderSentAt DateTime?
+
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

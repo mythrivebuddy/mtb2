@@ -1,9 +1,11 @@
-// /api/cron/daily-cmp-reminders/primary with post
+// /api/cron/daily-cmp-reminders/primary with get
+import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
+import { getISTEndOfDay, getISTStartOfDay } from "@/lib/utils/dateUtils";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { NextResponse } from "next/server";
 
-export async function POST() {
+export async function GET() {
   const istStart = getISTStartOfDay();
   const istEnd = getISTEndOfDay();
 
@@ -20,7 +22,7 @@ export async function POST() {
   });
 
   let sentCount = 0;
-
+  const {title,description,url} = CMP_NOTIFICATIONS.DAILY_PRIMARY;
   for (const { userId } of users) {
     // Skip if user already completed today
     const completed = await prisma.makeoverProgressLog.findFirst({
@@ -35,9 +37,9 @@ export async function POST() {
 
     await sendPushNotificationToUser(
       userId,
-      "🔔 Today’s CMP Card is waiting",
-      "Complete your Identity, Action & Win for today.",
-      { url: "/dashboard/complete-makeover-program/todays-actions" }
+      title,
+      description,
+      { url }
     );
 
     // Mark reminder sent for today
@@ -58,22 +60,4 @@ export async function POST() {
   });
 }
 
-/* ---------------- HELPERS ---------------- */
 
-function getISTStartOfDay(): Date {
-  const d = getNowInIST();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function getISTEndOfDay(): Date {
-  const d = getNowInIST();
-  d.setHours(24, 0, 0, 0);
-  return d;
-}
-
-function getNowInIST(): Date {
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  return new Date(utc + 5.5 * 60 * 60 * 1000);
-}

@@ -23,21 +23,15 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+
   const urlToOpen = event.notification.data?.url || "/";
 
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (new URL(client.url).pathname === new URL(urlToOpen, self.location.origin).pathname && "focus" in client) {
-          return client.focus();
-        }
-      }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
+    // ✅ ALWAYS opens a new tab
+    clients.openWindow(urlToOpen)
   );
 });
+
 
 /* Auto-resubscribe if Android drops the subscription */
 self.addEventListener("pushsubscriptionchange", async (event) => {

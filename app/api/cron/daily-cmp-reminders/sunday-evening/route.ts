@@ -1,8 +1,10 @@
-// /api/cron/daily-cmp-reminders/sunday-evening with post
+// /api/cron/daily-cmp-reminders/sunday-evening with get
+import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
+import { getISTEndOfWeek, getISTStartOfWeek } from "@/lib/utils/dateUtils";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 
-export async function POST() {
+export async function GET() {
   const weekStart = getISTStartOfWeek();
   const weekEnd = getISTEndOfWeek();
 
@@ -12,7 +14,7 @@ export async function POST() {
   });
 
   let sent = 0;
-
+  const { title, description, url } = CMP_NOTIFICATIONS.SUNDAY_EVENING_PENDING
   for (const { userId } of users) {
     const completed = await prisma.sundayProgressLog.findFirst({
       where: {
@@ -32,10 +34,10 @@ export async function POST() {
 
     await sendPushNotificationToUser(
       userId,
-      "📝 Don’t miss your weekly reflection",
-      "This unlocks your full weekly points.",
+      title,
+      description,
       {
-        url: "/dashboard/complete-makeover-program/todays-actions",
+        url,
       }
     );
 
@@ -51,24 +53,3 @@ export async function POST() {
   });
 }
 
-/* ---------------- HELPERS ---------------- */
-
-function getISTStartOfWeek(): Date {
-  const d = getNowInIST();
-  const day = d.getDay(); // 0 = Sunday
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function getISTEndOfWeek(): Date {
-  const d = getISTStartOfWeek();
-  d.setDate(d.getDate() + 7);
-  return d;
-}
-
-function getNowInIST(): Date {
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  return new Date(utc + 5.5 * 60 * 60 * 1000);
-}

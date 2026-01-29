@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { supabaseClient } from "@/lib/supabase";
 import calculateProfileCompletion from "@/utils/calculateProfileCompletion";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 interface UserSpotlightProfile {
   featuredWorkTitle?: string | null;
@@ -65,13 +65,13 @@ export async function PUT(req: Request) {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `spotlight-image/${fileName}`;
 
-      const { error } = await supabaseClient.storage
+      const { error } = await supabaseAdmin.storage
         .from("spotlight-image")
         .upload(filePath, file);
 
       if (error) throw new Error(`Supabase Upload Error: ${error.message}`);
 
-      const { data: publicUrl } = supabaseClient.storage
+      const { data: publicUrl } = supabaseAdmin.storage
         .from("spotlight-image")
         .getPublicUrl(filePath);
 

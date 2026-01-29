@@ -181,7 +181,7 @@ const ChallengeCalendar = ({
       // converts the UTC time from the server into the user's local timezone.
       const localDate = new Date(item.date);
       return [normalizeDateToLocalString(localDate), item.status];
-    })
+    }),
   );
 
   const challengeStartUTC = new Date(challengeStartDate);
@@ -230,7 +230,7 @@ const ChallengeCalendar = ({
           className={`aspect-square flex items-center justify-center rounded-lg text-sm transition-colors ${isToday ? "bg-indigo-100 text-indigo-600 font-bold" : ""} ${isSelectable ? "hover:bg-slate-100" : "cursor-default"}`}
         >
           {dayContent}
-        </div>
+        </div>,
       );
     }
     return grid;
@@ -255,8 +255,8 @@ const ChallengeCalendar = ({
                 new Date(
                   currentDate.getFullYear(),
                   currentDate.getMonth() - 1,
-                  1
-                )
+                  1,
+                ),
               )
             }
             className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
@@ -269,8 +269,8 @@ const ChallengeCalendar = ({
                 new Date(
                   currentDate.getFullYear(),
                   currentDate.getMonth() + 1,
-                  1
-                )
+                  1,
+                ),
               )
             }
             className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
@@ -400,8 +400,8 @@ export default function ChallengeManagementPage() {
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const streakCardRef = useRef<HTMLDivElement>(null);
 
-  const SHOULD_REFETCH_FROM =
-  "dashboard/complete-makeover-program/makeover-dashboard";
+  // const SHOULD_REFETCH_FROM =
+  //   "dashboard/complete-makeover-program/makeover-dashboard";
   const {
     data: challenge,
     isLoading,
@@ -409,12 +409,15 @@ export default function ChallengeManagementPage() {
     error,
     refetch,
   } = useQuery<ChallengeDetails, AxiosError<{ error?: string }>>({
-    queryKey: ["getChallengeDetails", slug,from_where_user_came],
+    queryKey: ["getChallengeDetails", slug],
     queryFn: async () => {
       const response = await axios.get(`/api/challenge/my-challenge/${slug}`);
       return response.data;
     },
-    enabled: !!slug && from_where_user_came === SHOULD_REFETCH_FROM,
+    enabled: !!slug,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const handleCalendarToggle = () => {
@@ -496,7 +499,7 @@ export default function ChallengeManagementPage() {
               };
             }
             return oldData;
-          }
+          },
         );
       }
       queryClient.invalidateQueries({
@@ -535,7 +538,7 @@ export default function ChallengeManagementPage() {
   };
 
   const shareText = encodeURIComponent(
-    `Check out this challenge: ${challenge?.title}!`
+    `Check out this challenge: ${challenge?.title}!`,
   );
   const shareUrl = encodeURIComponent(shareableLink);
   const socialLinks = socialLinksData.map((social) => ({
@@ -543,13 +546,13 @@ export default function ChallengeManagementPage() {
     icon: social.icon,
     onClick: () =>
       window.open(
-        social.template.replace("{url}", shareUrl).replace("{text}", shareText)
+        social.template.replace("{url}", shareUrl).replace("{text}", shareText),
       ),
   }));
   const deleteUserMutation = async (
     challengeId: string,
     userId: string,
-    user_name: string
+    user_name: string,
   ): Promise<{ message: string }> => {
     if (!challengeId || !userId) {
       throw new Error("Challenge ID and User ID are required");
@@ -561,7 +564,7 @@ export default function ChallengeManagementPage() {
         "/api/challenge/my-challenge/creator",
         {
           params: { challengeId, userId, user_name },
-        }
+        },
       );
 
       return response.data;
@@ -582,7 +585,7 @@ export default function ChallengeManagementPage() {
   const handleRemoveUserFromChallenge = async (
     challengeId: string,
     userId: string,
-    user_name: string
+    user_name: string,
   ): Promise<void> => {
     try {
       setIsUserDeleting(true);
@@ -633,7 +636,7 @@ export default function ChallengeManagementPage() {
     );
   }
   const loggedInParticipant = challenge.participants.find(
-    (p) => p.id === session.data?.user.id
+    (p) => p.id === session.data?.user.id,
   );
 
   // Check if their certificate has been issued
@@ -641,18 +644,20 @@ export default function ChallengeManagementPage() {
     loggedInParticipant?.isCertificateIssued === true;
   const daysLeft = Math.ceil(
     (new Date(challenge.endDate).getTime() - new Date().getTime()) /
-      (1000 * 60 * 60 * 24)
+      (1000 * 60 * 60 * 24),
   );
   const totalCompletedDays = (challenge.history || []).filter(
-    (day) => day.status === "COMPLETED"
+    (day) => day.status === "COMPLETED",
   ).length;
 
   const handleBack = () => {
-    if (from_where_user_came != "") {
+    if (
+      typeof from_where_user_came === "string" &&
+      from_where_user_came.length > 0
+    ) {
       router.push(`/${from_where_user_came}`);
-    }
-    else{
-      router.push(`/dashboard/challenge`)
+    } else {
+      router.push(`/dashboard/challenge`);
     }
   };
 
@@ -1039,7 +1044,7 @@ export default function ChallengeManagementPage() {
                 await handleRemoveUserFromChallenge(
                   challenge.id,
                   selectedUser.id,
-                  selectedUser.name
+                  selectedUser.name,
                 );
                 setSelectedUser(null);
               }}

@@ -1,6 +1,8 @@
 type GoaProgressInput = {
     totalPoints: number;
-    programMaxPoints:number,
+    programMaxPoints: number,
+    lastGoaMileStoneNotified?: number,
+
     // levelId: number; // 1 → 5
     // earnedBadgesCount: number; // ALL earned badges (for now)
 };
@@ -14,18 +16,29 @@ type GoaProgressInput = {
 //     4: 70,
 //     5: 100,
 // };
+const GOA_MILESTONES = [25, 50, 75] as const;
+
 
 export function calculateGoaProgressPercentage({
     totalPoints,
     programMaxPoints,
-    // levelId,
-    // earnedBadgesCount,
-}: GoaProgressInput): number {
-    // 1️⃣ Points Progress %
-    const pointsProgressPercent = Math.min(
+    lastGoaMileStoneNotified = 0,
+}: GoaProgressInput) {
+    // 1️⃣ Calculate % (same as before)
+    const percentage = Math.min(
         100,
-        (totalPoints / programMaxPoints) * 100
+        Math.floor((totalPoints / programMaxPoints) * 100)
     );
-    const goaProgress = Math.floor(pointsProgressPercent)
-    return Math.min(100, goaProgress);
+
+    // 2️⃣ Determine next milestone crossed 
+    const crossedMilestone =
+        GOA_MILESTONES.find(
+            (m) => percentage >= m && m > lastGoaMileStoneNotified
+        ) ?? null;
+
+
+    return {
+        progressPercentage: percentage,
+        crossedMilestone,
+    };
 }
