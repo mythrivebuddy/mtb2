@@ -8,6 +8,7 @@ export interface SocialHandles {
 }
 
 export interface BusinessProfile {
+  id?: string;
   name: string;
   businessInfo?: string;
   missionStatement?: string;

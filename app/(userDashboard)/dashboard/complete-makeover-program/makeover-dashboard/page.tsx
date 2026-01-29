@@ -137,7 +137,7 @@ const DashboardPage = async () => {
         </section>
 
         {/* Global Progress Section */}
-        <GlobalProgress userId={userId} programId={programState.programId} programMaxPoints={programState.program.max_golbal_points ?? 0}/>
+        <GlobalProgress userId={userId} programId={programState.programId} programMaxPoints={programState.program.max_golbal_points ?? 0} lastGoaMileStoneNotified={programState.lastGoaMilestoneNotified ?? 0}/>
 
         {/* Area Snapshots */}
         <AreaSnapshots
@@ -148,7 +148,7 @@ const DashboardPage = async () => {
         {/* Bottom Grid: Bonus & Community */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Bonus & Rewards */}
-          <BonusRewards isProgramStarted={isProgramStarted} programId={programState.programId}/>
+          <BonusRewards isProgramStarted={isProgramStarted} programId={programState.programId} />
           {/* Accountability Pod */}
           <AccountabilityBuddy />
         </section>

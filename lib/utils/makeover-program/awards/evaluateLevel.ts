@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { awardLevelBadge } from "./awardLevelBadge";
+import { CMP_NOTIFICATIONS } from "@/lib/constant";
+import { sendPushNotificationToUser } from "../../pushNotifications";
 
 export async function evaluateLevel(
   userId: string,
@@ -34,4 +36,11 @@ export async function evaluateLevel(
 
   // Award level badge
   await awardLevelBadge(userId, programId, targetLevel.name);
+
+  const { title, description, url } = CMP_NOTIFICATIONS.LEVEL_UP;
+  
+const dynamicTitle = title
+  .replace("{{levelId}}", String(targetLevel.id))
+  .replace("{{levelName}}", targetLevel.name);
+  void sendPushNotificationToUser(userId, dynamicTitle, description, { url });
 }
