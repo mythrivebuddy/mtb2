@@ -1611,7 +1611,7 @@ model MakeoverPointsSummary {
   programId   String
   areaId      Int
   totalPoints Int @default(0)
-  lastUpdated DateTime?
+  lastUpdated DateTime @updatedAt
 
   @@unique([userId, programId, areaId])
 }
