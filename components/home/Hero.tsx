@@ -35,9 +35,10 @@ export default function Hero() {
         to make your journey joyful, connected and wildly fulfilling.
       </p> */}
       <p className="text-[14px] md:text-[18px] lg:text-xl text-slate-600 dark:text-slate-400">
-        For Coaches, Solopreneurs & Self-Growth Enthusiasts. <br />A structured
-        environment that makes consistent growth inevitable — without hustle,
-        hype, or burnout
+        For Coaches, Solopreneurs & Self-Growth Enthusiasts. The ecosystem that
+        grows you and your business. <br />
+        <br />
+        One ecosystem. Endless momentum.
       </p>
       <div className="flex flex-col pt-5 sm:flex-row gap-4 lg:justify-start">
         {/* Self Growth Enthusiast button */}
