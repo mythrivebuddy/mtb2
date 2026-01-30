@@ -6,11 +6,11 @@ import webpush, { SendResult, WebPushError } from "web-push"; // Import WebPushE
 
 // Configure web-push with your VAPID keys (from your .env file)
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-    webpush.setVapidDetails(
-      "mailto:your-email@example.com", // Replace with your email
-      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-      process.env.VAPID_PRIVATE_KEY
-    );
+  webpush.setVapidDetails(
+    "mailto:your-email@example.com", // Replace with your email
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
 }
 
 export async function GET() {
@@ -34,8 +34,13 @@ export async function GET() {
     const subscriptionsToDelete: string[] = [];
 
     for (const reminder of activeReminders) {
+      const currentTime = now.toTimeString().slice(0, 5);
+
+      if (reminder.startTime && currentTime < reminder.startTime) continue;
+      if (reminder.endTime && currentTime > reminder.endTime) continue;
+
       if (reminder.user.pushSubscriptions.length === 0) continue;
-      
+
       const lastNotified = reminder.lastNotifiedAt || new Date(0);
       const minutesSinceLastNotification = (now.getTime() - lastNotified.getTime()) / (1000 * 60);
 
@@ -53,13 +58,13 @@ export async function GET() {
               { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
               payload
             ).catch((err: WebPushError) => {
-                // If a subscription is gone (404) or expired (410), mark it for deletion.
-                if (err.statusCode === 404 || err.statusCode === 410) {
-                    console.log(`Subscription for user ${reminder.userId} has expired. Marking for deletion.`);
-                    subscriptionsToDelete.push(sub.id);
-                } else {
-                    console.error(`Failed to send notification for user ${reminder.userId}:`, err.message);
-                }
+              // If a subscription is gone (404) or expired (410), mark it for deletion.
+              if (err.statusCode === 404 || err.statusCode === 410) {
+                console.log(`Subscription for user ${reminder.userId} has expired. Marking for deletion.`);
+                subscriptionsToDelete.push(sub.id);
+              } else {
+                console.error(`Failed to send notification for user ${reminder.userId}:`, err.message);
+              }
             })
           );
         }
@@ -79,7 +84,7 @@ export async function GET() {
     //         });
     //     }
     // }
-    
+
     // Delete any invalid subscriptions
 
     console.log(`Cron job finished. Attempted to send ${notificationsToSend.length} notifications.`);
