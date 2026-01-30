@@ -11,11 +11,11 @@ import Philosophy from "@/components/home/Philosophy";
 
 
 export const metadata: Metadata = {
-  title: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+  title: "MyThriveBuddy - One Complete Growth Ecosystem For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
   description:
     "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
   openGraph: {
-    title: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+    title: "MyThriveBuddy - One Complete Growth Ecosystem For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
       "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
     url: "https://mythrivebuddy.com",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+        alt: "MyThriveBuddy - One Complete Growth Ecosystem For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
       },
     ],
     locale: "en_US",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+    title: "MyThriveBuddy - One Complete Growth Ecosystem For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
       "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
     images: ["/logo.png"],
