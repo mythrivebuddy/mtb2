@@ -11,13 +11,13 @@ import Philosophy from "@/components/home/Philosophy";
 
 
 export const metadata: Metadata = {
-  title: "MyThriveBuddy - Solopreneurship Made Amazing",
+  title: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
   description:
-    "Solopreneurship doesn't have to be lonely. Join the ecosystem built to make your journey joyful, connected and wildly fulfilling.",
+    "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
   openGraph: {
-    title: "MyThriveBuddy - Solopreneurship Made Amazing",
+    title: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
-      "Solopreneurship doesn't have to be lonely. Join the ecosystem built to make your journey joyful, connected and wildly fulfilling.",
+      "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
     url: "https://mythrivebuddy.com",
     siteName: "MyThriveBuddy",
     images: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "MyThriveBuddy - Solopreneurship Made Amazing",
+        alt: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
       },
     ],
     locale: "en_US",
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MyThriveBuddy - Solopreneurship Made Amazing",
+    title: "MyThriveBuddy - One Complete Growth Ecosystem \n For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
-      "Solopreneurship doesn't have to be lonely. Join the ecosystem built to make your journey joyful, connected and wildly fulfilling.",
+      "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
     images: ["/logo.png"],
   },
 };
 
-// TODO: add current active spotlight get it with api
+
 export default function Home() {
  
   return (
