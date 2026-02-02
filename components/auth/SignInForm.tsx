@@ -13,13 +13,20 @@ import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
-import { isInAppBrowser, openInExternalBrowser } from "@/lib/utils/isInAppBrowser";
+import {
+  isInAppBrowser,
+  openInExternalBrowser,
+} from "@/lib/utils/isInAppBrowser";
+import OpenInBrowserDialog from "./OpenInBrowserDialog";
 
 function SignInFormContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState(""); // For backend error
   const router = useRouter();
   const [showPassword, setShowPassword] = useState<boolean>(false);
+
+  // state for Open in Browser dialog
+  const [showOpenBrowserDialog, setShowOpenBrowserDialog] = useState(false);
 
   const {
     register,
@@ -39,7 +46,7 @@ function SignInFormContent() {
     if (errorFromUrl === "account-exists-with-credentials") {
       setTimeout(() => {
         toast.error(
-          "An account with this email already exists. Please sign in with your password."
+          "An account with this email already exists. Please sign in with your password.",
         );
         router.push("/signin");
       }, 100);
@@ -77,7 +84,7 @@ function SignInFormContent() {
     } catch (error) {
       console.error("Signin error:", error);
       toast.error(
-        getAxiosErrorMessage(error, "Sign in failed. Please try again later.")
+        getAxiosErrorMessage(error, "Sign in failed. Please try again later."),
       );
     } finally {
       setIsLoading(false);
@@ -87,11 +94,10 @@ function SignInFormContent() {
   const handleGoogleLogin = async () => {
     try {
       if (isInAppBrowser()) {
-        toast.info("Opening secure browser for Google sign-in");
-        openInExternalBrowser("/signin");
+        setShowOpenBrowserDialog(true);
         return;
       }
-       signIn("google", {
+      signIn("google", {
         // redirect: false,
         callbackUrl: redirect,
       });
@@ -100,8 +106,8 @@ function SignInFormContent() {
       toast.error(
         getAxiosErrorMessage(
           error,
-          "Google Sign in failed. Please try again later."
-        )
+          "Google Sign in failed. Please try again later.",
+        ),
       );
     }
   };
@@ -224,6 +230,15 @@ function SignInFormContent() {
           </Link>
         </p>
       </div>
+      <OpenInBrowserDialog
+        open={showOpenBrowserDialog}
+        onOpenChange={setShowOpenBrowserDialog}
+        onConfirm={() => {
+          // IMPORTANT: navigation happens INSIDE dialog
+          // so here we just close the dialog (optional)
+          setShowOpenBrowserDialog(false);
+        }}
+      />
     </div>
   );
 }
