@@ -19,10 +19,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  isInAppBrowser,
-  openInExternalBrowser,
-} from "@/lib/utils/isInAppBrowser";
+import {isInAppBrowser} from "@/lib/utils/isInAppBrowser";
 import OpenInBrowserDialog from "./OpenInBrowserDialog";
 
 export default function SignUpForm() {

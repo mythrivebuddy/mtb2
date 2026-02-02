@@ -13,10 +13,7 @@ import { SigninFormType, signinSchema } from "@/schema/zodSchema";
 import { signIn } from "next-auth/react";
 import GoogleIcon from "../icons/GoogleIcon";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
-import {
-  isInAppBrowser,
-  openInExternalBrowser,
-} from "@/lib/utils/isInAppBrowser";
+import {isInAppBrowser} from "@/lib/utils/isInAppBrowser";
 import OpenInBrowserDialog from "./OpenInBrowserDialog";
 
 function SignInFormContent() {
