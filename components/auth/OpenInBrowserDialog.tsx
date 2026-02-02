@@ -26,8 +26,8 @@ export default function OpenInBrowserDialog({
         <DialogHeader>
           <DialogTitle>Google Sign-In Security</DialogTitle>
           <DialogDescription>
-            For your account’s security, Google Sign-In must be completed in
-            your device’s browser.
+            Google Sign-In may not work inside in-app browsers. Use the{" "}
+            <strong>⋮ menu → Open in Chrome</strong> to continue.
           </DialogDescription>
         </DialogHeader>
 
