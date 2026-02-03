@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
 
 
@@ -143,12 +143,23 @@ export async function POST(request: Request) {
     const userName = session?.user?.name || "Someone"
     const joinedUserId = session.user.id;
 
-    void sendMessageForJoining(challengeId,userName,null,"SYSTEM",joinedUserId);
-    
-    sendPushNotificationToUser(
-      challengeToJoin.creatorId,
+    void sendMessageForJoining(challengeId, userName, null, "SYSTEM", joinedUserId);
+
+    const existingEnrollments = await prisma.challengeEnrollment.findMany({
+      where: { challengeId },
+      select: { userId: true },
+    });
+
+    const participantIds = existingEnrollments.map((e) => e.userId);
+    const notificationRecipients = Array.from(
+      new Set([challengeToJoin.creatorId, ...participantIds])
+    ).filter((id) => id !== joinedUserId); // Don't notify the person who just joined
+
+    // 3. Use your new batch function
+    void sendPushNotificationMultipleUsers(
+      notificationRecipients,
       "New challenger alert 🚀",
-      `${session.user.name} joined "${challengeToJoin.title}"!`,
+      `${userName} joined "${challengeToJoin.title}"!`,
       { url: "/dashboard/challenge/my-challenges" }
     );
 
