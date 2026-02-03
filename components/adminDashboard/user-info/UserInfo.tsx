@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -23,6 +22,7 @@ import {
 } from "@/types/client/user-info";
 import useAdminPresence from "@/hooks/useUserRealtime";
 import Link from "next/link";
+import { FiCopy, FiCheck } from "react-icons/fi";
 
 // --- API Functions ---
 
@@ -30,7 +30,10 @@ async function fetchUsers(
   filter: string,
   search: string,
   page: number,
-  pageSize: number
+  pageSize: number,
+  userType: string,
+  planType: string,
+  programType: string
 ): Promise<{ users: IUser[]; total: number }> {
   const { data } = await axios.get(`/api/admin/dashboard/getAllUsers`, {
     params: {
@@ -38,6 +41,9 @@ async function fetchUsers(
       search,
       page,
       pageSize,
+      userType,
+      planType,
+      programType,
     },
   });
   return data;
@@ -72,7 +78,12 @@ export default function UserInfoContent() {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 50;
+  const pageSize = 10;
+
+  // ADDED: Filter states
+  const [userType, setUserType] = useState("all");
+  const [planType, setPlanType] = useState("all");
+  const [programType, setProgramType] = useState("all");
 
   // State for Block User Modal
   const [showModal, setShowModal] = useState(false);
@@ -83,13 +94,32 @@ export default function UserInfoContent() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState("");
 
+  // ADDED: State for copied email
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+
   // --- React Query ---
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["users", filter, searchTerm, page],
-    queryFn: () => fetchUsers(filter, searchTerm, page, pageSize),
-    refetchOnMount: true,
+    queryKey: [
+      "users",
+      filter,
+      searchTerm,
+      page,
+      userType,
+      planType,
+      programType,
+    ],
+    queryFn: () =>
+      fetchUsers(
+        filter,
+        searchTerm,
+        page,
+        pageSize,
+        userType,
+        planType,
+        programType
+      ),
     refetchOnWindowFocus: false,
   });
 
@@ -124,17 +154,6 @@ export default function UserInfoContent() {
     onError: (err) => toast.error(getAxiosErrorMessage(err)),
   });
 
-  // --- Handlers ---
-  const handleFilterChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setFilter(e.target.value.toLowerCase());
-    setPage(1);
-  };
-
-  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPage(1);
-  };
-
   const handleBlockClick = (user: IUser) => {
     setSelectedUser(user);
     setReason("");
@@ -168,40 +187,102 @@ export default function UserInfoContent() {
   const totalPages = Math.ceil(total / pageSize);
 
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
-  console.log({onlineUsers});
-  
+  console.log({ onlineUsers });
+
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
   const filteredUsers =
-  filter === "online"
-    ? users.filter((u) => onlineUserIds.has(u.id))
-    : users;
+    filter === "online"
+      ? users.filter((u) => onlineUserIds.has(u.id))
+      : users;
   console.log(filteredUsers);
-  
+
+  // handler for copy email functionality
+  const handleCopy = async (email: string) => {
+    await navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+
+    setTimeout(() => setCopiedEmail(null), 1500);
+  };
+
+
   // --- JSX ---
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-6">User Management</h2>
 
-      {/* Search and Filter */}
-      <div className="flex mb-4 gap-4">
+      <div className="flex flex-wrap mb-4 gap-4">
+        {/* Search */}
         <input
           type="text"
           placeholder="Search users..."
           value={searchTerm}
-          onChange={handleSearchChange}
-          className="w-full px-4 py-2 border rounded-lg"
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
+          className="flex-1 px-4 py-2 border rounded-lg"
         />
+
+        {/* EXISTING filter (kept) */}
         <select
           className="px-4 py-2 border rounded-lg"
-          onChange={handleFilterChange}
-          defaultValue="all"
+          value={filter}
+          onChange={(e) => {
+            setFilter(e.target.value.toLowerCase());
+            setPage(1);
+          }}
         >
           <option value="all">All Users</option>
           <option value="blocked">Blocked</option>
           <option value="new">New</option>
-          <option value="online">Online users</option>
+          <option value="online">Online</option>
+        </select>
+
+        {/* User Type */}
+        <select
+          className="px-4 py-2 border rounded-lg"
+          value={userType}
+          onChange={(e) => {
+            setUserType(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="all">All Types</option>
+          <option value="enthusiast">SGE</option>
+          <option value="coach">Coach</option>
+          <option value="solopreneur">Solopreneur</option>
+        </select>
+
+        {/* Plan Type */}
+        <select
+          className="px-4 py-2 border rounded-lg"
+          value={planType}
+          onChange={(e) => {
+            setPlanType(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="all">All Plans</option>
+          <option value="free">Free</option>
+          <option value="paid">Paid</option>
+        </select>
+
+        {/* Program Type */}
+        <select
+          className="px-4 py-2 border rounded-lg"
+          value={programType}
+          onChange={(e) => {
+            setProgramType(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="all">All Programs</option>
+          <option value="cmp">CMP</option>
+          <option value="none">None</option>
         </select>
       </div>
+
+
 
       {isLoading && <p>Loading users...</p>}
       {isError && <p className="text-red-600">Error: {error?.message}</p>}
@@ -222,27 +303,50 @@ export default function UserInfoContent() {
             {filteredUsers.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>
-                  <Link href={`/profile/${user.id}`} target="_blank" className="flex items-center gap-3">
-                  {
-                    user.image ? (
-                      <div className="rounded-full h-10 w-10">
-                        <img src={user.image} alt={user.name}  className="h-full  w-full rounded-full object-cover"/>
-                      </div>
-                    ):(
-                       <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
-                      {user.name.slice(0, 2).toUpperCase()}
-                      {onlineUserIds.has(user?.id) && (
-                        <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
-                      )}
-                    </div>
-                    )
-                  }
-                   
+                  <div className="flex items-center gap-3">
+                    <Link href={`/profile/${user.id}`} target="_blank">
+                      {
+                        user.image ? (
+                          <div className="rounded-full h-10 w-10">
+                            <img src={user.image} alt={user.name} className="h-full  w-full rounded-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
+                            {user.name.slice(0, 2).toUpperCase()}
+                            {onlineUserIds.has(user?.id) && (
+                              <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
+                            )}
+                          </div>
+                        )
+                      }
+                    </Link>
                     <div>
-                      <div className="text-sm font-medium">{user.name}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <Link href={`/profile/${user.id}`} target="_blank">
+                        <div className="text-sm font-medium hover:underline">
+                          {user.name}
+                        </div>
+                      </Link>
+
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span>{user.email}</span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(user.email)}
+                          className="hover:text-primary transition"
+                          title="Copy email"
+                        >
+                          {copiedEmail === user.email ? (
+                            <FiCheck className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <FiCopy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </Link>
+
+
+                  </div>
                 </TableCell>
                 <TableCell>{user.jpEarned}</TableCell>
                 <TableCell>{user.jpBalance}</TableCell>
@@ -261,11 +365,10 @@ export default function UserInfoContent() {
                       Edit Plan
                     </button>
                     <button
-                      className={`${
-                        user.isBlocked
-                          ? "text-gray-400 cursor-not-allowed"
-                          : "text-red-600 hover:text-red-900"
-                      } font-medium`}
+                      className={`${user.isBlocked
+                        ? "text-gray-400 cursor-not-allowed"
+                        : "text-red-600 hover:text-red-900"
+                        } font-medium`}
                       onClick={() => handleBlockClick(user)}
                       disabled={user.isBlocked}
                     >
