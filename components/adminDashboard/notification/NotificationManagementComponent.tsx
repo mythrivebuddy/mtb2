@@ -29,9 +29,39 @@ import { useEffect, useState } from "react";
 
 // Enum values
 const notificationTypes = [
+  // Push notifications
   "DAILY_CHALLENGE_PUSH_NOTIFICATION",
   "DAILY_BLOOM_PUSH_NOTIFICATION",
+
+  // CMP – Daily
+  "CMP_DAILY_PRIMARY",
+  "CMP_DAILY_GENTLE_NUDGE",
+
+  // CMP – Weekly (Sunday)
+  "CMP_SUNDAY_MORNING",
+  "CMP_SUNDAY_EVENING_PENDING",
+
+  // CMP – Quarterly
+  "CMP_QUARTER_ENDING_SOON",
+  "CMP_QUARTER_RESET",
+
+  // CMP – Rewards & Levels
+  "CMP_REWARD_UNLOCKED",
+  "CMP_REWARD_UNCLAIMED",
+  "CMP_LEVEL_UP",
+
+  // CMP – Goa Journey
+  "CMP_GOA_PROGRESS_MILESTONE",
+  "CMP_GOA_ELIGIBLE",
+
+  // CMP – Inactivity
+  "CMP_INACTIVITY_3_DAYS",
+  "CMP_INACTIVITY_7_DAYS",
+
+  // CMP – Onboarding
+  "CMP_ONBOARDING_PENDING",
 ] as const;
+
 
 const placeholderValue = "__placeholder__";
 
