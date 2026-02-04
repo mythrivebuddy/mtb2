@@ -78,7 +78,7 @@ export default function UserInfoContent() {
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // ADDED: Filter states
   const [userType, setUserType] = useState("all");
@@ -106,6 +106,7 @@ export default function UserInfoContent() {
       filter,
       searchTerm,
       page,
+      pageSize,
       userType,
       planType,
       programType,
@@ -210,8 +211,8 @@ export default function UserInfoContent() {
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-6">User Management</h2>
 
-      <div className="flex flex-wrap mb-4 gap-4">
-        {/* Search */}
+      <div className="mb-4 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap">
+        {/* Search – full width always */}
         <input
           type="text"
           placeholder="Search users..."
@@ -220,12 +221,12 @@ export default function UserInfoContent() {
             setSearchTerm(e.target.value);
             setPage(1);
           }}
-          className="flex-1 px-4 py-2 border rounded-lg"
+          className="col-span-2 sm:flex-1 px-4 py-2 border rounded-lg"
         />
 
         {/* EXISTING filter (kept) */}
         <select
-          className="px-4 py-2 border rounded-lg"
+          className="w-full sm:w-auto px-4 py-2 border rounded-lg"
           value={filter}
           onChange={(e) => {
             setFilter(e.target.value.toLowerCase());
@@ -240,7 +241,7 @@ export default function UserInfoContent() {
 
         {/* User Type */}
         <select
-          className="px-4 py-2 border rounded-lg"
+          className="w-full sm:w-auto px-4 py-2 border rounded-lg"
           value={userType}
           onChange={(e) => {
             setUserType(e.target.value);
@@ -255,7 +256,7 @@ export default function UserInfoContent() {
 
         {/* Plan Type */}
         <select
-          className="px-4 py-2 border rounded-lg"
+          className="w-full sm:w-auto px-4 py-2 border rounded-lg"
           value={planType}
           onChange={(e) => {
             setPlanType(e.target.value);
@@ -269,7 +270,7 @@ export default function UserInfoContent() {
 
         {/* Program Type */}
         <select
-          className="px-4 py-2 border rounded-lg"
+          className="w-full sm:w-auto px-4 py-2 border rounded-lg"
           value={programType}
           onChange={(e) => {
             setProgramType(e.target.value);
@@ -280,9 +281,24 @@ export default function UserInfoContent() {
           <option value="cmp">CMP</option>
           <option value="none">None</option>
         </select>
+
+        {/* Page Size */}
+        <select
+          className="w-full sm:w-auto px-4 py-2 border rounded-lg"
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setPage(1);
+          }}
+        >
+          <option value={5}>5 / page</option>
+          <option value={10}>10 / page</option>
+          <option value={20}>20 / page</option>
+          <option value={50}>50 / page</option>
+          <option value={100}>100 / page</option>
+        </select>
+
       </div>
-
-
 
       {isLoading && <p>Loading users...</p>}
       {isError && <p className="text-red-600">Error: {error?.message}</p>}
