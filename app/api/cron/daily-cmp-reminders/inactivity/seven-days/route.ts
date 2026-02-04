@@ -1,4 +1,3 @@
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
 import { runInactivityNotifier } from "@/lib/utils/makeover-program/inactivity/inactivityNotifier";
 import { NotificationType } from "@prisma/client";
