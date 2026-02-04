@@ -7,7 +7,8 @@ import {
     MTB_DEFAULT_START,
 } from "@/lib/utils/makeover-program/makeover-dashboard/get-weeks-quarters";
 import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
+import { NotificationType } from "@prisma/client";
 
 export async function GET(req: NextRequest) {
     // search params only for testing with ?date=2026-03-28 not use search params in production
@@ -36,17 +37,21 @@ export async function GET(req: NextRequest) {
 
     const { daysLeft } = result;
 
-    let notification;
+    let notification = null;
 
     // 🔹 A. Quarter Ending Reminder (3 days before)
     if (daysLeft === 3) {
-        notification = CMP_NOTIFICATIONS.QUARTER_ENDING_SOON;
+        notification = await getCMPNotification(
+            NotificationType.CMP_QUARTER_ENDING_SOON
+        );
     }
 
     // 🔹 B. Quarter Reset Reminder (first day of new quarter)
 
     if (yesterdayResult && yesterdayResult.daysLeft === 0) {
-        notification = CMP_NOTIFICATIONS.QUARTER_RESET;
+        notification = await getCMPNotification(
+            NotificationType.CMP_QUARTER_RESET
+        );
     }
 
 

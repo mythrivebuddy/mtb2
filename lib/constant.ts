@@ -93,7 +93,7 @@ export const CMP_NOTIFICATIONS = {
   ===================================================== */
 
   LEVEL_UP: {
-    title: "🏅 You reached Level {{levelId}} - {{levelName}}",
+    title: "🏅 You reached Level {{levelNumber}} - {{levelName}}",
     description:
       "Your consistency is paying off.",
     url: "/dashboard/complete-makeover-program/makeover-dashboard",
@@ -104,7 +104,7 @@ export const CMP_NOTIFICATIONS = {
   ===================================================== */
 
   GOA_PROGRESS_MILESTONE: {
-    title: "🌴 You’re making real progress",
+    title: "🌴 You’re {{goaProgressMilestone}}% on your Goa Journey",
     description:
       "You’re closer to the Goa journey than you think.",
     url: "/dashboard/complete-makeover-program/makeover-dashboard",

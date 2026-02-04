@@ -802,6 +802,7 @@ model NotificationSettings {
   notification_type NotificationType @unique
   title             String
   message           String
+  url               String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
@@ -1923,6 +1924,20 @@ enum NotificationType {
   DAILY_BLOOM_REMINDER
   DAILY_BLOOM_PUSH_NOTIFICATION
   DAILY_CHALLENGE_PUSH_NOTIFICATION
+  CMP_DAILY_PRIMARY
+  CMP_DAILY_GENTLE_NUDGE
+  CMP_SUNDAY_MORNING
+  CMP_SUNDAY_EVENING_PENDING
+  CMP_QUARTER_ENDING_SOON
+  CMP_QUARTER_RESET
+  CMP_REWARD_UNLOCKED
+  CMP_REWARD_UNCLAIMED
+  CMP_LEVEL_UP
+  CMP_GOA_PROGRESS_MILESTONE
+  CMP_GOA_ELIGIBLE
+  CMP_INACTIVITY_3_DAYS
+  CMP_INACTIVITY_7_DAYS
+  CMP_ONBOARDING_PENDING
 }
 
 enum BreathWorkType {
