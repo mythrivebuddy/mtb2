@@ -5,6 +5,8 @@ import { calculateGoaProgressPercentage } from "@/lib/utils/makeover-program/mak
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { NextRequest, NextResponse } from "next/server";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
+import { NotificationType } from "@prisma/client";
 
 /**
  * Business constant
@@ -100,12 +102,17 @@ export async function POST(req: NextRequest) {
 
   // A️⃣ Goa progress milestone
   {
-    const title = `🌴 You’re ${crossedMilestone}% on your Goa Journey`;
-    const { description, url } = CMP_NOTIFICATIONS.GOA_PROGRESS_MILESTONE;
+
+    const notification = await getCMPNotification(
+      NotificationType.CMP_GOA_PROGRESS_MILESTONE
+    );
+    const { title, description, url } = notification || CMP_NOTIFICATIONS.GOA_PROGRESS_MILESTONE;
+
+    const dynamicTitle = title.replace("{{goaProgressMilestone}}", String(crossedMilestone));
 
     await sendPushNotificationToUser(
       session.user.id,
-      title,
+      dynamicTitle,
       description,
       { url }
     );
@@ -113,8 +120,10 @@ export async function POST(req: NextRequest) {
 
   // B️⃣ Goa eligibility achieved (75%)
   if (crossedMilestone === GOA_ELIGIBILITY_PERCENT) {
-    const { title, description, url } =
-      CMP_NOTIFICATIONS.GOA_ELIGIBLE;
+
+    const notification = await getCMPNotification(NotificationType.CMP_GOA_ELIGIBLE);
+
+    const { title, description, url } = notification || CMP_NOTIFICATIONS.GOA_ELIGIBLE;
 
     await sendPushNotificationToUser(
       session.user.id,
