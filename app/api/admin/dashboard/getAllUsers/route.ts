@@ -62,17 +62,65 @@ if (userType !== "all") {
 
 // Plan type
 if (planType === "free") {
-  whereClause.plan = null;
+  // whereClause.plan = null; // Not using temperarily
+  whereClause.membership = "FREE";
 } else if (planType === "paid") {
-  whereClause.plan = { isNot: null };
+  // whereClause.plan = { isNot: null }; // Not using temperarily
+  whereClause.membership = "PAID";
 }
 
 // Program type
-if (programType === "cmp") {
-  whereClause.programStates = { some: {} };
-} else if (programType === "none") {
-  whereClause.programStates = { none: {} };
+let programId: string | null = null;
+
+if (programType !== "all" && programType !== "none") {
+  const program = await prisma.program.findUnique({
+    where: { slug: programType },
+    select: { id: true },
+  });
+
+  programId = program?.id ?? null;
 }
+// Program filter (one-time paid programs)
+
+// ALL → no program filter applied
+if (programType === "all") {
+  // intentionally empty
+}
+
+// ANY → users with at least one paid program
+else if (programType === "any") {
+  whereClause.oneTimePurchases = {
+    some: {
+      status: "PAID",
+    },
+  };
+}
+
+// NONE → users with no paid program
+else if (programType === "none") {
+  whereClause.oneTimePurchases = {
+    none: {
+      status: "PAID",
+    },
+  };
+}
+
+// SPECIFIC PROGRAM (by slug)
+else if (programId) {
+  whereClause.oneTimePurchases = {
+    some: {
+      status: "PAID",
+      productId: programId,
+    },
+  };
+}
+
+
+// if (programType === "cmp") {
+//   whereClause.oneTimePurchases = { some: {} };
+// } else if (programType === "none") {
+//   whereClause.programStates = { none: {} };
+// }
 
 // Search
 if (search.trim()) {

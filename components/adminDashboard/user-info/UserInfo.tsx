@@ -34,7 +34,7 @@ async function fetchUsers(
   userType: string,
   planType: string,
   programType: string
-): Promise<{ users: IUser[]; total: number }> {
+): Promise<{ users: IUserWithMembership[]; total: number }> {
   const { data } = await axios.get(`/api/admin/dashboard/getAllUsers`, {
     params: {
       filter,
@@ -71,6 +71,12 @@ async function changeUserPlan(params: { userId: string; newPlanId: string }) {
   return data;
 }
 
+// --- Types & Interfaces ---
+export type IUserWithMembership = IUser & {
+  membership: string;
+};
+
+
 // --- Component ---
 
 export default function UserInfoContent() {
@@ -87,7 +93,7 @@ export default function UserInfoContent() {
 
   // State for Block User Modal
   const [showModal, setShowModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<IUserWithMembership | null>(null);
   const [reason, setReason] = useState("");
 
   // ADDED: State for Change Plan Modal
@@ -155,7 +161,7 @@ export default function UserInfoContent() {
     onError: (err) => toast.error(getAxiosErrorMessage(err)),
   });
 
-  const handleBlockClick = (user: IUser) => {
+  const handleBlockClick = (user: IUserWithMembership) => {
     setSelectedUser(user);
     setReason("");
     setShowModal(true);
@@ -167,7 +173,7 @@ export default function UserInfoContent() {
   };
 
   // ADDED: Handlers for the Change Plan modal
-  const handleEditPlanClick = (user: IUser) => {
+  const handleEditPlanClick = (user: IUserWithMembership) => {
     setSelectedUser(user);
     setSelectedPlanId(user.plan?.id || ""); // Set default to user's current plan
     setShowPlanModal(true);
@@ -278,7 +284,8 @@ export default function UserInfoContent() {
           }}
         >
           <option value="all">All Programs</option>
-          <option value="cmp">CMP</option>
+          <option value="any">Any Program</option>
+          <option value="2026-complete-makeover">CMP</option>
           <option value="none">None</option>
         </select>
 
@@ -367,8 +374,8 @@ export default function UserInfoContent() {
                 <TableCell>{user.jpEarned}</TableCell>
                 <TableCell>{user.jpBalance}</TableCell>
                 <TableCell>
-                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                    {user.plan?.name || "Free"}
+                  <span className={`px-2 py-1 text-xs rounded-full ${user.membership === 'FREE' ? 'bg-red-100' : 'bg-green-100'} text-green-800`}>
+                    {user.membership}
                   </span>
                 </TableCell>
                 <TableCell>
