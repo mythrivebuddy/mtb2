@@ -6,7 +6,7 @@ type InactivityConfig = {
   notification: {
     title: string;
     description: string;
-    url: string;
+    url?: string;
   };
   notifiedField: "inactivity3DayNotified" | "inactivity7DayNotified";
 };

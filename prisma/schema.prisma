@@ -802,6 +802,7 @@ model NotificationSettings {
   notification_type NotificationType @unique
   title             String
   message           String
+  url               String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }

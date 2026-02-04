@@ -62,7 +62,6 @@ const notificationTypes = [
   "CMP_ONBOARDING_PENDING",
 ] as const;
 
-
 const placeholderValue = "__placeholder__";
 
 // Schema
@@ -75,12 +74,14 @@ const formSchema = z.object({
   ]),
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
+  url: z.string().startsWith("/", "URL must start with /").optional().or(z.literal("")),
 });
 
 type FormValues = {
-  type: typeof placeholderValue | typeof notificationTypes[number];
+  type: typeof placeholderValue | (typeof notificationTypes)[number];
   title: string;
   message: string;
+  url?: string;
 };
 type ApiResponse = { message: string };
 
@@ -96,11 +97,12 @@ export const NotificationManagementComponent = () => {
       type: placeholderValue,
       title: "",
       message: "",
+      url: "",
     },
   });
 
   // Fetch all templates once on page load
-  const { data: allTemplates = []} = useQuery({
+  const { data: allTemplates = [] } = useQuery({
     queryKey: ["notificationTemplates"],
     queryFn: async () => {
       const res = await axios.get("/api/admin/notification"); // <-- no type param
@@ -114,15 +116,19 @@ export const NotificationManagementComponent = () => {
     if (!selectedType || selectedType === placeholderValue) {
       form.setValue("title", "");
       form.setValue("message", "");
+      form.setValue("url", "");
       return;
     }
 
     const template = allTemplates.find(
-      (t: { notification_type?: string; }) => (t as { notification_type?: string }).notification_type === selectedType
+      (t: { notification_type?: string }) =>
+        (t as { notification_type?: string }).notification_type ===
+        selectedType,
     );
 
     form.setValue("title", template?.title || "");
     form.setValue("message", template?.message || "");
+    form.setValue("url", template?.url || "");
   }, [selectedType, allTemplates, form]);
 
   // Save template
@@ -140,6 +146,7 @@ export const NotificationManagementComponent = () => {
         type: placeholderValue,
         title: "",
         message: "",
+        url: "",
       });
       setSelectedType(placeholderValue);
     },
@@ -233,6 +240,23 @@ export const NotificationManagementComponent = () => {
                       <Textarea
                         placeholder="Enter notification message text"
                         className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Redirect URL */}
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Redirect URL (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="/dashboard/..."
                         {...field}
                       />
                     </FormControl>

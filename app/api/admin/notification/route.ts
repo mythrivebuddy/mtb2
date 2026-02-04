@@ -4,7 +4,7 @@ import { NotificationType } from "@prisma/client"
 
 export const POST = async (req: NextRequest) => {
   try {
-    const { type, title, message } = await req.json()
+    const { type, title, message, url } = await req.json()
 
     if (!type || !title || !message) {
       return NextResponse.json(
@@ -18,11 +18,13 @@ export const POST = async (req: NextRequest) => {
       update: {
         title,
         message,
+        url: url ?? null,
       },
       create: {
         notification_type: type,
         title,
         message,
+        url: url ?? null,
       },
     })
 
