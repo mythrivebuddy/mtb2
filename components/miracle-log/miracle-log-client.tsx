@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Eye, Loader2, Info, AlertTriangle } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Eye,
+  Loader2,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
 import { miracleLogSchema, type MiracleLogFormType } from "@/schema/zodSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,7 +69,9 @@ const useMediaQuery = (query: string) => {
 };
 // --- END: useMediaQuery Hook ---
 
-export default function MiracleLogClient({}: MiracleLogClientProps) {
+export default function MiracleLogClient({
+  dailyLimit,
+}: MiracleLogClientProps) {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);
   const [viewLog, setViewLog] = useState<MiracleLog | null>(null);
   const [deleteLog, setDeleteLog] = useState<MiracleLog | null>(null);
@@ -102,6 +111,7 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
       return res.data;
     },
   });
+  const DAILY_LIMIT = dailyLimit ?? 0;
 
   const { data: streak = { count: 0 } } = useQuery({
     queryKey: ["streak", "MIRACLE_LOG"],
@@ -141,9 +151,11 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
     },
     onError: (error) => {
       const errorMessage = getAxiosErrorMessage(error, "An error occurred");
-      if (errorMessage.includes("Daily limit of 3 entries reached")) {
+      if (
+        errorMessage.includes(`Daily limit of ${DAILY_LIMIT} entries reached`)
+      ) {
         toast.error(
-          "You've reached the daily limit of 3 entries. Please try again tomorrow."
+          `You've reached the daily limit of ${DAILY_LIMIT} entries. Please try again tomorrow.`,
         );
       } else {
         toast.error(errorMessage);
@@ -234,19 +246,20 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
 
           <CardContent className="space-y-6">
             {/* Info Box */}
-            {todayEntriesCount >= 3 ? (
+            {todayEntriesCount >= DAILY_LIMIT ? (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800 flex items-center">
-                  <Info className="w-4 h-4 mr-2" />
-                  You have reached the daily limit of 3 entries. Please try
-                  again tomorrow.
+                <p className="text-yellow-800 flex items-center ">
+                  <Info className="w-4 h-4 mr-2 flex-shrink-0" />
+                  You have reached the daily limit of {DAILY_LIMIT}{" "} {DAILY_LIMIT === 1 ? "entry" : "entries"}.
+                  Please try again tomorrow.
                 </p>
               </div>
             ) : (
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-blue-800 text-sm">
-                  You can add up to 3 entries per day ({todayEntriesCount}/3
-                  used today)
+                  You can add up to {DAILY_LIMIT}{" "}
+                  {DAILY_LIMIT === 1 ? "entry" : "entries"} per day (
+                  {todayEntriesCount}/{DAILY_LIMIT} used today)
                 </p>
               </div>
             )}
@@ -262,7 +275,7 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
                     isSubmitting ||
                     createMutation.isPending ||
                     updateMutation.isPending ||
-                    todayEntriesCount >= 3
+                    todayEntriesCount >= DAILY_LIMIT
                   }
                 />
                 {errors.content && (
@@ -285,7 +298,7 @@ export default function MiracleLogClient({}: MiracleLogClientProps) {
                     isSubmitting ||
                     createMutation.isPending ||
                     updateMutation.isPending ||
-                    todayEntriesCount >= 3
+                    todayEntriesCount >= DAILY_LIMIT
                   }
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
