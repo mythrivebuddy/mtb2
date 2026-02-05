@@ -311,7 +311,7 @@ export default function UserInfoContent() {
       {isError && <p className="text-red-600">Error: {error?.message}</p>}
 
       {/* Users Table */}
-      <div className="overflow-x-auto">
+      <div className={`overflow-x-auto ${(isLoading || filteredUsers.length === 0) && 'min-h-64'}`}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -405,7 +405,7 @@ export default function UserInfoContent() {
               <TableRow>
                 <TableCell
                   colSpan={5}
-                  className="text-center text-sm text-gray-500"
+                  className="text-center py-24 text-sm text-gray-500"
                 >
                   No users found.
                 </TableCell>

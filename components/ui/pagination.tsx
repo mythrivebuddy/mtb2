@@ -67,7 +67,7 @@ export function Pagination({
         variant="outline"
         size="sm"
         onClick={() => onPageChange(safeCurrentPage - 1)}
-        disabled={safeCurrentPage === 1}
+        disabled={safeCurrentPage === 1 || safeCurrentPage === 0}
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
