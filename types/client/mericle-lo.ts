@@ -11,4 +11,5 @@ export interface MiracleLog {
 export interface MiracleLogClientProps {
   initialLogs: MiracleLog[];
   initialStreak: { count: number };
+  dailyLimit: number;
 }
