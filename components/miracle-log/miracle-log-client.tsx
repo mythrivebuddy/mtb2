@@ -46,6 +46,7 @@ import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { MiracleLog, MiracleLogClientProps } from "@/types/client/mericle-lo";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import Link from "next/link";
 
 // --- START: useMediaQuery Hook ---
 // This custom hook helps determine the screen size for responsive rendering.
@@ -71,6 +72,7 @@ const useMediaQuery = (query: string) => {
 
 export default function MiracleLogClient({
   dailyLimit,
+  isUpgradeFlagShow,
 }: MiracleLogClientProps) {
   const [editingLog, setEditingLog] = useState<MiracleLog | null>(null);
   const [viewLog, setViewLog] = useState<MiracleLog | null>(null);
@@ -248,10 +250,26 @@ export default function MiracleLogClient({
             {/* Info Box */}
             {todayEntriesCount >= DAILY_LIMIT ? (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-yellow-800 flex items-center ">
+                <p className="text-yellow-800 flex items-center flex-wrap">
                   <Info className="w-4 h-4 mr-2 flex-shrink-0" />
-                  You have reached the daily limit of {DAILY_LIMIT}{" "} {DAILY_LIMIT === 1 ? "entry" : "entries"}.
-                  Please try again tomorrow.
+                  <span>
+                    You have reached the daily limit of {DAILY_LIMIT}{" "}
+                    {DAILY_LIMIT === 1 ? "entry" : "entries"}. Please try again
+                    tomorrow
+                    {isUpgradeFlagShow && (
+                      <>
+                        {" "}
+                        or{" "}
+                        <Link
+                          href="/pricing?ref=miracle-log"
+                          className="underline underline-offset-4 font-medium"
+                        >
+                          upgrade
+                        </Link>{" "}
+                        to increase the limit.
+                      </>
+                    )}
+                  </span>
                 </p>
               </div>
             ) : (
