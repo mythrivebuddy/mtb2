@@ -4,7 +4,6 @@ import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { checkFeature } from "@/lib/access-control/checkFeature";
-import { MiracleLogPlanConfig } from "@/types/client/mericle-lo";
 
 async function getMiracleLogs() {
   const session = await checkRole("USER");
