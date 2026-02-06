@@ -5,6 +5,11 @@ import { ActivityType, StreakType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
 import { startOfDay } from "date-fns";
 import { checkFeature } from "@/lib/access-control/checkFeature";
+import { UNLIMITED } from "@/lib/access-control/featureConfig";
+
+type MiracleLogPlanConfig = {
+  dailyLimit: number;
+};
 
 export async function GET() {
   try {
@@ -79,12 +84,24 @@ export async function POST(req: Request) {
     //     { status: 400 }
     //   );
     // }
-    const dailyLimit =
-      typeof featureResult.config === "object"
-        ? featureResult.config.dailyLimit
-        : 0;
+    const planConfig =
+      featureResult.allowed && typeof featureResult.config === "object"
+        ? (featureResult.config as MiracleLogPlanConfig)
+        : null;
 
-    if (activeLogsToday >= dailyLimit) {
+    if (!planConfig) {
+      return NextResponse.json(
+        { error: "Miracle log configuration not found" },
+        { status: 500 }
+      );
+    }
+
+    const { dailyLimit } = planConfig;
+
+    if (
+      dailyLimit !== UNLIMITED &&
+      activeLogsToday >= dailyLimit
+    ) {
       return NextResponse.json(
         {
           message: `Daily limit of ${dailyLimit} miracle logs reached`,
@@ -92,6 +109,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
 
     // Create a new log
     const log = await prisma.miracleLog.create({

@@ -10,6 +10,15 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 
+type MagicBoxPlanConfig = {
+  minJp: number;
+  maxJp: number;
+  bonusEligible?: boolean;
+  bonusMultiplier?: number;
+};
+
+
+
 // GET: Retrieve or create user's magic box for today
 export async function GET() {
   try {
@@ -170,14 +179,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get magic box settings
-    const settings = await prisma.magicBoxSettings.findFirst({
-      orderBy: { updatedAt: "desc" },
-    });
+    const planConfig =
+      featureResult.allowed && typeof featureResult.config === "object"
+        ? (featureResult.config as MagicBoxPlanConfig)
+        : null;
 
-    // If no settings, use defaults
-    const minJp = settings?.minJpAmount || 100;
-    const maxJp = settings?.maxJpAmount || 500;
+    if (!planConfig) {
+      return NextResponse.json(
+        { error: "Magic box configuration not found" },
+        { status: 500 }
+      );
+    }
+
+    const { minJp, maxJp } = planConfig;
 
     interface RandomUser {
       id: string;
@@ -200,14 +214,11 @@ export async function POST(request: NextRequest) {
     let jpAmount = Math.floor(Math.random() * (maxJp - minJp + 1) + minJp);
 
     // apply bonus ONLY if paid member
-    const bonusEligible =
-      typeof featureResult.config === "object" &&
-      featureResult.config.bonusEligible === true;
 
-    if (bonusEligible) {
-      const BONUS_MULTIPLIER = featureResult.config.bonusMultiplier || 1; // single source here, no config explosion
+    if (planConfig.bonusEligible === true) {
+      const BONUS_MULTIPLIER = planConfig.bonusMultiplier || 1; // single source here, no config explosion
 
-      jpAmount = Math.floor(jpAmount * BONUS_MULTIPLIER);
+      jpAmount = Math.floor(jpAmount * BONUS_MULTIPLIER);  
     }
 
     // keep JP even

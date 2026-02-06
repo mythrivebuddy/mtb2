@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
-import { createLogWin } from "@/lib/utils/makeover-program/makeover-daily-tasks/createLogWin";
 import { sharedInChallengeGroup } from "@/lib/utils/makeover-program/makeover-daily-tasks/sharedInGroup";
 function normalizeToUTCStartOfDay(date: Date): Date {
   return new Date(

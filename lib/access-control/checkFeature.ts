@@ -10,11 +10,10 @@ import { featureConfig, UNLIMITED } from "./featureConfig";
 export type FeatureKey = keyof typeof featureConfig;
 
 type FeatureConfigMap = typeof featureConfig;
+type SupportedUserType = "COACH" | "ENTHUSIAST";
 
-type PlanConfig<F extends FeatureKey> =
-  FeatureConfigMap[F] extends { free: infer F1; paid: infer P1 }
-    ? F1 | P1
-    : boolean;
+
+
 
 type FeatureActions<F extends FeatureKey> =
   FeatureConfigMap[F] extends { actions: infer A } ? keyof A : never;
@@ -33,91 +32,63 @@ export function checkFeature<F extends FeatureKey>(params: {
   const { feature, user } = params;
   const config = featureConfig[feature];
 
-  /* ----------------------------------
-   * 🚫 Invalid / missing session data
-   * ---------------------------------- */
-
+  // ---------- validation ----------
   if (!user?.userType || !user?.membership) {
-    return {
-      allowed: false as const,
-      reason: "INVALID_SESSION_STATE" as const,
-    };
+    return { allowed: false as const, reason: "INVALID_SESSION_STATE" as const };
   }
 
   if (
-    !Object.values(PlanUserType).includes(
-      user.userType as PlanUserType
-    )
+    !Object.values(PlanUserType).includes(user.userType as PlanUserType)
   ) {
-    return {
-      allowed: false as const,
-      reason: "INVALID_USER_TYPE" as const,
-    };
+    return { allowed: false as const, reason: "INVALID_USER_TYPE" as const };
   }
 
   if (user.membership !== "FREE" && user.membership !== "PAID") {
-    return {
-      allowed: false as const,
-      reason: "INVALID_PLAN" as const,
-    };
+    return { allowed: false as const, reason: "INVALID_PLAN" as const };
   }
-
-  const userType = user.userType as PlanUserType;
-  const planKey = user.membership === "PAID" ? "paid" : "free";
-
-  /* ----------------------------------
-   * 🚫 Explicitly unsupported personas
-   * ---------------------------------- */
 
   if (
-    userType === PlanUserType.SOLOPRENEUR ||
-    userType === PlanUserType.ALL
+    user.userType !== PlanUserType.COACH &&
+    user.userType !== PlanUserType.ENTHUSIAST
   ) {
-    return {
-      allowed: false as const,
-      reason: "USER_TYPE_NOT_SUPPORTED" as const,
-    };
+    return { allowed: false as const, reason: "USER_TYPE_NOT_SUPPORTED" as const };
   }
 
-  /* ----------------------------------
-   * 🔑 UserType-level access
-   * ---------------------------------- */
+  const userType = user.userType as SupportedUserType;
 
-  const allowedUserTypes =
-    config.access as readonly PlanUserType[];
+  const planKey = user.membership === "PAID" ? "paid" : "free";
+
+  // ---------- access ----------
+  const allowedUserTypes = config.access as readonly SupportedUserType[];
 
   if (!allowedUserTypes.includes(userType)) {
-    return {
-      allowed: false as const,
-      reason: "USER_TYPE_NOT_ALLOWED" as const,
-    };
+    return { allowed: false as const, reason: "USER_TYPE_NOT_ALLOWED" as const };
   }
 
-  /* ----------------------------------
-   * 💳 Plan-level access
-   * ---------------------------------- */
 
-  const planValue = config[planKey];
+  if (!("plans" in config)) {
+    return { allowed: false as const, reason: "NO_PLAN_CONFIG" as const };
+  }
 
-  if (typeof planValue === "boolean") {
-    return planValue
-      ? {
-          allowed: true as const,
-          config: true,
-          isUnlimited: () => false,
-        }
-      : {
-          allowed: false as const,
-          reason: "PLAN_NOT_ALLOWED" as const,
-        };
+  const plans = config.plans as Record<
+    "free" | "paid",
+    Partial<Record<SupportedUserType, unknown>>
+  >;
+
+  const planConfig = plans[planKey]?.[userType];
+
+
+  if (planConfig === undefined) {
+    return { allowed: false as const, reason: "PLAN_NOT_ALLOWED" as const };
   }
 
   return {
     allowed: true as const,
-    config: planValue as PlanConfig<F>,
+    config: planConfig,
     isUnlimited: (value?: number) => value === UNLIMITED,
   };
 }
+
 
 /* ----------------------------------
  * 🔑 Action-Level Permission Check
