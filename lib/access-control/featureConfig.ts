@@ -6,6 +6,7 @@ export type PlanAccess = "FREE" | "PAID";
 
 //! Use -1 everywhere to represent "no limit"
 export const UNLIMITED = -1;
+// paid coach and paid sge me difference krna he
 
 export const featureConfig = {
     joyPearls: {
@@ -19,6 +20,7 @@ export const featureConfig = {
             spendRateMultiplier: 0.8,
             bonusEligible: true,
         },
+
     },
     //* miracleLog feature  implementation done
     miracleLog: {
@@ -37,6 +39,7 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         free: true,
         paid: true,
+        // SAME MIRACLE LOG JAISA HI HE
     },
 
     dailyBlooms: {
@@ -69,12 +72,14 @@ export const featureConfig = {
         access: [PlanUserType.COACH],
         free: { priorityBoost: 0 },
         paid: { priorityBoost: 1 },
+        //fcfs basis pe hoga ye feature dono ke liye but paid users ko thoda sa jyada chance milega spotlight me aane ka
     },
 
     buddyLens: {
         access: [PlanUserType.COACH],
         free: { requestLimit: 1, earnJPPerReview: 500 },
         paid: { requestLimit: 5, earnJPPerReview: 1500 },
+        // only coach review ke liye option baad me sge ka bhi kar skte he admin se 
     },
 
     challenges: {
@@ -82,10 +87,14 @@ export const featureConfig = {
         actions: {
             join: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
             create: [PlanUserType.COACH],
-            issueCertificate: [PlanUserType.COACH],
+            issueCertificate: [PlanUserType.COACH],  // free coach different and paid coach different control 
+            // challengeGroupChat
         },
-        free: { createLimit: 1 },
+        free: { createLimit: 2 },  // join limit 
         paid: { createLimit: UNLIMITED },
+        // free coach paid challenge bana skta he yes / no 
+        // paid coach paid challenge bana skta he 
+        // paid coach commission fee percentage 
     },
 
     challengeGroupChat: {
@@ -110,6 +119,10 @@ export const featureConfig = {
         access: [PlanUserType.COACH],
         free: { activePrograms: 1 },
         paid: { activePrograms: UNLIMITED },
+        // challenge jaisa hi he 
+           // free coach paid challenge bana skta he yes / no 
+        // paid coach paid challenge bana skta he 
+        // paid coach commission fee percentage 
     },
 
     prosperityDrops: {
