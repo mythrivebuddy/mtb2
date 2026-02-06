@@ -179,11 +179,13 @@ export const featureConfig = {
                     canIssueCertificate: true,
                     groupChatLimit: -1,
                     joinLimit: -1,
+                    isUpgradeFlagShow: true,
                 },
                 ENTHUSIAST: {
                     createLimit: 1,
                     groupChatLimit: -1,
                     joinLimit: -1,
+                    isUpgradeFlagShow: true,
                 },
             },
             paid: {
