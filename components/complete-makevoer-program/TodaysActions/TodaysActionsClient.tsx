@@ -17,7 +17,6 @@ import { isSunday } from "date-fns";
 import WeekdayActionCard from "./WeekDayActionCard";
 import SundayActionCard from "./SundayActionCard";
 
-
 /* ---------------- Types ---------------- */
 export type Commitment = {
   id: string;
@@ -73,7 +72,7 @@ export default function TodaysActionsClient({
     queryKey: ["today-lock-status"],
     queryFn: async () => {
       const res = await axios.get(
-        "/api/makeover-program/makeover-daily-tasks/today-lock"
+        "/api/makeover-program/makeover-daily-tasks/today-lock",
       );
       return res.data as {
         isDayLocked: boolean;
@@ -92,7 +91,7 @@ export default function TodaysActionsClient({
     queryKey: ["today-progress"],
     queryFn: async () => {
       const res = await axios.get(
-        "/api/makeover-program/makeover-daily-tasks/today-progress"
+        "/api/makeover-program/makeover-daily-tasks/today-progress",
       );
       return res.data.data as {
         areaId: number;
@@ -105,23 +104,22 @@ export default function TodaysActionsClient({
   });
 
   const sundayProgressQuery = useQuery({
-  queryKey: ["sunday-progress"],
-  queryFn: async () => {
-    const res = await axios.get(
-      "/api/makeover-program/makeover-sunday-tasks/today-progress"
-    );
-    return res.data.data as {
-      card: 1 | 2 | 3;
-      taskId: string;
-      done: true;
-    }[];
-  },
-  enabled: isProgramStarted && isTodaySunday,
-});
-
+    queryKey: ["sunday-progress"],
+    queryFn: async () => {
+      const res = await axios.get(
+        "/api/makeover-program/makeover-sunday-tasks/today-progress",
+      );
+      return res.data.data as {
+        card: 1 | 2 | 3;
+        taskId: string;
+        done: true;
+      }[];
+    },
+    enabled: isProgramStarted && isTodaySunday,
+  });
 
   useEffect(() => {
-    if(isTodaySunday) return;
+    if (isTodaySunday) return;
     if (!todayProgressQuery.data) return;
 
     const mapped: Record<number, ChecklistState> = {};
@@ -153,7 +151,7 @@ export default function TodaysActionsClient({
       0,
       0,
       0,
-      0
+      0,
     );
   }, [lockQuery.data?.unlockAt]);
 
@@ -184,7 +182,7 @@ export default function TodaysActionsClient({
       todayProgressQuery.data.map((log) => [
         log.areaId,
         log.identityDone && log.actionDone && log.winLogged,
-      ])
+      ]),
     );
 
     // find first incomplete area in commitments order
@@ -261,7 +259,7 @@ export default function TodaysActionsClient({
           value,
           actionText,
           date: new Date().toISOString(),
-        }
+        },
       );
 
       return res.data as {
@@ -274,8 +272,12 @@ export default function TodaysActionsClient({
       if (data?.success && data.pointsAwarded > 0) {
         const { field } = variables;
 
+        const label = TASK_LABEL[field];
+
         toast.success(
-          `${TASK_LABEL[field]} completed in "${activeSlide.areaName}" — +${data.pointsAwarded} points 🎉`
+          field === "winLogged"
+            ? `Shared  in the ${activeSlide.areaName} group — +${data.pointsAwarded} points 🎉`
+            : `${label} completed in "${activeSlide.areaName}" — +${data.pointsAwarded} points 🎉`,
         );
 
         queryClient.setQueryData(
@@ -284,7 +286,7 @@ export default function TodaysActionsClient({
             const safeData = oldData ?? [];
 
             const exists = safeData.some(
-              (item) => item.areaId === activeSlide.areaId
+              (item) => item.areaId === activeSlide.areaId,
             );
 
             if (!exists) {
@@ -303,9 +305,9 @@ export default function TodaysActionsClient({
                     ...item,
                     totalPoints: item.totalPoints + data.pointsAwarded,
                   }
-                : item
+                : item,
             );
-          }
+          },
         );
       }
     },
@@ -329,38 +331,36 @@ export default function TodaysActionsClient({
     });
   }, [commitments, checklistByArea]);
 
-//  const isSundayCompleted = React.useMemo(() => {
-//   if (!isTodaySunday) return false;
-//   if (!sundayProgressQuery.data) return false;
+  //  const isSundayCompleted = React.useMemo(() => {
+  //   if (!isTodaySunday) return false;
+  //   if (!sundayProgressQuery.data) return false;
 
-//   const byCard = new Map<number, Set<string>>();
+  //   const byCard = new Map<number, Set<string>>();
 
-//   sundayProgressQuery.data.forEach((p) => {
-//     if (!byCard.has(p.card)) {
-//       byCard.set(p.card, new Set());
-//     }
-//     byCard.get(p.card)!.add(p.taskId);
-//   });
+  //   sundayProgressQuery.data.forEach((p) => {
+  //     if (!byCard.has(p.card)) {
+  //       byCard.set(p.card, new Set());
+  //     }
+  //     byCard.get(p.card)!.add(p.taskId);
+  //   });
 
-//   /** CARD 1 RULE */
-//   const card1 = byCard.get(1) ?? new Set();
-//   const card1Completed =
-//     card1.has("weekly-win") &&
-//     card1.has("daily-win") &&
-//     card1.has("next-week"); // 👈 GROUP FLAG FROM BACKEND
+  //   /** CARD 1 RULE */
+  //   const card1 = byCard.get(1) ?? new Set();
+  //   const card1Completed =
+  //     card1.has("weekly-win") &&
+  //     card1.has("daily-win") &&
+  //     card1.has("next-week"); // 👈 GROUP FLAG FROM BACKEND
 
-//   /** CARD 2 RULE */
-//   const card2 = byCard.get(2) ?? new Set();
-//   const card2Completed = card2.size > 0; // 👈 ANY TASK
+  //   /** CARD 2 RULE */
+  //   const card2 = byCard.get(2) ?? new Set();
+  //   const card2Completed = card2.size > 0; // 👈 ANY TASK
 
-//   /** CARD 3 RULE */
-//   const card3 = byCard.get(3) ?? new Set();
-//   const card3Completed = card3.has("accountability");
+  //   /** CARD 3 RULE */
+  //   const card3 = byCard.get(3) ?? new Set();
+  //   const card3Completed = card3.has("accountability");
 
-//   return card1Completed && card2Completed && card3Completed;
-// }, [isTodaySunday, sundayProgressQuery.data]);
-
-
+  //   return card1Completed && card2Completed && card3Completed;
+  // }, [isTodaySunday, sundayProgressQuery.data]);
 
   const isIdentityDisabled = isDayLocked || currentChecklist.identityDone;
   const isActionDisabled = isDayLocked || currentChecklist.actionDone;
@@ -415,29 +415,29 @@ export default function TodaysActionsClient({
   }
 
   // 🟦 SUNDAY — all cards completed
-// if (
-//   isTodaySunday &&
-//   isProgramStarted &&
-//   isSundayCompleted
-// ) {
-//   return (
-//     <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
-//       <NotStartedYetTasks
-//         timeLeft={dayUnlockTimeLeft}
-//         startDate={unlockDate}
-//         isBack={true}
-//         title="Sunday Reflection Completed 🌱"
-//         description={
-//           <>
-//             You’ve completed all your Sunday reflection tasks.
-//             <br />
-//             Come back tomorrow to continue your journey.
-//           </>
-//         }
-//       />
-//     </main>
-//   );
-// }
+  // if (
+  //   isTodaySunday &&
+  //   isProgramStarted &&
+  //   isSundayCompleted
+  // ) {
+  //   return (
+  //     <main className="flex-1 flex flex-col max-w-xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
+  //       <NotStartedYetTasks
+  //         timeLeft={dayUnlockTimeLeft}
+  //         startDate={unlockDate}
+  //         isBack={true}
+  //         title="Sunday Reflection Completed 🌱"
+  //         description={
+  //           <>
+  //             You’ve completed all your Sunday reflection tasks.
+  //             <br />
+  //             Come back tomorrow to continue your journey.
+  //           </>
+  //         }
+  //       />
+  //     </main>
+  //   );
+  // }
 
   // 🔒 Day locked → show countdown till midnight
   if (
@@ -486,15 +486,15 @@ export default function TodaysActionsClient({
     }
   };
 
-  const allIdentityStatements = commitments.map(c => ({
-  title: c.areaName,
-  text: c.identityText,
-}));
+  const allIdentityStatements = commitments.map((c) => ({
+    title: c.areaName,
+    text: c.identityText,
+  }));
 
   // VIEW 2: Main Carousel Page
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8 font-sans">
-      <HeaderOfDailyTodaysActions isTodaySunday={isTodaySunday}/>
+      <HeaderOfDailyTodaysActions isTodaySunday={isTodaySunday} />
       {/* Main Carousel Area */}
 
       {isTodaySunday ? (
@@ -505,8 +505,8 @@ export default function TodaysActionsClient({
           handleNext={handleNext}
           // activeSlide={activeSlide}
           isLast={isLast}
-          identityStatements={allIdentityStatements} 
-          areaId={activeSlide.areaId} 
+          identityStatements={allIdentityStatements}
+          areaId={activeSlide.areaId}
           progress={sundayProgressQuery.data ?? []}
         />
       ) : (

@@ -84,7 +84,7 @@ const MessageModal = ({
             Continue with Free Plan
           </Button>
           <Button
-            onClick={() => router.push(`/dashboard/subscription`)}
+            onClick={() => router.push(`/pricing?ref=create-challenge`)}
             className="bg-green-700 hover:bg-green-800"
           >
             Upgrade Now

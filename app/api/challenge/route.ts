@@ -16,6 +16,11 @@ function generateSlug(title: string): string {
     .replace(/ /g, "-")
     .replace(/[^\w-]+/g, "");
 }
+type ChallengePlanConfig = {
+  createLimit: number;
+  isUpgradeFlagShow?: boolean;
+};
+
 
 export async function POST(request: Request) {
 
@@ -39,10 +44,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const createLimit =
-      typeof featureResult.config === "object"
-        ? featureResult.config.createLimit
-        : 0;
+    const planConfig =
+      featureResult.allowed && typeof featureResult.config === "object"
+        ? (featureResult.config as ChallengePlanConfig)
+        : null;
+
+    if (!planConfig) {
+      return NextResponse.json(
+        { error: "Challenge configuration not found" },
+        { status: 500 }
+      );
+    }
+
+    const { createLimit, isUpgradeFlagShow } = planConfig;
 
     //  Fetch user and include their plan (for the deductJp function)
     const user = await prisma.user.findUnique({
@@ -71,7 +85,7 @@ export async function POST(request: Request) {
       currentCount: monthlyChallengeCount,
       message:
         user.membership === "FREE"
-          ? "You have reached your Free Membership limit of 1 challenge per month. Please upgrade."
+          ? `You have reached your Free Membership limit of ${createLimit} challenge per month. ${isUpgradeFlagShow && "Please upgrade to increase the limit "}.`
           : `You have reached your monthly challenge creation limit.`,
     });
 

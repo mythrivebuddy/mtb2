@@ -277,7 +277,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
-                  label="Log Serendipities"
+                  label="Log Miracles"
                   onLinkClick={toggleSidebar}
                 />
                 <NavItem

@@ -194,8 +194,8 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       return (
         <div className="flex flex-col items-center justify-center p-8">
           <Clock className="h-16 w-16 text-blue-500 mb-4" />
-          <p className="text-xl font-semibold mb-2">Magic Box Redeemed</p>
-          <p className="text-gray-600 mb-2">
+          <p className="text-lg sm:text-xl text-center font-semibold mb-2">Magic Box Redeemed</p>
+          <p className="text-gray-600 text-center mb-2">
             You&apos;ve already opened today&apos;s Magic Box
           </p>
           <p className="text-blue-600 font-medium mb-6">
@@ -260,7 +260,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
             {Math.floor((magicBox.jpAmount || 0) / 2)} JP each)
           </p>
 
-          <div className="grid grid-cols-2 gap-4 w-full mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-6">
             {randomUsers.map((user: RandomUser) => (
               <div
                 key={user.id}
@@ -271,7 +271,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
                 }`}
               >
                 <div
-                  className="flex max-sm:flex-col justify-center sm:items-center cursor-pointer min-w-0 gap-2"
+                  className="flex  justify-center items-center cursor-pointer min-w-0 gap-2"
                   onClick={() => setSelectedUser(user.id)}
                 >
                   <Avatar className="h-10  w-10 mr-3">
@@ -285,7 +285,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
 
                 <a
                   href={`/profile/${user.id}`}
-                  className="text-sm flex items-center max-sm:mt-6   text-blue-600 hover:text-blue-800"
+                  className="text-sm flex items-center   text-blue-600 hover:text-blue-800"
                   onClick={(e) => e.stopPropagation()}
                   target="_blank"
                 >
