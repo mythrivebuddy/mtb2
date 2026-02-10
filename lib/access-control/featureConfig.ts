@@ -55,7 +55,7 @@ export const featureConfig = {
             },
         },
     },
-
+    //  progress vault feature implementation done
     onePercentProgressVault: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
@@ -69,7 +69,7 @@ export const featureConfig = {
             },
         },
     },
-
+    // daily blooms feature implementation done
     dailyBlooms: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
@@ -84,13 +84,13 @@ export const featureConfig = {
         },
     },
 
-
+    // reminder access control done
     reminders: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: UNLIMITED },
-                ENTHUSIAST: { dailyLimit: UNLIMITED },
+                COACH: { dailyLimit: 1 },
+                ENTHUSIAST: { dailyLimit: 1 },
             },
             paid: {
                 COACH: { dailyLimit: UNLIMITED },

@@ -12,7 +12,6 @@ import {
   PlusCircle,
   X,
   Calendar as CalendarIcon,
-  AlertTriangle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,19 +19,11 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  // DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Editor } from "@tinymce/tinymce-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
@@ -49,51 +40,6 @@ type CreateChallengeProps = {
   onSuccess?: () => void;
 };
 
-// --- A reusable modal component for displaying messages ---
-const MessageModal = ({
-  isOpen,
-  onClose,
-  title,
-  message,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-}) => {
-  const router = useRouter();
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md ">
-        <DialogHeader className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-            <AlertTriangle className="h-8 w-8 text-red-600" />
-          </div>
-          <DialogTitle className="text-2xl font-bold text-slate-800">
-            {title}
-          </DialogTitle>
-          <DialogDescription className="text-md text-slate-600 mt-2">
-            {message}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="!flex !flex-col gap-2">
-          <Button onClick={onClose} className="bg-red-600  hover:bg-red-700 ">
-            Continue with Free Plan
-          </Button>
-          <Button
-            onClick={() => router.push(`/pricing?ref=create-challenge`)}
-            className="bg-green-700 hover:bg-green-800"
-          >
-            Upgrade Now
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 // --- Type definitions ---
 interface UserData {
@@ -738,7 +684,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 {mutation.isPending ? "Creating..." : "Create Challenge"}
               </button>
             </div>
-            <MessageModal
+            <UpgradeMessageModal
               isOpen={!!modalContent}
               onClose={() => {
                 setModalContent(null);
@@ -751,6 +697,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               }}
               title={modalContent?.title ?? ""}
               message={modalContent?.message ?? ""}
+              redirectToPricingUrl={`/pricing?ref=create-challenge`}
             />
           </form>
         </div>
