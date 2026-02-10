@@ -41,16 +41,17 @@ export const featureConfig = {
         },
     },
 
+    // this is set todays focus
     onePercentStart: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: true,
-                ENTHUSIAST: true,
+                COACH: { dailyLimit: 1, isUpgradeFlagShow: true },
+                ENTHUSIAST: { dailyLimit: 1, isUpgradeFlagShow: true },
             },
             paid: {
-                COACH: true,
-                ENTHUSIAST: true,
+                COACH: { dailyLimit: 3 },
+                ENTHUSIAST: { dailyLimit: 3 },
             },
         },
     },
@@ -59,8 +60,8 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: 1 },
-                ENTHUSIAST: { dailyLimit: 1 },
+                COACH: { dailyLimit: 2, isUpgradeFlagShow: true },
+                ENTHUSIAST: { dailyLimit: 1, isUpgradeFlagShow: true },
             },
             paid: {
                 COACH: { dailyLimit: 3 },
@@ -73,8 +74,8 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: UNLIMITED },
-                ENTHUSIAST: { dailyLimit: UNLIMITED },
+                COACH: { dailyLimit: 2 },
+                ENTHUSIAST: { dailyLimit: 2 },
             },
             paid: {
                 COACH: { dailyLimit: UNLIMITED },
