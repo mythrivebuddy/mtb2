@@ -8,7 +8,11 @@ export type PlanAccess = "FREE" | "PAID";
 export const UNLIMITED = -1;
 // paid coach and paid sge me difference krna he
 
+export type LimitType = "MONTHLY" | "YEARLY" | "LIFETIME";
+
+
 export const featureConfig = {
+    // deduct dynamic for only prosperity drops and spotlight only
     joyPearls: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
@@ -141,28 +145,49 @@ export const featureConfig = {
         access: [PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { priorityBoost: 0 },
+                COACH: {
+                    eligible: false,
+                    priorityWeight: 0,
+                    applyLimitType: "MONTHLY" as LimitType,
+                    applyLimit: 0,
+                },
             },
             paid: {
-                COACH: { priorityBoost: 1 },
+                COACH: {
+                    eligible: true,
+                    priorityWeight: 1,
+                    applyLimitType: "MONTHLY" as LimitType,
+                    applyLimit: 1,
+                },
             },
         },
     },
 
-
+    // monthly yearly lifetime
+    // buddy lens feature implementation done
     buddyLens: {
         access: [PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { requestLimit: 1, earnJPPerReview: 500 },
+                COACH: {
+                    requestLimitType: "MONTHLY" as LimitType,
+                    requestLimit: 1,
+                    earnJPPerReview: 1000,
+                },
             },
             paid: {
-                COACH: { requestLimit: 5, earnJPPerReview: 1500 },
+                COACH: {
+                    requestLimitType: "MONTHLY" as LimitType,
+                    requestLimit: 6,
+                    earnJPPerReview: 1500,
+                },
             },
         },
     },
 
 
+    // monthly yearly lifetime config karna he limit ko 
+    // default monthly 
     challenges: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         actions: {
@@ -174,7 +199,7 @@ export const featureConfig = {
         plans: {
             free: {
                 COACH: {
-                    createLimit: 2,
+                    createLimit: 3,
                     canCreatePaidChallenge: false,
                     commissionPercent: 20,
                     canIssueCertificate: true,
@@ -199,7 +224,7 @@ export const featureConfig = {
                     joinLimit: -1,
                 },
                 ENTHUSIAST: {
-                    createLimit: 3,
+                    createLimit: 8,
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
                     groupChatLimit: -1,
@@ -254,12 +279,16 @@ export const featureConfig = {
         // paid coach paid challenge bana skta he
         // paid coach commission fee percentage
     },
-
+    // prosperity drops feature implementation done
     prosperityDrops: {
         access: [PlanUserType.COACH],
         plans: {
-            free: { eligible: false },
-            paid: { eligible: true, priorityWeight: 1 },
+            free: {
+                COACH: { eligible: false, priorityWeight: 0 },
+            },
+            paid: {
+                COACH: { eligible: true, priorityWeight: 1 },
+            },
         },
     },
 } as const;

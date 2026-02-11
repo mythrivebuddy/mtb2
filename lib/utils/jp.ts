@@ -8,6 +8,9 @@ import {
   createJPEarnedNotification,
   createJpSpentNotification,
 } from "./notifications";
+import { checkFeature } from "../access-control/checkFeature";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth";
 
 type UserWithPlan = Prisma.UserGetPayload<{
   include: { plan: true };
@@ -30,6 +33,9 @@ export async function assignJp(
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
+    const session = await getServerSession(authOptions);
+    console.log("💸assinging jps💸");
+    
     const activityData = await prismaClient.activity.findUnique({
       where: { activity },
     });
@@ -44,8 +50,8 @@ export async function assignJp(
     const baseAmount = options?.amount ?? activityData.jpAmount;
 
     // 3. Calculate the final amount to add after applying any plan multipliers.
-    const isActive = isPlanActive(user);
-    const multiplier = isActive ? user?.plan?.jpMultiplier || 1 : 1;
+    const joyPearlsConfig = await getJoyPearlsConfig(user);
+    const multiplier = joyPearlsConfig?.earnRateMultiplier ?? 1;
     const jpToAdd = Math.ceil(baseAmount * multiplier);
 
     // 4. Update the user's JP balance and create a transaction record.
@@ -63,7 +69,8 @@ export async function assignJp(
         },
       },
     });
-
+  console.log({jpToAdd});
+      
     // 5. Create a notification for the user about the earned JP.
     await createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
   } catch (error) {
@@ -98,9 +105,11 @@ export async function deductJp(
     const baseAmount = options?.amount ?? activityData.jpAmount;
 
     // 3. Calculate the final amount to deduct after applying any discounts.
-    const isActive = isPlanActive(user);
-    const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
-    const jpToDeduct = Math.ceil(baseAmount * (1 - discount / 100));
+    const joyPearlsConfig = await getJoyPearlsConfig(user);
+    const spendMultiplier =   joyPearlsConfig?.spendRateMultiplier ?? 1;
+    const jpToDeduct = Math.ceil(baseAmount * spendMultiplier);
+    console.log({spendMultiplier,jpToDeduct});
+    
 
     // 4. Check if the user has a sufficient balance.
     if (user.jpBalance < jpToDeduct) {
@@ -136,4 +145,25 @@ export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
   const isActive = isPlanActive(user);
   const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
   return Math.ceil(activityData.jpAmount * (1 - discount / 100));
+}
+
+async function getJoyPearlsConfig(user: UserWithPlan) {
+  const session = await getServerSession(authOptions);
+
+  const result = checkFeature({
+    feature: "joyPearls",
+     user:session?.user ?? user, // Pass session user if available, otherwise fallback to provided user
+  });
+  console.log("joyPearlsConfig result:", result);
+  
+
+  if (!result.allowed) {
+    return null;
+  }
+
+  return result.config as {
+    earnRateMultiplier?: number;
+    spendRateMultiplier?: number;
+    bonusEligible?: boolean;
+  };
 }
