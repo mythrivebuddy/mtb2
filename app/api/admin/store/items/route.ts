@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
+import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 
 const prisma = new PrismaClient();
+
 // GET /api/items - Fetch all items
 export async function GET() {
   try {
@@ -10,7 +11,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
-        category: true,
+        categoryId: true,
         basePrice: true,
         monthlyPrice: true,
         yearlyPrice: true,
@@ -24,6 +25,7 @@ export async function GET() {
     return NextResponse.json(
       { items: items.map((item) => ({
         ...item,
+        category: item.categoryId, // Map categoryId to category for frontend
         createdAt: item.createdAt.toISOString(),
       })) },
       { status: 200 }
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
     const imageUrl = await handleSupabaseImageUpload(imageFile,"store-images","store-images");
     let downloadUrl: string | undefined;
 
-    if (downloadFile) {
+    if (downloadFile && downloadFile.size > 0) {
       downloadUrl = await handleSupabaseImageUpload(downloadFile,"store-images","store-images");
     }
 
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        category: true,
+        categoryId: true,
         basePrice: true,
         monthlyPrice: true,
         yearlyPrice: true,
@@ -91,7 +93,11 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { item: { ...item, createdAt: item.createdAt.toISOString() } },
+      { item: { 
+        ...item, 
+        category: item.categoryId, // Map categoryId to category for frontend
+        createdAt: item.createdAt.toISOString() 
+      } },
       { status: 201 }
     );
   } catch (error) {
@@ -117,6 +123,22 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // First, get the existing item to preserve current URLs if not updating
+    const existingItem = await prisma.item.findUnique({
+      where: { id },
+      select: {
+        imageUrl: true,
+        downloadUrl: true,
+      },
+    });
+
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: "Item not found" },
+        { status: 404 }
+      );
+    }
+
     const formData = await request.formData();
     
     const name = formData.get("name") as string;
@@ -135,7 +157,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updateData : {
+    // Build update data - start with existing URLs
+    interface UpdateData {
       name: string;
       categoryId: string;
       basePrice: number;
@@ -143,26 +166,28 @@ export async function PUT(request: NextRequest) {
       yearlyPrice: number;
       lifetimePrice: number;
       imageUrl: string;
-      downloadUrl: string | null;
-    } = {
+      downloadUrl?: string | null;
+    }
+
+    const updateData: UpdateData = {
       name,
       categoryId: category,
       basePrice,
       monthlyPrice,
       yearlyPrice,
       lifetimePrice,
-      imageUrl: '',
-      downloadUrl: '',
+      imageUrl: existingItem.imageUrl, // Keep existing URL by default
+      downloadUrl: existingItem.downloadUrl, // Keep existing URL by default
     };
 
-    if (imageFile) {
+    // Only update imageUrl if a new file is provided
+    if (imageFile && imageFile.size > 0) {
       updateData.imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
     }
 
-    if (downloadFile) {
+    // Only update downloadUrl if a new file is provided
+    if (downloadFile && downloadFile.size > 0) {
       updateData.downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
-    } else if (formData.get("download") === null) {
-      updateData.downloadUrl = null;
     }
 
     const item = await prisma.item.update({
@@ -171,7 +196,7 @@ export async function PUT(request: NextRequest) {
       select: {
         id: true,
         name: true,
-        category: true,
+        categoryId: true,
         basePrice: true,
         monthlyPrice: true,
         yearlyPrice: true,
@@ -183,7 +208,11 @@ export async function PUT(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { item: { ...item, createdAt: item.createdAt.toISOString() } },
+      { item: { 
+        ...item, 
+        category: item.categoryId, // Map categoryId to category for frontend
+        createdAt: item.createdAt.toISOString() 
+      } },
       { status: 200 }
     );
   } catch (error) {

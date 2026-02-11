@@ -17,7 +17,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import { Category } from "@/types/client/manage-store-product";
+import { Category, ItemFormData } from "@/types/client/manage-store-product";
 import { Item, WishlistItem } from "@/types/client/store";
 import Image from "next/image";
 
@@ -50,6 +50,15 @@ const fetchWishlist = async (): Promise<WishlistItem[]> => {
 
 const StorePage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isAddProductModalOpen, setAddProductModalOpen] = useState<boolean>(false);
+  const [formData, setFormData] = useState<ItemFormData>({
+    name: "",
+    category: "",
+    basePrice: 0,
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    lifetimePrice: 0,
+  });
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -72,6 +81,36 @@ const StorePage: React.FC = () => {
         ? fetchItemsByCategory(selectedCategory)
         : fetchAllItems(),
     placeholderData: (prev) => prev,
+  });
+
+  const createProductMutation = useMutation({
+    mutationFn: async (newItem: ItemFormData) => {
+      const formDataToSend = new FormData();
+      formDataToSend.append("name", newItem.name);
+      formDataToSend.append("category", newItem.category);
+      formDataToSend.append("basePrice", newItem.basePrice.toString());
+      formDataToSend.append("monthlyPrice", newItem.monthlyPrice.toString());
+      formDataToSend.append("yearlyPrice", newItem.yearlyPrice.toString());
+      formDataToSend.append("lifetimePrice", newItem.lifetimePrice.toString());
+      if (newItem.imageFile) {
+        formDataToSend.append("image", newItem.imageFile);
+      }
+      if (newItem.downloadFile) {
+        formDataToSend.append("download", newItem.downloadFile);
+      }
+      return axios.post("/api/user/store/items/add-items", formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      setAddProductModalOpen(false);
+      resetForm();
+      toast.success("Product created successfully!");
+    },
+    onError: (err) => {
+      toast.error(getAxiosErrorMessage(err, "Failed to create product."));
+    },
   });
 
   const toggleWishlistMutation = useMutation({
@@ -109,6 +148,30 @@ const StorePage: React.FC = () => {
     },
   });
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      category: "",
+      basePrice: 0,
+      monthlyPrice: 0,
+      yearlyPrice: 0,
+      lifetimePrice: 0,
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.category) {
+      toast.error("Please select a category");
+      return;
+    }
+    if (!formData.imageFile) {
+      toast.error("Please upload an image");
+      return;
+    }
+    createProductMutation.mutate(formData);
+  };
+
   const getPriceForMembership = (item: Item): number => {
     switch (membership) {
       case "MONTHLY":
@@ -145,15 +208,175 @@ const StorePage: React.FC = () => {
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <div className="flex flex-col">
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
             <h1 className="text-3xl font-bold text-slate-800">🛍 Store</h1>
-            <Link
-              href="/dashboard/store/profile"
-              className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600"
-            >
-              My Cart & Orders
-            </Link>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setAddProductModalOpen(true)}
+                className="bg-green-600 text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-green-700"
+              >
+                Add Product
+              </button>
+              <Link
+                href="/dashboard/store/profile"
+                className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600"
+              >
+                My Cart & Orders
+              </Link>
+            </div>
           </div>
+
+          {/* Add Product Modal */}
+          {isAddProductModalOpen && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Create New Product</h3>
+                  <button
+                    onClick={() => {
+                      setAddProductModalOpen(false);
+                      resetForm();
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </button>
+                </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium">Name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Category</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) =>
+                        setFormData({ ...formData, category: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Base Price</label>
+                    <input
+                      type="number"
+                      value={formData.basePrice}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          basePrice: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Monthly Price
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.monthlyPrice}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          monthlyPrice: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Yearly Price</label>
+                    <input
+                      type="number"
+                      value={formData.yearlyPrice}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          yearlyPrice: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Lifetime Price
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.lifetimePrice}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          lifetimePrice: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Image File</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          imageFile: e.target.files?.[0] || undefined,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">
+                      Download File (Optional)
+                    </label>
+                    <input
+                      type="file"
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          downloadFile: e.target.files?.[0] || undefined,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                    disabled={createProductMutation.isPending}
+                  >
+                    {createProductMutation.isPending
+                      ? "Creating..."
+                      : "Create Product"}
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
 
           <Carousel
             className="w-full mx-auto mb-6"
@@ -183,9 +406,8 @@ const StorePage: React.FC = () => {
           <div className="flex flex-wrap gap-2 justify-center mb-6">
             <button
               onClick={() => setSelectedCategory(null)}
-              className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${
-                selectedCategory === null ? "opacity-90" : ""
-              }`}
+              className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${selectedCategory === null ? "opacity-90" : ""
+                }`}
             >
               All Products
             </button>
@@ -193,9 +415,8 @@ const StorePage: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${
-                  selectedCategory === cat.id ? "opacity-90" : ""
-                }`}
+                className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${selectedCategory === cat.id ? "opacity-90" : ""
+                  }`}
               >
                 {cat.name}
               </button>
@@ -204,10 +425,9 @@ const StorePage: React.FC = () => {
 
           <h2 className="text-2xl font-semibold text-slate-800 mb-4 text-center">
             {selectedCategory
-              ? `${
-                  categories.find((c) => c.id === selectedCategory)?.name ||
-                  "Selected"
-                } Items`
+              ? `${categories.find((c) => c.id === selectedCategory)?.name ||
+              "Selected"
+              } Items`
               : "All Products"}
           </h2>
 
@@ -222,12 +442,15 @@ const StorePage: React.FC = () => {
                 >
                   <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
                     <Image
-                      src={item.imageUrl}
+                      src={item.imageUrl && item.imageUrl.trim() !== ""
+                        ? item.imageUrl
+                        : "/placeholder-image.jpg"}
                       alt={item.name}
                       width={300}
                       height={300}
                       className="w-full h-full object-cover rounded-lg"
                     />
+
                   </div>
 
                   <div className="flex justify-between items-center mb-2">

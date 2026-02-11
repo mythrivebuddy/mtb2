@@ -337,13 +337,20 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   )}
                 </div> */}
 
-                <ComingSoonWrapper>
+                  <NavItem
+                  href="/dashboard/store"
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Store"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+
+                {/* <ComingSoonWrapper>
                   <NavItem
                     icon={<ShoppingCartIcon size={20} />}
                     label="Store"
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
-                </ComingSoonWrapper>
+                </ComingSoonWrapper> */}
               </NavSection>
               {/* Settings Section */}
               {(session.data?.user.userType == "COACH" ||

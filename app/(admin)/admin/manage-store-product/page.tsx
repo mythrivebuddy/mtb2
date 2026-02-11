@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ export default function ProductManagement() {
   const [isCategoryModalOpen, setCategoryModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [newCategory, setNewCategory] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("");
   const [formData, setFormData] = useState<ItemFormData>({
     name: "",
     category: "",
@@ -56,6 +58,25 @@ export default function ProductManagement() {
       toast.error(`Failed to load categories: ${categoriesError.message}`);
     }
   }, [error, categoriesError]);
+
+  // Filter and search logic
+  const filteredItems = useMemo(() => {
+    let filtered = [...items];
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategoryFilter) {
+      filtered = filtered.filter((item) => item.category === selectedCategoryFilter);
+    }
+
+    return filtered;
+  }, [items, searchQuery, selectedCategoryFilter]);
 
   const createMutation = useMutation({
     mutationFn: async (newItem: ItemFormData) => {
@@ -164,6 +185,7 @@ export default function ProductManagement() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("formdata" , formData)
     if (!formData.category) {
       toast.error("Please select a category");
       return;
@@ -204,8 +226,8 @@ export default function ProductManagement() {
   };
 
   // Type assertions for the data
-  const typedItems = items as Item[];
   const typedCategories = categories as Category[];
+  const typedFilteredItems = filteredItems as Item[];
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -213,7 +235,7 @@ export default function ProductManagement() {
 
       <div className="mb-6 flex gap-4">
         <button
-          className="px-4 py-2 bg-green-600 text-white rounded-lg"
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           onClick={() => {
             setEditingItem(null);
             resetForm();
@@ -223,7 +245,7 @@ export default function ProductManagement() {
           Add New Product
         </button>
         <button
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           onClick={() => setCategoryModalOpen(true)}
         >
           Add New Category
@@ -282,7 +304,7 @@ export default function ProductManagement() {
                   <button
                     type="button"
                     onClick={() => setCategoryModalOpen(true)}
-                    className="px-3 py-2 bg-gray-200 rounded-lg"
+                    className="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
                   >
                     +
                   </button>
@@ -364,7 +386,7 @@ export default function ProductManagement() {
                   required={!editingItem}
                 />
                 {editingItem && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1">
                     Current: {editingItem.imageUrl}
                   </p>
                 )}
@@ -384,14 +406,14 @@ export default function ProductManagement() {
                   className="w-full px-3 py-2 border rounded-lg"
                 />
                 {editingItem && editingItem.downloadUrl && (
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1">
                     Current: {editingItem.downloadUrl}
                   </p>
                 )}
               </div>
               <button
                 type="submit"
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                 disabled={createMutation.isPending || updateMutation.isPending}
               >
                 {editingItem
@@ -437,7 +459,7 @@ export default function ProductManagement() {
               </div>
               <button
                 type="submit"
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg"
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
                 disabled={createCategoryMutation.isPending}
               >
                 {createCategoryMutation.isPending
@@ -454,20 +476,26 @@ export default function ProductManagement() {
           <input
             type="text"
             placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg"
           />
         </div>
         <div>
           {isCategoriesLoading ? (
-            <select className="px-4 py-2 border rounded-lg">
+            <select className="px-4 py-2 border rounded-lg" disabled>
               <option>Loading...</option>
             </select>
           ) : categoriesError ? (
-            <select className="px-4 py-2 border rounded-lg">
+            <select className="px-4 py-2 border rounded-lg" disabled>
               <option>Error loading categories</option>
             </select>
           ) : (
-            <select className="px-4 py-2 border rounded-lg">
+            <select 
+              className="px-4 py-2 border rounded-lg"
+              value={selectedCategoryFilter}
+              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+            >
               <option value="">All Categories</option>
               {typedCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -482,13 +510,17 @@ export default function ProductManagement() {
       {isLoading ? (
         <PageSkeleton type="manage-store-product" />
       ) : error ? (
-        <div>Error loading items: {error.message}</div>
-      ) : typedItems.length === 0 ? (
-        <div>No items found.</div>
+        <div className="text-red-600">Error loading items: {error.message}</div>
+      ) : typedFilteredItems.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          {searchQuery || selectedCategoryFilter 
+            ? "No products match your filters." 
+            : "No items found."}
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead>
+            <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
@@ -516,29 +548,29 @@ export default function ProductManagement() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {typedItems.map((item) => {
+            <tbody className="bg-white divide-y divide-gray-200">
+              {typedFilteredItems.map((item) => {
                 const category = typedCategories.find(
                   (cat) => cat.id === item.category
                 );
                 return (
                   <tr key={item.id}>
-                    <td className="px-6 py-4">{item.name}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {category ? category.name : "Unknown"}
                     </td>
-                    <td className="px-6 py-4">${item.basePrice.toFixed(2)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">${item.basePrice.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       ${item.monthlyPrice.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4">${item.yearlyPrice.toFixed(2)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">${item.yearlyPrice.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       ${item.lifetimePrice.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {new Date(item.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 space-x-2">
+                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
                       <button
                         onClick={() => handleEdit(item)}
                         className="text-blue-600 hover:text-blue-900"
