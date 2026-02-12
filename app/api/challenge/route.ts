@@ -1,7 +1,9 @@
 // app/api/challenge/route.ts
 
-import { checkFeature } from "@/lib/access-control/checkFeature";
+import { checkFeature, checkFeatureAction } from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { LimitType } from "@/lib/access-control/featureConfig";
+import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { deductJp } from "@/lib/utils/jp";
@@ -19,6 +21,7 @@ function generateSlug(title: string): string {
 type ChallengePlanConfig = {
   createLimit: number;
   isUpgradeFlagShow?: boolean;
+  limitType: LimitType;
 };
 
 
@@ -30,6 +33,23 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
+    //  Action-level check: if only COACH can create challenges
+    const canCreate = checkFeatureAction({
+      feature: "challenges",
+      action: "create",
+      userType: session.user.userType,
+    });
+
+    if (!canCreate) {
+      return NextResponse.json(
+        {
+          message: "Only coaches are allowed to create challenges.",
+          isUpgradeFlagShow: false,
+        },
+        { status: 403 }
+      );
+    }
+
 
     const userId = session.user.id;
     const featureResult = checkFeature({
@@ -56,7 +76,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { createLimit, isUpgradeFlagShow } = planConfig;
+    const { createLimit, isUpgradeFlagShow, limitType } = planConfig;
 
     //  Fetch user and include their plan (for the deductJp function)
     const user = await prisma.user.findUnique({
@@ -68,25 +88,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
-    //  Count challenges created this month
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    //  Count challenges created this limitType 
+    const periodStart = getLimitPeriodStart(limitType);
 
-    const monthlyChallengeCount = await prisma.challenge.count({
+    const createdCount = await prisma.challenge.count({
       where: {
         creatorId: userId,
-        createdAt: { gte: startOfMonth },
+        ...(periodStart && {
+          createdAt: { gte: periodStart },
+        }),
       },
     });
 
+
     //  Enforce the limit
+    const limitLabel =
+      limitType === "MONTHLY"
+        ? "per month"
+        : limitType === "YEARLY"
+          ? "per year"
+          : "";
+
+    const message =
+      createLimit === 0
+        ? `You cannot create challenges on the Free plan.${isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
+        }`
+        : `You have reached your Free Membership limit of ${createLimit} challenge${createLimit === 1 ? "" : "s"
+        } ${limitLabel}.${isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
+        }`;
+
     const limitResponse = await enforceLimitResponse({
       limit: createLimit,
-      currentCount: monthlyChallengeCount,
-      message:
-        user.membership === "FREE"
-          ? `You have reached your Free Membership limit of ${createLimit} challenge per month. ${isUpgradeFlagShow && "Please upgrade to increase the limit "}.`
-          : `You have reached your monthly challenge creation limit.`,
+      currentCount: createdCount,
+      message
+
     });
 
     if (limitResponse) {

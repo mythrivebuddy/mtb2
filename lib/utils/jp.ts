@@ -34,8 +34,7 @@ export async function assignJp(
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
     const session = await getServerSession(authOptions);
-    console.log("💸assinging jps💸");
-    
+
     const activityData = await prismaClient.activity.findUnique({
       where: { activity },
     });
@@ -69,8 +68,7 @@ export async function assignJp(
         },
       },
     });
-  console.log({jpToAdd});
-      
+
     // 5. Create a notification for the user about the earned JP.
     await createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
   } catch (error) {
@@ -106,10 +104,9 @@ export async function deductJp(
 
     // 3. Calculate the final amount to deduct after applying any discounts.
     const joyPearlsConfig = await getJoyPearlsConfig(user);
-    const spendMultiplier =   joyPearlsConfig?.spendRateMultiplier ?? 1;
+    const spendMultiplier = joyPearlsConfig?.spendRateMultiplier ?? 1;
     const jpToDeduct = Math.ceil(baseAmount * spendMultiplier);
-    console.log({spendMultiplier,jpToDeduct});
-    
+
 
     // 4. Check if the user has a sufficient balance.
     if (user.jpBalance < jpToDeduct) {
@@ -152,10 +149,9 @@ async function getJoyPearlsConfig(user: UserWithPlan) {
 
   const result = checkFeature({
     feature: "joyPearls",
-     user:session?.user ?? user, // Pass session user if available, otherwise fallback to provided user
+    user: session?.user ?? user, // Pass session user if available, otherwise fallback to provided user
   });
-  console.log("joyPearlsConfig result:", result);
-  
+
 
   if (!result.allowed) {
     return null;

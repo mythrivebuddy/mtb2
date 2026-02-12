@@ -140,7 +140,7 @@ export const featureConfig = {
             },
         },
     },
-
+    // spotlight feature implementation done
     spotlight: {
         access: [PlanUserType.COACH],
         plans: {
@@ -188,6 +188,9 @@ export const featureConfig = {
 
     // monthly yearly lifetime config karna he limit ko 
     // default monthly 
+    // join limit implemented 
+    // create limit implemented
+    // action for coach challenge creation implemented
     challenges: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         actions: {
@@ -199,18 +202,21 @@ export const featureConfig = {
         plans: {
             free: {
                 COACH: {
-                    createLimit: 3,
+                    createLimit: 2,
+                    //TODO paid challenge , commission is left
                     canCreatePaidChallenge: false,
                     commissionPercent: 20,
-                    canIssueCertificate: true,
+                    canIssueCertificate: false,
                     groupChatLimit: -1,
-                    joinLimit: -1,
-                    isUpgradeFlagShow: true,
+                    joinLimit: 1,
+                    limitType: "LIFETIME",
+                    isUpgradeFlagShow: false,
                 },
                 ENTHUSIAST: {
-                    createLimit: 1,
+                    createLimit: 2,
                     groupChatLimit: -1,
                     joinLimit: -1,
+                    limitType: "MONTHLY",
                     isUpgradeFlagShow: true,
                 },
             },
@@ -222,13 +228,15 @@ export const featureConfig = {
                     canIssueCertificate: true,
                     groupChatLimit: -1,
                     joinLimit: -1,
+                    limitType: "MONTHLY",
                 },
                 ENTHUSIAST: {
                     createLimit: 8,
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
                     groupChatLimit: -1,
-                    joinLimit: -1,
+                    joinLimit: 1,
+                    limitType: "MONTHLY",
                 },
             },
         },
