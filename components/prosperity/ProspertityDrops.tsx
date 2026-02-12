@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { ProsperityFormType, prosperitySchema } from "@/schema/zodSchema";
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
+import { useState } from "react";
+import UpgradeMessageModal from "../common/UpgradeMessageModal";
 
 const ProsperityPage = () => {
   const queryClient = useQueryClient();
@@ -27,6 +29,15 @@ const ProsperityPage = () => {
     formState: { errors },
   } = useForm<ProsperityFormType>({
     resolver: zodResolver(prosperitySchema),
+  });
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    title: "",
+    message: "",
   });
 
   const mutation = useMutation({
@@ -43,7 +54,18 @@ const ProsperityPage = () => {
       reset(); // Reset form using react-hook-form
     },
     onError: (error) => {
-      toast.error(getAxiosErrorMessage(error));
+      const message = getAxiosErrorMessage(error);
+
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        setUpgradeModal({
+          open: true,
+          title: "Upgrade Required",
+          message,
+        });
+        return;
+      }
+
+      toast.error(message);
     },
   });
 
@@ -54,6 +76,14 @@ const ProsperityPage = () => {
   return (
     <>
       <CustomAccordion />
+      <UpgradeMessageModal
+        isOpen={upgradeModal.open}
+        onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+        title={upgradeModal.title}
+        message={upgradeModal.message}
+        redirectToPricingUrl={`/pricing?ref=prosperity-drops`}
+      />
+
       <div className="container mx-auto px-4 space-y-6">
         {/* Description Section */}
         <Card>

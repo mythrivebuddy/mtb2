@@ -70,9 +70,6 @@ const ReviewerForm = () => {
     enabled: !!requestId && !!reviewerId,
   });
 
-  useEffect(() => {
-    console.log("selectedRequest", selectedRequest);
-  });
 
   // Initialize timer when reviewer opens the form without backend changes
   useEffect(() => {
@@ -152,7 +149,7 @@ const ReviewerForm = () => {
       }
 
       // No schema changes needed - just using the existing API
-      await axios.post("/api/buddy-lens/reviewer", {
+      const response = await axios.post("/api/buddy-lens/reviewer", {
         action: "submit-review",
         requestId: selectedRequest.request.id,
         reviewerId,
@@ -165,10 +162,12 @@ const ReviewerForm = () => {
 
       // Clear the timer from sessionStorage after successful submission
       sessionStorage.removeItem(`review_start_time_${selectedRequest.id}`);
+
+      return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success(
-        `Review submitted successfully! You earned ${selectedRequest?.request.jpCost} JoyPearls.`
+        `Review submitted successfully! You earned ${data.reviewerEarns} JoyPearls.`
       );
       setAnswers([]);
       setReviewText("");
@@ -231,13 +230,12 @@ const ReviewerForm = () => {
                 <span className="font-medium">Time Remaining:</span>
               </div>
               <div
-                className={`font-mono font-bold text-lg ${
-                  isExpired
+                className={`font-mono font-bold text-lg ${isExpired
                     ? "text-red-600"
                     : timeRemaining && timeRemaining < 60
-                    ? "text-orange-600"
-                    : "text-blue-600"
-                }`}
+                      ? "text-orange-600"
+                      : "text-blue-600"
+                  }`}
               >
                 {formatTimeRemaining()}
               </div>
@@ -348,17 +346,16 @@ const ReviewerForm = () => {
             <Button
               onClick={() => submitReviewMutation.mutate()}
               disabled={submitReviewMutation.isPending || isExpired}
-              className={`w-full text-white ${
-                isExpired
+              className={`w-full text-white ${isExpired
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700"
-              }`}
+                }`}
             >
               {submitReviewMutation.isPending
                 ? "Submitting..."
                 : isExpired
-                ? "Time Expired"
-                : "Submit Review"}
+                  ? "Time Expired"
+                  : "Submit Review"}
             </Button>
           </div>
         )}

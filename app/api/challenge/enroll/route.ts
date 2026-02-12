@@ -8,6 +8,10 @@ import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { LimitType } from "@/lib/access-control/featureConfig";
+import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 
 
 export const maxDuration = 60; // 60 seconds
@@ -45,19 +49,6 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-
-    // Fetch the template tasks associated with this challenge.
-    const templateTasks = await prisma.challengeTask.findMany({
-      where: { challengeId: challengeId },
-    });
-
-    if (challengeToJoin.creatorId === joinerId) {
-      return NextResponse.json(
-        { error: "You cannot join a challenge you created." },
-        { status: 400 }
-      );
-    }
-
     // Fetch the joiner and check for existing enrollment concurrently.
     const [joiner, existingEnrollment] = await Promise.all([
       prisma.user.findUnique({
@@ -79,6 +70,70 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
+    // 🚦 Enforce join limit ONLY for MANUAL challenges
+    // 🚦 Enforce join limit ONLY for MANUAL challenges
+    if (challengeToJoin.joinMode === "MANUAL") {
+      const featureCheck = checkFeature({
+        feature: "challenges",
+        user: {
+          userType: joiner.userType,
+          membership: joiner.membership,
+        },
+      });
+
+      if (!featureCheck.allowed) {
+        return NextResponse.json(
+          { error: "Challenge access not allowed" },
+          { status: 403 }
+        );
+      }
+
+      const { joinLimit, limitType, isUpgradeFlagShow } = featureCheck.config as {
+        joinLimit: number;
+        limitType: LimitType;
+        isUpgradeFlagShow: boolean;
+      };
+
+      const periodStart = getLimitPeriodStart(limitType);
+
+      const joinedCount = await prisma.challengeEnrollment.count({
+        where: {
+          userId: joinerId,
+          ...(periodStart && {
+            joinedAt: { gte: periodStart },
+          }),
+        },
+      });
+
+      const limitResponse = await enforceLimitResponse({
+        limit: joinLimit,
+        currentCount: joinedCount,
+        message:
+          joiner.membership === "PAID"
+            ? "You have reached your challenge join limit."
+            : `You have reached your challenge join limit.`,
+        statusCode: joiner.membership === "PAID" ? 400 : 403,
+        isUpgradeFlagShow,
+      });
+
+      if (limitResponse) {
+        return limitResponse;
+      }
+    }
+
+
+    // Fetch the template tasks associated with this challenge.
+    const templateTasks = await prisma.challengeTask.findMany({
+      where: { challengeId: challengeId },
+    });
+
+    if (challengeToJoin.creatorId === joinerId) {
+      return NextResponse.json(
+        { error: "You cannot join a challenge you created." },
+        { status: 400 }
+      );
+    }
+
 
     // Fetch creator only if there's a cost
     const creator =

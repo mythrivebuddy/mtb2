@@ -3,6 +3,7 @@ import ProgressVaultClient from "@/components/progress-vault/progress-vault-clie
 import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { checkFeature } from "@/lib/access-control/checkFeature";
 
 async function getProgressVault() {
   const session = await checkRole("USER");
@@ -24,6 +25,38 @@ async function getProgressVault() {
     updatedAt: log.updatedAt.toISOString(),
     deletedAt: log.deletedAt?.toISOString() || null
   }));
+}
+
+async function getProgressVaultDailyLimit() {
+  const session = await checkRole("USER");
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const featureResult = checkFeature({
+    feature: "onePercentProgressVault",
+    user: session.user,
+  });
+
+   if (
+    !featureResult.allowed ||
+    typeof featureResult.config !== "object"
+  ) {
+    return {
+      dailyLimit: 0,
+      isUpgradeFlagShow: false,
+    };
+  }
+
+  const config = featureResult.config as {
+    dailyLimit: number;
+    isUpgradeFlagShow?: boolean;
+  };
+
+  return {
+    dailyLimit: config.dailyLimit,
+    isUpgradeFlagShow: config.isUpgradeFlagShow ?? false,
+  };
 }
 
 async function getStreak() {
@@ -48,9 +81,10 @@ async function getStreak() {
 }
 
 export default async function ProgressVaultPage() {
-  const [logs, streak] = await Promise.all([
+  const [logs, streak,progressVaultConfig] = await Promise.all([
     getProgressVault(),
     getStreak(),
+    getProgressVaultDailyLimit()
   ]);
 
   return (
@@ -62,7 +96,7 @@ export default async function ProgressVaultPage() {
         </div>
       }
     >
-      <ProgressVaultClient initialLogs={logs} initialStreak={streak} />
+      <ProgressVaultClient initialLogs={logs} initialStreak={streak} dailyLimit={progressVaultConfig.dailyLimit} isUpgradeFlagShow={progressVaultConfig.isUpgradeFlagShow} />
     </Suspense>
   );
 }
