@@ -195,7 +195,7 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         actions: {
             join: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
-            create: [PlanUserType.COACH],
+            create: [PlanUserType.COACH, PlanUserType.ENTHUSIAST],
             issueCertificate: [PlanUserType.COACH],
             groupChat: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         },
@@ -208,7 +208,7 @@ export const featureConfig = {
                     commissionPercent: 20,
                     canIssueCertificate: false,
                     groupChatLimit: -1,
-                    joinLimit: 1,
+                    joinLimit: -1,
                     limitType: "LIFETIME",
                     isUpgradeFlagShow: false,
                 },
@@ -222,7 +222,7 @@ export const featureConfig = {
             },
             paid: {
                 COACH: {
-                    createLimit: 3,
+                    createLimit: 5,
                     canCreatePaidChallenge: true,
                     commissionPercent: 10,
                     canIssueCertificate: true,
@@ -231,11 +231,11 @@ export const featureConfig = {
                     limitType: "MONTHLY",
                 },
                 ENTHUSIAST: {
-                    createLimit: 8,
+                    createLimit: 5,
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
                     groupChatLimit: -1,
-                    joinLimit: 1,
+                    joinLimit: -1,
                     limitType: "MONTHLY",
                 },
             },

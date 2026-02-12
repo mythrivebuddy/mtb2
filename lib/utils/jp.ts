@@ -33,7 +33,7 @@ export async function assignJp(
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
-    const session = await getServerSession(authOptions);
+    // const session = await getServerSession(authOptions);
 
     const activityData = await prismaClient.activity.findUnique({
       where: { activity },
