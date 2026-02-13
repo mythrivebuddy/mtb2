@@ -13,22 +13,40 @@
 //   };
 // }
 
+// export interface Item {
+//   id: string;
+//   name: string;
+//   categoryId: string;
+//   imageUrl: string;
+//   basePrice: number;
+//   monthlyPrice: number;
+//   yearlyPrice: number;
+//   lifetimePrice: number;
+//   category: {
+//     id: string;
+//     name: string;
+//   };
+// }
+
 export interface Item {
   id: string;
   name: string;
-  categoryId: string;
   imageUrl: string;
+  categoryId: string;
   basePrice: number;
   monthlyPrice: number;
   yearlyPrice: number;
   lifetimePrice: number;
+  isApproved: boolean; // Add this field
+  createdByUserId: string;
+  createdByRole: string;
+  createdAt: Date;
+  updatedAt: Date;
   category: {
     id: string;
     name: string;
   };
 }
-
-
 
 export interface User {
   id: string;

@@ -5,9 +5,8 @@ import axios, { AxiosResponse } from "axios";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-
 import OrderSection from "@/components/storeProfile/OrderSection";
 import CartSection from "@/components/storeProfile/CartSection";
 import WishlistSection from "@/components/storeProfile/WishlistSection";

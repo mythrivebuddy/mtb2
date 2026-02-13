@@ -343,6 +343,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     label="Store"
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
+                  <NavItem
+                  href="/dashboard/manage-store"
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Manage Store"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
 
                 {/* <ComingSoonWrapper>
                   <NavItem

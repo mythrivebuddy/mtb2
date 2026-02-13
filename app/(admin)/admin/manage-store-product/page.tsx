@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Item, ItemFormData, Category } from "@/types/client/manage-store-product";
 import PageSkeleton from "@/components/PageSkeleton";
-
+import { CheckCircle, XCircle } from "lucide-react";
 
 export default function ProductManagement() {
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
@@ -16,6 +16,7 @@ export default function ProductManagement() {
   const [newCategory, setNewCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("");
+  const [approvalFilter, setApprovalFilter] = useState<string>("all"); // all, approved, pending
   const [formData, setFormData] = useState<ItemFormData>({
     name: "",
     category: "",
@@ -75,8 +76,15 @@ export default function ProductManagement() {
       filtered = filtered.filter((item) => item.category === selectedCategoryFilter);
     }
 
+    // Filter by approval status
+    if (approvalFilter === "approved") {
+      filtered = filtered.filter((item) => item.isApproved === true);
+    } else if (approvalFilter === "pending") {
+      filtered = filtered.filter((item) => item.isApproved === false);
+    }
+
     return filtered;
-  }, [items, searchQuery, selectedCategoryFilter]);
+  }, [items, searchQuery, selectedCategoryFilter, approvalFilter]);
 
   const createMutation = useMutation({
     mutationFn: async (newItem: ItemFormData) => {
@@ -150,6 +158,36 @@ export default function ProductManagement() {
     },
   });
 
+  const approveItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return axios.patch(`/api/admin/store/items/${id}/approve`, {
+        isApproved: true,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      toast.success("Item approved successfully!");
+    },
+    onError: (err) => {
+      toast.error(getAxiosErrorMessage(err, "Failed to approve item."));
+    },
+  });
+
+  const disapproveItemMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return axios.patch(`/api/admin/store/items/${id}/approve`, {
+        isApproved: false,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      toast.success("Item disapproved successfully!");
+    },
+    onError: (err) => {
+      toast.error(getAxiosErrorMessage(err, "Failed to disapprove item."));
+    },
+  });
+
   const createCategoryMutation = useMutation({
     mutationFn: async (category: string) => {
       const response = await axios.post("/api/admin/store/items/categories", {
@@ -163,7 +201,7 @@ export default function ProductManagement() {
       setNewCategory("");
       setFormData((prev) => ({
         ...prev,
-        category: data.category.id, // Set new category ID in form
+        category: data.category.id,
       }));
       toast.success("Category created successfully!");
     },
@@ -185,7 +223,6 @@ export default function ProductManagement() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("formdata" , formData)
     if (!formData.category) {
       toast.error("Please select a category");
       return;
@@ -225,7 +262,14 @@ export default function ProductManagement() {
     }
   };
 
-  // Type assertions for the data
+  const handleApprove = (id: string) => {
+    approveItemMutation.mutate(id);
+  };
+
+  const handleDisapprove = (id: string) => {
+    disapproveItemMutation.mutate(id);
+  };
+
   const typedCategories = categories as Category[];
   const typedFilteredItems = filteredItems as Item[];
 
@@ -233,7 +277,7 @@ export default function ProductManagement() {
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-6">Product Management</h2>
 
-      <div className="mb-6 flex gap-4">
+      <div className="mb-6 flex gap-4 flex-wrap">
         <button
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           onClick={() => {
@@ -252,6 +296,7 @@ export default function ProductManagement() {
         </button>
       </div>
 
+      {/* Modal code remains the same... */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto">
@@ -471,7 +516,7 @@ export default function ProductManagement() {
         </div>
       )}
 
-      <div className="mb-4 flex gap-4">
+      <div className="mb-4 flex gap-4 flex-wrap">
         <div className="flex-1">
           <input
             type="text"
@@ -491,7 +536,7 @@ export default function ProductManagement() {
               <option>Error loading categories</option>
             </select>
           ) : (
-            <select 
+            <select
               className="px-4 py-2 border rounded-lg"
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
@@ -505,6 +550,17 @@ export default function ProductManagement() {
             </select>
           )}
         </div>
+        <div>
+          <select
+            className="px-4 py-2 border rounded-lg"
+            value={approvalFilter}
+            onChange={(e) => setApprovalFilter(e.target.value)}
+          >
+            <option value="all">All Status</option>
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
       </div>
 
       {isLoading ? (
@@ -513,8 +569,8 @@ export default function ProductManagement() {
         <div className="text-red-600">Error loading items: {error.message}</div>
       ) : typedFilteredItems.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          {searchQuery || selectedCategoryFilter 
-            ? "No products match your filters." 
+          {searchQuery || selectedCategoryFilter || approvalFilter !== "all"
+            ? "No products match your filters."
             : "No items found."}
         </div>
       ) : (
@@ -522,6 +578,9 @@ export default function ProductManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
@@ -532,13 +591,16 @@ export default function ProductManagement() {
                   Base Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Monthly Price
+                  Monthly
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Yearly Price
+                  Yearly
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lifetime Price
+                  Lifetime
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Created By
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created At
@@ -555,39 +617,81 @@ export default function ProductManagement() {
                 );
                 return (
                   <tr key={item.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {item.isApproved ? (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-600">
+                          Approved
+                        </span>
+                      ) : (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-600">
+                          Pending
+                        </span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">{item.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {category ? category.name : "Unknown"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">${item.basePrice.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      ${item.basePrice.toFixed(2)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       ${item.monthlyPrice.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">${item.yearlyPrice.toFixed(2)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      ${item.yearlyPrice.toFixed(2)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       ${item.lifetimePrice.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        item.createdByRole === "ADMIN"
+                          ? "bg-purple-100 text-purple-600"
+                          : "bg-blue-100 text-blue-600"
+                      }`}>
+                        {item.createdByRole}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {new Date(item.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap space-x-2">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="text-blue-600 hover:text-blue-900"
-                        disabled={deleteMutation.isPending}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-red-600 hover:text-red-900"
-                        disabled={deleteMutation.isPending}
-                      >
-                        {deleteMutation.isPending &&
-                          deleteMutation.variables === item.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-2">
+                        {item.isApproved ? (
+                          <button
+                            onClick={() => handleDisapprove(item.id)}
+                            className="text-red-600 hover:text-red-900 flex items-center gap-1"
+                            disabled={disapproveItemMutation.isPending}
+                            title="Disapprove"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleApprove(item.id)}
+                            className="text-green-600 hover:text-green-900 flex items-center gap-1"
+                            disabled={approveItemMutation.isPending}
+                            title="Approve"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="text-blue-600 hover:text-blue-900"
+                          disabled={deleteMutation.isPending}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-600 hover:text-red-900"
+                          disabled={deleteMutation.isPending}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

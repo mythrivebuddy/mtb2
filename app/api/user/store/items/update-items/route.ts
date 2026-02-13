@@ -6,17 +6,38 @@ import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 
 const prisma = new PrismaClient();
 
-// POST /api/user/store/items/add-items
-// USER-ONLY ROUTE (no admin logic)
-export async function POST(request: NextRequest) {
+// PUT /api/user/store/items/[id] - Update an item
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    // 🔐 Authentication
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 📦 Read form data
+    const itemId = params.id;
+
+    // Check if item exists and belongs to user (or user is admin)
+    const existingItem = await prisma.item.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!existingItem) {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    }
+
+    const isAdmin = session.user.role === "ADMIN";
+    const isOwner = existingItem.createdByUserId === session.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json(
+        { error: "You don't have permission to edit this item" },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
 
     const name = formData.get("name") as string;
@@ -25,26 +46,30 @@ export async function POST(request: NextRequest) {
     const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
     const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
     const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
-    const imageFile = formData.get("image") as File;
+    const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
 
-    // ❗ Validation
-    if (!name || !category || !imageFile || isNaN(basePrice)) {
+    // Validation
+    if (!name || !category || isNaN(basePrice)) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // 🖼 Upload image
-    const imageUrl = await handleSupabaseImageUpload(
-      imageFile,
-      "store-images",
-      "store-images"
-    );
+    let imageUrl = existingItem.imageUrl;
+    let downloadUrl = existingItem.downloadUrl;
 
-    // 📥 Optional download
-    let downloadUrl: string | undefined;
+    // Upload new image if provided
+    if (imageFile && imageFile.size > 0) {
+      imageUrl = await handleSupabaseImageUpload(
+        imageFile,
+        "store-images",
+        "store-images"
+      );
+    }
+
+    // Upload new download file if provided
     if (downloadFile && downloadFile.size > 0) {
       downloadUrl = await handleSupabaseImageUpload(
         downloadFile,
@@ -53,8 +78,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🗄 Create item (ALWAYS pending approval)
-    const item = await prisma.item.create({
+    // Update item
+    const updatedItem = await prisma.item.update({
+      where: { id: itemId },
       data: {
         name,
         categoryId: category,
@@ -64,9 +90,6 @@ export async function POST(request: NextRequest) {
         lifetimePrice,
         imageUrl,
         downloadUrl,
-        isApproved: false, // ❌ USERS CANNOT AUTO-APPROVE
-        createdByUserId: session.user.id,
-        createdByRole: "USER",
       },
       select: {
         id: true,
@@ -79,26 +102,32 @@ export async function POST(request: NextRequest) {
         imageUrl: true,
         downloadUrl: true,
         isApproved: true,
+        createdByRole: true,
+        createdByUserId: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
     return NextResponse.json(
       {
         item: {
-          ...item,
-          category: item.categoryId,
-          createdAt: item.createdAt.toISOString(),
+          ...updatedItem,
+          category: updatedItem.categoryId,
+          createdAt: updatedItem.createdAt.toISOString(),
+          updatedAt: updatedItem.updatedAt.toISOString(),
         },
-        message: "Item created successfully. Pending admin approval.",
+        message: "Item updated successfully",
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
-    console.error("Error creating item:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error updating item:", errorMessage);
     return NextResponse.json(
-      { error: "Failed to create item" },
+      { error: "Failed to update item", message: errorMessage },
       { status: 500 }
     );
   }
 }
+

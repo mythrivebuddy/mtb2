@@ -8,7 +8,7 @@ datasource db {
   directUrl         = env("DIRECT_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
-
+// updated user for item table
 model User {
   id                            String                            @id @default(uuid())
   email                         String                            @unique
@@ -117,6 +117,8 @@ model User {
   createdChallenges             Challenge[]                       @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]                @relation("BuddyLensReviews")
   Goal                          Goal[]                            @relation("GoalToUser")
+  createdItems  Item[] @relation("ItemCreator")
+  approvedItems Item[] @relation("ItemApprover")
 
   @@index([name])
 }
@@ -286,26 +288,50 @@ model ProgressVault {
   jpPointsAssigned Boolean   @default(false)
   user             User      @relation(fields: [userId], references: [id])
 }
-
+// updated Item 
 model Item {
-  id            String      @id @default(cuid())
-  name          String
-  basePrice     Float
-  monthlyPrice  Float?
-  yearlyPrice   Float?
-  lifetimePrice Float?
-  imageUrl      String
-  createdAt     DateTime    @default(now())
-  downloadUrl   String?
-  categoryId    String
-  updatedAt     DateTime    @default(now()) @updatedAt
-  cart          Cart[]
-  category      Category    @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  wishlists     Wishlist[]
+  id               String      @id @default(cuid())
+  name             String
+
+  // Pricing
+  basePrice        Float
+  monthlyPrice     Float?
+  yearlyPrice      Float?
+  lifetimePrice    Float?
+
+  // Media
+  imageUrl         String
+  downloadUrl      String?
+
+  // Category
+  categoryId       String
+  category         Category    @relation(fields: [categoryId], references: [id])
+
+  // Ownership (NEW)
+  createdByUserId  String
+  createdByRole    String     // ADMIN | COACH
+  creator          User       @relation("ItemCreator", fields: [createdByUserId], references: [id])
+
+  // Approval system (NEW)
+  isApproved       Boolean    @default(false)
+  approvedByUserId String?
+  approvedAt       DateTime?
+  approver         User?      @relation("ItemApprover", fields: [approvedByUserId], references: [id])
+
+  // Existing relations
+  cart             Cart[]
+  orderItems       OrderItem[]
+  wishlists        Wishlist[]
+
+  // Timestamps
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   @@index([categoryId])
+  @@index([createdByUserId])
+  @@index([isApproved])
 }
+
 
 model Category {
   id        String   @id @default(cuid())
@@ -754,7 +780,6 @@ model NotificationSettings {
   url               String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
-  url               String?
 }
 
 model CompletionRecord {
