@@ -24,6 +24,16 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
   const lastFetchedActionIdRef = useRef<string | null>(null);
   const lastCheckRef = useRef<number>(0);
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // const snoozeExpiredRef = useRef(false);
+
+  const clearSnoozeTimer = () => {
+  if (postponeTimerRef.current) {
+    clearTimeout(postponeTimerRef.current);
+    postponeTimerRef.current = null;
+  }
+  // snoozeExpiredRef.current = false;
+};
+
 
   // Mutation to mark action as completed
   const completeAction = useMutation({
@@ -48,6 +58,7 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
     },
     onSuccess: (data) => {
       toast.success("Congratulations! +50 JP for completing your 1% Start action!");
+      // clearSnoozeTimer(); 
       setShowReminder(false);
       setCurrentAction(null);
       setPostponed(false);
@@ -79,10 +90,7 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
       clearInterval(checkIntervalRef.current);
       checkIntervalRef.current = null;
     }
-    if (postponeTimerRef.current) {
-      clearTimeout(postponeTimerRef.current);
-      postponeTimerRef.current = null;
-    }
+   
     if (pollingTimeoutRef.current) {
       clearTimeout(pollingTimeoutRef.current);
       pollingTimeoutRef.current = null;
@@ -124,10 +132,16 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
     
     // If no action or the action is already completed, don't schedule anything
     if (!action) {
-      setCurrentAction(null);
-      clearAllTimers();
-      return;
-    }
+  setCurrentAction(null);
+
+  // ❗ DO NOT clear timers while snoozed
+  if (!postponed) {
+    clearAllTimers();
+  }
+
+  return;
+}
+
     
     // Store the fetched action
     setCurrentAction(action);
@@ -135,6 +149,13 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
     // Track the last fetched action ID to detect changes
     const newActionFetched = lastFetchedActionIdRef.current !== action.id;
     lastFetchedActionIdRef.current = action.id;
+
+    if (newActionFetched) {
+  console.log("🔄 New action detected, clearing snooze");
+
+  // clearSnoozeTimer();
+  // snoozeExpiredRef.current = false;
+}
     
     // Calculate time until the exact start time
     const currentTime = new Date();
@@ -209,35 +230,37 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
       }
     } 
     // Case 2: Current time is within the scheduled time window - show immediately if not postponed
-    else if (isCurrentlyWithinWindow) {
-      // If this is a newly fetched action or we're forcing a check, and not postponed, show the reminder
-      if ((newActionFetched || force) && !postponed) {
-        console.log(`🔔 Showing reminder immediately as we're in the time window: ${format(currentTime, "h:mm:ss a")}`);
-        setShowReminder(true);
-        
-        // Start a more frequent check since we're in the time window
-        if (!checkIntervalRef.current) {
-          checkIntervalRef.current = setInterval(() => {
-            // This checks for updates while in the time window
-            fetchAlignedAction().then(updatedAction => {
-              if (!updatedAction || updatedAction.completed) {
-                // Action was completed or removed
-                setShowReminder(false);
-                setCurrentAction(null);
-                clearInterval(checkIntervalRef.current!);
-                checkIntervalRef.current = null;
-              }
-            });
-          }, 15000); // Check every 15 seconds during the time window
+    else if (isCurrentlyWithinWindow && !postponed) {
+  console.log(
+    `🔔 Showing reminder (within window) at ${format(currentTime, "h:mm:ss a")}`
+  );
+
+  setShowReminder(true);
+
+  if (!checkIntervalRef.current) {
+    checkIntervalRef.current = setInterval(() => {
+      fetchAlignedAction().then(updatedAction => {
+        if (!updatedAction || updatedAction.completed) {
+          setShowReminder(false);
+          setCurrentAction(null);
+          clearInterval(checkIntervalRef.current!);
+          checkIntervalRef.current = null;
         }
-      }
-    }
+      });
+    }, 15000);
+  }
+}
+
     // Case 3: We've passed the time window - clear everything
-    else if (currentTime > endTime) {
-      setCurrentAction(null);
-      setShowReminder(false);
-      clearAllTimers();
-    }
+   else if (currentTime > endTime) {
+  setCurrentAction(null);
+  setShowReminder(false);
+
+  if (!postponed) {
+    clearAllTimers();
+  }
+}
+
     
   }, [session, postponed, fetchAlignedAction, clearAllTimers]);
 
@@ -257,6 +280,7 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
     // Clean up all timers on unmount
     return () => {
       clearAllTimers();
+      // clearSnoozeTimer();
       clearInterval(pollingInterval);
     };
   }, [session, checkAndScheduleReminder, clearAllTimers]);
@@ -282,20 +306,35 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
     };
   }, [checkAndScheduleReminder]);
 
-  const handlePostpone = () => {
-    setShowReminder(false);
-    setPostponed(true);
-    
-    // Clear any existing postpone timer
-    if (postponeTimerRef.current) {
-      clearTimeout(postponeTimerRef.current);
-    }
+ const handlePostpone = () => {
+  setShowReminder(false);
+  setPostponed(true);
 
-    // Reset postponed after 5 minutes
-    postponeTimerRef.current = setTimeout(() => {
-      setPostponed(false);
-    }, 5 * 60 * 1000);
-  };
+  if (postponeTimerRef.current) {
+    clearTimeout(postponeTimerRef.current);
+  }
+
+  postponeTimerRef.current = setTimeout(async () => {
+  console.log("⏰ Snooze expired");
+
+  setPostponed(false);
+
+  const latestAction = await fetchAlignedAction();
+  if (!latestAction || latestAction.completed) return;
+
+  const now = new Date();
+  const start = new Date(latestAction.timeFrom);
+  const end = new Date(latestAction.timeTo);
+
+  if (now >= start && now <= end) {
+    console.log("🔔 Re-showing reminder after snooze");
+    setCurrentAction(latestAction);
+    setShowReminder(true);
+  }
+}, 60 * 1000); // 1 min
+
+};
+
 
   const getMoodEmoji = (mood: string) => {
     switch (mood) {
