@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+// types
+
 interface Plan {
   id: string;
   name: string;
@@ -38,12 +40,18 @@ interface CouponResponse {
   message?: string;
 }
 
+type PaymentGateway = "CASHFREE" | "RAZORPAY";
+
 export default function CheckoutPage() {
   const { data: session } = useSession(); // Get User Session
   const searchParams = useSearchParams();
   const planId = searchParams.get("plan");
 
   const [plan, setPlan] = useState<Plan | null>(null);
+
+// to get active gateway
+const [activeGateway, setActiveGateway] = useState<PaymentGateway>("CASHFREE");
+
 
   // Form State
   const [billingDetails, setBillingDetails] = useState({
@@ -69,6 +77,183 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+
+// get active gateway on load
+useEffect(() => {
+  const fetchGateway = async () => {
+    try {
+      const res = await fetch("/api/admin/payment-gateway-config");
+      const data = await res.json();
+      setActiveGateway(data.gateway);
+    } catch {
+      setActiveGateway("CASHFREE"); // safe fallback
+    }
+  };
+
+  fetchGateway();
+}, []);
+// // razorpay script loader
+// const loadRazorpayScript = (): Promise<boolean> => {
+//   return new Promise((resolve) => {
+//     if ((window as any).Razorpay) return resolve(true);
+
+//     const script = document.createElement("script");
+//     script.src = "https://checkout.razorpay.com/v1/checkout.js";
+//     script.onload = () => resolve(true);
+//     script.onerror = () => resolve(false);
+//     document.body.appendChild(script);
+//   });
+// };
+// razorpay checkout handler
+  // const handleRazorpayPayment = async (planId: string) => {
+  //   try {
+  //     const loaded = await loadRazorpayScript();
+  //     if (!loaded) {
+  //       toast.error("Razorpay SDK failed to load");
+  //       return;
+  //     }
+
+  //     // 1️⃣ Create order
+  //     const { data } = await axios.post(
+  //       "/api/billing/razorpay/create-order",
+  //       {
+  //         planId,
+  //         userId: session?.user.id,
+  //       }
+  //     );
+
+  //     if (data.isFreePlan) {
+  //       toast.success("Membership activated successfully");
+  //       window.location.href = "/dashboard/subscription";
+  //       return;
+  //     }
+
+  //     const options = {
+  //       key: data.keyId,
+  //       amount: data.amount,
+  //       currency: data.currency,
+  //       order_id: data.orderId,
+  //       name: "MyThriveBuddy",
+  //       description: "Subscription Payment",
+  //       handler: async (response: any) => {
+  //         try {
+  //           // 2️⃣ Verify payment
+  //           await axios.post("/api/billing/razorpay/verify", {
+  //             razorpay_order_id: response.razorpay_order_id,
+  //             razorpay_payment_id: response.razorpay_payment_id,
+  //             razorpay_signature: response.razorpay_signature,
+  //           });
+
+  //           toast.success("Payment successful 🎉");
+  //           window.location.href = "/dashboard";
+  //         } catch (err) {
+  //           toast.error("Payment verification failed");
+  //         }
+  //       },
+  //       prefill: {
+  //         name: session?.user?.name || "",
+  //         email: session?.user?.email || "",
+  //       },
+  //       theme: {
+  //         color: "#2563EB",
+  //       },
+  //     };
+
+  //     const rzp = new (window as any).Razorpay(options);
+  //     rzp.open();
+  //   } catch (err) {
+  //     toast.error("Unable to initiate payment");
+  //   }
+  // };
+
+  const handleWithRazorpay = async (): Promise<void> => {
+  if (!plan) return;
+
+  try {
+    const isLifetime = plan.interval === "LIFETIME";
+    const isRecurring = plan.interval === "MONTHLY" || plan.interval === "YEARLY";
+
+    let endpoint = "";
+
+    /**
+     * 1️⃣ Decide backend endpoint
+     */
+    if (isLifetime) {
+      // One-time payment (NO autopay)
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/razorpay/create-one-time-order`;
+    } else if (isRecurring) {
+      // Subscription with autopay (mandate)
+      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/razorpay/create-subscription`;
+    } else {
+      throw new Error("Unsupported plan interval");
+    }
+
+    /**
+     * 2️⃣ Call backend to create order / subscription
+     */
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        planId: plan.id,
+        couponCode: appliedCoupon?.code || null,
+        billingDetails,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Razorpay order creation failed");
+    }
+
+    /**
+     * 3️⃣ Prepare Razorpay options
+     */
+    const options = {
+      key: data.key, // Razorpay public key
+      name: "mythrivebuddy.com",
+      description: plan.name,
+      theme: { color: "#0f172a" },
+
+      handler: function () {
+        /**
+         * 🚫 DO NOTHING HERE
+         * Payment verification MUST happen via webhook + backend verify API
+         */
+      },
+
+      prefill: {
+        name: billingDetails.name,
+        email: billingDetails.email,
+        contact: billingDetails.phone,
+      },
+    };
+
+    /**
+     * 4️⃣ Attach order OR subscription
+     */
+    if (isLifetime) {
+      options.order_id = data.orderId;
+    }
+
+    if (isRecurring) {
+      options.subscription_id = data.subscriptionId;
+    }
+
+    /**
+     * 5️⃣ Open Razorpay Checkout
+     */
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+
+  } catch (error) {
+    console.error("Razorpay Error:", error);
+    toast.error("Unable to initiate Razorpay payment");
+    throw error; // important so caller can handle state
+  }
+};
 
   // ---------------------------
   // 0. PREFILL DATA & DETECT IP
@@ -334,10 +519,26 @@ export default function CheckoutPage() {
 
   setProcessingPayment(true);
 
+  // handel razorpay checkout if active gateway is razorpay
+  // if (activeGateway === "RAZORPAY") {
+  //   await handleRazorpayPayment(plan.id);
+  //   return;
+  // }
+
   try {
     let endpoint = "";
     const isProgram = plan.isProgramPlan === true; // IMPORTANT
     const isLifetime = plan.interval === "LIFETIME";
+
+    // ✅ ADDITION: Non-program plans handled separately (Razorpay)
+if (plan.isProgramPlan !== true) {
+  try {
+    await handleWithRazorpay();
+  } finally {
+    setProcessingPayment(false);
+  }
+  return;
+}
 
     // 1. Determine the correct backend endpoint
     if (isProgram) {
@@ -345,7 +546,7 @@ export default function CheckoutPage() {
       endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/purchase-programs`;
     } else if (isLifetime) {
       // LIFETIME SUBSCRIPTION
-      // As our cashfree recurring application rejected  we will create one time payment order with all plan as same 
+      // As our cashfree recurring application rejected we will create one time payment order with all plan as same 
       // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
       endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
     } else {
@@ -437,6 +638,7 @@ export default function CheckoutPage() {
     setProcessingPayment(false);
   }
 };
+
 useEffect(() => {
   const raw = localStorage.getItem("checkout_state");
   if (!raw) return;
@@ -769,7 +971,7 @@ useEffect(() => {
                   )}
                 </button>
                 <p className="mt-4 text-center text-xs text-gray-400">
-                  Secure checkout powered by Cashfree.
+                  Secure checkout powered by {activeGateway}.
                 </p>
               </div>
             </div>

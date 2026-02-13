@@ -24,8 +24,10 @@ import axios from "axios";
 import NavLink from "@/components/navbars/navbar/NavLink";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import Link from "next/link";
+import { PlanInterval } from "@prisma/client";
+import { PLAN_PRIORITY } from "@/lib/subscription";
+import { useRouter } from "next/navigation";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -62,6 +64,7 @@ const fetchPlans = async (): Promise<Plan[]> => {
 };
 
 // type ActiveTab = "ENTHUSIAST" | "SOLOPRENEUR" | "COACH";
+
 
 export default function PricingPage() {
   const session = useSession();
@@ -146,11 +149,12 @@ export default function PricingPage() {
           return (
             <div
               key={p.id}
-              className={`relative rounded-2xl p-6 shadow-sm text-center flex flex-col h-full bg-white dark:bg-slate-900 transition-all hover:shadow-md ${
-                p.amountUSD === 299
-                  ? "border-2 border-blue-600 ring-4 ring-blue-600/10 z-10 transform sm:-translate-y-2"
-                  : "border border-slate-200 dark:border-slate-800"
-              }`}
+              className={`relative rounded-2xl p-6 shadow-sm text-center flex flex-col h-full bg-white dark:bg-slate-900 transition-all hover:shadow-md ${p.amountUSD === 299
+                ? "border-2 border-blue-600 ring-4 ring-blue-600/10 z-10 transform sm:-translate-y-2"
+                : "border border-slate-200 dark:border-slate-800"
+                }
+                ${getPlanLevel(p.interval) === 0 && "border-2 border-blue-600 ring-4 ring-blue-600/10 z-10 transform sm:-translate-y-2"}
+                `}
             >
               {badgeText && (
                 <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-lg uppercase">
@@ -204,19 +208,22 @@ export default function PricingPage() {
                   user?.userType === "SOLOPRENEUR" ||
                   user?.role === "ADMIN") && (
                   // Eligible CTA
-                  <ComingSoonWrapper>
-                    {/* <NavLink href="/dashboard/subscription"> */}
-                    <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
-                      Get Started for FREE Now
+                    <button
+                    onClick={() => !(getPlanLevel(p.interval) === 0) && router.push(`/dashboard/membership/checkout?plan=${p.id}`)}
+                    // disabled={isPlanDisabled(p.interval as PlanInterval)}
+                    disabled={getPlanLevel(p.interval) === -1 && userPriority === PLAN_PRIORITY.MONTHLY}
+                    className={`mt-8 w-full py-3 rounded-xl text-sm font-bold 
+                      ${getPlanLevel(p.interval) === 0 ? "bg-blue-700 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}
+                      `}>
+                    {getPlanLevel(p.interval) === -1 ? "Switch to Lower Plan" : getPlanLevel(p.interval) === 0 ? "Current Plan" : "Switch to Higher Plan"}
                     </button>
-                    {/* </NavLink> */}
-                  </ComingSoonWrapper>
+
                 )}
               {!session.data?.user && (
                 // Not logged in CTA
                 <NavLink href="/signin?callbackUrl=/pricing">
                   <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
-                    Get Started for FREE Now
+                    {p.interval === "FREE" ? "Get Started for FREE Now" : "Buy Now"}
                   </button>
                 </NavLink>
               )}
@@ -294,8 +301,8 @@ export default function PricingPage() {
               </NavLink>
             )}
             {session.data?.user &&
-            user?.role !== "ADMIN" &&
-            user?.userType !== "ENTHUSIAST" ? (
+              user?.role !== "ADMIN" &&
+              user?.userType !== "ENTHUSIAST" ? (
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
@@ -344,6 +351,28 @@ export default function PricingPage() {
       </div>
     );
   };
+
+
+  const { data: planPriority } = useQuery<number>({
+    queryKey: ["user-plan-priority"],
+    queryFn: async () => {
+      const res = await fetch("/api/subscription/active-plan-priority");
+      const data = await res.json();
+      return data.priority;
+    },
+  });
+  const userPriority = planPriority !== undefined ? planPriority : PLAN_PRIORITY.FREE;
+console.log("userPriority", userPriority);
+  const getPlanLevel = (planInterval: PlanInterval) => {
+    if (PLAN_PRIORITY[planInterval] < userPriority)
+      return -1
+    else if (PLAN_PRIORITY[planInterval] === userPriority)
+      return 0
+    else
+      return 1
+  };
+
+  const router = useRouter();
 
   return (
     <>
@@ -550,11 +579,10 @@ export default function PricingPage() {
                     onClick={() => setActiveTab("ENTHUSIAST")}
                     className={`
         px-5 py-2.5 rounded-xl text-sm font-semibold transition-all
-        ${
-          activeTab === "ENTHUSIAST"
-            ? "bg-green-600 text-white shadow-md shadow-green-600/20 scale-[1.03]"
-            : "text-slate-600 dark:text-slate-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-        }
+        ${activeTab === "ENTHUSIAST"
+                        ? "bg-green-600 text-white shadow-md shadow-green-600/20 scale-[1.03]"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      }
       `}
                   >
                     Self Growth Enthusiast
@@ -565,11 +593,10 @@ export default function PricingPage() {
                     onClick={() => setActiveTab("SOLOPRENEUR")}
                     className={`
         px-5 py-2.5 rounded-xl text-sm font-semibold transition-all
-        ${
-          activeTab === "SOLOPRENEUR"
-            ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 scale-[1.03]"
-            : "text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-        }
+        ${activeTab === "SOLOPRENEUR"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 scale-[1.03]"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      }
       `}
                   >
                     Coaches & Solopreneurs

@@ -1323,6 +1323,12 @@ model AdminCashfreeConfigSettings {
   updatedAt    DateTime @updatedAt
 }
 
+model AdminPaymentGatewayConfig {
+  id            Int      @id @default(autoincrement())
+  activeGateway String   @default("CASHFREE") // CASHFREE | RAZORPAY
+  updatedAt     DateTime @updatedAt
+}
+
 
 // membership model end
 
