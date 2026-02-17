@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -74,7 +74,11 @@ const formSchema = z.object({
   ]),
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
-  url: z.string().startsWith("/", "URL must start with /").optional().or(z.literal("")),
+  url: z
+    .string()
+    .startsWith("/", "URL must start with /")
+    .optional()
+    .or(z.literal("")),
 });
 
 type FormValues = {
@@ -84,11 +88,28 @@ type FormValues = {
   url?: string;
 };
 type ApiResponse = { message: string };
+interface NotificationTemplate {
+  notification_type: string;
+  title: string;
+  message: string;
+  url?: string;
+  isDynamic?: boolean;
+}
+
+const extractPlaceholders = (text: string): string[] => {
+  const regex = /{{\s*([^}]+)\s*}}/g;
+  const matches = [];
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    matches.push(match[1]);
+  }
+
+  return Array.from(new Set(matches)); // remove duplicates
+};
 
 export const NotificationManagementComponent = () => {
   const queryClient = useQueryClient();
-  const [selectedType, setSelectedType] =
-    useState<FormValues["type"]>(placeholderValue);
 
   // Form setup
   const form = useForm<FormValues>({
@@ -100,9 +121,15 @@ export const NotificationManagementComponent = () => {
       url: "",
     },
   });
+  const selectedType = useWatch({
+    control: form.control,
+    name: "type",
+  });
+
+  const [dynamicVariables, setDynamicVariables] = useState<string[]>([]);
 
   // Fetch all templates once on page load
-  const { data: allTemplates = [] } = useQuery({
+  const { data: allTemplates = [] } = useQuery<NotificationTemplate[]>({
     queryKey: ["notificationTemplates"],
     queryFn: async () => {
       const res = await axios.get("/api/admin/notification"); // <-- no type param
@@ -113,23 +140,50 @@ export const NotificationManagementComponent = () => {
 
   // Update form fields when type changes
   useEffect(() => {
+    //  Exit early if no selection
     if (!selectedType || selectedType === placeholderValue) {
-      form.setValue("title", "");
-      form.setValue("message", "");
-      form.setValue("url", "");
+      // Only reset if not already empty to avoid unnecessary triggers
+      if (form.getValues("title") !== "") {
+        form.resetField("title", { defaultValue: "" });
+        form.resetField("message", { defaultValue: "" });
+        form.resetField("url", { defaultValue: "" });
+        setDynamicVariables([]);
+      }
       return;
     }
 
+    // 2. Find the template
     const template = allTemplates.find(
-      (t: { notification_type?: string }) =>
-        (t as { notification_type?: string }).notification_type ===
-        selectedType,
+      (t) => t.notification_type === selectedType,
     );
 
-    form.setValue("title", template?.title || "");
-    form.setValue("message", template?.message || "");
-    form.setValue("url", template?.url || "");
-  }, [selectedType, allTemplates, form]);
+    const newTitle = template?.title || "";
+    const newMessage = template?.message || "";
+    const newUrl = template?.url || "";
+
+    // 3. IMPORTANT: Only update if the values are different
+    // This prevents the infinite loop
+    const currentValues = form.getValues();
+    if (
+      currentValues.title !== newTitle ||
+      currentValues.message !== newMessage ||
+      currentValues.url !== newUrl
+    ) {
+      form.setValue("title", newTitle);
+      form.setValue("message", newMessage);
+      form.setValue("url", newUrl);
+
+      if (template?.isDynamic) {
+        const allVars = [
+          ...extractPlaceholders(newTitle),
+          ...extractPlaceholders(newMessage),
+        ];
+        setDynamicVariables(Array.from(new Set(allVars)));
+      } else {
+        setDynamicVariables([]);
+      }
+    }
+  }, [selectedType, allTemplates, form]); // Added form to dependencies for completeness
 
   // Save template
   const mutation = useMutation<ApiResponse, Error, FormValues>({
@@ -148,7 +202,7 @@ export const NotificationManagementComponent = () => {
         message: "",
         url: "",
       });
-      setSelectedType(placeholderValue);
+      setDynamicVariables([]);
     },
     onError: () => {
       toast.error("Failed to save template");
@@ -161,6 +215,22 @@ export const NotificationManagementComponent = () => {
       return;
     }
     mutation.mutate(values as FormValues);
+  };
+  // Change the function signature
+  const insertPlaceholder = (
+    fieldName: "title" | "message",
+    variable: string,
+  ) => {
+    const placeholder = `{{${variable}}}`;
+    const currentValue = form.getValues(fieldName) || "";
+
+    form.setValue(
+      fieldName,
+      `${currentValue}${currentValue && !currentValue.endsWith(" ") ? " " : ""}${placeholder}`,
+      { shouldDirty: true },
+    );
+
+    form.setFocus(fieldName);
   };
 
   const isLoading = mutation.status === "pending";
@@ -187,7 +257,6 @@ export const NotificationManagementComponent = () => {
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
-                          setSelectedType(value as FormValues["type"]);
                         }}
                         value={field.value}
                       >
@@ -217,7 +286,27 @@ export const NotificationManagementComponent = () => {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel className="flex flex-col gap-1">
+                      <span>Title</span>
+
+                      {/* Inside the Title FormField render */}
+                      {dynamicVariables.length > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          Available variables (click to insert):{" "}
+                          {dynamicVariables.map((v) => (
+                            <button
+                              key={v}
+                              type="button" // Important: prevents form submission
+                              onClick={() => insertPlaceholder("title", v)}
+                              className="mx-0.5 rounded bg-slate-100 px-1 py-0.5 text-xs text-slate-800 hover:bg-blue-200 transition-colors cursor-pointer border-none"
+                            >
+                              {`{{${v}}}`}
+                            </button>
+                          ))}
+                        </span>
+                      )}
+                    </FormLabel>
+
                     <FormControl>
                       <Input
                         placeholder="Enter notification title"
@@ -235,7 +324,27 @@ export const NotificationManagementComponent = () => {
                 name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Message</FormLabel>
+                    <FormLabel className="flex flex-col gap-1">
+                      <div className="flex gap-4 items-center">
+                        <span>Message</span>
+                        {/* Variables UI repeated for Message */}
+
+                        {dynamicVariables.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {dynamicVariables.map((v) => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => insertPlaceholder("message", v)}
+                                className="rounded bg-slate-100 px-1 py-0.5 text-[10px] text-slate-800 hover:bg-blue-200 transition-colors border border-slate-200"
+                              >
+                                {`{{${v}}}`}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Enter notification message text"
@@ -255,10 +364,7 @@ export const NotificationManagementComponent = () => {
                   <FormItem>
                     <FormLabel>Redirect URL (optional)</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="/dashboard/..."
-                        {...field}
-                      />
+                      <Input placeholder="/dashboard/..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
