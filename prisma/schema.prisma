@@ -810,6 +810,7 @@ model NotificationSettings {
   title             String
   message           String
   url               String?
+  isDynamic         Boolean          @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
