@@ -534,6 +534,13 @@ model AlignedAction {
   tasks        String[]
   timeFrom     DateTime
   timeTo       DateTime
+  
+  activeReminder   String?   // "START" | "END" | "SNOOZE"
+  reminderAt       DateTime? // when reminder was triggered
+  popupShown       Boolean   @default(false)
+
+  snoozedUntill    DateTime?
+
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])

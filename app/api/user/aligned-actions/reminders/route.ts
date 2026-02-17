@@ -1,3 +1,4 @@
+// /api/
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
@@ -9,20 +10,20 @@ import { checkRole } from "@/lib/utils/auth";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    
+
     if (!session || !session.user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
-    
+
     const userId = session.user.id;
     const url = new URL(req.url);
     console.log(url);
     // Get current time
     const now = new Date();
-    
+
     // Check if there's an ongoing action (current time is within the scheduled time window)
     const ongoingActions = await prisma.alignedAction.findMany({
       where: {
@@ -39,11 +40,11 @@ export async function GET(req: NextRequest) {
         timeFrom: "asc",
       },
     });
-    
+
     if (ongoingActions.length > 0) {
       return NextResponse.json(ongoingActions[0]);
     }
-    
+
     // If no ongoing actions, return scheduled future actions (needed for client timer setup)
     const futureActions = await prisma.alignedAction.findMany({
       where: {
@@ -58,14 +59,14 @@ export async function GET(req: NextRequest) {
       },
       take: 1,
     });
-    
+
     if (futureActions.length > 0) {
       return NextResponse.json({
         ...futureActions[0],
         status: "future",
       });
     }
-    
+
     return NextResponse.json({ status: "none" });
   } catch (error) {
     console.error("Error fetching 1% Start action reminders:", error);
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
     const userId = (await session).user.id
     const body = await req.json();
     const { actionId, completed } = body;
-    
+
     if (!actionId) {
       return NextResponse.json(
         { error: "Action ID is required" },
@@ -93,11 +94,11 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
-      },include:{
-        plan:true
+      }, include: {
+        plan: true
       }
     });
-    
+
     // Check if the action exists and belongs to the user
     const action = await prisma.alignedAction.findFirst({
       where: {
@@ -105,14 +106,14 @@ export async function POST(req: NextRequest) {
         userId,
       },
     });
-    
+
     if (!action) {
       return NextResponse.json(
         { error: "Action not found" },
         { status: 404 }
       );
     }
-    
+
     // Mark the action as completed
     const updatedAction = await prisma.alignedAction.update({
       where: {
@@ -120,11 +121,14 @@ export async function POST(req: NextRequest) {
       },
       data: {
         completed: completed ?? true,
+        popupShown: true,
+        activeReminder: null,   // to  kill reminders
+        reminderAt: null,
       },
     });
-    
+
     let jpAwarded = 0;
-    
+
     if (completed) {
       if (user) {
         try {
@@ -135,8 +139,8 @@ export async function POST(req: NextRequest) {
           // Continue execution even if JP assignment fails
         }
       }
-    } 
-      
+    }
+
     // Add to progress vault
     await prisma.progressVault.create({
       data: {
@@ -145,15 +149,15 @@ export async function POST(req: NextRequest) {
         jpPointsAssigned: jpAwarded > 0
       },
     });
-    
+
     // Fetch the updated user data to get the current JP balance
     const updatedUser = await prisma.user.findUnique({
       where: {
         id: userId,
       }
     });
-      
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       action: updatedAction,
       jpAwarded,
       newBalance: updatedUser?.jpBalance

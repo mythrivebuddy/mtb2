@@ -1,340 +1,35 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useSession } from "next-auth/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { format, isWithinInterval } from "date-fns";
-import { AlignedAction, ReminderListenerProps } from "@/types/client/align-action";
+import { format } from "date-fns";
+import { AlignedAction } from "@/types/client/align-action";
+import { useState } from "react";
+import { toast } from "sonner";
 
-
-export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
-  const { data: session, update: updateSession } = useSession();
-  const queryClient = useQueryClient();
-  const [showReminder, setShowReminder] = useState(false);
-  const [currentAction, setCurrentAction] = useState<AlignedAction | null>(null);
-  const [postponed, setPostponed] = useState(false);
-  
-  // References for timer management
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const postponeTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastFetchedActionIdRef = useRef<string | null>(null);
-  const lastCheckRef = useRef<number>(0);
-  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // const snoozeExpiredRef = useRef(false);
-
-  const clearSnoozeTimer = () => {
-  if (postponeTimerRef.current) {
-    clearTimeout(postponeTimerRef.current);
-    postponeTimerRef.current = null;
-  }
-  // snoozeExpiredRef.current = false;
-};
-
-
-  // Mutation to mark action as completed
-  const completeAction = useMutation({
-    mutationFn: async (actionId: string) => {
-      const response = await fetch("/api/user/aligned-actions/reminders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          actionId,
-          completed: true,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to complete action");
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast.success("Congratulations! +50 JP for completing your 1% Start action!");
-      // clearSnoozeTimer(); 
-      setShowReminder(false);
-      setCurrentAction(null);
-      setPostponed(false);
-      
-      // Update the session with the new JP balance
-      if (session?.user) {
-        updateSession({ user: { ...session.user, jpBalance: data.newBalance } });
-      }
-      
-      // Invalidate the user data and aligned actions query caches to force a refresh
-      queryClient.invalidateQueries({ queryKey: ['userInfo'] });
-      queryClient.invalidateQueries({ queryKey: ['aligned-actions'] });
-      
-      // Refetch the aligned actions
-      onRefetch();
-    },
-    onError: (error: Error) => {
-      toast.error(error.message);
-    },
-  });
-
-  // Clear all timers function
-  const clearAllTimers = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (checkIntervalRef.current) {
-      clearInterval(checkIntervalRef.current);
-      checkIntervalRef.current = null;
-    }
-   
-    if (pollingTimeoutRef.current) {
-      clearTimeout(pollingTimeoutRef.current);
-      pollingTimeoutRef.current = null;
-    }
-  }, []);
-
-  // Fetch the active or upcoming aligned action
-  const fetchAlignedAction = useCallback(async (): Promise<AlignedAction | null> => {
-    try {
-      const response = await fetch("/api/user/aligned-actions/reminders");
-      if (!response.ok) return null;
-
-      const data = await response.json();
-      
-      // If there's no action or it's completed, return null
-      if (!data || !data.id || data.completed || !data.timeFrom || data.status === "none") {
-        return null;
-      }
-      
-      return data as AlignedAction;
-    } catch (error) {
-      console.error("Error fetching reminders:", error);
-      return null;
-    }
-  }, []);
-
-  // Check if it's time to show a reminder with more precision
-  const checkAndScheduleReminder = useCallback(async (force = false) => {
-    if (!session?.user) return;
-    
-    // Add rate limiting to prevent excessive API calls
-    const now = Date.now();
-    if (now - lastCheckRef.current < 10000 && !force) { // Don't check more than once every 10 seconds unless forced
-      return;
-    }
-    lastCheckRef.current = now;
-    
-    const action = await fetchAlignedAction();
-    
-    // If no action or the action is already completed, don't schedule anything
-    if (!action) {
-  setCurrentAction(null);
-
-  // ❗ DO NOT clear timers while snoozed
-  if (!postponed) {
-    clearAllTimers();
-  }
-
-  return;
-}
-
-    
-    // Store the fetched action
-    setCurrentAction(action);
-    
-    // Track the last fetched action ID to detect changes
-    const newActionFetched = lastFetchedActionIdRef.current !== action.id;
-    lastFetchedActionIdRef.current = action.id;
-
-    if (newActionFetched) {
-  console.log("🔄 New action detected, clearing snooze");
-
-  // clearSnoozeTimer();
-  // snoozeExpiredRef.current = false;
-}
-    
-    // Calculate time until the exact start time
-    const currentTime = new Date();
-    const startTime = new Date(action.timeFrom);
-    const endTime = new Date(action.timeTo);
-    const timeUntilStart = startTime.getTime() - currentTime.getTime();
-    
-    console.log(
-      `Action found: ${action.selectedTask}\n` +
-      `Start time: ${format(startTime, "yyyy-MM-dd h:mm:ss a")}\n` +
-      `Current time: ${format(currentTime, "yyyy-MM-dd h:mm:ss a")}\n` +
-      `Time until start: ${Math.round(timeUntilStart/1000)} seconds\n` +
-      `Postponed: ${postponed}`
-    );
-    
-    // Check if we're currently within the time window
-    const isCurrentlyWithinWindow = isWithinInterval(currentTime, {
-      start: startTime,
-      end: endTime
-    });
-    
-    // Clear existing timer before setting a new one
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    
-    // Case 1: Start time is in the future - schedule a precise timer
-    if (timeUntilStart > 0) {
-      console.log(`Scheduling reminder for ${format(startTime, "h:mm:ss a")} (in ${Math.round(timeUntilStart/1000)} seconds)`);
-      
-      // Set the timer to show the reminder exactly at the start time
-      timerRef.current = setTimeout(() => {
-        if (!postponed) {
-          console.log(`🔔 Time to show reminder at ${format(new Date(), "h:mm:ss a")}`);
-          // Double-check before showing to make sure we don't have stale data
-          fetchAlignedAction().then(latestAction => {
-            if (latestAction && !latestAction.completed) {
-              setShowReminder(true);
-              
-              // Start a more frequent check once we're in the time window
-              if (!checkIntervalRef.current) {
-                checkIntervalRef.current = setInterval(() => {
-                  // This checks for updates while in the time window
-                  fetchAlignedAction().then(updatedAction => {
-                    if (!updatedAction || updatedAction.completed) {
-                      // Action was completed or removed
-                      setShowReminder(false);
-                      setCurrentAction(null);
-                      clearInterval(checkIntervalRef.current!);
-                      checkIntervalRef.current = null;
-                    }
-                  });
-                }, 15000); // Check every 15 seconds during the time window
-              }
-            }
-          });
-        }
-      }, timeUntilStart);
-      
-      // Add a slightly more frequent polling during the 5 minutes before the task starts
-      if (timeUntilStart < 5 * 60 * 1000 && timeUntilStart > 0) {
-        // Clear any existing polling timeout
-        if (pollingTimeoutRef.current) {
-          clearTimeout(pollingTimeoutRef.current);
-        }
-        
-        // Set up a more frequent poll as we get closer to the time
-        pollingTimeoutRef.current = setTimeout(() => {
-          checkAndScheduleReminder(true);
-        }, Math.min(30000, timeUntilStart / 2)); // Poll more frequently as we get closer
-      }
-    } 
-    // Case 2: Current time is within the scheduled time window - show immediately if not postponed
-    else if (isCurrentlyWithinWindow && !postponed) {
-  console.log(
-    `🔔 Showing reminder (within window) at ${format(currentTime, "h:mm:ss a")}`
-  );
-
-  setShowReminder(true);
-
-  if (!checkIntervalRef.current) {
-    checkIntervalRef.current = setInterval(() => {
-      fetchAlignedAction().then(updatedAction => {
-        if (!updatedAction || updatedAction.completed) {
-          setShowReminder(false);
-          setCurrentAction(null);
-          clearInterval(checkIntervalRef.current!);
-          checkIntervalRef.current = null;
-        }
-      });
-    }, 15000);
-  }
-}
-
-    // Case 3: We've passed the time window - clear everything
-   else if (currentTime > endTime) {
-  setCurrentAction(null);
-  setShowReminder(false);
-
-  if (!postponed) {
-    clearAllTimers();
-  }
-}
-
-    
-  }, [session, postponed, fetchAlignedAction, clearAllTimers]);
-
-  // Set up the initial check and regular polling interval
-  useEffect(() => {
-    if (!session?.user) return;
-    
-    // Initial check on component mount
-    checkAndScheduleReminder(true);
-    
-    // Set up polling every 30 seconds to check for upcoming actions
-    // This helps catch any new actions or changes to existing ones
-    const pollingInterval = setInterval(() => {
-      checkAndScheduleReminder();
-    }, 30 * 1000); // Check every 30 seconds
-    
-    // Clean up all timers on unmount
-    return () => {
-      clearAllTimers();
-      // clearSnoozeTimer();
-      clearInterval(pollingInterval);
-    };
-  }, [session, checkAndScheduleReminder, clearAllTimers]);
-
-  // Reset everything when postponed status changes
-  useEffect(() => {
-    checkAndScheduleReminder(true);
-  }, [postponed, checkAndScheduleReminder]);
-
-  // If there's a browser visibility change, check reminders
-  // This helps catch up after tab has been inactive
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkAndScheduleReminder(true);
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [checkAndScheduleReminder]);
-
- const handlePostpone = () => {
-  setShowReminder(false);
-  setPostponed(true);
-
-  if (postponeTimerRef.current) {
-    clearTimeout(postponeTimerRef.current);
-  }
-
-  postponeTimerRef.current = setTimeout(async () => {
-  console.log("⏰ Snooze expired");
-
-  setPostponed(false);
-
-  const latestAction = await fetchAlignedAction();
-  if (!latestAction || latestAction.completed) return;
-
-  const now = new Date();
-  const start = new Date(latestAction.timeFrom);
-  const end = new Date(latestAction.timeTo);
-
-  if (now >= start && now <= end) {
-    console.log("🔔 Re-showing reminder after snooze");
-    setCurrentAction(latestAction);
-    setShowReminder(true);
-  }
-}, 60 * 1000); // 1 min
-
-};
-
+export default function ReminderListener({
+  action,
+  open,
+  onClose,
+  onSnooze,
+  onComplete,
+}: {
+  action: AlignedAction;
+  open: boolean;
+  onClose: () => void;
+  onSnooze: () => void;
+  onComplete: () => void;
+}) {
+  // ADD inside component
+  const [snoozeLoading, setSnoozeLoading] = useState(false);
+  const [completeLoading, setCompleteLoading] = useState(false);
 
   const getMoodEmoji = (mood: string) => {
     switch (mood) {
@@ -365,15 +60,38 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
         return category;
     }
   };
+  // CHANGE handlers
+  const handleSnooze = async () => {
+    setSnoozeLoading(true);
+    try {
+      await onSnooze();
+      toast.success("Reminder snoozed for 5 minutes ⏱️");
+      onClose();
+    } catch {
+      toast.error("Failed to snooze reminder");
+    } finally {
+      setSnoozeLoading(false);
+    }
+  };
 
-  if (!currentAction) return null;
+  const handleComplete = async () => {
+    setCompleteLoading(true);
+    try {
+      await onComplete();
+      toast.success("Task marked as completed 🎉");
+    } catch {
+      toast.error("Failed to mark task as completed");
+    } finally {
+      setCompleteLoading(false);
+    }
+  };
 
   return (
-    <Dialog open={showReminder} onOpenChange={setShowReminder}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-gradient-to-br from-white to-gray-100 rounded-xl shadow-lg border border-gray-200">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <span className="text-2xl">{getMoodEmoji(currentAction.mood)}</span>
+            <span className="text-2xl">{getMoodEmoji(action.mood)}</span>
             Your 1% Start Action Awaits!
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-600">
@@ -383,38 +101,41 @@ export default function ReminderListener({ onRefetch }: ReminderListenerProps) {
 
         <div className="space-y-3 py-3">
           <div className="bg-green-500/10 p-3 rounded-md">
-            <p className="font-bold text-green-500 text-sm">{currentAction.selectedTask}</p>
+            <p className="font-bold text-green-500 text-sm">
+              {action.selectedTask}
+            </p>
             <p className="text-xs text-gray-500 mt-1">
-              {format(new Date(currentAction.timeFrom), "h:mm a")} - {format(new Date(currentAction.timeTo), "h:mm a")}
+              {format(new Date(action.timeFrom), "h:mm a")} -{" "}
+              {format(new Date(action.timeTo), "h:mm a")}
             </p>
           </div>
 
           <div className="bg-gray-50 p-3 rounded-md">
-            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Category</h4>
-            <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <h4 className="text-xs font-medium text-gray-500 uppercase mb-1">
+              Category
+            </h4>
+            <p className="text-sm font-semibold flex items-center gap-2">
               <span className="w-4 h-4 rounded-sm bg-green-500"></span>
-              {getCategoryLabel(currentAction.category)}
+              {getCategoryLabel(action.category)}
             </p>
           </div>
         </div>
 
         <DialogFooter className="flex sm:justify-between">
           <Button
-            type="button"
             variant="outline"
-            onClick={handlePostpone}
+            onClick={handleSnooze}
+            disabled={snoozeLoading || completeLoading}
             className="px-4 py-1 text-sm text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400 shadow-sm rounded-md"
           >
-            Remind in 5 Min
+            {snoozeLoading ? "Snoozing..." : "Remind in 5 Min"}
           </Button>
-
           <Button
-            type="button"
-            onClick={() => completeAction.mutate(currentAction.id)}
-            disabled={completeAction.isPending}
+            onClick={handleComplete}
+            disabled={snoozeLoading || completeLoading}
             className="px-4 py-1 text-sm bg-green-500 text-white hover:bg-green-600 shadow-md rounded-md"
           >
-            {completeAction.isPending ? "Completing..." : "I have Completed"}
+            {completeLoading ? "Marking..." : "I have completed"}
           </Button>
         </DialogFooter>
       </DialogContent>
