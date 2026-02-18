@@ -132,7 +132,12 @@ const StorePage: React.FC = () => {
     return <PageLoader />;
   }
 
+  // Filter items: only show approved items + apply product filter
   const filteredItems = items.filter((item) => {
+    // First, only show approved items
+    if (!item.isApproved) return false;
+
+    // Then apply product filter
     if (productFilter === "ALL") return true;
 
     if (productFilter === "MY") {
@@ -266,16 +271,6 @@ const StorePage: React.FC = () => {
                   className="w-full h-full object-cover rounded-lg"
                 />
               </div>
-
-              <span
-                className={`absolute top-2 right-2 px-3 py-1 text-xs rounded-full font-bold ${
-                  item.isApproved
-                    ? "bg-green-500 text-white"
-                    : "bg-red-500 text-white"
-                }`}
-              >
-                {item.isApproved ? "Approved" : "Pending"}
-              </span>
 
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold text-slate-800">

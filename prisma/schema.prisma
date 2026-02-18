@@ -8,7 +8,8 @@ datasource db {
   directUrl         = env("DIRECT_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
-// updated user for item table
+
+// updated user for item table , updating the model for product purcahsing using razorpay
 model User {
   id                            String                            @id @default(uuid())
   email                         String                            @unique
@@ -81,6 +82,7 @@ model User {
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
+  productBilling                ProductBillingInformation?
   referralsReceived             Referral[]                        @relation("Referred")
   referralsMade                 Referral[]                        @relation("Referrer")
   reminders                     Reminder[]
@@ -117,8 +119,8 @@ model User {
   createdChallenges             Challenge[]                       @relation("CreatedChallenges")
   buddyLensReviews              BuddyLensRequest[]                @relation("BuddyLensReviews")
   Goal                          Goal[]                            @relation("GoalToUser")
-  createdItems  Item[] @relation("ItemCreator")
-  approvedItems Item[] @relation("ItemApprover")
+  createdItems                  Item[]                            @relation("ItemCreator")
+  approvedItems                 Item[]                            @relation("ItemApprover")
 
   @@index([name])
 }
@@ -288,51 +290,52 @@ model ProgressVault {
   jpPointsAssigned Boolean   @default(false)
   user             User      @relation(fields: [userId], references: [id])
 }
+
 // updated Item 
 model Item {
-  id               String      @id @default(cuid())
-  name             String
+  id   String @id @default(cuid())
+  name String
 
   // Pricing
-  basePrice        Float
-  monthlyPrice     Float?
-  yearlyPrice      Float?
-  lifetimePrice    Float?
+  basePrice     Float
+  monthlyPrice  Float?
+  yearlyPrice   Float?
+  lifetimePrice Float?
 
   // Media
-  imageUrl         String
-  downloadUrl      String?
+  imageUrl    String
+  downloadUrl String?
 
   // Category
-  categoryId       String
-  category         Category    @relation(fields: [categoryId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
   // Ownership (NEW)
-  createdByUserId  String
-  createdByRole    String     // ADMIN | COACH
-  creator          User       @relation("ItemCreator", fields: [createdByUserId], references: [id])
+  createdByUserId String
+  createdByRole   String // ADMIN | COACH
+  creator         User   @relation("ItemCreator", fields: [createdByUserId], references: [id])
 
   // Approval system (NEW)
-  isApproved       Boolean    @default(false)
+  isApproved       Boolean   @default(false)
   approvedByUserId String?
   approvedAt       DateTime?
-  approver         User?      @relation("ItemApprover", fields: [approvedByUserId], references: [id])
+  approver         User?     @relation("ItemApprover", fields: [approvedByUserId], references: [id])
 
   // Existing relations
-  cart             Cart[]
-  orderItems       OrderItem[]
-  wishlists        Wishlist[]
+  cart       Cart[]
+  orderItems OrderItem[]
+  wishlists  Wishlist[]
 
   // Timestamps
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([categoryId])
   @@index([createdByUserId])
   @@index([isApproved])
 }
 
-
+// category  model
 model Category {
   id        String   @id @default(cuid())
   name      String
@@ -1174,6 +1177,25 @@ model BillingInformation {
   user         User     @relation(fields: [userId], references: [id])
 }
 
+// model for product purchasing info
+model ProductBillingInformation {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  fullName     String
+  email        String
+  phone        String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Restrict)
+}
+
 model AdminCashfreeConfigSettings {
   id           Int      @id @default(autoincrement())
   cashfreeMode String   @default("sandbox")
@@ -1318,6 +1340,7 @@ model UserVisionImage {
   @@unique([userId, programId, quarter])
 }
 
+// usdf kdfjksdbnfkljbksldnf
 model UserProgramState {
   id                       String    @id @default(cuid())
   userId                   String
@@ -1357,6 +1380,7 @@ model MakeoverProgressLog {
   @@unique([userId, programId, areaId, date])
 }
 
+// sunday progressing 
 model SundayProgressLog {
   id                  String   @id @default(cuid())
   userId              String

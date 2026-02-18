@@ -1,0 +1,113 @@
+// app/api/user/store/checkout/billinginfo/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { prisma } from "@/lib/prisma";
+import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
+
+// GET - fetch billing info for the current user
+export async function GET() {
+  try {
+    const session = await getServerSession(authConfig);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const billingInfo = await prisma.productBillingInformation.findUnique({
+      where: { userId: user.id },
+    });
+
+    return NextResponse.json({ billingInfo });
+  } catch (error) {
+    console.error("GET /checkout/billinginfo error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - upsert billing info for the current user
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authConfig);
+
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const body = await req.json();
+    const {
+      fullName,
+      email,
+      phone,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      postalCode,
+      country,
+    } = body;
+
+    if (!fullName || !email || !addressLine1 || !city || !state || !postalCode || !country) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const billingInfo = await prisma.productBillingInformation.upsert({
+      where: { userId: user.id },
+      update: {
+        fullName,
+        email,
+        phone: phone || null,
+        addressLine1,
+        addressLine2: addressLine2 || null,
+        city,
+        state,
+        postalCode,
+        country,
+      },
+      create: {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        fullName,
+        email,
+        phone: phone || null,
+        addressLine1,
+        addressLine2: addressLine2 || null,
+        city,
+        state,
+        postalCode,
+        country,
+      },
+    });
+
+    return NextResponse.json({ billingInfo });
+  } catch (error) {
+    console.error("POST /checkout/billinginfo error:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
