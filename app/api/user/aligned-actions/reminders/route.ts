@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id;
     const url = new URL(req.url);
-    console.log(url);
+    
     // Get current time
     const now = new Date();
 

@@ -12,7 +12,7 @@ import { inngest } from "@/lib/inngest";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    console.log("this is the inngest event key ",process.env.INNGEST_EVENT_KEY)
+    
 
     if (!session || !session.user) {
       return NextResponse.json(
@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
     }
 
     const userId = session.user.id;
-    console.log("userId", userId);
+  
     const body = await req.json();
-    console.log("body", body);
+    
 
     // Add userId to body for validation
     // const dataToValidate = {
@@ -34,7 +34,6 @@ export async function POST(req: NextRequest) {
 
     // Validate the request body against the schema
     // const validationResult = AlignedActionSchema.safeParse(dataToValidate);
-    // console.log("result", validationResult);
     // if (!validationResult.success) {
     //   return NextResponse.json(
     //     { error: "Invalid request data", details: validationResult.error.format() },
