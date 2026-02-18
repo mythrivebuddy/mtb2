@@ -1,35 +1,53 @@
-// __tests__/Hero.test.tsx
-import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import Hero from '@/components/home/Hero';
+// __tests__/components/home/Hero.test.tsx
+import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import Hero from "@/components/home/Hero";
 
-// Mock useRedirectDashboard
-jest.mock('@/hooks/use-redirect-dashboard', () => jest.fn());
 
-// Mock SpotlightCard since it’s rendered inside Hero
-jest.mock('@/components/home/SpotlightCard', () => () => <div>Mocked SpotlightCard</div>);
+// ✅ mock redirect hook
+jest.mock("@/hooks/use-redirect-dashboard", () => jest.fn());
 
-// Mock CardGrid
-jest.mock('@/components/CardDesign', () => () => <div>Mocked CardGrid</div>);
+// ✅ IMPORTANT: mock next-auth FULLY
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+jest.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
 
-describe('Hero Component', () => {
-  it('renders both headings', () => {
-    render(<Hero />);
-    expect(screen.getByRole('heading', { name: /Solopreneurship/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Made Amazing/i })).toBeInTheDocument();
+// ✅ mock SpotlightCard
+jest.mock("@/components/home/SpotlightCard", () => () => (
+  <div>Mocked SpotlightCard</div>
+));
+
+describe("Hero Component", () => {
+  const renderHero = () => render(<Hero />);
+
+  it("renders main heading", () => {
+    renderHero();
+    expect(
+      screen.getByRole("heading", {
+        name: /One Complete Growth Ecosystem/i,
+      })
+    ).toBeInTheDocument();
   });
 
-  it('renders all category tags', () => {
-    render(<Hero />);
-    const tags = ['Trainer','Coach','Healer','Consultant','Designer','Developer','Astrologer'];
-    tags.forEach(tag => {
-      expect(screen.getByRole('button', { name: tag })).toBeInTheDocument();
-    });
+  it("renders hero description text", () => {
+    renderHero();
+    expect(
+      screen.getByText(
+        /For Coaches, Solopreneurs & Self-Growth Enthusiasts/i
+      )
+    ).toBeInTheDocument();
   });
 
-  it('renders mocked child components', () => {
-    render(<Hero />);
-    expect(screen.getByText('Mocked SpotlightCard')).toBeInTheDocument();
-    expect(screen.getByText('Mocked CardGrid')).toBeInTheDocument();
+  it("renders SpotlightCard", () => {
+    renderHero();
+    expect(screen.getByText("Mocked SpotlightCard")).toBeInTheDocument();
   });
 });

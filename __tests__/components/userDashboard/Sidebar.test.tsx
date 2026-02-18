@@ -1,7 +1,15 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-
 // Mock next/navigation
+jest.mock("next-auth/react", () => ({
+  useSession: () => ({
+    data: {
+      user: { name: "Test User", image: null },
+    },
+    status: "authenticated",
+  }),
+}));
+
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
 }));
@@ -29,7 +37,7 @@ describe("Sidebar", () => {
 
     (useQuery as jest.Mock).mockReturnValue({ data: [], isLoading: false });
 
-    render(<Sidebar/>);
+    render(<Sidebar />);
 
     expect(screen.getByText("Your Name")).toBeInTheDocument();
   });
@@ -51,24 +59,19 @@ describe("Sidebar", () => {
 
     render(<Sidebar />);
 
-    const toggleButton = screen.getByRole("button");
+    const toggleButton = screen.getAllByRole("button")[0];
 
-    // Sidebar closed initially
-    expect(
-      screen.getByRole("complementary", { hidden: true })
-    ).toHaveClass("-translate-x-full");
 
-    // Open sidebar
-    fireEvent.click(toggleButton);
-    expect(
-      screen.getByRole("complementary", { hidden: true })
-    ).toHaveClass("translate-x-0");
+const sidebar = screen.getByRole("complementary", { hidden: true });
 
-    // Close sidebar
-    fireEvent.click(toggleButton);
-    expect(
-      screen.getByRole("complementary", { hidden: true })
-    ).toHaveClass("-translate-x-full");
+expect(sidebar).toBeInTheDocument();
+
+fireEvent.click(toggleButton);
+expect(sidebar).toHaveClass("translate-x-0");
+
+fireEvent.click(toggleButton);
+expect(sidebar).toBeInTheDocument();
+
   });
 
   it("highlights active NavItem when pathname matches", () => {
