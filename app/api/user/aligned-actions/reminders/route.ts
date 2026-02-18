@@ -7,7 +7,7 @@ import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authConfig);
 
@@ -19,8 +19,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = session.user.id;
-    const url = new URL(req.url);
-    
+
     // Get current time
     const now = new Date();
 
