@@ -1,8 +1,9 @@
-// __tests__/Home.test.tsx
+// __tests__/app/Home.test.tsx
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import Home, { metadata } from "../../../app/page";
+
 import { SessionProvider } from "next-auth/react";
+import Home, { metadata } from "@/app/page";
 
 // Mock image imports
 jest.mock("@/public/avtar.png", () => "test-file-stub");
@@ -42,7 +43,7 @@ describe("Home Page", () => {
   it("renders the main heading", () => {
     render(
       <SessionProvider session={null}>
-        <Home />
+        <Home/>
       </SessionProvider>
     );
 
