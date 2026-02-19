@@ -109,7 +109,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   const pathname = usePathname();
   // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
   const session = useSession();
-  console.log("User type:", session.data?.user.userType);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 

@@ -6,6 +6,8 @@ import { getJpToDeduct } from "@/lib/utils/jp";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { format } from "date-fns";
 import { getSpotlightAppliedNotificationData } from "@/lib/utils/notifications";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 
 //! add check for profile completion
 
@@ -20,6 +22,8 @@ export async function POST() {
       "You are not authorized for this action"
     );
     const userId = session.user.id;
+    
+
 
     // Get spotlight activity data
     const spotlightActivity = await prisma.activity.findUnique({
@@ -50,6 +54,79 @@ export async function POST() {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    const featureCheck = checkFeature({
+      feature: "spotlight",
+      user: {
+        userType: session.user.userType,
+        membership: session.user.membership,
+      },
+    });
+ 
+
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        { error: "You are not eligible to apply for Spotlight" },
+        { status: 403 }
+      );
+    }
+    const { eligible, applyLimit, applyLimitType } =
+      featureCheck.config as {
+        eligible: boolean;
+        applyLimit: number;
+        applyLimitType: "MONTHLY" | "YEARLY" | "LIFETIME";
+      };
+
+    if (!eligible) {
+      return NextResponse.json(
+        { message: "Please Upgrade to apply for Spotlight" },
+        { status: 403 }
+      );
+    }
+
+    let fromDate: Date | undefined;
+
+    if (applyLimitType === "MONTHLY") {
+      fromDate = new Date();
+      fromDate.setDate(1);
+      fromDate.setHours(0, 0, 0, 0);
+    }
+
+    if (applyLimitType === "YEARLY") {
+      fromDate = new Date(new Date().getFullYear(), 0, 1);
+    }
+
+    // LIFETIME → fromDate remains undefined
+    const currentCount = await prisma.spotlight.count({
+      where: {
+        userId,
+        ...(fromDate && {
+          appliedAt: { gte: fromDate },
+        }),
+      },
+    });
+
+    const isPaidUser = session.user.membership === "PAID";
+
+    const limitMessage = isPaidUser
+  ? applyLimit > 0
+    ? `You have reached the ${applyLimit} Spotlight ${applyLimitType.toLowerCase()} limit.`
+    : "You have reached your Spotlight limit."
+  : applyLimit > 0
+    ? `You can apply for up to ${applyLimit} Spotlight in the ${applyLimitType.toLowerCase()} period. Please upgrade to increase your limit.`
+    : "Please upgrade to apply for Spotlight.";
+
+
+
+    const limitResponse = await enforceLimitResponse({
+      limit: applyLimit,
+      currentCount,
+      message: limitMessage,
+      statusCode: isPaidUser ? 400 : 403,
+    });
+
+    if (limitResponse) return limitResponse;
+
+
 
     const jpRequired = getJpToDeduct(user, spotlightActivity);
 
@@ -167,7 +244,7 @@ export async function POST() {
       { status: 201 }
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }
@@ -201,7 +278,7 @@ export async function GET() {
       },
     });
 
-  
+
 
     if (!spotlightApplications) {
       return NextResponse.json(

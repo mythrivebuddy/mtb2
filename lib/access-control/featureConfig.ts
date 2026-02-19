@@ -8,7 +8,11 @@ export type PlanAccess = "FREE" | "PAID";
 export const UNLIMITED = -1;
 // paid coach and paid sge me difference krna he
 
+export type LimitType = "MONTHLY" | "YEARLY" | "LIFETIME";
+
+
 export const featureConfig = {
+    // deduct dynamic for only prosperity drops and spotlight only
     joyPearls: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
@@ -41,26 +45,13 @@ export const featureConfig = {
         },
     },
 
+    // this is set todays focus
     onePercentStart: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: true,
-                ENTHUSIAST: true,
-            },
-            paid: {
-                COACH: true,
-                ENTHUSIAST: true,
-            },
-        },
-    },
-
-    onePercentProgressVault: {
-        access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
-        plans: {
-            free: {
-                COACH: { dailyLimit: 1 },
-                ENTHUSIAST: { dailyLimit: 1 },
+                COACH: { dailyLimit: 1, isUpgradeFlagShow: true },
+                ENTHUSIAST: { dailyLimit: 1, isUpgradeFlagShow: true },
             },
             paid: {
                 COACH: { dailyLimit: 3 },
@@ -68,13 +59,27 @@ export const featureConfig = {
             },
         },
     },
-
+    //  progress vault feature implementation done
+    onePercentProgressVault: {
+        access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
+        plans: {
+            free: {
+                COACH: { dailyLimit: 2, isUpgradeFlagShow: true },
+                ENTHUSIAST: { dailyLimit: 1, isUpgradeFlagShow: true },
+            },
+            paid: {
+                COACH: { dailyLimit: 3 },
+                ENTHUSIAST: { dailyLimit: 3 },
+            },
+        },
+    },
+    // daily blooms feature implementation done
     dailyBlooms: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: UNLIMITED },
-                ENTHUSIAST: { dailyLimit: UNLIMITED },
+                COACH: { dailyLimit: 2 },
+                ENTHUSIAST: { dailyLimit: 2 },
             },
             paid: {
                 COACH: { dailyLimit: UNLIMITED },
@@ -83,13 +88,13 @@ export const featureConfig = {
         },
     },
 
-
+    // reminder access control done
     reminders: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: UNLIMITED },
-                ENTHUSIAST: { dailyLimit: UNLIMITED },
+                COACH: { dailyLimit: 1 },
+                ENTHUSIAST: { dailyLimit: 1 },
             },
             paid: {
                 COACH: { dailyLimit: UNLIMITED },
@@ -135,38 +140,62 @@ export const featureConfig = {
             },
         },
     },
-
+    // spotlight feature implementation done
     spotlight: {
         access: [PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { priorityBoost: 0 },
+                COACH: {
+                    eligible: false,
+                    priorityWeight: 0,
+                    applyLimitType: "MONTHLY" as LimitType,
+                    applyLimit: 0,
+                },
             },
             paid: {
-                COACH: { priorityBoost: 1 },
+                COACH: {
+                    eligible: true,
+                    priorityWeight: 1,
+                    applyLimitType: "MONTHLY" as LimitType,
+                    applyLimit: 1,
+                },
             },
         },
     },
 
-
+    // monthly yearly lifetime
+    // buddy lens feature implementation done
     buddyLens: {
         access: [PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { requestLimit: 1, earnJPPerReview: 500 },
+                COACH: {
+                    requestLimitType: "MONTHLY" as LimitType,
+                    requestLimit: 1,
+                    earnJPPerReview: 1000,
+                },
             },
             paid: {
-                COACH: { requestLimit: 5, earnJPPerReview: 1500 },
+                COACH: {
+                    requestLimitType: "MONTHLY" as LimitType,
+                    requestLimit: 6,
+                    earnJPPerReview: 1500,
+                },
             },
         },
     },
 
 
+    // monthly yearly lifetime config karna he limit ko 
+    // default monthly 
+    // join limit implemented 
+    // create limit implemented
+    // action for coach challenge creation implemented
     challenges: {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         actions: {
             join: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
-            create: [PlanUserType.COACH],
+            create: [PlanUserType.COACH, PlanUserType.ENTHUSIAST],
             issueCertificate: [PlanUserType.COACH],
             groupChat: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         },
@@ -174,38 +203,64 @@ export const featureConfig = {
             free: {
                 COACH: {
                     createLimit: 2,
+                    //TODO paid challenge , commission is left
                     canCreatePaidChallenge: false,
                     commissionPercent: 20,
-                    canIssueCertificate: true,
+                    canIssueCertificate: false,
                     groupChatLimit: -1,
                     joinLimit: -1,
-                    isUpgradeFlagShow: true,
+                    limitType: "LIFETIME",
+                    isUpgradeFlagShow: false,
                 },
                 ENTHUSIAST: {
-                    createLimit: 1,
+                    createLimit: 2,
                     groupChatLimit: -1,
                     joinLimit: -1,
+                    limitType: "MONTHLY",
                     isUpgradeFlagShow: true,
                 },
             },
             paid: {
                 COACH: {
-                    createLimit: 3,
+                    createLimit: 5,
                     canCreatePaidChallenge: true,
                     commissionPercent: 10,
                     canIssueCertificate: true,
                     groupChatLimit: -1,
                     joinLimit: -1,
+                    limitType: "MONTHLY",
                 },
                 ENTHUSIAST: {
-                    createLimit: 3,
+                    createLimit: 2,
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
-                    groupChatLimit: -1,
-                    joinLimit: -1,
+                    groupChatLimit: 1,
+                    joinLimit: 2,
+                    limitType: "MONTHLY",
                 },
             },
         },
+    },
+    accountabilityHub: {
+        access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
+        actions: {
+            join: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
+            create: [PlanUserType.COACH],
+        },
+        plans: {
+            free: {
+                COACH: {
+                    createLimit: 1,
+                    limitType: "MONTHLY",
+                }
+            },
+            paid: {
+                COACH: {
+                    createLimit: 1,
+                    limitType: "MONTHLY"
+                }
+            }
+        }
     },
     discoveryCalls: {
         access: [PlanUserType.COACH],
@@ -253,12 +308,16 @@ export const featureConfig = {
         // paid coach paid challenge bana skta he
         // paid coach commission fee percentage
     },
-
+    // prosperity drops feature implementation done
     prosperityDrops: {
         access: [PlanUserType.COACH],
         plans: {
-            free: { eligible: false },
-            paid: { eligible: true, priorityWeight: 1 },
+            free: {
+                COACH: { eligible: false, priorityWeight: 0 },
+            },
+            paid: {
+                COACH: { eligible: true, priorityWeight: 1 },
+            },
         },
     },
 } as const;

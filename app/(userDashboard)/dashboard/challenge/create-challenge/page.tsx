@@ -8,31 +8,18 @@ import {
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { challengeSchema, challengeSchemaFormType } from "@/schema/zodSchema";
-import {
-  PlusCircle,
-  X,
-  Calendar as CalendarIcon,
-  AlertTriangle,
-} from "lucide-react";
+import { PlusCircle, X, Calendar as CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  // DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Editor } from "@tinymce/tinymce-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
@@ -47,52 +34,7 @@ const generateSlug = (title: string) => {
 
 type CreateChallengeProps = {
   onSuccess?: () => void;
-};
-
-// --- A reusable modal component for displaying messages ---
-const MessageModal = ({
-  isOpen,
-  onClose,
-  title,
-  message,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-}) => {
-  const router = useRouter();
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md ">
-        <DialogHeader className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-            <AlertTriangle className="h-8 w-8 text-red-600" />
-          </div>
-          <DialogTitle className="text-2xl font-bold text-slate-800">
-            {title}
-          </DialogTitle>
-          <DialogDescription className="text-md text-slate-600 mt-2">
-            {message}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="!flex !flex-col gap-2">
-          <Button onClick={onClose} className="bg-red-600  hover:bg-red-700 ">
-            Continue with Free Plan
-          </Button>
-          <Button
-            onClick={() => router.push(`/pricing?ref=create-challenge`)}
-            className="bg-green-700 hover:bg-green-800"
-          >
-            Upgrade Now
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  canIssueCertificate?: boolean;
 };
 
 // --- Type definitions ---
@@ -123,7 +65,9 @@ const formatDateForInput = (date: Date | null | undefined): string => {
   return date.toISOString().split("T")[0];
 };
 
-export default function CreateChallenge({}: CreateChallengeProps) {
+export default function CreateChallenge({
+  canIssueCertificate,
+}: CreateChallengeProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [modalContent, setModalContent] = useState<{
@@ -177,7 +121,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       social_link_task: "",
     },
   });
- 
+
   const startDate = watch("startDate");
   const endDate = watch("endDate");
 
@@ -200,7 +144,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
         toast.success(data.data?.message || "Challenge created successfully");
         queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] });
         router.push(
-          `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`
+          `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`,
         );
       } else {
         setModalContent({
@@ -211,27 +155,27 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       }
     },
     onError: (error) => {
-  let message = "Something went wrong. Please try again.";
+      let message = "Something went wrong. Please try again.";
 
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data;
 
-    if (typeof data === "string") {
-      message = data;
-    } else if (typeof data?.message === "string") {
-      message = data.message;
-    } else if (typeof error.message === "string") {
-      message = error.message;
-    }
-  } else if (error instanceof Error) {
-    message = error.message;
-  }
+        if (typeof data === "string") {
+          message = data;
+        } else if (typeof data?.message === "string") {
+          message = data.message;
+        } else if (typeof error.message === "string") {
+          message = error.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
 
-  setModalContent({
-    title: "Challenge Creation Failed",
-    message,
-  });
-},
+      setModalContent({
+        title: "Challenge Creation Failed",
+        message,
+      });
+    },
   });
 
   const onSubmit: SubmitHandler<challengeSchemaFormType> = (data) => {
@@ -272,8 +216,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     setIsShowingCertificateToggle(diffInDays >= 5);
   }, [startDate, endDate]);
 
-  
-
   if (isUserLoading || isFeeLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -291,6 +233,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       </div>
     );
   }
+  console.log({ modalContent });
 
   return (
     <>
@@ -699,7 +642,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </p>
             </div>
 
-            {isShowingCertificateToggle && (
+            {isShowingCertificateToggle && canIssueCertificate && (
               <div className="flex gap-4 items-center">
                 <Label
                   htmlFor="multiple"
@@ -721,7 +664,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </div>
             )}
 
-
             <div className="mt-8 flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -738,7 +680,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 {mutation.isPending ? "Creating..." : "Create Challenge"}
               </button>
             </div>
-            <MessageModal
+            <UpgradeMessageModal
               isOpen={!!modalContent}
               onClose={() => {
                 setModalContent(null);
@@ -751,6 +693,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               }}
               title={modalContent?.title ?? ""}
               message={modalContent?.message ?? ""}
+              redirectToPricingUrl={`/pricing?ref=create-challenge`}
             />
           </form>
         </div>

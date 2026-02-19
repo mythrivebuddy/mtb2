@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { ArrowLeft } from "lucide-react";
-import {toast} from "sonner"
+import { toast } from "sonner";
+import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
 interface RadioInputProps {
   id: string;
@@ -55,7 +56,7 @@ type FormState = {
 export default function CreateGroupPage() {
   const router = useRouter();
   // const { toast } = useToast();
-  
+
   const sp = useSearchParams();
 
   const groupId = sp.get("groupId");
@@ -72,6 +73,15 @@ export default function CreateGroupPage() {
     stages: "STAGE_3",
     notesPrivacy: "VISIBLE_TO_GROUP",
   });
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+  });
 
   // ✅ Load existing group in edit mode
   useEffect(() => {
@@ -83,7 +93,7 @@ export default function CreateGroupPage() {
     const load = async () => {
       try {
         const res = await axios.get(
-          `/api/accountability-hub/groups/${groupId}/view`
+          `/api/accountability-hub/groups/${groupId}/view`,
         );
         const g = res.data.group;
 
@@ -107,7 +117,7 @@ export default function CreateGroupPage() {
   }, [groupId, isEditMode]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -123,7 +133,7 @@ export default function CreateGroupPage() {
         // ✅ Create group
         const res = await axios.post(
           "/api/accountability-hub/groups",
-          formData
+          formData,
         );
 
         toast.success(res?.data?.message || "Group created successfully.");
@@ -132,7 +142,7 @@ export default function CreateGroupPage() {
         // ✅ Edit group (PATCH API)
         const res = await axios.patch(
           `/api/accountability-hub/groups/${groupId}/edit`,
-          formData
+          formData,
         );
         toast.success(res?.data?.message);
 
@@ -141,7 +151,18 @@ export default function CreateGroupPage() {
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         // Axios error - safe to access response
-        toast.error(error.response?.data?.error || "Something went wrong.");
+  
+        const message =
+          error.response?.data?.error || error?.response?.data?.message;
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setUpgradeModal({
+            open: true,
+            title: "Upgrade Required",
+            message,
+          });
+          return;
+        }
+        toast.error(message);
       } else if (error instanceof Error) {
         // Generic JS Error
         toast.error(error.message || "Something went wrong.");
@@ -160,6 +181,13 @@ export default function CreateGroupPage() {
 
   return (
     <section className="mx-auto max-w-4xl py-8 px-4">
+         <UpgradeMessageModal
+              isOpen={upgradeModal.open}
+              onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+              title={upgradeModal.title}
+              message={upgradeModal.message}
+              redirectToPricingUrl={`/pricing?ref=accountability-group-creation`}
+            />
       <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
@@ -312,7 +340,7 @@ export default function CreateGroupPage() {
             <Link href="/dashboard/accountability">
               <button
                 type="button"
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                className="px-4 sm:px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
                 disabled={isLoading}
               >
                 Cancel
@@ -322,7 +350,7 @@ export default function CreateGroupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400"
+              className="px-4 sm:px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400"
             >
               {isEditMode
                 ? isLoading

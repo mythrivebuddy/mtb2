@@ -46,11 +46,15 @@ const getChallengeDuration = (startDateString: string | Date, endDateString: str
 
 export default function ChallengeDetailView({ challenge, initialEnrollment }: ChallengeDetailViewProps) {
   const router = useRouter();
-  const { status: sessionStatus } = useSession();
+  const { status: sessionStatus,data:session } = useSession();
   const [enrollment, setEnrollment] = useState(initialEnrollment);
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{
+  message: string;
+  isUpgradeFlagShow?: boolean;
+} | null>(null);
+
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
   const queryClient = useQueryClient();
   //const searchParams = useSearchParams();
@@ -74,7 +78,10 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
           }
         } catch (err) {
           console.error("Polling failed:", err);
-          setError("Could not confirm enrollment status. Please refresh the page.");
+          setError({
+  message: "Could not confirm enrollment status. Please refresh the page.",
+});
+
           setIsPolling(false);
           clearInterval(poll);
         }
@@ -103,16 +110,22 @@ const handleEnroll = async () => {
     router.push(`/dashboard/challenge/my-challenges/${challenge.id}`);
 
   } catch (err) {
-    let errorMessage = "An unexpected error occurred. Please try again.";
-    if (axios.isAxiosError(err) && err.response?.data?.error) {
-      const errorData = err.response.data.error;
-      if (typeof errorData === "object" && errorData.message) {
-        errorMessage = errorData.message;
-      } else if (typeof errorData === "string") {
-        errorMessage = errorData;
-      }
-    }
-    setError(errorMessage);
+   if (axios.isAxiosError(err) && err.response?.data) {
+  const errorData = err.response.data;
+
+  if (typeof errorData === "object" && errorData.message) {
+    setError({
+      message: errorData.message,
+      isUpgradeFlagShow: errorData.isUpgradeFlagShow,
+    });
+    return;
+  }
+}
+
+setError({
+  message: "An unexpected error occurred. Please try again.",
+});
+
   } finally {
     setIsEnrolling(false);
   }
@@ -247,12 +260,33 @@ const handleCloseModalAndRedirect = async () => {
 
             {/* Action Button Section */}
             <div className="pt-6 border-t border-slate-200">
-              {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-4 flex items-center">
-                  <AlertTriangle className="w-5 h-5 mr-2" />
-                  <span>{error}</span>
-                </div>
-              )}
+ {error && (
+  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 font-medium">
+    <div className="flex items-center">
+      <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0" />
+       <span>
+    {error.message}
+
+    {error.isUpgradeFlagShow && session?.user.membership === "FREE" && (
+      <>
+        {" "}
+        <span
+          onClick={() => router.push("/pricing?ref=join-challenge")}
+          className="underline cursor-pointer font-medium"
+        >
+          Upgrade
+        </span>{" "}
+        to increase the limit.
+      </>
+    )}
+  </span>
+      
+    </div>
+  </div>
+)}
+
+
+
               {(() => {
                 if (enrollment && enrollment.userTasks.length > 0) {
                   return (

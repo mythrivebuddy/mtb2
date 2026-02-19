@@ -3,16 +3,14 @@ import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { notifyUsersExcept } from "@/lib/utils/pushNotifications";
 import { ChallengeJoinMode } from "@prisma/client";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
+import { LimitType } from "@/lib/access-control/featureConfig";
 
-// 1. Create an Admin Supabase client
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +25,59 @@ export async function POST(req: Request) {
     if (!challengeId || !message?.trim()) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
+    const feature = checkFeature({
+      feature: "challenges",
+      user: session.user,
+    });
+
+    if (!feature.allowed) {
+      return NextResponse.json({ message: "Access denied" }, { status: 403 });
+    }
+
+    const config = feature.config;
+    const { groupChatLimit, limitType, isUpgradeFlagShow } = config as {
+      groupChatLimit: number;
+      limitType: LimitType;
+      isUpgradeFlagShow?: boolean;
+    };
+
+    // ⏱️ Count messages
+    let periodStart: Date | null = null;
+    if (groupChatLimit !== -1) {
+      periodStart = getLimitPeriodStart(limitType);
+    }
+
+    const messageCount = groupChatLimit === -1
+      ? 0
+      : await prisma.challengeMessage.count({
+        where: {
+          challengeId,
+          userId: session.user.id,
+          ...(periodStart && {
+            createdAt: { gte: periodStart },
+          }),
+        },
+      });
+
+    const limitLabel =
+      limitType === "MONTHLY"
+        ? "per month"
+        : limitType === "YEARLY"
+          ? "per year"
+          : "in total";
+
+    const limitResponse = await enforceLimitResponse({
+      limit: groupChatLimit,
+      currentCount: messageCount,
+      message: `You have reached your group chat message limit (${groupChatLimit} ${limitLabel}).${isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
+        }`,
+
+    });
+
+    if (limitResponse) {
+      return limitResponse;
+    }
+
 
     // 2. Create the message just as before
     const newMessage = await prisma.challengeMessage.create({

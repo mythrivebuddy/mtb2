@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect } from "react";
+import { JSX, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ import { Card } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import axios, { AxiosError } from "axios";
-import { BuddyLensRequestInputs, buddyLensRequestSchema } from "@/schema/zodSchema";
+import {
+  BuddyLensRequestInputs,
+  buddyLensRequestSchema,
+} from "@/schema/zodSchema";
 import {
   LinkIcon,
   FileQuestion,
@@ -25,7 +28,7 @@ import {
 import { InputWithLabel } from "@/components/inputs/InputWithLabel";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
+import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
 interface ApiErrorResponse {
   message?: string;
@@ -85,6 +88,15 @@ const DOMAIN_ICONS: Record<string, JSX.Element> = {
 
 export default function BuddyLensRequestPage() {
   const router = useRouter();
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+  });
   const { data: session } = useSession();
 
   const requesterId = session?.user?.id;
@@ -108,6 +120,14 @@ export default function BuddyLensRequestPage() {
           axiosError.response?.data?.message ||
           axiosError.message ||
           "Something went wrong";
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setUpgradeModal({
+            open: true,
+            title: "Upgrade Required",
+            message,
+          });
+          return;
+        }
         toast.error(`Error: ${message}`);
       } else if (error instanceof Error) {
         toast.error(error.message);
@@ -144,6 +164,13 @@ export default function BuddyLensRequestPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-10 px-6">
+      <UpgradeMessageModal
+              isOpen={upgradeModal.open}
+              onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+              title={upgradeModal.title}
+              message={upgradeModal.message}
+              redirectToPricingUrl={`/pricing?ref=buddy-lens-request`}
+            />
       <Card className="rounded-xl shadow-md border border-gray-200 bg-white p-8 space-y-8">
         <h2 className="text-3xl font-bold text-center text-gray-800">
           📋 BuddyLens Review Request

@@ -40,6 +40,7 @@ import { LeaderboardPlayer } from "@/app/(userDashboard)/dashboard/challenge/my-
 import { PollCreationModal } from "./PollCreationModal";
 import { PollBubble } from "./PollBubble";
 import { toast } from "sonner";
+import UpgradeMessageModal from "./common/UpgradeMessageModal";
 
 // --- Types ---
 type Reaction = {
@@ -209,6 +210,16 @@ export default function ChallengeChat({
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+
+   const [upgradeModal, setUpgradeModal] = useState<{
+      open: boolean;
+      title: string;
+      message: string;
+    }>({
+      open: false,
+      title: "",
+      message: "",
+    });
 
   // Map members to mention format
   const allMembersData: MentionSuggestion[] = members.map((m) => {
@@ -603,7 +614,18 @@ export default function ChallengeChat({
       });
     } catch (e) {
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
-      console.error("Send failed", e);
+      if (axios.isAxiosError(e)) {
+        const message = e?.response?.data?.message || e.response?.data?.error;
+        if (e.response?.status == 403) {
+          setUpgradeModal({
+          open: true,
+          title: "Upgrade Required",
+          message,
+        });
+        return;
+        }
+      }
+      toast.error("Failed to send message. Please try again.");
     }
   };
 
@@ -1253,6 +1275,13 @@ export default function ChallengeChat({
         onOpenChange={setIsPollModalOpen}
         onCreatePoll={handleCreatePoll}
       />
+       <UpgradeMessageModal
+              isOpen={upgradeModal.open}
+              onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+              title={upgradeModal.title}
+              message={upgradeModal.message}
+              redirectToPricingUrl={`/pricing?ref=challenge-group-chat`}
+            />
     </Card>
   );
 }
