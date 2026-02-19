@@ -51,6 +51,7 @@ function ProfilePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["profileData"],
     queryFn: fetchProfileData,
+    refetchOnMount:true
   });
 
   const user = data?.user.user as User;

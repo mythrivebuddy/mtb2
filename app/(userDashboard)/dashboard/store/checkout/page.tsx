@@ -19,10 +19,9 @@ import {
 import Link from "next/link";
 import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import PaymentModal from "@/components/PaymentModal";
-import { PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { Item } from "@/types/client/store";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -320,8 +319,10 @@ const CheckoutContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cartItems = searchParams.getAll("cartItem");
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEditingBilling, setIsEditingBilling] = useState(false);
+
+  // ✅ Session for prefilling name and email
+  const { data: session } = useSession();
 
   const parsedCartItems = cartItems.map((item) => {
     const [itemId, quantity] = item.split(":");
@@ -359,6 +360,13 @@ const CheckoutContent = () => {
   const savedBilling: BillingInfo | null = billingData ?? null;
   const hasBilling = !!savedBilling?.addressLine1;
 
+  // ✅ Default billing prefilled from session when no saved billing exists
+  const defaultBilling: BillingInfo = {
+    ...EMPTY_BILLING,
+    fullName: session?.user?.name ?? "",
+    email: session?.user?.email ?? "",
+  };
+
   // Save billing mutation
   const saveBillingMutation = useMutation({
     mutationFn: async (data: BillingInfo) => {
@@ -378,9 +386,7 @@ const CheckoutContent = () => {
     },
   });
 
-  const isOutOfStock = React.useMemo(() => Math.random() < 0.1, []);
-
-  // Place order mutation
+  // Place order mutation — sends all cart items at once
   const placeOrderMutation = useMutation({
     mutationFn: async () => {
       await axios.post("/api/user/store/items/place-order", {
@@ -399,18 +405,10 @@ const CheckoutContent = () => {
     },
   });
 
-  // ✅ Clean async handler — no JSX return inside
-  const handlePaymentSuccess = async () => {
-    await placeOrderMutation.mutateAsync();
-  };
-
-  // ── All hooks above this line ──────────────────────────────────────────────
-
   const isLoading = isItemsLoading || isBillingLoading;
 
   if (isLoading) return <PageLoader />;
 
-  // ✅ Guard is now AFTER all hooks, so items.reduce is safe below
   if (!items || items.length === 0) {
     return (
       <div className="container mx-auto p-4 text-center">
@@ -429,7 +427,7 @@ const CheckoutContent = () => {
     return total + item.basePrice * parsedCartItems[index].quantity;
   }, 0);
 
-  const canProceed = hasBilling && !isEditingBilling && !isOutOfStock;
+  const canProceed = hasBilling && !isEditingBilling;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -450,7 +448,9 @@ const CheckoutContent = () => {
             <div className="bg-white p-4 rounded-lg shadow">
               <h2 className="font-bold">1. LOGIN ✓</h2>
               <p className="text-gray-600 text-sm mt-1">
-                Signed in via your account
+                Signed in as{" "}
+                <span className="font-medium">{session?.user?.name}</span> (
+                {session?.user?.email})
               </p>
             </div>
 
@@ -462,8 +462,9 @@ const CheckoutContent = () => {
                     ? "2. DELIVERY ADDRESS — Edit"
                     : "2. DELIVERY ADDRESS — Add your address to continue"}
                 </p>
+                {/* ✅ Use savedBilling when editing, else prefill from session */}
                 <BillingForm
-                  billing={savedBilling ?? EMPTY_BILLING}
+                  billing={isEditingBilling && savedBilling ? savedBilling : defaultBilling}
                   onSave={(data) => saveBillingMutation.mutate(data)}
                   isSaving={saveBillingMutation.isPending}
                   showCancel={isEditingBilling && hasBilling}
@@ -480,48 +481,36 @@ const CheckoutContent = () => {
             {/* 3. Order Summary */}
             <div className="bg-white p-4 rounded-lg shadow">
               <h2 className="font-bold mb-4">3. ORDER SUMMARY</h2>
-
-              {isOutOfStock ? (
-                <div className="text-red-500 p-4 bg-red-50 rounded mb-4">
-                  <p>Some items have become Out of Stock:</p>
-                  {items.map((item) => (
-                    <p key={item.id} className="font-medium">
-                      {item.name}
-                    </p>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      className="flex gap-4 border-b pb-4 last:border-b-0"
-                    >
-                      <Image
-                        src={item.imageUrl}
-                        alt={item.name}
-                        width={96}
-                        height={96}
-                        className="w-24 h-24 object-cover rounded"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-gray-500">
-                          Pack of 1, {item.category.name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="text-lg font-bold">
-                            ${item.basePrice.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="mt-2 text-sm text-gray-600">
-                          Qty: {parsedCartItems[index].quantity}
-                        </div>
+              <div className="space-y-4">
+                {items.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex gap-4 border-b pb-4 last:border-b-0"
+                  >
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      width={96}
+                      height={96}
+                      className="w-24 h-24 object-cover rounded"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-medium">{item.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        Pack of 1, {item.category.name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-lg font-bold">
+                          ${item.basePrice.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-sm text-gray-600">
+                        Qty: {parsedCartItems[index].quantity}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -581,7 +570,7 @@ const CheckoutContent = () => {
                 </p>
 
                 <button
-                  onClick={() => setIsPaymentModalOpen(true)}
+                  onClick={() => placeOrderMutation.mutate()}
                   disabled={!canProceed || placeOrderMutation.isPending}
                   className={`w-full py-4 text-white font-bold rounded-lg transition-colors ${
                     !canProceed || placeOrderMutation.isPending
@@ -589,36 +578,15 @@ const CheckoutContent = () => {
                       : "bg-[#fb641b] hover:bg-[#fb641b]/90"
                   }`}
                 >
-                  {placeOrderMutation.isPending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <PageLoader /> Processing...
-                    </span>
-                  ) : (
-                    "Proceed to Payment"
-                  )}
+                  {placeOrderMutation.isPending
+                    ? "Placing Order..."
+                    : "Place Order"}
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Payment Modal */}
-      <PayPalScriptProvider
-        options={{
-          clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "",
-        }}
-      >
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onSuccess={handlePaymentSuccess}
-          totalAmount={totalAmount}
-          itemName={items.map((item) => item.name).join(", ")}
-          quantity={parsedCartItems.reduce((sum, i) => sum + i.quantity, 0)}
-          isLoading={placeOrderMutation.isPending}
-        />
-      </PayPalScriptProvider>
     </div>
   );
 };

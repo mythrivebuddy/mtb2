@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { Pencil, Trash2, PlusCircle, LayoutGrid, List } from "lucide-react";
@@ -11,6 +11,8 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { Category, ItemFormData } from "@/types/client/manage-store-product";
 import { Item } from "@/types/client/store";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const fetchCategories = async (): Promise<Category[]> => {
   const res = await axios.get("/api/user/store/items/get-categories");
@@ -23,9 +25,12 @@ const fetchMyItems = async (): Promise<Item[]> => {
 };
 
 const ManageStorePage: React.FC = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // ✅ ALL hooks declared first — before any early returns
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
@@ -51,12 +56,6 @@ const ManageStorePage: React.FC = () => {
     queryFn: fetchMyItems,
   });
 
-  const filteredItems = items.filter((item) => {
-    if (filterStatus === "approved") return item.isApproved === true;
-    if (filterStatus === "not-approved") return item.isApproved === false;
-    return true;
-  });
-
   const createProductMutation = useMutation({
     mutationFn: async (newItem: ItemFormData) => {
       const formDataToSend = new FormData();
@@ -66,12 +65,8 @@ const ManageStorePage: React.FC = () => {
       formDataToSend.append("monthlyPrice", newItem.monthlyPrice.toString());
       formDataToSend.append("yearlyPrice", newItem.yearlyPrice.toString());
       formDataToSend.append("lifetimePrice", newItem.lifetimePrice.toString());
-      if (newItem.imageFile) {
-        formDataToSend.append("image", newItem.imageFile);
-      }
-      if (newItem.downloadFile) {
-        formDataToSend.append("download", newItem.downloadFile);
-      }
+      if (newItem.imageFile) formDataToSend.append("image", newItem.imageFile);
+      if (newItem.downloadFile) formDataToSend.append("download", newItem.downloadFile);
       return axios.post("/api/user/store/items/add-items", formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -114,12 +109,8 @@ const ManageStorePage: React.FC = () => {
       formDataToSend.append("monthlyPrice", data.monthlyPrice.toString());
       formDataToSend.append("yearlyPrice", data.yearlyPrice.toString());
       formDataToSend.append("lifetimePrice", data.lifetimePrice.toString());
-      if (data.imageFile) {
-        formDataToSend.append("image", data.imageFile);
-      }
-      if (data.downloadFile) {
-        formDataToSend.append("download", data.downloadFile);
-      }
+      if (data.imageFile) formDataToSend.append("image", data.imageFile);
+      if (data.downloadFile) formDataToSend.append("download", data.downloadFile);
       return axios.put(`/api/user/store/items/${id}`, formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -149,6 +140,31 @@ const ManageStorePage: React.FC = () => {
     onError: (err) => {
       toast.error(getAxiosErrorMessage(err, "Failed to delete product."));
     },
+  });
+
+  // ✅ Auth redirect effect — after all hooks
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session || session.user.userType !== "COACH") {
+      router.replace("/dashboard");
+    }
+  }, [session, status, router]);
+
+  // ✅ Early returns — after ALL hooks
+  if (status === "loading" || !session || session.user.userType !== "COACH") {
+    return <PageLoader />;
+  }
+
+  if (categoriesLoading || itemsLoading) {
+    return <PageLoader />;
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+
+  const filteredItems = items.filter((item) => {
+    if (filterStatus === "approved") return item.isApproved === true;
+    if (filterStatus === "not-approved") return item.isApproved === false;
+    return true;
   });
 
   const resetForm = () => {
@@ -195,7 +211,6 @@ const ManageStorePage: React.FC = () => {
       toast.error("Please upload an image");
       return;
     }
-
     if (editingItem) {
       updateProductMutation.mutate({ id: editingItem.id, data: formData });
     } else {
@@ -209,13 +224,13 @@ const ManageStorePage: React.FC = () => {
     }
   };
 
-  if (categoriesLoading || itemsLoading) {
-    return <PageLoader />;
-  }
+  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <div className="flex flex-col">
+
+        {/* Header */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
           <h1 className="text-3xl font-bold text-slate-800">🏪 Manage Store</h1>
           <div className="flex gap-3">
@@ -235,6 +250,7 @@ const ManageStorePage: React.FC = () => {
           </div>
         </div>
 
+        {/* Filters & View Toggle */}
         <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
           <div className="flex gap-2 flex-wrap">
             <button
@@ -293,10 +309,7 @@ const ManageStorePage: React.FC = () => {
                 <h3 className="text-lg font-semibold">
                   {editingItem ? "Edit Product" : "Create New Product"}
                 </h3>
-                <button
-                  onClick={handleCloseModal}
-                  className="0text-gray-500 hover:text-gray-700 text-2xl font-bold"
-                >
+                <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">
                   ×
                 </button>
               </div>
@@ -354,7 +367,6 @@ const ManageStorePage: React.FC = () => {
                         required
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium mb-1">Monthly Price</label>
                       <input
@@ -366,7 +378,6 @@ const ManageStorePage: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium mb-1">Yearly Price</label>
                       <input
@@ -378,7 +389,6 @@ const ManageStorePage: React.FC = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium mb-1">Lifetime Price</label>
                       <input
@@ -415,9 +425,9 @@ const ManageStorePage: React.FC = () => {
                       accept=".pdf,application/pdf"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file && file.type !== 'application/pdf') {
-                          toast.error('Only PDF files are allowed for download');
-                          e.target.value = '';
+                        if (file && file.type !== "application/pdf") {
+                          toast.error("Only PDF files are allowed for download");
+                          e.target.value = "";
                           return;
                         }
                         setFormData({ ...formData, downloadFile: file || undefined });
@@ -480,7 +490,6 @@ const ManageStorePage: React.FC = () => {
                     required
                   />
                 </div>
-
                 <button
                   type="submit"
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
@@ -656,10 +665,13 @@ const ManageStorePage: React.FC = () => {
           <div className="bg-white shadow-lg rounded-xl p-6">
             <h3 className="text-lg font-semibold text-slate-800 mb-2">Avg Base Price</h3>
             <p className="text-3xl font-bold text-blue-600">
-              ${items.length > 0 ? (items.reduce((sum, item) => sum + item.basePrice, 0) / items.length).toFixed(2) : "0.00"}
+              ${items.length > 0
+                ? (items.reduce((sum, item) => sum + item.basePrice, 0) / items.length).toFixed(2)
+                : "0.00"}
             </p>
           </div>
         </div>
+
       </div>
     </div>
   );

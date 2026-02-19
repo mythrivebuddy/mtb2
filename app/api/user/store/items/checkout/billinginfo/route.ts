@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const billingInfo = await prisma.productBillingInformation.findUnique({
+    const billingInfo = await prisma.userBillingInformation.findUnique({
       where: { userId: user.id },
     });
 
@@ -56,8 +56,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      fullName,
-      email,
       phone,
       addressLine1,
       addressLine2,
@@ -67,18 +65,16 @@ export async function POST(req: NextRequest) {
       country,
     } = body;
 
-    if (!fullName || !email || !addressLine1 || !city || !state || !postalCode || !country) {
+    if (!addressLine1 || !city || !state || !postalCode || !country) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const billingInfo = await prisma.productBillingInformation.upsert({
+    const billingInfo = await prisma.userBillingInformation.upsert({
       where: { userId: user.id },
       update: {
-        fullName,
-        email,
         phone: phone || null,
         addressLine1,
         addressLine2: addressLine2 || null,
@@ -90,8 +86,6 @@ export async function POST(req: NextRequest) {
       create: {
         id: crypto.randomUUID(),
         userId: user.id,
-        fullName,
-        email,
         phone: phone || null,
         addressLine1,
         addressLine2: addressLine2 || null,

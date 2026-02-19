@@ -24,9 +24,10 @@ export async function GET() {
 
     return NextResponse.json({ wishlist });
   } catch (error) {
+    console.error(error)
     return NextResponse.json(
       { error: "Failed to fetch wishlist" },
-      { status: 500 }
+      { status: 500 } 
     );
   }
 }

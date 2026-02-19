@@ -60,16 +60,19 @@ const StorePage: React.FC = () => {
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
+    refetchOnMount: true,
   });
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: fetchUserProfile,
+    refetchOnMount: true,
   });
 
   const { data: wishlist = [], isLoading: wishlistLoading } = useQuery({
     queryKey: ["wishlist"],
     queryFn: fetchWishlist,
+    refetchOnMount: true,
   });
 
   const { data: items = [], isLoading: itemsLoading } = useQuery({
@@ -79,6 +82,7 @@ const StorePage: React.FC = () => {
         ? fetchItemsByCategory(selectedCategory)
         : fetchAllItems(),
     placeholderData: (prev) => prev,
+    refetchOnMount: true,
   });
 
   const toggleWishlistMutation = useMutation({
@@ -134,20 +138,10 @@ const StorePage: React.FC = () => {
 
   // Filter items: only show approved items + apply product filter
   const filteredItems = items.filter((item) => {
-    // First, only show approved items
     if (!item.isApproved) return false;
-
-    // Then apply product filter
     if (productFilter === "ALL") return true;
-
-    if (productFilter === "MY") {
-      return item.createdByUserId === user?.id;
-    }
-
-    if (productFilter === "ADMIN") {
-      return item.createdByRole === "ADMIN";
-    }
-
+    if (productFilter === "MY") return item.createdByUserId === user?.id;
+    if (productFilter === "ADMIN") return item.createdByRole === "ADMIN";
     return true;
   });
 
@@ -162,12 +156,6 @@ const StorePage: React.FC = () => {
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-slate-800">🛍 Store</h1>
         <div className="flex gap-3">
-          <Link
-            href="/dashboard/manage-store"
-            className="bg-green-600 text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-green-700"
-          >
-            Manage Store
-          </Link>
           <Link
             href="/dashboard/store/profile"
             className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600"
@@ -201,16 +189,17 @@ const StorePage: React.FC = () => {
           <button
             key={f}
             onClick={() => setProductFilter(f as ProductFilter)}
-            className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${productFilter === f
-              ? "bg-green-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-              }`}
+            className={`px-4 py-2 rounded-full font-bold text-sm transition-all ${
+              productFilter === f
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
           >
             {f === "ALL"
               ? "All Products"
               : f === "MY"
-                ? "My Products"
-                : "Admin Products"}
+              ? "My Products"
+              : "Admin Products"}
           </button>
         ))}
       </div>
@@ -219,8 +208,9 @@ const StorePage: React.FC = () => {
       <div className="flex flex-wrap gap-2 justify-center mb-6">
         <button
           onClick={() => setSelectedCategory(null)}
-          className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${selectedCategory === null ? "opacity-90" : ""
-            }`}
+          className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${
+            selectedCategory === null ? "opacity-90" : ""
+          }`}
         >
           All Categories
         </button>
@@ -228,8 +218,9 @@ const StorePage: React.FC = () => {
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${selectedCategory === cat.id ? "opacity-90" : ""
-              }`}
+            className={`bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 ${
+              selectedCategory === cat.id ? "opacity-90" : ""
+            }`}
           >
             {cat.name}
           </button>
@@ -238,14 +229,15 @@ const StorePage: React.FC = () => {
 
       <h2 className="text-2xl font-semibold text-slate-800 mb-4 text-center">
         {selectedCategory
-          ? `${categories.find((c) => c.id === selectedCategory)?.name ||
-          "Selected"
-          } Items`
+          ? `${
+              categories.find((c) => c.id === selectedCategory)?.name ||
+              "Selected"
+            } Items`
           : productFilter === "MY"
-            ? "My Products"
-            : productFilter === "ADMIN"
-              ? "Admin Products"
-              : "All Products"}
+          ? "My Products"
+          : productFilter === "ADMIN"
+          ? "Admin Products"
+          : "All Products"}
       </h2>
 
       {/* PRODUCTS */}
