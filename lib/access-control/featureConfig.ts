@@ -231,15 +231,36 @@ export const featureConfig = {
                     limitType: "MONTHLY",
                 },
                 ENTHUSIAST: {
-                    createLimit: 5,
+                    createLimit: 2,
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
-                    groupChatLimit: -1,
-                    joinLimit: -1,
+                    groupChatLimit: 1,
+                    joinLimit: 2,
                     limitType: "MONTHLY",
                 },
             },
         },
+    },
+    accountabilityHub: {
+        access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
+        actions: {
+            join: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
+            create: [PlanUserType.COACH],
+        },
+        plans: {
+            free: {
+                COACH: {
+                    createLimit: 1,
+                    limitType: "MONTHLY",
+                }
+            },
+            paid: {
+                COACH: {
+                    createLimit: 1,
+                    limitType: "MONTHLY"
+                }
+            }
+        }
     },
     discoveryCalls: {
         access: [PlanUserType.COACH],
