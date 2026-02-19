@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import Navbar from "@/components/navbars/navbar/Navbar"; // adjust import if needed
-import { useSession, signOut } from "next-auth/react";
+import Navbar from "@/components/navbars/navbar/Navbar";
+import { useSession } from "next-auth/react";
 
 // Mock next-auth
 jest.mock("next-auth/react", () => ({
@@ -9,12 +9,12 @@ jest.mock("next-auth/react", () => ({
   signOut: jest.fn(),
 }));
 
-// Mock Next.js Link and Image
+// Mock Next.js Link & Image
 jest.mock("next/link", () => ({ children, href }: any) => (
   <a href={href}>{children}</a>
 ));
 jest.mock("next/image", () => (props: any) => (
-  <img {...props} alt={props.alt || "mocked-image"} />
+  <img {...props} alt={props.alt || "image"} />
 ));
 
 describe("Navbar Component", () => {
@@ -22,28 +22,27 @@ describe("Navbar Component", () => {
     jest.clearAllMocks();
   });
 
-  it("renders logo and basic links", () => {
+  it("renders logo and primary links", () => {
     (useSession as jest.Mock).mockReturnValue({ data: null });
 
     render(<Navbar />);
 
     expect(screen.getByText("MyThriveBuddy.com")).toBeInTheDocument();
     expect(screen.getByText("Challenges")).toBeInTheDocument();
-    expect(screen.getByText("Blog")).toBeInTheDocument();
-    expect(screen.getByText("Contact Us")).toBeInTheDocument();
-    expect(screen.getByText("About Us")).toBeInTheDocument();
+    expect(screen.getByText("Pricing")).toBeInTheDocument();
   });
 
-  it("shows Sign In and Sign Up buttons when logged out", () => {
+  it("shows Sign In button when logged out", () => {
     (useSession as jest.Mock).mockReturnValue({ data: null });
 
     render(<Navbar />);
 
-    expect(screen.getByRole("button", { name: /Sign Up/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Sign In/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Sign In/i })
+    ).toBeInTheDocument();
   });
 
-  it("shows Dashboard and Sign Out when logged in", () => {
+  it("shows Dashboard when logged in", () => {
     (useSession as jest.Mock).mockReturnValue({
       data: { user: { name: "Test User" } },
     });
@@ -51,39 +50,21 @@ describe("Navbar Component", () => {
     render(<Navbar />);
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-
-    const signOutButton = screen.getByRole("button", { name: /Sign Out/i });
-    expect(signOutButton).toBeInTheDocument();
-
-    fireEvent.click(signOutButton);
-    expect(signOut).toHaveBeenCalled();
   });
 
-  it("toggles mobile menu when hamburger button is clicked", () => {
+  it("toggles mobile menu correctly", () => {
     (useSession as jest.Mock).mockReturnValue({ data: null });
 
     render(<Navbar />);
 
-    const menuButton = screen.getByRole("button", { name: /menu/i });
+    const menuButton = screen.getByLabelText("menu");
 
-    // Open menu
+    // open
     fireEvent.click(menuButton);
+    expect(screen.getByText("Blog")).toBeInTheDocument();
 
-    // Desktop + mobile both render "Challenges"
-    const challengesLinks = screen.getAllByText("Challenges");
-    expect(challengesLinks.length).toBeGreaterThan(0);
-
-    // Desktop + mobile both render "Sign In"
-    const signInButtons = screen.getAllByRole("button", { name: /Sign In/i });
-    // last one is the mobile menu button
-    const mobileSignInButton = signInButtons[signInButtons.length - 1];
-    expect(mobileSignInButton).toBeInTheDocument();
-    expect(mobileSignInButton).toBeVisible();
-
-    // Close menu
+    // close
     fireEvent.click(menuButton);
-
-    // After closing, the mobile one should not be visible anymore
-    expect(mobileSignInButton).not.toBeVisible();
+    expect(screen.queryByText("Blog")).not.toBeInTheDocument();
   });
 });

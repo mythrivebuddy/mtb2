@@ -22,7 +22,7 @@ export async function POST() {
       "You are not authorized for this action"
     );
     const userId = session.user.id;
-    console.log("SEssion of the post of spotlight ", session);
+    
 
 
     // Get spotlight activity data
@@ -61,7 +61,7 @@ export async function POST() {
         membership: session.user.membership,
       },
     });
-    console.log(" featureCheck", featureCheck);
+ 
 
     if (!featureCheck.allowed) {
       return NextResponse.json(
@@ -244,7 +244,7 @@ export async function POST() {
       { status: 201 }
     );
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 }
