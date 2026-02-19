@@ -9,129 +9,118 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+// updated user for item table , updating the model for product purcahsing using razorpay
 model User {
-  id                            String                @id @default(uuid())
-  email                         String                @unique
+  id                            String                            @id @default(uuid())
+  email                         String                            @unique
   password                      String?
   name                          String
-  createdAt                     DateTime              @default(now())
-  updatedAt                     DateTime              @updatedAt
+  createdAt                     DateTime                          @default(now())
+  updatedAt                     DateTime                          @updatedAt
   role                          Role
   image                         String?
-  jpEarned                      Int                   @default(0)
-  jpSpent                       Int                   @default(0)
-  authMethod                    AuthMethod            @default(CREDENTIALS)
+  jpEarned                      Int                               @default(0)
+  jpSpent                       Int                               @default(0)
+  authMethod                    AuthMethod                        @default(CREDENTIALS)
   planEnd                       DateTime?
   planId                        String?
   planStart                     DateTime?
-  jpBalance                     Int                   @default(0)
-  jpTransaction                 Int                   @default(0)
-  isBlocked                     Boolean?              @default(false)
+  jpBalance                     Int                               @default(0)
+  jpTransaction                 Int                               @default(0)
+  isBlocked                     Boolean?                          @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
-  isEmailVerified               Boolean               @default(false)
+  isEmailVerified               Boolean                           @default(false)
   achievements                  String?
   goals                         String?
   keyOfferings                  String?
-  referralCode                  String?               @unique
+  referralCode                  String?                           @unique
   referredById                  String?
   socialHandles                 Json?
   website                       String?
-  membership                    String                @default("FREE")
+  membership                    String                            @default("FREE")
   subscriptionEnd               DateTime?
-  subscriptionId                String?               @unique
+  subscriptionId                String?                           @unique
   subscriptionStart             DateTime?
   subscriptionStatus            String?
   bio                           String?
-  isOnline                      Boolean?              @default(false)
-  isFirstTimeSurvey             Boolean?              @default(true)
+  isOnline                      Boolean?                          @default(false)
+  isFirstTimeSurvey             Boolean?                          @default(true)
   lastSurveyTime                DateTime?
-  challenge_limit               Int                   @default(1)
+  challenge_limit               Int                               @default(1)
+  currentCurrency               SubscriptionPlanCurrency?
+  currentPlanId                 String?
+  currentPlanInterval           PlanInterval?
+  userType                      PlanUserType?
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
+  billingInformation            BillingInformation?
   blockedUsers                  BlockedUsers?
-  buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
-  BuddyLensReviewer             BuddyLensRequest[]    @relation("BuddyLensReviewer")
+  buddyLensRequests             BuddyLensRequest[]                @relation("BuddyLensRequests")
+  BuddyLensReviewer             BuddyLensRequest[]                @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
   cart                          Cart[]
-  accountabilityComments        Comment[]             @relation("AccountabilityComments")
-  groupsOwned                   Group[]               @relation("CoachGroups")
-  Group_Group_creatorIdToUser   Group[]               @relation("Group_creatorIdToUser")
-  accountabilityMemberships     GroupMember[]         @relation("AccountabilityMemberships")
+  challengeCreatorSignature     ChallengeCreatorSignature?
+  challengeMessageReactions     ChallengeMessageReaction[]
+  accountabilityComments        Comment[]                         @relation("AccountabilityComments")
+  couponRedemptions             CouponRedemption[]
+  groupsOwned                   Group[]                           @relation("CoachGroups")
+  Group_Group_creatorIdToUser   Group[]                           @relation("Group_creatorIdToUser")
+  accountabilityMemberships     GroupMember[]                     @relation("AccountabilityMemberships")
   invoice                       Invoice[]
   magicBoxes                    MagicBox[]
+  buddyChecker                  MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyTarget")
+  buddyDoer                     MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyOwner")
+  makeoverProgressLogs          MakeoverProgressLog[]
+  mandates                      Mandate[]
   miracleLog                    MiracleLog[]
   Notification                  Notification[]
+  oneTimePurchases              OneTimeProgramPurchase[]
   orders                        Order[]
+  paymentOrders                 PaymentOrder[]
   profileViews                  ProfileView[]
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
-  referralsReceived             Referral[]            @relation("Referred")
-  referralsMade                 Referral[]            @relation("Referrer")
+  userBilling                UserBillingInformation?
+  referralsReceived             Referral[]                        @relation("Referred")
+  referralsMade                 Referral[]                        @relation("Referrer")
   reminders                     Reminder[]
-  rewardsGiven                  Reward[]              @relation("AdminRewards")
-  rewardsReceived               Reward[]              @relation("MemberRewards")
+  rewardsGiven                  Reward[]                          @relation("AdminRewards")
+  rewardsReceived               Reward[]                          @relation("MemberRewards")
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
+  subscriptions                 Subscription[]
+  invoices                      SubscriptionInvoice[]             @relation("UserInvoices")
+  sundayProgressLogs            SundayProgressLog[]
   todos                         Todo[]
   transaction                   Transaction[]
-  plan                          Plan?                 @relation(fields: [planId], references: [id])
-  referredBy                    User?                 @relation("UserReferrer", fields: [referredById], references: [id])
-  referrals                     User[]                @relation("UserReferrer")
+  plan                          Plan?                             @relation(fields: [planId], references: [id])
+  referredBy                    User?                             @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals                     User[]                            @relation("UserReferrer")
   userBusinessProfile           UserBusinessProfile?
-  userNotifications             UserNotification[]    @relation("UserNotifications")
+  makeoverAreas                 UserMakeoverArea[]
+  makeoverBadges                UserMakeoverBadge[]
+  makeoverChallengeEnrollments  UserMakeoverChallengeEnrollment[]
+  makeoverCommitments           UserMakeoverCommitment[]
+  makeoverLevels                UserMakeoverLevel[]
+  selfRewards                   UserMakeoverSelfReward[]
+  userNotifications             UserNotification[]                @relation("UserNotifications")
+  programStates                 UserProgramState[]
   userStreak                    UserStreak?
+  visionImages                  UserVisionImage[]
   wishlists                     Wishlist[]
+  certificatesIssued            ChallengeCertificate[]            @relation("CertificatesIssuedByUser")
+  certificatesReceived          ChallengeCertificate[]            @relation("CertificatesReceivedByUser")
   enrollments                   ChallengeEnrollment[]
-  createdChallenges             Challenge[]           @relation("CreatedChallenges")
-  buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
-  Goal                          Goal[]                @relation("GoalToUser")
-  sentChallengeMessages   ChallengeMessage[]          @relation("UserMessages")
-  challengeMessageReactions ChallengeMessageReaction[]
-  challengePollVotes ChallengeMessagePollVote[]
-
-   certificatesReceived ChallengeCertificate[] @relation("CertificatesReceivedByUser")
-   certificatesIssued   ChallengeCertificate[] @relation("CertificatesIssuedByUser")
-
-  challengeCreatorSignature ChallengeCreatorSignature?
-
-  // membership 
-  userType                      PlanUserType?        // COACH | ENTHUSIAST | SOLOPRENEUR
-  currentPlanId        String?
-  currentPlanInterval  PlanInterval?     // MONTHLY | YEARLY | LIFETIME
-  currentCurrency      SubscriptionPlanCurrency?     // INR | USD
-
-    // NEW MEMBERSHIP RELATIONS
-  mandates           Mandate[]
-  subscriptions      Subscription[]
-  invoices        SubscriptionInvoice[]          @relation("UserInvoices")
-
-
-  couponRedemptions  CouponRedemption[]
-  billingInformation  BillingInformation[]
-
-  oneTimePurchases OneTimeProgramPurchase[]
-  paymentOrders PaymentOrder[] 
-
-    // Makeover relations ===============================
-  makeoverAreas        UserMakeoverArea[]
-  makeoverCommitments  UserMakeoverCommitment[]
-  makeoverProgressLogs MakeoverProgressLog[]
-  sundayProgressLogs SundayProgressLog[]
-  makeoverLevels       UserMakeoverLevel[]
-  makeoverBadges       UserMakeoverBadge[]
-  makeoverChallengeEnrollments UserMakeoverChallengeEnrollment[]
-  visionImages UserVisionImage[]
-  programStates UserProgramState[]
-
-  selfRewards UserMakeoverSelfReward[]
-
-  //Makeover Accountability Buddy
-  buddyDoer    MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyOwner")
-  buddyChecker MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyTarget")
-
+  sentChallengeMessages         ChallengeMessage[]                @relation("UserMessages")
+  challengePollVotes            ChallengeMessagePollVote[]
+  createdChallenges             Challenge[]                       @relation("CreatedChallenges")
+  buddyLensReviews              BuddyLensRequest[]                @relation("BuddyLensReviews")
+  Goal                          Goal[]                            @relation("GoalToUser")
+  createdItems                  Item[]                            @relation("ItemCreator")
+  approvedItems                 Item[]                            @relation("ItemApprover")
 
   @@index([name])
 }
@@ -302,26 +291,51 @@ model ProgressVault {
   user             User      @relation(fields: [userId], references: [id])
 }
 
+// updated Item 
 model Item {
-  id            String      @id @default(cuid())
-  name          String
+  id   String @id @default(cuid())
+  name String
+
+  // Pricing
   basePrice     Float
   monthlyPrice  Float?
   yearlyPrice   Float?
   lifetimePrice Float?
-  imageUrl      String
-  createdAt     DateTime    @default(now())
-  downloadUrl   String?
-  categoryId    String
-  updatedAt     DateTime    @default(now()) @updatedAt
-  cart          Cart[]
-  category      Category    @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  wishlists     Wishlist[]
+
+  // Media
+  imageUrl    String
+  downloadUrl String?
+
+  // Category
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // Ownership (NEW)
+  createdByUserId String
+  createdByRole   String // ADMIN | COACH
+  creator         User   @relation("ItemCreator", fields: [createdByUserId], references: [id])
+
+  // Approval system (NEW)
+  isApproved       Boolean   @default(false)
+  approvedByUserId String?
+  approvedAt       DateTime?
+  approver         User?     @relation("ItemApprover", fields: [approvedByUserId], references: [id])
+
+  // Existing relations
+  cart       Cart[]
+  orderItems OrderItem[]
+  wishlists  Wishlist[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([categoryId])
+  @@index([createdByUserId])
+  @@index([isApproved])
 }
 
+// category  model
 model Category {
   id        String   @id @default(cuid())
   name      String
@@ -329,7 +343,6 @@ model Category {
   updatedAt DateTime @updatedAt
   items     Item[]
 }
-
 model Order {
   id          String      @id @default(cuid())
   userId      String
@@ -1323,6 +1336,23 @@ model BillingInformation {
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id])
+}
+
+// userbilling for products
+
+model UserBillingInformation {
+  id           String   @id
+  userId       String   @unique
+  phone        String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model AdminCashfreeConfigSettings {
