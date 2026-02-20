@@ -78,8 +78,8 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: 2 },
-                ENTHUSIAST: { dailyLimit: 2 },
+                COACH: { dailyLimit: 3 },
+                ENTHUSIAST: { dailyLimit: 3 },
             },
             paid: {
                 COACH: { dailyLimit: UNLIMITED },
@@ -202,7 +202,7 @@ export const featureConfig = {
         plans: {
             free: {
                 COACH: {
-                    createLimit: 2,
+                    createLimit: 3,
                     //TODO paid challenge , commission is left
                     canCreatePaidChallenge: false,
                     commissionPercent: 20,
@@ -222,7 +222,7 @@ export const featureConfig = {
             },
             paid: {
                 COACH: {
-                    createLimit: 5,
+                    createLimit: 10,
                     canCreatePaidChallenge: true,
                     commissionPercent: 10,
                     canIssueCertificate: true,

@@ -132,7 +132,10 @@ export const challengeSchema = z
     mode: z.nativeEnum(ChallengeMode),
     challengeType: z.enum(["FREE", "PAID"]).default("FREE"),
 
-    challengeJoiningFee: z.number().optional(),
+    challengeJoiningFee: z.preprocess(
+      (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
+      z.number().min(1).optional()
+    ),
     challengeJoiningFeeCurrency: z.enum(["INR", "USD"]).optional(),
     cost: z.number(),
     reward: z.number(),
@@ -170,24 +173,24 @@ export const challengeSchema = z
     message: "End date must be after the start date.",
     path: ["endDate"],
   }).superRefine((data, ctx) => {
-    if (data.challengeType === "PAID") {
-      if (!data.challengeJoiningFee || data.challengeJoiningFee <= 0) {
-        ctx.addIssue({
-          path: ["challengeJoiningFee"],
-          message: "Fee is required for paid challenges",
-          code: z.ZodIssueCode.custom,
-        });
-      }
-      if (!data.challengeJoiningFeeCurrency) {
+  if (data.challengeType === "PAID") {
+    if (typeof data.challengeJoiningFee !== "number") {
+      ctx.addIssue({
+        path: ["challengeJoiningFee"],
+        message: "Fee is required for paid challenges",
+        code: z.ZodIssueCode.custom,
+      });
+    }
+
+    if (!data.challengeJoiningFeeCurrency) {
       ctx.addIssue({
         path: ["challengeJoiningFeeCurrency"],
         message: "Currency is required for paid challenges",
         code: z.ZodIssueCode.custom,
       });
     }
-    }
-    
-  });
+  }
+});
 
 // Miracle Log Schema
 export const progressvaultSchema = z.object({
