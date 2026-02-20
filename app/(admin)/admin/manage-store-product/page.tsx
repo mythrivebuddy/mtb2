@@ -653,6 +653,8 @@ export default function ProductManagement() {
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
+
+                      
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex gap-1">
