@@ -8,7 +8,7 @@ interface OrdersSectionProps {
   getPriceForMembership: (item: Item) => number | null;
 }
 
-const OrdersSection: React.FC<OrdersSectionProps> = ({ orders}) => {
+const OrdersSection: React.FC<OrdersSectionProps> = ({ orders }) => {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "delivered":
@@ -59,13 +59,15 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({ orders}) => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 {order.items.map((orderItem) => (
                   <div key={orderItem.id} className="flex items-center space-x-4">
                     <Image
                       src={orderItem.item.imageUrl}
                       alt={orderItem.item.name}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 object-cover rounded-md"
                     />
                     <div className="flex-1">

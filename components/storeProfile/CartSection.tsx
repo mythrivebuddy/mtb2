@@ -11,8 +11,7 @@ interface CartSectionProps {
   getPriceForMembership: (item: Item) => number | null;
   handleRemoveFromCart: (id: string) => void;
   calculateTotal: () => number;
-  handleBuyAll: () => Promise<void>;
-  purchasingItemId: string | null;
+  handleBuyAll: () => void; purchasingItemId: string | null;
 }
 
 const CartSection: React.FC<CartSectionProps> = ({
@@ -26,11 +25,16 @@ const CartSection: React.FC<CartSectionProps> = ({
   const queryClient = useQueryClient();
 
   const updateQuantityMutation = useMutation({
-    mutationFn: async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
+    mutationFn: async ({
+      cartItemId,
+      quantity,
+    }: {
+      cartItemId: string;
+      quantity: number;
+    }) => {
       const response = await axios.put(
         "/api/user/store/items/cart/update-item-quantity",
-        { cartItemId, quantity },
-        { withCredentials: true }
+        { cartItemId, quantity }
       );
       return response.data;
     },
@@ -38,30 +42,14 @@ const CartSection: React.FC<CartSectionProps> = ({
       queryClient.invalidateQueries({ queryKey: ["profileData"] });
       toast.success("Quantity updated successfully!");
     },
-    onError: (error) => {
-      console.error("Quantity update error:", error);
+    onError: () => {
       toast.error("Failed to update quantity.");
     },
   });
 
-  // const removeFromCartMutation = useMutation({
-  //   mutationFn: async (cartItemId: string) => {
-  //     await axios.delete("/api/user/store/items/cart/delete-cart-items", { 
-  //       data: { cartItemId }
-  //     });
-  //   },
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ["profileData"] });
-  //     toast.success("Item removed from cart!");
-  //   },
-  //   onError: () => {
-  //     toast.error("Error removing item from cart.");
-  //   },
-  // });
-
   const handleQuantityChange = (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
-      if (window.confirm("Quantity will be 0. Remove item from cart?")) {
+      if (window.confirm("Remove item from cart?")) {
         handleRemoveFromCart(cartItemId);
       }
       return;
@@ -69,10 +57,7 @@ const CartSection: React.FC<CartSectionProps> = ({
     updateQuantityMutation.mutate({ cartItemId, quantity: newQuantity });
   };
 
-  // Debug log to verify cart data
-  console.log("Cart items:", cart);
-
-  if (!cart || !Array.isArray(cart) || cart.some((item) => !item.item)) {
+  if (!cart || cart.some((c) => !c.item)) {
     return <p className="text-gray-500">Cart data is unavailable.</p>;
   }
 
@@ -90,6 +75,7 @@ const CartSection: React.FC<CartSectionProps> = ({
           <ul className="space-y-4">
             {cart.map((cartItem) => {
               const price = getPriceForMembership(cartItem.item);
+
               return (
                 <li
                   key={cartItem.id}
@@ -97,12 +83,17 @@ const CartSection: React.FC<CartSectionProps> = ({
                 >
                   <div className="flex items-center gap-4">
                     <Image
-                      src={cartItem.item.imageUrl}
+                      src={cartItem.item.imageUrl || "/placeholder-image.jpg"}
                       alt={cartItem.item.name}
-                      className="w-16 h-16 object-cover rounded-md"
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-md"
                     />
+
                     <div>
-                      <h4 className="text-lg font-medium text-gray-800">{cartItem.item.name}</h4>
+                      <h4 className="text-lg font-medium">
+                        {cartItem.item.name}
+                      </h4>
                       <div className="flex items-center gap-2">
                         <span className="text-green-600 font-semibold">
                           ₹{(price ?? cartItem.item.basePrice).toFixed(2)}
@@ -119,30 +110,48 @@ const CartSection: React.FC<CartSectionProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
                       <button
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
-                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity - 1)}
+                        onClick={() =>
+                          handleQuantityChange(
+                            cartItem.id,
+                            cartItem.quantity - 1
+                          )
+                        }
                         disabled={updateQuantityMutation.isPending}
+                        className="bg-gray-200 px-2 py-1 rounded"
                       >
                         -
                       </button>
-                      <span className="text-gray-800 font-semibold">{cartItem.quantity}</span>
+
+                      <span>{cartItem.quantity}</span>
+
                       <button
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
-                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity + 1)}
+                        onClick={() =>
+                          handleQuantityChange(
+                            cartItem.id,
+                            cartItem.quantity + 1
+                          )
+                        }
                         disabled={updateQuantityMutation.isPending}
+                        className="bg-gray-200 px-2 py-1 rounded"
                       >
                         +
                       </button>
                     </div>
+
                     <span className="text-green-600 font-semibold">
-                      ₹{((price ?? cartItem.item.basePrice) * cartItem.quantity).toFixed(2)}
+                      ₹
+                      {(
+                        (price ?? cartItem.item.basePrice) *
+                        cartItem.quantity
+                      ).toFixed(2)}
                     </span>
+
                     <button
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer"
                       onClick={() => handleRemoveFromCart(cartItem.id)}
+                      className="bg-red-600 text-white px-4 py-2 rounded-md"
                     >
                       Remove
                     </button>
@@ -158,9 +167,9 @@ const CartSection: React.FC<CartSectionProps> = ({
 
           <div className="flex justify-end">
             <button
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold mt-4 cursor-pointer disabled:bg-gray-400"
               onClick={handleBuyAll}
               disabled={purchasingItemId !== null}
+              className="bg-green-600 text-white px-6 py-3 rounded-xl mt-4 disabled:bg-gray-400"
             >
               {purchasingItemId ? "Processing..." : "Buy All"}
             </button>

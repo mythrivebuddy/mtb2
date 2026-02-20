@@ -1,31 +1,21 @@
+// Types for managing store products (admin and user interfaces)
+
 export interface Item {
   id: string;
   name: string;
-  category: string;
-  categoryId: string;
+  category: string; // This is the categoryId mapped as 'category'
   basePrice: number;
   monthlyPrice: number;
   yearlyPrice: number;
   lifetimePrice: number;
   imageUrl: string;
   downloadUrl?: string;
-  isApproved: boolean;
-  createdByRole: string;
-  createdByUserId: string;
-  approvedByUserId?: string | null;
-  approvedAt?: string | null;
-  approver?: {
-    id: string;
-    name?: string | null;
-    email: string;
-  } | null;
   createdAt: string;
-  updatedAt?: string;
 }
 
 export interface ItemFormData {
   name: string;
-  category: string;
+  category: string; // categoryId
   basePrice: number;
   monthlyPrice: number;
   yearlyPrice: number;
@@ -37,4 +27,12 @@ export interface ItemFormData {
 export interface Category {
   id: string;
   name: string;
+}
+
+// Extended Item type with category object (for display purposes)
+export interface ItemWithCategory extends Omit<Item, 'category'> {
+  category: {
+    id: string;
+    name: string;
+  };
 }
