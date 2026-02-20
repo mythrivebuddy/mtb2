@@ -113,6 +113,9 @@ export default function CreateChallenge({
       description: "",
       mode: "PUBLIC",
       tasks: [{ description: "" }],
+      challengeType: "FREE",
+      challengeJoiningFee: undefined,
+      challengeJoiningFeeCurrency: "INR",
       cost: 50,
       reward: 50,
       penalty: 0,
@@ -124,6 +127,7 @@ export default function CreateChallenge({
 
   const startDate = watch("startDate");
   const endDate = watch("endDate");
+  const challengeType = watch("challengeType");
 
   const { fields, append, remove } = useFieldArray({ name: "tasks", control });
 
@@ -233,7 +237,6 @@ export default function CreateChallenge({
       </div>
     );
   }
-  console.log({ modalContent });
 
   return (
     <>
@@ -496,6 +499,104 @@ export default function CreateChallenge({
                 )}
               </div>
             </div>
+
+            {/* Challenge Type */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Challenge Type
+              </label>
+
+              <div className="flex gap-6">
+                <label className=" flex cursor-pointer items-start gap-2">
+                  <input
+                    type="radio"
+                    value="FREE"
+                    {...register("challengeType")}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <p className=" text-slate-700">Free Challenge</p>
+                    <p className="text-xs text-slate-500">
+                      Anyone can join without paying fee
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="radio"
+                    value="PAID"
+                    {...register("challengeType")}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <p className=" text-slate-700">Paid Challenge</p>
+                    <p className="text-xs text-slate-500">
+                      Users must pay fee to join
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            {challengeType === "PAID" && (
+              <div className="mt-4 flex gap-4 space-y-4">
+                {/* Fee */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Challenge Joining Fee
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Enter joining fee"
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    {...register("challengeJoiningFee", {
+                      valueAsNumber: true,
+                    })}
+                  />
+                  {errors.challengeJoiningFee && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.challengeJoiningFee.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Currency */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                    Fee Currency
+                  </label>
+
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="INR"
+                        {...register("challengeJoiningFeeCurrency")}
+                        className="h-4 w-4 text-purple-600"
+                      />
+                      <span>INR (₹)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="USD"
+                        {...register("challengeJoiningFeeCurrency")}
+                        className="h-4 w-4 text-purple-600"
+                      />
+                      <span>USD ($)</span>
+                    </label>
+                  </div>
+
+                  {errors.challengeJoiningFeeCurrency && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.challengeJoiningFeeCurrency.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
               <div>

@@ -14,7 +14,7 @@ const baseSignupSchema = z.object({
     .min(PASS_LENGTH, "Confirm Password must be at least 8 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   referralCode: z.string().optional(),
-   userType: z.enum(["enthusiast", "coach"], {
+  userType: z.enum(["enthusiast", "coach"], {
     required_error: "Kindly select one user type",
   }),
 });
@@ -30,7 +30,7 @@ export const signupSchema = baseSignupSchema.refine(
 
 // Signin Schema (omit name and confirmPassword from the signup schema)
 export const signinSchema = baseSignupSchema
-  .omit({ name: true, confirmPassword: true,userType: true })
+  .omit({ name: true, confirmPassword: true, userType: true })
   .extend({
     rememberMe: z.boolean().default(false),
   });
@@ -130,6 +130,10 @@ export const challengeSchema = z
     title: z.string().min(1, "Title is required"),
     description: z.string().min(1, "Description is required"),
     mode: z.nativeEnum(ChallengeMode),
+    challengeType: z.enum(["FREE", "PAID"]).default("FREE"),
+
+    challengeJoiningFee: z.number().optional(),
+    challengeJoiningFeeCurrency: z.enum(["INR", "USD"]).optional(),
     cost: z.number(),
     reward: z.number(),
     penalty: z.number(),
@@ -165,6 +169,16 @@ export const challengeSchema = z
   .refine((data) => data.endDate > data.startDate, {
     message: "End date must be after the start date.",
     path: ["endDate"],
+  }).superRefine((data, ctx) => {
+    if (data.challengeType === "PAID") {
+      if (!data.challengeJoiningFee || data.challengeJoiningFee <= 0) {
+        ctx.addIssue({
+          path: ["fee"],
+          message: "Fee is required for paid challenges",
+          code: z.ZodIssueCode.custom,
+        });
+      }
+    }
   });
 
 // Miracle Log Schema

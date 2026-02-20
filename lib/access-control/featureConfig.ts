@@ -213,7 +213,7 @@ export const featureConfig = {
                     isUpgradeFlagShow: false,
                 },
                 ENTHUSIAST: {
-                    createLimit: 2,
+                    createLimit: 3,
                     groupChatLimit: -1,
                     joinLimit: -1,
                     limitType: "MONTHLY",
@@ -231,7 +231,7 @@ export const featureConfig = {
                     limitType: "MONTHLY",
                 },
                 ENTHUSIAST: {
-                    createLimit: 2,
+                    createLimit: 10,
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
                     groupChatLimit: 1,
