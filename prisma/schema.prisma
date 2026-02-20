@@ -1486,7 +1486,7 @@ model MakeoverGoalLibrary {
   @@unique([areaId, title])
 }
 
-model MakeoverIdentityLibrary {
+model MakeoverIdentityLibrary{
   id        String @id @default(cuid())
   areaId    Int
   statement String
