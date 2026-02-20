@@ -642,8 +642,20 @@ model Challenge {
   makeoverAreaMaps        MakeoverAreaChallengeMap[]
   makeoverEnrollments     UserMakeoverChallengeEnrollment[]
   joinMode    ChallengeJoinMode @default(MANUAL)
+  challengeJoiningType  ChallengeJoiningType   @default(FREE)
+  challengeJoiningFee    Int                   @default(0)
+  challengeJoiningFeeCurrency   challengeJoiningFeeCurrency   @default(INR)
 
   @@map("challenges")
+}
+
+enum ChallengeJoiningType {
+  FREE
+  PAID
+}
+enum challengeJoiningFeeCurrency {
+  INR 
+  USD
 }
 
 enum ChallengeJoinMode {

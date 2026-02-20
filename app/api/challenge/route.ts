@@ -150,6 +150,9 @@ export async function POST(request: Request) {
       tasks,
       social_link_task,
       isIssuingCertificate,
+      challengeType,
+      challengeJoiningFee,
+      challengeJoiningFeeCurrency,
     } = validationResult.data;
 
     // Transaction: create challenge, enroll, deduct JP
@@ -178,6 +181,14 @@ export async function POST(request: Request) {
             endDate,
             status: "UPCOMING",
             isIssuingCertificate,
+
+            challengeJoiningType: challengeType,
+            challengeJoiningFee: challengeType === "PAID" ? challengeJoiningFee : 0,
+            challengeJoiningFeeCurrency:
+              challengeType === "PAID"
+                ? challengeJoiningFeeCurrency
+                : "INR",
+
             creator: { connect: { id: userId } },
             templateTasks: {
               create: tasks.map((task) => ({ description: task.description })),
