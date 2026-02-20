@@ -54,7 +54,7 @@ model User {
   userType                      PlanUserType?
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
-  billingInformation            BillingInformation?
+  billingInformation            BillingInformation[]
   blockedUsers                  BlockedUsers?
   buddyLensRequests             BuddyLensRequest[]                @relation("BuddyLensRequests")
   BuddyLensReviewer             BuddyLensRequest[]                @relation("BuddyLensReviewer")
