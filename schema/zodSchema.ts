@@ -173,12 +173,20 @@ export const challengeSchema = z
     if (data.challengeType === "PAID") {
       if (!data.challengeJoiningFee || data.challengeJoiningFee <= 0) {
         ctx.addIssue({
-          path: ["fee"],
+          path: ["challengeJoiningFee"],
           message: "Fee is required for paid challenges",
           code: z.ZodIssueCode.custom,
         });
       }
+      if (!data.challengeJoiningFeeCurrency) {
+      ctx.addIssue({
+        path: ["challengeJoiningFeeCurrency"],
+        message: "Currency is required for paid challenges",
+        code: z.ZodIssueCode.custom,
+      });
     }
+    }
+    
   });
 
 // Miracle Log Schema

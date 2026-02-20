@@ -539,7 +539,7 @@ export default function CreateChallenge({
               </div>
             </div>
             {challengeType === "PAID" && (
-              <div className="mt-4 flex gap-4 space-y-4">
+              <div className="mt-4 flex gap-4 items-center">
                 {/* Fee */}
                 <div>
                   <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -563,7 +563,7 @@ export default function CreateChallenge({
 
                 {/* Currency */}
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
                     Fee Currency
                   </label>
 
