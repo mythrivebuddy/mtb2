@@ -398,7 +398,7 @@ export async function PUT(request: NextRequest) {
     await sendPushNotificationToUser(
       selectedUserId,
       "Magic Box Shared",
-      `You have received ${sharedJpAmount} JP from ${session?.user?.name || ""}`
+      `You have received ${sharedJpAmount} GP from ${session?.user?.name || ""}`
     );
 
     // Send email to both users

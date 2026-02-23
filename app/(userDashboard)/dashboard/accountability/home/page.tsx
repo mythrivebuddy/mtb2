@@ -245,7 +245,7 @@ export default function AccountabilityHomePage() {
           </button>
         </div>
         <p className="text-muted-foreground mt-4">
-          You both earn 500 JoyPearls when they join!
+          You both earn 500 Growth Points when they join!
         </p>
       </motion.div>
 

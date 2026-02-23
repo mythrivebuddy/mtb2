@@ -189,7 +189,7 @@ export default function SpotlightPage() {
             <h3 className="text-xl font-semibold mb-4"> Requirements:</h3>
             <ul className="list-disc pl-6 text-gray-600 mb-8">
               <li className="mb-2">
-                You must have {jpAmount} JP tokens to apply (lower amounts for
+                You must have {jpAmount} GP tokens to apply (lower amounts for
                 premium plan members).
               </li>
               <li className="mb-2">

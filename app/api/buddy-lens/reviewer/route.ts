@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
     const reviewerEarns = earnJPPerReview;
 
     if (requesterPays <= 0 || reviewerEarns <= 0) {
-      return errorResponse("Invalid JP configuration for this request", 400);
+      return errorResponse("Invalid GP configuration for this request", 400);
     }
 
 
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
         if (!creditActivity || !debitActivity)
           throw new Error("Required activity types not found");
 
-        // JP transactions
+        // GP transactions
         await prisma.user.update({
           where: { id: request.requesterId },
           data: {
@@ -299,10 +299,10 @@ export async function POST(req: NextRequest) {
     // Email to requester
     if (request.requester.email) {
       const reviewUrl = `${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}`;
-      const subject = "Joy Pearls Deducted for Reviewed Request";
+      const subject = "Growth Points Deducted for Reviewed Request";
       const htmlContent = `
             <p>Hello ${request.requester.name || "User"},</p>
-            <p>Your BuddyLens request in ${request.domain} has been reviewed. ${requesterPays} Joy Pearls have been deducted.</p>
+            <p>Your BuddyLens request in ${request.domain} has been reviewed. ${requesterPays} Growth Points have been deducted.</p>
             <p><a href="${reviewUrl}">View Review</a></p>
           `;
 
@@ -317,10 +317,10 @@ export async function POST(req: NextRequest) {
 
     // Email to reviewer after submission reviewed for requester
     if (request.reviewer?.email) {
-      const subject = "You Earned Joy Pearls for Reviewing a Request";
+      const subject = "You Earned Growth Points for Reviewing a Request";
       const htmlContent = `
             <p>Hello ${request.reviewer.name || "Reviewer"},</p>
-            <p>Thank you for reviewing the BuddyLens request in ${request.domain}. You have earned ${reviewerEarns} Joy Pearls.</p>
+            <p>Thank you for reviewing the BuddyLens request in ${request.domain}. You have earned ${reviewerEarns} Growth Points.</p>
             <p><a href="${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}">View Review</a></p>
           `;
       await sendEmail(

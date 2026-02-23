@@ -116,7 +116,7 @@ const ProsperityPage = () => {
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                You must have 5,000 JP tokens to apply (lower amounts for
+                You must have 5,000 GP tokens to apply (lower amounts for
                 premium plan members)
               </li>
               <li>You must have a complete business profile</li>

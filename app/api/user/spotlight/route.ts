@@ -168,7 +168,7 @@ export async function POST() {
 
     // Check if user has enough JP
     if (user.jpBalance < jpRequired) {
-      return NextResponse.json({ error: "Insufficient JP" }, { status: 400 });
+      return NextResponse.json({ error: "Insufficient GP" }, { status: 400 });
     }
 
     // estimated activation date for spotlight

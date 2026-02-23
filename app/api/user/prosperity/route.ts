@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    console.log({session});
+    
     
     const featureCheck = checkFeature({
       feature: "prosperityDrops",
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         membership: session.user.membership, // FREE | PAID
       },
     });
-    console.log({featureCheck});
+    
     
     if (!featureCheck.allowed) {
       return NextResponse.json(
@@ -106,7 +106,7 @@ if (hasNonFinalApplication) {
 
     // Check if user has enough JP
     if (user.jpBalance < jpRequired) {
-      return NextResponse.json({ error: "Insufficient JP" }, { status: 400 });
+      return NextResponse.json({ error: "Insufficient GP" }, { status: 400 });
     }
 
     const notificationData = getProsperityAppliedNotificationData(userId);

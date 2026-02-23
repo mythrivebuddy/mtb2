@@ -90,11 +90,11 @@ export async function POST(request: Request): Promise<Response> {
           }
 
           await assignJp(user, activityType);
-          jpMessage = ` You've earned ${jpAmount} Joy Pearls for your ${subject} feedback!`;
+          jpMessage = ` You've earned ${jpAmount} Growth Points for your ${subject} feedback!`;
         }
       }
     } catch (jpError) {
-      console.error("JP points assignment error:", jpError);
+      console.error("GP points assignment error:", jpError);
       // Continue with email sending even if JP assignment fails
     }
 
@@ -174,7 +174,7 @@ export async function POST(request: Request): Promise<Response> {
       ${jpMessage ? `
         <div style="background-color: #e6ffed; padding: 16px; border-radius: 8px; border-left: 5px solid #38a169; margin-top: 20px;">
           <p style="color: #276749; margin: 0; font-size: 15px;">
-            ✅ User earned Joy Pearls for this feedback: <strong>${jpMessage}</strong>
+            ✅ User earned Growth Points for this feedback: <strong>${jpMessage}</strong>
           </p>
         </div>
       ` : ''}

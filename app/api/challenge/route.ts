@@ -239,10 +239,10 @@ export async function POST(request: Request) {
         );
       }
 
-      if (error.message === "Insufficient JP balance") {
+      if (error.message === "Insufficient GP balance") {
         return NextResponse.json(
           {
-            error: "You do not have enough JP to create this challenge.",
+            error: "You do not have enough GP to create this challenge.",
           },
           { status: 400 },
         );

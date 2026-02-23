@@ -132,21 +132,21 @@ function ContactFormContent() {
             <span>
               • General{" "}
               <span className="font-bold">
-                {activityData?.generalFeedbackJp} Joy Pearls 🪙
+                {activityData?.generalFeedbackJp} Growth Points 🪙
               </span>
             </span>
             <span className="text-green-400">|</span>
             <span>
               • Feature{" "}
               <span className="font-bold">
-                {activityData?.featureRequestJp} Joy Pearls 🪙
+                {activityData?.featureRequestJp} Growth Points 🪙
               </span>
             </span>
             <span className="text-green-400">|</span>
             <span>
               • Bug{" "}
               <span className="font-bold">
-                {activityData?.bugReportJp} Joy Pearls 🪙
+                {activityData?.bugReportJp} Growth Points 🪙
               </span>
             </span>
           </div>
@@ -154,7 +154,7 @@ function ContactFormContent() {
       ) : (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-yellow-800">
-            Sign in to earn Joy Pearls for your feedback!
+            Sign in to earn Growth Points for your feedback!
           </p>
         </div>
       )}

@@ -32,7 +32,7 @@ export async function GET() {
         featureRequestJp: featureActivity.jpAmount,
       });
     } catch (error) {
-      return NextResponse.json({ message: 'Error fetching Joy Pearls', error });
+      return NextResponse.json({ message: 'Error fetching Growth Points', error });
     }
   }
 

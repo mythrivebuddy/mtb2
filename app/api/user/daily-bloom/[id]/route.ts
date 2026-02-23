@@ -71,7 +71,7 @@ export async function PUT(
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await req.json();
 
     // --- START: THE FIX ---
@@ -146,7 +146,7 @@ const validatedData = dailyBloomSchema._def.schema.partial().parse(todoData);
             data: { taskCompleteJP: true },
           });
         } catch (error) {
-           console.error("Error assigning JP for task completion:", error);
+           console.error("Error assigning GP for task completion:", error);
            // Decide if you want to fail the whole request or just log the error
         }
       }
