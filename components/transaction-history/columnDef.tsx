@@ -32,9 +32,9 @@ export const columns: ColumnDef<Transaction>[] = [
   },
   {
     accessorKey: "jpAmount",
-    header: "JP Amount",
+    header: "GP Amount",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.jpAmount} JP</div>
+      <div className="font-medium">{row.original.jpAmount} GP</div>
     ),
   },
 ];

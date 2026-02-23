@@ -225,21 +225,21 @@ const handleCloseModalAndRedirect = async () => {
                   <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
                   <div>
                       <div className="text-sm text-slate-500">Joining Cost</div>
-                      <div className="font-semibold text-slate-700">{challenge.cost > 0 ? `${challenge.cost} JP` : 'Free'}</div>
+                      <div className="font-semibold text-slate-700">{challenge.cost > 0 ? `${challenge.cost} GP` : 'Free'}</div>
                   </div>
               </div>
               <div className="flex items-center">
                   <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
                   <div>
                       <div className="text-sm text-slate-500">Reward</div>
-                      <div className="font-semibold text-slate-700">{challenge.reward} JP</div>
+                      <div className="font-semibold text-slate-700">{challenge.reward} GP</div>
                   </div>
               </div>
               <div className="flex items-center">
                   <ShieldAlert className={`w-6 h-6 mr-3 flex-shrink-0 ${challenge.penalty > 0 ? 'text-red-500' : 'text-gray-400'}`} />
                   <div>
                       <div className="text-sm text-slate-500">Penalty</div>
-                      <div className="font-semibold text-slate-700">{challenge.penalty > 0 ? `${challenge.penalty} JP` : 'None'}</div>
+                      <div className="font-semibold text-slate-700">{challenge.penalty > 0 ? `${challenge.penalty} GP` : 'None'}</div>
                   </div>
               </div>
               <div className="flex items-center">

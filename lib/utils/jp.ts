@@ -110,7 +110,7 @@ export async function deductJp(
 
     // 4. Check if the user has a sufficient balance.
     if (user.jpBalance < jpToDeduct) {
-      throw new Error("Insufficient JP balance");
+      throw new Error("Insufficient GP balance");
     }
 
     // 5. Update the user's JP balance and create a transaction record.

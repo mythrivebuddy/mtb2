@@ -232,9 +232,9 @@ export async function POST(request: Request) {
     console.error("Enrollment transaction failed:", error);
 
     if (error instanceof Error) {
-      if (error.message.includes("Insufficient JP balance")) {
+      if (error.message.includes("Insufficient GP balance")) {
         return NextResponse.json(
-          { error: "You do not have enough JP to join this challenge." },
+          { error: "You do not have enough GP to join this challenge." },
           { status: 400 }
         );
       }

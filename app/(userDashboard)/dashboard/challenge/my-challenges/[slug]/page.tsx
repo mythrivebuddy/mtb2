@@ -794,7 +794,7 @@ export default function ChallengeManagementPage() {
             <StatCard
               icon={<Award className="w-6 h-6 text-white" />}
               label="Reward"
-              value={`${challenge.reward} JP`}
+              value={`${challenge.reward} GP`}
               colorClass="bg-green-500"
             />
 

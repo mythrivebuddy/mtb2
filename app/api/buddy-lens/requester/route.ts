@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
     // Validate if the requester has enough Joy Pearls to set for the review
     if (requester.jpBalance < jpCost) {
       return errorResponse(
-        "Insufficient Joy Pearls to create the request",
+        "Insufficient Growth Points to create the request",
         400
       );
     }

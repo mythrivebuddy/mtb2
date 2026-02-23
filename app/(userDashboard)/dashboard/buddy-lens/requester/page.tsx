@@ -328,13 +328,13 @@ export default function BuddyLensRequestPage() {
           <InputWithLabel
             label={
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                JoyPearls Cost
+                Growth Points Cost
               </div>
             }
             type="number"
             min={100}
             step={100}
-            placeholder="Enter cost in JoyPearls"
+            placeholder="Enter cost in Growth Points"
             {...register("jpCost", { valueAsNumber: true })}
             error={errors.jpCost}
           />

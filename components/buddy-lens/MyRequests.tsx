@@ -101,7 +101,7 @@ function MyRequestsCard({
                 <Award className="w-4 h-4 text-gray-500" />
                 <span className="font-medium">Reward:</span>
                 <span className="font-semibold text-jp-orange custom-txt">
-                  {jpCost} JoyPearls
+                  {jpCost} Growth Points
                 </span>
               </div>
 

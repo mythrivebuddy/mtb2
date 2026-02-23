@@ -196,7 +196,7 @@ export default function EditChallengePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="reward" className="block text-sm font-medium text-slate-700 mb-1">
-                  Reward (JP)
+                  Reward (GP)
                 </label>
                 <input
                   type="number"
@@ -210,7 +210,7 @@ export default function EditChallengePage() {
               </div>
               <div>
                 <label htmlFor="penalty" className="block text-sm font-medium text-slate-700 mb-1">
-                  Penalty (JP, optional)
+                  Penalty (GP, optional)
                 </label>
                 <input
                   type="number"

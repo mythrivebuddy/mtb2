@@ -172,7 +172,7 @@ export async function PATCH(
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
     console.error("Failed to update task:", errorMessage);
 
-    if (errorMessage.includes("not active") || errorMessage.includes("Insufficient JP balance")) {
+    if (errorMessage.includes("not active") || errorMessage.includes("Insufficient GP balance")) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 

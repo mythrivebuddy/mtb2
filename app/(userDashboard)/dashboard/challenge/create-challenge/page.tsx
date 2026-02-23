@@ -194,7 +194,7 @@ export default function CreateChallenge({
     if (user && user.jpBalance < challengeCreationFee) {
       setModalContent({
         title: "Insufficient Balance",
-        message: `You need ${challengeCreationFee} JP to create a challenge, but you only have ${user.jpBalance} JP.`,
+        message: `You need ${challengeCreationFee} GP to create a challenge, but you only have ${user.jpBalance} GP.`,
       });
       return;
     }
@@ -245,10 +245,10 @@ export default function CreateChallenge({
           <div className="mb-8 text-center">
             <div className="mb-4 flex flex-col items-center justify-center gap-2 sm:flex-row sm:justify-end sm:gap-4">
               <div className="rounded-lg bg-blue-100 px-4 py-2 font-bold text-blue-800 shadow-md">
-                Creation Fee: {challengeCreationFee ?? "..."} JP
+                Creation Fee: {challengeCreationFee ?? "..."} GP
               </div>
               <div className="rounded-lg bg-purple-100 px-4 py-2 font-bold text-purple-800 shadow-md">
-                Your JP Balance: {user?.jpBalance ?? "N/A"}
+                Your GP Balance: {user?.jpBalance ?? "N/A"}
               </div>
             </div>
             <h1 className="text-3xl font-extrabold text-slate-800 md:text-4xl">
@@ -291,7 +291,7 @@ export default function CreateChallenge({
                   htmlFor="cost"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
-                  Cost (JP)
+                  Cost (GP)
                 </label>
                 <input
                   id="cost"
@@ -313,7 +313,7 @@ export default function CreateChallenge({
                   htmlFor="reward"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
-                  Reward (JP)
+                  Reward (GP)
                 </label>
                 <input
                   id="reward"
@@ -637,7 +637,7 @@ export default function CreateChallenge({
                   htmlFor="penalty"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
-                  Penalty (JP)
+                  Penalty (GP)
                 </label>
                 <input
                   id="penalty"

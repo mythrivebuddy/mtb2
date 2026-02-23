@@ -449,7 +449,7 @@ export default function ChallengePage({canIssueCertificate}:{canIssueCertificate
                         {/* Container for both reward and icons */}
                         <div className="flex items-center gap-1 text-purple-700 font-bold text-sm">
                           <Gift className="w-4 h-4" />
-                          <span>{c.reward} JP</span>
+                          <span>{c.reward} GP</span>
                         </div>
                         <div className="flex items-center gap-1">
                           {/* --- THIS IS THE CLEANED SECTION --- */}
@@ -478,7 +478,7 @@ export default function ChallengePage({canIssueCertificate}:{canIssueCertificate
                     ) : (
                       <div className="flex items-center gap-2 text-purple-700 font-bold">
                         <Gift className="w-4 h-4" />
-                        <span>{c.reward} JP</span>
+                        <span>{c.reward} GP</span>
                       </div>
                     )}
                   </div>

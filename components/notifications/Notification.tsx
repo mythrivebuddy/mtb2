@@ -100,7 +100,7 @@ export default function NotificationsPage()  {
                   <div className="flex justify-between items-start">
                     <h3 className="font-medium">{notification.title}</h3>
                   </div>
-                  <p className="text-gray-600 mt-1">{notification.message}</p>
+                  <p className="text-gray-600 mt-1">{notification.message?.replace(/JP/g, "GP")}</p>
                   <div className="flex justify-between mt-2 text-xs text-gray-500">
                     <span>
                       {formatDistanceToNow(new Date(notification.createdAt), {
