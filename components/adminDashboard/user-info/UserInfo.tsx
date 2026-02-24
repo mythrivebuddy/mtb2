@@ -316,8 +316,8 @@ export default function UserInfoContent() {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead>JP Earned</TableHead>
-              <TableHead>JP Balance</TableHead>
+              <TableHead>GP Earned</TableHead>
+              <TableHead>GP Balance</TableHead>
               <TableHead>Plan</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>

@@ -12,3 +12,7 @@ export interface TemplateFormData {
   htmlContent: string;
   description?: string;
 }
+export interface EmailTemplatesResponse {
+  templates: EmailTemplate[];
+  total: number;
+}

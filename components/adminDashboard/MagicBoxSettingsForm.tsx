@@ -44,7 +44,7 @@ export function MagicBoxSettingsForm({
       className="space-y-4"
     >
       <InputWithLabel
-        label="Minimum JP Amount"
+        label="Minimum GP Amount"
         type="number"
         min="1"
         max="1000"
@@ -53,7 +53,7 @@ export function MagicBoxSettingsForm({
       />
 
       <InputWithLabel
-        label="Maximum JP Amount"
+        label="Maximum GP Amount"
         type="number"
         min="1"
         max="1000"

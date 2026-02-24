@@ -151,7 +151,7 @@ const Sidebar = () => {
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
               <NavItem href="/admin/faq" label="FAQs" />
-              <NavItem href="/admin/activity/update-jp" label="JP Management" />
+              <NavItem href="/admin/activity/update-jp" label="GP Management" />
               <NavItem href="/admin/plans" label="Manage Plans" />
               <NavItem
                 href="/admin/manage-store-product"
