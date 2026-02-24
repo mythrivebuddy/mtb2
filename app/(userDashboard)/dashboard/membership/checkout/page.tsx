@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react"; 
+import { useSession } from "next-auth/react";
 
 import { load } from "@cashfreepayments/cashfree-js";
 import {
@@ -17,6 +17,8 @@ import {
   Phone,
 } from "lucide-react";
 import { toast } from "sonner";
+
+// types
 
 interface Plan {
   id: string;
@@ -38,12 +40,19 @@ interface CouponResponse {
   message?: string;
 }
 
+type PaymentGateway = "CASHFREE" | "RAZORPAY";
+
 export default function CheckoutPage() {
   const { data: session } = useSession(); // Get User Session
   const searchParams = useSearchParams();
   const planId = searchParams.get("plan");
+  // const router = useRouter();
 
   const [plan, setPlan] = useState<Plan | null>(null);
+
+  // to get active gateway
+  const [activeGateway, setActiveGateway] = useState<PaymentGateway>("CASHFREE");
+
 
   // Form State
   const [billingDetails, setBillingDetails] = useState({
@@ -69,6 +78,213 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+
+  // get active gateway on load
+  useEffect(() => {
+    const fetchGateway = async () => {
+      try {
+        const res = await fetch("/api/admin/payment-gateway-config");
+        const data = await res.json();
+        setActiveGateway(data.gateway);
+      } catch {
+        setActiveGateway("CASHFREE"); // safe fallback
+      }
+    };
+
+    fetchGateway();
+  }, []);
+  // razorpay script loader
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as unknown as WindowWithRazorpay).Razorpay) return resolve(true);
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+  type RazorpayCheckoutOptions = {
+    key: string;
+    name: string;
+    description: string;
+    theme: {
+      color: string;
+    };
+    handler: (response: RazorpaySuccessResponse) => void;
+    prefill: {
+      name: string;
+      email: string;
+      contact: string;
+    };
+    order_id?: string;
+    subscription_id?: string;
+    modal?: {
+      ondismiss: () => void;
+    }
+  };
+  interface RazorpaySuccessResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id?: string;
+  razorpay_subscription_id?: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayErrorResponse {
+  error: {
+    code: string;
+    description: string;
+    source: string;
+    step: string;
+    reason: string;
+    metadata: {
+      order_id?: string;
+      payment_id?: string;
+      subscription_id?: string;
+    };
+  };
+}
+interface WindowWithRazorpay extends Window {
+  Razorpay: new (options: Record<string, unknown>) => {
+    open: () => void;
+    on: (event: string, callback: (res: RazorpayErrorResponse) => void) => void;
+  };
+}
+
+const handleWithRazorpay = async (): Promise<void> => {
+  const loaded = await loadRazorpayScript();
+  if (!loaded) {
+    toast.error("Razorpay SDK failed to load");
+    return;
+  }
+
+  if (!plan) return;
+
+  try {
+    const isLifetime = plan.interval === "LIFETIME";
+    const isRecurring =
+      plan.interval === "MONTHLY" || plan.interval === "YEARLY";
+
+    let endpoint = "";
+
+    // 1️⃣ Backend endpoint
+    if (isLifetime) {
+      endpoint = "/api/billing/razorpay/create-one-time-order";
+    } else if (isRecurring) {
+      endpoint = "/api/billing/razorpay/create-subscription";
+    } else {
+      throw new Error("Unsupported plan interval");
+    }
+    console.log("Creating Razorpay order/subscription with endpoint:", endpoint);
+    // 2️⃣ Create order / subscription
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        planId: plan.id,
+        couponCode: appliedCoupon?.code || null,
+        billingDetails,
+      }),
+    });
+    console.log("Razorpay order/subscription creation ");
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || "Razorpay order creation failed");
+    }
+
+    // 3️⃣ Razorpay options
+    const options: RazorpayCheckoutOptions = {
+      key: data.key,
+      name: "mythrivebuddy.com",
+      description: plan.name,
+      theme: { color: "#0f172a" },
+
+   // Inside handleWithRazorpay -> options object
+handler: function (response: RazorpaySuccessResponse) {
+  const callbackUrl = new URL(
+    "/api/billing/razorpay/callback",
+    window.location.origin
+  );
+console.log(response, "Razorpay success response in handler");
+  if (isLifetime) {
+    callbackUrl.searchParams.set("order_id", response.razorpay_order_id!);
+  } else {
+    callbackUrl.searchParams.set("sub_id", response.razorpay_subscription_id!);
+  }
+
+  callbackUrl.searchParams.set("payment_id", response.razorpay_payment_id!);
+  callbackUrl.searchParams.set("signature", response.razorpay_signature!);
+
+  window.location.href = callbackUrl.toString();
+},
+
+      prefill: {
+        name: billingDetails.name,
+        email: billingDetails.email,
+        contact: billingDetails.phone,
+      },
+
+      // ✅ FAILURE / CLOSE HANDLING
+      modal: {
+  ondismiss: () => {
+    console.log("ONDISMISS CALLED")
+    const type = isLifetime ? "lifetime" : "subscription"; // ✅ clearer type
+
+    window.location.href =
+      `/dashboard/membership/failure` +
+      `?type=${type}` +
+      (isLifetime && data.orderId               // ✅ use data.orderId (not data.razorpayOrderId)
+        ? `&orderId=${data.orderId}`
+        : "") +
+      (!isLifetime && data.subscriptionId       // ✅ pass sub_id for recurring
+        ? `&sub_id=${data.subscriptionId}`
+        : "") +
+      `&reason=checkout_closed`;
+  },
+},
+    };
+
+    // 4️⃣ Attach identifiers
+    if (isLifetime) {
+      options.order_id = data.orderId;
+    }
+
+    if (isRecurring) {
+      options.subscription_id = data.subscriptionId;
+    }
+
+    // 5️⃣ Open checkout
+    const rzp = new (window as unknown as WindowWithRazorpay).Razorpay(options);
+
+    // ✅ PAYMENT FAILED EVENT (very important)
+    rzp.on("payment.failed", (response: RazorpayErrorResponse) => {
+  const reason =
+    response?.error?.description ||
+    response?.error?.reason ||
+    "payment_failed";
+
+  const type = isLifetime ? "lifetime" : "subscription"; // ✅ was "mandate"
+  window.location.href =
+    `/dashboard/membership/failure` +
+    `?type=${type}` +
+    (isLifetime && response.error.metadata?.order_id
+      ? `&orderId=${response.error.metadata.order_id}`
+      : "") +
+    (!isLifetime && response.error.metadata?.subscription_id
+      ? `&sub_id=${response.error.metadata.subscription_id}`
+      : "") +
+    `&reason=${encodeURIComponent(reason)}`;
+});
+
+    rzp.open();
+  } catch (error) {
+    console.error("Razorpay Error:", error);
+    toast.error("Unable to initiate Razorpay payment");
+  }
+};
+
 
   // ---------------------------
   // 0. PREFILL DATA & DETECT IP
@@ -99,7 +315,6 @@ export default function CheckoutPage() {
     };
     detectCountry();
   }, [session]);
-
   // ---------------------------
   // 1. FETCH PLAN + AUTO APPLY
   // ---------------------------
@@ -107,7 +322,18 @@ export default function CheckoutPage() {
     async function init() {
       if (!planId) return;
 
+      setLoading(true);
       try {
+      //   // 1️⃣ CHECK IF USER ALREADY HAS THIS PLAN
+      // const checkRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/user/subscription`);
+      // const activeSub = await checkRes.json();
+
+      // // If user has an active subscription and it matches the planId they are trying to buy
+      // if (activeSub && activeSub.planId === planId && activeSub.status === "ACTIVE") {
+      //   toast.error("You already have an active subscription for this plan.");
+      //   router.push("/pricing"); // Redirect them away
+      //   return;
+      // }
         const planRes = await fetch(
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`
         );
@@ -319,98 +545,114 @@ export default function CheckoutPage() {
   // ---------------------------
 
 
- const handleSubscribe = async () => {
-  if (!plan) return;
+  const handleSubscribe = async () => {
+    if (!plan) return;
 
-  // Basic Validation
-  if (
-    !billingDetails.addressLine1 ||
-    !billingDetails.city ||
-    !billingDetails.postalCode
-  ) {
-    toast.error("Please fill in all required address fields.");
-    return;
-  }
-
-  setProcessingPayment(true);
-
-  try {
-    let endpoint = "";
-    const isProgram = plan.isProgramPlan === true; // IMPORTANT
-    const isLifetime = plan.interval === "LIFETIME";
-
-    // 1. Determine the correct backend endpoint
-    if (isProgram) {
-      // PURCHASE PROGRAM (One-time purchase)
-      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/purchase-programs`;
-    } else if (isLifetime) {
-      // LIFETIME SUBSCRIPTION
-      // As our cashfree recurring application rejected  we will create one time payment order with all plan as same 
-      // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
-      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
-    } else {
-      // MONTHLY / YEARLY RECURRING PLAN
-      // As our cashfree recurring application rejected  we will create one time payment order
-      // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
-      endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
-    }
-
-    // 2. Call Backend
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        planId: plan.id,
-        couponCode: appliedCoupon?.code || null,
-        billingDetails: billingDetails,
-      }),
-    });
-
-    const data = await res.json();
-    
-    if (!res.ok){
-      throw new Error(data.error || "Backend creation failed");
-
-    }
-
-    // 3. Load Cashfree SDK
-    const mode =
-  data.mode === "prod"
-    ? "production"
-    : "sandbox";
-    
-    const cf = await load({ mode });
-    
-    // 4A. Program Purchase Checkout
-    if (isProgram) {
-      if (!data.paymentSessionId) throw new Error("Invalid payment session for program");
-
-      console.log(`Starting Program Checkout`, data.paymentSessionId);
-
-      await cf.checkout({
-        paymentSessionId: data.paymentSessionId,
-        redirectTarget: "_self",
-        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?order_id=${data.orderId}&purchase_id=${data.purchaseId}`,
-      });
-
+    // Basic Validation
+    if (
+      !billingDetails.addressLine1 ||
+      !billingDetails.city ||
+      !billingDetails.postalCode
+    ) {
+      toast.error("Please fill in all required address fields.");
       return;
     }
 
-    // 4B. Lifetime Checkout
-    if (isLifetime) {
-      if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
+    setProcessingPayment(true);
 
-      console.log(`Starting Lifetime Checkout`, data.paymentSessionId);
+    // handel razorpay checkout if active gateway is razorpay
+    // if (activeGateway === "RAZORPAY") {
+    //   await handleRazorpayPayment(plan.id);
+    //   return;
+    // }
 
-      await cf.checkout({
-        paymentSessionId: data.paymentSessionId,
-        redirectTarget: "_self",
-        returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}&purchase_id=${data.purchaseId}`,
+    try {
+      let endpoint = "";
+      const isProgram = plan.isProgramPlan === true; // IMPORTANT
+      const isLifetime = plan.interval === "LIFETIME";
+
+      // ✅ ADDITION: Non-program plans handled separately (Razorpay)
+      if (plan.isProgramPlan !== true) {
+        try {
+          await handleWithRazorpay();
+        } finally {
+          setProcessingPayment(false);
+        }
+        return;
+      }
+
+      // 1. Determine the correct backend endpoint
+      if (isProgram) {
+        // PURCHASE PROGRAM (One-time purchase)
+        endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/purchase-programs`;
+      } else if (isLifetime) {
+        // LIFETIME SUBSCRIPTION
+        // As our cashfree recurring application rejected we will create one time payment order with all plan as same 
+        // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
+        endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
+      } else {
+        // MONTHLY / YEARLY RECURRING PLAN
+        // As our cashfree recurring application rejected  we will create one time payment order
+        // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/create-mandate`;
+        endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
+      }
+
+      // 2. Call Backend
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          planId: plan.id,
+          couponCode: appliedCoupon?.code || null,
+          billingDetails: billingDetails,
+        }),
       });
 
-      return;
-    }
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Backend creation failed");
+
+      }
+
+      // 3. Load Cashfree SDK
+      const mode =
+        data.mode === "prod"
+          ? "production"
+          : "sandbox";
+
+      const cf = await load({ mode });
+
+      // 4A. Program Purchase Checkout
+      if (isProgram) {
+        if (!data.paymentSessionId) throw new Error("Invalid payment session for program");
+
+        console.log(`Starting Program Checkout`, data.paymentSessionId);
+
+        await cf.checkout({
+          paymentSessionId: data.paymentSessionId,
+          redirectTarget: "_self",
+          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?order_id=${data.orderId}&purchase_id=${data.purchaseId}`,
+        });
+
+        return;
+      }
+
+      // 4B. Lifetime Checkout
+      if (isLifetime) {
+        if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
+
+        console.log(`Starting Lifetime Checkout`, data.paymentSessionId);
+
+        await cf.checkout({
+          paymentSessionId: data.paymentSessionId,
+          redirectTarget: "_self",
+          returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/payment-callback?order_id=${data.orderId}&purchase_id=${data.purchaseId}`,
+        });
+
+        return;
+      }
       if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
 
       console.log(`Starting plan Checkout`, data.paymentSessionId);
@@ -421,36 +663,36 @@ export default function CheckoutPage() {
         returnUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-plan-callback?purchase_id=${data.purchaseId}&order_id=${data.orderId}`,
       });
 
-    // 4C. Recurring Checkout
-    // if (!data.subscriptionSessionId)
-    //   throw new Error("Invalid subscription session");
+      // 4C. Recurring Checkout
+      // if (!data.subscriptionSessionId)
+      //   throw new Error("Invalid subscription session");
 
-    // await cf.subscriptionsCheckout({
-    //   subsSessionId: data.subscriptionSessionId,
-    //   redirectTarget: "_self",
-    //   return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
-    // });
-  } catch (error) {
-    console.error("Payment Error:", error);
-    toast.error("Something went wrong initiating payment");
-  } finally {
-    setProcessingPayment(false);
-  }
-};
-useEffect(() => {
-  const raw = localStorage.getItem("checkout_state");
-  if (!raw) return;
+      // await cf.subscriptionsCheckout({
+      //   subsSessionId: data.subscriptionSessionId,
+      //   redirectTarget: "_self",
+      //   return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/subscription-callback?sub_id=${data.subscriptionId}`,
+      // });
+    } catch (error) {
+      console.error("Payment Error:", error);
+      toast.error("Something went wrong initiating payment");
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
 
-  try {
-    const checkoutState = JSON.parse(raw);
-    console.log("Recovered checkout state:", checkoutState);
+  useEffect(() => {
+    const raw = localStorage.getItem("checkout_state");
+    if (!raw) return;
 
-    // Use it for UI recovery, retry logic, analytics, etc.
-  } catch (e) {
-    console.error("Failed to parse checkout state", e);
-  }
-}, []);
+    try {
+      const checkoutState = JSON.parse(raw);
+      console.log("Recovered checkout state:", checkoutState);
 
+      // Use it for UI recovery, retry logic, analytics, etc.
+    } catch (e) {
+      console.error("Failed to parse checkout state", e);
+    }
+  }, []);
 
 
   if (loading)
@@ -769,7 +1011,7 @@ useEffect(() => {
                   )}
                 </button>
                 <p className="mt-4 text-center text-xs text-gray-400">
-                  Secure checkout powered by Cashfree.
+                  Secure checkout powered by {activeGateway}.
                 </p>
               </div>
             </div>

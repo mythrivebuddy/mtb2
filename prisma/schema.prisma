@@ -1097,6 +1097,8 @@ model SubscriptionPlan {
   gstEnabled     Boolean   @default(true)
   gstPercentage  Float     @default(18)
 
+   razorpayPlanId   String?  @unique 
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -1107,6 +1109,7 @@ model SubscriptionPlan {
   invoices SubscriptionInvoice[]
   oneTimePurchases OneTimeProgramPurchase[]
   paymentOrders PaymentOrder[] 
+  razorpayPlanCache RazorpayPlanCache[]
 }
 enum SubscriptionPlanCurrency {
   INR
@@ -1164,6 +1167,7 @@ model Subscription {
   orderId          String?     // optional
   couponId         String?     // optional
   paymentOrderId String?  
+  razorpaySubscriptionId  String?
 
   grantedByPurchaseId String?   @unique// if the user purchase our program we grant them membership
   status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL | CANCELLATION_PENDING
@@ -1215,12 +1219,17 @@ model PaymentOrder {
   couponId      String?
   billingInfoId String?
 
+  razorpayOrderId String?
+  razorpaySubscriptionId String?
+  razorpayReceipt String?
+
   createdAt     DateTime @default(now())
   paidAt        DateTime?
 
   user          User             @relation(fields: [userId], references: [id])
   plan          SubscriptionPlan @relation(fields: [planId], references: [id])
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
+
 }
 
 
@@ -1371,6 +1380,31 @@ model AdminCashfreeConfigSettings {
   id           Int      @id @default(autoincrement())
   cashfreeMode String   @default("sandbox") // "sandbox" | "prod"
   updatedAt    DateTime @updatedAt
+}
+
+model AdminPaymentGatewayConfig {
+  id            Int      @id @default(autoincrement())
+  activeGateway String   @default("CASHFREE") // "CASHFREE" | "RAZORPAY"
+  updatedAt     DateTime @updatedAt
+}
+
+model RazorpayPlanCache {
+  id                  String   @id @default(cuid())
+  razorpayPlanId      String   @unique
+  razorpayItemId      String?  // optional, Razorpay internally creates item
+  amount              Decimal  @db.Decimal(10, 2)
+  currency            String
+  interval            PlanInterval  // MONTHLY | YEARLY
+  intervalCount       Int      @default(1)
+  gstEnabled          Boolean
+  gstPercentage       Decimal  @db.Decimal(5, 2)
+  planName            String
+  description         String?
+  subscriptionPlanId  String?
+  subscriptionPlan    SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  @@index([amount, currency, interval])
 }
 
 
