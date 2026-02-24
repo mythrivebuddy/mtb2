@@ -142,7 +142,7 @@ export default function ReferFriendPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Total Rewards</p>
-                <p className="text-2xl font-bold">{stats?.totalRewards || 0} JP</p>
+                <p className="text-2xl font-bold">{stats?.totalRewards || 0} GP</p>
               </div>
             </div>
           </CardContent>

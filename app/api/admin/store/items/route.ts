@@ -1,93 +1,125 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 
 const prisma = new PrismaClient();
 
-// GET /api/items - Fetch all items
+// GET /api/admin/store/items - Fetch all items for admin
 export async function GET() {
   try {
     const items = await prisma.item.findMany({
-      select: {
-        id: true,
-        name: true,
-        categoryId: true,
-        basePrice: true,
-        monthlyPrice: true,
-        yearlyPrice: true,
-        lifetimePrice: true,
-        imageUrl: true,
-        downloadUrl: true,
-        createdAt: true,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        approver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     });
 
     return NextResponse.json(
       {
         items: items.map((item) => ({
-          ...item,
-          category: item.categoryId, // Map categoryId to category for frontend
+          id: item.id,
+          name: item.name,
+          categoryId: item.categoryId,
+          category: item.category,
+          basePrice: item.basePrice,
+          monthlyPrice: item.monthlyPrice,
+          yearlyPrice: item.yearlyPrice,
+          lifetimePrice: item.lifetimePrice,
+          imageUrl: item.imageUrl,
+          downloadUrl: item.downloadUrl,
+          isApproved: item.isApproved, // ✅ CRITICAL: This was missing!
+          approvedByUserId: item.approvedByUserId,
+          approvedAt: item.approvedAt?.toISOString() || null,
+          approver: item.approver,
+          createdByUserId: item.createdByUserId,
+          createdByRole: item.createdByRole,
+          creator: item.creator,
           createdAt: item.createdAt.toISOString(),
+          updatedAt: item.updatedAt.toISOString(),
         })),
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("Error fetching items:", error);
     return NextResponse.json(
       { error: "Failed to fetch items" },
-      { status: 500 },
+      { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
+
+// POST /api/admin/store/items - Create a new item
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authConfig)
+    const session = await getServerSession(authConfig);
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // ✅ PRINT ROLE
-    console.log("USER ROLE:", session.user.role)
+    console.log("USER ROLE:", session.user.role);
 
-    const isAdmin = session.user.role === "ADMIN"
+    const isAdmin = session.user.role === "ADMIN";
 
-    const formData = await request.formData()
+    const formData = await request.formData();
 
-    const name = formData.get("name") as string
-    const category = formData.get("category") as string
-    const basePrice = Number(formData.get("basePrice"))
-    const monthlyPrice = Number(formData.get("monthlyPrice")) || 0
-    const yearlyPrice = Number(formData.get("yearlyPrice")) || 0
-    const lifetimePrice = Number(formData.get("lifetimePrice")) || 0
-    const imageFile = formData.get("image") as File
-    const downloadFile = formData.get("download") as File | null
+    const name = formData.get("name") as string;
+    const category = formData.get("category") as string;
+    const basePrice = Number(formData.get("basePrice"));
+    const monthlyPrice = Number(formData.get("monthlyPrice")) || 0;
+    const yearlyPrice = Number(formData.get("yearlyPrice")) || 0;
+    const lifetimePrice = Number(formData.get("lifetimePrice")) || 0;
+    const imageFile = formData.get("image") as File;
+    const downloadFile = formData.get("download") as File | null;
 
     if (!name || !category || !imageFile || isNaN(basePrice)) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
-      )
+      );
     }
 
     const imageUrl = await handleSupabaseImageUpload(
       imageFile,
       "store-images",
       "store-images"
-    )
+    );
 
-    let downloadUrl: string | undefined
+    let downloadUrl: string | undefined;
 
     if (downloadFile && downloadFile.size > 0) {
       downloadUrl = await handleSupabaseImageUpload(
         downloadFile,
         "store-images",
         "store-images"
-      )
+      );
     }
 
     const item = await prisma.item.create({
@@ -100,327 +132,64 @@ export async function POST(request: NextRequest) {
         lifetimePrice,
         imageUrl,
         downloadUrl,
-
         // 🔐 ROLE-BASED LOGIC
         isApproved: isAdmin, // ✅ ADMIN = true, USER = false
         createdByRole: session.user.role,
         createdByUserId: session.user.id,
       },
-    })
+      include: {
+        category: true,
+      },
+    });
 
     return NextResponse.json(
       {
         item: {
           ...item,
           createdAt: item.createdAt.toISOString(),
+          updatedAt: item.updatedAt.toISOString(),
         },
       },
       { status: 201 }
-    )
+    );
   } catch (error) {
-    console.error("Error creating item:", error)
-
+    console.error("Error creating item:", error);
     return NextResponse.json(
       { error: "Failed to create item" },
       { status: 500 }
-    )
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-
-
-
-// old code
-// export async function POST(request: NextRequest) {
-//   try {
-//     const session = await getServerSession(authConfig);
-
-//     if (!session || !session.user) {
-//       return NextResponse.json(
-//         { error: "Unauthorized" },
-//         { status: 401 }
-//       );
-//     }
-// console.log(session.user.role)
-//     const formData = await request.formData();
-
-//     const name = formData.get("name") as string;
-//     const category = formData.get("category") as string;
-//     const basePrice = parseInt(formData.get("basePrice") as string);
-//     const monthlyPrice =
-//       parseInt(formData.get("monthlyPrice") as string) || 0;
-//     const yearlyPrice =
-//       parseInt(formData.get("yearlyPrice") as string) || 0;
-//     const lifetimePrice =
-//       parseInt(formData.get("lifetimePrice") as string) || 0;
-//     const imageFile = formData.get("image") as File;
-//     const downloadFile = formData.get("download") as File | null;
-
-//     if (!name || !category || !imageFile || isNaN(basePrice)) {
-//       return NextResponse.json(
-//         { error: "Missing required fields" },
-//         { status: 400 }
-//       );
-//     }
-
-//     // 🖼 OLD upload logic (unchanged)
-//     const imageUrl = await handleSupabaseImageUpload(
-//       imageFile,
-//       "store-images",
-//       "store-images"
-//     );
-
-//     let downloadUrl: string | undefined;
-
-//     if (downloadFile && downloadFile.size > 0) {
-//       downloadUrl = await handleSupabaseImageUpload(
-//         downloadFile,
-//         "store-images",
-//         "store-images"
-//       );
-//     }
-
-//     // 🗄 DB create (ONLY createdBy added)
-//     const item = await prisma.item.create({
-//       data: {
-//         name,
-//         categoryId: category,
-//         basePrice,
-//         monthlyPrice,
-//         yearlyPrice,
-//         lifetimePrice,
-//         imageUrl,
-//         downloadUrl,
-
-//         // ✅ ONLY NEW FIELDS
-//         createdByRole: session.user.role,
-//         createdByUserId: session.user.id,
-//       },
-//       select: {
-//         id: true,
-//         name: true,
-//         categoryId: true,
-//         basePrice: true,
-//         monthlyPrice: true,
-//         yearlyPrice: true,
-//         lifetimePrice: true,
-//         imageUrl: true,
-//         downloadUrl: true,
-//         createdAt: true,
-//       },
-//     });
-
-//     return NextResponse.json(
-//       {
-//         item: {
-//           ...item,
-//           category: item.categoryId,
-//           createdAt: item.createdAt.toISOString(),
-//         },
-//       },
-//       { status: 201 }
-//     );
-//   } catch (error) {
-//     const message =
-//       error instanceof Error ? error.message : "Unknown error";
-
-//     console.error("Error creating item:", message);
-
-//     return NextResponse.json(
-//       { error: "Failed to create item", message },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
-// export async function POST(request: NextRequest) {
-//   try {
-//     const session = await getServerSession(authConfig);
-
-//     if (!session || !session.user) {
-//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//     }
-
-//     if (session.user.role !== "ADMIN") {
-//       return NextResponse.json(
-//         { error: "Only admins can create items" },
-//         { status: 403 },
-//       );
-//     }
-
-//     const formData = await request.formData();
-
-//     const name = formData.get("name") as string;
-//     const category = formData.get("category") as string;
-//     const basePrice = Number(formData.get("basePrice"));
-//     const monthlyPrice = Number(formData.get("monthlyPrice")) || 0;
-//     const yearlyPrice = Number(formData.get("yearlyPrice")) || 0;
-//     const lifetimePrice = Number(formData.get("lifetimePrice")) || 0;
-//     const imageFile = formData.get("image") as File;
-//     const downloadFile = formData.get("download") as File | null;
-
-//     if (!name || !category || !imageFile || isNaN(basePrice)) {
-//       return NextResponse.json(
-//         { error: "Missing required fields" },
-//         { status: 400 },
-//       );
-//     }
-
-//     // 🖼 Upload image to Supabase
-//     const imageUrl = await handleSupabaseImageUpload(
-//       imageFile,
-//       "store-images",
-//       "store-images",
-//     );
-
-//     // 📥 Optional download file
-//     let downloadUrl: string | undefined;
-//     if (downloadFile && downloadFile.size > 0) {
-//       downloadUrl = await handleSupabaseImageUpload(
-//         downloadFile,
-//         "store-images",
-//         "store-images",
-//       );
-//     }
-
-//     // 🗄 Create item in DB
-//     const item = await prisma.item.create({
-//       data: {
-//         name,
-//         categoryId: category,
-//         basePrice,
-//         monthlyPrice,
-//         yearlyPrice,
-//         lifetimePrice,
-//         imageUrl,
-//         downloadUrl,
-
-//         createdByRole: session.user.role, // ADMIN | COACH
-//         createdByUserId: session.user.id,
-//       },
-//       select: {
-//         id: true,
-//         name: true,
-//         categoryId: true,
-//         basePrice: true,
-//         monthlyPrice: true,
-//         yearlyPrice: true,
-//         lifetimePrice: true,
-//         imageUrl: true,
-//         downloadUrl: true,
-//         createdAt: true,
-//       },
-//     });
-
-//     // ✅ Success response
-//     return NextResponse.json(
-//       {
-//         item: {
-//           ...item,
-//           category: item.categoryId, // frontend compatibility
-//           createdAt: item.createdAt.toISOString(),
-//         },
-//       },
-//       { status: 201 },
-//     );
-//   } catch (error) {
-//     const message = error instanceof Error ? error.message : "Unknown error";
-
-//     console.error("Error creating item:", message);
-
-//     return NextResponse.json(
-//       { error: "Failed to create item", message },
-//       { status: 500 },
-//     );
-//   }
-// }
-
-// // POST /api/items - Create a new item
-// export async function POST(request: NextRequest) {
-//   try {
-//     const formData = await request.formData();
-
-//     const name = formData.get("name") as string;
-//     const category = formData.get("category") as string;
-//     const basePrice = parseInt(formData.get("basePrice") as string);
-//     const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
-//     const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
-//     const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
-//     const imageFile = formData.get("image") as File;
-//     const downloadFile = formData.get("download") as File | null;
-
-//     if (!name || !category || !imageFile || isNaN(basePrice)) {
-//       return NextResponse.json(
-//         { error: "Missing required fields" },
-//         { status: 400 }
-//       );
-//     }
-
-//     const imageUrl = await handleSupabaseImageUpload(imageFile,"store-images","store-images");
-//     let downloadUrl: string | undefined;
-
-//     if (downloadFile && downloadFile.size > 0) {
-//       downloadUrl = await handleSupabaseImageUpload(downloadFile,"store-images","store-images");
-//     }
-
-//     const item = await prisma.item.create({
-//       data: {
-//         name,
-//         categoryId: category,
-//         basePrice,
-//         monthlyPrice,
-//         yearlyPrice,
-//         lifetimePrice,
-//         imageUrl,
-//         downloadUrl,
-//       },
-//       select: {
-//         id: true,
-//         name: true,
-//         categoryId: true,
-//         basePrice: true,
-//         monthlyPrice: true,
-//         yearlyPrice: true,
-//         lifetimePrice: true,
-//         imageUrl: true,
-//         downloadUrl: true,
-//         createdAt: true,
-//       },
-//     });
-
-//     return NextResponse.json(
-//       { item: {
-//         ...item,
-//         category: item.categoryId, // Map categoryId to category for frontend
-//         createdAt: item.createdAt.toISOString()
-//       } },
-//       { status: 201 }
-//     );
-//   } catch (error) {
-//     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-//     console.error("Error creating item:", errorMessage);
-//     return NextResponse.json(
-//       { error: "Failed to create item", message: errorMessage },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-// PUT /api/items/[id] - Update an item
+// PUT /api/admin/store/items - Update an item
 export async function PUT(request: NextRequest) {
   try {
+    const session = await getServerSession(authConfig);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
     const url = new URL(request.url);
     const id = url.pathname.split("/").pop();
 
     if (!id) {
       return NextResponse.json(
         { error: "Item ID is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // First, get the existing item to preserve current URLs if not updating
     const existingItem = await prisma.item.findUnique({
       where: { id },
       select: {
@@ -448,11 +217,10 @@ export async function PUT(request: NextRequest) {
     if (!name || !category || isNaN(basePrice)) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // Build update data - start with existing URLs
     interface UpdateData {
       name: string;
       categoryId: string;
@@ -471,42 +239,38 @@ export async function PUT(request: NextRequest) {
       monthlyPrice,
       yearlyPrice,
       lifetimePrice,
-      imageUrl: existingItem.imageUrl, // Keep existing URL by default
-      downloadUrl: existingItem.downloadUrl, // Keep existing URL by default
+      imageUrl: existingItem.imageUrl,
+      downloadUrl: existingItem.downloadUrl,
     };
 
-    // Only update imageUrl if a new file is provided
     if (imageFile && imageFile.size > 0) {
       updateData.imageUrl = await handleSupabaseImageUpload(
         imageFile,
         "store-images",
-        "store-images",
+        "store-images"
       );
     }
 
-    // Only update downloadUrl if a new file is provided
     if (downloadFile && downloadFile.size > 0) {
       updateData.downloadUrl = await handleSupabaseImageUpload(
         downloadFile,
         "store-images",
-        "store-images",
+        "store-images"
       );
     }
 
     const item = await prisma.item.update({
       where: { id },
       data: updateData,
-      select: {
-        id: true,
-        name: true,
-        categoryId: true,
-        basePrice: true,
-        monthlyPrice: true,
-        yearlyPrice: true,
-        lifetimePrice: true,
-        imageUrl: true,
-        downloadUrl: true,
-        createdAt: true,
+      include: {
+        category: true,
+        approver: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
 
@@ -514,31 +278,47 @@ export async function PUT(request: NextRequest) {
       {
         item: {
           ...item,
-          category: item.categoryId, // Map categoryId to category for frontend
           createdAt: item.createdAt.toISOString(),
+          updatedAt: item.updatedAt.toISOString(),
         },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("Error updating item:", error);
     return NextResponse.json(
       { error: "Failed to update item" },
-      { status: 500 },
+      { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-// DELETE /api/items/[id] - Delete an item
+// DELETE /api/admin/store/items - Delete an item
 export async function DELETE(request: NextRequest) {
   try {
+    const session = await getServerSession(authConfig);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
     const url = new URL(request.url);
     const id = url.pathname.split("/").pop();
 
     if (!id) {
       return NextResponse.json(
         { error: "Item ID is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -548,13 +328,15 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json(
       { message: "Item deleted successfully" },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     console.error("Error deleting item:", error);
     return NextResponse.json(
       { error: "Failed to delete item" },
-      { status: 500 },
+      { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

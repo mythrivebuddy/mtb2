@@ -1,8 +1,9 @@
-// __tests__/Home.test.tsx
+// __tests__/app/Home.test.tsx
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import Home, { metadata } from "../../../app/page";
+
 import { SessionProvider } from "next-auth/react";
+import Home, { metadata } from "@/app/page";
 
 // Mock image imports
 jest.mock("@/public/avtar.png", () => "test-file-stub");
@@ -42,13 +43,13 @@ describe("Home Page", () => {
   it("renders the main heading", () => {
     render(
       <SessionProvider session={null}>
-        <Home />
+        <Home/>
       </SessionProvider>
     );
 
     // Only checks <h1> and ignores paragraphs
     const heading = screen.getByRole("heading", {
-      name: /Solopreneurship/i,
+      name: /One Complete Growth Ecosystem/i,
       level: 1,
     });
     expect(heading).toBeInTheDocument();
@@ -63,21 +64,24 @@ describe("Home Page", () => {
 
     // Hero heading (h1) specifically
     expect(
-      screen.getByRole("heading", { name: /Solopreneurship/i, level: 1 })
+      screen.getByRole("heading", { name: /One Complete Growth Ecosystem/i, level: 1 })
     ).toBeInTheDocument();
 
     // SpotlightCard mock should show Developer text
-    expect(screen.getByText(/Developer/i)).toBeInTheDocument();
+    expect(
+  screen.getAllByRole("heading", { name: /Spotlight of the Day/i }).length
+).toBeGreaterThan(0);
+
+
   });
 
   it("has correct SEO metadata", () => {
-    expect(metadata.title).toBe("MyThriveBuddy - Solopreneurship Made Amazing");
-    expect(metadata.description).toContain(
-      "Solopreneurship doesn't have to be lonely"
-    );
+    expect(metadata.title).toBe("MyThriveBuddy - One Complete Growth Ecosystem For Coaches, Solopreneurs & Self-Growth Enthusiasts.");
+   expect(metadata.description).toContain("consistent growth");
+
     expect(metadata.openGraph?.siteName).toBe("MyThriveBuddy");
     expect(metadata.twitter?.title).toBe(
-      "MyThriveBuddy - Solopreneurship Made Amazing"
+      "MyThriveBuddy - One Complete Growth Ecosystem For Coaches, Solopreneurs & Self-Growth Enthusiasts."
     );
   });
 });

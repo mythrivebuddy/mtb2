@@ -76,7 +76,7 @@ export function checkFeature<F extends FeatureKey>(params: {
   >;
 
   const planConfig = plans[planKey]?.[userType];
-
+  
 
   if (planConfig === undefined) {
     return { allowed: false as const, reason: "PLAN_NOT_ALLOWED" as const };

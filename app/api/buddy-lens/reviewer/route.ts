@@ -6,6 +6,8 @@ import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { ActivityType, BuddyLensRequestStatus } from "@prisma/client";
 import { createBuddyLensReviewedNotification, createBuddyLensReviewerCompletedNotification, createBuddyLensClaimedNotification } from "@/lib/utils/notifications";
+import { authOptions } from "@/lib/auth";
+import { checkFeature } from "@/lib/access-control/checkFeature";
 
 // import sendEmail from '@/lib/email/sendEmail';
 
@@ -45,18 +47,11 @@ async function sendEmail(
   fromName?: string
 ): Promise<EmailResponse> {
   // Updated return type to EmailResponse
-  console.log("Preparing to send email:", { toEmail, subject, fromName });
+
 
   try {
     const senderEmail = process.env.CONTACT_SENDER_EMAIL;
     const brevoApiKey = process.env.BREVO_API_KEY;
-
-    console.log("Environment variables:", {
-      senderEmail: senderEmail ? "Set" : "Missing",
-      brevoApiKey: brevoApiKey
-        ? "Set (first 4 chars: " + brevoApiKey.slice(0, 4) + ")"
-        : "Missing",
-    });
 
     if (!senderEmail || !brevoApiKey) {
       throw new Error(
@@ -77,12 +72,7 @@ async function sendEmail(
       htmlContent,
     };
 
-    console.log("Sending email to Brevo API...");
     const response = await axios.post(brevoApiUrl, emailPayload, { headers });
-    console.log("Email sent successfully:", {
-      status: response.status,
-      messageId: response.data.messageId,
-    });
 
     // Return the custom response (not wrapped in NextResponse.json)
     return { success: true, messageId: response.data.messageId };
@@ -123,8 +113,9 @@ interface CreateReviewBody {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authConfig);
+    const session = await getServerSession(authOptions);
     if (!session?.user?.email) return errorResponse("Please log in", 401);
+
 
     const {
       requestId,
@@ -135,7 +126,7 @@ export async function POST(req: NextRequest) {
       status = "SUBMITTED",
     } = (await req.json()) as CreateReviewBody;
     const reviewerId = session.user.id;
-    console.log("POST /api/buddy-lens/reviewer", reviewerId);
+   
 
     if (!requestId || !answers || !reviewText || !rating)
       return errorResponse(
@@ -149,6 +140,23 @@ export async function POST(req: NextRequest) {
       return errorResponse("Rating must be between 1 and 5", 400);
     if (!["SUBMITTED", "DRAFT"].includes(status))
       return errorResponse("Invalid status", 400);
+
+    const featureCheck = checkFeature({
+      feature: "buddyLens",
+      user: {
+        userType: session.user.userType,     // COACH
+        membership: session.user.membership, // FREE / PAID
+      },
+    });
+
+    if (!featureCheck.allowed) {
+      return errorResponse("BuddyLens access not allowed", 403);
+    }
+
+    const { earnJPPerReview } = featureCheck.config as {
+      earnJPPerReview: number;
+    };
+
 
     const request = await prisma.buddyLensRequest.findUnique({
       where: { id: requestId },
@@ -171,13 +179,6 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // console.log(
-    //   "when submitting request ------------------ ",
-    //   "reviewerID",
-    //   reviewerId,
-    //   request?.review
-    // );
-
     if (!request || request.isDeleted)
       return errorResponse("Request not found", 404);
     if (request.review.some((r) => r.reviewerId !== reviewerId))
@@ -187,9 +188,13 @@ export async function POST(req: NextRequest) {
       return errorResponse("Request is not claimed", 400);
     // if (new Date(request.expiresAt) < new Date()) return errorResponse("Request has expired", 400);
 
-    const jpCost = request.jpCost ?? 0;
-    if (jpCost <= 0)
-      return errorResponse("Invalid JP cost for this request", 400);
+    const requesterPays = request.jpCost ?? 0;
+    const reviewerEarns = earnJPPerReview;
+
+    if (requesterPays <= 0 || reviewerEarns <= 0) {
+      return errorResponse("Invalid GP configuration for this request", 400);
+    }
+
 
     const existingReview = await prisma.buddyLensReview.findFirst({
       where: { requestId, reviewerId },
@@ -239,12 +244,12 @@ export async function POST(req: NextRequest) {
         if (!creditActivity || !debitActivity)
           throw new Error("Required activity types not found");
 
-        // JP transactions
+        // GP transactions
         await prisma.user.update({
           where: { id: request.requesterId },
           data: {
-            jpBalance: { decrement: jpCost },
-            jpSpent: { increment: jpCost },
+            jpBalance: { decrement: requesterPays },
+            jpSpent: { increment: requesterPays },
             jpTransaction: { increment: 1 },
           },
         });
@@ -252,8 +257,8 @@ export async function POST(req: NextRequest) {
         await prisma.user.update({
           where: { id: reviewerId },
           data: {
-            jpBalance: { increment: jpCost },
-            jpEarned: { increment: jpCost },
+            jpBalance: { increment: reviewerEarns },
+            jpEarned: { increment: reviewerEarns },
             jpTransaction: { increment: 1 },
           },
         });
@@ -262,75 +267,72 @@ export async function POST(req: NextRequest) {
           data: [
             {
               userId: request.requesterId,
-              jpAmount: jpCost,
+              jpAmount: requesterPays,
               activityId: debitActivity.id,
             },
             {
               userId: reviewerId,
-              jpAmount: jpCost,
+              jpAmount: reviewerEarns,
               activityId: creditActivity.id,
             },
           ],
         });
-        console.log("review ***************************** ", review);
-
-        // Notify reviewer
-        await createBuddyLensReviewerCompletedNotification(
-          reviewerId,
-          request.domain,
-          jpCost,
-        );
-
-        // Notify requester
-        await createBuddyLensReviewedNotification(
-          request.requesterId,
-          request.domain,
-          jpCost,
-          review.id
-        );
-
-        // Email to requester
-        if (request.requester.email) {
-          const reviewUrl = `${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}`;
-          const subject = "Joy Pearls Deducted for Reviewed Request";
-          const htmlContent = `
-            <p>Hello ${request.requester.name || "User"},</p>
-            <p>Your BuddyLens request in ${request.domain} has been reviewed. ${jpCost} Joy Pearls have been deducted.</p>
-            <p><a href="${reviewUrl}">View Review</a></p>
-          `;
-
-          await sendEmail(
-            request.requester.email,
-            request.requester.name || "User",
-            subject,
-            htmlContent,
-            request.reviewer?.name || "MyThriveBuddy"
-          );
-        }
-
-        // Email to reviewer after submission reviewed for requester
-        if (request.reviewer?.email) {
-          const subject = "You Earned Joy Pearls for Reviewing a Request";
-          const htmlContent = `
-            <p>Hello ${request.reviewer.name || "Reviewer"},</p>
-            <p>Thank you for reviewing the BuddyLens request in ${request.domain}. You have earned ${jpCost} Joy Pearls.</p>
-            <p><a href="${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}">View Review</a></p>
-          `;
-          await sendEmail(
-            request.reviewer.email,
-            request.reviewer.name || "Reviewer",
-            subject,
-            htmlContent,
-            request.reviewer.name || "MyThriveBuddy"
-          );
-        }
       }
 
       return review;
     });
+    // Notify reviewer
+    await createBuddyLensReviewerCompletedNotification(
+      reviewerId,
+      request.domain,
+      reviewerEarns,
+    );
 
+    // Notify requester
+    await createBuddyLensReviewedNotification(
+      request.requesterId,
+      request.domain,
+      requesterPays,
+      reviewerId
+    );
+
+    // Email to requester
+    if (request.requester.email) {
+      const reviewUrl = `${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}`;
+      const subject = "Growth Points Deducted for Reviewed Request";
+      const htmlContent = `
+            <p>Hello ${request.requester.name || "User"},</p>
+            <p>Your BuddyLens request in ${request.domain} has been reviewed. ${requesterPays} Growth Points have been deducted.</p>
+            <p><a href="${reviewUrl}">View Review</a></p>
+          `;
+
+      await sendEmail(
+        request.requester.email,
+        request.requester.name || "User",
+        subject,
+        htmlContent,
+        request.reviewer?.name || "MyThriveBuddy"
+      );
+    }
+
+    // Email to reviewer after submission reviewed for requester
+    if (request.reviewer?.email) {
+      const subject = "You Earned Growth Points for Reviewing a Request";
+      const htmlContent = `
+            <p>Hello ${request.reviewer.name || "Reviewer"},</p>
+            <p>Thank you for reviewing the BuddyLens request in ${request.domain}. You have earned ${reviewerEarns} Growth Points.</p>
+            <p><a href="${process.env.NEXT_URL}/dashboard/buddy-lens/reviewer/${request.id}">View Review</a></p>
+          `;
+      await sendEmail(
+        request.reviewer.email,
+        request.reviewer.name || "Reviewer",
+        subject,
+        htmlContent,
+        request.reviewer.name || "MyThriveBuddy"
+      );
+    }
     return NextResponse.json(
-      { message: "Review submitted", data: newReview },
+      { message: "Review submitted", data: newReview, reviewerEarns },
       { status: 201 }
     );
   } catch (error) {
@@ -387,11 +389,6 @@ export async function GET(req: NextRequest) {
         },
       },
     });
-
-    console.log(
-      "request-----------------------------------------------------------",
-      reviews
-    );
 
     return NextResponse.json(reviews);
   } catch (error: unknown) {
@@ -587,7 +584,7 @@ export async function PATCH(req: NextRequest) {
         },
       },
     });
-    console.log("request", request);
+
     if (!request || request.isDeleted) {
       return errorResponse("Request not found", 404);
     }
@@ -677,15 +674,15 @@ export async function PATCH(req: NextRequest) {
             reviewer.name || "MyThriveBuddy"
           );
 
-          if (!emailResult.success) {
-            console.error(
-              `Failed to send claim notification email within transaction: ${emailResult.error}`
-            );
-          } else {
-            console.log(
-              "Claim notification email sent successfully within transaction"
-            );
-          }
+          // if (!emailResult.success) {
+          //   console.error(
+          //     `Failed to send claim notification email within transaction: ${emailResult.error}`
+          //   );
+          // } else {
+          //   console.log(
+          //     "Claim notification email sent successfully within transaction"
+          //   );
+          // }
         } catch (error) {
           console.error("Transaction email sending failed:", error);
           // We continue with the transaction even if email fails
@@ -703,7 +700,7 @@ export async function PATCH(req: NextRequest) {
     // If email failed within transaction and requester has email, try once more outside transaction
     if (!emailResult.success && request.requester.email) {
       try {
-        console.log("Retrying email sending outside transaction...");
+     
         emailResult = await sendEmail(
           request.requester.email,
           request.requester.name || "User",
@@ -712,13 +709,13 @@ export async function PATCH(req: NextRequest) {
           reviewer.name || "MyThriveBuddy"
         );
 
-        if (emailResult.success) {
-          console.log("Claim notification email sent successfully on retry");
-        } else {
-          console.error(
-            `Failed to send claim notification email on retry: ${emailResult.error}`
-          );
-        }
+        // if (emailResult.success) {
+        //   console.log("Claim notification email sent successfully on retry");
+        // } else {
+        //   console.error(
+        //     `Failed to send claim notification email on retry: ${emailResult.error}`
+        //   );
+        // }
       } catch (error) {
         if (error instanceof Error) {
           console.error("Email sending failed:", error.message);

@@ -8,6 +8,20 @@ const prisma = new PrismaClient();
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     if (!id) {
@@ -46,39 +60,47 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       );
     }
 
-    const updateData: {
-      name: string;
-      categoryId: string;
-      basePrice: number;
-      monthlyPrice: number;
-      yearlyPrice: number;
-      lifetimePrice: number;
-      imageUrl: string;
-      downloadUrl: string | null;
-    } = {
-      name,
-      categoryId,
-      basePrice,
-      monthlyPrice,
-      yearlyPrice,
-      lifetimePrice,
-      imageUrl: '',
-      downloadUrl: '',
-    };
+    // Get existing item to preserve image URLs if not updating
+    const existingItem = await prisma.item.findUnique({
+      where: { id },
+      select: {
+        imageUrl: true,
+        downloadUrl: true,
+      },
+    });
 
-    if (imageFile) {
-      updateData.imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+    if (!existingItem) {
+      return NextResponse.json(
+        { error: "Item not found" },
+        { status: 404 }
+      );
     }
 
-    if (downloadFile) {
-      updateData.downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
-    } else if (formData.get("download") === null) {
-      updateData.downloadUrl = null;
+    let imageUrl = existingItem.imageUrl;
+    let downloadUrl = existingItem.downloadUrl;
+
+    // Upload new image if provided
+    if (imageFile && imageFile.size > 0) {
+      imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+    }
+
+    // Upload new download file if provided
+    if (downloadFile && downloadFile.size > 0) {
+      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
     }
 
     const item = await prisma.item.update({
       where: { id },
-      data: updateData,
+      data: {
+        name,
+        categoryId,
+        basePrice,
+        monthlyPrice,
+        yearlyPrice,
+        lifetimePrice,
+        imageUrl,
+        downloadUrl,
+      },
       select: {
         id: true,
         name: true,
@@ -89,7 +111,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         lifetimePrice: true,
         imageUrl: true,
         downloadUrl: true,
+        isApproved: true,
+        createdByRole: true,
+        createdByUserId: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -99,7 +125,9 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
           ...item,
           category: item.categoryId,
           createdAt: item.createdAt.toISOString(),
+          updatedAt: item.updatedAt.toISOString(),
         },
+        message: "Item updated successfully",
       },
       { status: 200 }
     );
@@ -117,6 +145,20 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
     const { id } = await context.params;
 
     if (!id) {
@@ -147,73 +189,81 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
 }
 
 
-// PATCH /api/admin/store/items/[id]/approve - Approve or disapprove an item
-export async function PATCH(
+
+
+
+
+// app/api/admin/store/items/[id]/route.ts
+
+
+
+export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }   // ← "id" matches [id] folder
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const { id } = await context.params;           // ← destructure "id"
 
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user is admin
-    if (session.user.role !== "ADMIN") {
+    if (!id) {
       return NextResponse.json(
-        { error: "Forbidden - Admin access required" },
-        { status: 403 }
-      );
-    }
-
-    const itemId = params.id;
-    const body = await request.json();
-    const { isApproved } = body;
-
-    if (typeof isApproved !== "boolean") {
-      return NextResponse.json(
-        { error: "isApproved must be a boolean value" },
+        { error: "Product ID is required" },
         { status: 400 }
       );
     }
 
-    // Check if item exists
-    const existingItem = await prisma.item.findUnique({
-      where: { id: itemId },
+    const product = await prisma.item.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: { id: true, name: true },
+        },
+        creator: {
+          select: { id: true, name: true, email: true, image: true },
+        },
+        approver: {
+          select: { id: true, name: true, email: true },
+        },
+      },
     });
 
-    if (!existingItem) {
-      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    if (!product) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
     }
 
-    // Update the approval status
-    const updatedItem = await prisma.item.update({
-      where: { id: itemId },
-      data: {
-        isApproved,
-      },
-      include: {
-        category: true,
-      },
-    });
+    const formattedProduct = {
+      id: product.id,
+      name: product.name,
+      categoryId: product.categoryId,
+      category: product.category,
+      basePrice: product.basePrice,
+      monthlyPrice: product.monthlyPrice,
+      yearlyPrice: product.yearlyPrice,
+      lifetimePrice: product.lifetimePrice,
+      imageUrl: product.imageUrl,
+      downloadUrl: product.downloadUrl,
+      isApproved: product.isApproved,
+      approvedByUserId: product.approvedByUserId,
+      approvedAt: product.approvedAt?.toISOString() || null,
+      approver: product.approver,
+      createdByUserId: product.createdByUserId,
+      createdByRole: product.createdByRole,
+      creator: product.creator,
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+    };
 
-    return NextResponse.json(
-      {
-        item: updatedItem,
-        message: isApproved
-          ? "Item approved successfully"
-          : "Item disapproved successfully",
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ product: formattedProduct }, { status: 200 });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error("Error updating item approval status:", errorMessage);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error fetching product:", errorMessage);
     return NextResponse.json(
-      { error: "Failed to update item approval status", message: errorMessage },
+      { error: "Failed to fetch product", message: errorMessage },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

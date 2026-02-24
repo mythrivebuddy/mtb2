@@ -232,7 +232,7 @@ export default function MyChallenges() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2 text-purple-700 font-bold text-lg">
                         <Gift className="w-5 h-5" />
-                        <span>{challenge.reward} JP</span>
+                        <span>{challenge.reward} GP</span>
                       </div>
                       {activeTab === "hosted" && (
                         <div className="flex items-center gap-2">

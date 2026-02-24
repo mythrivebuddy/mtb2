@@ -1,11 +1,10 @@
 "use client";
-
 import React, { useState } from "react";
 import axios, { AxiosResponse } from "axios";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient} from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import OrderSection from "@/components/storeProfile/OrderSection";
 import CartSection from "@/components/storeProfile/CartSection";
@@ -48,10 +47,11 @@ function ProfilePage() {
       cart: getData(cartRes, { cart: [] }),
     };
   };
-
+  
   const { data, isLoading } = useQuery({
     queryKey: ["profileData"],
     queryFn: fetchProfileData,
+    refetchOnMount:true
   });
 
   const user = data?.user.user as User;

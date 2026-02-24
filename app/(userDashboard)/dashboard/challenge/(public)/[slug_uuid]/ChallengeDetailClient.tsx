@@ -100,7 +100,7 @@ export default function ChallengeDetailClient({
           </h1>
           <div className="text-right">
             <p className="text-lg font-bold text-purple-600">
-              {challenge.reward} JP
+              {challenge.reward} GP
             </p>
             <p className="text-sm text-slate-500">Reward</p>
           </div>

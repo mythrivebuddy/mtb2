@@ -60,16 +60,19 @@ const StorePage: React.FC = () => {
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
+    refetchOnMount: true,
   });
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: fetchUserProfile,
+    refetchOnMount: true,
   });
 
   const { data: wishlist = [], isLoading: wishlistLoading } = useQuery({
     queryKey: ["wishlist"],
     queryFn: fetchWishlist,
+    refetchOnMount: true,
   });
 
   const { data: items = [], isLoading: itemsLoading } = useQuery({
@@ -79,6 +82,7 @@ const StorePage: React.FC = () => {
         ? fetchItemsByCategory(selectedCategory)
         : fetchAllItems(),
     placeholderData: (prev) => prev,
+    refetchOnMount: true,
   });
 
   const toggleWishlistMutation = useMutation({
@@ -132,17 +136,12 @@ const StorePage: React.FC = () => {
     return <PageLoader />;
   }
 
+  // Filter items: only show approved items + apply product filter
   const filteredItems = items.filter((item) => {
+    if (!item.isApproved) return false;
     if (productFilter === "ALL") return true;
-
-    if (productFilter === "MY") {
-      return item.createdByUserId === user?.id;
-    }
-
-    if (productFilter === "ADMIN") {
-      return item.createdByRole === "ADMIN";
-    }
-
+    if (productFilter === "MY") return item.createdByUserId === user?.id;
+    if (productFilter === "ADMIN") return item.createdByRole === "ADMIN";
     return true;
   });
 
@@ -157,12 +156,6 @@ const StorePage: React.FC = () => {
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-slate-800">🛍 Store</h1>
         <div className="flex gap-3">
-          <Link
-            href="/dashboard/manage-store"
-            className="bg-green-600 text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-green-700"
-          >
-            Manage Store
-          </Link>
           <Link
             href="/dashboard/store/profile"
             className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600"
@@ -266,16 +259,6 @@ const StorePage: React.FC = () => {
                   className="w-full h-full object-cover rounded-lg"
                 />
               </div>
-
-              <span
-                className={`absolute top-2 right-2 px-3 py-1 text-xs rounded-full font-bold ${
-                  item.isApproved
-                    ? "bg-green-500 text-white"
-                    : "bg-red-500 text-white"
-                }`}
-              >
-                {item.isApproved ? "Approved" : "Pending"}
-              </span>
 
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold text-slate-800">

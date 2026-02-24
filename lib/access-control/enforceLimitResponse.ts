@@ -8,12 +8,14 @@ export async function enforceLimitResponse(params: {
     currentCount: number;
     message?: string;
     statusCode?: number;
+    isUpgradeFlagShow?: boolean;
 }) {
     const {
         limit,
         currentCount,
         message = "Upgrade required",
         statusCode = 403,
+        isUpgradeFlagShow 
     } = params;
 
     if (limit === UNLIMITED) {
@@ -22,7 +24,7 @@ export async function enforceLimitResponse(params: {
 
     if (currentCount >= limit) {
         return NextResponse.json(
-            { message },
+            { message,isUpgradeFlagShow },
             { status: statusCode }
         );
     }

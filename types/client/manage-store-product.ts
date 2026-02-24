@@ -12,10 +12,16 @@ export interface Item {
   isApproved: boolean;
   createdByRole: string;
   createdByUserId: string;
+  approvedByUserId?: string | null;
+  approvedAt?: string | null;
+  approver?: {
+    id: string;
+    name?: string | null;
+    email: string;
+  } | null;
   createdAt: string;
   updatedAt?: string;
 }
-
 
 export interface ItemFormData {
   name: string;

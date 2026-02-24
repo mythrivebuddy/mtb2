@@ -6,7 +6,6 @@ import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 import { ClientBlogPageProps } from "@/types/client/blog";
 
-
 export default function ClientBlogPage({ blog }: ClientBlogPageProps) {
   return (
     <AppLayout>
@@ -29,16 +28,15 @@ export default function ClientBlogPage({ blog }: ClientBlogPageProps) {
         />
       </div>
       <div>
-        <p>Ready to transform your solopreneurship journey?</p>
+        <p>Ready to transform your growth journey?</p>
         <br />
         <p>
           <Link href={"/signin"}>
             <span className="font-bold">Join MyThriveBuddy today</span>
           </Link>{" "}
-          and be part of a supportive ecosystem that empowers solopreneurs to
-          thrive, grow, and succeed. Together, we&apos;re building a future
-          where solopreneurship is not just a career choice but a fulfilling and
-          joyful way of life.
+          and be part of a supportive ecosystem that empowers self growth
+          enthusiasts, coaches and solopreneurs to thrive, grow, and succeed in
+          life and business
         </p>
       </div>
     </AppLayout>

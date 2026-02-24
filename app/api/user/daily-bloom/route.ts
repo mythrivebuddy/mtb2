@@ -297,7 +297,7 @@ export async function POST(req: NextRequest) {
           data: { taskAddJP: true },
         });
       } catch (error) {
-        console.error(`Error while assigning JP:`, error);
+        console.error(`Error while assigning GP:`, error);
       }
     }
 
@@ -371,7 +371,7 @@ export async function PUT(req: NextRequest) {
             data: { taskCompleteJP: true },
           });
         } catch (error) {
-          console.error(`Error while assigning JP:`, error);
+          console.error(`Error while assigning GP:`, error);
         }
       }
     }

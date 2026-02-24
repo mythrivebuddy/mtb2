@@ -143,7 +143,7 @@ const RightPanel = ({ className }: { className?: string }) => {
                   </p>
                 </div>
                 <p className="text-red-500 font-medium ml-2 break-words">
-                  {item.amount} JP
+                  {item.amount} GP
                 </p>
               </div>
             ))}

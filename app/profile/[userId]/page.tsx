@@ -428,19 +428,19 @@ export default function UserDetailsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Badge className="py-3 md:px-6 text-sm bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex-wrap">
                   <span className="font-semibold">Balance:</span>{" "}
-                  {userData.jpBalance} JP
+                  {userData.jpBalance} GP
                 </Badge>
                 <Badge className="py-3 md:px-6 text-sm bg-gradient-to-r from-green-100 to-teal-100 text-green-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex-wrap">
                   <span className="font-semibold">Earned:</span>{" "}
-                  {userData.jpEarned} JP
+                  {userData.jpEarned} GP
                 </Badge>
                 <Badge className="py-3 md:px-6 text-sm bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex-wrap">
                   <span className="font-semibold">Spent:</span>{" "}
-                  {userData.jpSpent} JP
+                  {userData.jpSpent} GP
                 </Badge>
                 <Badge className="py-3 md:px-6 text-sm bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex-wrap">
                   <span className="font-semibold">Transactions:</span>{" "}
-                  {userData.jpTransaction}
+                  {userData.jpTransaction} GP
                 </Badge>
               </div>
 
