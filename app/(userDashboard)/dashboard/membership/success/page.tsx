@@ -171,3 +171,107 @@ export default function SuccessPage() {
     </div>
   );
 }
+
+// /api/billing/verify-success/route.ts
+//
+// Called by the success page to confirm the purchase and get redirect info.
+// Handles three types: "lifetime", "subscription", "program"
+//
+// GET /api/billing/verify-success?pid=<internal_db_id>&type=<type>
+
+// import { NextRequest, NextResponse } from "next/server";
+// import { prisma } from "@/lib/prisma";
+// import { getServerSession } from "next-auth";
+// import { authOptions } from "@/lib/auth";
+
+// export async function GET(req: NextRequest) {
+//   const session = await getServerSession(authOptions);
+//   if (!session?.user?.id) {
+//     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+//   }
+
+//   const url = new URL(req.url);
+//   const pid = url.searchParams.get("pid");
+//   const type = url.searchParams.get("type");
+
+//   if (!pid || !type) {
+//     return NextResponse.json({ ok: false, error: "Missing params" }, { status: 400 });
+//   }
+
+//   try {
+//     // ─── LIFETIME ─────────────────────────────────────────────────────────────
+//     if (type === "lifetime") {
+//       const order = await prisma.paymentOrder.findFirst({
+//         where: { id: pid, userId: session.user.id },
+//       });
+
+//       if (!order || order.status !== "PAID") {
+//         return NextResponse.json({ ok: false, error: "Order not verified" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard",
+//       });
+//     }
+
+//     // ─── SUBSCRIPTION (MONTHLY / YEARLY via Razorpay) ────────────────────────
+//     if (type === "subscription") {
+//       const sub = await prisma.subscription.findFirst({
+//         where: { id: pid, userId: session.user.id },
+//         include: { plan: true },
+//       });
+
+//       if (!sub || sub.status !== "ACTIVE") {
+//         return NextResponse.json({ ok: false, error: "Subscription not active" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard",
+//         yearlyPlanName: sub.plan?.name ?? null,
+//       });
+//     }
+
+//     // ─── PROGRAM (Cashfree one-time purchase) ─────────────────────────────────
+//     if (type === "program") {
+//       const purchase = await prisma.programPurchase.findFirst({
+//         where: { id: pid, userId: session.user.id },
+//         include: { plan: true },
+//       });
+
+//       if (!purchase) {
+//         return NextResponse.json({ ok: false, error: "Purchase not found" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard/programs",
+//         yearlyPlanName: purchase.plan?.name ?? null,
+//       });
+//     }
+
+//     // ─── MEMBERSHIP (legacy Cashfree flow) ────────────────────────────────────
+//     if (type === "membership") {
+//       const user = await prisma.user.findUnique({
+//         where: { id: session.user.id },
+//         select: { membership: true },
+//       });
+
+//       if (user?.membership !== "PAID") {
+//         return NextResponse.json({ ok: false, error: "Membership not active" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard",
+//       });
+//     }
+
+//     return NextResponse.json({ ok: false, error: "Unknown type" }, { status: 400 });
+
+//   } catch (error) {
+//     console.error("verify-success error:", error);
+//     return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
+//   }
+// }

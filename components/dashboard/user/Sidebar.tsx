@@ -277,7 +277,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
-                  label="Log Serendipities"
+                  label="Log Miracles"
                   onLinkClick={toggleSidebar}
                 />
                 <NavItem
@@ -337,13 +337,26 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   )}
                 </div> */}
 
-                <ComingSoonWrapper>
+                  <NavItem
+                  href="/dashboard/store"
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Store"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+                  <NavItem
+                  href="/dashboard/manage-store"
+                    icon={<ShoppingCartIcon size={20} />}
+                    label="Manage Store"
+                    onLinkClick={toggleSidebar} // Pass toggleSidebar
+                  />
+
+                {/* <ComingSoonWrapper>
                   <NavItem
                     icon={<ShoppingCartIcon size={20} />}
                     label="Store"
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
-                </ComingSoonWrapper>
+                </ComingSoonWrapper> */}
               </NavSection>
               {/* Settings Section */}
               {(session.data?.user.userType == "COACH" ||

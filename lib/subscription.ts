@@ -55,7 +55,11 @@ export async function getUserActivePlanPriority(userId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  if (!activeSubscription) return 0;
-
+  if (!activeSubscription) return PLAN_PRIORITY.FREE;
+console.log("Active subscription found:", {
+  id: activeSubscription.id,
+  planInterval: activeSubscription.plan.interval,
+  status: activeSubscription.status,
+});
   return PLAN_PRIORITY[activeSubscription.plan.interval];
 }

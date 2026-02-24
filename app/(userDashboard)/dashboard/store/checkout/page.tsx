@@ -149,7 +149,30 @@ const CheckoutContent = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {items.map((item, index) => (
+
+{items.map((item) => (
+  <div key={item.id} className="flex gap-4 border-b pb-4">
+    {item.imageUrl ? (
+      <Image
+        src={item.imageUrl}
+        alt={item.name}
+        width={96}
+        height={96}
+        className="w-24 h-24 object-cover rounded"
+      />
+    ) : (
+      <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center text-xs text-gray-500">
+        No Image
+      </div>
+    )}
+
+    <div className="flex-1">
+      <h3 className="font-medium">{item.name}</h3>
+    </div>
+  </div>
+))}
+
+                  {/* {items.map((item, index) => (
                     <div key={item.id} className="flex gap-4 border-b pb-4">
                       <Image src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded" />
                       <div className="flex-1">
@@ -165,7 +188,7 @@ const CheckoutContent = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))} */}
                 </div>
               )}
             </div>

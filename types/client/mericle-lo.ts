@@ -11,4 +11,10 @@ export interface MiracleLog {
 export interface MiracleLogClientProps {
   initialLogs: MiracleLog[];
   initialStreak: { count: number };
+  dailyLimit: number;
+  isUpgradeFlagShow?: boolean;
 }
+export type MiracleLogPlanConfig = {
+  dailyLimit: number;
+  isUpgradeFlagShow?: boolean;
+};

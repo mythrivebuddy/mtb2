@@ -8,130 +8,117 @@ datasource db {
   directUrl         = env("DIRECT_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
-
+// updated user for item table
 model User {
-  id                            String                @id @default(uuid())
-  email                         String                @unique
+  id                            String                            @id @default(uuid())
+  email                         String                            @unique
   password                      String?
   name                          String
-  createdAt                     DateTime              @default(now())
-  updatedAt                     DateTime              @updatedAt
+  createdAt                     DateTime                          @default(now())
+  updatedAt                     DateTime                          @updatedAt
   role                          Role
   image                         String?
-  jpEarned                      Int                   @default(0)
-  jpSpent                       Int                   @default(0)
-  authMethod                    AuthMethod            @default(CREDENTIALS)
+  jpEarned                      Int                               @default(0)
+  jpSpent                       Int                               @default(0)
+  authMethod                    AuthMethod                        @default(CREDENTIALS)
   planEnd                       DateTime?
   planId                        String?
   planStart                     DateTime?
-  jpBalance                     Int                   @default(0)
-  jpTransaction                 Int                   @default(0)
-  isBlocked                     Boolean?              @default(false)
+  jpBalance                     Int                               @default(0)
+  jpTransaction                 Int                               @default(0)
+  isBlocked                     Boolean?                          @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
-  isEmailVerified               Boolean               @default(false)
+  isEmailVerified               Boolean                           @default(false)
   achievements                  String?
   goals                         String?
   keyOfferings                  String?
-  referralCode                  String?               @unique
+  referralCode                  String?                           @unique
   referredById                  String?
   socialHandles                 Json?
   website                       String?
-  membership                    String                @default("FREE")
+  membership                    String                            @default("FREE")
   subscriptionEnd               DateTime?
-  subscriptionId                String?               @unique
+  subscriptionId                String?                           @unique
   subscriptionStart             DateTime?
   subscriptionStatus            String?
   bio                           String?
-  isOnline                      Boolean?              @default(false)
-  isFirstTimeSurvey             Boolean?              @default(true)
+  isOnline                      Boolean?                          @default(false)
+  isFirstTimeSurvey             Boolean?                          @default(true)
   lastSurveyTime                DateTime?
-  challenge_limit               Int                   @default(1)
+  challenge_limit               Int                               @default(1)
+  currentCurrency               SubscriptionPlanCurrency?
+  currentPlanId                 String?
+  currentPlanInterval           PlanInterval?
+  userType                      PlanUserType?
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
+  billingInformation            BillingInformation?
   blockedUsers                  BlockedUsers?
-  buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
-  BuddyLensReviewer             BuddyLensRequest[]    @relation("BuddyLensReviewer")
+  buddyLensRequests             BuddyLensRequest[]                @relation("BuddyLensRequests")
+  BuddyLensReviewer             BuddyLensRequest[]                @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
   cart                          Cart[]
-  accountabilityComments        Comment[]             @relation("AccountabilityComments")
-  groupsOwned                   Group[]               @relation("CoachGroups")
-  Group_Group_creatorIdToUser   Group[]               @relation("Group_creatorIdToUser")
-  accountabilityMemberships     GroupMember[]         @relation("AccountabilityMemberships")
+  challengeCreatorSignature     ChallengeCreatorSignature?
+  challengeMessageReactions     ChallengeMessageReaction[]
+  accountabilityComments        Comment[]                         @relation("AccountabilityComments")
+  couponRedemptions             CouponRedemption[]
+  groupsOwned                   Group[]                           @relation("CoachGroups")
+  Group_Group_creatorIdToUser   Group[]                           @relation("Group_creatorIdToUser")
+  accountabilityMemberships     GroupMember[]                     @relation("AccountabilityMemberships")
   invoice                       Invoice[]
   magicBoxes                    MagicBox[]
+  buddyChecker                  MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyTarget")
+  buddyDoer                     MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyOwner")
+  makeoverProgressLogs          MakeoverProgressLog[]
+  mandates                      Mandate[]
   miracleLog                    MiracleLog[]
   Notification                  Notification[]
+  oneTimePurchases              OneTimeProgramPurchase[]
   orders                        Order[]
+  paymentOrders                 PaymentOrder[]
   profileViews                  ProfileView[]
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
-  referralsReceived             Referral[]            @relation("Referred")
-  referralsMade                 Referral[]            @relation("Referrer")
+  referralsReceived             Referral[]                        @relation("Referred")
+  referralsMade                 Referral[]                        @relation("Referrer")
   reminders                     Reminder[]
-  rewardsGiven                  Reward[]              @relation("AdminRewards")
-  rewardsReceived               Reward[]              @relation("MemberRewards")
+  rewardsGiven                  Reward[]                          @relation("AdminRewards")
+  rewardsReceived               Reward[]                          @relation("MemberRewards")
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
+  subscriptions                 Subscription[]
+  invoices                      SubscriptionInvoice[]             @relation("UserInvoices")
+  sundayProgressLogs            SundayProgressLog[]
   todos                         Todo[]
   transaction                   Transaction[]
-  plan                          Plan?                 @relation(fields: [planId], references: [id])
-  referredBy                    User?                 @relation("UserReferrer", fields: [referredById], references: [id])
-  referrals                     User[]                @relation("UserReferrer")
+  plan                          Plan?                             @relation(fields: [planId], references: [id])
+  referredBy                    User?                             @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals                     User[]                            @relation("UserReferrer")
   userBusinessProfile           UserBusinessProfile?
-  userNotifications             UserNotification[]    @relation("UserNotifications")
+  makeoverAreas                 UserMakeoverArea[]
+  makeoverBadges                UserMakeoverBadge[]
+  makeoverChallengeEnrollments  UserMakeoverChallengeEnrollment[]
+  makeoverCommitments           UserMakeoverCommitment[]
+  makeoverLevels                UserMakeoverLevel[]
+  selfRewards                   UserMakeoverSelfReward[]
+  userNotifications             UserNotification[]                @relation("UserNotifications")
+  programStates                 UserProgramState[]
   userStreak                    UserStreak?
+  visionImages                  UserVisionImage[]
   wishlists                     Wishlist[]
+  certificatesIssued            ChallengeCertificate[]            @relation("CertificatesIssuedByUser")
+  certificatesReceived          ChallengeCertificate[]            @relation("CertificatesReceivedByUser")
   enrollments                   ChallengeEnrollment[]
-  createdChallenges             Challenge[]           @relation("CreatedChallenges")
-  buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
-  Goal                          Goal[]                @relation("GoalToUser")
-  sentChallengeMessages   ChallengeMessage[]          @relation("UserMessages")
-  challengeMessageReactions ChallengeMessageReaction[]
-  challengePollVotes ChallengeMessagePollVote[]
-
-   certificatesReceived ChallengeCertificate[] @relation("CertificatesReceivedByUser")
-   certificatesIssued   ChallengeCertificate[] @relation("CertificatesIssuedByUser")
-
-  challengeCreatorSignature ChallengeCreatorSignature?
-
-  // membership 
-  userType                      PlanUserType?        // COACH | ENTHUSIAST | SOLOPRENEUR
-  currentPlanId        String?
-  currentPlanInterval  PlanInterval?     // MONTHLY | YEARLY | LIFETIME
-  currentCurrency      SubscriptionPlanCurrency?     // INR | USD
-
-    // NEW MEMBERSHIP RELATIONS
-  mandates           Mandate[]
-  subscriptions      Subscription[]
-  invoices        SubscriptionInvoice[]          @relation("UserInvoices")
-
-
-  couponRedemptions  CouponRedemption[]
-  billingInformation  BillingInformation[]
-
-  oneTimePurchases OneTimeProgramPurchase[]
-  paymentOrders PaymentOrder[] 
-
-    // Makeover relations ===============================
-  makeoverAreas        UserMakeoverArea[]
-  makeoverCommitments  UserMakeoverCommitment[]
-  makeoverProgressLogs MakeoverProgressLog[]
-  sundayProgressLogs SundayProgressLog[]
-  makeoverLevels       UserMakeoverLevel[]
-  makeoverBadges       UserMakeoverBadge[]
-  makeoverChallengeEnrollments UserMakeoverChallengeEnrollment[]
-  visionImages UserVisionImage[]
-  programStates UserProgramState[]
-
-  selfRewards UserMakeoverSelfReward[]
-
-  //Makeover Accountability Buddy
-  buddyDoer    MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyOwner")
-  buddyChecker MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyTarget")
-
+  sentChallengeMessages         ChallengeMessage[]                @relation("UserMessages")
+  challengePollVotes            ChallengeMessagePollVote[]
+  createdChallenges             Challenge[]                       @relation("CreatedChallenges")
+  buddyLensReviews              BuddyLensRequest[]                @relation("BuddyLensReviews")
+  Goal                          Goal[]                            @relation("GoalToUser")
+  createdItems  Item[] @relation("ItemCreator")
+  approvedItems Item[] @relation("ItemApprover")
 
   @@index([name])
 }
@@ -153,7 +140,7 @@ model Activity {
   transactionType TransactionType @default(CREDIT)
   Transaction     Transaction[]
 }
-// legacy plan model do not touch
+
 model Plan {
   id              String   @id @default(uuid())
   name            String   @unique
@@ -301,26 +288,50 @@ model ProgressVault {
   jpPointsAssigned Boolean   @default(false)
   user             User      @relation(fields: [userId], references: [id])
 }
-
+// updated Item 
 model Item {
-  id            String      @id @default(cuid())
-  name          String
-  basePrice     Float
-  monthlyPrice  Float?
-  yearlyPrice   Float?
-  lifetimePrice Float?
-  imageUrl      String
-  createdAt     DateTime    @default(now())
-  downloadUrl   String?
-  categoryId    String
-  updatedAt     DateTime    @default(now()) @updatedAt
-  cart          Cart[]
-  category      Category    @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  wishlists     Wishlist[]
+  id               String      @id @default(cuid())
+  name             String
+
+  // Pricing
+  basePrice        Float
+  monthlyPrice     Float?
+  yearlyPrice      Float?
+  lifetimePrice    Float?
+
+  // Media
+  imageUrl         String
+  downloadUrl      String?
+
+  // Category
+  categoryId       String
+  category         Category    @relation(fields: [categoryId], references: [id])
+
+  // Ownership (NEW)
+  createdByUserId  String
+  createdByRole    String     // ADMIN | COACH
+  creator          User       @relation("ItemCreator", fields: [createdByUserId], references: [id])
+
+  // Approval system (NEW)
+  isApproved       Boolean    @default(false)
+  approvedByUserId String?
+  approvedAt       DateTime?
+  approver         User?      @relation("ItemApprover", fields: [approvedByUserId], references: [id])
+
+  // Existing relations
+  cart             Cart[]
+  orderItems       OrderItem[]
+  wishlists        Wishlist[]
+
+  // Timestamps
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   @@index([categoryId])
+  @@index([createdByUserId])
+  @@index([isApproved])
 }
+
 
 model Category {
   id        String   @id @default(cuid())
@@ -472,7 +483,7 @@ model UserNotification {
   link      String?
   user      User     @relation("UserNotifications", fields: [userId], references: [id])
 }
-// legacy plan model do not touch
+
 model Invoice {
   id                 String   @id @default(uuid())
   userSubscriptionId String
@@ -597,38 +608,31 @@ model Todo {
 }
 
 model Challenge {
-  id            String                @id @default(cuid())
-  slug          String
-  title         String
-  description   String?
-  mode          ChallengeMode         @default(PUBLIC)
-  cost          Float                 @default(0)
-  reward        Float                 @default(0)
-  penalty       Float                 @default(0)
-  startDate     DateTime
-  endDate       DateTime
-  status        ChallengeStatus       @default(UPCOMING)
-  createdAt     DateTime              @default(now())
-  creatorId     String
-  social_link_task String?
-  isIssuingCertificate Boolean @default(false)
-
-  enrollments   ChallengeEnrollment[]
-  templateTasks ChallengeTask[]
-  creator       User                  @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
-  messages ChallengeMessage[]         @relation("ChallengeMessages")
-  certificates  ChallengeCertificate[]
-
-  makeoverAreaMaps        MakeoverAreaChallengeMap[]
-  makeoverEnrollments     UserMakeoverChallengeEnrollment[]
-  joinMode    ChallengeJoinMode @default(MANUAL)
+  id                   String                            @id @default(cuid())
+  slug                 String
+  title                String
+  description          String?
+  mode                 ChallengeMode                     @default(PUBLIC)
+  cost                 Float                             @default(0)
+  reward               Float                             @default(0)
+  penalty              Float                             @default(0)
+  startDate            DateTime
+  endDate              DateTime
+  status               ChallengeStatus                   @default(UPCOMING)
+  createdAt            DateTime                          @default(now())
+  creatorId            String
+  social_link_task     String?
+  isIssuingCertificate Boolean                           @default(false)
+  joinMode             ChallengeJoinMode                 @default(MANUAL)
+  makeoverAreaMaps     MakeoverAreaChallengeMap[]
+  makeoverEnrollments  UserMakeoverChallengeEnrollment[]
+  certificates         ChallengeCertificate[]
+  enrollments          ChallengeEnrollment[]
+  messages             ChallengeMessage[]                @relation("ChallengeMessages")
+  templateTasks        ChallengeTask[]
+  creator              User                              @relation("CreatedChallenges", fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@map("challenges")
-}
-
-enum ChallengeJoinMode {
-  MANUAL        // User can join freely
-  SYSTEM_ONLY   // ❌ User cannot join manually
 }
 
 model ChallengeTask {
@@ -655,146 +659,117 @@ model UserChallengeTask {
 }
 
 model ChallengeEnrollment {
-  id               String              @id @default(cuid())
-  joinedAt         DateTime            @default(now())
-  status           EnrollmentStatus    @default(IN_PROGRESS)
-  userId           String
-  challengeId      String
-  currentStreak    Int                 @default(0)
-  longestStreak    Int                 @default(0)
-  isCertificateIssued Boolean @default(false)
-  lastStreakUpdate DateTime?           @map("last_streak_update")
-  challenge        Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userTasks        UserChallengeTask[]
-
- makeoverLinks UserMakeoverChallengeEnrollment[]
+  id                  String                            @id @default(cuid())
+  joinedAt            DateTime                          @default(now())
+  status              EnrollmentStatus                  @default(IN_PROGRESS)
+  userId              String
+  challengeId         String
+  currentStreak       Int                               @default(0)
+  longestStreak       Int                               @default(0)
+  lastStreakUpdate    DateTime?                         @map("last_streak_update")
+  isCertificateIssued Boolean                           @default(false)
+  makeoverLinks       UserMakeoverChallengeEnrollment[]
+  challenge           Challenge                         @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user                User                              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userTasks           UserChallengeTask[]
 
   @@unique([userId, challengeId])
   @@map("challenge_enrollments")
 }
+
 model ChallengeMessage {
-  id          String   @id @default(cuid())
+  id          String                     @id @default(cuid())
   message     String?
-  createdAt   DateTime @default(now())
-
+  createdAt   DateTime                   @default(now())
   userId      String?
-  type        MessageType @default(USER)
   challengeId String
-
-  // ✅ NEW: metadata for SYSTEM messages (joins, leaves, admin actions, etc.)
-  meta        Json?
-  user        User?      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
-  challenge   Challenge @relation("ChallengeMessages", fields: [challengeId], references: [id], onDelete: Cascade)
-
-  reactions ChallengeMessageReaction[]
-
-  // ✅ ADDED: Poll Relation
-  poll        ChallengeMessagePoll?
-
-  // ✅ ADDED: Reply Relation
   replyToId   String?
-  replyTo     ChallengeMessage?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies     ChallengeMessage[] @relation("Replies")
+  type        MessageType                @default(USER)
+  meta        Json?
+  reactions   ChallengeMessageReaction[]
+  challenge   Challenge                  @relation("ChallengeMessages", fields: [challengeId], references: [id], onDelete: Cascade)
+  replyTo     ChallengeMessage?          @relation("Replies", fields: [replyToId], references: [id])
+  replies     ChallengeMessage[]         @relation("Replies")
+  user        User?                      @relation("UserMessages", fields: [userId], references: [id], onDelete: Cascade)
+  poll        ChallengeMessagePoll?
 
   @@index([challengeId, createdAt])
   @@map("challenge_messages")
-
-}
-enum MessageType {
-  USER
-  SYSTEM
 }
 
 model ChallengeMessagePoll {
-  id            String   @id @default(cuid())
+  id            String                       @id @default(cuid())
   question      String
-  createdAt     DateTime @default(now())
-  
-  // Options
-  allowMultiple Boolean @default(true) 
-
-  messageId     String   @unique
-  message       ChallengeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
+  createdAt     DateTime                     @default(now())
+  allowMultiple Boolean                      @default(true)
+  messageId     String                       @unique
   options       ChallengeMessagePollOption[]
+  message       ChallengeMessage             @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
   @@map("challenge_polls")
 }
 
 model ChallengeMessagePollOption {
-  id     String @id @default(cuid())
+  id     String                     @id @default(cuid())
   text   String
   pollId String
-  poll   ChallengeMessagePoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
-
+  poll   ChallengeMessagePoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes  ChallengeMessagePollVote[]
 
   @@map("challenge_poll_options")
 }
 
 model ChallengeMessagePollVote {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
+  id        String                     @id @default(cuid())
+  createdAt DateTime                   @default(now())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   optionId  String
   option    ChallengeMessagePollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user      User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, optionId]) // User can vote for an option only once
+  @@unique([userId, optionId])
   @@map("challenge_poll_votes")
 }
 
-
 model ChallengeMessageReaction {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   emoji     String
-  createdAt DateTime @default(now())
-
+  createdAt DateTime         @default(now())
   userId    String
   messageId String
-
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   message   ChallengeMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, messageId]) // One specific emoji per user per message
+  @@unique([userId, messageId])
   @@index([messageId])
 }
 
-// certificate of challenges 
 model ChallengeCertificate {
-  id              String    @id @default(cuid())
-  certificateId   String    @unique            // MTB-CHL-XXXXXX
-  participantId   String
-  challengeId     String
-  issuedById      String                     // Creator ID
-  issuedAt        DateTime  @default(now())
-
-  // Certificate assets
-  certificateUrl  String                     // PDF/ URL
-  qrCodeUrl       String?                    // QR code file if stored
-  verificationHash String                    // SHA-256 hash
-  imageUrl         String?                    // Image URL
-
-  // Relations
-  participant      User      @relation("CertificatesReceivedByUser", fields: [participantId], references: [id], onDelete: Cascade)
-  challenge       Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  certificateId    String    @unique
+  participantId    String
+  challengeId      String
+  issuedById       String
+  issuedAt         DateTime  @default(now())
+  certificateUrl   String
+  qrCodeUrl        String?
+  verificationHash String
+  imageUrl         String?
+  challenge        Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   issuedBy         User      @relation("CertificatesIssuedByUser", fields: [issuedById], references: [id], onDelete: Cascade)
+  participant      User      @relation("CertificatesReceivedByUser", fields: [participantId], references: [id], onDelete: Cascade)
 
   @@map("challenge_certificates")
 }
 
-// challenge creator signatures
 model ChallengeCreatorSignature {
-  id               String   @id @default(cuid())
-  userId           String   @unique
-  type             SignatureType   // "IMAGE", "TEXT", "DRAWN"
-  text             String?  // for text signature
-  imageUrl         String?  // signed URL from Supabase bucket
-  createdAt        DateTime @default(now())
-  user             User     @relation(fields: [userId], references: [id])
+  id        String        @id @default(cuid())
+  userId    String        @unique
+  type      SignatureType
+  text      String?
+  imageUrl  String?
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id])
 }
 
 model NotificationSettings {
@@ -879,14 +854,14 @@ model Group {
   progressStage              ProgressStage      @default(NOT_STARTED)
   notesPrivacy               NotesPrivacy       @default(VISIBLE_TO_GROUP)
   cycleDuration              CycleDuration      @default(MONTHLY)
+  notes                      String?
+  isBlocked                  Boolean            @default(false)
   activityFeed               ActivityFeedItem[]
   cycles                     Cycle[]
   coach                      User?              @relation("CoachGroups", fields: [coachId], references: [id])
   User_Group_creatorIdToUser User               @relation("Group_creatorIdToUser", fields: [creatorId], references: [id])
   members                    GroupMember[]
   Goal                       Goal[]             @relation("GoalToGroup")
-  notes                     String?
-  isBlocked                 Boolean             @default(false)
 }
 
 model GroupMember {
@@ -922,7 +897,6 @@ model Goal {
   text             String
   description      String?
   isCompleted      Boolean            @default(false)
-  notes            String?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   midwayUpdate     String?
@@ -932,6 +906,7 @@ model Goal {
   authorId         String
   groupId          String
   cycleId          String
+  notes            String?
   ActivityFeedItem ActivityFeedItem[]
   comments         Comment[]
   member           GroupMember        @relation(fields: [authorId, groupId], references: [userId, groupId], onDelete: Cascade)
@@ -993,88 +968,616 @@ model Reward {
   @@index([memberId])
   @@index([cycleId])
 }
-model Nudge{
-  id       String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  groupId  String
-  adminId  String
-  memberId  String
-  pushNotificationSent Boolean @default(false)
-  sendEmail Boolean @default(false)
-  
-  // for push notification 
-  title    String?
-  description String?
 
-  // for email
-  subject  String?
-  emailContent String?
-
-  url String
+model Nudge {
+  id                   String   @id @default(cuid())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  groupId              String
+  adminId              String
+  memberId             String
+  pushNotificationSent Boolean  @default(false)
+  sendEmail            Boolean  @default(false)
+  title                String?
+  description          String?
+  subject              String?
+  emailContent         String?
+  url                  String
 }
 
-// The new Page model for CMS from admin
 model Page {
-  id              String   @id @default(cuid())
-  title           String   // "Page Title" field
-  slug            String   @unique // Auto-generated but editable
-  
-  // Content
-  content         Json     // Stores rich text/block data
-  
-  // SEO Fields
+  id              String         @id @default(cuid())
+  title           String
+  slug            String         @unique
+  content         Json
   metaTitle       String?
   metaDescription String?
   metaKeywords    String?
   canonicalUrl    String?
-  
-  // OG (Social) Fields
   ogTitle         String?
   ogDescription   String?
-  ogImage         String?  // URL to the "Featured Image"
-  
-  // AEO & Structured Data
-  schemaType      PageSchemaType @default(NONE) // Helps UI render the right form
-  schemaMarkup    Json?    // Stores the final JSON-LD object
-
-  // Author id
+  ogImage         String?
+  schemaType      PageSchemaType @default(NONE)
+  schemaMarkup    Json?
   authorId        String?
-
-  // Status & Timestamps
-  isPublished     Boolean  @default(false) // "Publish Toggle"
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
+  isPublished     Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
-// membership model start
 model SubscriptionPlan {
-  id             String    @id @default(cuid())
-  programId      String?
-  name           String    @unique
-  userType       PlanUserType    // COACH | ENTHUSIAST
-  interval       PlanInterval    // MONTHLY | YEARLY | LIFETIME
-  amountINR      Float
-  amountUSD      Float
-  description    String?
-  isActive       Boolean   @default(true)
-  features       Json? 
-  isProgramPlan  Boolean @default(false) // hide from normal pricing
-  gstEnabled     Boolean   @default(true)
-  gstPercentage  Float     @default(18)
-
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  program         Program?              @relation("ProgramPlans", fields: [programId], references: [id])
-  subscriptions  Subscription[]
-  mandates       Mandate[]
-  coupons        Coupon[]        @relation("PlanCoupons")
-  invoices SubscriptionInvoice[]
+  id               String                   @id @default(cuid())
+  name             String                   @unique
+  userType         PlanUserType
+  interval         PlanInterval
+  amountINR        Float
+  amountUSD        Float
+  description      String?
+  isActive         Boolean                  @default(true)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  gstEnabled       Boolean                  @default(true)
+  gstPercentage    Float                    @default(18)
+  features         Json?
+  isProgramPlan    Boolean                  @default(false)
+  programId        String?
+  mandates         Mandate[]
   oneTimePurchases OneTimeProgramPurchase[]
-  paymentOrders PaymentOrder[] 
+  paymentOrders    PaymentOrder[]
+  subscriptions    Subscription[]
+  invoices         SubscriptionInvoice[]
+  program          Program?                 @relation("ProgramPlans", fields: [programId], references: [id])
+  coupons          Coupon[]                 @relation("PlanCoupons")
+  razorpayPlanId   String?  @unique 
+  razorpayPlanCache RazorpayPlanCache[]
 }
+
+model Mandate {
+  id              String           @id @default(cuid())
+  mandateId       String           @unique
+  userId          String
+  planId          String
+  status          MandateStatus
+  currency        String
+  paymentMethod   String?
+  frequency       PlanInterval
+  maxAmount       Float
+  nextBillingDate DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  plan            SubscriptionPlan @relation(fields: [planId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
+  subscriptions   Subscription?
+}
+
+model Subscription {
+  id                  String                  @id @default(cuid())
+  userId              String
+  planId              String
+  mandateId           String?                 @unique
+  couponId            String?
+  status              SubscriptionStatus
+  startDate           DateTime
+  endDate             DateTime
+  renewedAt           DateTime?
+  trialEndsAt         DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  orderId             String?
+  grantedByPurchaseId String?                 @unique
+  paymentOrderId      String?
+  coupon              Coupon?                 @relation(fields: [couponId], references: [id])
+  grantedByPurchase   OneTimeProgramPurchase? @relation("FreeSubscriptionGrant", fields: [grantedByPurchaseId], references: [id])
+  mandate             Mandate?                @relation(fields: [mandateId], references: [id])
+  plan                SubscriptionPlan        @relation(fields: [planId], references: [id])
+  user                User                    @relation(fields: [userId], references: [id])
+  invoices            SubscriptionInvoice[]
+  razorpaySubscriptionId  String?
+}
+
+model PaymentOrder {
+  id              String           @id @default(cuid())
+  userId          String
+  planId          String
+  orderId         String?          @unique
+  currency        String
+  status          PaymentStatus
+  paymentMethod   String?
+  paymentId       String?
+  couponId        String?
+  billingInfoId   String?
+  createdAt       DateTime         @default(now())
+  paidAt          DateTime?
+  cashfreeOrderId String?
+  razorpayOrderId String?
+  razorpaySubscriptionId String?
+  razorpayReceipt String?
+  baseAmount      Float
+  discountApplied Float            @default(0)
+  gstAmount       Float            @default(0)
+  totalAmount     Float
+  coupon          Coupon?          @relation(fields: [couponId], references: [id])
+  plan            SubscriptionPlan @relation(fields: [planId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
+}
+
+model SubscriptionInvoice {
+  id                   String           @id @default(cuid())
+  subscriptionId       String
+  userId               String
+  planId               String
+  baseAmount           Float
+  gstAmount            Float            @default(0)
+  totalAmount          Float
+  currency             String
+  serialNumberIN       Int?
+  serialNumberINTL     Int?
+  transactionId        String?
+  status               InvoiceStatus
+  billingDate          DateTime
+  createdAt            DateTime         @default(now())
+  billingInformationId String?
+  plan                 SubscriptionPlan @relation(fields: [planId], references: [id])
+  subscription         Subscription     @relation(fields: [subscriptionId], references: [id])
+  user                 User             @relation("UserInvoices", fields: [userId], references: [id])
+}
+
+model Coupon {
+  id                   String                     @id @default(cuid())
+  couponCode           String                     @unique
+  description          String?
+  type                 CouponType
+  discountPercentage   Float?
+  freeDays             Int?
+  applicableUserTypes  CouponUserType[]
+  applicableCurrencies SubscriptionPlanCurrency[]
+  firstCycleOnly       Boolean                    @default(false)
+  multiCycle           Boolean                    @default(false)
+  startDate            DateTime
+  endDate              DateTime
+  maxGlobalUses        Int?
+  maxUsesPerUser       Int?                       @default(1)
+  autoApply            Boolean                    @default(false)
+  autoApplyConditions  Json?
+  status               CouponStatus
+  createdBy            String?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  discountAmountINR    Float?
+  discountAmountUSD    Float?
+  redemptions          CouponRedemption[]
+  oneTimePurchases     OneTimeProgramPurchase[]
+  paymentOrders        PaymentOrder[]
+  subscriptions        Subscription[]
+  applicablePlans      SubscriptionPlan[]         @relation("PlanCoupons")
+}
+
+model CouponRedemption {
+  id              String   @id @default(cuid())
+  couponId        String
+  userId          String
+  usedAt          DateTime @default(now())
+  appliedPlan     String
+  discountApplied Float
+  coupon          Coupon   @relation(fields: [couponId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model BillingInformation {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  fullName     String
+  email        String
+  phone        String?
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model AdminCashfreeConfigSettings {
+  id           Int      @id @default(autoincrement())
+  cashfreeMode String   @default("sandbox")
+  updatedAt    DateTime @updatedAt
+}
+
+model RazorpayPlanCache {
+  id                  String   @id @default(cuid())
+  razorpayPlanId      String   @unique
+  razorpayItemId      String?  // optional, Razorpay internally creates item
+  amount              Decimal  @db.Decimal(10, 2)
+  currency            String
+  interval            PlanInterval  // MONTHLY | YEARLY
+  intervalCount       Int      @default(1)
+  gstEnabled          Boolean
+  gstPercentage       Decimal  @db.Decimal(5, 2)
+  planName            String
+  description         String?
+  subscriptionPlanId  String?
+  subscriptionPlan    SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  @@index([amount, currency, interval])
+}
+
+
+model Program {
+  id                             String                   @id @default(cuid())
+  name                           String                   @unique
+  slug                           String                   @unique
+  description                    String?
+  durationDays                   Int?
+  isOneTimeProduct               Boolean                  @default(true)
+  isActive                       Boolean                  @default(true)
+  grantsFreeSubscriptionToPlanId String?
+  createdAt                      DateTime                 @default(now())
+  updatedAt                      DateTime                 @updatedAt
+  endDate                        DateTime?
+  startDate                      DateTime?
+  onboardingEndDate              DateTime?
+  onboardingStartDate            DateTime?
+  max_golbal_points              Int?
+  purchases                      OneTimeProgramPurchase[]
+  plans                          SubscriptionPlan[]       @relation("ProgramPlans")
+  userProgramStates              UserProgramState[]
+}
+
+model OneTimeProgramPurchase {
+  id                 String           @id @default(cuid())
+  productId          String
+  planId             String
+  userId             String
+  orderId            String?
+  cashfreeOrderId    String?
+  razorpayOrderId    String?
+  razorpayReceipt    String?
+  razorpaySubscriptionId String?
+  baseAmount         Float
+  gstAmount          Float            @default(0)
+  discountApplied    Float            @default(0)
+  totalAmount        Float
+  currency           String
+  couponId           String?
+  status             PaymentStatus
+  purchasedAt        DateTime         @default(now())
+  freeSubscriptionId String?          @unique
+  coupon             Coupon?          @relation(fields: [couponId], references: [id])
+  plan               SubscriptionPlan @relation(fields: [planId], references: [id])
+  product            Program          @relation(fields: [productId], references: [id])
+  user               User             @relation(fields: [userId], references: [id])
+  freeSubscription   Subscription?    @relation("FreeSubscriptionGrant")
+}
+
+model MakeoverArea {
+  id            Int                        @id
+  name          String                     @unique
+  description   String
+  challengeMaps MakeoverAreaChallengeMap[]
+  progressLogs  MakeoverProgressLog[]
+  userAreas     UserMakeoverArea[]
+  commitments   UserMakeoverCommitment[]
+}
+
+model MakeoverAreaChallengeMap {
+  id          String       @id @default(cuid())
+  programId   String
+  areaId      Int
+  challengeId String
+  area        MakeoverArea @relation(fields: [areaId], references: [id])
+  challenge   Challenge    @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, areaId])
+}
+
+model UserMakeoverArea {
+  id        String       @id @default(cuid())
+  userId    String
+  programId String
+  areaId    Int
+  year      Int
+  area      MakeoverArea @relation(fields: [areaId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId])
+}
+
+model MakeoverGoalLibrary {
+  id       String  @id @default(cuid())
+  areaId   Int
+  title    String
+  isCustom Boolean @default(false)
+
+  @@unique([areaId, title])
+}
+
+model MakeoverIdentityLibrary {
+  id        String  @id @default(cuid())
+  areaId    Int
+  statement String
+  isCustom  Boolean @default(false)
+
+  @@unique([areaId, statement])
+}
+
+model MakeoverDailyActionLibrary {
+  id       String  @id @default(cuid())
+  areaId   Int
+  title    String
+  isCustom Boolean @default(false)
+
+  @@unique([areaId, title])
+}
+
+model UserMakeoverCommitment {
+  id              String        @id @default(cuid())
+  userId          String
+  programId       String
+  areaId          Int?
+  quarter         String
+  goalId          String?
+  goalText        String?
+  identityId      String?
+  identityText    String?
+  actionId        String?
+  actionText      String?
+  visionStatement String?
+  isLocked        Boolean       @default(false)
+  area            MakeoverArea? @relation(fields: [areaId], references: [id])
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId, quarter])
+}
+
+model UserVisionImage {
+  id        String   @id @default(cuid())
+  userId    String
+  programId String
+  quarter   String
+  imageUrl  String
+  isLocked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, quarter])
+}
+
+model UserProgramState {
+  id                       String    @id @default(cuid())
+  userId                   String
+  programId                String
+  onboarded                Boolean   @default(false)
+  onboardedAt              DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  lastReminderDate         DateTime?
+  inactivity3DayNotified   DateTime?
+  inactivity7DayNotified   DateTime?
+  lastGoaMilestoneNotified Int       @default(0)
+  program                  Program   @relation(fields: [programId], references: [id])
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId])
+}
+
+model MakeoverProgressLog {
+  id            String       @id @default(cuid())
+  userId        String
+  programId     String
+  areaId        Int
+  date          DateTime     @db.Date
+  identityDone  Boolean?
+  actionDone    Boolean?
+  winLogged     Boolean?
+  weeklyWin     String?
+  identityShift String?
+  nextWeekFocus String?
+  sharedInGroup Boolean      @default(false)
+  pointsEarned  Int          @default(0)
+  completedAt   DateTime     @default(now())
+  area          MakeoverArea @relation(fields: [areaId], references: [id])
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId, date])
+}
+
+model SundayProgressLog {
+  id                  String   @id @default(cuid())
+  userId              String
+  programId           String
+  date                DateTime
+  card1WeeklyWin      Boolean  @default(false)
+  card1DailyWin       Boolean  @default(false)
+  card1NextWeekDone   Boolean  @default(false)
+  card2Done           Boolean  @default(false)
+  card3Done           Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  sundayCardId        Int
+  card1NextWeekTaskId String?
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, sundayCardId, date], name: "uniq_sunday_progress")
+  @@index([userId])
+  @@index([programId])
+}
+
+model MakeoverCompletionSnapshot {
+  id                   String @id @default(cuid())
+  userId               String
+  programId            String
+  areaId               Int
+  month                String
+  completionPercentage Float
+
+  @@unique([userId, programId, areaId, month])
+}
+
+model MakeoverPointsSummary {
+  id          String   @id @default(cuid())
+  userId      String
+  programId   String
+  areaId      Int
+  totalPoints Int      @default(0)
+  lastUpdated DateTime @updatedAt
+
+  @@unique([userId, programId, areaId])
+}
+
+model MakeoverLevel {
+  id            Int                 @id
+  name          String
+  minPoints     Int
+  icon          String?
+  identityState String?
+  levelTheme    String?
+  users         UserMakeoverLevel[]
+}
+
+model UserMakeoverLevel {
+  id        String        @id @default(cuid())
+  userId    String
+  programId String
+  levelId   Int
+  earnedAt  DateTime      @default(now())
+  level     MakeoverLevel @relation(fields: [levelId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId])
+}
+
+model MakeoverBadge {
+  id              String              @id @default(cuid())
+  name            String              @unique
+  thresholdPoints Int?
+  icon            String?
+  type            MakeoverBadgeType?
+  description     String?
+  users           UserMakeoverBadge[]
+}
+
+model UserMakeoverBadge {
+  id        String        @id @default(cuid())
+  userId    String
+  programId String
+  badgeId   String
+  earnedAt  DateTime      @default(now())
+  badge     MakeoverBadge @relation(fields: [badgeId], references: [id])
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, badgeId])
+}
+
+model MakeoverAccountabilityBuddy {
+  id          String @id @default(cuid())
+  userId      String
+  buddyUserId String
+  programId   String
+  areaId      Int
+  quarter     String
+  buddyUser   User   @relation("MakeoverBuddyTarget", fields: [buddyUserId], references: [id], onDelete: Cascade)
+  user        User   @relation("MakeoverBuddyOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId, quarter])
+}
+
+model UserMakeoverChallengeEnrollment {
+  id           String              @id @default(cuid())
+  userId       String
+  programId    String
+  areaId       Int
+  challengeId  String
+  enrollmentId String
+  challenge    Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  enrollment   ChallengeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, areaId])
+}
+
+model MakeoverSelfRewardLibrary {
+  id          String                         @id @default(cuid())
+  title       String
+  description String?
+  levelId     Int
+  levelName   String
+  minPoints   Int
+  isActive    Boolean                        @default(true)
+  createdAt   DateTime                       @default(now())
+  updatedAt   DateTime                       @updatedAt
+  checkpoints MakeoverSelfRewardCheckpoint[]
+  options     MakeoverSelfRewardOption[]
+}
+
+model MakeoverSelfRewardOption {
+  id          String                    @id @default(cuid())
+  libraryId   String
+  title       String
+  description String?
+  isActive    Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  library     MakeoverSelfRewardLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  userRewards UserMakeoverSelfReward[]
+}
+
+model MakeoverSelfRewardCheckpoint {
+  id              String                    @id @default(cuid())
+  levelId         Int
+  minPoints       Int
+  orderIndex      Int
+  createdAt       DateTime                  @default(now())
+  rewardLibraryId String
+  rewardLibrary   MakeoverSelfRewardLibrary @relation(fields: [rewardLibraryId], references: [id])
+  userRewards     UserMakeoverSelfReward[]
+
+  @@unique([levelId, minPoints])
+  @@index([levelId])
+}
+
+model UserMakeoverSelfReward {
+  id                      String                       @id @default(cuid())
+  userId                  String
+  programId               String
+  levelId                 Int
+  levelName               String
+  checkpointId            String
+  isCustom                Boolean                      @default(false)
+  customTitle             String?
+  customDescription       String?
+  pointsAtUnlock          Int
+  unlockedAt              DateTime                     @default(now())
+  completedAt             DateTime?
+  rewardOptionId          String?
+  unclaimedReminderSentAt DateTime?
+  checkpoint              MakeoverSelfRewardCheckpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+  rewardOption            MakeoverSelfRewardOption?    @relation(fields: [rewardOptionId], references: [id])
+  user                    User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, checkpointId])
+  @@index([userId, programId, levelId])
+}
+
+model AdminPaymentGatewayConfig {
+  id            Int      @id @default(autoincrement())
+  activeGateway String   @default("CASHFREE")
+  updatedAt     DateTime
+}
+
+enum ChallengeJoinMode {
+  MANUAL
+  SYSTEM_ONLY
+}
+
+enum MessageType {
+  USER
+  SYSTEM
+}
+
 enum SubscriptionPlanCurrency {
   INR
   USD
@@ -1095,27 +1598,6 @@ enum PlanInterval {
   ONE_TIME
 }
 
-model Mandate {
-  id              String     @id @default(cuid())
-  mandateId       String     @unique
-  userId          String
-  planId          String
-
-  status          MandateStatus // PENDING, ACTIVE, FAILED, CANCELLED
-  currency        String        // INR | USD
-  paymentMethod   String?       // UPI, CARD
-  frequency       PlanInterval  // MONTHLY or YEARLY only
-  maxAmount       Float
-
-  nextBillingDate DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  user            User       @relation(fields: [userId], references: [id])
-  plan            SubscriptionPlan       @relation(fields: [planId], references: [id])
-  subscriptions   Subscription[]
-}
-
 enum MandateStatus {
   PENDING
   ACTIVE
@@ -1123,146 +1605,22 @@ enum MandateStatus {
   CANCELLED
 }
 
-model Subscription {
-  id               String      @id @default(cuid())
-  userId           String
-  planId           String
-  mandateId        String?      @unique   // null for lifetime or free trial
-  orderId          String?     // optional
-  couponId         String?     // optional
-  paymentOrderId String?  
-
-  grantedByPurchaseId String?   @unique// if the user purchase our program we grant them membership
-  status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL | CANCELLATION_PENDING
-  startDate        DateTime
-  endDate          DateTime
-  renewedAt        DateTime?
-  trialEndsAt      DateTime?   // for enthusiast free trials
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-
-  user             User        @relation(fields: [userId], references: [id])
-  plan             SubscriptionPlan        @relation(fields: [planId], references: [id])
-  mandate          Mandate?    @relation(fields: [mandateId], references: [id])
-  coupon           Coupon?     @relation(fields: [couponId], references: [id])
-  invoices         SubscriptionInvoice[]
-grantedByPurchase OneTimeProgramPurchase? @relation("FreeSubscriptionGrant", fields: [grantedByPurchaseId], references: [id])
-}
-
 enum SubscriptionStatus {
   ACTIVE
   CANCELLED
   EXPIRED
   FREE_TRIAL
-  FREE_GRANT
   PENDING
   CANCELLATION_PENDING
-  CREATED 
-  AUTHORIZED        // Amount authorized but not captured (eNACH, cards)
-  DROPPED           // User abandoned checkout
-}
-
-model PaymentOrder {
-  id            String   @id @default(cuid())
-  userId        String
-  planId        String
-
-  orderId       String?   @unique
-  cashfreeOrderId    String?
-  baseAmount         Float
-  gstAmount          Float @default(0)
-  discountApplied    Float @default(0)
-  totalAmount        Float
-  currency      String
-
-  status        PaymentStatus
-  paymentMethod String?
-  paymentId     String?
-
-  couponId      String?
-  billingInfoId String?
-
-  createdAt     DateTime @default(now())
-  paidAt        DateTime?
-
-  user          User             @relation(fields: [userId], references: [id])
-  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
-  coupon        Coupon?           @relation(fields: [couponId], references: [id])
-}
-
-
-model SubscriptionInvoice {
-  id               String    @id @default(cuid())
-  subscriptionId   String
-  userId           String
-  planId           String
-
-  baseAmount       Float
-  gstAmount        Float      @default(0)
-  totalAmount      Float
-  currency         String     // INR | USD
-
-  serialNumberIN   Int?       // Indian GST invoice series
-  serialNumberINTL Int?       // International invoice series
-
-  transactionId    String?
-  status           InvoiceStatus // PAID | FAILED
-
-  billingDate      DateTime
-  
-  billingInformationId  String?
-
-  createdAt        DateTime @default(now())
-
-  subscription     Subscription @relation(fields: [subscriptionId], references: [id])
-  user             User         @relation("UserInvoices", fields: [userId], references: [id])
-  plan             SubscriptionPlan         @relation(fields: [planId], references: [id])
+  FREE_GRANT
+  CREATED
+  AUTHORIZED
+  DROPPED
 }
 
 enum InvoiceStatus {
   PAID
   FAILED
-}
-
-model Coupon {
-  id                  String      @id @default(cuid())
-  couponCode          String      @unique
-  description         String?
-
-  type                CouponType
-
-  // Discount types
-  discountPercentage  Float?
-  discountAmountUSD   Float?
-  discountAmountINR   Float?
-  freeDays            Int?
-
-  // Applicability
-  applicableUserTypes  CouponUserType[]
-  applicablePlans      SubscriptionPlan[]           @relation("PlanCoupons")
-  applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
-  firstCycleOnly        Boolean @default(false)
-  multiCycle            Boolean @default(false)
-
-  // Validity
-  startDate           DateTime
-  endDate             DateTime
-  maxGlobalUses       Int?
-  maxUsesPerUser      Int? @default(1)
-
-  // Auto apply
-  autoApply           Boolean @default(false)
-  autoApplyConditions Json?
-
-  status              CouponStatus
-
-  createdBy           String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  subscriptions Subscription[]
-  redemptions         CouponRedemption[]
-  oneTimePurchases OneTimeProgramPurchase[]
-  paymentOrders PaymentOrder[] 
 }
 
 enum CouponType {
@@ -1276,8 +1634,8 @@ enum CouponType {
 enum CouponUserType {
   COACH
   ENTHUSIAST
-  SOLOPRENEUR
   ALL
+  SOLOPRENEUR
 }
 
 enum CouponStatus {
@@ -1286,378 +1644,16 @@ enum CouponStatus {
   EXPIRED
 }
 
-model CouponRedemption {
-  id          String   @id @default(cuid())
-  couponId    String
-  userId      String
-  usedAt      DateTime @default(now())
-  appliedPlan String
-  discountApplied Float
-
-  coupon      Coupon @relation(fields: [couponId], references: [id])
-  user        User   @relation(fields: [userId], references: [id])
-}
-model BillingInformation {
-  id          String   @id @default(cuid())
-  userId      String   @unique  
-  fullName    String
-  email       String
-  phone       String?
-  
-  addressLine1  String
-  addressLine2  String?
-  city          String
-  state         String
-  postalCode    String
-  country       String   // "IN" or "US" etc.
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User     @relation(fields: [userId], references: [id])
-}
-
-model AdminCashfreeConfigSettings {
-  id           Int      @id @default(autoincrement())
-  cashfreeMode String   @default("sandbox") // "sandbox" | "prod"
-  updatedAt    DateTime @updatedAt
-}
-
-model AdminPaymentGatewayConfig {
-  id            Int      @id @default(autoincrement())
-  activeGateway String   @default("CASHFREE") // CASHFREE | RAZORPAY
-  updatedAt     DateTime @updatedAt
-}
-
-
-// membership model end
-
-// program models start
-model Program {
-  id               String   @id @default(cuid())
-  name             String   @unique
-  slug             String   @unique
-  description      String?
-  durationDays     Int?
-  isOneTimeProduct Boolean  @default(true)
-  isActive         Boolean  @default(true)
-
-  // Optional: assign a plan to grant
-  grantsFreeSubscriptionToPlanId String?
-
-   // 🔐 Program lifecycle
-  startDate        DateTime?  
-  endDate          DateTime?
-  onboardingStartDate DateTime?
-  onboardingEndDate  DateTime?
-  max_golbal_points  Int?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  plans              SubscriptionPlan[] @relation("ProgramPlans")
-  purchases          OneTimeProgramPurchase[]
-  userProgramStates UserProgramState[]
-}
-model OneTimeProgramPurchase {
-  id                 String   @id @default(cuid())
-
-  productId          String
-  planId             String
-  userId             String
-  orderId            String?
-  cashfreeOrderId    String?
-
-  baseAmount         Float
-  gstAmount          Float @default(0)
-  discountApplied    Float @default(0)
-  totalAmount        Float
-  currency           String
-  couponId           String?
-
-  status             PaymentStatus
-  purchasedAt        DateTime @default(now())
-
-  freeSubscriptionId String? @unique
-
-  // Correct: this side defines the FK
-  freeSubscription   Subscription?  @relation("FreeSubscriptionGrant")
-
-  // Relations
-  product Program            @relation(fields: [productId], references: [id])
-  plan    SubscriptionPlan   @relation(fields: [planId], references: [id])
-  user    User               @relation(fields: [userId], references: [id])
-  coupon  Coupon?            @relation(fields: [couponId], references: [id])
-}
-
 enum PaymentStatus {
-  CREATED           // Order created in DB, payment not started
-  PENDING           // User in checkout OR payment authorization pending
-  AUTHORIZED        // Amount authorized but not captured (eNACH, cards)
-  PAID              // Fully paid & captured
-  DROPPED           // User abandoned checkout
-  FAILED            // Explicit failure from gateway
-  CANCELLED         // User or system cancelled before payment
-  REFUNDED          // Fully refunded after payment
+  PAID
+  PENDING
+  FAILED
+  CREATED
+  AUTHORIZED
+  DROPPED
+  CANCELLED
+  REFUNDED
   PARTIALLY_REFUNDED
-}
-
-// program models end
-// makeover programs feature for user starts
-
-
-model MakeoverArea {
-  id          Int    @id
-  name        String @unique
-  description String
-
-  challengeMaps MakeoverAreaChallengeMap[]
-  userAreas     UserMakeoverArea[]
-  commitments   UserMakeoverCommitment[]
-  progressLogs  MakeoverProgressLog[]
-}
-
-// Program → Area → Challenge
-model MakeoverAreaChallengeMap {
-  id          String @id @default(cuid())
-  programId   String
-  areaId      Int
-  challengeId String
-  area      MakeoverArea @relation(fields: [areaId], references: [id])
-  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  
-
-  @@unique([programId, areaId])
-}
-
-// User onboarding (area selection)
-model UserMakeoverArea {
-  id        String @id @default(cuid())
-  userId    String
-  programId String
-  areaId    Int
-  year      Int
-  area MakeoverArea @relation(fields: [areaId], references: [id])
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, programId, areaId])
-}
-
-// Libraries
-model MakeoverGoalLibrary {
-  id       String @id @default(cuid())
-  areaId   Int
-  title    String
-  isCustom Boolean @default(false)
-
-  @@unique([areaId, title])
-}
-
-model MakeoverIdentityLibrary {
-  id        String @id @default(cuid())
-  areaId    Int
-  statement String
-  isCustom  Boolean @default(false)
-
-  @@unique([areaId, statement])
-}
-
-model MakeoverDailyActionLibrary {
-  id       String @id @default(cuid())
-  areaId   Int
-  title    String
-  isCustom Boolean @default(false)
-
-  @@unique([areaId, title])
-}
-
-// User commitment (quarter locked)
-model UserMakeoverCommitment {
-  id        String @id @default(cuid())
-  userId    String
-  programId String
-  areaId    Int?
-  quarter   String
-
-  goalId   String?
-  goalText String?
-
-  identityId   String?
-  identityText String?
-
-  actionId   String?
-  actionText String?
-  visionStatement String?
-  isLocked Boolean @default(false)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  area   MakeoverArea? @relation(fields: [areaId], references: [id])
-
-
-  @@unique([userId, programId, areaId, quarter])
-}
-
-model UserVisionImage {
-  id        String @id @default(cuid())
-
-  userId    String
-  programId String
-  quarter   String
-
-  imageUrl  String
-
-  isLocked  Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, programId, quarter])
-}
-// User program state (onboarding status)
-model UserProgramState {
-  id        String   @id @default(cuid())
-
-  userId    String
-  programId String
-
-  // Has the user completed onboarding?
-  onboarded Boolean  @default(false)
-  onboardedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  lastReminderDate DateTime?
-  inactivity3DayNotified  DateTime?
-  inactivity7DayNotified  DateTime?
-
-  // Goa milestone guard
-  lastGoaMilestoneNotified Int @default(0)
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  program Program @relation(fields: [programId], references: [id])
-
-  @@unique([userId, programId])
-}
-
-
-// Daily + weekly execution log
-model MakeoverProgressLog {
-  id        String   @id @default(cuid())
-  userId    String
-  programId String
-  areaId    Int
-  date      DateTime @db.Date
-  completedAt DateTime @default(now())
-
-  identityDone Boolean?
-  actionDone   Boolean?
-  winLogged    Boolean?
-
-  weeklyWin     String?
-  identityShift String?
-  nextWeekFocus String?
-  sharedInGroup Boolean @default(false)
-
-  pointsEarned Int @default(0)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  area MakeoverArea @relation(fields: [areaId], references: [id])
-
-  @@unique([userId, programId, areaId, date])
-}
-
-model SundayProgressLog {
-  id String @id @default(cuid())
-
-  userId    String
-  programId String
-  sundayCardId    Int
-  date      DateTime
-
-  // ---------- Card 1 ----------
-  card1WeeklyWin     Boolean @default(false)
-  card1DailyWin      Boolean @default(false)
-  card1NextWeekDone  Boolean @default(false)
-  card1NextWeekTaskId   String? 
-
-  // ---------- Card 2 ----------
-  card2Done Boolean @default(false)
-
-  // ---------- Card 3 ----------
-  card3Done Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // ---------- Relations ----------
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // ---------- Guards ----------
-  @@unique([userId, programId, sundayCardId, date], name: "uniq_sunday_progress")
-  @@index([userId])
-  @@index([programId])
-}
-
-// Derived data
-model MakeoverCompletionSnapshot {
-  id        String @id @default(cuid())
-  userId    String
-  programId String
-  areaId    Int
-  month     String
-  completionPercentage Float
-
-  @@unique([userId, programId, areaId, month])
-}
-
-model MakeoverPointsSummary {
-  id          String @id @default(cuid())
-  userId      String
-  programId   String
-  areaId      Int
-  totalPoints Int @default(0)
-  lastUpdated DateTime @updatedAt
-
-  @@unique([userId, programId, areaId])
-}
-
-// Levels
-model MakeoverLevel {
-  id        Int @id
-  name      String
-  minPoints Int
-
-  icon      String? // lucide-react icon name
-  identityState  String?
-  levelTheme     String?
-
-  users UserMakeoverLevel[]
-}
-
-model UserMakeoverLevel {
-  id         String @id @default(cuid())
-  userId     String
-  programId  String
-  levelId    Int
-  earnedAt DateTime @default(now())
-
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level MakeoverLevel @relation(fields: [levelId], references: [id])
-
-  @@unique([userId, programId])
-}
-
-// Badges
-model MakeoverBadge {
-  id              String @id @default(cuid())
-  name            String @unique
-  description     String?   
-  type            MakeoverBadgeType?  // LEVEL | MILESTONE
-  thresholdPoints Int?
-  icon            String? // lucide-react icon name
-  users UserMakeoverBadge[]
 }
 
 enum MakeoverBadgeType {
@@ -1665,148 +1661,12 @@ enum MakeoverBadgeType {
   MILESTONE
 }
 
-model UserMakeoverBadge {
-  id        String @id @default(cuid())
-  userId    String
-  programId String
-  badgeId   String
-  earnedAt  DateTime @default(now())
-
-  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badge MakeoverBadge @relation(fields: [badgeId], references: [id])
-
-  @@unique([userId, programId, badgeId])
-}
-
-// Accountability buddy
-model MakeoverAccountabilityBuddy {
-  id          String @id @default(cuid())
-  userId      String
-  buddyUserId String
-  programId   String
-  areaId      Int
-  quarter     String
-
-  user      User @relation("MakeoverBuddyOwner", fields: [userId], references: [id], onDelete: Cascade)
-  buddyUser User @relation("MakeoverBuddyTarget", fields: [buddyUserId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, programId, areaId, quarter])
-}
-
-// 🔥 Makeover ↔ Challenge enrollment link
-model UserMakeoverChallengeEnrollment {
-  id           String @id @default(cuid())
-  userId       String
-  programId    String
-  areaId       Int
-  challengeId  String
-  enrollmentId String
-
-  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  challenge  Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  enrollment ChallengeEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, programId, areaId])
-}
-
-// self rewards
-model MakeoverSelfRewardLibrary {
-  id          String @id @default(cuid())
-
-  title       String
-  description String?
-
-  levelId     Int        
-  levelName   String
-  minPoints   Int      
-
-  isActive    Boolean @default(true)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  options     MakeoverSelfRewardOption[]
-  checkpoints MakeoverSelfRewardCheckpoint[]
-}
-
-model MakeoverSelfRewardOption {
-  id            String @id @default(cuid())
-
-  libraryId      String
-
-  title         String
-  description   String?
-
-  isActive      Boolean @default(true)
-
-  createdAt     DateTime @default(now())
-
-  library       MakeoverSelfRewardLibrary @relation(fields: [libraryId], references: [id], onDelete: Cascade)
-  userRewards UserMakeoverSelfReward[] 
-}
-
-model MakeoverSelfRewardCheckpoint {
-  id              String @id @default(cuid())
-
-  levelId         Int
-  rewardLibraryId String   
-  minPoints  Int   // GLOBAL points
-  orderIndex      Int
-
-  createdAt       DateTime @default(now())
-  rewardLibrary   MakeoverSelfRewardLibrary  @relation(fields: [rewardLibraryId], references: [id])
-
-  userRewards     UserMakeoverSelfReward[]
-
-  @@unique([levelId, minPoints])
-  @@index([levelId])
-}
-
-
-model UserMakeoverSelfReward {
-  id              String @id @default(cuid())
-
-  userId          String
-  programId       String
-
-  // snapshot at unlock time
-  levelId         Int
-  levelName       String
-
-  checkpointId    String      // MakeoverSelfRewardCheckpoint.id
-
-  checkpoint      MakeoverSelfRewardCheckpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
-
-  // 🔑 reward selection
-  rewardOptionId          String?     // null if custom reward
-  rewardOption    MakeoverSelfRewardOption? @relation(fields: [rewardOptionId], references: [id])
-
-  isCustom        Boolean @default(false)
-
-  // 🧠 custom reward data
-  customTitle     String?
-  customDescription String?
-
-  pointsAtUnlock  Int
-  unlockedAt      DateTime @default(now())
-  completedAt     DateTime?
-  unclaimedReminderSentAt DateTime?
-
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, programId, checkpointId])
-  @@index([userId, programId, levelId])
-}
-
-// makeover programs feature for user ends
-// Enum for the AEO/Schema feature
 enum PageSchemaType {
-  NONE        // Default
+  NONE
   ARTICLE
   FAQ_PAGE
   HOW_TO
-  CUSTOM_JSON // For raw JSON-LD input
+  CUSTOM_JSON
 }
 
 enum Audience {
@@ -1864,10 +1724,9 @@ enum ActivityType {
   CHALLENGE_FEE_EARNED
   CHALLENGE_PENALTY
   CHALLENGE_REWARD
-  // accountability group related
   REWARD_JP_TO_MEMBER_BY_COACH
-  COACH_REWARD_SPEND      // For the admin's deduction
-  COACH_REWARD_RECEIVE    // For the member's credit
+  COACH_REWARD_SPEND
+  COACH_REWARD_RECEIVE
 }
 
 enum TransactionType {
@@ -1992,12 +1851,12 @@ enum CycleDuration {
 }
 
 enum ProgressStage {
-  STAGE_2
-  STAGE_3
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
   BLOCKED
+  STAGE_2
+  STAGE_3
 }
 
 enum NotesPrivacy {
@@ -2024,7 +1883,6 @@ enum GroupRole {
   MEMBER
 }
 
-// enum for challenge creator signature 
 enum SignatureType {
   IMAGE
   TEXT

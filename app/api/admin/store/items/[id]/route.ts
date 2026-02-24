@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
-import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload";
+import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
 const prisma = new PrismaClient();
 
@@ -141,5 +143,77 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     );
   } finally {
     await prisma.$disconnect();
+  }
+}
+
+
+// PATCH /api/admin/store/items/[id]/approve - Approve or disapprove an item
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check if user is admin
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    const itemId = params.id;
+    const body = await request.json();
+    const { isApproved } = body;
+
+    if (typeof isApproved !== "boolean") {
+      return NextResponse.json(
+        { error: "isApproved must be a boolean value" },
+        { status: 400 }
+      );
+    }
+
+    // Check if item exists
+    const existingItem = await prisma.item.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!existingItem) {
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
+    }
+
+    // Update the approval status
+    const updatedItem = await prisma.item.update({
+      where: { id: itemId },
+      data: {
+        isApproved,
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        item: updatedItem,
+        message: isApproved
+          ? "Item approved successfully"
+          : "Item disapproved successfully",
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error("Error updating item approval status:", errorMessage);
+    return NextResponse.json(
+      { error: "Failed to update item approval status", message: errorMessage },
+      { status: 500 }
+    );
   }
 }
