@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
   PaymentStatus,
-  Subscription,
   SubscriptionStatus,
 } from "@prisma/client";
 import { verifyRazorpaySignature } from "@/lib/razorpay/razorpay";
