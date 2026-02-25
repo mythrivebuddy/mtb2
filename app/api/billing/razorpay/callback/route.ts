@@ -394,14 +394,14 @@ export async function GET(req: NextRequest) {
     // ------------------------------------------------------------------
     let isVerified = false;
     let pid: string | null = null;  // internal DB id sent to success page
-    let type: "lifetime" | "subscription" = "lifetime";
+    let type="membership";
 
     for (let i = 0; i < 10; i++) {
       console.log(`Polling attempt ${i + 1} for ${orderId ?? subId}`);
 
       // ── LIFETIME (one-time order) ───────────────────────────────────
       if (orderId) {
-        type = "lifetime";
+        // type = "lifetime";
 
         const order = await prisma.paymentOrder.findFirst({
           where: { razorpayOrderId: orderId },
@@ -418,7 +418,7 @@ export async function GET(req: NextRequest) {
 
       // ── SUBSCRIPTION (recurring) ────────────────────────────────────
       if (subId) {
-        type = "subscription";
+        // type = "subscription";
 
         const sub = await prisma.subscription.findFirst({
           where: { razorpaySubscriptionId: subId },

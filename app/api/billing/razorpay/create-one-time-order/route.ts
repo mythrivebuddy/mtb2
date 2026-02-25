@@ -270,7 +270,7 @@ if (existingOrder) {
     });
 
     const razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(payableAmount * 1), // paise
+      amount: Math.round(payableAmount * 100), // paise
       currency,
       receipt: razorpayReceipt,
       notes: {

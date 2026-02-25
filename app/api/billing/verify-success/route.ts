@@ -110,7 +110,13 @@ export async function GET(req: NextRequest) {
             ok: true,
             redirect: "/dashboard",
             yearlyPlanName: sub.plan.name,
-            provisioning: false
+            provisioning: false,
+             membership: {
+            planName: sub.plan.name,
+            interval: sub.plan.interval, // MONTHLY | YEARLY | LIFETIME
+            startDate: sub.startDate,
+            endDate: sub.endDate
+        }
         });
     }
 

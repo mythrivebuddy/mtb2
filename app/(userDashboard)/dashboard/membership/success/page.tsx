@@ -13,10 +13,18 @@ import { Button } from "@/components/ui/button";
 import ConfettiClient from "./_components/ConfettiClient";
 import InfoRow from "./_components/InfoRow";
 import CountdownTimer from "./_components/CountdownTimer";
+type MembershipInfo = {
+  planName: string;
+  interval: "MONTHLY" | "YEARLY" | "LIFETIME";
+  startDate: string;
+  endDate?: string | null;
+};
+
 
 export default function SuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [membership, setMembership] = useState<MembershipInfo | null>(null);
 
   const pid = searchParams.get("pid");
   const type = searchParams.get("type");
@@ -49,6 +57,9 @@ export default function SuccessPage() {
         if (res.data?.ok) {
           setRedirectTo(res.data.redirect);
           setYearlyPlanName(res.data.yearlyPlanName ?? null);
+            if (res.data.membership) {
+    setMembership(res.data.membership);
+  }
           setVerified(true);
           setLoading(false);
           return;
@@ -95,6 +106,7 @@ export default function SuccessPage() {
   /* --------------------------------------------------------------- */
 
   const isProgram = type === "program";
+  const isMembership = type === "membership";
   const programStart = new Date("2026-01-07T12:00:00+05:30");
 
   return (
@@ -126,6 +138,37 @@ export default function SuccessPage() {
           <h1 className="text-3xl font-bold text-slate-900">
             Payment Successful
           </h1>
+          {isMembership && membership && (
+  <>
+    <p className="text-slate-600 leading-relaxed">
+      🎉 Your <strong>{membership.planName}</strong> membership is now active.
+    </p>
+
+    <InfoRow text={`Plan type: ${membership.interval}`} />
+
+    <InfoRow
+      text={`Activated on: ${new Date(
+        membership.startDate
+      ).toLocaleDateString()}`}
+    />
+
+    {membership.endDate && membership.interval !== "LIFETIME" && (
+      <InfoRow
+        text={`Valid until: ${new Date(
+          membership.endDate
+        ).toLocaleDateString()}`}
+      />
+    )}
+
+    {!membership.endDate && membership.interval === "LIFETIME" && (
+      <InfoRow text="This is a lifetime membership — no renewals required." />
+    )}
+
+    <p className="text-sm text-slate-700">
+      You now have full access to all features included in your plan.
+    </p>
+  </>
+)}
 
           {isProgram && (
             <>
