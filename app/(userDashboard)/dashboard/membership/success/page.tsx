@@ -45,7 +45,7 @@ export default function SuccessPage() {
     }
 
     let retries = 0;
-    const MAX_RETRIES = 5;
+    const MAX_RETRIES = 10;
 
     const verify = async () => {
       try {

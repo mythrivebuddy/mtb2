@@ -42,27 +42,78 @@ export const POST = async (req: NextRequest) => {
     console.log("🔔 Razorpay Event:", event.event);
 
     /* ========================================================= */
-    /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
+    /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
     /* ========================================================= */
     if (event.event === "payment.captured") {
 
       const payment = event.payload.payment.entity;
-
+      if (payment.status !== "captured") return NextResponse.json({ received: true });
       // ✅ Ignore subscription payments
-      if (payment.subscription_id) {
-        return NextResponse.json({ received: true });
-      }
+
 
       if (!payment.order_id)
         return NextResponse.json({ received: true });
+      if (payment.subscription_id) {
+        const order = await prisma.paymentOrder.findFirst({
+          where: { razorpaySubscriptionId: payment.subscription_id },
+        });
+        console.log("🟡 [payment.captured] subscription payment detected");
+        console.log("🧾 Razorpay subscription_id:", payment.subscription_id);
+        console.log("🧾 Found paymentOrder:", order);
+
+        if (!order || order.status === PaymentStatus.PAID) {
+          return NextResponse.json({ received: true });
+        }
+
+        // ✅ THIS IS REAL SUCCESS
+        await prisma.$transaction(async (tx) => {
+          await tx.paymentOrder.update({
+            where: { id: order.id },
+            data: {
+              status: PaymentStatus.PAID,
+              paymentId: payment.id,
+              paymentMethod: payment.method,
+              paidAt: new Date(payment.created_at * 1000),
+            },
+          });
+
+          await tx.subscription.updateMany({
+            where: { userId: order.userId },
+            data: { status: SubscriptionStatus.ACTIVE },
+          });
+
+          const subsAfterUpdate = await tx.subscription.findMany({
+            where: { userId: order.userId },
+          });
+
+          console.log(
+            "📦 [payment.captured] subscriptions AFTER updateMany:",
+            subsAfterUpdate
+          );
+          await tx.user.update({
+            where: { id: order.userId },
+            data: { membership: "PAID" },
+          });
+        });
+
+        return NextResponse.json({ received: true });
+      }
 
       // 🔎 Use Razorpay order_id to find our paymentOrder
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpayOrderId: payment.order_id },
       });
-       
+
 
       if (!order || order.status === PaymentStatus.PAID) return NextResponse.json({ received: true });
+      const redemption = order.couponId
+        ? await prisma.couponRedemption.findFirst({
+          where: {
+            couponId: order.couponId,
+            userId: order.userId,
+          },
+        })
+        : null;
 
       await prisma.$transaction(async (tx) => {
 
@@ -76,6 +127,29 @@ export const POST = async (req: NextRequest) => {
             paidAt: new Date(payment.created_at * 1000),
           },
         });
+
+
+        // 🔑 COUPON REDEMPTION — MUST BE HERE
+        if (order.couponId && (!redemption || !redemption.redeemed)) {
+          if (!redemption) {
+            await tx.couponRedemption.create({
+              data: {
+                couponId: order.couponId,
+                userId: order.userId,
+                appliedPlan: order.planId,
+                discountApplied: order.discountApplied,
+                redeemed: true,
+              },
+            });
+          } else {
+            await tx.couponRedemption.update({
+              where: { id: redemption.id },
+              data: { redeemed: true },
+            });
+          }
+
+
+        }
 
         // 2️⃣ Create or Update Subscription (LIFETIME)
         const existingSub = await tx.subscription.findFirst({
@@ -136,18 +210,23 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "subscription.activated") {
       const subscription = event.payload.subscription.entity;
+      console.log("🟢 [subscription.activated] webhook received");
+      console.log("🧾 Razorpay subscription id:", subscription.id);
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
-        include:{
+        include: {
           plan: true
         }
       });
 
+      console.log("🧾 [subscription.activated] linked paymentOrder:", order);
+
       if (!order) return NextResponse.json({ received: true });
 
       await prisma.$transaction(async (tx) => {
-
-        // 1️⃣ Mark payment order paid
+        /* =======================================================
+           1️⃣ MARK PAYMENT ORDER AS PAID (CRITICAL)
+           ======================================================= */
         await tx.paymentOrder.update({
           where: { id: order.id },
           data: {
@@ -155,27 +234,16 @@ export const POST = async (req: NextRequest) => {
             paidAt: new Date(),
           },
         });
-        // console.log("")
-        // 2️⃣ Create or update subscription
-        const existingSub = await tx.subscription.findFirst({
+
+        /* =======================================================
+           2️⃣ CREATE / ACTIVATE SUBSCRIPTION
+           ======================================================= */
+        let activeSubscription = await tx.subscription.findFirst({
           where: { userId: order.userId },
         });
-        let newSubscription: Subscription;
 
-        if (existingSub) {
-          newSubscription = await tx.subscription.update({
-            where: { id: existingSub.id },
-            data: {
-              planId: order.planId,
-              status: SubscriptionStatus.ACTIVE,
-              razorpaySubscriptionId: subscription.id,
-              startDate: new Date(subscription.start_at * 1000),
-              endDate: new Date(subscription.current_end * 1000),
-              paymentOrderId: order.id,
-            },
-          });
-        } else {
-          newSubscription = await tx.subscription.create({
+        if (!activeSubscription) {
+          activeSubscription = await tx.subscription.create({
             data: {
               userId: order.userId,
               planId: order.planId,
@@ -186,31 +254,23 @@ export const POST = async (req: NextRequest) => {
               paymentOrderId: order.id,
             },
           });
-
+        } else {
+          activeSubscription = await tx.subscription.update({
+            where: { id: activeSubscription.id },
+            data: {
+              status: SubscriptionStatus.ACTIVE,
+              razorpaySubscriptionId: subscription.id,
+              paymentOrderId: order.id,
+            },
+          });
         }
-        // const newSubscription = await tx.subscription.upsert({
-        //     where: { userId: order.userId },
-        //     update: {
-        //       planId: order.planId,
-        //       status: SubscriptionStatus.ACTIVE,
-        //       razorpaySubscriptionId: subscription.id,
-        //       startDate: new Date(subscription.start_at * 1000),
-        //       endDate: new Date(subscription.current_end * 1000),
-        //     },
-        //     create: {
-        //       userId: order.userId,
-        //       planId: order.planId,
-        //       status: SubscriptionStatus.ACTIVE,
-        //       razorpaySubscriptionId: subscription.id,
-        //       startDate: new Date(subscription.start_at * 1000),
-        //       endDate: new Date(subscription.current_end * 1000),
-        //     },
-        //   });
 
-        // 🟢 Mandate Creation
+        /* =======================================================
+           3️⃣ CREATE / UPDATE MANDATE (IDEMPOTENT)
+           ======================================================= */
         const mandate = await tx.mandate.upsert({
           where: {
-            mandateId: subscription.id, // ✅ unique field
+            mandateId: subscription.id, // UNIQUE
           },
           update: {
             userId: order.userId,
@@ -232,18 +292,49 @@ export const POST = async (req: NextRequest) => {
             nextBillingDate: new Date(subscription.current_end * 1000),
           },
         });
-        // 🟢 Update subscription with mandateId
+
+        // 🔗 Attach mandate to subscription (optional but recommended)
         await tx.subscription.update({
-          where: { id: existingSub?.id || newSubscription.id },
+          where: { id: activeSubscription.id },
           data: { mandateId: mandate.id },
         });
 
-        // 3️⃣ Update membership
+        /* =======================================================
+           4️⃣ COUPON REDEMPTION (FLAG-BASED, MINIMAL)
+           ======================================================= */
+        if (order.couponId) {
+          const redemption = await tx.couponRedemption.findFirst({
+            where: {
+              couponId: order.couponId,
+              userId: order.userId,
+            },
+          });
+
+          if (!redemption) {
+            await tx.couponRedemption.create({
+              data: {
+                couponId: order.couponId,
+                userId: order.userId,
+                appliedPlan: order.planId,
+                discountApplied: order.discountApplied,
+                redeemed: true,
+              },
+            });
+          } else if (!redemption.redeemed) {
+            await tx.couponRedemption.update({
+              where: { id: redemption.id },
+              data: { redeemed: true },
+            });
+          }
+        }
+
+        /* =======================================================
+           5️⃣ UPDATE USER MEMBERSHIP
+           ======================================================= */
         await tx.user.update({
           where: { id: order.userId },
           data: { membership: "PAID" },
         });
-
       });
 
       return NextResponse.json({ received: true });

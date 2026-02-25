@@ -218,28 +218,6 @@ if (existingOrder) {
 
     const internalOrderId = `sub_${paymentOrder.id}`;
 
-    // ----------------------------
-    // Record coupon redemption
-    // ----------------------------
-    if (coupon) {
-      await prisma.couponRedemption.create({
-        data: {
-          couponId: coupon.id,
-          userId,
-          appliedPlan: plan.name,
-          discountApplied: discountValue,
-        },
-      });
-
-      if (coupon.maxGlobalUses) {
-        await prisma.coupon.update({
-          where: { id: coupon.id },
-          data: {
-            maxGlobalUses: { decrement: 1 },
-          },
-        });
-      }
-    }
 
 /* -------------------------------------------------- */
 /* 6️⃣ RAZORPAY SUBSCRIPTION */
