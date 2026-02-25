@@ -26,6 +26,26 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ ok: false }, { status: 400 });
     }
 
+      const order = await prisma.paymentOrder.findUnique({
+    where: { id: pid },
+    select: {
+      status: true,
+      razorpaySubscriptionId: true,
+      razorpayOrderId: true,
+    },
+  });
+
+  // Razorpay-only: webhook not finished yet
+  if (
+    (order?.razorpaySubscriptionId || order?.razorpayOrderId) &&
+    order.status !== PaymentStatus.PAID
+  ) {
+    return NextResponse.json(
+      { ok: false, pending: true },
+      { status: 202 }
+    );
+  }
+
     /* ================================================================
        PROGRAM PURCHASE SUCCESS
        ================================================================ */

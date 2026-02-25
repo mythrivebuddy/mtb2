@@ -300,7 +300,7 @@ if (!existingPlan) {
 const razorpaySubscription = await razorpay.subscriptions.create({
   plan_id: subscriptionPlanId,
   customer_notify: 1,
-  total_count: plan.interval === "MONTHLY" ? 1200 : 100, // max 100 years
+  total_count: plan.interval === "MONTHLY" ? 120 : 10, // max 10 years
   notes: {
     paymentOrderId: paymentOrder.id,
     userId,
