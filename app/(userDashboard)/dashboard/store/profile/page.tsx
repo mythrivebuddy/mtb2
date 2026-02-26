@@ -155,7 +155,6 @@ function ProfilePage() {
 
         <OrderSection
           orders={orders}
-          getPriceForMembership={getPriceForMembership}
         />
       </div>
     </div>

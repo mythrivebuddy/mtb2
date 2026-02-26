@@ -7,28 +7,28 @@ import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 const prisma = new PrismaClient();
 
 // POST /api/user/store/items/add-items
-// USER-ONLY ROUTE (no admin logic)
 export async function POST(request: NextRequest) {
   try {
-    // 🔐 Authentication
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 📦 Read form data
     const formData = await request.formData();
 
-    const name = formData.get("name") as string;
-    const category = formData.get("category") as string;
-    const basePrice = parseInt(formData.get("basePrice") as string);
-    const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
-    const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
+    const name          = formData.get("name") as string;
+    const category      = formData.get("category") as string;
+    const basePrice     = parseInt(formData.get("basePrice") as string);
+    const monthlyPrice  = parseInt(formData.get("monthlyPrice") as string) || 0;
+    const yearlyPrice   = parseInt(formData.get("yearlyPrice") as string) || 0;
     const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
-    const imageFile = formData.get("image") as File;
-    const downloadFile = formData.get("download") as File | null;
+    const imageFile     = formData.get("image") as File;
+    const downloadFile  = formData.get("download") as File | null;
 
-    // ❗ Validation
+    // ✅ Read currency, default to INR, validate
+    const rawCurrency = (formData.get("currency") as string) || "INR";
+    const currency    = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
+
     if (!name || !category || !imageFile || isNaN(basePrice)) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -36,14 +36,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🖼 Upload image
     const imageUrl = await handleSupabaseImageUpload(
       imageFile,
       "store-images",
       "store-images"
     );
 
-    // 📥 Optional download
     let downloadUrl: string | undefined;
     if (downloadFile && downloadFile.size > 0) {
       downloadUrl = await handleSupabaseImageUpload(
@@ -53,33 +51,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🗄 Create item (ALWAYS pending approval)
     const item = await prisma.item.create({
       data: {
         name,
-        categoryId: category,
+        categoryId:      category,
         basePrice,
         monthlyPrice,
         yearlyPrice,
         lifetimePrice,
+        currency,                    // ✅ ADDED
         imageUrl,
         downloadUrl,
-        isApproved: false, // ❌ USERS CANNOT AUTO-APPROVE
+        isApproved:      false,
         createdByUserId: session.user.id,
-        createdByRole: "USER",
+        createdByRole:   "USER",
       },
       select: {
-        id: true,
-        name: true,
-        categoryId: true,
-        basePrice: true,
+        id:           true,
+        name:         true,
+        categoryId:   true,
+        basePrice:    true,
         monthlyPrice: true,
-        yearlyPrice: true,
-        lifetimePrice: true,
-        imageUrl: true,
-        downloadUrl: true,
-        isApproved: true,
-        createdAt: true,
+        yearlyPrice:  true,
+        lifetimePrice:true,
+        currency:     true,          // ✅ ADDED
+        imageUrl:     true,
+        downloadUrl:  true,
+        isApproved:   true,
+        createdAt:    true,
       },
     });
 
@@ -87,7 +86,7 @@ export async function POST(request: NextRequest) {
       {
         item: {
           ...item,
-          category: item.categoryId,
+          category:  item.categoryId,
           createdAt: item.createdAt.toISOString(),
         },
         message: "Item created successfully. Pending admin approval.",

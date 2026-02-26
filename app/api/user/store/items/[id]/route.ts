@@ -6,7 +6,7 @@ import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 
 const prisma = new PrismaClient();
 
-// PUT /api/user/store/items/[id] - Update an item
+// PUT /api/user/store/items/[id]
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -19,7 +19,6 @@ export async function PUT(
 
     const itemId = params.id;
 
-    // Check if item exists and belongs to user (or user is admin)
     const existingItem = await prisma.item.findUnique({
       where: { id: itemId },
     });
@@ -40,16 +39,19 @@ export async function PUT(
 
     const formData = await request.formData();
 
-    const name = formData.get("name") as string;
-    const category = formData.get("category") as string;
-    const basePrice = parseInt(formData.get("basePrice") as string);
-    const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
-    const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
+    const name          = formData.get("name") as string;
+    const category      = formData.get("category") as string;
+    const basePrice     = parseInt(formData.get("basePrice") as string);
+    const monthlyPrice  = parseInt(formData.get("monthlyPrice") as string) || 0;
+    const yearlyPrice   = parseInt(formData.get("yearlyPrice") as string) || 0;
     const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
-    const imageFile = formData.get("image") as File | null;
-    const downloadFile = formData.get("download") as File | null;
+    const imageFile     = formData.get("image") as File | null;
+    const downloadFile  = formData.get("download") as File | null;
 
-    // Validation
+    // ✅ Read currency, fallback to existing item's currency, then INR
+    const rawCurrency = (formData.get("currency") as string) || existingItem.currency || "INR";
+    const currency    = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
+
     if (!name || !category || isNaN(basePrice)) {
       return NextResponse.json(
         { error: "Missing required fields" },
@@ -57,28 +59,17 @@ export async function PUT(
       );
     }
 
-    let imageUrl = existingItem.imageUrl;
+    let imageUrl    = existingItem.imageUrl;
     let downloadUrl = existingItem.downloadUrl;
 
-    // Upload new image if provided
     if (imageFile && imageFile.size > 0) {
-      imageUrl = await handleSupabaseImageUpload(
-        imageFile,
-        "store-images",
-        "store-images"
-      );
+      imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
     }
 
-    // Upload new download file if provided
     if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(
-        downloadFile,
-        "store-images",
-        "store-images"
-      );
+      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
     }
 
-    // Update item
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
       data: {
@@ -88,24 +79,26 @@ export async function PUT(
         monthlyPrice,
         yearlyPrice,
         lifetimePrice,
+        currency,                  // ✅ ADDED
         imageUrl,
         downloadUrl,
       },
       select: {
-        id: true,
-        name: true,
-        categoryId: true,
-        basePrice: true,
-        monthlyPrice: true,
-        yearlyPrice: true,
-        lifetimePrice: true,
-        imageUrl: true,
-        downloadUrl: true,
-        isApproved: true,
-        createdByRole: true,
-        createdByUserId: true,
-        createdAt: true,
-        updatedAt: true,
+        id:             true,
+        name:           true,
+        categoryId:     true,
+        basePrice:      true,
+        monthlyPrice:   true,
+        yearlyPrice:    true,
+        lifetimePrice:  true,
+        currency:       true,      // ✅ ADDED
+        imageUrl:       true,
+        downloadUrl:    true,
+        isApproved:     true,
+        createdByRole:  true,
+        createdByUserId:true,
+        createdAt:      true,
+        updatedAt:      true,
       },
     });
 
@@ -113,7 +106,7 @@ export async function PUT(
       {
         item: {
           ...updatedItem,
-          category: updatedItem.categoryId,
+          category:  updatedItem.categoryId,
           createdAt: updatedItem.createdAt.toISOString(),
           updatedAt: updatedItem.updatedAt.toISOString(),
         },
@@ -131,7 +124,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/user/store/items/[id] - Delete an item
+// DELETE /api/user/store/items/[id] - unchanged
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -144,7 +137,6 @@ export async function DELETE(
 
     const itemId = params.id;
 
-    // Check if item exists and belongs to user (or user is admin)
     const existingItem = await prisma.item.findUnique({
       where: { id: itemId },
     });
@@ -163,10 +155,7 @@ export async function DELETE(
       );
     }
 
-    // Delete the item
-    await prisma.item.delete({
-      where: { id: itemId },
-    });
+    await prisma.item.delete({ where: { id: itemId } });
 
     return NextResponse.json(
       { message: "Item deleted successfully" },

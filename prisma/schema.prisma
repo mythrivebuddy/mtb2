@@ -320,7 +320,8 @@ model Item {
   approvedByUserId String?
   approvedAt       DateTime?
   approver         User?     @relation("ItemApprover", fields: [approvedByUserId], references: [id])
-
+  // Currency selector
+  currency      String @default("INR") //  NEW: "USD" | "INR"
   // Existing relations
   cart       Cart[]
   orderItems OrderItem[]

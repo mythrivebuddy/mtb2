@@ -27,25 +27,37 @@
 //     name: string;
 //   };
 // }
+export interface Category {
+  id: string;
+  name: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface Item {
   id: string;
   name: string;
-  imageUrl: string;
+  category: Category;           // ✅ CHANGED from string to Category object
   categoryId: string;
   basePrice: number;
   monthlyPrice: number;
   yearlyPrice: number;
   lifetimePrice: number;
-  isApproved: boolean; // Add this field
-  createdByUserId: string;
+  currency: string;
+  imageUrl: string;
+  downloadUrl?: string;
+  isApproved: boolean;
   createdByRole: string;
-  createdAt: Date;
-  updatedAt: Date;
-  category: {
+  createdByUserId: string;
+  approvedByUserId?: string | null;
+  approvedAt?: string | null;
+  approver?: {
     id: string;
-    name: string;
-  };
+    name?: string | null;
+    email: string;
+  } | null;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface User {
@@ -84,14 +96,9 @@ export interface CartItem {
   wasInWishlist?: boolean;
 }
 
-
-export interface Category {
-  id: string;
-  name: string;
-}
-
 export interface WishlistItem {
   id: string;
   itemId: string;
   item: Item;
 }
+
