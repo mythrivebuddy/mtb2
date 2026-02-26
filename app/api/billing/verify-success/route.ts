@@ -26,6 +26,29 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ ok: false }, { status: 400 });
     }
 
+      const order = await prisma.paymentOrder.findUnique({
+    where: { id: pid },
+    select: {
+      status: true,
+      razorpaySubscriptionId: true,
+      razorpayOrderId: true,
+    },
+  });
+  console.log("🔍 [verify-success] paymentOrder:", order);
+
+  // Razorpay-only: webhook not finished yet
+  if (
+    (order?.razorpaySubscriptionId || order?.razorpayOrderId) &&
+    order.status !== PaymentStatus.PAID
+  ) {
+
+  console.log("⏳ [verify-success] pending because order not PAID");
+    return NextResponse.json(
+      { ok: false, pending: true },
+      { status: 202 }
+    );
+  }
+
     /* ================================================================
        PROGRAM PURCHASE SUCCESS
        ================================================================ */
@@ -45,6 +68,14 @@ export async function GET(req: NextRequest) {
                 }
             }
         });
+        console.log(
+  "🔍 [verify-success] checking subscription for pid:",
+  pid
+);
+
+
+
+console.log("📦 [verify-success] subscription found:");
 
         if (!purchase) {
             return NextResponse.json({ ok: false }, { status: 403 });
@@ -110,7 +141,13 @@ export async function GET(req: NextRequest) {
             ok: true,
             redirect: "/dashboard",
             yearlyPlanName: sub.plan.name,
-            provisioning: false
+            provisioning: false,
+             membership: {
+            planName: sub.plan.name,
+            interval: sub.plan.interval, // MONTHLY | YEARLY | LIFETIME
+            startDate: sub.startDate,
+            endDate: sub.endDate
+        }
         });
     }
 

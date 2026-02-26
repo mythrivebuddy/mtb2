@@ -92,7 +92,7 @@ export default function AdminPlansPage() {
                     Name
                   </TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    JP Multiplier
+                    GP Multiplier
                   </TableHead>
                   <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Discount (%)

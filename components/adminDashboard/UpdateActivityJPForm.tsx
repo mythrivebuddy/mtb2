@@ -41,11 +41,11 @@ export function UpdateActivityJPForm({
       return res.data;
     },
     onSuccess: () => {
-      toast.success("JP amount updated successfully!");
+      toast.success("GP amount updated successfully!");
       form.reset();
     },
     onError: (error) => {
-      toast.error(getAxiosErrorMessage(error, "Failed to update JP amount"));
+      toast.error(getAxiosErrorMessage(error, "Failed to update GP amount"));
     },
   });
 
@@ -71,7 +71,7 @@ export function UpdateActivityJPForm({
           <SelectContent>
             {activities.map((a) => (
               <SelectItem key={a.id} value={a.id}>
-                {a.activity ?? "Unnamed"} (JP: {a.jpAmount ?? 0})
+                {a.activity ?? "Unnamed"} (GP: {a.jpAmount ?? 0})
               </SelectItem>
             ))}
           </SelectContent>
@@ -84,7 +84,7 @@ export function UpdateActivityJPForm({
       </div>
 
       <InputWithLabel
-        label="New JP Amount"
+        label="New GP Amount"
         type="number"
         // min="0"
         {...form.register("jpAmount")}
@@ -95,7 +95,7 @@ export function UpdateActivityJPForm({
         {mutation.isPending ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
-          "Update JP Amount"
+          "Update GP Amount"
         )}
       </Button>
     </form>
