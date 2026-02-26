@@ -57,6 +57,7 @@ export async function GET() {
             monthlyPrice: orderItem.item.monthlyPrice,
             yearlyPrice: orderItem.item.yearlyPrice,
             lifetimePrice: orderItem.item.lifetimePrice,
+            currency: orderItem.item.currency,  // ✅ ONLY LINE ADDED
             category: orderItem.item.category,
           },
         })),

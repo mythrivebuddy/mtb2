@@ -39,6 +39,7 @@ export async function GET(req: Request) {
         monthlyPrice: item.monthlyPrice,
         yearlyPrice: item.yearlyPrice,
         lifetimePrice: item.lifetimePrice,
+        currency: item.currency, // ← ADD THIS LINE
         category: {
           id: item.category.id,
           name: item.category.name,
@@ -49,4 +50,4 @@ export async function GET(req: Request) {
     console.error("[ITEM_GET]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
-} 
+}

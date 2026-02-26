@@ -7,6 +7,7 @@ export interface Item {
   monthlyPrice: number;
   yearlyPrice: number;
   lifetimePrice: number;
+  currency: string;              // ✅ ADDED
   imageUrl: string;
   downloadUrl?: string;
   isApproved: boolean;
@@ -30,6 +31,7 @@ export interface ItemFormData {
   monthlyPrice: number;
   yearlyPrice: number;
   lifetimePrice: number;
+  currency: string;              // ✅ ADDED
   imageFile?: File;
   downloadFile?: File;
 }

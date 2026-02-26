@@ -48,9 +48,10 @@ export async function GET() {
           monthlyPrice: item.monthlyPrice,
           yearlyPrice: item.yearlyPrice,
           lifetimePrice: item.lifetimePrice,
+          currency: item.currency, // ✅ NEW: Include currency
           imageUrl: item.imageUrl,
           downloadUrl: item.downloadUrl,
-          isApproved: item.isApproved, // ✅ CRITICAL: This was missing!
+          isApproved: item.isApproved,
           approvedByUserId: item.approvedByUserId,
           approvedAt: item.approvedAt?.toISOString() || null,
           approver: item.approver,
@@ -78,12 +79,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
+    console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+console.log("SERVICE_ROLE_KEY exists:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ PRINT ROLE
     console.log("USER ROLE:", session.user.role);
 
     const isAdmin = session.user.role === "ADMIN";
@@ -96,8 +98,17 @@ export async function POST(request: NextRequest) {
     const monthlyPrice = Number(formData.get("monthlyPrice")) || 0;
     const yearlyPrice = Number(formData.get("yearlyPrice")) || 0;
     const lifetimePrice = Number(formData.get("lifetimePrice")) || 0;
+    const currency = (formData.get("currency") as string) || "USD"; // ✅ NEW
     const imageFile = formData.get("image") as File;
     const downloadFile = formData.get("download") as File | null;
+
+    // ✅ Validate currency
+    if (!["USD", "INR"].includes(currency)) {
+      return NextResponse.json(
+        { error: "Invalid currency. Must be USD or INR." },
+        { status: 400 }
+      );
+    }
 
     if (!name || !category || !imageFile || isNaN(basePrice)) {
       return NextResponse.json(
@@ -130,10 +141,10 @@ export async function POST(request: NextRequest) {
         monthlyPrice,
         yearlyPrice,
         lifetimePrice,
+        currency, //  NEW
         imageUrl,
         downloadUrl,
-        // 🔐 ROLE-BASED LOGIC
-        isApproved: isAdmin, // ✅ ADMIN = true, USER = false
+        isApproved: isAdmin,
         createdByRole: session.user.role,
         createdByUserId: session.user.id,
       },
@@ -172,7 +183,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden - Admin access required" },
@@ -209,10 +219,18 @@ export async function PUT(request: NextRequest) {
     const basePrice = parseInt(formData.get("basePrice") as string);
     const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
     const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice =
-      parseInt(formData.get("lifetimePrice") as string) || 0;
+    const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
+    const currency = (formData.get("currency") as string) || "USD"; // ✅ NEW
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
+
+    // ✅ Validate currency
+    if (!["USD", "INR"].includes(currency)) {
+      return NextResponse.json(
+        { error: "Invalid currency. Must be USD or INR." },
+        { status: 400 }
+      );
+    }
 
     if (!name || !category || isNaN(basePrice)) {
       return NextResponse.json(
@@ -228,6 +246,7 @@ export async function PUT(request: NextRequest) {
       monthlyPrice: number;
       yearlyPrice: number;
       lifetimePrice: number;
+      currency: string; // ✅ NEW
       imageUrl: string;
       downloadUrl?: string | null;
     }
@@ -239,6 +258,7 @@ export async function PUT(request: NextRequest) {
       monthlyPrice,
       yearlyPrice,
       lifetimePrice,
+      currency, // ✅ NEW
       imageUrl: existingItem.imageUrl,
       downloadUrl: existingItem.downloadUrl,
     };
@@ -304,7 +324,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden - Admin access required" },

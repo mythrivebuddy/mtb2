@@ -21,8 +21,54 @@ import { Category } from "@/types/client/manage-store-product";
 import { Item, WishlistItem } from "@/types/client/store";
 import Image from "next/image";
 
+// ─── Currency helpers ──────────────────────────────────────────────────────────
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+};
+
+const getCurrencySymbol = (currency?: string): string =>
+  CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
+
+// // ─── SVG Icons ─────────────────────────────────────────────────────────────────
+// const RupeeIcon = ({ className }: { className?: string }) => (
+//   <svg
+//     xmlns="http://www.w3.org/2000/svg"
+//     className={className}
+//     viewBox="0 0 24 24"
+//     fill="none"
+//     stroke="currentColor"
+//     strokeWidth="2"
+//     strokeLinecap="round"
+//     strokeLinejoin="round"
+//   >
+//     <path d="M6 3h12" />
+//     <path d="M6 8h12" />
+//     <path d="M6 13l8.5 8" />
+//     <path d="M6 13h3a4 4 0 0 0 0-8" />
+//   </svg>
+// );
+
+// const DollarIcon = ({ className }: { className?: string }) => (
+//   <svg
+//     xmlns="http://www.w3.org/2000/svg"
+//     className={className}
+//     viewBox="0 0 24 24"
+//     fill="none"
+//     stroke="currentColor"
+//     strokeWidth="2"
+//     strokeLinecap="round"
+//     strokeLinejoin="round"
+//   >
+//     <line x1="12" y1="1" x2="12" y2="23" />
+//     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+//   </svg>
+// );
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 type ProductFilter = "ALL" | "MY" | "ADMIN";
 
+// ─── Fetchers ──────────────────────────────────────────────────────────────────
 const fetchCategories = async (): Promise<Category[]> => {
   const res = await axios.get("/api/user/store/items/get-categories");
   return res.data.categories;
@@ -50,6 +96,7 @@ const fetchWishlist = async (): Promise<WishlistItem[]> => {
   return res.data.wishlist || [];
 };
 
+// ─── Component ─────────────────────────────────────────────────────────────────
 const StorePage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [productFilter, setProductFilter] = useState<ProductFilter>("ALL");
@@ -78,9 +125,7 @@ const StorePage: React.FC = () => {
   const { data: items = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["items", selectedCategory],
     queryFn: () =>
-      selectedCategory
-        ? fetchItemsByCategory(selectedCategory)
-        : fetchAllItems(),
+      selectedCategory ? fetchItemsByCategory(selectedCategory) : fetchAllItems(),
     placeholderData: (prev) => prev,
     refetchOnMount: true,
   });
@@ -88,9 +133,7 @@ const StorePage: React.FC = () => {
   const toggleWishlistMutation = useMutation({
     mutationFn: async (itemId: string) => {
       if (wishlist.some((item) => item.itemId === itemId)) {
-        await axios.delete("/api/user/store/items/wishlist", {
-          data: { itemId },
-        });
+        await axios.delete("/api/user/store/items/wishlist", { data: { itemId } });
         toast.info("Removed from wishlist");
       } else {
         await axios.post("/api/user/store/items/wishlist", { itemId });
@@ -110,21 +153,15 @@ const StorePage: React.FC = () => {
     },
     onSuccess: () => toast.success("Item added to cart"),
     onError: (error) =>
-      toast.error(
-        getAxiosErrorMessage(error, "Something went wrong! Please try again.")
-      ),
+      toast.error(getAxiosErrorMessage(error, "Something went wrong! Please try again.")),
   });
 
   const getPriceForMembership = (item: Item): number => {
     switch (user?.membership) {
-      case "MONTHLY":
-        return item.monthlyPrice;
-      case "YEARLY":
-        return item.yearlyPrice;
-      case "LIFETIME":
-        return item.lifetimePrice;
-      default:
-        return item.basePrice;
+      case "MONTHLY":  return item.monthlyPrice;
+      case "YEARLY":   return item.yearlyPrice;
+      case "LIFETIME": return item.lifetimePrice;
+      default:         return item.basePrice;
     }
   };
 
@@ -139,8 +176,8 @@ const StorePage: React.FC = () => {
   // Filter items: only show approved items + apply product filter
   const filteredItems = items.filter((item) => {
     if (!item.isApproved) return false;
-    if (productFilter === "ALL") return true;
-    if (productFilter === "MY") return item.createdByUserId === user?.id;
+    if (productFilter === "ALL")   return true;
+    if (productFilter === "MY")    return item.createdByUserId === user?.id;
     if (productFilter === "ADMIN") return item.createdByRole === "ADMIN";
     return true;
   });
@@ -195,11 +232,7 @@ const StorePage: React.FC = () => {
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            {f === "ALL"
-              ? "All Products"
-              : f === "MY"
-              ? "My Products"
-              : "Admin Products"}
+            {f === "ALL" ? "All Products" : f === "MY" ? "My Products" : "Admin Products"}
           </button>
         ))}
       </div>
@@ -229,10 +262,7 @@ const StorePage: React.FC = () => {
 
       <h2 className="text-2xl font-semibold text-slate-800 mb-4 text-center">
         {selectedCategory
-          ? `${
-              categories.find((c) => c.id === selectedCategory)?.name ||
-              "Selected"
-            } Items`
+          ? `${categories.find((c) => c.id === selectedCategory)?.name || "Selected"} Items`
           : productFilter === "MY"
           ? "My Products"
           : productFilter === "ADMIN"
@@ -245,65 +275,71 @@ const StorePage: React.FC = () => {
         <p className="text-center text-gray-600">No items available.</p>
       ) : (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-xl shadow-lg p-4 hover:shadow-2xl transition-shadow relative"
-            >
-              <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <Image
-                  src={item.imageUrl || "/placeholder-image.jpg"}
-                  alt={item.name}
-                  width={300}
-                  height={300}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-              </div>
+          {filteredItems.map((item) => {
+            const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
+            // const isINR        = itemCurrency === "INR";
+            const sym          = getCurrencySymbol(itemCurrency);
+            const price        = getPriceForMembership(item);
 
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  {item.name}
-                </h3>
-                <button
-                  onClick={() => toggleWishlistMutation.mutate(item.id)}
-                  className="cursor-pointer"
-                >
-                  <Heart
-                    className={
-                      wishlist.some((w) => w.itemId === item.id)
-                        ? "text-red-500 w-6 h-6 fill-red-500"
-                        : "text-gray-500 w-6 h-6"
-                    }
+            return (
+              <div
+                key={item.id}
+                className="bg-white rounded-xl shadow-lg p-4 hover:shadow-2xl transition-shadow relative"
+              >
+               
+                <div className="w-full aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                  <Image
+                    src={item.imageUrl || "/placeholder-image.jpg"}
+                    alt={item.name}
+                    width={300}
+                    height={300}
+                    className="w-full h-full object-cover rounded-lg"
                   />
-                </button>
-              </div>
+                </div>
 
-              <p className="text-sm text-blue-500 font-medium mb-2">
-                {item.category.name}
-              </p>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-lg font-semibold text-slate-800">{item.name}</h3>
+                  <button
+                    onClick={() => toggleWishlistMutation.mutate(item.id)}
+                    className="cursor-pointer"
+                  >
+                    <Heart
+                      className={
+                        wishlist.some((w) => w.itemId === item.id)
+                          ? "text-red-500 w-6 h-6 fill-red-500"
+                          : "text-gray-500 w-6 h-6"
+                      }
+                    />
+                  </button>
+                </div>
 
-              <div className="flex flex-col items-start mb-4">
-                <span className="text-lg font-bold text-green-600">
-                  ${getPriceForMembership(item)}
-                </span>
-              </div>
+                <p className="text-sm text-blue-500 font-medium mb-2">
+                  {item.category.name}
+                </p>
 
-              <div className="flex gap-6">
-                <Button
-                  className="flex-1 text-white font-bold text-sm rounded-full px-1 py-6 w-full"
-                  onClick={() => addToCartMutation.mutate(item.id)}
-                >
-                  <PlusCircle className="w-4 h-4 mr-1 inline" /> Add to Cart
-                </Button>
-                <button
-                  className="flex-1 bg-jp-orange text-white font-bold text-sm rounded-full px-1 py-3 hover:bg-red-600 w-full"
-                  onClick={() => handleBuyNow(item.id)}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1 inline" /> Buy Now
-                </button>
+                <div className="flex flex-col items-start mb-4">
+                  <span className="text-lg font-bold text-green-600">
+                    {sym}{Number(price).toFixed(0)}
+                  </span>
+                </div>
+
+                <div className="flex gap-6">
+                  <Button
+                    className="flex-1 text-white font-bold text-sm rounded-full px-1 py-6 w-full"
+                    onClick={() => addToCartMutation.mutate(item.id)}
+                  >
+                    <PlusCircle className="w-4 h-4 mr-1 inline" /> Add to Cart
+                  </Button>
+                  <button
+                    className="flex-1 bg-jp-orange text-white font-bold text-sm rounded-full px-1 py-3 hover:bg-red-600 w-full"
+                    onClick={() => handleBuyNow(item.id)}
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-1 inline" /> Buy Now
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

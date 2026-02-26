@@ -40,6 +40,7 @@ interface ProductDetailData {
   approvedAt: string | null;
   isApproved: boolean;
   createdByRole: string;
+  currency?: string;
   category: {
     id: string;
     name: string;
@@ -65,10 +66,24 @@ async function fetchProduct(productId: string): Promise<ProductDetailData> {
   const res = await fetch(`/api/admin/store/items/${productId}`);
   if (!res.ok) throw new Error("Failed to fetch product details");
   const data = await res.json();
-  return data.product; // unwrap { product: ... }
+  return data.product;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+};
+
+function getCurrencySymbol(currency?: string): string {
+  return CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
+}
+
+function formatPrice(price: number | null, currency?: string): string {
+  if (price === null || price === undefined) return "—";
+  return `${getCurrencySymbol(currency)}${price.toFixed(0)}`;
+}
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
@@ -81,10 +96,41 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-function formatPrice(price: number | null): string {
-  if (price === null || price === undefined) return "—";
-  return `$${price.toFixed(2)}`;
-}
+// ── SVG Icons ─────────────────────────────────────────────────────────────────
+
+const RupeeIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M6 3h12" />
+    <path d="M6 8h12" />
+    <path d="M6 13l8.5 8" />
+    <path d="M6 13h3a4 4 0 0 0 0-8" />
+  </svg>
+);
+
+const DollarIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -185,6 +231,10 @@ export default function ProductDetailPage() {
     );
   }
 
+  const currency    = product.currency ?? "INR";
+  const isINR       = currency === "INR";
+  const currencySym = getCurrencySymbol(currency);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
       <div className="max-w-5xl mx-auto pt-4">
@@ -206,8 +256,23 @@ export default function ProductDetailPage() {
           {/* Hero Banner */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 h-36 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-            {/* Status badge floating on banner */}
-            <div className="absolute top-4 right-4">
+            {/* Status badge */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              {/* Currency badge */}
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full backdrop-blur-sm border ${
+                  isINR
+                    ? "bg-orange-400/20 text-orange-100 border-orange-300/40"
+                    : "bg-green-400/20 text-green-100 border-green-300/40"
+                }`}
+              >
+                {isINR
+                  ? <RupeeIcon className="w-3.5 h-3.5" />
+                  : <DollarIcon className="w-3.5 h-3.5" />
+                }
+                {currency}
+              </span>
+              {/* Approval badge */}
               {product.isApproved ? (
                 <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-green-400/20 text-green-100 border border-green-300/40 backdrop-blur-sm">
                   <CheckCircle className="w-3.5 h-3.5" />
@@ -287,14 +352,17 @@ export default function ProductDetailPage() {
               {/* Pricing Cards */}
               <div>
                 <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Pricing
+                  {isINR
+                    ? <RupeeIcon className="w-4 h-4" />
+                    : <DollarSign className="w-4 h-4" />
+                  }
+                  Pricing ({currency})
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <PriceCard label="Base" value={formatPrice(product.basePrice)} highlight />
-                  <PriceCard label="Monthly" value={formatPrice(product.monthlyPrice)} />
-                  <PriceCard label="Yearly" value={formatPrice(product.yearlyPrice)} />
-                  <PriceCard label="Lifetime" value={formatPrice(product.lifetimePrice)} />
+                  <PriceCard label="Base"     value={formatPrice(product.basePrice,     currency)} highlight />
+                  <PriceCard label="Monthly"  value={formatPrice(product.monthlyPrice,  currency)} />
+                  <PriceCard label="Yearly"   value={formatPrice(product.yearlyPrice,   currency)} />
+                  <PriceCard label="Lifetime" value={formatPrice(product.lifetimePrice, currency)} />
                 </div>
               </div>
 
@@ -323,6 +391,19 @@ export default function ProductDetailPage() {
                       icon={<Tag className="w-4 h-4" />}
                       label="Category"
                       value={product.category.name}
+                    />
+                    <InfoRow
+                      icon={isINR ? <RupeeIcon className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
+                      label="Currency"
+                      value={
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full ${
+                            isINR ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
+                          }`}
+                        >
+                          {currencySym} {currency}
+                        </span>
+                      }
                     />
                     <InfoRow
                       icon={<Calendar className="w-4 h-4" />}
@@ -401,9 +482,7 @@ export default function ProductDetailPage() {
                       label="Approved By"
                       value={
                         product.approvedBy ? (
-                          <span>
-                            {product.approvedBy.name ?? product.approvedBy.email}
-                          </span>
+                          <span>{product.approvedBy.name ?? product.approvedBy.email}</span>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )
@@ -436,7 +515,7 @@ export default function ProductDetailPage() {
                 </Card>
               </div>
 
-              {/* Category ID (extra detail) */}
+              {/* Category ID */}
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
                 <Layers className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <div>
