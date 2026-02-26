@@ -11,11 +11,11 @@ export async function POST(req: NextRequest) {
       razorpay_signature,
     } = await req.json();
 
-    const { keySecret } = await getRazorpayConfig();
+    const { razorpayKeySecret } = await getRazorpayConfig();
 
     const body = `${razorpay_order_id}|${razorpay_payment_id}`;
     const expectedSignature = crypto
-      .createHmac("sha256", keySecret)
+      .createHmac("sha256", razorpayKeySecret)
       .update(body)
       .digest("hex");
 

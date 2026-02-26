@@ -136,76 +136,56 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    // ----------------------------
-    // 6. RECORD COUPON USAGE
-    // ----------------------------
-    if (coupon) {
-      await prisma.couponRedemption.create({
-        data: {
-          couponId: coupon.id,
-          userId,
-          appliedPlan: plan.name,
-          discountApplied: discountValue,
-        },
-      });
-
-      if (coupon.maxGlobalUses) {
-        await prisma.coupon.update({
-          where: { id: coupon.id },
-          data: { maxGlobalUses: { decrement: 1 } },
-        });
-      }
-    }
 
     // --------------------------------------------------
     // 6️⃣ INTERNAL PAYMENT ORDER
     // --------------------------------------------------
-        const existingOrder = await prisma.paymentOrder.findFirst({
-  where: {
-    userId,
-    planId: plan.id,
-  },
-  orderBy: {
-    createdAt: "desc", // optional but recommended
-  },
-});
-let paymentOrder;
-if (existingOrder) {
-  paymentOrder = await prisma.paymentOrder.update({
-    where: { id: existingOrder.id }, // must use unique field here
-    data: {
-      currency,
-      couponId: coupon?.id,
-      status: PaymentStatus.CREATED,
-      baseAmount,
-      discountApplied: discountValue,
-      gstAmount:
-        isIndia && plan.gstEnabled
-          ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
-          : 0,
-      totalAmount: finalAmount,
-      billingInfoId: billingInfo.id,
-    },
-  });
-} else {
-  paymentOrder = await prisma.paymentOrder.create({
-    data: {
-      userId,
-      planId: plan.id,
-      currency,
-      couponId: coupon?.id,
-      status: PaymentStatus.CREATED,
-      baseAmount,
-      discountApplied: discountValue,
-      gstAmount:
-        isIndia && plan.gstEnabled
-          ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
-          : 0,
-      totalAmount: finalAmount,
-      billingInfoId: billingInfo.id,
-    },
-  });
-}
+    const existingOrder = await prisma.paymentOrder.findFirst({
+      where: {
+        userId,
+        planId: plan.id,
+      },
+      orderBy: {
+        createdAt: "desc", // optional but recommended
+      },
+    });
+    let paymentOrder;
+    if (existingOrder) {
+      paymentOrder = await prisma.paymentOrder.update({
+        where: { id: existingOrder.id }, // must use unique field here
+        data: {
+          currency,
+          couponId: coupon?.id,
+          status: PaymentStatus.CREATED,
+          baseAmount,
+          discountApplied: discountValue,
+          gstAmount:
+            isIndia && plan.gstEnabled
+              ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
+              : 0,
+          totalAmount: finalAmount,
+          billingInfoId: billingInfo.id,
+        },
+      });
+    } else {
+      paymentOrder = await prisma.paymentOrder.create({
+        data: {
+          userId,
+          planId: plan.id,
+          currency,
+          couponId: coupon?.id,
+          status: PaymentStatus.CREATED,
+          baseAmount,
+          discountApplied: discountValue,
+          gstAmount:
+            isIndia && plan.gstEnabled
+              ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
+              : 0,
+          totalAmount: finalAmount,
+          billingInfoId: billingInfo.id,
+        },
+      });
+    }
     // const paymentOrder = await prisma.paymentOrder.create({
     //   data: {
     //     planId: plan.id,
@@ -220,53 +200,53 @@ if (existingOrder) {
     //   },
     // });
 
-//     // --------------------------------------------------
-//     // 7️⃣ PENDING SUBSCRIPTION (IMPORTANT)
-//     // --------------------------------------------------
+    //     // --------------------------------------------------
+    //     // 7️⃣ PENDING SUBSCRIPTION (IMPORTANT)
+    //     // --------------------------------------------------
     const internalOrderId = `lifetime_${paymentOrder.id}_${Date.now()}`;
     const razorpayReceipt = `lt_${Date.now().toString().slice(-8)}`;
 
-//     const existingSubscription = await prisma.subscription.findFirst({
-//   where: { userId },
-// });
+    //     const existingSubscription = await prisma.subscription.findFirst({
+    //   where: { userId },
+    // });
 
-// if (existingSubscription) {
-//   await prisma.subscription.update({
-//     where: { id: existingSubscription.id },
-//     data: {
-//       planId: plan.id, // ✅ CRITICAL: Update the planId to the Lifetime ID
-//       status: SubscriptionStatus.PENDING,
-//       orderId: internalOrderId,
-//       paymentOrderId: paymentOrder.id,
-//       startDate: new Date(),
-//       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 99)),
-//       // If you have a recurring subscription ID from Razorpay, clear it
-//       razorpaySubscriptionId: null, 
-//     },
-//   });
-// } else {
-//       await prisma.subscription.create({
-//         data: {
-//           userId,
-//           planId: plan.id,
-//           status: SubscriptionStatus.PENDING,
-//           orderId: internalOrderId,
-//           paymentOrderId: paymentOrder.id,
-//           startDate: new Date(),
-//           endDate: new Date(
-//             new Date().setFullYear(new Date().getFullYear() + 99)
-//           ),
-//         },
-//       });
-//     }
+    // if (existingSubscription) {
+    //   await prisma.subscription.update({
+    //     where: { id: existingSubscription.id },
+    //     data: {
+    //       planId: plan.id, // ✅ CRITICAL: Update the planId to the Lifetime ID
+    //       status: SubscriptionStatus.PENDING,
+    //       orderId: internalOrderId,
+    //       paymentOrderId: paymentOrder.id,
+    //       startDate: new Date(),
+    //       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 99)),
+    //       // If you have a recurring subscription ID from Razorpay, clear it
+    //       razorpaySubscriptionId: null, 
+    //     },
+    //   });
+    // } else {
+    //       await prisma.subscription.create({
+    //         data: {
+    //           userId,
+    //           planId: plan.id,
+    //           status: SubscriptionStatus.PENDING,
+    //           orderId: internalOrderId,
+    //           paymentOrderId: paymentOrder.id,
+    //           startDate: new Date(),
+    //           endDate: new Date(
+    //             new Date().setFullYear(new Date().getFullYear() + 99)
+    //           ),
+    //         },
+    //       });
+    //     }
 
     // --------------------------------------------------
     // 8️⃣ CREATE RAZORPAY ORDER
     // --------------------------------------------------
-    const { keyId, keySecret } = await getRazorpayConfig();
+    const { razorpayKeyId, razorpayKeySecret } = await getRazorpayConfig();
     const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
+      key_id: razorpayKeyId,
+      key_secret: razorpayKeySecret,
     });
 
     const razorpayOrder = await razorpay.orders.create({
@@ -278,28 +258,28 @@ if (existingOrder) {
         userId,
       },
     });
- 
-   await prisma.paymentOrder.update({
-  where: { id: paymentOrder.id },
-  data: {
-    orderId: internalOrderId,
-    razorpayReceipt,
-    razorpayOrderId: razorpayOrder.id,
-    status: PaymentStatus.PENDING,
-  },
-});
+
+    await prisma.paymentOrder.update({
+      where: { id: paymentOrder.id },
+      data: {
+        orderId: internalOrderId,
+        razorpayReceipt,
+        razorpayOrderId: razorpayOrder.id,
+        status: PaymentStatus.PENDING,
+      },
+    });
 
 
     // --------------------------------------------------
     // 9️⃣ RETURN (FIXED CONTRACT)
     // --------------------------------------------------
     return NextResponse.json({
-  key: keyId,
-  orderId: razorpayOrder.id,
-  amount: razorpayOrder.amount,
-  currency: razorpayOrder.currency,
-  purchaseId: paymentOrder.id,
-});
+      key: razorpayKeyId,
+      orderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      purchaseId: paymentOrder.id,
+    });
 
   } catch (error) {
     console.error("Razorpay create order error:", error);

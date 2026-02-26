@@ -6,12 +6,14 @@ import {
   PaymentStatus,
   SubscriptionStatus,
 } from "@prisma/client";
-import { verifyRazorpaySignature } from "@/lib/razorpay/razorpay";
+import { getRazorpayConfig, verifyRazorpaySignature } from "@/lib/razorpay/razorpay";
 
 export const POST = async (req: NextRequest) => {
-  console.log("WEBHOOK CALLED");
+
   try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const { razorpayWebhookSecret: webhookSecret } = await getRazorpayConfig();
+    console.log("🎀 Webhook called");
+
     if (!webhookSecret) {
       console.error("❌ Missing RAZORPAY_WEBHOOK_SECRET");
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -38,12 +40,12 @@ export const POST = async (req: NextRequest) => {
 
     const event = JSON.parse(rawBody);
 
-    console.log("🔔 Razorpay Event:", event.event);
 
     /* ========================================================= */
     /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
     /* ========================================================= */
     if (event.event === "payment.captured") {
+      console.log("payemtn captured");
 
       const payment = event.payload.payment.entity;
       if (payment.status !== "captured") return NextResponse.json({ received: true });
@@ -56,9 +58,7 @@ export const POST = async (req: NextRequest) => {
         const order = await prisma.paymentOrder.findFirst({
           where: { razorpaySubscriptionId: payment.subscription_id },
         });
-        console.log("🟡 [payment.captured] subscription payment detected");
-        console.log("🧾 Razorpay subscription_id:", payment.subscription_id);
-        console.log("🧾 Found paymentOrder:", order);
+
 
         if (!order || order.status === PaymentStatus.PAID) {
           return NextResponse.json({ received: true });
@@ -81,14 +81,7 @@ export const POST = async (req: NextRequest) => {
             data: { status: SubscriptionStatus.ACTIVE },
           });
 
-          const subsAfterUpdate = await tx.subscription.findMany({
-            where: { userId: order.userId },
-          });
 
-          console.log(
-            "📦 [payment.captured] subscriptions AFTER updateMany:",
-            subsAfterUpdate
-          );
           await tx.user.update({
             where: { id: order.userId },
             data: { membership: "PAID" },
@@ -207,10 +200,14 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     /* 🔁 SUBSCRIPTION ACTIVATED (FIRST PAYMENT SUCCESS) */
     /* ========================================================= */
-    if (event.event === "subscription.activated") {
+    if (event.event === "subscription.activated"
+      || event.event === "subscription.authenticated"
+    ) {
       const subscription = event.payload.subscription.entity;
-      console.log("🟢 [subscription.activated] webhook received");
-      console.log("🧾 Razorpay subscription id:", subscription.id);
+
+      console.log("subscription activated ", { event });
+
+
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
         include: {
@@ -218,9 +215,19 @@ export const POST = async (req: NextRequest) => {
         }
       });
 
-      console.log("🧾 [subscription.activated] linked paymentOrder:", order);
+
 
       if (!order) return NextResponse.json({ received: true });
+      const startDate = new Date();
+
+      // ✅ END DATE BASED ON PLAN INTERVAL
+      const endDate = new Date(startDate);
+
+      if (order.plan.interval === "MONTHLY") {
+        endDate.setMonth(endDate.getMonth() + 1);
+      } else if (order.plan.interval === "YEARLY") {
+        endDate.setFullYear(endDate.getFullYear() + 1);
+      }
 
       await prisma.$transaction(async (tx) => {
         /* =======================================================
@@ -248,8 +255,10 @@ export const POST = async (req: NextRequest) => {
               planId: order.planId,
               status: SubscriptionStatus.ACTIVE,
               razorpaySubscriptionId: subscription.id,
-              startDate: new Date(subscription.start_at * 1000),
-              endDate: new Date(subscription.current_end * 1000),
+              // startDate: new Date(subscription.start_at * 1000),
+              // endDate: new Date(subscription.current_end * 1000),
+              startDate,
+              endDate,
               paymentOrderId: order.id,
             },
           });
@@ -260,6 +269,9 @@ export const POST = async (req: NextRequest) => {
               status: SubscriptionStatus.ACTIVE,
               razorpaySubscriptionId: subscription.id,
               paymentOrderId: order.id,
+              startDate, // 🔥 ADD THIS
+              endDate,
+              planId: order.planId,
             },
           });
         }
@@ -278,7 +290,7 @@ export const POST = async (req: NextRequest) => {
             currency: order.currency,
             frequency: order.plan.interval,
             maxAmount: order.totalAmount,
-            nextBillingDate: new Date(subscription.current_end * 1000),
+            nextBillingDate: endDate,
           },
           create: {
             mandateId: subscription.id,
@@ -288,7 +300,7 @@ export const POST = async (req: NextRequest) => {
             currency: order.currency,
             frequency: order.plan.interval,
             maxAmount: order.totalAmount,
-            nextBillingDate: new Date(subscription.current_end * 1000),
+            nextBillingDate: endDate,
           },
         });
 
@@ -344,9 +356,8 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "invoice.paid") {
       const invoice = event.payload.invoice.entity;
+      console.log("invoice event");
 
-      // 🔍 Log this to see exactly what Razorpay is sending
-      console.log("Invoice Period End:", invoice.period_end);
 
       const subscription = await prisma.subscription.findFirst({
         where: { razorpaySubscriptionId: invoice.subscription_id },
@@ -355,8 +366,31 @@ export const POST = async (req: NextRequest) => {
       if (!subscription) return NextResponse.json({ received: true });
 
       // ✅ Fix: Ensure the date is a valid number
-      const periodEndTimestamp = invoice.period_end || (Math.floor(Date.now() / 1000) + 2592000); // Fallback +30 days
-      const validEndDate = new Date(periodEndTimestamp * 1000);
+      // const periodEndTimestamp = invoice.period_end || (Math.floor(Date.now() / 1000) + 2592000); // Fallback +30 days
+      // const validEndDate = new Date(periodEndTimestamp * 1000);
+
+      // await prisma.$transaction(async (tx) => {
+      //   await tx.user.update({
+      //     where: { id: subscription.userId },
+      //     data: { membership: "PAID" },
+      //   });
+
+      //   await tx.subscription.update({
+      //     where: { id: subscription.id },
+      //     data: {
+      //       renewedAt: new Date(),
+      //       endDate: validEndDate, // ✅ Now guaranteed to be a valid Date object
+      //     },
+      //   });
+      //   // Update mandate's nextBillingDate
+      //   await tx.mandate.updateMany({
+      //     where: { mandateId: subscription.razorpaySubscriptionId! },
+      //     data: { nextBillingDate: validEndDate },
+      //   });
+
+      //   // ... rest of your code for creating the invoice
+      // });
+      const periodEndTimestamp = invoice.period_end;
 
       await prisma.$transaction(async (tx) => {
         await tx.user.update({
@@ -364,20 +398,24 @@ export const POST = async (req: NextRequest) => {
           data: { membership: "PAID" },
         });
 
-        await tx.subscription.update({
-          where: { id: subscription.id },
-          data: {
-            renewedAt: new Date(),
-            endDate: validEndDate, // ✅ Now guaranteed to be a valid Date object
-          },
-        });
-        // Update mandate's nextBillingDate
-        await tx.mandate.updateMany({
-          where: { mandateId: subscription.razorpaySubscriptionId! },
-          data: { nextBillingDate: validEndDate },
-        });
+        if (periodEndTimestamp) {
+          const validEndDate = new Date(periodEndTimestamp * 1000);
 
-        // ... rest of your code for creating the invoice
+          // 🔥 MAGIC FIX: Only update if the new date is further in the future!
+          if (validEndDate > subscription.endDate) {
+            await tx.subscription.update({
+              where: { id: subscription.id },
+              data: {
+                renewedAt: new Date(),
+                endDate: validEndDate,
+              },
+            });
+            await tx.mandate.updateMany({
+              where: { mandateId: subscription.razorpaySubscriptionId! },
+              data: { nextBillingDate: validEndDate },
+            });
+          }
+        }
       });
       return NextResponse.json({ received: true });
     }

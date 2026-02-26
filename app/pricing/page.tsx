@@ -99,6 +99,8 @@ export default function PricingPage() {
         const data = await res.json();
         return data.priority;
       },
+      refetchOnMount: true, //  refetch on page revisit
+      staleTime: 0,
     });
   const userPriority = planPriority ? planPriority : PLAN_PRIORITY.FREE;
 
@@ -138,6 +140,9 @@ export default function PricingPage() {
     if (session.status !== "authenticated") {
       return planInterval === "YEARLY";
     }
+    if (user?.userType === "ENTHUSIAST") {
+      return false;
+    }
 
     // 🟢 Logged-in users → only if it's an upgrade
     return (
@@ -155,11 +160,22 @@ export default function PricingPage() {
     // lowest coach plan only
     return PLAN_PRIORITY[planInterval] === PLAN_PRIORITY.FREE;
   };
-  const isPaidCurrentPlan = (planInterval: PlanInterval) => {
+  const isPaidCurrentPlan = (plan: Plan) => {
+    if (session.status !== "authenticated") return false;
+    if (user?.membership === "FREE") return false;
+
+    // ENTHUSIAST plans must match exactly
+    if (user?.userType === "ENTHUSIAST") {
+      return (
+        plan.userType === "ENTHUSIAST" &&
+        PLAN_PRIORITY[plan.interval] === userPriority
+      );
+    }
+
+    // COACH & SOLOPRENEUR are the SAME
     return (
-      session.status === "authenticated" &&
-      PLAN_PRIORITY[planInterval] === userPriority &&
-      user?.membership !== "FREE"
+      (plan.userType === "COACH" || plan.userType === "SOLOPRENEUR") &&
+      PLAN_PRIORITY[plan.interval] === userPriority
     );
   };
 
@@ -188,7 +204,7 @@ export default function PricingPage() {
               const { price, period } = getPriceDisplay(p);
               const badgeText =
                 shouldShowCoachFreeCurrentPlan(p.interval) ||
-                isPaidCurrentPlan(p.interval)
+                isPaidCurrentPlan(p)
                   ? "Current Plan"
                   : isBestValuePlan(p.interval)
                     ? "BEST VALUE"
@@ -201,7 +217,7 @@ export default function PricingPage() {
                   ${
                     shouldShowCoachFreeCurrentPlan(p.interval)
                       ? "border-2 border-green-600 ring-4 ring-green-600/10 z-10 transform sm:-translate-y-2"
-                      : isPaidCurrentPlan(p.interval)
+                      : isPaidCurrentPlan(p)
                         ? "border-2 border-green-600 ring-4 ring-green-600/10 z-10 transform sm:-translate-y-2"
                         : isBestValuePlan(p.interval)
                           ? "border-2 border-blue-600 ring-4 ring-blue-600/10 z-10 transform sm:-translate-y-2"
@@ -213,7 +229,7 @@ export default function PricingPage() {
                     <div
                       className={`absolute -top-[2px] -right-[2px] text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl uppercase z-20 ${
                         shouldShowCoachFreeCurrentPlan(p.interval) ||
-                        isPaidCurrentPlan(p.interval)
+                        isPaidCurrentPlan(p)
                           ? "bg-green-600"
                           : isBestValuePlan(p.interval)
                             ? "bg-blue-600"

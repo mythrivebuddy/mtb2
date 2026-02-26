@@ -7,6 +7,7 @@ import {
   PaymentStatus,
 } from "@prisma/client";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
+import { RazorpaySubscriptionCreatePayload } from "@/types/razorpay";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -52,7 +53,7 @@ export const POST = async (req: NextRequest) => {
 
     const isIndia = billingDetails.country === "IN";
     const currency = isIndia ? "INR" : "USD";
-    console.log(currency)
+
     const baseAmount = isIndia ? plan.amountINR : plan.amountUSD;
     const gstRate = plan.gstPercentage / 100;
 
@@ -107,6 +108,9 @@ export const POST = async (req: NextRequest) => {
     // ----------------------------
     // Compute charges
     // ----------------------------
+    // const isFirstCycleOnlyCoupon = coupon?.firstCycleOnly === true;
+    const isMultiCycleCoupon = coupon?.multiCycle === true;
+
     const discountValue = calculateDiscount(baseAmount, coupon);
 
     let finalAmount = calculateFinal(
@@ -118,6 +122,24 @@ export const POST = async (req: NextRequest) => {
     );
 
     finalAmount = (finalAmount <= 0) ? 1 : finalAmount;
+
+    // ✅ Calculate the full price INCLUDING GST for subsequent cycles
+    const fullPriceWithGst = calculateFinal(
+      baseAmount,
+      0, // 0 discount for subsequent cycles
+      isIndia,
+      plan.gstEnabled,
+      gstRate
+    );
+
+    // ✅ Razorpay subscription should ALWAYS be full amount
+    // Razorpay subscription amount logic
+    const razorpayPlanAmount = isMultiCycleCoupon
+      ? finalAmount            //  discounted every cycle
+      : fullPriceWithGst;      //  full price with GST after first cycle
+
+    //  First cycle charge (mandate activation)
+    const firstCycleChargeAmount = finalAmount;
 
     /* -------------------------------------------------- */
     /* 4️⃣ BILLING INFO */
@@ -153,51 +175,51 @@ export const POST = async (req: NextRequest) => {
     /* 5️⃣ INTERNAL PAYMENT ORDER */
     /* -------------------------------------------------- */
     const existingOrder = await prisma.paymentOrder.findFirst({
-  where: {
-    userId,
-    planId: plan.id,
-  },
-  orderBy: {
-    createdAt: "desc", // optional but recommended
-  },
-});
-let paymentOrder;
-if (existingOrder) {
-  paymentOrder = await prisma.paymentOrder.update({
-    where: { id: existingOrder.id }, // must use unique field here
-    data: {
-      currency,
-      couponId: coupon?.id,
-      status: PaymentStatus.CREATED,
-      baseAmount,
-      discountApplied: discountValue,
-      gstAmount:
-        isIndia && plan.gstEnabled
-          ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
-          : 0,
-      totalAmount: finalAmount,
-      billingInfoId: billingInfo.id,
-    },
-  });
-} else {
-  paymentOrder = await prisma.paymentOrder.create({
-    data: {
-      userId,
-      planId: plan.id,
-      currency,
-      couponId: coupon?.id,
-      status: PaymentStatus.CREATED,
-      baseAmount,
-      discountApplied: discountValue,
-      gstAmount:
-        isIndia && plan.gstEnabled
-          ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
-          : 0,
-      totalAmount: finalAmount,
-      billingInfoId: billingInfo.id,
-    },
-  });
-}
+      where: {
+        userId,
+        planId: plan.id,
+      },
+      orderBy: {
+        createdAt: "desc", // optional but recommended
+      },
+    });
+    let paymentOrder;
+    if (existingOrder) {
+      paymentOrder = await prisma.paymentOrder.update({
+        where: { id: existingOrder.id }, // must use unique field here
+        data: {
+          currency,
+          couponId: coupon?.id,
+          status: PaymentStatus.CREATED,
+          baseAmount,
+          discountApplied: discountValue,
+          gstAmount:
+            isIndia && plan.gstEnabled
+              ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
+              : 0,
+          totalAmount: firstCycleChargeAmount,
+          billingInfoId: billingInfo.id,
+        },
+      });
+    } else {
+      paymentOrder = await prisma.paymentOrder.create({
+        data: {
+          userId,
+          planId: plan.id,
+          currency,
+          couponId: coupon?.id,
+          status: PaymentStatus.CREATED,
+          baseAmount,
+          discountApplied: discountValue,
+          gstAmount:
+            isIndia && plan.gstEnabled
+              ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
+              : 0,
+          totalAmount: firstCycleChargeAmount,
+          billingInfoId: billingInfo.id,
+        },
+      });
+    }
     // const paymentOrder = await prisma.paymentOrder.create({
     //   data: {
     //     userId,
@@ -219,121 +241,145 @@ if (existingOrder) {
     const internalOrderId = `sub_${paymentOrder.id}`;
 
 
-/* -------------------------------------------------- */
-/* 6️⃣ RAZORPAY SUBSCRIPTION */
-/* -------------------------------------------------- */
-const { keyId, keySecret } = await getRazorpayConfig();
+    /* -------------------------------------------------- */
+    /* 6️⃣ RAZORPAY SUBSCRIPTION */
+    /* -------------------------------------------------- */
+    const { razorpayKeyId, razorpayKeySecret } = await getRazorpayConfig();
 
-const razorpay = new Razorpay({
-  key_id: keyId,
-  key_secret: keySecret,
-});
+    const razorpay = new Razorpay({
+      key_id: razorpayKeyId,
+      key_secret: razorpayKeySecret,
+    });
 
-console.log("finalAmount", finalAmount, "currency", currency, "plan.interval", plan.interval)
-// Find if a plan with these exact specs already exists
-const existingPlan = await prisma.razorpayPlanCache.findFirst({
-  where: {
-    amount: finalAmount,
-    currency,
-    interval: plan.interval,
-    planName: plan.name,
-  },
-});
-console.log(existingPlan)
-let subscriptionPlanId: string;
-console.log("CHECKING CONDITION");
-if (!existingPlan) {
-  console.log("Entered if block", currency);
-  const razorpayPlan = await razorpay.plans.create({
-    period: plan.interval === "MONTHLY" ? "monthly" : "yearly",
-    interval: 1,
-    item: {
-      name: plan.name,
-      amount: Math.round(finalAmount * 100), // convert to subunits/paise
-      currency,
-      description: plan.name,
-    },
-  });
-  console.log(razorpayPlan)
 
-  // Cache it so we don't create thousands of duplicate plans in Razorpay
-  const cached = await prisma.razorpayPlanCache.create({
-    data: {
-      razorpayPlanId: razorpayPlan.id,
-      amount: finalAmount,
-      currency,
-      interval: plan.interval,
-      planName: plan.name,
-      gstEnabled: plan.gstEnabled,
-    gstPercentage: plan.gstPercentage,
-    },
-  });
-  
-  subscriptionPlanId = cached.razorpayPlanId;
-} else {
-  subscriptionPlanId = existingPlan.razorpayPlanId;
-}
+    // Find if a plan with these exact specs already exists
+    const existingPlan = await prisma.razorpayPlanCache.findFirst({
+      where: {
+        amount: razorpayPlanAmount, // ✅ ALWAYS recurring amount
+        currency,
+        interval: plan.interval,
+        planName: plan.name,
+      },
+    });
 
-// Create the actual subscription
-const razorpaySubscription = await razorpay.subscriptions.create({
-  plan_id: subscriptionPlanId,
-  customer_notify: 1,
-  total_count: plan.interval === "MONTHLY" ? 120 : 10, // max 10 years
-  notes: {
-    paymentOrderId: paymentOrder.id,
-    userId,
-    internalOrderId,
-  },
-});
+    let subscriptionPlanId: string;
 
-//    /* -------------------------------------------------- */
-// /* 7️⃣ MANDATE + SUBSCRIPTION (LOCAL) */
-// /* -------------------------------------------------- */
+    if (!existingPlan) {
 
-// // 1. Create or Update Mandate
-// const mandate = await prisma.mandate.create({
-//   data: {
-//     mandateId: razorpaySubscription.id,
-//     userId,
-//     planId: plan.id,
-//     status: MandateStatus.PENDING,
-//     currency,
-//     frequency: plan.interval,
-//     maxAmount: finalAmount,
-//   },
-// });
+      const razorpayPlan = await razorpay.plans.create({
+        period: plan.interval === "MONTHLY" ? "monthly" : "yearly",
+        interval: 1,
+        item: {
+          name: plan.name,
+          amount: Math.round(razorpayPlanAmount * 100), // convert to subunits/paise
+          currency,
+          description: plan.name,
+        },
+      });
 
-// // 2. Find if user already has a subscription entry
-// const existingSubscription = await prisma.subscription.findFirst({
-//   where: { userId: userId },
-// });
 
-// const subscriptionData = {
-//   planId: plan.id,
-//   couponId: coupon?.id || null,
-//   status: SubscriptionStatus.PENDING,
-//   mandateId: mandate.id,
-//   paymentOrderId: paymentOrder.id,
-//   razorpaySubscriptionId: razorpaySubscription.id,
-// };
+      // Cache it so we don't create thousands of duplicate plans in Razorpay
+      const cached = await prisma.razorpayPlanCache.create({
+        data: {
+          razorpayPlanId: razorpayPlan.id,
+          amount: razorpayPlanAmount,
+          currency,
+          interval: plan.interval,
+          planName: plan.name,
+          gstEnabled: plan.gstEnabled,
+          gstPercentage: plan.gstPercentage,
+        },
+      });
 
-// if (existingSubscription) {
-//   // 3. Update using the unique Primary Key (id)
-//   await prisma.subscription.update({
-//     where: { id: existingSubscription.id },
-//     data: subscriptionData,
-//   });
-// } else {
-//   // 4. Create new if none exists
-//   await prisma.subscription.create({
-//     data: {
-//       ...subscriptionData,
-//       userId,
-//       startDate: new Date(),
-//       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)),
-//     },
-//   });
-// }
+      subscriptionPlanId = cached.razorpayPlanId;
+    } else {
+      subscriptionPlanId = existingPlan.razorpayPlanId;
+    }
+
+    // Build base subscription payload
+    const subscriptionPayload: RazorpaySubscriptionCreatePayload  = {
+      plan_id: subscriptionPlanId,
+      customer_notify: 1,
+      total_count: plan.interval === "MONTHLY" ? 120 : 10, // max 10 years
+      notes: {
+        paymentOrderId: paymentOrder.id,
+        userId,
+        internalOrderId,
+      },
+    };
+
+    // Delay the standard plan billing to next cycle and charge the discounted amount right now via addons
+    if (firstCycleChargeAmount !== razorpayPlanAmount) {
+      const nextCycleDate = new Date();
+      if (plan.interval === "MONTHLY") {
+        nextCycleDate.setMonth(nextCycleDate.getMonth() + 1);
+      } else {
+        nextCycleDate.setFullYear(nextCycleDate.getFullYear() + 1);
+      }
+
+      subscriptionPayload.start_at = Math.floor(nextCycleDate.getTime() / 1000);
+      subscriptionPayload.addons = [
+        {
+          item: {
+            name: "First Cycle Charge",
+            amount: Math.round(firstCycleChargeAmount * 100),
+            currency,
+          },
+        },
+      ];
+    }
+
+    // Create the actual subscription
+    const razorpaySubscription = await razorpay.subscriptions.create(subscriptionPayload);
+
+    //    /* -------------------------------------------------- */
+    // /* 7️⃣ MANDATE + SUBSCRIPTION (LOCAL) */
+    // /* -------------------------------------------------- */
+
+    // // 1. Create or Update Mandate
+    // const mandate = await prisma.mandate.create({
+    //   data: {
+    //     mandateId: razorpaySubscription.id,
+    //     userId,
+    //     planId: plan.id,
+    //     status: MandateStatus.PENDING,
+    //     currency,
+    //     frequency: plan.interval,
+    //     maxAmount: finalAmount,
+    //   },
+    // });
+
+    // // 2. Find if user already has a subscription entry
+    // const existingSubscription = await prisma.subscription.findFirst({
+    //   where: { userId: userId },
+    // });
+
+    // const subscriptionData = {
+    //   planId: plan.id,
+    //   couponId: coupon?.id || null,
+    //   status: SubscriptionStatus.PENDING,
+    //   mandateId: mandate.id,
+    //   paymentOrderId: paymentOrder.id,
+    //   razorpaySubscriptionId: razorpaySubscription.id,
+    // };
+
+    // if (existingSubscription) {
+    //   // 3. Update using the unique Primary Key (id)
+    //   await prisma.subscription.update({
+    //     where: { id: existingSubscription.id },
+    //     data: subscriptionData,
+    //   });
+    // } else {
+    //   // 4. Create new if none exists
+    //   await prisma.subscription.create({
+    //     data: {
+    //       ...subscriptionData,
+    //       userId,
+    //       startDate: new Date(),
+    //       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 10)),
+    //     },
+    //   });
+    // }
 
     await prisma.paymentOrder.update({
       where: { id: paymentOrder.id },
@@ -349,7 +395,7 @@ const razorpaySubscription = await razorpay.subscriptions.create({
     /* 8️⃣ RESPONSE */
     /* -------------------------------------------------- */
     return NextResponse.json({
-      key: keyId,
+      key: razorpayKeyId,
       subscriptionId: razorpaySubscription.id,
       purchaseId: paymentOrder.id,
       internalOrderId,

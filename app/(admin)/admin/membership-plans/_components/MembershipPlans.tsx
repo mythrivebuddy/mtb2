@@ -297,7 +297,7 @@ const MembershipPlans = () => {
             <Link href="/admin/coupons">Coupons Management</Link>
           </Button>
           <Button className="bg-blue-600 hover:bg-blue-700">
-            <Link href="/admin/cashfree-config">Cashfree Environments</Link>
+            <Link href="/admin/payment-gateway-config">Payment Gateway Environments</Link>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>

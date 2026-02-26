@@ -15,3 +15,18 @@ export interface RazorpayCreateOrderResponse {
   keyId: string;
 }
 
+export interface RazorpaySubscriptionCreatePayload {
+  plan_id: string;
+  customer_notify?: 0 | 1;
+  total_count: number;
+  start_at?: number;
+  expire_by?: number;
+  addons?: {
+    item: {
+      name: string;
+      amount: number;
+      currency: string;
+    };
+  }[];
+  notes?: Record<string, string>;
+}
