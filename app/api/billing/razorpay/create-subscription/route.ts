@@ -7,6 +7,7 @@ import {
   PaymentStatus,
 } from "@prisma/client";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
+import { RazorpaySubscriptionCreatePayload } from "@/types/razorpay";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -107,7 +108,7 @@ export const POST = async (req: NextRequest) => {
     // ----------------------------
     // Compute charges
     // ----------------------------
-    const isFirstCycleOnlyCoupon = coupon?.firstCycleOnly === true;
+    // const isFirstCycleOnlyCoupon = coupon?.firstCycleOnly === true;
     const isMultiCycleCoupon = coupon?.multiCycle === true;
 
     const discountValue = calculateDiscount(baseAmount, coupon);
@@ -296,7 +297,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     // Build base subscription payload
-    const subscriptionPayload: any = {
+    const subscriptionPayload: RazorpaySubscriptionCreatePayload  = {
       plan_id: subscriptionPlanId,
       customer_notify: 1,
       total_count: plan.interval === "MONTHLY" ? 120 : 10, // max 10 years

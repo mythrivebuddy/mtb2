@@ -81,10 +81,6 @@ export const POST = async (req: NextRequest) => {
             data: { status: SubscriptionStatus.ACTIVE },
           });
 
-          const subsAfterUpdate = await tx.subscription.findMany({
-            where: { userId: order.userId },
-          });
-
 
           await tx.user.update({
             where: { id: order.userId },
