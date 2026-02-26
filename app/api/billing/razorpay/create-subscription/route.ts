@@ -52,7 +52,7 @@ export const POST = async (req: NextRequest) => {
 
     const isIndia = billingDetails.country === "IN";
     const currency = isIndia ? "INR" : "USD";
-    console.log(currency)
+   
     const baseAmount = isIndia ? plan.amountINR : plan.amountUSD;
     const gstRate = plan.gstPercentage / 100;
 
@@ -222,14 +222,14 @@ if (existingOrder) {
 /* -------------------------------------------------- */
 /* 6️⃣ RAZORPAY SUBSCRIPTION */
 /* -------------------------------------------------- */
-const { keyId, keySecret } = await getRazorpayConfig();
+const { razorpayKeyId, razorpayKeySecret } = await getRazorpayConfig();
 
 const razorpay = new Razorpay({
-  key_id: keyId,
-  key_secret: keySecret,
+  key_id: razorpayKeyId,
+  key_secret: razorpayKeySecret,
 });
 
-console.log("finalAmount", finalAmount, "currency", currency, "plan.interval", plan.interval)
+
 // Find if a plan with these exact specs already exists
 const existingPlan = await prisma.razorpayPlanCache.findFirst({
   where: {
@@ -239,11 +239,11 @@ const existingPlan = await prisma.razorpayPlanCache.findFirst({
     planName: plan.name,
   },
 });
-console.log(existingPlan)
+
 let subscriptionPlanId: string;
-console.log("CHECKING CONDITION");
+
 if (!existingPlan) {
-  console.log("Entered if block", currency);
+
   const razorpayPlan = await razorpay.plans.create({
     period: plan.interval === "MONTHLY" ? "monthly" : "yearly",
     interval: 1,
@@ -254,7 +254,7 @@ if (!existingPlan) {
       description: plan.name,
     },
   });
-  console.log(razorpayPlan)
+ 
 
   // Cache it so we don't create thousands of duplicate plans in Razorpay
   const cached = await prisma.razorpayPlanCache.create({
@@ -349,7 +349,7 @@ const razorpaySubscription = await razorpay.subscriptions.create({
     /* 8️⃣ RESPONSE */
     /* -------------------------------------------------- */
     return NextResponse.json({
-      key: keyId,
+      key: razorpayKeyId,
       subscriptionId: razorpaySubscription.id,
       purchaseId: paymentOrder.id,
       internalOrderId,

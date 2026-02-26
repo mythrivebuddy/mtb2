@@ -31,22 +31,22 @@ export async function GET(req: NextRequest) {
   /* -------------------------------------------------- */
   if (paymentId && signature) {
     try {
-      const { keySecret } = await getRazorpayConfig();
+      const { razorpayKeySecret } = await getRazorpayConfig();
 
       const body = orderId
         ? `${orderId}|${paymentId}`
         : `${paymentId}|${subId}`;
 
       const expected = crypto
-        .createHmac("sha256", keySecret)
+        .createHmac("sha256", razorpayKeySecret)
         .update(body)
         .digest("hex");
 
       if (expected !== signature) {
         console.warn("⚠ Razorpay signature mismatch (ignored)");
       }
-    } catch {
-      console.warn("⚠ Signature verification skipped");
+    } catch (err) {
+      console.warn("⚠ Signature verification skipped", err);
     }
   }
 

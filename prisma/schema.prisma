@@ -1384,6 +1384,12 @@ model AdminCashfreeConfigSettings {
   updatedAt    DateTime @updatedAt
 }
 
+model AdminRazorpayConfigSettings {
+  id            Int      @id @default(autoincrement())
+  razorpayMode  String   @default("test") // "test" | "live"
+  updatedAt     DateTime @updatedAt
+}
+
 model AdminPaymentGatewayConfig {
   id            Int      @id @default(autoincrement())
   activeGateway String   @default("CASHFREE") // "CASHFREE" | "RAZORPAY"

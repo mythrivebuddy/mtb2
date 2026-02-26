@@ -6,12 +6,12 @@ import {
   PaymentStatus,
   SubscriptionStatus,
 } from "@prisma/client";
-import { verifyRazorpaySignature } from "@/lib/razorpay/razorpay";
+import { getRazorpayConfig, verifyRazorpaySignature } from "@/lib/razorpay/razorpay";
 
 export const POST = async (req: NextRequest) => {
-  console.log("WEBHOOK CALLED");
+  
   try {
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const { razorpayWebhookSecret:webhookSecret } = await getRazorpayConfig();
     if (!webhookSecret) {
       console.error("❌ Missing RAZORPAY_WEBHOOK_SECRET");
       return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -38,7 +38,6 @@ export const POST = async (req: NextRequest) => {
 
     const event = JSON.parse(rawBody);
 
-    console.log("🔔 Razorpay Event:", event.event);
 
     /* ========================================================= */
     /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
@@ -56,9 +55,7 @@ export const POST = async (req: NextRequest) => {
         const order = await prisma.paymentOrder.findFirst({
           where: { razorpaySubscriptionId: payment.subscription_id },
         });
-        console.log("🟡 [payment.captured] subscription payment detected");
-        console.log("🧾 Razorpay subscription_id:", payment.subscription_id);
-        console.log("🧾 Found paymentOrder:", order);
+     
 
         if (!order || order.status === PaymentStatus.PAID) {
           return NextResponse.json({ received: true });
@@ -85,10 +82,7 @@ export const POST = async (req: NextRequest) => {
             where: { userId: order.userId },
           });
 
-          console.log(
-            "📦 [payment.captured] subscriptions AFTER updateMany:",
-            subsAfterUpdate
-          );
+          
           await tx.user.update({
             where: { id: order.userId },
             data: { membership: "PAID" },
@@ -209,8 +203,7 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "subscription.activated") {
       const subscription = event.payload.subscription.entity;
-      console.log("🟢 [subscription.activated] webhook received");
-      console.log("🧾 Razorpay subscription id:", subscription.id);
+     
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
         include: {
@@ -218,7 +211,7 @@ export const POST = async (req: NextRequest) => {
         }
       });
 
-      console.log("🧾 [subscription.activated] linked paymentOrder:", order);
+   
 
       if (!order) return NextResponse.json({ received: true });
 
@@ -344,9 +337,6 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "invoice.paid") {
       const invoice = event.payload.invoice.entity;
-
-      // 🔍 Log this to see exactly what Razorpay is sending
-      console.log("Invoice Period End:", invoice.period_end);
 
       const subscription = await prisma.subscription.findFirst({
         where: { razorpaySubscriptionId: invoice.subscription_id },

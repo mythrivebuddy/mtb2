@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
+import { checkRole } from "@/lib/utils/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { planId, userId, couponCode } = await req.json();
+    const session = await checkRole("USER");
+    const userId = session.user.id;
+    const { planId, couponCode } = await req.json();
 
     // 1️⃣ Fetch plan
     const plan = await prisma.subscriptionPlan.findUnique({
@@ -106,11 +109,11 @@ export async function POST(req: NextRequest) {
     });
 
     // 6️⃣ Razorpay
-    const { keyId, keySecret } = await getRazorpayConfig();
+    const { razorpayKeyId, razorpayKeySecret } = await getRazorpayConfig();
 
     const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
+      key_id: razorpayKeyId,
+      key_secret: razorpayKeySecret,
     });
 
     const razorpayOrder = await razorpay.orders.create({
@@ -134,7 +137,7 @@ export async function POST(req: NextRequest) {
       orderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
-      keyId,
+      keyId: razorpayKeyId,
     });
   } catch (error) {
     console.error("Razorpay create order error:", error);
