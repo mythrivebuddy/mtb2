@@ -128,6 +128,7 @@ export async function POST(req: Request) {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       },
       create: {
         userId,
@@ -140,6 +141,7 @@ export async function POST(req: Request) {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       }
     });
 

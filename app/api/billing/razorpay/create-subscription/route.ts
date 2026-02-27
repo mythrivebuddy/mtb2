@@ -156,6 +156,7 @@ export const POST = async (req: NextRequest) => {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       },
       create: {
         userId,
@@ -168,6 +169,7 @@ export const POST = async (req: NextRequest) => {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       },
     });
 

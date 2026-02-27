@@ -17,6 +17,7 @@ import {
   Phone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { GST_REGEX } from "@/lib/constant";
 
 // types
 
@@ -68,6 +69,7 @@ export default function CheckoutPage() {
     state: "",
     postalCode: "",
     country: "IN", // Default to IN, will update via IP
+    gstNumber: "",
   });
 
   const [couponCode, setCouponCode] = useState("");
@@ -328,10 +330,12 @@ export default function CheckoutPage() {
       try {
         const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
-        if (data.country_code && data.country_code !== "IN") {
-          setBillingDetails((prev) => ({ ...prev, country: "US" })); // Set to US/Global for non-India
-        } else {
+        if (data.country_code && data.country_code == "IN") {
           setBillingDetails((prev) => ({ ...prev, country: "IN" }));
+        } else if (data.country_code === "US") {
+          setBillingDetails((prev) => ({ ...prev, country: "US" }));
+        } else {
+          setBillingDetails((prev) => ({ ...prev, country: "OT" }));
         }
       } catch (error) {
         console.warn("IP detection failed, defaulting to India", error);
@@ -345,7 +349,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     async function init() {
       if (!planId) return;
-
+      const isIndia = billingDetails.country === "IN";
+      const currency = isIndia ? "INR" : "USD";
       setLoading(true);
       try {
         //   // 1️⃣ CHECK IF USER ALREADY HAS THIS PLAN
@@ -374,7 +379,7 @@ export default function CheckoutPage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 planId,
-                currency: planData.currency || "INR",
+                currency: currency,
                 billingCountry: billingDetails.country, // Use detected country
                 userType: session?.user.userType,
                 userId: session?.user?.id,
@@ -448,7 +453,8 @@ export default function CheckoutPage() {
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
-
+    const isIndia = billingDetails.country === "IN";
+    const currency = isIndia ? "INR" : "USD";
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/verify`,
@@ -458,7 +464,7 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             code: couponCode,
             planId: plan.id,
-            currency: plan.currency || "INR",
+            currency: currency,
             billingCountry: billingDetails.country,
             userType: session?.user.userType,
             userId: session?.user?.id,
@@ -593,7 +599,10 @@ export default function CheckoutPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setBillingDetails((prev) => ({ ...prev, [name]: value }));
+    setBillingDetails((prev) => ({
+      ...prev,
+      [name]: name === "gstNumber" ? value.toUpperCase() : value,
+    }));
   };
 
   // ---------------------------
@@ -610,6 +619,12 @@ export default function CheckoutPage() {
       !billingDetails.postalCode
     ) {
       toast.error("Please fill in all required address fields.");
+      return;
+    }
+    const gst = billingDetails.gstNumber.trim();
+
+    if (billingDetails.country === "IN" && gst && !GST_REGEX.test(gst)) {
+      toast.error("Invalid GST Number format");
       return;
     }
 
@@ -864,6 +879,25 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+                {/* GST NUMBER (OPTIONAL - INDIA ONLY) */}
+                {billingDetails.country === "IN" && (
+                  <div className="col-span-full">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      GST Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="gstNumber"
+                      value={billingDetails.gstNumber}
+                      onChange={handleInputChange}
+                      placeholder="22AAAAA0000A1Z5"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border uppercase"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Enter GST number if you want GST invoice for business.
+                    </p>
+                  </div>
+                )}
 
                 {/* ADDRESS LINE 1 - ALWAYS FULL WIDTH */}
                 <div className="col-span-full">
