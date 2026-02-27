@@ -26,17 +26,12 @@ export function RazorpayEnvironment({ initialData }: Props) {
     },
 
     onSuccess: (updated) => {
-      queryClient.setQueryData(["payment-config"], (prev: any) => ({
-        ...prev,
-        razorpay: {
-          mode: updated.razorpayMode,
-        },
-      }));
+      queryClient.invalidateQueries({ queryKey: ["payment-config"] });
 
       toast.success(
         `Razorpay switched to ${
           updated.razorpayMode === "live" ? "Live" : "Test"
-        } mode`
+        } mode`,
       );
     },
   });
@@ -65,7 +60,7 @@ export function RazorpayEnvironment({ initialData }: Props) {
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm font-medium">Toggle Environment</span>
-          <Switch checked={isLive} onCheckedChange={handleToggle} />
+          <Switch disabled={toggleMutation.isPending} checked={isLive} onCheckedChange={handleToggle} />
         </div>
       </CardContent>
     </Card>

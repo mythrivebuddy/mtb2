@@ -4,6 +4,7 @@ import axios from "axios";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type Props = {
   initialData: {
@@ -25,17 +26,9 @@ export function CashfreeEnvironment({ initialData }: Props) {
       return res.data;
     },
 
-    onSuccess: (updated) => {
-      queryClient.setQueryData(["payment-config"], (prev: any) => ({
-        ...prev,
-        cashfree: {
-          mode: updated.cashfreeMode,
-          baseUrl:
-            updated.cashfreeMode === "prod"
-              ? process.env.NEXT_PUBLIC_CASHFREE_PROD_BASE_URL
-              : process.env.NEXT_PUBLIC_CASHFREE_SANDBOX_BASE_URL,
-        },
-      }));
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-config"] });
+      toast.success("Cashfree environment updated");
     },
   });
 
@@ -70,7 +63,7 @@ export function CashfreeEnvironment({ initialData }: Props) {
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm font-medium">Toggle Environment</span>
-          <Switch checked={isProduction} onCheckedChange={handleToggle} />
+          <Switch disabled={toggleMutation.isPending} checked={isProduction} onCheckedChange={handleToggle} />
         </div>
       </CardContent>
     </Card>
