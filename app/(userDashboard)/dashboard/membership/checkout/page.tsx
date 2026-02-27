@@ -17,6 +17,7 @@ import {
   Phone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { GST_REGEX } from "@/lib/constant";
 
 // types
 
@@ -29,14 +30,18 @@ interface Plan {
   currency: string;
   interval: "MONTHLY" | "YEARLY" | "LIFETIME";
   features?: string[];
-  isProgramPlan: boolean
+  isProgramPlan: boolean;
 }
 
 interface CouponResponse {
   valid: boolean;
   code: string;
   discountType: "percentage" | "fixed" | "free_duration";
-  discountValue: number;
+  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT";
+  // discountValue: number;
+  discountPercentage?: number | null;
+  discountAmountINR?: number | null;
+  discountAmountUSD?: number | null;
   message?: string;
 }
 
@@ -51,8 +56,8 @@ export default function CheckoutPage() {
   const [plan, setPlan] = useState<Plan | null>(null);
 
   // to get active gateway
-  const [activeGateway, setActiveGateway] = useState<PaymentGateway>("CASHFREE");
-
+  const [activeGateway, setActiveGateway] =
+    useState<PaymentGateway>("CASHFREE");
 
   // Form State
   const [billingDetails, setBillingDetails] = useState({
@@ -64,11 +69,12 @@ export default function CheckoutPage() {
     state: "",
     postalCode: "",
     country: "IN", // Default to IN, will update via IP
+    gstNumber: "",
   });
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<CouponResponse | null>(
-    null
+    null,
   );
   const [couponMessage, setCouponMessage] = useState<{
     type: "success" | "error";
@@ -96,7 +102,8 @@ export default function CheckoutPage() {
   // razorpay script loader
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
-      if ((window as unknown as WindowWithRazorpay).Razorpay) return resolve(true);
+      if ((window as unknown as WindowWithRazorpay).Razorpay)
+        return resolve(true);
 
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -122,169 +129,188 @@ export default function CheckoutPage() {
     subscription_id?: string;
     modal?: {
       ondismiss: () => void;
-    }
+    };
   };
   interface RazorpaySuccessResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id?: string;
-  razorpay_subscription_id?: string;
-  razorpay_signature: string;
-}
+    razorpay_payment_id: string;
+    razorpay_order_id?: string;
+    razorpay_subscription_id?: string;
+    razorpay_signature: string;
+  }
 
-interface RazorpayErrorResponse {
-  error: {
-    code: string;
-    description: string;
-    source: string;
-    step: string;
-    reason: string;
-    metadata: {
-      order_id?: string;
-      payment_id?: string;
-      subscription_id?: string;
+  interface RazorpayErrorResponse {
+    error: {
+      code: string;
+      description: string;
+      source: string;
+      step: string;
+      reason: string;
+      metadata: {
+        order_id?: string;
+        payment_id?: string;
+        subscription_id?: string;
+      };
     };
-  };
-}
-interface WindowWithRazorpay extends Window {
-  Razorpay: new (options: Record<string, unknown>) => {
-    open: () => void;
-    on: (event: string, callback: (res: RazorpayErrorResponse) => void) => void;
-  };
-}
-
-const handleWithRazorpay = async (): Promise<void> => {
-  const loaded = await loadRazorpayScript();
-  if (!loaded) {
-    toast.error("Razorpay SDK failed to load");
-    return;
   }
-
-  if (!plan) return;
-
-  try {
-    const isLifetime = plan.interval === "LIFETIME";
-    const isRecurring =
-      plan.interval === "MONTHLY" || plan.interval === "YEARLY";
-
-    let endpoint = "";
-
-    // 1️⃣ Backend endpoint
-    if (isLifetime) {
-      endpoint = "/api/billing/razorpay/create-one-time-order";
-    } else if (isRecurring) {
-      endpoint = "/api/billing/razorpay/create-subscription";
-    } else {
-      throw new Error("Unsupported plan interval");
-    }
-    console.log("Creating Razorpay order/subscription with endpoint:", endpoint);
-    // 2️⃣ Create order / subscription
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        planId: plan.id,
-        couponCode: appliedCoupon?.code || null,
-        billingDetails,
-      }),
-    });
-    console.log("Razorpay order/subscription creation ");
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || "Razorpay order creation failed");
-    }
-
-    // 3️⃣ Razorpay options
-    const options: RazorpayCheckoutOptions = {
-      key: data.key,
-      name: "mythrivebuddy.com",
-      description: plan.name,
-      theme: { color: "#0f172a" },
-
-   // Inside handleWithRazorpay -> options object
-handler: function (response: RazorpaySuccessResponse) {
-  const callbackUrl = new URL(
-    "/api/billing/razorpay/callback",
-    window.location.origin
-  );
-console.log(response, "Razorpay success response in handler");
-  if (isLifetime) {
-    callbackUrl.searchParams.set("order_id", response.razorpay_order_id!);
-  } else {
-    callbackUrl.searchParams.set("sub_id", response.razorpay_subscription_id!);
-  }
-
-  callbackUrl.searchParams.set("payment_id", response.razorpay_payment_id!);
-  callbackUrl.searchParams.set("signature", response.razorpay_signature!);
-
-  window.location.href = callbackUrl.toString();
-},
-
-      prefill: {
-        name: billingDetails.name,
-        email: billingDetails.email,
-        contact: billingDetails.phone,
-      },
-
-      // ✅ FAILURE / CLOSE HANDLING
-      modal: {
-  ondismiss: () => {
-    console.log("ONDISMISS CALLED")
-    const type = isLifetime ? "lifetime" : "subscription"; // ✅ clearer type
-
-    window.location.href =
-      `/dashboard/membership/failure` +
-      `?type=${type}` +
-      (isLifetime && data.orderId               // ✅ use data.orderId (not data.razorpayOrderId)
-        ? `&orderId=${data.orderId}`
-        : "") +
-      (!isLifetime && data.subscriptionId       // ✅ pass sub_id for recurring
-        ? `&sub_id=${data.subscriptionId}`
-        : "") +
-      `&reason=checkout_closed`;
-  },
-},
+  interface WindowWithRazorpay extends Window {
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (
+        event: string,
+        callback: (res: RazorpayErrorResponse) => void,
+      ) => void;
     };
-
-    // 4️⃣ Attach identifiers
-    if (isLifetime) {
-      options.order_id = data.orderId;
-    }
-
-    if (isRecurring) {
-      options.subscription_id = data.subscriptionId;
-    }
-
-    // 5️⃣ Open checkout
-    const rzp = new (window as unknown as WindowWithRazorpay).Razorpay(options);
-
-    // ✅ PAYMENT FAILED EVENT (very important)
-    rzp.on("payment.failed", (response: RazorpayErrorResponse) => {
-  const reason =
-    response?.error?.description ||
-    response?.error?.reason ||
-    "payment_failed";
-
-  const type = isLifetime ? "lifetime" : "subscription"; // ✅ was "mandate"
-  window.location.href =
-    `/dashboard/membership/failure` +
-    `?type=${type}` +
-    (isLifetime && response.error.metadata?.order_id
-      ? `&orderId=${response.error.metadata.order_id}`
-      : "") +
-    (!isLifetime && response.error.metadata?.subscription_id
-      ? `&sub_id=${response.error.metadata.subscription_id}`
-      : "") +
-    `&reason=${encodeURIComponent(reason)}`;
-});
-
-    rzp.open();
-  } catch (error) {
-    console.error("Razorpay Error:", error);
-    toast.error("Unable to initiate Razorpay payment");
   }
-};
 
+  const handleWithRazorpay = async (): Promise<void> => {
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      toast.error("Razorpay SDK failed to load");
+      return;
+    }
+
+    if (!plan) return;
+
+    try {
+      const isLifetime = plan.interval === "LIFETIME";
+      const isRecurring =
+        plan.interval === "MONTHLY" || plan.interval === "YEARLY";
+
+      let endpoint = "";
+
+      // 1️⃣ Backend endpoint
+      if (isLifetime) {
+        endpoint = "/api/billing/razorpay/create-one-time-order";
+      } else if (isRecurring) {
+        endpoint = "/api/billing/razorpay/create-subscription";
+      } else {
+        throw new Error("Unsupported plan interval");
+      }
+      console.log(
+        "Creating Razorpay order/subscription with endpoint:",
+        endpoint,
+      );
+      // 2️⃣ Create order / subscription
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          planId: plan.id,
+          couponCode: appliedCoupon?.code || null,
+          billingDetails,
+        }),
+      });
+      console.log("Razorpay order/subscription creation ");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Razorpay order creation failed");
+      }
+
+      // 3️⃣ Razorpay options
+      const options: RazorpayCheckoutOptions = {
+        key: data.key,
+        name: "mythrivebuddy.com",
+        description: plan.name,
+        theme: { color: "#0f172a" },
+
+        // Inside handleWithRazorpay -> options object
+        handler: function (response: RazorpaySuccessResponse) {
+          const callbackUrl = new URL(
+            "/api/billing/razorpay/callback",
+            window.location.origin,
+          );
+          console.log(response, "Razorpay success response in handler");
+          if (isLifetime) {
+            callbackUrl.searchParams.set(
+              "order_id",
+              response.razorpay_order_id!,
+            );
+          } else {
+            callbackUrl.searchParams.set(
+              "sub_id",
+              response.razorpay_subscription_id!,
+            );
+          }
+
+          callbackUrl.searchParams.set(
+            "payment_id",
+            response.razorpay_payment_id!,
+          );
+          callbackUrl.searchParams.set(
+            "signature",
+            response.razorpay_signature!,
+          );
+
+          window.location.href = callbackUrl.toString();
+        },
+
+        prefill: {
+          name: billingDetails.name,
+          email: billingDetails.email,
+          contact: billingDetails.phone,
+        },
+
+        // ✅ FAILURE / CLOSE HANDLING
+        modal: {
+          ondismiss: () => {
+            console.log("ONDISMISS CALLED");
+            const type = isLifetime ? "lifetime" : "subscription"; // ✅ clearer type
+
+            window.location.href =
+              `/dashboard/membership/failure` +
+              `?type=${type}` +
+              (isLifetime && data.orderId // ✅ use data.orderId (not data.razorpayOrderId)
+                ? `&orderId=${data.orderId}`
+                : "") +
+              (!isLifetime && data.subscriptionId // ✅ pass sub_id for recurring
+                ? `&sub_id=${data.subscriptionId}`
+                : "") +
+              `&reason=checkout_closed`;
+          },
+        },
+      };
+
+      // 4️⃣ Attach identifiers
+      if (isLifetime) {
+        options.order_id = data.orderId;
+      }
+
+      if (isRecurring) {
+        options.subscription_id = data.subscriptionId;
+      }
+
+      // 5️⃣ Open checkout
+      const rzp = new (window as unknown as WindowWithRazorpay).Razorpay(
+        options,
+      );
+
+      // ✅ PAYMENT FAILED EVENT (very important)
+      rzp.on("payment.failed", (response: RazorpayErrorResponse) => {
+        const reason =
+          response?.error?.description ||
+          response?.error?.reason ||
+          "payment_failed";
+
+        const type = isLifetime ? "lifetime" : "subscription"; // ✅ was "mandate"
+        window.location.href =
+          `/dashboard/membership/failure` +
+          `?type=${type}` +
+          (isLifetime && response.error.metadata?.order_id
+            ? `&orderId=${response.error.metadata.order_id}`
+            : "") +
+          (!isLifetime && response.error.metadata?.subscription_id
+            ? `&sub_id=${response.error.metadata.subscription_id}`
+            : "") +
+          `&reason=${encodeURIComponent(reason)}`;
+      });
+
+      rzp.open();
+    } catch (error) {
+      console.error("Razorpay Error:", error);
+      toast.error("Unable to initiate Razorpay payment");
+    }
+  };
 
   // ---------------------------
   // 0. PREFILL DATA & DETECT IP
@@ -304,10 +330,12 @@ console.log(response, "Razorpay success response in handler");
       try {
         const res = await fetch("https://ipapi.co/json/");
         const data = await res.json();
-        if (data.country_code && data.country_code !== "IN") {
-          setBillingDetails((prev) => ({ ...prev, country: "US" })); // Set to US/Global for non-India
-        } else {
+        if (data.country_code && data.country_code == "IN") {
           setBillingDetails((prev) => ({ ...prev, country: "IN" }));
+        } else if (data.country_code === "US") {
+          setBillingDetails((prev) => ({ ...prev, country: "US" }));
+        } else {
+          setBillingDetails((prev) => ({ ...prev, country: "OT" }));
         }
       } catch (error) {
         console.warn("IP detection failed, defaulting to India", error);
@@ -321,21 +349,22 @@ console.log(response, "Razorpay success response in handler");
   useEffect(() => {
     async function init() {
       if (!planId) return;
-
+      const isIndia = billingDetails.country === "IN";
+      const currency = isIndia ? "INR" : "USD";
       setLoading(true);
       try {
-      //   // 1️⃣ CHECK IF USER ALREADY HAS THIS PLAN
-      // const checkRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/user/subscription`);
-      // const activeSub = await checkRes.json();
+        //   // 1️⃣ CHECK IF USER ALREADY HAS THIS PLAN
+        // const checkRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/user/subscription`);
+        // const activeSub = await checkRes.json();
 
-      // // If user has an active subscription and it matches the planId they are trying to buy
-      // if (activeSub && activeSub.planId === planId && activeSub.status === "ACTIVE") {
-      //   toast.error("You already have an active subscription for this plan.");
-      //   router.push("/pricing"); // Redirect them away
-      //   return;
-      // }
+        // // If user has an active subscription and it matches the planId they are trying to buy
+        // if (activeSub && activeSub.planId === planId && activeSub.status === "ACTIVE") {
+        //   toast.error("You already have an active subscription for this plan.");
+        //   router.push("/pricing"); // Redirect them away
+        //   return;
+        // }
         const planRes = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`,
         );
         if (!planRes.ok) throw new Error("Failed to fetch plan");
         const planData = await planRes.json();
@@ -350,12 +379,12 @@ console.log(response, "Razorpay success response in handler");
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 planId,
-                currency: planData.currency || "INR",
+                currency: currency,
                 billingCountry: billingDetails.country, // Use detected country
                 userType: session?.user.userType,
                 userId: session?.user?.id,
               }),
-            }
+            },
           );
 
           const text = await autoRes.text();
@@ -370,16 +399,19 @@ console.log(response, "Razorpay success response in handler");
                   ? "percentage"
                   : c.type.toLowerCase();
 
-            const discountValue =
-              c.type === "FULL_DISCOUNT"
-                ? 100
-                : c.discountAmount || c.discountPercentage || 0;
+            // const discountValue =
+            //   c.type === "FULL_DISCOUNT"
+            //     ? 100
+            //     : c.discountAmount || c.discountPercentage || 0;
 
             setAppliedCoupon({
               valid: true,
               code: c.code,
               discountType,
-              discountValue,
+              type: c.type,
+              discountPercentage: c.discountPercentage,
+              discountAmountINR: c.discountAmountINR,
+              discountAmountUSD: c.discountAmountUSD,
               message: "Best offer auto-applied",
             });
             setCouponCode(c.code);
@@ -409,7 +441,8 @@ console.log(response, "Razorpay success response in handler");
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
-
+    const isIndia = billingDetails.country === "IN";
+    const currency = isIndia ? "INR" : "USD";
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/coupons/verify`,
@@ -419,12 +452,12 @@ console.log(response, "Razorpay success response in handler");
           body: JSON.stringify({
             code: couponCode,
             planId: plan.id,
-            currency: plan.currency || "INR",
+            currency: currency,
             billingCountry: billingDetails.country,
             userType: session?.user.userType,
             userId: session?.user?.id,
           }),
-        }
+        },
       );
 
       const data = await res.json();
@@ -438,16 +471,14 @@ console.log(response, "Razorpay success response in handler");
               ? "percentage"
               : c.type.toLowerCase();
 
-        const discountValue =
-          c.type === "FULL_DISCOUNT"
-            ? 100
-            : c.discountAmount || c.discountPercentage || 0;
-
         setAppliedCoupon({
           valid: true,
           code: c.code,
           discountType,
-          discountValue,
+          type: c.type,
+          discountPercentage: c.discountPercentage,
+          discountAmountINR: c.discountAmountINR,
+          discountAmountUSD: c.discountAmountUSD,
         });
 
         setCouponMessage({
@@ -460,8 +491,8 @@ console.log(response, "Razorpay success response in handler");
           type: "error",
           text: data.message || "Invalid coupon",
         });
-        setCouponCode("")
-        setAppliedCoupon(null)
+        setCouponCode("");
+        setAppliedCoupon(null);
       }
     } catch (error) {
       setCouponMessage({ type: "error", text: "Could not verify coupon" });
@@ -496,14 +527,20 @@ console.log(response, "Razorpay success response in handler");
     let discount = 0;
 
     if (appliedCoupon) {
-      if (appliedCoupon.discountType === "percentage") {
-        discount = (subtotal * appliedCoupon.discountValue) / 100;
-      } else if (appliedCoupon.discountType === "fixed") {
-        discount = appliedCoupon.discountValue;
-      } else if (appliedCoupon.discountType === "free_duration") {
+      if (appliedCoupon.type === "PERCENTAGE") {
+        discount = (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100;
+      } else if (appliedCoupon.type === "FIXED") {
+        discount = isIndia
+          ? (appliedCoupon.discountAmountINR ?? 0)
+          : (appliedCoupon.discountAmountUSD ?? 0);
+      } else if (
+        appliedCoupon.type === "FREE_DURATION" ||
+        appliedCoupon.type === "FULL_DISCOUNT"
+      ) {
         discount = subtotal;
       }
     }
+    discount = Math.min(discount, subtotal);
 
     const taxableAmount = Math.max(0, subtotal - discount);
 
@@ -534,16 +571,18 @@ console.log(response, "Razorpay success response in handler");
 
   // Handle Input Changes
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setBillingDetails((prev) => ({ ...prev, [name]: value }));
+    setBillingDetails((prev) => ({
+      ...prev,
+      [name]: name === "gstNumber" ? value.toUpperCase() : value,
+    }));
   };
 
   // ---------------------------
   // 4. CHECKOUT
   // ---------------------------
-
 
   const handleSubscribe = async () => {
     if (!plan) return;
@@ -555,6 +594,12 @@ console.log(response, "Razorpay success response in handler");
       !billingDetails.postalCode
     ) {
       toast.error("Please fill in all required address fields.");
+      return;
+    }
+    const gst = billingDetails.gstNumber.trim();
+
+    if (billingDetails.country === "IN" && gst && !GST_REGEX.test(gst)) {
+      toast.error("Invalid GST Number format");
       return;
     }
 
@@ -587,7 +632,7 @@ console.log(response, "Razorpay success response in handler");
         endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/purchase-programs`;
       } else if (isLifetime) {
         // LIFETIME SUBSCRIPTION
-        // As our cashfree recurring application rejected we will create one time payment order with all plan as same 
+        // As our cashfree recurring application rejected we will create one time payment order with all plan as same
         // endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/lifetime-order`;
         endpoint = `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/one-time-payment-order`;
       } else {
@@ -613,20 +658,17 @@ console.log(response, "Razorpay success response in handler");
 
       if (!res.ok) {
         throw new Error(data.error || "Backend creation failed");
-
       }
 
       // 3. Load Cashfree SDK
-      const mode =
-        data.mode === "prod"
-          ? "production"
-          : "sandbox";
+      const mode = data.mode === "prod" ? "production" : "sandbox";
 
       const cf = await load({ mode });
 
       // 4A. Program Purchase Checkout
       if (isProgram) {
-        if (!data.paymentSessionId) throw new Error("Invalid payment session for program");
+        if (!data.paymentSessionId)
+          throw new Error("Invalid payment session for program");
 
         console.log(`Starting Program Checkout`, data.paymentSessionId);
 
@@ -641,7 +683,8 @@ console.log(response, "Razorpay success response in handler");
 
       // 4B. Lifetime Checkout
       if (isLifetime) {
-        if (!data.paymentSessionId) throw new Error("Invalid payment session ID");
+        if (!data.paymentSessionId)
+          throw new Error("Invalid payment session ID");
 
         console.log(`Starting Lifetime Checkout`, data.paymentSessionId);
 
@@ -693,7 +736,7 @@ console.log(response, "Razorpay success response in handler");
       console.error("Failed to parse checkout state", e);
     }
   }, []);
-
+  console.log(activeGateway);
 
   if (loading)
     return (
@@ -744,7 +787,7 @@ console.log(response, "Razorpay success response in handler");
                         <Check className="h-4 w-4 text-green-500 mr-2 mt-1" />
                         <span className="text-gray-600 text-sm">{feat}</span>
                       </li>
-                    )
+                    ),
                   )}
                 </ul>
               </div>
@@ -812,6 +855,25 @@ console.log(response, "Razorpay success response in handler");
                     />
                   </div>
                 </div>
+                {/* GST NUMBER (OPTIONAL - INDIA ONLY) */}
+                {billingDetails.country === "IN" && (
+                  <div className="col-span-full">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      GST Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      name="gstNumber"
+                      value={billingDetails.gstNumber}
+                      onChange={handleInputChange}
+                      placeholder="22AAAAA0000A1Z5"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border uppercase"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Enter GST number if you want GST invoice for business.
+                    </p>
+                  </div>
+                )}
 
                 {/* ADDRESS LINE 1 - ALWAYS FULL WIDTH */}
                 <div className="col-span-full">
@@ -1011,7 +1073,8 @@ console.log(response, "Razorpay success response in handler");
                   )}
                 </button>
                 <p className="mt-4 text-center text-xs text-gray-400">
-                  Secure checkout powered by {activeGateway}.
+                  Secure checkout powered by{" "}
+                  {plan.isProgramPlan ? "CASHFREE" : "RAZORPAY"}.
                 </p>
               </div>
             </div>

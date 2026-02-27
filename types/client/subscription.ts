@@ -51,7 +51,8 @@ export interface PaymentModalProps {
 export type CouponLike = {
   type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
   discountPercentage?: number | null;
-  discountAmount?: number | null;
+  discountAmountINR?: number | null;
+  discountAmountUSD?: number | null;
   freeDays?: number | null;
 };
 

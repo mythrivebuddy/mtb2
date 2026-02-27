@@ -94,7 +94,7 @@ export const POST = async (req: NextRequest) => {
     // --------------------------------------------------
     // 4️⃣ PRICE CALCULATION
     // --------------------------------------------------
-    const discountValue = calculateDiscount(baseAmount, coupon);
+    const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
     const finalAmount = calculateFinal(
       baseAmount,
@@ -121,6 +121,7 @@ export const POST = async (req: NextRequest) => {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+         gstNumber: billingDetails.gstNumber || null,
       },
       create: {
         userId,
@@ -133,6 +134,7 @@ export const POST = async (req: NextRequest) => {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       },
     });
 
