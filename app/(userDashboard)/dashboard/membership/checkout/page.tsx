@@ -403,19 +403,7 @@ export default function CheckoutPage() {
             //   c.type === "FULL_DISCOUNT"
             //     ? 100
             //     : c.discountAmount || c.discountPercentage || 0;
-            let discountValue = 0;
-
-            if (c.type === "FULL_DISCOUNT") {
-              discountValue = 100;
-            } else if (c.type === "FIXED") {
-              const isIndia = billingDetails.country === "IN";
-
-              discountValue = isIndia
-                ? (c.discountAmountINR ?? 0)
-                : (c.discountAmountUSD ?? 0);
-            } else {
-              discountValue = c.discountPercentage ?? 0;
-            }
+           
             setAppliedCoupon({
               valid: true,
               code: c.code,
@@ -483,18 +471,7 @@ export default function CheckoutPage() {
               ? "percentage"
               : c.type.toLowerCase();
 
-        let discountValue = 0;
-
-        if (c.type === "FULL_DISCOUNT") {
-          discountValue = 100;
-        } else if (c.type === "FIXED") {
-          const isIndia = billingDetails.country === "IN";
-          discountValue = isIndia
-            ? (c.discountAmountINR ?? 0)
-            : (c.discountAmountUSD ?? 0);
-        } else {
-          discountValue = c.discountPercentage ?? 0;
-        }
+     
 
         setAppliedCoupon({
           valid: true,
@@ -1097,7 +1074,7 @@ export default function CheckoutPage() {
                   )}
                 </button>
                 <p className="mt-4 text-center text-xs text-gray-400">
-                  Secure checkout powered by {activeGateway}.
+                  Secure checkout powered by {plan.isProgramPlan ?"CASHFREE":"RAZORPAY"}.
                 </p>
               </div>
             </div>

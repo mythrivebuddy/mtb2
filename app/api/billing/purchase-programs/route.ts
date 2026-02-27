@@ -8,12 +8,12 @@ import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 import { calculateDiscount } from "@/lib/payment/payment.utils";
 
 // ----- Helpers -----
-type CouponLike = {
-  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
-  discountPercentage?: number | null;
-  discountAmount?: number | null;
-  freeDays?: number | null;
-};
+// type CouponLike = {
+//   type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
+//   discountPercentage?: number | null;
+//   discountAmount?: number | null;
+//   freeDays?: number | null;
+// };
 // function calculateDiscount(base: number, coupon: CouponLike | null): number {
 //   if (!coupon) return 0;
 
