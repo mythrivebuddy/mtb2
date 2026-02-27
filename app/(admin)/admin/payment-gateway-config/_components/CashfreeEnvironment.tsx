@@ -1,29 +1,23 @@
 "use client";
 
-import React from "react";
 import axios from "axios";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-type CashfreeConfig = {
-  cashfreeMode: "prod" | "sandbox";
-  baseUrl: string;
+type Props = {
+  initialData: {
+    mode: "prod" | "sandbox";
+    baseUrl: string;
+  };
 };
 
-export function CashfreeEnvironment() {
+export function CashfreeEnvironment({ initialData }: Props) {
   const queryClient = useQueryClient();
 
-  // GET current Cashfree config
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["cashfree-config"],
-    queryFn: async () => {
-      const res = await axios.get("/api/admin/cashfree-config");
-      return res.data;
-    },
-  });
+  const isProduction = initialData.mode === "prod";
 
-  // PATCH toggle mode (sandbox ↔ prod)
   const toggleMutation = useMutation({
     mutationFn: async (isProduction: boolean) => {
       const res = await axios.patch("/api/admin/cashfree-config", {
@@ -32,29 +26,11 @@ export function CashfreeEnvironment() {
       return res.data;
     },
 
-    // Instead of invalidating, we update cache manually
-    onSuccess: (updatedData) => {
-      queryClient.setQueryData(["cashfree-config"], (prev:CashfreeConfig) => ({
-        ...prev,
-        mode: updatedData.cashfreeMode,
-        baseUrl:
-          updatedData.cashfreeMode === "prod"
-            ? process.env.NEXT_PUBLIC_CASHFREE_PROD_BASE_URL
-            : process.env.NEXT_PUBLIC_CASHFREE_SANDBOX_BASE_URL,
-      }));
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payment-config"] });
+      toast.success("Cashfree environment updated");
     },
   });
-
-  if (isLoading) {
-    return <div className="text-sm">Loading Cashfree Environment...</div>;
-  }
-
-  if (isError) {
-    return <div className="text-sm text-red-500">Error loading config</div>;
-  }
-
-  const mode = data?.mode ?? "sandbox";
-  const isProduction = mode === "prod";
 
   function handleToggle() {
     toggleMutation.mutate(!isProduction);
@@ -67,7 +43,6 @@ export function CashfreeEnvironment() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Current Mode</span>
           <span
@@ -82,14 +57,13 @@ export function CashfreeEnvironment() {
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Base URL</span>
           <span className="text-xs break-all text-muted-foreground">
-            {data?.baseUrl}
+            {initialData.baseUrl}
           </span>
         </div>
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm font-medium">Toggle Environment</span>
-
-          <Switch checked={isProduction} onCheckedChange={handleToggle} />
+          <Switch disabled={toggleMutation.isPending} checked={isProduction} onCheckedChange={handleToggle} />
         </div>
       </CardContent>
     </Card>
