@@ -111,7 +111,7 @@ export const POST = async (req: NextRequest) => {
     // const isFirstCycleOnlyCoupon = coupon?.firstCycleOnly === true;
     const isMultiCycleCoupon = coupon?.multiCycle === true;
 
-    const discountValue = calculateDiscount(baseAmount, coupon);
+    const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
     let finalAmount = calculateFinal(
       baseAmount,

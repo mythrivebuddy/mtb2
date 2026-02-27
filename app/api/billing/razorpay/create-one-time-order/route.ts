@@ -94,7 +94,7 @@ export const POST = async (req: NextRequest) => {
     // --------------------------------------------------
     // 4️⃣ PRICE CALCULATION
     // --------------------------------------------------
-    const discountValue = calculateDiscount(baseAmount, coupon);
+    const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
     const finalAmount = calculateFinal(
       baseAmount,

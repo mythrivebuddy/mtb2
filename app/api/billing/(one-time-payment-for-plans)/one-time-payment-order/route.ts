@@ -35,7 +35,7 @@ export const POST = async (req: NextRequest) => {
             if (!coupon) return NextResponse.json({ error: "Invalid coupon" }, { status: 400 });
         }
 
-        const discountValue = calculateDiscount(baseAmount, coupon);
+        const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
         // 3. Final amount
         const finalAmount = calculateFinal(

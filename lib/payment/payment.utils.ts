@@ -75,15 +75,21 @@ export function extractMandateFailureReason(data: unknown): string {
 };
 
 // helper to calculate discount 
-export function calculateDiscount(baseAmount: number, coupon: CouponLike | null): number {
+export function calculateDiscount(baseAmount: number, coupon: CouponLike | null,currency:"INR"|"USD"): number {
   if (!coupon) return 0;
 
   switch (coupon.type) {
     case "PERCENTAGE":
       return (baseAmount * (coupon.discountPercentage || 0)) / 100;
 
-    case "FIXED":
-      return coupon.discountAmount || 0;
+          case "FIXED": {
+      const fixedAmount =
+        currency === "INR"
+          ? coupon.discountAmountINR ?? 0
+          : coupon.discountAmountUSD ?? 0;
+
+      return Math.min(baseAmount, fixedAmount);
+    }
 
     case "FREE_DURATION": // Treat free duration as 100% off for lifetime if applicable, or logic specific to you
     case "FULL_DISCOUNT":

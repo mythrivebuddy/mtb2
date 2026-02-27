@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PaymentStatus } from "@prisma/client";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
+import { calculateDiscount } from "@/lib/payment/payment.utils";
 
 // ----- Helpers -----
 type CouponLike = {
@@ -13,20 +14,20 @@ type CouponLike = {
   discountAmount?: number | null;
   freeDays?: number | null;
 };
-function calculateDiscount(base: number, coupon: CouponLike | null): number {
-  if (!coupon) return 0;
+// function calculateDiscount(base: number, coupon: CouponLike | null): number {
+//   if (!coupon) return 0;
 
-  if (coupon.type === "PERCENTAGE")
-    return (base * (coupon.discountPercentage || 0)) / 100;
+//   if (coupon.type === "PERCENTAGE")
+//     return (base * (coupon.discountPercentage || 0)) / 100;
 
-  if (coupon.type === "FIXED")
-    return coupon.discountAmount || 0;
+//   if (coupon.type === "FIXED")
+//     return coupon.discountAmount || 0;
 
-  if (coupon.type === "FULL_DISCOUNT")
-    return base;
+//   if (coupon.type === "FULL_DISCOUNT")
+//     return base;
 
-  return 0;
-}
+//   return 0;
+// }
 
 function calculateFinal(
   base: number,
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
       if (!coupon) return NextResponse.json({ error: "Invalid coupon" }, { status: 400 });
     }
 
-    const discountValue = calculateDiscount(baseAmount, coupon);
+    const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
     // 3. Final amount
     const finalAmount = calculateFinal(
