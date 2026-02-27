@@ -199,6 +199,45 @@ model UserBusinessProfile {
   phone               String?
   website             String?
   socialHandles       Json?
+
+  /* -------- BASIC INFO -------- */
+  tagline             String?
+
+  /* -------- NICHE -------- */
+  coachingDomains     Json?
+  targetAudience      Json?
+
+  /* -------- TRANSFORMATION -------- */
+  transformation      String?
+  typicalResults      Json?
+
+  /* -------- SESSION STYLE -------- */
+  sessionStyles       Json?
+  methodology         String?
+  toolsFrameworks     Json?
+
+  /* -------- SERVICES -------- */
+  servicesOffered     Json?
+
+  /* -------- SESSION & PRICING -------- */
+  languages           Json?
+  timezone            String?
+  sessionFormat       String?
+  sessionDuration     String?
+  priceMin            Float?
+  priceMax            Float?
+
+  /* -------- AUTHORITY -------- */
+  yearsOfExperience   Int?
+  certifications      Json?
+  shortBio            String?
+  testimonials        Json?
+
+  /* -------- TRUST -------- */
+  profilePhoto        String
+  introVideo          String?
+  linkedin            String?
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   featuredWorkDesc    String?

@@ -298,6 +298,199 @@ export const contactFormSchems = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
+const testimonialSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Client name is required"),
+
+  role: z
+    .string()
+    .min(2, "Client role is required"),
+
+  content: z
+    .string()
+    .min(15, "Testimonial must be at least 15 characters")
+    .max(500, "Maximum 500 characters"),
+})
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
+export const businessProfileSchema = z
+  .object({
+    /* ---------------- BASIC INFO ---------------- */
+
+    name: z
+      .string()
+      .min(2, "Name must be at least 2 characters"),
+
+    tagline: z
+      .string()
+      .min(10, "Tagline must be at least 10 characters"),
+
+    /* ---------------- NICHE ---------------- */
+
+    coachingDomains: z
+      .array(z.string())
+      .min(1, "Select at least one coaching domain"),
+
+    targetAudience: z
+      .array(z.string())
+      .min(1, "Select at least one target audience"),
+
+    /* ---------------- TRANSFORMATION ---------------- */
+
+    transformation: z
+      .string()
+      .min(20, "Describe transformation (min 20 characters)"),
+
+    typicalResults: z
+      .array(z.string())
+      .min(1, "Add at least one typical result"),
+
+    /* ---------------- SESSION STYLE ---------------- */
+
+    sessionStyles: z
+      .array(z.string())
+      .min(1, "Select at least one session style"),
+
+    methodology: z
+      .string()
+      .min(20, "Describe your methodology (min 20 characters)")
+      .max(500, "Maximum 500 characters allowed"),
+
+    toolsFrameworks: z
+      .string()
+      .max(300, "Maximum 300 characters allowed")
+      .optional(),
+
+    /* ---------------- SERVICES ---------------- */
+
+    servicesOffered: z
+      .array(z.string())
+      .min(1, "Select at least one service"),
+
+    /* ---------------- SESSION & AVAILABILITY ---------------- */
+
+    languages: z
+      .array(z.string())
+      .min(1, "Select at least one language"),
+
+    timezone: z
+      .string()
+      .min(1, "Please select your timezone"),
+
+    sessionFormat: z
+      .string()
+      .min(1, "Please select session format"),
+
+    sessionDuration: z
+      .string()
+      .min(1, "Please select session duration"),
+
+    priceMin: z
+      .number({
+        required_error: "Enter minimum price",
+        invalid_type_error: "Enter valid minimum price",
+      })
+      .min(1, "Minimum price must be greater than 0"),
+
+    priceMax: z
+      .number({
+        required_error: "Enter maximum price",
+        invalid_type_error: "Enter valid maximum price",
+      })
+      .min(1, "Maximum price must be greater than 0"),
+
+    /* ---------------- AUTHORITY ---------------- */
+
+    yearsOfExperience: z
+      .number({
+        required_error: "Select years of experience",
+        invalid_type_error: "Select years of experience",
+      })
+      .min(0, "Experience cannot be negative"),
+
+    certifications: z
+  .array(
+    z.object({
+      value: z
+        .string()
+        .trim()
+        .min(2, "Certification cannot be empty"),
+    })
+  )
+  .max(10, "Maximum 10 certifications allowed")
+  .optional(),
+
+    shortBio: z
+      .string()
+      .min(30, "Short bio must be at least 30 characters")
+      .max(250, "Short bio cannot exceed 250 characters"),
+
+    testimonials: z
+  .preprocess(
+    (val) => (Array.isArray(val) ? val : []),
+    z.array(testimonialSchema).max(6)
+  )
+  .optional(),
+
+    /* ---------------- TRUST LAST FORM ---------------- */
+    //  profilePhoto: z
+    // .any()
+    // .refine((file) => file instanceof File, "Profile photo is required")
+    // .refine(
+    //   (file) => file instanceof File && file.size <= MAX_FILE_SIZE,
+    //   "Max file size is 5MB"
+    // )
+    // .refine(
+    //   (file) =>
+    //     file instanceof File && ACCEPTED_IMAGE_TYPES.includes(file.type),
+    //   "Only JPG, PNG or GIF allowed"
+    // ),
+      profilePhoto: z
+  .union([
+    z.string().url("Required"), // existing image URL allowed
+
+    z
+      .instanceof(File)
+      .refine((file) => file.size <= MAX_FILE_SIZE, {
+        message: "Max file size is 5MB",
+      })
+      .refine(
+        (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+        {
+          message: "Only JPG, PNG or GIF allowed",
+        }
+      ),
+  ]),
+
+  introVideo: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^https?:\/\/.+/.test(val),
+      "Enter a valid URL"
+    ),
+
+  linkedin: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^https?:\/\/.+/.test(val),
+      "Enter a valid URL"
+    ),
+    /* ---------------- OPTIONAL FUTURE EXTENSIONS ---------------- */
+
+    pricingPlans: z.any().optional(),
+    availability: z.any().optional(),
+  })
+
+  /* ---------------- CROSS FIELD VALIDATION ---------------- */
+
+  .refine((data) => data.priceMax >= data.priceMin, {
+    message: "Maximum price must be greater than minimum price",
+    path: ["priceMax"],
+  })
+
 export type ContactForm = z.infer<typeof contactFormSchems>;
 export type ActivityFormValues = z.infer<typeof activitySchema>;
 export type MagicBoxSettings = z.infer<typeof magicBoxSettingsSchema>;
@@ -317,3 +510,4 @@ export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
 export type challengeSchemaFormType = z.infer<typeof challengeSchema>;
+export type BusinessProfileFormValues =z.infer<typeof businessProfileSchema>

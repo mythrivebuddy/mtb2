@@ -49,6 +49,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import ProfileMain from "@/components/profile/ProfileMain";
 
 // --- START OF MODIFICATION 1: Add useMediaQuery hook ---
 function useMediaQuery(query: string): boolean {
@@ -133,7 +134,7 @@ export default function UserDetailsPage() {
   const { userId } = useParams<{ userId: string }>();
   const router = useRouter();
   const { data: session } = useSession();
-
+console.log("Session data:", session);
   // --- START OF MODIFICATION 2: Initialize media query hook ---
   const isDesktop = useMediaQuery("(min-width: 768px)");
   // --- END OF MODIFICATION 2 ---
@@ -164,7 +165,7 @@ export default function UserDetailsPage() {
     queryFn: () => fetchUser(userId),
     enabled: !!userId,
   });
-
+console.log("Fetched user data:", userData);
   const profileUrl = `${
     typeof window !== "undefined" ? window.location.origin : ""
   }/profile/${userId}`;
@@ -201,6 +202,10 @@ export default function UserDetailsPage() {
   }
 
   return (
+    // session?.user.userType === "COACH" || session?.user.userType === "SOLOPRENEUR"
+    // ?
+    // <ProfileMain profile={userData} />
+    // : 
     <div className="min-h-screen  bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
       
       <div className="max-w-5xl pt-0 mx-auto">
