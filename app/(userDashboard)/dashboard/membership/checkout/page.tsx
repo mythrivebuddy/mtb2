@@ -403,7 +403,7 @@ export default function CheckoutPage() {
             //   c.type === "FULL_DISCOUNT"
             //     ? 100
             //     : c.discountAmount || c.discountPercentage || 0;
-           
+
             setAppliedCoupon({
               valid: true,
               code: c.code,
@@ -470,8 +470,6 @@ export default function CheckoutPage() {
             : c.type === "FULL_DISCOUNT"
               ? "percentage"
               : c.type.toLowerCase();
-
-     
 
         setAppliedCoupon({
           valid: true,
@@ -738,6 +736,7 @@ export default function CheckoutPage() {
       console.error("Failed to parse checkout state", e);
     }
   }, []);
+  console.log(activeGateway);
 
   if (loading)
     return (
@@ -1074,7 +1073,8 @@ export default function CheckoutPage() {
                   )}
                 </button>
                 <p className="mt-4 text-center text-xs text-gray-400">
-                  Secure checkout powered by {plan.isProgramPlan ?"CASHFREE":"RAZORPAY"}.
+                  Secure checkout powered by{" "}
+                  {plan.isProgramPlan ? "CASHFREE" : "RAZORPAY"}.
                 </p>
               </div>
             </div>
