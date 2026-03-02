@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import { Award, Calendar, CheckCircle, Users, Loader2, PartyPopper, AlertTriangle, Coins, ShieldAlert, UserCircle } from "lucide-react";
-import type { Challenge, ChallengeTask, ChallengeEnrollment, UserChallengeTask, User } from "@prisma/client";
+import { type Challenge, type ChallengeTask, type ChallengeEnrollment, type UserChallengeTask, type User, ChallengeJoiningType } from "@prisma/client";
 import AppLayout from "@/components/layout/AppLayout";
 import { useQueryClient } from "@tanstack/react-query";
 import ChallengeDescription from "@/components/Dompurify";
@@ -225,7 +225,16 @@ const handleCloseModalAndRedirect = async () => {
                   <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
                   <div>
                       <div className="text-sm text-slate-500">Joining Cost</div>
-                      <div className="font-semibold text-slate-700">{challenge.cost > 0 ? `${challenge.cost} GP` : 'Free'}</div>
+                      <div className="font-semibold text-slate-700">
+                          {challenge.challengeJoiningType === ChallengeJoiningType.PAID && (
+                            <>
+                           {challenge.challengeJoiningFee.toLocaleString()}{" "} {challenge.challengeJoiningFeeCurrency}
+                          {challenge.cost > 0 && " + "}
+                            </>
+                  )}{" "}
+
+  {challenge.cost > 0 ? `${challenge.cost} GP` : "+ Free GP"}
+                      </div>
                   </div>
               </div>
               <div className="flex items-center">

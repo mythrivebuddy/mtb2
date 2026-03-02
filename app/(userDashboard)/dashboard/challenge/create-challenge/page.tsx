@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
+import { err } from "inngest/types";
 
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
@@ -163,7 +164,11 @@ export default function CreateChallenge({
 
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
-
+        const status = Number(error.response?.status ?? 0);
+          if (status == 400) {
+    toast.error(message);
+    return;
+  }
         if (typeof data === "string") {
           message = data;
         } else if (typeof data?.message === "string") {
@@ -174,6 +179,8 @@ export default function CreateChallenge({
       } else if (error instanceof Error) {
         message = error.message;
       }
+     
+
 
       setModalContent({
         title: "Challenge Creation Failed",

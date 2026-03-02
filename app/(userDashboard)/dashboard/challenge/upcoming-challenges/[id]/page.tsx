@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ChallengeDetailView from "../ChallengeDetailView";
 import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
+import { log } from "console";
 
 export type EnrollmentWithTasks = ChallengeEnrollment & {
   userTasks: UserChallengeTask[];
@@ -28,6 +29,7 @@ async function getChallengeData(challengeId: string, userId?: string) {
   if (!challenge) {
     return null;
   }
+  log("Fetched challenge:", challenge);
 
   let enrollment: EnrollmentWithTasks | null = null;
   // This block only runs if a logged-in user's ID is provided
