@@ -410,7 +410,7 @@ export const POST = async (req: NextRequest) => {
   } catch (error) {
     console.error("Razorpay subscription create error:", error);
     return NextResponse.json(
-      { error: "Unable to create subscription" },
+      { error: "Unable to create subscription",error},
       { status: 500 }
     );
   }
