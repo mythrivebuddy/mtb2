@@ -1450,10 +1450,12 @@ model RazorpayPlanCache {
   planName            String
   description         String?
   subscriptionPlanId  String?
+  environment          String   @default("test") // "test" | "live"
   subscriptionPlan    SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   @@index([amount, currency, interval])
+  @@unique([amount, currency, interval, intervalCount, environment])
 }
 
 
