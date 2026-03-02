@@ -12,22 +12,36 @@ export default function Step2Transformation({ next, back }: Props) {
     register,
     control,
     trigger,
+    getValues,
+    setValue,
     formState: { errors },
   } = useFormContext()
 
   // Dynamic Typical Results
-  const {
-    fields,
-    append,
-    remove,
-  } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "typicalResults",
   })
 
   const handleNext = async () => {
     const valid = await trigger(["transformation", "typicalResults"])
-    if (valid) next()
+    if (!valid) return
+
+    // ✅ CLEAN EMPTY STRINGS BEFORE GOING NEXT
+    const values = getValues("typicalResults")
+
+    if (Array.isArray(values)) {
+      const cleaned = values.filter(
+        (item: string) => item && item.trim() !== ""
+      )
+
+      setValue("typicalResults", cleaned, {
+        shouldValidate: true,
+        shouldDirty: true,
+      })
+    }
+
+    next()
   }
 
   return (
@@ -36,6 +50,7 @@ export default function Step2Transformation({ next, back }: Props) {
       <h2 className="text-xl font-semibold mb-2">
         What Transformation Do You Create?
       </h2>
+
       <p className="text-gray-500 mb-6">
         Be specific about the shift your clients undergo.
       </p>
@@ -47,6 +62,7 @@ export default function Step2Transformation({ next, back }: Props) {
           placeholder="After working with me, you will..."
           className="w-full border p-3 rounded-lg min-h-[120px]"
         />
+
         {errors.transformation && (
           <p className="text-red-500 text-sm mt-1">
             {errors.transformation.message as string}
