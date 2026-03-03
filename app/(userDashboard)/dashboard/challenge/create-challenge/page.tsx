@@ -163,7 +163,11 @@ export default function CreateChallenge({
 
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
-
+        const status = Number(error.response?.status ?? 0);
+          if (status == 400) {
+    toast.error(message);
+    return;
+  }
         if (typeof data === "string") {
           message = data;
         } else if (typeof data?.message === "string") {
@@ -174,6 +178,8 @@ export default function CreateChallenge({
       } else if (error instanceof Error) {
         message = error.message;
       }
+     
+
 
       setModalContent({
         title: "Challenge Creation Failed",

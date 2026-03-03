@@ -111,7 +111,7 @@ export const POST = async (req: NextRequest) => {
     // const isFirstCycleOnlyCoupon = coupon?.firstCycleOnly === true;
     const isMultiCycleCoupon = coupon?.multiCycle === true;
 
-    const discountValue = calculateDiscount(baseAmount, coupon,currency);
+    const discountValue = calculateDiscount(baseAmount, coupon, currency);
 
     let finalAmount = calculateFinal(
       baseAmount,
@@ -246,7 +246,9 @@ export const POST = async (req: NextRequest) => {
     /* -------------------------------------------------- */
     /* 6️⃣ RAZORPAY SUBSCRIPTION */
     /* -------------------------------------------------- */
-    const { razorpayKeyId, razorpayKeySecret } = await getRazorpayConfig();
+    const { razorpayKeyId, razorpayKeySecret, mode } = await getRazorpayConfig();
+
+    const environment = mode; // "test" | "live"
 
     const razorpay = new Razorpay({
       key_id: razorpayKeyId,
@@ -260,7 +262,9 @@ export const POST = async (req: NextRequest) => {
         amount: razorpayPlanAmount, // ✅ ALWAYS recurring amount
         currency,
         interval: plan.interval,
-        planName: plan.name,
+        // planName: plan.name,
+        intervalCount: 1,
+        environment
       },
     });
 
@@ -290,6 +294,7 @@ export const POST = async (req: NextRequest) => {
           planName: plan.name,
           gstEnabled: plan.gstEnabled,
           gstPercentage: plan.gstPercentage,
+          environment
         },
       });
 
@@ -299,7 +304,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     // Build base subscription payload
-    const subscriptionPayload: RazorpaySubscriptionCreatePayload  = {
+    const subscriptionPayload: RazorpaySubscriptionCreatePayload = {
       plan_id: subscriptionPlanId,
       customer_notify: 1,
       total_count: plan.interval === "MONTHLY" ? 120 : 10, // max 10 years
@@ -405,7 +410,7 @@ export const POST = async (req: NextRequest) => {
   } catch (error) {
     console.error("Razorpay subscription create error:", error);
     return NextResponse.json(
-      { error: "Unable to create subscription" },
+      { error: "Unable to create subscription", errorDetails: error },
       { status: 500 }
     );
   }
