@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
-import { err } from "inngest/types";
 
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
