@@ -200,26 +200,26 @@ model UserBusinessProfile {
   website             String?
   socialHandles       Json?
 
-  /* -------- BASIC INFO -------- */
+  // /* -------- BASIC INFO -------- */
   tagline             String?
 
-  /* -------- NICHE -------- */
+  // /* -------- NICHE -------- */
   coachingDomains     Json?
   targetAudience      Json?
 
-  /* -------- TRANSFORMATION -------- */
+  // /* -------- TRANSFORMATION -------- */
   transformation      String?
   typicalResults      Json?
 
-  /* -------- SESSION STYLE -------- */
+  // /* -------- SESSION STYLE -------- */
   sessionStyles       Json?
   methodology         String?
   toolsFrameworks     Json?
 
-  /* -------- SERVICES -------- */
+  // /* -------- SERVICES -------- */
   servicesOffered     Json?
 
-  /* -------- SESSION & PRICING -------- */
+  // /* -------- SESSION & PRICING -------- */
   languages           Json?
   timezone            String?
   sessionFormat       String?
@@ -227,13 +227,13 @@ model UserBusinessProfile {
   priceMin            Float?
   priceMax            Float?
 
-  /* -------- AUTHORITY -------- */
+  // /* -------- AUTHORITY -------- */
   yearsOfExperience   Int?
   certifications      Json?
   shortBio            String?
   testimonials        Json?
 
-  /* -------- TRUST -------- */
+  // /* -------- TRUST -------- */
   profilePhoto        String
   introVideo          String?
   linkedin            String?
