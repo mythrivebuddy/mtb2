@@ -153,7 +153,7 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({
                     <div className="mt-2">
                       <p className="text-green-600 font-bold text-lg">
                         {orderSym}
-                        {Number(order.totalAmount).toFixed(0)}
+                        {Number(order.totalAmount).toFixed(2)}
                         <span className="text-xs text-gray-500 ml-1 font-normal">
                           {orderCurrency}
                         </span>
@@ -218,14 +218,14 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-green-600 font-semibold">
                               {sym}
-                              {Number(orderItem.priceAtPurchase).toFixed(0)}
+                              {Number(orderItem.priceAtPurchase).toFixed(2)}
                             </span>
 
                             {orderItem.priceAtPurchase !==
                               orderItem.item.basePrice && (
                               <span className="text-gray-400 line-through text-sm">
                                 {sym}
-                                {Number(orderItem.item.basePrice).toFixed(0)}
+                                {Number(orderItem.item.basePrice).toFixed(2)}
                               </span>
                             )}
 
@@ -235,7 +235,7 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({
                                 {Number(
                                   orderItem.priceAtPurchase *
                                     orderItem.quantity
-                                ).toFixed(0)}
+                                ).toFixed(2)}
                                 )
                               </span>
                             )}

@@ -344,6 +344,8 @@ model Item {
   // Media
   imageUrl    String
   downloadUrl String?
+  downloadPath  String?
+  imagePath     String
 
   // Category
   categoryId String
@@ -416,7 +418,7 @@ model Wishlist {
   userId    String
   itemId    String
   createdAt DateTime @default(now())
-  item      Item     @relation(fields: [itemId], references: [id])
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, itemId])
@@ -430,7 +432,7 @@ model Cart {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   wasInWishlist Boolean  @default(false)
-  item          Item     @relation(fields: [itemId], references: [id])
+  item          Item     @relation(fields: [itemId], references: [id], onDelete:Cascade)
   user          User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, itemId])

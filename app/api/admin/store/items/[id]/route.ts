@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 
@@ -35,12 +36,21 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     const name = formData.get("name") as string;
     const categoryId = formData.get("category") as string;
-    const basePrice = parseInt(formData.get("basePrice") as string);
-    const monthlyPrice = parseInt(formData.get("monthlyPrice") as string) || 0;
-    const yearlyPrice = parseInt(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
+    const basePrice = parseFloat(formData.get("basePrice") as string);
+    const monthlyPrice = parseFloat(formData.get("monthlyPrice") as string) || 0;
+    const yearlyPrice = parseFloat(formData.get("yearlyPrice") as string) || 0;
+    const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
+    const currency = (formData.get("currency") as string) || "USD";
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
+
+    // Validate currency
+    if (!["USD", "INR"].includes(currency)) {
+      return NextResponse.json(
+        { error: "Invalid currency. Must be USD or INR." },
+        { status: 400 }
+      );
+    }
 
     if (!name || !categoryId || isNaN(basePrice)) {
       return NextResponse.json(
@@ -66,6 +76,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       select: {
         imageUrl: true,
         downloadUrl: true,
+        imagePath: true,
+        downloadPath: true,
       },
     });
 
@@ -78,15 +90,55 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     let imageUrl = existingItem.imageUrl;
     let downloadUrl = existingItem.downloadUrl;
+    let imagePath = existingItem.imagePath;
+    let downloadPath = existingItem.downloadPath;
 
     // Upload new image if provided
     if (imageFile && imageFile.size > 0) {
-      imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+      // Delete old image from Supabase storage if it exists
+      if (existingItem.imagePath) {
+        try {
+          await supabaseAdmin.storage
+            .from("store-images")
+            .remove([existingItem.imagePath]);
+          console.log("Old image deleted:", existingItem.imagePath);
+        } catch (error) {
+          console.error("Error deleting old image:", error);
+          // Continue even if deletion fails
+        }
+      }
+
+      const uploadResult = await handleSupabaseImageUpload(
+        imageFile,
+        "store-images",
+        "store-images"
+      );
+      imageUrl = uploadResult.url;
+      imagePath = uploadResult.path;
     }
 
     // Upload new download file if provided
     if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
+      // Delete old download file from Supabase storage if it exists
+      if (existingItem.downloadPath) {
+        try {
+          await supabaseAdmin.storage
+            .from("store-images")
+            .remove([existingItem.downloadPath]);
+          console.log("Old download file deleted:", existingItem.downloadPath);
+        } catch (error) {
+          console.error("Error deleting old download file:", error);
+          // Continue even if deletion fails
+        }
+      }
+
+      const uploadResult = await handleSupabaseImageUpload(
+        downloadFile,
+        "store-images",
+        "store-images"
+      );
+      downloadUrl = uploadResult.url;
+      downloadPath = uploadResult.path;
     }
 
     const item = await prisma.item.update({
@@ -98,8 +150,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         monthlyPrice,
         yearlyPrice,
         lifetimePrice,
+        currency,
         imageUrl,
         downloadUrl,
+        imagePath,
+        downloadPath,
       },
       select: {
         id: true,
@@ -109,8 +164,11 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         monthlyPrice: true,
         yearlyPrice: true,
         lifetimePrice: true,
+        currency: true,
         imageUrl: true,
         downloadUrl: true,
+        imagePath: true,
+        downloadPath: true,
         isApproved: true,
         createdByRole: true,
         createdByUserId: true,
@@ -168,12 +226,53 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
       );
     }
 
+    // Get item to retrieve file paths before deletion
+    const item = await prisma.item.findUnique({
+      where: { id },
+      select: {
+        imagePath: true,
+        downloadPath: true,
+      },
+    });
+
+    if (!item) {
+      return NextResponse.json(
+        { error: "Item not found" },
+        { status: 404 }
+      );
+    }
+
+    // Delete files from Supabase storage
+    const filesToDelete = [];
+    
+    if (item.imagePath) {
+      filesToDelete.push(item.imagePath);
+    }
+    
+    if (item.downloadPath) {
+      filesToDelete.push(item.downloadPath);
+    }
+
+    // Delete all files at once if there are any
+    if (filesToDelete.length > 0) {
+      try {
+        await supabaseAdmin.storage
+          .from("store-images")
+          .remove(filesToDelete);
+        console.log("Files deleted from storage:", filesToDelete);
+      } catch (error) {
+        console.error("Error deleting files from storage:", error);
+        // Continue with database deletion even if storage deletion fails
+      }
+    }
+
+    // Delete item from database
     await prisma.item.delete({
       where: { id },
     });
 
     return NextResponse.json(
-      { message: "Item deleted successfully" },
+      { message: "Item and associated files deleted successfully" },
       { status: 200 }
     );
   } catch (error) {
@@ -188,21 +287,12 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   }
 }
 
-
-
-
-
-
-// app/api/admin/store/items/[id]/route.ts
-
-
-
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }   // ← "id" matches [id] folder
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params;           // ← destructure "id"
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
@@ -242,8 +332,11 @@ export async function GET(
       monthlyPrice: product.monthlyPrice,
       yearlyPrice: product.yearlyPrice,
       lifetimePrice: product.lifetimePrice,
+      currency: product.currency,
       imageUrl: product.imageUrl,
       downloadUrl: product.downloadUrl,
+      imagePath: product.imagePath,
+      downloadPath: product.downloadPath,
       isApproved: product.isApproved,
       approvedByUserId: product.approvedByUserId,
       approvedAt: product.approvedAt?.toISOString() || null,

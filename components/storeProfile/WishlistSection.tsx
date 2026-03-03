@@ -76,7 +76,7 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
                     <h4 className="font-semibold">{item.name}</h4>
                     <p className="text-green-600 font-bold">
                       {sym}
-                      {Number(price).toFixed(0)}
+                      {Number(price).toFixed(2)}
                     </p>
                     {item.category && (
                       <p className="text-sm text-gray-500">

@@ -7,7 +7,7 @@ export interface Item {
   monthlyPrice: number;
   yearlyPrice: number;
   lifetimePrice: number;
-  currency: string;              // ✅ ADDED
+  currency: string;
   imageUrl: string;
   downloadUrl?: string;
   isApproved: boolean;
@@ -20,10 +20,14 @@ export interface Item {
     name?: string | null;
     email: string;
   } | null;
+  creator?: {
+    id: string;
+    name?: string | null;
+    email: string;
+  } | null;
   createdAt: string;
   updatedAt?: string;
 }
-
 export interface ItemFormData {
   name: string;
   category: string;

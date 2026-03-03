@@ -84,6 +84,7 @@ export default function ProductManagement() {
   const [searchQuery,         setSearchQuery      ] = useState("");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
   const [approvalFilter,      setApprovalFilter   ] = useState("all");
+  const [creatorFilter,       setCreatorFilter    ] = useState("all");
   const [formData,            setFormData         ] = useState<ItemFormData>(BLANK_FORM);
 
   const queryClient = useQueryClient();
@@ -125,18 +126,22 @@ export default function ProductManagement() {
       filtered = filtered.filter((i) => i.isApproved === true);
     else if (approvalFilter === "pending")
       filtered = filtered.filter((i) => i.isApproved === false);
+    if (creatorFilter === "admin")
+      filtered = filtered.filter((i) => i.createdByRole === "ADMIN");
+    else if (creatorFilter === "coach")
+      filtered = filtered.filter((i) => i.createdByRole === "USER");
     return filtered;
-  }, [items, searchQuery, selectedCategoryFilter, approvalFilter]);
+  }, [items, searchQuery, selectedCategoryFilter, approvalFilter, creatorFilter]);
 
   // ─── Helper: build FormData payload ──────────────────────────────────────────
   const buildFd = (data: ItemFormData) => {
     const fd = new FormData();
     fd.append("name",         data.name);
     fd.append("category",     data.category);
-    fd.append("basePrice",    Math.floor(Number(data.basePrice)    || 0).toString());
-    fd.append("monthlyPrice", Math.floor(Number(data.monthlyPrice) || 0).toString());
-    fd.append("yearlyPrice",  Math.floor(Number(data.yearlyPrice)  || 0).toString());
-    fd.append("lifetimePrice",Math.floor(Number(data.lifetimePrice)|| 0).toString());
+    fd.append("basePrice",    (Number(data.basePrice)    || 0).toString());
+    fd.append("monthlyPrice", (Number(data.monthlyPrice) || 0).toString());
+    fd.append("yearlyPrice",  (Number(data.yearlyPrice)  || 0).toString());
+    fd.append("lifetimePrice",(Number(data.lifetimePrice)|| 0).toString());
     fd.append("currency",     data.currency ?? "INR");
     if (data.imageFile)    fd.append("image",    data.imageFile);
     if (data.downloadFile) fd.append("download", data.downloadFile);
@@ -261,18 +266,29 @@ export default function ProductManagement() {
   const currencySymbol     = getCurrencySymbol(formData.currency ?? "INR");
 
   // ─── Price stepper helper ─────────────────────────────────────────────────────
-  const stepPrice = (key: keyof ItemFormData, delta: 1 | -1) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: Math.max(0, (Number(prev[key]) || 0) + delta),
-    }));
+  const stepPrice = (key: keyof ItemFormData, delta: number) => {
+    setFormData((prev) => {
+      const currentValue = Number(prev[key]) || 0;
+      const newValue = Math.max(0, currentValue + delta);
+      // Round to 2 decimal places
+      return {
+        ...prev,
+        [key]: Math.round(newValue * 100) / 100,
+      };
+    });
   };
 
   const handlePriceChange = (key: keyof ItemFormData, raw: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: raw === "" ? ("" as unknown as number) : Math.max(0, Math.floor(Number(raw))),
-    }));
+    if (raw === "") {
+      setFormData((prev) => ({ ...prev, [key]: "" as unknown as number }));
+      return;
+    }
+    
+    // Allow decimal numbers
+    const value = parseFloat(raw);
+    if (!isNaN(value) && value >= 0) {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    }
   };
 
   // ─── JSX ──────────────────────────────────────────────────────────────────────
@@ -283,13 +299,13 @@ export default function ProductManagement() {
       {/* Top action buttons */}
       <div className="mb-6 flex gap-4 flex-wrap">
         <button
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="px-6 py-2.5 bg-[#3b82f5] text-white rounded-lg hover:bg-[#2563eb] transition-all duration-300 font-semibold"
           onClick={() => { setEditingItem(null); resetForm(); setModalOpen(true); }}
         >
           Add New Product
         </button>
         <button
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-6 py-2.5 bg-[#ff7070] text-white rounded-lg hover:bg-[#ff5555] transition-all duration-300 font-semibold"
           onClick={() => setCategoryModalOpen(true)}
         >
           Add New Category
@@ -404,8 +420,8 @@ export default function ProductManagement() {
                       <input
                         type="number"
                         min="0"
-                        step="1"
-                        placeholder="0"
+                        step="0.01"
+                        placeholder="0.00"
                         value={
                           formData[key] === "" || formData[key] === undefined
                             ? ""
@@ -423,7 +439,7 @@ export default function ProductManagement() {
                       <div className="flex flex-col border-l border-gray-300">
                         <button
                           type="button"
-                          onClick={() => stepPrice(key, 1)}
+                          onClick={() => stepPrice(key, 0.01)}
                           className="px-2 py-[3px] bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors select-none border-b border-gray-300 leading-none"
                           title="Increase"
                         >
@@ -433,7 +449,7 @@ export default function ProductManagement() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => stepPrice(key, -1)}
+                          onClick={() => stepPrice(key, -0.01)}
                           className="px-2 py-[3px] bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors select-none leading-none"
                           title="Decrease"
                         >
@@ -462,7 +478,7 @@ export default function ProductManagement() {
                   required={!editingItem}
                 />
                 {editingItem && (
-                  <p className="text-xs text-gray-400 mt-1">Leave empty to keep current image</p>
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to keep current image</p>
                 )}
               </div>
 
@@ -485,6 +501,9 @@ export default function ProductManagement() {
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                {editingItem && (
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to keep current file</p>
+                )}
               </div>
 
               {/* Submit */}
@@ -569,6 +588,15 @@ export default function ProductManagement() {
           <option value="approved">Approved</option>
           <option value="pending">Pending</option>
         </select>
+        <select
+          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          value={creatorFilter}
+          onChange={(e) => setCreatorFilter(e.target.value)}
+        >
+          <option value="all">All Creators</option>
+          <option value="admin">Admin Products</option>
+          <option value="coach">Coach Products</option>
+        </select>
       </div>
 
       {/* ═══════════════════ Table ═══════════════════ */}
@@ -578,7 +606,7 @@ export default function ProductManagement() {
         <div className="text-red-600 p-4 bg-red-50 rounded-lg">Error: {error.message}</div>
       ) : typedFilteredItems.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
-          {searchQuery || selectedCategoryFilter || approvalFilter !== "all"
+          {searchQuery || selectedCategoryFilter || approvalFilter !== "all" || creatorFilter !== "all"
             ? "No products match your filters."
             : "No products found. Create your first product!"}
         </div>
@@ -587,18 +615,39 @@ export default function ProductManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {[
-                  "Status", "Name", "Category", "Currency",
-                  "Base", "Monthly", "Yearly", "Lifetime",
-                  "Approved By", "Actions",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
-                ))}
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Category
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Currency
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Base
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Monthly
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Yearly
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Lifetime
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Creator
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Approved By
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -611,7 +660,7 @@ export default function ProductManagement() {
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
 
                     {/* Status */}
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
                       {item.isApproved ? (
                         <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
                           Approved
@@ -627,14 +676,14 @@ export default function ProductManagement() {
                     <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
 
                     {/* Category */}
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-center">
                       <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
                         {category?.name || "Unknown"}
                       </span>
                     </td>
 
                     {/* Currency badge */}
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-full ${
                           isINR
@@ -648,21 +697,40 @@ export default function ProductManagement() {
                     </td>
 
                     {/* Prices */}
-                    <td className="px-4 py-3 text-gray-600 ">
-                      {sym}{Number(item.basePrice).toFixed(0)}
+                    <td className="px-4 py-3 text-gray-600 text-center">
+                      {sym}{Number(item.basePrice).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {sym}{Number(item.monthlyPrice).toFixed(0)}
+                    <td className="px-4 py-3 text-gray-600 text-center">
+                      {sym}{Number(item.monthlyPrice).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {sym}{Number(item.yearlyPrice).toFixed(0)}
+                    <td className="px-4 py-3 text-gray-600 text-center">
+                      {sym}{Number(item.yearlyPrice).toFixed(2)}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {sym}{Number(item.lifetimePrice).toFixed(0)}
+                    <td className="px-4 py-3 text-gray-600 text-center">
+                      {sym}{Number(item.lifetimePrice).toFixed(2)}
+                    </td>
+
+                    {/* Creator (Show name with different colors for Admin vs Coach) */}
+                    <td className="px-4 py-3 text-sm whitespace-nowrap text-center">
+                      {item.createdByRole === "ADMIN" ? (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200">
+                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                          <span className="text-sm font-medium text-purple-700">
+                            {item.creator?.name || item.creator?.email || "Unknown Admin"}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200">
+                          <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                          <span className="text-sm font-medium text-indigo-700">
+                            {item.creator?.name || item.creator?.email || "Unknown Coach"}
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Approved By */}
-                    <td className="px-4 py-3 text-sm text-gray-700">
+                    <td className="px-4 py-3 text-sm text-gray-700 text-center">
                       {item.approver
                         ? <span>{item.approver.name || item.approver.email}</span>
                         : <span className="text-gray-400">—</span>
@@ -670,8 +738,8 @@ export default function ProductManagement() {
                     </td>
 
                     {/* Actions */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex gap-1">
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <div className="flex gap-1 justify-center">
                         <button
                           onClick={() => router.push(`/admin/manage-store-product/${item.id}`)}
                           className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
