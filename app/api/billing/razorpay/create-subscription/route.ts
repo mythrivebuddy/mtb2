@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { calculateDiscount, calculateFinal } from "@/lib/payment/payment.utils";
 import {
+  PaymentContextType,
   PaymentStatus,
 } from "@prisma/client";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
@@ -16,7 +17,6 @@ export const POST = async (req: NextRequest) => {
     /* -------------------------------------------------- */
     const session = await checkRole("USER");
     const userId = session.user.id;
-
     const { planId, couponCode, billingDetails } = await req.json();
 
     if (!billingDetails?.country) {
@@ -61,6 +61,7 @@ export const POST = async (req: NextRequest) => {
     /* 3️⃣ COUPON VALIDATION */
     /* -------------------------------------------------- */
     let coupon = null;
+    
 
     if (couponCode) {
       coupon = await prisma.coupon.findUnique({
@@ -104,6 +105,7 @@ export const POST = async (req: NextRequest) => {
         );
       }
     }
+
 
     // ----------------------------
     // Compute charges
@@ -201,6 +203,7 @@ export const POST = async (req: NextRequest) => {
               : 0,
           totalAmount: firstCycleChargeAmount,
           billingInfoId: billingInfo.id,
+           contextType: PaymentContextType.SUBSCRIPTION, 
         },
       });
     } else {
@@ -219,6 +222,7 @@ export const POST = async (req: NextRequest) => {
               : 0,
           totalAmount: firstCycleChargeAmount,
           billingInfoId: billingInfo.id,
+          contextType: PaymentContextType.SUBSCRIPTION, 
         },
       });
     }

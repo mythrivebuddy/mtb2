@@ -16,38 +16,23 @@ import { Separator } from "@/components/ui/separator";
 export default function FailurePage() {
   const searchParams = useSearchParams();
 
-  const typeParam = searchParams.get("type"); // "lifetime" or "mandate"
+  const typeParam = searchParams.get("type");
   const orderId = searchParams.get("orderId");
   const subId = searchParams.get("sub_id");
   const reason =
     searchParams.get("reason") ||
     "Cashfree did not return error details. User did not complete the payment.";
 
-  // -----------------------------------------------------------------------
-  // 1. Determine *correct* payment type (MANDATE or LIFETIME)
-  // -----------------------------------------------------------------------
 
-  let isLifetime = false;
+  const heading = typeParam === "subscription" ? "Mandate Failed" : "Payment Failed";
 
-  if (typeParam === "lifetime") isLifetime = true;
-  else if (typeParam === "mandate") isLifetime = false;
-  else if (orderId && !subId) isLifetime = true; // If orderId exists, it's lifetime
-  else if (subId) isLifetime = false; // If subId exists, it's mandate
-  else isLifetime = true; // Default fallback = lifetime (safer)
+  const description = typeParam === "subscription"
+    ? "We couldn't set up your recurring payment mandate."
+    : "Your one-time payment could not be completed.";
 
-  // -----------------------------------------------------------------------
-  // 2. Labels
-  // -----------------------------------------------------------------------
+  const reference = typeParam === "subscription" ? subId : orderId;
 
-  const heading = isLifetime ? "Payment Failed" : "Mandate Failed";
-
-  const description = isLifetime
-    ? "Your one-time payment could not be completed."
-    : "We couldn't set up your recurring payment mandate.";
-
-  const reference = isLifetime ? orderId : subId;
-
-  const referenceLabel = isLifetime ? "Order ID" : "Subscription ID";
+  const referenceLabel = typeParam === "subscription" ? "Subscription ID" : "Order ID";
 
   // -----------------------------------------------------------------------
   // 3. Render UI
@@ -109,7 +94,7 @@ export default function FailurePage() {
               </Link>
             </Button>
 
-          <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3">
 
               <Button asChild variant="outline" className="text-sm">
                 <Link href="/pricing">

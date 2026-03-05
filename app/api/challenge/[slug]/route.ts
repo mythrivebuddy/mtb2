@@ -1,3 +1,4 @@
+// /api/challenge/[slug]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; // ✅ FIX 1: Use the shared Prisma instance
 
@@ -37,12 +38,6 @@ export async function GET(
       where: {
         id: uuid, 
       },
-      select: { // Use select to only get the data you need for this page
-        id: true,
-        slug: true,
-        title: true,
-        description: true,
-      }
     });
 
     if (!challenge) {

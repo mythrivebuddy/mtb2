@@ -160,7 +160,7 @@ export async function handleSuccessfulPayment(
     console.error("❌ PaymentOrder not found:", paymentOrderId);
     return;
   }
-console.log("Success payment transaction begins");
+
 
   await prisma.$transaction(async (tx) => {
     /**
@@ -193,7 +193,7 @@ console.log("Success payment transaction begins");
     const startDate = new Date();
     const endDate = new Date(startDate);
 
-    switch (paymentOrder.plan.interval) {
+    switch (paymentOrder?.plan?.interval) {
       case PlanInterval.MONTHLY:
         endDate.setMonth(endDate.getMonth() + 1);
         break;
@@ -216,7 +216,7 @@ console.log("Success payment transaction begins");
     await tx.subscription.create({
       data: {
         userId: paymentOrder.userId,
-        planId: paymentOrder.planId,
+        planId: paymentOrder.planId!,
         status: SubscriptionStatus.ACTIVE,
         startDate,
         endDate,
@@ -234,7 +234,7 @@ console.log("Success payment transaction begins");
         data: {
           couponId: paymentOrder.couponId,
           userId: paymentOrder.userId,
-          appliedPlan: paymentOrder.planId,
+          appliedPlan: paymentOrder.planId!,
           discountApplied: paymentOrder.discountApplied
         }
       });
@@ -258,7 +258,7 @@ console.log("Success payment transaction begins");
 
 
 export async function handleFailedPayment(paymentOrderId: string) {
-  console.log("Failed payment transaction begins");
+  
   await prisma.paymentOrder.updateMany({
     where: {
       id: paymentOrderId,

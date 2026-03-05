@@ -2,21 +2,22 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { PaymentStatus, SubscriptionStatus } from "@prisma/client";
 import {
-  PaymentStatus,
-  SubscriptionStatus,
-} from "@prisma/client";
-import { getRazorpayConfig, verifyRazorpaySignature } from "@/lib/razorpay/razorpay";
+  getRazorpayConfig,
+  verifyRazorpaySignature,
+} from "@/lib/razorpay/razorpay";
 
 export const POST = async (req: NextRequest) => {
-
   try {
     const { razorpayWebhookSecret: webhookSecret } = await getRazorpayConfig();
-    console.log("🎀 Webhook called");
 
     if (!webhookSecret) {
       console.error("❌ Missing RAZORPAY_WEBHOOK_SECRET");
-      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Server misconfigured" },
+        { status: 500 },
+      );
     }
 
     // ✅ RAW BODY REQUIRED
@@ -27,11 +28,7 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
-    const isValid = verifyRazorpaySignature(
-      rawBody,
-      signature,
-      webhookSecret
-    );
+    const isValid = verifyRazorpaySignature(rawBody, signature, webhookSecret);
 
     if (!isValid) {
       console.error("❌ Invalid Razorpay signature");
@@ -40,27 +37,34 @@ export const POST = async (req: NextRequest) => {
 
     const event = JSON.parse(rawBody);
 
-
     /* ========================================================= */
     /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
     /* ========================================================= */
     if (event.event === "payment.captured") {
-      console.log("payemtn captured");
-
       const payment = event.payload.payment.entity;
-      if (payment.status !== "captured") return NextResponse.json({ received: true });
+      if (payment.status !== "captured")
+        return NextResponse.json({ received: true });
       // ✅ Ignore subscription payments
 
-
-      if (!payment.order_id)
-        return NextResponse.json({ received: true });
+      if (!payment.order_id) return NextResponse.json({ received: true });
       if (payment.subscription_id) {
         const order = await prisma.paymentOrder.findFirst({
           where: { razorpaySubscriptionId: payment.subscription_id },
+          include: { plan: true },
         });
 
-
         if (!order || order.status === PaymentStatus.PAID) {
+          return NextResponse.json({ received: true });
+        }
+        if (!order) {
+          console.error(
+            "Order not found for subscription",
+            payment.subscription_id,
+          );
+          return NextResponse.json({ received: true });
+        }
+        if (!order.planId || !order?.plan) {
+          console.error("Subscription order missing plan relation");
           return NextResponse.json({ received: true });
         }
 
@@ -81,7 +85,6 @@ export const POST = async (req: NextRequest) => {
             data: { status: SubscriptionStatus.ACTIVE },
           });
 
-
           await tx.user.update({
             where: { id: order.userId },
             data: { membership: "PAID" },
@@ -96,19 +99,18 @@ export const POST = async (req: NextRequest) => {
         where: { razorpayOrderId: payment.order_id },
       });
 
-
-      if (!order || order.status === PaymentStatus.PAID) return NextResponse.json({ received: true });
+      if (!order || order.status === PaymentStatus.PAID)
+        return NextResponse.json({ received: true });
       const redemption = order.couponId
         ? await prisma.couponRedemption.findFirst({
-          where: {
-            couponId: order.couponId,
-            userId: order.userId,
-          },
-        })
+            where: {
+              couponId: order.couponId,
+              userId: order.userId,
+            },
+          })
         : null;
 
       await prisma.$transaction(async (tx) => {
-
         // 1️⃣ Mark payment order as PAID
         await tx.paymentOrder.update({
           where: { id: order.id },
@@ -120,7 +122,6 @@ export const POST = async (req: NextRequest) => {
           },
         });
 
-
         // 🔑 COUPON REDEMPTION — MUST BE HERE
         if (order.couponId && (!redemption || !redemption.redeemed)) {
           if (!redemption) {
@@ -128,7 +129,7 @@ export const POST = async (req: NextRequest) => {
               data: {
                 couponId: order.couponId,
                 userId: order.userId,
-                appliedPlan: order.planId,
+                appliedPlan: order.planId as string,
                 discountApplied: order.discountApplied,
                 redeemed: true,
               },
@@ -139,8 +140,6 @@ export const POST = async (req: NextRequest) => {
               data: { redeemed: true },
             });
           }
-
-
         }
 
         // 2️⃣ Create or Update Subscription (LIFETIME)
@@ -149,21 +148,20 @@ export const POST = async (req: NextRequest) => {
         });
 
         const lifetimeEndDate = new Date(
-          new Date().setFullYear(new Date().getFullYear() + 99)
+          new Date().setFullYear(new Date().getFullYear() + 99),
         );
 
         if (existingSub) {
           await tx.subscription.update({
             where: { id: existingSub.id },
             data: {
-              planId: order.planId,
+              planId: order.planId as string,
               status: SubscriptionStatus.ACTIVE,
               razorpaySubscriptionId: null, // IMPORTANT
               startDate: new Date(),
               endDate: lifetimeEndDate,
               renewedAt: null,
               paymentOrderId: order.id,
-
             },
           });
           // Cancel any mandates with the same (old) subscription id
@@ -177,7 +175,7 @@ export const POST = async (req: NextRequest) => {
           await tx.subscription.create({
             data: {
               userId: order.userId,
-              planId: order.planId,
+              planId: order.planId as string,
               status: SubscriptionStatus.ACTIVE,
               startDate: new Date(),
               endDate: lifetimeEndDate,
@@ -191,7 +189,6 @@ export const POST = async (req: NextRequest) => {
           where: { id: order.userId },
           data: { membership: "PAID" },
         });
-
       });
 
       return NextResponse.json({ received: true });
@@ -200,24 +197,30 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     /* 🔁 SUBSCRIPTION ACTIVATED (FIRST PAYMENT SUCCESS) */
     /* ========================================================= */
-    if (event.event === "subscription.activated"
-      || event.event === "subscription.authenticated"
+    if (
+      event.event === "subscription.activated" ||
+      event.event === "subscription.authenticated"
     ) {
       const subscription = event.payload.subscription.entity;
-
-      console.log("subscription activated ", { event });
-
 
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
         include: {
-          plan: true
-        }
+          plan: true,
+        },
       });
 
+      if (!order) {
+        console.error("Order not found for subscription", subscription.id);
+        return NextResponse.json({ received: true });
+      }
 
-
-      if (!order) return NextResponse.json({ received: true });
+      if (!order.planId || !order.plan) {
+        console.error("Subscription order missing plan relation");
+        return NextResponse.json({ received: true });
+      }
+      const planId = order.planId;
+      const plan = order.plan;
       const startDate = new Date();
 
       // ✅ END DATE BASED ON PLAN INTERVAL
@@ -252,7 +255,7 @@ export const POST = async (req: NextRequest) => {
           activeSubscription = await tx.subscription.create({
             data: {
               userId: order.userId,
-              planId: order.planId,
+              planId: planId,
               status: SubscriptionStatus.ACTIVE,
               razorpaySubscriptionId: subscription.id,
               // startDate: new Date(subscription.start_at * 1000),
@@ -271,7 +274,7 @@ export const POST = async (req: NextRequest) => {
               paymentOrderId: order.id,
               startDate, // 🔥 ADD THIS
               endDate,
-              planId: order.planId,
+              planId: planId,
             },
           });
         }
@@ -285,20 +288,20 @@ export const POST = async (req: NextRequest) => {
           },
           update: {
             userId: order.userId,
-            planId: order.planId,
+            planId: planId,
             status: "ACTIVE",
             currency: order.currency,
-            frequency: order.plan.interval,
+            frequency: plan.interval,
             maxAmount: order.totalAmount,
             nextBillingDate: endDate,
           },
           create: {
             mandateId: subscription.id,
             userId: order.userId,
-            planId: order.planId,
+            planId: planId,
             status: "ACTIVE",
             currency: order.currency,
-            frequency: order.plan.interval,
+            frequency: plan.interval,
             maxAmount: order.totalAmount,
             nextBillingDate: endDate,
           },
@@ -326,7 +329,7 @@ export const POST = async (req: NextRequest) => {
               data: {
                 couponId: order.couponId,
                 userId: order.userId,
-                appliedPlan: order.planId,
+                appliedPlan: order.planId as string,
                 discountApplied: order.discountApplied,
                 redeemed: true,
               },
@@ -356,7 +359,6 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "invoice.paid") {
       const invoice = event.payload.invoice.entity;
-      console.log("invoice event");
 
 
       const subscription = await prisma.subscription.findFirst({
@@ -436,7 +438,7 @@ export const POST = async (req: NextRequest) => {
         // 2. Find the user associated with this subscription
         const dbSub = await tx.subscription.findFirst({
           where: { razorpaySubscriptionId: subscription.id },
-          select: { userId: true }
+          select: { userId: true },
         });
 
         if (dbSub) {
@@ -466,10 +468,8 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ received: true });
     }
 
-
     console.log("⚠️ Unhandled event:", event.event);
     return NextResponse.json({ received: true });
-
   } catch (error) {
     console.error("🔥 Razorpay Webhook Error:", error);
     return NextResponse.json({ error: "Webhook failed" }, { status: 500 });

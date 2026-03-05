@@ -121,6 +121,7 @@ model User {
   Goal                          Goal[]                            @relation("GoalToUser")
   createdItems                  Item[]                            @relation("ItemCreator")
   approvedItems                 Item[]                            @relation("ItemApprover")
+  coachChallengePayouts ChallengePayout[]
 
   @@index([name])
 }
@@ -393,6 +394,7 @@ model Order {
   user        User        @relation(fields: [userId], references: [id])
   items       OrderItem[]
 
+  paymentOrders PaymentOrder[] 
   @@index([userId])
 }
 
@@ -685,6 +687,8 @@ model Challenge {
   challengeJoiningType  ChallengeJoiningType   @default(FREE)
   challengeJoiningFee    Int                   @default(0)
   challengeJoiningFeeCurrency   challengeJoiningFeeCurrency   @default(INR)
+  paymentOrders PaymentOrder[]
+  payout ChallengePayout[]
 
   @@map("challenges")
 }
@@ -744,6 +748,35 @@ model ChallengeEnrollment {
 
   @@unique([userId, challengeId])
   @@map("challenge_enrollments")
+}
+
+// paid challenge payout model 
+model ChallengePayout {
+  id                String   @id @default(cuid())
+
+  challengeId       String 
+  creatorId         String
+
+  totalRevenue      Float
+  platformFee       Float
+  netPayable        Float
+
+  status            PayoutStatus
+
+  processedByAdminId String?
+  processedAt        DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  challenge         Challenge @relation(fields: [challengeId], references: [id])
+  creator           User      @relation(fields: [creatorId], references: [id])
+}
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
 }
 model ChallengeMessage {
   id          String   @id @default(cuid())
@@ -1242,9 +1275,13 @@ enum SubscriptionStatus {
 model PaymentOrder {
   id            String   @id @default(cuid())
   userId        String
-  planId        String
+  planId        String?
+  challengeId   String?
+  storeOrderId         String?    // Todo realtion needs to define when working with the storeProductId
+  contextType   PaymentContextType?    // first optional then backfill then make required
 
-  orderId       String?   @unique
+
+  orderId       String?   @unique   // Gateway order reference
   cashfreeOrderId    String?
   baseAmount         Float
   gstAmount          Float @default(0)
@@ -1267,9 +1304,22 @@ model PaymentOrder {
   paidAt        DateTime?
 
   user          User             @relation(fields: [userId], references: [id])
-  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
+  plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
+  challenge     Challenge?        @relation(fields: [challengeId], references: [id])
+  storeOrder  Order?            @relation(fields: [storeOrderId], references: [id])
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
 
+
+  @@index([planId])
+  @@index([challengeId])
+  @@index([storeOrderId])
+  @@index([contextType])
+
+}
+enum PaymentContextType {
+  SUBSCRIPTION
+  CHALLENGE
+  STORE_ORDER
 }
 
 
