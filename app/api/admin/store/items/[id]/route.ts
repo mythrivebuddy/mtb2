@@ -7,6 +7,21 @@ import { getServerSession } from "next-auth";
 
 const prisma = new PrismaClient();
 
+// Helper: extract storage path from Supabase public URL
+// e.g. "https://xxx.supabase.co/storage/v1/object/public/store-images/store-images/file.png"
+//   → "store-images/file.png"
+function extractStoragePath(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const marker = "/object/public/store-images/";
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.slice(idx + marker.length);
+  } catch {
+    return null;
+  }
+}
+
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,7 +30,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden - Admin access required" },
@@ -26,10 +40,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const { id } = await context.params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Item ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
     }
 
     const formData = await request.formData();
@@ -44,7 +55,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
 
-    // Validate currency
     if (!["USD", "INR"].includes(currency)) {
       return NextResponse.json(
         { error: "Invalid currency. Must be USD or INR." },
@@ -53,92 +63,52 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     }
 
     if (!name || !categoryId || isNaN(basePrice)) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Verify category exists
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-    });
+    const category = await prisma.category.findUnique({ where: { id: categoryId } });
     if (!category) {
-      return NextResponse.json(
-        { error: "Invalid category ID" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid category ID" }, { status: 400 });
     }
 
-    // Get existing item to preserve image URLs if not updating
     const existingItem = await prisma.item.findUnique({
       where: { id },
-      select: {
-        imageUrl: true,
-        downloadUrl: true,
-        imagePath: true,
-        downloadPath: true,
-      },
+      select: { imageUrl: true, downloadUrl: true },
     });
 
     if (!existingItem) {
-      return NextResponse.json(
-        { error: "Item not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
     let imageUrl = existingItem.imageUrl;
     let downloadUrl = existingItem.downloadUrl;
-    let imagePath = existingItem.imagePath;
-    let downloadPath = existingItem.downloadPath;
 
-    // Upload new image if provided
+   // Upload new image if provided
     if (imageFile && imageFile.size > 0) {
-      // Delete old image from Supabase storage if it exists
-      if (existingItem.imagePath) {
+      const oldImagePath = extractStoragePath(existingItem.imageUrl);
+      if (oldImagePath) {
         try {
-          await supabaseAdmin.storage
-            .from("store-images")
-            .remove([existingItem.imagePath]);
-          console.log("Old image deleted:", existingItem.imagePath);
+          await supabaseAdmin.storage.from("store-images").remove([oldImagePath]);
+          console.log("Old image deleted:", oldImagePath);
         } catch (error) {
           console.error("Error deleting old image:", error);
-          // Continue even if deletion fails
         }
       }
-
-      const uploadResult = await handleSupabaseImageUpload(
-        imageFile,
-        "store-images",
-        "store-images"
-      );
-      imageUrl = uploadResult.url;
-      imagePath = uploadResult.path;
+      imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
     }
 
     // Upload new download file if provided
     if (downloadFile && downloadFile.size > 0) {
-      // Delete old download file from Supabase storage if it exists
-      if (existingItem.downloadPath) {
+      const oldDownloadPath = extractStoragePath(existingItem.downloadUrl);
+      if (oldDownloadPath) {
         try {
-          await supabaseAdmin.storage
-            .from("store-images")
-            .remove([existingItem.downloadPath]);
-          console.log("Old download file deleted:", existingItem.downloadPath);
+          await supabaseAdmin.storage.from("store-images").remove([oldDownloadPath]);
+          console.log("Old download file deleted:", oldDownloadPath);
         } catch (error) {
           console.error("Error deleting old download file:", error);
-          // Continue even if deletion fails
         }
       }
-
-      const uploadResult = await handleSupabaseImageUpload(
-        downloadFile,
-        "store-images",
-        "store-images"
-      );
-      downloadUrl = uploadResult.url;
-      downloadPath = uploadResult.path;
+      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
     }
 
     const item = await prisma.item.update({
@@ -153,8 +123,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         currency,
         imageUrl,
         downloadUrl,
-        imagePath,
-        downloadPath,
+        // imagePath and downloadPath removed
       },
       select: {
         id: true,
@@ -167,8 +136,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         currency: true,
         imageUrl: true,
         downloadUrl: true,
-        imagePath: true,
-        downloadPath: true,
         isApproved: true,
         createdByRole: true,
         createdByUserId: true,
@@ -209,7 +176,6 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden - Admin access required" },
@@ -220,56 +186,34 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const { id } = await context.params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Item ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
     }
 
-    // Get item to retrieve file paths before deletion
     const item = await prisma.item.findUnique({
       where: { id },
-      select: {
-        imagePath: true,
-        downloadPath: true,
-      },
+      select: { imageUrl: true, downloadUrl: true },
     });
 
     if (!item) {
-      return NextResponse.json(
-        { error: "Item not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
 
-    // Delete files from Supabase storage
-    const filesToDelete = [];
-    
-    if (item.imagePath) {
-      filesToDelete.push(item.imagePath);
-    }
-    
-    if (item.downloadPath) {
-      filesToDelete.push(item.downloadPath);
-    }
+    // Extract paths from URLs and delete from storage
+    const filesToDelete = [
+      extractStoragePath(item.imageUrl),
+      extractStoragePath(item.downloadUrl),
+    ].filter(Boolean) as string[];
 
-    // Delete all files at once if there are any
     if (filesToDelete.length > 0) {
       try {
-        await supabaseAdmin.storage
-          .from("store-images")
-          .remove(filesToDelete);
+        await supabaseAdmin.storage.from("store-images").remove(filesToDelete);
         console.log("Files deleted from storage:", filesToDelete);
       } catch (error) {
         console.error("Error deleting files from storage:", error);
-        // Continue with database deletion even if storage deletion fails
       }
     }
 
-    // Delete item from database
-    await prisma.item.delete({
-      where: { id },
-    });
+    await prisma.item.delete({ where: { id } });
 
     return NextResponse.json(
       { message: "Item and associated files deleted successfully" },
@@ -287,40 +231,25 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
   }
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: "Product ID is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Product ID is required" }, { status: 400 });
     }
 
     const product = await prisma.item.findUnique({
       where: { id },
       include: {
-        category: {
-          select: { id: true, name: true },
-        },
-        creator: {
-          select: { id: true, name: true, email: true, image: true },
-        },
-        approver: {
-          select: { id: true, name: true, email: true },
-        },
+        category: { select: { id: true, name: true } },
+        creator: { select: { id: true, name: true, email: true, image: true } },
+        approver: { select: { id: true, name: true, email: true } },
       },
     });
 
     if (!product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     const formattedProduct = {
@@ -335,8 +264,7 @@ export async function GET(
       currency: product.currency,
       imageUrl: product.imageUrl,
       downloadUrl: product.downloadUrl,
-      imagePath: product.imagePath,
-      downloadPath: product.downloadPath,
+      // imagePath and downloadPath removed — derive on demand via extractStoragePath()
       isApproved: product.isApproved,
       approvedByUserId: product.approvedByUserId,
       approvedAt: product.approvedAt?.toISOString() || null,

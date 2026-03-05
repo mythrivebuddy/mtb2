@@ -344,8 +344,6 @@ model Item {
   // Media
   imageUrl    String
   downloadUrl String?
-  downloadPath  String?
-  imagePath     String
 
   // Category
   categoryId String
