@@ -1,0 +1,216 @@
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
+
+// export default function Step2ProgramAchievements({ onNext, onBack }: { onNext: () => void, onBack: () => void }) {
+//   const [achievements, setAchievements] = useState<string[]>([""]);
+
+//   useEffect(() => {
+//     const saved = localStorage.getItem("step2_achievements");
+//     if (saved) setAchievements(JSON.parse(saved));
+//   }, []);
+
+//   const updateAchievement = (index: number, value: string) => {
+//     const newItems = [...achievements];
+//     newItems[index] = value;
+//     setAchievements(newItems);
+//     localStorage.setItem("step2_achievements", JSON.stringify(newItems));
+//   };
+
+//   const addItem = () => setAchievements([...achievements, ""]);
+  
+//   const removeItem = (index: number) => {
+//     if (achievements.length > 1) {
+//       const newItems = achievements.filter((_, i) => i !== index);
+//       setAchievements(newItems);
+//       localStorage.setItem("step2_achievements", JSON.stringify(newItems));
+//     }
+//   };
+
+//   return (
+//     <div className="space-y-10 animate-in fade-in duration-500">
+//       <header>
+//         <h2 className="text-4xl font-serif font-bold text-[#1e293b]">What Will Participants Achieve?</h2>
+//         <p className="text-gray-400 mt-4 text-lg">Define the transformation participants will experience through your Mini-Mastery Program.</p>
+//       </header>
+
+//       <div className="space-y-4">
+//         {achievements.map((item, index) => (
+//           <div key={index} className="relative group">
+//             <input
+//               type="text"
+//               placeholder="e.g. Develop a consistent morning routine"
+//               className="w-full p-6 bg-gray-50/50 border border-gray-100 rounded-[24px] focus:ring-2 focus:ring-blue-600-400 outline-none transition-all text-gray-700"
+//               value={item}
+//               onChange={(e) => updateAchievement(index, e.target.value)}
+//             />
+//             {achievements.length > 1 && (
+//               <button 
+//                 onClick={() => removeItem(index)}
+//                 className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-300 hover:text-red-400 transition-colors"
+//               >
+//                 <X size={18} />
+//               </button>
+//             )}
+//           </div>
+//         ))}
+        
+//         <button 
+//           onClick={addItem}
+//           className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors px-2"
+//         >
+//           <Plus size={16} /> Add another achievement
+//         </button>
+//       </div>
+
+//       <div className="flex justify-between items-center pt-10">
+//         <button 
+//           onClick={onBack}
+//           className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+//         >
+//           <ArrowLeft size={18} /> Back
+//         </button>
+
+//         <button 
+//           onClick={onNext}
+//           className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95"
+//         >
+//           Save & Continue <ArrowRight size={20} />
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }
+"use client";
+
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
+import { step2MMPSchema, type Step2Data, type FullFormData, MMP_STORAGE_KEY } from "@/schema/zodSchema";
+
+interface Props {
+  onNext: (data: Step2Data) => void;
+  onBack: () => void;
+  defaultValues?: Partial<Step2Data>;
+}
+
+export default function Step2ProgramAchievements({ onNext, onBack, defaultValues }: Props) {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors },
+  } = useForm<Step2Data>({
+    resolver: zodResolver(step2MMPSchema),
+    defaultValues: {
+      achievements: defaultValues?.achievements?.length
+        ? defaultValues.achievements
+        : [{ value: "" }],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({ control, name: "achievements" });
+
+  // useWatch for localStorage persistence — no useEffect dependency warning
+  const allValues = useWatch({ control });
+
+  const persistToStorage = (values: Partial<Step2Data>) => {
+    const stored = localStorage.getItem(MMP_STORAGE_KEY);
+    const parsed: Partial<FullFormData> = stored ? (JSON.parse(stored) as Partial<FullFormData>) : {};
+    localStorage.setItem(MMP_STORAGE_KEY, JSON.stringify({ ...parsed, step2: values }));
+  };
+
+  // achievements is a ZodArray — root error lives on the array itself, not on a field key
+  // FieldArrayPath errors come as errors.achievements (array-level) or errors.achievements[n].value
+  const arrayLevelError: string | undefined =
+    errors.achievements?.message ??
+    (errors.achievements as { root?: { message?: string } } | undefined)?.root?.message;
+
+  return (
+    <form
+      onSubmit={handleSubmit(onNext)}
+      className="space-y-10 animate-in fade-in duration-500"
+      noValidate
+    >
+      <header>
+        <h2 className="text-4xl font-serif font-bold text-[#1e293b]">
+          What Will Participants Achieve?
+        </h2>
+        <p className="text-gray-400 mt-4 text-lg">
+          Define the transformation participants will experience through your Mini-Mastery Program.
+        </p>
+      </header>
+
+      <div className="space-y-4">
+        {arrayLevelError && (
+          <p className="text-sm text-red-500 font-medium">{arrayLevelError}</p>
+        )}
+
+        {fields.map((field, index) => (
+          <div key={field.id} className="space-y-1">
+            <div className="relative group">
+              <input
+                {...register(`achievements.${index}.value`, {
+                  onChange: () => persistToStorage(allValues as Partial<Step2Data>),
+                })}
+                type="text"
+                placeholder="e.g. Develop a consistent morning routine"
+                className={`w-full p-6 border rounded-[24px] focus:ring-2 outline-none transition-all text-gray-700 ${
+                  errors.achievements?.[index]?.value
+                    ? "border-red-400 bg-red-50/30 focus:ring-red-400"
+                    : "bg-gray-50/50 border-gray-100 focus:ring-blue-400"
+                }`}
+              />
+              {fields.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    remove(index);
+                    persistToStorage(allValues as Partial<Step2Data>);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-300 hover:text-red-400 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+            {errors.achievements?.[index]?.value?.message && (
+              <p className="text-[11px] text-red-500 font-medium pl-4">
+                {errors.achievements[index].value.message}
+              </p>
+            )}
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => {
+            append({ value: "" });
+            persistToStorage(allValues as Partial<Step2Data>);
+          }}
+          disabled={fields.length >= 10}
+          className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors px-2 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Plus size={16} /> Add another achievement
+        </button>
+      </div>
+
+      <div className="flex justify-between items-center pt-10">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+        >
+          <ArrowLeft size={18} /> Back
+        </button>
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95"
+        >
+          Save & Continue <ArrowRight size={20} />
+        </button>
+      </div>
+    </form>
+  );
+}

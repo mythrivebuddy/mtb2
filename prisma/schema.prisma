@@ -124,6 +124,7 @@ model User {
   coachChallengePayouts ChallengePayout[]
   challengePayments ChallengePayment[]
 
+  createdPrograms  Program[]  @relation("ProgramCreator")
   @@index([name])
 }
 
@@ -1581,10 +1582,36 @@ model Program {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // --- 🆕 Mini-Mastery Program (MMP) Specific Fields ---
+  
+  // Step 1: Unlock Logic
+  unlockType        String?  @default("daily") // "daily" or "all"
+
+  // Step 2: What will participants achieve?
+  achievements      Json?    // Stores: ["Master focus", "Early rising", ...]
+
+  // Step 3: Daily Module Builder
+  // for each day title, type, videoUrl, instructions, action task
+  modules           Json?    // Stores: [{day: 1, title: "Intro", type: "video", ...}]
+
+  // Step 4: Pricing
+  price             Float?   @default(0)
+  currency          String?  @default("INR")
+
+  // Step 5: Certificate Settings
+  completionThreshold Int?    @default(100)
+  certificateTitle    String?
+
+  // Step 6: Status handling
+  status            String?  @default("DRAFT") // "DRAFT", "UNDER_REVIEW", "PUBLISHED"
+
   // Relations
   plans              SubscriptionPlan[] @relation("ProgramPlans")
   purchases          OneTimeProgramPurchase[]
   userProgramStates UserProgramState[]
+
+  createdBy   String?
+  creator     User?   @relation("ProgramCreator", fields: [createdBy], references: [id])
 }
 model OneTimeProgramPurchase {
   id                 String   @id @default(cuid())

@@ -431,12 +431,18 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     />
                   </ComingSoonWrapper> */}
                     <div className="flex items-center ">
-                      <ComingSoonWrapper>
-                        <span className="flex items-center gap-2 py-2 hover:text-jp-orange cursor-pointer  text-[#6C7894]">
-                          <GraduationCap size={20} className="w-7" />
+                      <Link
+                        href="/dashboard/mini-mastery-programs"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs" ? "text-jp-orange" : ""}`}
+                      >
+                        <GraduationCap size={20} className="w-7" />
+
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-2">
                           Promote Mini Mastery Programs
                         </span>
-                      </ComingSoonWrapper>
+                      </Link>
                     </div>
                     <NavItem
                       href="/dashboard/manage-store"
