@@ -440,11 +440,10 @@ const CustomDropdown = ({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none ${
-          open
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none ${open
             ? `shadow-lg ring-2 ${ringClass}`
             : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-        }`}
+          }`}
       >
         <span className={value ? "text-gray-800" : "text-gray-700"}>{selectedLabel}</span>
         <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${open ? "rotate-180 text-gray-600" : "text-gray-400"}`} />
@@ -461,9 +460,8 @@ const CustomDropdown = ({
                   key={opt.value}
                   type="button"
                   onClick={() => { onChange(opt.value); setOpen(false); }}
-                  className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left ${
-                    isSelected ? `${selectedBg} font-semibold` : `text-gray-700 ${hoverBg}`
-                  }`}
+                  className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left ${isSelected ? `${selectedBg} font-semibold` : `text-gray-700 ${hoverBg}`
+                    }`}
                 >
                   <span>{opt.label}</span>
                   {isSelected && <Check className={`w-4 h-4 shrink-0 ${checkColor}`} />}
@@ -694,12 +692,12 @@ const StorePage: React.FC = () => {
                         </Link>
                       ) : (
                         <button
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-white hover:bg-blue-50 active:scale-95 text-blue-600 font-semibold text-xs rounded-xl px-3 py-2.5 border-2 border-blue-500 hover:border-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-white hover:bg-blue-50 active:scale-95 text-blue-600 font-semibold text-xs rounded-xl px-3 py-2 border-2 border-blue-500 hover:border-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           onClick={() => addToCartMutation.mutate(item.id)}
                           disabled={addingItemId === item.id}
                         >
                           <PlusCircle className="w-4 h-4 shrink-0" />
-                          <span>{addingItemId === item.id ? "Adding..." : "Add"}</span>
+                          <span>{addingItemId === item.id ? "Adding..." : "Add to Cart"}</span>
                         </button>
                       )}
                       <button
