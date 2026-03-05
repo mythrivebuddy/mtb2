@@ -16,8 +16,8 @@ import { useRouter } from "next/navigation";
 
 // ─── Currency Config ───────────────────────────────────────────────────────────
 const CURRENCIES = [
-  { value: "INR", label: "INR", symbol: "₹" },
-  { value: "USD", label: "USD", symbol: "$" },
+  { value: "INR", label: "INR (₹)", symbol: "₹" },
+  { value: "USD", label: "USD ($)", symbol: "$" },
 ];
 
 const getCurrencySymbol = (currency?: string) =>
@@ -41,41 +41,6 @@ const BLANK_FORM: ItemFormData = {
   lifetimePrice: "" as unknown as number,
   currency:      "INR",
 };
-
-// ─── SVG Icons ─────────────────────────────────────────────────────────────────
-const RupeeIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M6 3h12" />
-    <path d="M6 8h12" />
-    <path d="M6 13l8.5 8" />
-    <path d="M6 13h3a4 4 0 0 0 0-8" />
-  </svg>
-);
-
-const DollarIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
-);
 
 // ─── API fetchers ──────────────────────────────────────────────────────────────
 const fetchCategories = async (): Promise<Category[]> => {
@@ -118,10 +83,10 @@ const ManageStorePage: React.FC = () => {
     const fd = new FormData();
     fd.append("name",          data.name);
     fd.append("category",      data.category);
-    fd.append("basePrice",     Math.floor(Number(data.basePrice)     || 0).toString());
-    fd.append("monthlyPrice",  Math.floor(Number(data.monthlyPrice)  || 0).toString());
-    fd.append("yearlyPrice",   Math.floor(Number(data.yearlyPrice)   || 0).toString());
-    fd.append("lifetimePrice", Math.floor(Number(data.lifetimePrice) || 0).toString());
+    fd.append("basePrice",     (Number(data.basePrice)     || 0).toString());
+    fd.append("monthlyPrice",  (Number(data.monthlyPrice)  || 0).toString());
+    fd.append("yearlyPrice",   (Number(data.yearlyPrice)   || 0).toString());
+    fd.append("lifetimePrice", (Number(data.lifetimePrice) || 0).toString());
     fd.append("currency",      data.currency ?? "INR");
     if (data.imageFile)    fd.append("image",    data.imageFile);
     if (data.downloadFile) fd.append("download", data.downloadFile);
@@ -139,7 +104,7 @@ const ManageStorePage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["items"] });
       setIsModalOpen(false);
       resetForm();
-      toast.success("Product created successfully! .");
+      toast.success("Product created successfully!");
     },
     onError: (err) => toast.error(getAxiosErrorMessage(err, "Failed to create product.")),
   });
@@ -244,17 +209,30 @@ const ManageStorePage: React.FC = () => {
   };
 
   // ─── Price stepper ────────────────────────────────────────────────────────────
-  const stepPrice = (key: keyof ItemFormData, delta: 1 | -1) =>
-    setFormData((prev) => ({
-      ...prev,
-      [key]: Math.max(0, (Number(prev[key]) || 0) + delta),
-    }));
+  const stepPrice = (key: keyof ItemFormData, delta: number) => {
+    setFormData((prev) => {
+      const currentValue = Number(prev[key]) || 0;
+      const newValue = Math.max(0, currentValue + delta);
+      // Round to 2 decimal places
+      return {
+        ...prev,
+        [key]: Math.round(newValue * 100) / 100,
+      };
+    });
+  };
 
-  const handlePriceChange = (key: keyof ItemFormData, raw: string) =>
-    setFormData((prev) => ({
-      ...prev,
-      [key]: raw === "" ? ("" as unknown as number) : Math.max(0, Math.floor(Number(raw))),
-    }));
+  const handlePriceChange = (key: keyof ItemFormData, raw: string) => {
+    if (raw === "") {
+      setFormData((prev) => ({ ...prev, [key]: "" as unknown as number }));
+      return;
+    }
+    
+    // Allow decimal numbers
+    const value = parseFloat(raw);
+    if (!isNaN(value) && value >= 0) {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    }
+  };
 
   const currencySymbol = getCurrencySymbol(formData.currency);
 
@@ -379,37 +357,21 @@ const ManageStorePage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* ── Currency Selector ── */}
+                  {/* ── Currency Dropdown ── */}
                   <div>
                     <label className="block text-sm font-medium mb-1">Currency *</label>
-                    <div className="flex gap-2">
-                      {/* INR */}
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, currency: "INR" })}
-                        className={`flex-1 px-4 py-2.5 rounded-lg border-2 font-semibold transition-all flex items-center justify-center gap-2 ${
-                          formData.currency === "INR"
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                        }`}
-                      >
-                        <RupeeIcon className="w-4 h-4" />
-                        INR
-                      </button>
-                      {/* USD */}
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, currency: "USD" })}
-                        className={`flex-1 px-4 py-2.5 rounded-lg border-2 font-semibold transition-all flex items-center justify-center gap-2 ${
-                          formData.currency === "USD"
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                        }`}
-                      >
-                        <DollarIcon className="w-4 h-4" />
-                        USD
-                      </button>
-                    </div>
+                    <select
+                      value={formData.currency}
+                      onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      {CURRENCIES.map((curr) => (
+                        <option key={curr.value} value={curr.value}>
+                          {curr.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* ── Price Fields ── */}
@@ -428,8 +390,8 @@ const ManageStorePage: React.FC = () => {
                           <input
                             type="number"
                             min="0"
-                            step="1"
-                            placeholder="0"
+                            step="0.01"
+                            placeholder="0.00"
                             value={
                               formData[key] === "" || formData[key] === undefined
                                 ? ""
@@ -446,7 +408,7 @@ const ManageStorePage: React.FC = () => {
                           <div className="flex flex-col border-l border-gray-300">
                             <button
                               type="button"
-                              onClick={() => stepPrice(key, 1)}
+                              onClick={() => stepPrice(key, 0.01)}
                               className="px-2 py-[3px] bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors select-none border-b border-gray-300 leading-none"
                               title="Increase"
                             >
@@ -456,7 +418,7 @@ const ManageStorePage: React.FC = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => stepPrice(key, -1)}
+                              onClick={() => stepPrice(key, -0.01)}
                               className="px-2 py-[3px] bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors select-none leading-none"
                               title="Decrease"
                             >
@@ -485,7 +447,7 @@ const ManageStorePage: React.FC = () => {
                       required={!editingItem}
                     />
                     {editingItem && (
-                      <p className="text-xs text-gray-400 mt-1">Leave empty to keep current image</p>
+                      <p className="text-xs text-gray-500 mt-1">Leave empty to keep current image</p>
                     )}
                   </div>
 
@@ -509,6 +471,9 @@ const ManageStorePage: React.FC = () => {
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
+                    {editingItem && (
+                      <p className="text-xs text-gray-500 mt-1">Leave empty to keep current file</p>
+                    )}
                   </div>
 
                   {/* Submit */}
@@ -590,7 +555,6 @@ const ManageStorePage: React.FC = () => {
               {filteredItems.map((item) => {
                 const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
                 const sym          = getCurrencySymbol(itemCurrency);
-                const isINR        = itemCurrency === "INR";
                 return (
                   <div
                     key={item.id}
@@ -611,12 +575,7 @@ const ManageStorePage: React.FC = () => {
 
                     {/* Currency badge — top left */}
                     <div className="absolute top-2 left-2 z-10">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-full ${
-                          isINR ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {isINR ? <RupeeIcon className="w-3 h-3" /> : <DollarIcon className="w-3 h-3" />}
+                      <span className="bg-blue-100 text-blue-700 px-2 py-1 text-xs font-bold rounded-full">
                         {itemCurrency}
                       </span>
                     </div>
@@ -644,7 +603,7 @@ const ManageStorePage: React.FC = () => {
                         <div key={label}>
                           <span className="text-gray-600">{label}:</span>
                           <span className="text-green-600 font-semibold ml-1">
-                            {sym}{Number(val).toFixed(0)}
+                            {sym}{Number(val).toFixed(2)}
                           </span>
                         </div>
                       ))}
@@ -690,7 +649,6 @@ const ManageStorePage: React.FC = () => {
                   {filteredItems.map((item) => {
                     const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
                     const sym          = getCurrencySymbol(itemCurrency);
-                    const isINR        = itemCurrency === "INR";
                     return (
                       <tr key={item.id} className="border-b hover:bg-gray-50">
                         <td className="py-3 px-4">
@@ -718,21 +676,16 @@ const ManageStorePage: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-full ${
-                              isINR ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
-                            }`}
-                          >
-                            {isINR ? <RupeeIcon className="w-3 h-3" /> : <DollarIcon className="w-3 h-3" />}
+                          <span className="bg-gray-100 text-gray-700 px-2 py-1 text-xs font-bold rounded-full">
                             {itemCurrency}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-green-600 font-semibold">
-                          {sym}{Number(item.basePrice).toFixed(0)}
+                          {sym}{Number(item.basePrice).toFixed(2)}
                         </td>
-                        <td className="py-3 px-4">{sym}{Number(item.monthlyPrice).toFixed(0)}</td>
-                        <td className="py-3 px-4">{sym}{Number(item.yearlyPrice).toFixed(0)}</td>
-                        <td className="py-3 px-4">{sym}{Number(item.lifetimePrice).toFixed(0)}</td>
+                        <td className="py-3 px-4">{sym}{Number(item.monthlyPrice).toFixed(2)}</td>
+                        <td className="py-3 px-4">{sym}{Number(item.yearlyPrice).toFixed(2)}</td>
+                        <td className="py-3 px-4">{sym}{Number(item.lifetimePrice).toFixed(2)}</td>
                         <td className="py-3 px-4">
                           <div className="flex gap-2 justify-end">
                             <button
@@ -782,7 +735,7 @@ const ManageStorePage: React.FC = () => {
             <h3 className="text-lg font-semibold text-slate-800 mb-2">Avg Base Price</h3>
             <p className="text-3xl font-bold text-blue-600">
               {items.length > 0
-                ? `${getCurrencySymbol()}${(items.reduce((s, i) => s + i.basePrice, 0) / items.length).toFixed(0)}`
+                ? `${getCurrencySymbol()}${(items.reduce((s, i) => s + i.basePrice, 0) / items.length).toFixed(2)}`
                 : "—"}
             </p>
           </div>

@@ -10,6 +10,7 @@ const prisma = new PrismaClient();
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
+
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -18,67 +19,57 @@ export async function POST(request: NextRequest) {
 
     const name          = formData.get("name") as string;
     const category      = formData.get("category") as string;
-    const basePrice     = parseInt(formData.get("basePrice") as string);
-    const monthlyPrice  = parseInt(formData.get("monthlyPrice") as string) || 0;
-    const yearlyPrice   = parseInt(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
+    const basePrice     = parseFloat(formData.get("basePrice") as string);
+    const monthlyPrice  = parseFloat(formData.get("monthlyPrice") as string) || 0;
+    const yearlyPrice   = parseFloat(formData.get("yearlyPrice") as string) || 0;
+    const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
     const imageFile     = formData.get("image") as File;
     const downloadFile  = formData.get("download") as File | null;
 
-    // ✅ Read currency, default to INR, validate
     const rawCurrency = (formData.get("currency") as string) || "INR";
     const currency    = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
 
     if (!name || !category || !imageFile || isNaN(basePrice)) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const imageUrl = await handleSupabaseImageUpload(
-      imageFile,
-      "store-images",
-      "store-images"
-    );
+    const imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
 
     let downloadUrl: string | undefined;
+
     if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(
-        downloadFile,
-        "store-images",
-        "store-images"
-      );
+      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
     }
 
     const item = await prisma.item.create({
       data: {
         name,
-        categoryId:      category,
+        categoryId: category,
         basePrice,
         monthlyPrice,
         yearlyPrice,
         lifetimePrice,
-        currency,                    // ✅ ADDED
+        currency,
         imageUrl,
         downloadUrl,
-        isApproved:      false,
+        // imagePath and downloadPath removed
+        isApproved: false,
         createdByUserId: session.user.id,
-        createdByRole:   "USER",
+        createdByRole: "USER",
       },
       select: {
-        id:           true,
-        name:         true,
-        categoryId:   true,
-        basePrice:    true,
-        monthlyPrice: true,
-        yearlyPrice:  true,
-        lifetimePrice:true,
-        currency:     true,          // ✅ ADDED
-        imageUrl:     true,
-        downloadUrl:  true,
-        isApproved:   true,
-        createdAt:    true,
+        id:            true,
+        name:          true,
+        categoryId:    true,
+        basePrice:     true,
+        monthlyPrice:  true,
+        yearlyPrice:   true,
+        lifetimePrice: true,
+        currency:      true,
+        imageUrl:      true,
+        downloadUrl:   true,
+        isApproved:    true,
+        createdAt:     true,
       },
     });
 
@@ -95,9 +86,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error creating item:", error);
-    return NextResponse.json(
-      { error: "Failed to create item" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to create item" }, { status: 500 });
   }
 }

@@ -118,7 +118,7 @@ describe("POST /api/spotlight", () => {
     expect(body.error).toContain("Complete your business profile");
   });
 
-  it("returns 400 if insufficient JP", async () => {
+  it("returns 400 if insufficient GP", async () => {
     (prisma.activity.findUnique as jest.Mock).mockResolvedValue({ id: "act-1" });
 
     (prisma.user.findUnique as jest.Mock).mockResolvedValue({
@@ -135,7 +135,7 @@ describe("POST /api/spotlight", () => {
     const body = await res.json();
 
     expect(res.status).toBe(400);
-    expect(body.error).toBe("Insufficient JP");
+    expect(body.error).toBe("Insufficient GP");
   });
 
   it("creates spotlight application successfully", async () => {

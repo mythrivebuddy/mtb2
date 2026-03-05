@@ -178,11 +178,11 @@ const CartSection: React.FC<CartSectionProps> = ({
                       <h4 className="text-lg font-medium">{cartItem.item.name}</h4>
                       <div className="flex items-center gap-2">
                         <span className="text-green-600 font-semibold">
-                          {sym}{Number(effectivePrice).toFixed(0)}
+                          {sym}{Number(effectivePrice).toFixed(2)}
                         </span>
                         {price !== cartItem.item.basePrice && (
                           <span className="text-gray-500 line-through text-sm">
-                            {sym}{Number(cartItem.item.basePrice).toFixed(0)}
+                            {sym}{Number(cartItem.item.basePrice).toFixed(2)}
                           </span>
                         )}
                       </div>
@@ -214,7 +214,7 @@ const CartSection: React.FC<CartSectionProps> = ({
 
                     {/* Line total */}
                     <span className="text-green-600 font-semibold">
-                      {sym}{Number(effectivePrice * cartItem.quantity).toFixed(0)}
+                      {sym}{Number(effectivePrice * cartItem.quantity).toFixed(2)}
                     </span>
 
                     <button
@@ -253,7 +253,7 @@ const CartSection: React.FC<CartSectionProps> = ({
                             <DollarIcon className="w-4 h-4" />
                           )}
                           <span>
-                            {sym}{Number(total).toFixed(0)}
+                            {sym}{Number(total).toFixed(2)}
                           </span>
                           <span className="text-sm text-gray-500 font-normal">
                             {currency}
@@ -272,7 +272,7 @@ const CartSection: React.FC<CartSectionProps> = ({
                 Total Amount:{" "}
                 <span className="text-green-600">
                   {resolveCurrencySymbol(cartCurrencies[0])}
-                  {Number(calculateTotal()).toFixed(0)}
+                  {Number(calculateTotal()).toFixed(2)}
                 </span>
               </div>
             )}

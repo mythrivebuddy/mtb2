@@ -1,19 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { getServerSession } from "next-auth";
+import { prisma } from '@/lib/prisma';
 import { authOptions } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
+import { getServerSession } from "next-auth";
+import { NextRequest, NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
+// Helper: extract storage path from Supabase public URL
+// e.g. "https://xxx.supabase.co/storage/v1/object/public/store-images/store-images/file.png"
+//   → "store-images/file.png"
+function extractStoragePath(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const marker = "/object/public/store-images/";
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    return url.slice(idx + marker.length);
+  } catch {
+    return null;
+  }
+}
 
-// PUT /api/user/store/items/[id]
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -21,6 +35,13 @@ export async function PUT(
 
     const existingItem = await prisma.item.findUnique({
       where: { id: itemId },
+      select: {
+        imageUrl: true,
+        downloadUrl: true,
+        createdByUserId: true,
+        currency: true,
+        isApproved: true,
+      },
     });
 
     if (!existingItem) {
@@ -39,37 +60,43 @@ export async function PUT(
 
     const formData = await request.formData();
 
-    const name          = formData.get("name") as string;
-    const category      = formData.get("category") as string;
-    const basePrice     = parseInt(formData.get("basePrice") as string);
-    const monthlyPrice  = parseInt(formData.get("monthlyPrice") as string) || 0;
-    const yearlyPrice   = parseInt(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseInt(formData.get("lifetimePrice") as string) || 0;
-    const imageFile     = formData.get("image") as File | null;
-    const downloadFile  = formData.get("download") as File | null;
+    const name = formData.get("name") as string;
+    const category = formData.get("category") as string;
+    const basePrice = parseFloat(formData.get("basePrice") as string);
+    const monthlyPrice = parseFloat(formData.get("monthlyPrice") as string) || 0;
+    const yearlyPrice = parseFloat(formData.get("yearlyPrice") as string) || 0;
+    const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
 
-    // ✅ Read currency, fallback to existing item's currency, then INR
+    const imageFile = formData.get("image") as File | null;
+    const downloadFile = formData.get("download") as File | null;
+
     const rawCurrency = (formData.get("currency") as string) || existingItem.currency || "INR";
-    const currency    = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
+    const currency = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
 
     if (!name || !category || isNaN(basePrice)) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    let imageUrl    = existingItem.imageUrl;
+    let imageUrl = existingItem.imageUrl;
     let downloadUrl = existingItem.downloadUrl;
-
+// Replace Image
     if (imageFile && imageFile.size > 0) {
+      const oldImagePath = extractStoragePath(existingItem.imageUrl);
+      if (oldImagePath) {
+        await supabaseAdmin.storage.from("store-images").remove([oldImagePath]);
+      }
       imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
     }
 
+    // Replace Download File
     if (downloadFile && downloadFile.size > 0) {
+      const oldDownloadPath = extractStoragePath(existingItem.downloadUrl);
+      if (oldDownloadPath) {
+        await supabaseAdmin.storage.from("store-images").remove([oldDownloadPath]);
+      }
       downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
     }
-
+    // Update Item
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
       data: {
@@ -79,44 +106,24 @@ export async function PUT(
         monthlyPrice,
         yearlyPrice,
         lifetimePrice,
-        currency,                  // ✅ ADDED
+        currency,
         imageUrl,
         downloadUrl,
-      },
-      select: {
-        id:             true,
-        name:           true,
-        categoryId:     true,
-        basePrice:      true,
-        monthlyPrice:   true,
-        yearlyPrice:    true,
-        lifetimePrice:  true,
-        currency:       true,      // ✅ ADDED
-        imageUrl:       true,
-        downloadUrl:    true,
-        isApproved:     true,
-        createdByRole:  true,
-        createdByUserId:true,
-        createdAt:      true,
-        updatedAt:      true,
+        // Reset approval if NOT admin
+        ...(!isAdmin && {
+          isApproved: false,
+          approvedAt: null,
+          approvedByUserId: null,
+        }),
       },
     });
 
     return NextResponse.json(
-      {
-        item: {
-          ...updatedItem,
-          category:  updatedItem.categoryId,
-          createdAt: updatedItem.createdAt.toISOString(),
-          updatedAt: updatedItem.updatedAt.toISOString(),
-        },
-        message: "Item updated successfully",
-      },
+      { message: "Item updated successfully", item: updatedItem },
       { status: 200 }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error updating item:", errorMessage);
     return NextResponse.json(
       { error: "Failed to update item", message: errorMessage },
       { status: 500 }
@@ -124,14 +131,13 @@ export async function PUT(
   }
 }
 
-// DELETE /api/user/store/items/[id] - unchanged
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -139,6 +145,11 @@ export async function DELETE(
 
     const existingItem = await prisma.item.findUnique({
       where: { id: itemId },
+      select: {
+        imageUrl: true,
+        downloadUrl: true,
+        createdByUserId: true,
+      },
     });
 
     if (!existingItem) {
@@ -155,15 +166,34 @@ export async function DELETE(
       );
     }
 
+    // Delete storage files using paths extracted from URLs
+    const filesToDelete = [
+      extractStoragePath(existingItem.imageUrl),
+      extractStoragePath(existingItem.downloadUrl),
+    ].filter(Boolean) as string[];
+
+    if (filesToDelete.length > 0) {
+      const { error } = await supabaseAdmin.storage
+        .from("store-images")
+        .remove(filesToDelete);
+
+      if (error) {
+        return NextResponse.json(
+          { error: "Failed to delete storage files" },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Delete from DB
     await prisma.item.delete({ where: { id: itemId } });
 
     return NextResponse.json(
-      { message: "Item deleted successfully" },
+      { message: "Item and associated files deleted successfully" },
       { status: 200 }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error deleting item:", errorMessage);
     return NextResponse.json(
       { error: "Failed to delete item", message: errorMessage },
       { status: 500 }

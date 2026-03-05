@@ -60,24 +60,24 @@ export async function PUT(
     let imageUrl = existingItem.imageUrl;
     let downloadUrl = existingItem.downloadUrl;
 
-    // Upload new image if provided
-    if (imageFile && imageFile.size > 0) {
-      imageUrl = await handleSupabaseImageUpload(
-        imageFile,
-        "store-images",
-        "store-images"
-      );
-    }
+    // ✅ Upload new image if provided — extract .url from the result
+   // ✅ Upload new image if provided
+if (imageFile && imageFile.size > 0) {
+  imageUrl = await handleSupabaseImageUpload(
+    imageFile,
+    "store-images",
+    "store-images"
+  );
+}
 
-    // Upload new download file if provided
-    if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(
-        downloadFile,
-        "store-images",
-        "store-images"
-      );
-    }
-
+// ✅ Upload new download file if provided
+if (downloadFile && downloadFile.size > 0) {
+  downloadUrl = await handleSupabaseImageUpload(
+    downloadFile,
+    "store-images",
+    "store-images"
+  );
+}
     // Update item
     const updatedItem = await prisma.item.update({
       where: { id: itemId },
@@ -130,4 +130,3 @@ export async function PUT(
     );
   }
 }
-

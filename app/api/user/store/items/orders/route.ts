@@ -55,6 +55,7 @@ export async function GET() {
             imageUrl: orderItem.item.imageUrl,
             basePrice: orderItem.item.basePrice,
             monthlyPrice: orderItem.item.monthlyPrice,
+            downloadUrl:orderItem.item.downloadUrl,
             yearlyPrice: orderItem.item.yearlyPrice,
             lifetimePrice: orderItem.item.lifetimePrice,
             currency: orderItem.item.currency,  // ✅ ONLY LINE ADDED

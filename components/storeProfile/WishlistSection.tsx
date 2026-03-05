@@ -5,7 +5,6 @@ import Image from "next/image";
 
 import { Item, WishlistItem } from "@/types/client/store";
 
-// ─── Currency helpers ──────────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: "₹",
   USD: "$",
@@ -14,7 +13,6 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 const getCurrencySymbol = (currency?: string): string =>
   CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
-// ─── Props ─────────────────────────────────────────────────────────────────────
 interface WishlistSectionProps {
   wishlist: WishlistItem[];
   getPriceForMembership: (item: Item) => number;
@@ -32,18 +30,20 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
 
   return (
     <div className="bg-white shadow-lg rounded-xl p-6 col-span-2">
-      <h3 className="text-2xl font-semibold mb-6 flex items-center">
-        <Heart className="w-6 h-6 mr-2 text-pink-500" />
+      {/* ✅ Matched Orders: text-xl font-bold, w-5 h-5 icon, mb-4 */}
+      <h3 className="text-xl font-bold mb-4 flex items-center">
+        <Heart className="w-5 h-5 mr-2 text-pink-500" />
         My Wishlist
       </h3>
 
       {!wishlist.length ? (
-        <div className="text-center py-12">
-          <Heart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+        // ✅ Reduced empty state height: smaller icon + tighter padding
+        <div className="text-center py-3">
+          <Heart className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+          <p className="text-gray-500 mb-3 text-sm">Your wishlist is empty</p>
           <Link
             href="/dashboard/store"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-3 rounded-full transition"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2 rounded-full transition"
           >
             Browse Store
           </Link>
@@ -71,12 +71,11 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
                     height={64}
                     className="rounded-md object-cover"
                   />
-
                   <div>
                     <h4 className="font-semibold">{item.name}</h4>
                     <p className="text-green-600 font-bold">
                       {sym}
-                      {Number(price).toFixed(0)}
+                      {Number(price).toFixed(2)}
                     </p>
                     {item.category && (
                       <p className="text-sm text-gray-500">

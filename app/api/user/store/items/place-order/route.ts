@@ -107,13 +107,11 @@
 //     return new NextResponse("Internal Error", { status: 500 });
 //   }
 // } 
-
-
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { getServerSession } from "next-auth";
+import { sendEmailUsingTemplate } from "utils/sendEmail"; // ✅ adjust path if needed
 
 export async function POST(req: Request) {
   try {
@@ -132,7 +130,7 @@ export async function POST(req: Request) {
     // Get user with membership info
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, membership: true },
+      select: { id: true, membership: true, email: true, name: true },
     });
 
     if (!user) {
@@ -146,6 +144,9 @@ export async function POST(req: Request) {
       quantity: number;
       priceAtPurchase: number;
     }[] = [];
+
+    // ✅ Also collect item names + currencies for the email
+    const itemDetails: { name: string; currency: string; price: number }[] = [];
 
     for (const { itemId, quantity } of items) {
       if (!itemId) {
@@ -177,26 +178,82 @@ export async function POST(req: Request) {
 
       totalAmount += finalPrice * quantity;
       orderItemsData.push({ itemId: item.id, quantity, priceAtPurchase: finalPrice });
+      itemDetails.push({ name: item.name, currency: item.currency || "INR", price: finalPrice });
     }
 
-    // Create order with all items in one transaction
-    const order = await prisma.order.create({
-      data: {
-        userId: user.id,
-        totalAmount,
-        status: "PENDING",
-        items: {
-          create: orderItemsData,
-        },
-      },
-      include: {
-        items: {
-          include: {
-            item: true,
+    // ✅ Create order + clear cart in one transaction
+    const [order] = await prisma.$transaction([
+      prisma.order.create({
+        data: {
+          userId: user.id,
+          totalAmount,
+          status: "COMPLETED",
+          items: {
+            create: orderItemsData,
           },
         },
-      },
-    });
+        include: {
+          items: {
+            include: { item: true },
+          },
+        },
+      }),
+      prisma.cart.deleteMany({
+        where: { userId: user.id },
+      }),
+    ]);
+
+    // ✅ Send order confirmation email (non-blocking — won't fail the order if email errors)
+    try {
+      const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+
+      // Build a readable total amount string
+      // Group by currency since mixed carts are possible
+      const currencyTotals: Record<string, number> = {};
+      itemDetails.forEach((d, i) => {
+        const cur = d.currency;
+        const amt = d.price * orderItemsData[i].quantity;
+        currencyTotals[cur] = (currencyTotals[cur] || 0) + amt;
+      });
+      const totalAmountStr = Object.entries(currencyTotals)
+        .map(([cur, amt]) => `${cur === "INR" ? "₹" : "$"}${Number(amt).toFixed(2)}`)
+        .join(" + ");
+
+      const itemNames = itemDetails.map((d) => d.name).join(", ");
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+
+      await sendEmailUsingTemplate({
+        toEmail: user.email!,
+        toName: user.name ?? "Customer",
+        templateId: "order-placed",
+        templateData: {
+          username: user.name ?? "Customer",
+          orderId: order.id,
+          orderDate,
+          totalAmount: totalAmountStr,
+          status: order.status,
+          itemCount: orderItemsData.length,
+          itemNames,
+          orderUrl: `${appUrl}/dashboard/store/profile`,
+        },
+      });
+
+      // ✅ Success log
+      console.log("\n[ORDER_EMAIL_SENT] ✅ Email sent successfully!");
+      console.log(`  → To:       ${user.email}`);
+      console.log(`  → Name:     ${user.name ?? "Customer"}`);
+      console.log(`  → Order ID: ${order.id}`);
+      console.log(`  → Amount:   ${totalAmountStr}`);
+      console.log(`  → Items:    ${itemNames}\n`);
+
+    } catch (emailError) {
+      // Log but don't fail the request — order is already placed
+      console.error("[ORDER_EMAIL_FAILED] ❌", emailError);
+    }
 
     return NextResponse.json({
       order: {
