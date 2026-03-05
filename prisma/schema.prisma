@@ -689,6 +689,7 @@ model Challenge {
   challengeJoiningFeeCurrency   challengeJoiningFeeCurrency   @default(INR)
   paymentOrders PaymentOrder[]
   payout ChallengePayout[]
+  coupons   Coupon[] @relation("ChallengeCoupons")
 
   @@map("challenges")
 }
@@ -1362,14 +1363,16 @@ model Coupon {
   description         String?
 
   type                CouponType
-
+  scope               CouponScope @default(SUBSCRIPTION)
   // Discount types
   discountPercentage  Float?
   discountAmountUSD   Float?
   discountAmountINR   Float?
   freeDays            Int?
-
+  creatorUserId           String?
+  challengeCreatorType        CouponCreatorType?  // "COACH","ADMIN","SYSTEM"
   // Applicability
+  applicableChallenges Challenge[] @relation("ChallengeCoupons")
   applicableUserTypes  CouponUserType[]
   applicablePlans      SubscriptionPlan[]           @relation("PlanCoupons")
   applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
@@ -1395,8 +1398,21 @@ model Coupon {
   redemptions         CouponRedemption[]
   oneTimePurchases OneTimeProgramPurchase[]
   paymentOrders PaymentOrder[] 
-}
 
+  @@index([couponCode])
+  @@index([scope])
+  @@index([status])
+}
+enum CouponCreatorType {
+  COACH
+  ADMIN
+  SYSTEM
+}
+enum CouponScope  {
+  SUBSCRIPTION
+  CHALLENGE
+  STORE_PRODUCT
+}
 enum CouponType {
   PERCENTAGE
   FIXED
