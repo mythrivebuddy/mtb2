@@ -491,6 +491,182 @@ export const businessProfileSchema = z
     path: ["priceMax"],
   })
 
+// ─── Shared localStorage key — SINGLE SOURCE OF TRUTH ────────────────────────
+export const MMP_STORAGE_KEY = "mmp_create_form";
+
+// ─── Step 1: Program Basics ───────────────────────────────────────────────────
+export const step1MMPSchema = z.object({
+  title: z
+    .string()
+    .min(5, "Program title must be at least 5 characters")
+    .max(100, "Program title cannot exceed 100 characters"),
+  subtitle: z
+    .string()
+    .min(10, "Transformation promise must be at least 10 characters")
+    .max(300, "Cannot exceed 300 characters"),
+  duration: z.enum(["7 Days", "14 Days", "21 Days", "30 Days"], {
+    errorMap: () => ({ message: "Please select a valid duration" }),
+  }),
+  unlockType: z.enum(["daily", "all"], {
+    errorMap: () => ({ message: "Please select an unlock type" }),
+  }),
+});
+
+export type Step1Data = z.infer<typeof step1MMPSchema>;
+
+// ─── Step 2: Achievements ─────────────────────────────────────────────────────
+export const step2MMPSchema = z.object({
+  achievements: z
+    .array(
+      z.object({
+        value: z
+          .string()
+          .min(5, "Achievement must be at least 5 characters")
+          .max(200, "Cannot exceed 200 characters"),
+      })
+    )
+    .min(1, "Add at least one achievement")
+    .max(10, "Maximum 10 achievements allowed"),
+});
+
+export type Step2Data = z.infer<typeof step2MMPSchema>;
+
+// ─── Step 3: Module Builder ───────────────────────────────────────────────────
+export const moduleSchema = z
+  .object({
+    id: z.number(),
+    title: z
+      .string()
+      .min(3, "Module title must be at least 3 characters")
+      .max(100, "Cannot exceed 100 characters"),
+    type: z.enum(["video", "text"], {
+      errorMap: () => ({ message: "Please select a content type" }),
+    }),
+    videoUrl: z.string().optional(),
+    instructions: z
+      .string()
+      .min(10, "Instructions must be at least 10 characters")
+      .max(2000, "Cannot exceed 2000 characters"),
+    actionTask: z
+      .string()
+      .min(5, "Action task must be at least 5 characters")
+      .max(500, "Cannot exceed 500 characters"),
+  })
+  .superRefine((mod, ctx) => {
+    if (mod.type === "video") {
+      if (!mod.videoUrl || mod.videoUrl.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Video URL is required for video modules",
+          path: ["videoUrl"],
+        });
+      } else {
+        const urlResult = z.string().url("Please enter a valid URL (YouTube/Vimeo)").safeParse(mod.videoUrl);
+        if (!urlResult.success) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please enter a valid URL (YouTube/Vimeo)",
+            path: ["videoUrl"],
+          });
+        }
+      }
+    }
+  });
+
+export const step3MMPSchema = z.object({
+  modules: z.array(moduleSchema).min(1, "Add at least one module"),
+});
+
+export type ModuleData = z.infer<typeof moduleSchema>;
+export type Step3Data = z.infer<typeof step3MMPSchema>;
+
+// ─── Step 4: Pricing ──────────────────────────────────────────────────────────
+export const step4MMPSchema = z
+  .object({
+    isPaid: z.boolean(),
+    currency: z.enum(["INR", "USD"]),
+    price: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.isPaid) {
+      const num = parseFloat(data.price);
+      if (!data.price || isNaN(num)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please enter a valid price", path: ["price"] });
+      } else if (num <= 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Price must be greater than 0", path: ["price"] });
+      } else if (data.currency === "INR" && num < 10) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Minimum price for INR is ₹10", path: ["price"] });
+      } else if (data.currency === "USD" && num < 1) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Minimum price for USD is $1", path: ["price"] });
+      }
+    }
+  });
+
+export type Step4Data = z.infer<typeof step4MMPSchema>;
+
+// ─── Step 5: Completion & Certificate ────────────────────────────────────────
+export const step5MMPSchema = z.object({
+  threshold: z
+    .number()
+    .min(50, "Completion threshold must be at least 50%")
+    .max(100, "Cannot exceed 100%"),
+  certTitle: z
+    .string()
+    .min(5, "Certificate title must be at least 5 characters")
+    .max(150, "Cannot exceed 150 characters"),
+});
+
+export type Step5Data = z.infer<typeof step5MMPSchema>;
+
+// ─── Full Form Shape (used in main page + localStorage) ──────────────────────
+export const fullFormSchema = z.object({
+  step1: step1MMPSchema,
+  step2: step2MMPSchema,
+  step3: step3MMPSchema,
+  step4: step4MMPSchema,
+  step5: step5MMPSchema,
+});
+
+export type FullFormData = z.infer<typeof fullFormSchema>;
+
+// ─── DB Payload (what gets sent to API) ──────────────────────────────────────
+export interface ProgramDBPayload {
+  name: string;
+  slug: string;
+  description: string;
+  durationDays: number;
+  unlockType: string;
+  achievements: string[];
+  modules: ModuleData[];
+  price: number;
+  currency: string;
+  completionThreshold: number;
+  certificateTitle: string;
+  status: "DRAFT" | "UNDER_REVIEW" | "PUBLISHED";
+}
+
+export function buildDBPayload(data: FullFormData): ProgramDBPayload {
+  return {
+    name: data.step1.title,
+    slug: data.step1.title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, ""),
+    description: data.step1.subtitle,
+    durationDays: parseInt(data.step1.duration),
+    unlockType: data.step1.unlockType,
+    achievements: data.step2.achievements.map((a) => a.value),
+    modules: data.step3.modules,
+    price: data.step4.isPaid ? parseFloat(data.step4.price) : 0,
+    currency: data.step4.currency,
+    completionThreshold: data.step5.threshold,
+    certificateTitle: data.step5.certTitle,
+    status: "UNDER_REVIEW",
+  };
+}
+
 export type ContactForm = z.infer<typeof contactFormSchems>;
 export type ActivityFormValues = z.infer<typeof activitySchema>;
 export type MagicBoxSettings = z.infer<typeof magicBoxSettingsSchema>;
