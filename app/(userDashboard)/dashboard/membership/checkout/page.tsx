@@ -223,14 +223,15 @@ export default function CheckoutPage() {
         body: JSON.stringify(
           context === "CHALLENGE"
             ? {
-                challengeId,
-                billingDetails,
-              }
+              challengeId,
+              couponCode: appliedCoupon?.code || null,
+              billingDetails,
+            }
             : {
-                planId: plan?.id,
-                couponCode: appliedCoupon?.code || null,
-                billingDetails,
-              },
+              planId: plan?.id,
+              couponCode: appliedCoupon?.code || null,
+              billingDetails,
+            },
         ),
       });
 
@@ -432,21 +433,27 @@ export default function CheckoutPage() {
 
     init();
   }, [context, challengeId, planId]);
+
+
   useEffect(() => {
     async function init() {
-      if (!planId) return;
+      if (context === "SUBSCRIPTION" && !planId) return;
+      if (context === "CHALLENGE" && !challengeId) return;
       const isIndia = billingDetails.country === "IN";
       const currency = isIndia ? "INR" : "USD";
       setLoading(true);
       try {
-        //   // 1️⃣ CHECK IF USER ALREADY HAS THIS PLAN
 
-        const planRes = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`,
-        );
-        if (!planRes.ok) throw new Error("Failed to fetch plan");
-        const planData = await planRes.json();
-        setPlan(planData);
+        if (context === "SUBSCRIPTION" && planId) {
+          const planRes = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`,
+          );
+
+          if (!planRes.ok) throw new Error("Failed to fetch plan");
+
+          const planData = await planRes.json();
+          setPlan(planData);
+        }
 
         // AUTO APPLY COUPON
         try {
@@ -456,7 +463,8 @@ export default function CheckoutPage() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                planId,
+                planId: context === "SUBSCRIPTION" ? planId : null,
+                challengeId: context === "CHALLENGE" ? challengeId : null,
                 currency: currency,
                 billingCountry: billingDetails.country, // Use detected country
                 userType: session?.user.userType,
@@ -509,14 +517,14 @@ export default function CheckoutPage() {
     }
 
     init();
-  }, [planId]);
+  }, [planId, challengeId, context, billingDetails.country]);
   // Note: We don't depend on billingDetails.country here to avoid refetching loop, logic handles dynamic currency below
 
   // ---------------------------
   // 2. MANUAL VERIFY
   // ---------------------------
   const handleVerifyCoupon = async () => {
-    if (!couponCode || !plan) return;
+   if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge)) return;
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
@@ -530,7 +538,8 @@ export default function CheckoutPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             code: couponCode,
-            planId: plan.id,
+            planId: context === "SUBSCRIPTION" ? plan?.id : null,
+            challengeId: context === "CHALLENGE" ? challenge?.id : null,
             currency: currency,
             billingCountry: billingDetails.country,
             userType: session?.user.userType,
@@ -594,14 +603,37 @@ export default function CheckoutPage() {
       const subtotal = challenge.challengeJoiningFee;
       const currency = challenge.challengeJoiningFeeCurrency;
 
+      let discount = 0;
+
+      if (appliedCoupon) {
+        if (appliedCoupon.type === "PERCENTAGE") {
+          discount =
+            (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100;
+        } else if (appliedCoupon.type === "FIXED") {
+          discount =
+            currency === "INR"
+              ? appliedCoupon.discountAmountINR ?? 0
+              : appliedCoupon.discountAmountUSD ?? 0;
+        } else if (
+          appliedCoupon.type === "FREE_DURATION" ||
+          appliedCoupon.type === "FULL_DISCOUNT"
+        ) {
+          discount = subtotal;
+        }
+      }
+
+      discount = Math.min(discount, subtotal);
+
+      const taxableAmount = subtotal - discount;
+
       const taxRate = isIndia ? 0.18 : 0;
-      const tax = subtotal * taxRate;
-      const total = subtotal + tax;
+      const tax = taxableAmount * taxRate;
+      const total = taxableAmount + tax;
 
       return {
         base: subtotal,
-        discount: 0,
-        taxableAmount: subtotal,
+        discount,
+        taxableAmount,
         tax,
         total: parseFloat(total.toFixed(2)),
         currency,

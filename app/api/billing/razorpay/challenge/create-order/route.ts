@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
+import { calculateDiscount, calculateFinal } from "@/lib/payment/payment.utils";
 
 
 interface BillingDetails {
@@ -22,6 +23,7 @@ interface BillingDetails {
 
 interface RequestBody {
   challengeId: string;
+  couponCode?: string;
   billingDetails: BillingDetails;
 }
 
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body: RequestBody = await req.json();
-    const { challengeId, billingDetails } = body;
+    const { challengeId, billingDetails, couponCode } = body;
 
     if (!challengeId) {
       return NextResponse.json(
@@ -67,6 +69,31 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    let coupon = null;
+
+    if (couponCode) {
+      coupon = await prisma.coupon.findFirst({
+        where: {
+          couponCode: couponCode.toUpperCase(),
+          status: "ACTIVE",
+          scope: "CHALLENGE",
+          startDate: { lte: new Date() },
+          endDate: { gte: new Date() },
+          applicableChallenges: {
+            some: {
+              id: challengeId,
+            },
+          },
+        },
+      });
+
+      if (!coupon) {
+        return NextResponse.json(
+          { success: false, error: "Invalid or expired coupon" },
+          { status: 400 }
+        );
+      }
+    }
 
     // Prevent duplicate enrollment
     const existingEnrollment = await prisma.challengeEnrollment.findUnique({
@@ -92,9 +119,27 @@ export async function POST(req: NextRequest) {
     } = await getRazorpayConfig();
 
     const baseAmount = challenge.challengeJoiningFee;
-    const gstRate = billingDetails.country === "IN" ? 0.18 : 0;
-    const gst = baseAmount * gstRate;
-    const totalAmount = baseAmount + gst;
+
+    const isIndia = billingDetails.country === "IN";
+    const currency = challenge.challengeJoiningFeeCurrency as "INR" | "USD";
+
+    const discount = calculateDiscount(baseAmount, coupon, currency);
+
+    let totalAmount = calculateFinal(
+      baseAmount,
+      discount,
+      isIndia,
+      true,
+      0.18
+    );
+
+    // Razorpay does not allow 0 amount
+    if (totalAmount <= 0) {
+      totalAmount = 1;
+    }
+
+    const gstRate = isIndia ? 0.18 : 0;
+    const gst = (baseAmount - discount) * gstRate;
 
     const razorpay = new Razorpay({
       key_id: razorpayKeyId,
@@ -106,8 +151,8 @@ export async function POST(req: NextRequest) {
       currency: challenge.challengeJoiningFeeCurrency,
       receipt: crypto.randomBytes(10).toString("hex"),
     });
-    console.log("order",order,"total amount: ",totalAmount,"baseAmt : ",baseAmount);
-    
+    console.log("order", order, "total amount: ", totalAmount, "baseAmt : ", baseAmount);
+
 
     // Upsert Billing Info
     const billing = await prisma.billingInformation.upsert({
@@ -145,8 +190,11 @@ export async function POST(req: NextRequest) {
         razorpayOrderId: order.id,
         orderId: order.id,
         baseAmount,
+        discountApplied: discount,
         gstAmount: gst,
         totalAmount,
+        // couponCode: coupon?.couponCode ?? null,
+        couponId: coupon?.id ?? null,
         currency: challenge.challengeJoiningFeeCurrency,
         status: "PENDING",
         billingInfoId: billing.id,
