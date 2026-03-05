@@ -285,6 +285,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   label="Join Challenges"
                   onLinkClick={toggleSidebar}
                 />
+                <NavItem
+                  href="/dashboard/mini-mastery-programs"
+                  icon={<GraduationCap size={20} />}
+                  label="Join Mini Mastery Programs"
+                  onLinkClick={toggleSidebar}
+                />
                 <div className="flex items-center ">
                   <Link href='/MTB-2026-the-complete-makeover-program'>
                     <span className="flex items-center gap-3 py-2 cursor-pointer  text-[#6C7894]">
@@ -432,9 +438,9 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   </ComingSoonWrapper> */}
                     <div className="flex items-center ">
                       <Link
-                        href="/dashboard/mini-mastery-programs"
+                        href="/dashboard/mini-mastery-programs/create"
                         onClick={toggleSidebar}
-                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs" ? "text-jp-orange" : ""}`}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
                       >
                         <GraduationCap size={20} className="w-7" />
 

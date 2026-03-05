@@ -1,72 +1,3 @@
-// "use client";
-
-// import Step1ProgramBasics from "@/components/mini-mastery-program/create-program/Step1ProgramBasics";
-// import Step2ProgramAchievements from "@/components/mini-mastery-program/create-program/Step2ProgramAchivements";
-// import Step3ModuleBuilder from "@/components/mini-mastery-program/create-program/Step3ModuleBuilder";
-// import Step4PricingStrategy from "@/components/mini-mastery-program/create-program/Step4PricingStrategy";
-// import Step5CompletionCertificate from "@/components/mini-mastery-program/create-program/Step5CompletionCertificate";
-// import Step6ReviewAndPublish from "@/components/mini-mastery-program/create-program/Step6ReviewAndPublish";
-// import { useState } from "react";
-
-// export default function CreateProgramPage() {
-//   const [currentStep, setCurrentStep] = useState(1);
-//   const totalSteps = 6;
-
-//  // stepInfo array mein update:
-// const stepInfo = [
-//   { label: "Program Basics", next: "Content Structure" },           // Step 1
-//   { label: "MMP Creation Flow", next: "Module Builder" },            // Step 2
-//   { label: "Daily Module Builder", next: "Pricing Strategy" },       // Step 3
-//   { label: "Pricing Strategy", next: "Completion & Certificate" },   // Step 4
-//   { label: "Completion & Certificate", next: "Review & Publish" },   // Step 5
-//   { label: "Review & Publish", next: "Finish" },                     // Step 6
-// ];
-
-//   const handleNext = () => setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-//   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-
-//   const progress = Math.round((currentStep / totalSteps) * 100);
-
-//   return (
-//     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center py-10 px-4">
-//       {/* Dynamic Progress Header */}
-//       <div className="w-full max-w-4xl mb-10">
-//         <div className="flex justify-between items-end mb-3">
-//           <div className="flex flex-col">
-//             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-//               STEP {currentStep} OF {totalSteps}
-//             </span>
-//             <h3 className="text-gray-900 font-bold text-sm mt-1">
-//               {stepInfo[currentStep - 1]?.label || "Loading..."}
-//             </h3>
-//           </div>
-//           <span className="text-blue-600 font-bold text-sm">{progress}%</span>
-//         </div>
-        
-//         <div className="w-full h-[6px] bg-gray-200 rounded-full">
-//           <div 
-//             className="h-full bg-blue-600 rounded-full transition-all duration-700 ease-in-out"
-//             style={{ width: `${progress}%` }}
-//           />
-//         </div>
-//         <p className="text-gray-400 text-[11px] italic mt-3">
-//           Next: {stepInfo[currentStep - 1]?.next || "TBD"}
-//         </p>
-//       </div>
-
-//       {/* Main Form Card */}
-//       <div className="w-full max-w-4xl bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
-//         {currentStep === 1 && <Step1ProgramBasics onNext={handleNext} />}
-//         {currentStep === 2 && <Step2ProgramAchievements onNext={handleNext} onBack={handleBack} />}
-//         {currentStep === 3 && <Step3ModuleBuilder onNext={handleNext} onBack={handleBack} />}
-//         {currentStep === 4 && <Step4PricingStrategy onNext={handleNext} onBack={handleBack} />}
-//         {currentStep === 5 && <Step5CompletionCertificate onNext={handleNext} onBack={handleBack} />}
-//         {currentStep === 6 && <Step6ReviewAndPublish onBack={handleBack} />}
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -184,7 +115,7 @@ export default function CreateProgramPage() {
 
       clearStorage();
       toast.success("Program submitted for review successfully!");
-      router.push("/dashboard/mini-mastery-programs");
+      router.push("/dashboard/mini-mastery-programs/create");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setSubmitError(message);
