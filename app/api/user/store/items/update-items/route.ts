@@ -93,7 +93,6 @@ if (downloadFile && downloadFile.size > 0) {
       },
       select: {
         id: true,
-        
         name: true,
         categoryId: true,
         basePrice: true,
