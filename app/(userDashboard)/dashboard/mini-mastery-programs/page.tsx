@@ -1,167 +1,693 @@
-// import React from 'react';
-// import { 
-//   Plus, TrendingUp, Users, CheckCircle, Star, 
-//   MoreVertical, Filter, Lightbulb, HelpCircle 
-// } from 'lucide-react';
-// import Link from 'next/link';
+// // import React from 'react';
+// // import { ChevronDown, ArrowUpDown, Sparkles, Zap } from 'lucide-react';
+// // import Link from 'next/link';
 
-// const Dashboard = () => {
-//   const stats = [
-//     { label: "TOTAL REVENUE", value: "$12,450.00", trend: "+12.5% vs last month", icon: <TrendingUp className="text-green-500" size={20} />, bg: "bg-green-50" },
-//     { label: "ACTIVE STUDENTS", value: "842", trend: "+5.2% vs last month", icon: <Users className="text-blue-500" size={20} />, bg: "bg-blue-50" },
-//     { label: "COMPLETION RATE", value: "68%", trend: "Stable", icon: <CheckCircle className="text-orange-500" size={20} />, bg: "bg-orange-50" },
-//     { label: "AVG. RATING", value: "4.8", trend: "+0.2% improvement", icon: <Star className="text-yellow-500" size={20} />, bg: "bg-yellow-50" },
-//   ];
+// // const Page = () => {
+// //   const categories = ["Free", "Paid", "Duration", "Category"];
 
-//   const programs = [
-//     { title: "Morning Mindfulness Rituals", type: "Self-paced • 14 days", status: "Published", students: "342", revenue: "$4,275.00", updated: "Oct 24, 2023", color: "bg-green-100 text-green-700" },
-//     { title: "Nutrition for Peak Performance", type: "Self-paced • 21 days", status: "Under Review", students: "—", revenue: "$0.00", updated: "Oct 21, 2023", color: "bg-blue-100 text-blue-700" },
-//     { title: "Strength Basics 101", type: "Draft", status: "Draft", students: "—", revenue: "$0.00", updated: "Oct 18, 2023", color: "bg-gray-100 text-gray-700" },
-//     { title: "Stress-Free Living", type: "Self-paced • 7 days", status: "Published", students: "500", revenue: "$8,175.00", updated: "Sep 30, 2023", color: "bg-green-100 text-green-700" },
-//   ];
+// //   const programs = [
+// //     { id: 1, title: "Mindfulness 101", coach: "Coach Sarah", duration: "11 Days", price: "₹299", Enrolled: "450+", image: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=400", isPaid: true },
+// //     { id: 2, title: "High-Performance Habits", coach: "Coach James", duration: "7 Days", price: "FREE", Enrolled: "820+", image: "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?auto=format&fit=crop&q=80&w=400", isPaid: false },
+// //     { id: 3, title: "Public Speaking Pro", coach: "Coach Elena", duration: "14 Days", price: "₹499", Enrolled: "310+", image: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=400", isPaid: true },
+// //     { id: 4, title: "Financial Literacy", coach: "Coach Raj", duration: "10 Days", price: "FREE", Enrolled: "1.2k+", image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=400", isPaid: false },
+// //     { id: 5, title: "Energy Blueprint", coach: "Coach Mia", duration: "5 Days", price: "FREE", Enrolled: "670+", image: "https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=400", isPaid: false },
+// //     { id: 6, title: "Creative Coding", coach: "Coach Alex", duration: "21 Days", price: "₹999", Enrolled: "240+", image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=400", isPaid: true },
+// //   ];
 
+// //   return (
+// //     <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto font-sans">
+// //       {/* Header Section */}
+// //       <header className="mb-12 space-y-6">
+// //         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+// //           <div className="space-y-3">
+// //             <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
+// //               <Sparkles size={14} />
+// //               <span>SGE Discovery</span>
+// //             </div>
+// //             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none">
+// //               Mini-Mastery Programs
+// //             </h1>
+// //             <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl leading-relaxed">
+// //               Bite-sized daily transformations. Expert-led skills in under 15 minutes a day.
+// //             </p>
+// //           </div>
+
+// //           <div className="bg-white px-4 py-2.5 rounded-2xl text-[11px] font-bold text-slate-600 flex items-center gap-3 shadow-sm border border-slate-100 self-start md:mb-1">
+// //             <div className="flex -space-x-2">
+// //               {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200" />)}
+// //             </div>
+// //             <span>Join <span className="text-blue-600 font-black">1,200+</span> growing members</span>
+// //           </div>
+// //         </div>
+// //       </header>
+
+// //       {/* Filters & Sorting */}
+// //       <div className="flex flex-wrap items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-200/60">
+// //         <div className="flex flex-wrap gap-2">
+// //           {categories.map((cat) => (
+// //             <button key={cat} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 rounded-xl text-xs font-bold text-slate-600 transition-all border border-slate-200 shadow-sm active:scale-95">
+// //               {cat} <ChevronDown size={12} className="text-slate-400" />
+// //             </button>
+// //           ))}
+// //         </div>
+// //         <button className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors">
+// //           Sort: <span className="text-slate-900 font-black uppercase tracking-tighter">Popularity</span> <ArrowUpDown size={12} />
+// //         </button>
+// //       </div>
+
+// //       {/* Program Grid */}
+// //       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+// //         {programs.map((prog, idx) => (
+// //           <div key={idx} className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden relative">
+            
+// //             {/* Image & Badges */}
+// //             <div className="relative aspect-[16/10] overflow-hidden">
+// //               <img src={prog.image} alt={prog.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+// //               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-60" />
+              
+// //               <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-slate-900 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-sm flex items-center gap-1">
+// //                 <Zap size={10} className="text-blue-500 fill-blue-500" /> {prog.duration}
+// //               </div>
+              
+// //               <div className={`absolute top-3 right-3 ${prog.isPaid ? 'bg-blue-500' : 'bg-slate-900'} text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg`}>
+// //                 {prog.price}
+// //               </div>
+// //             </div>
+
+// //             {/* Content */}
+// //             <div className="p-5 flex flex-col flex-1 space-y-4">
+// //               <div className="space-y-1.5">
+// //                 <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">{prog.title}</h3>
+// //                 <p className="text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
+// //                   Experience a complete transformation with expert-guided sessions designed for your busy lifestyle.
+// //                 </p>
+// //               </div>
+
+// //               <div className="flex items-center justify-between border-y border-slate-50 py-3">
+// //                 <div className="flex items-center gap-2">
+// //                   <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200" /> 
+// //                   <span className="text-[10px] font-bold text-slate-400 italic">{prog.coach}</span>
+// //                 </div>
+// //                 <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-md">
+// //                    {prog.Enrolled} Enrolled
+// //                 </div>
+// //               </div>
+
+// //               {/* Action Buttons - Horizontal Layout */}
+// //               <div className="flex gap-2 pt-1">
+// //                 <Link href={`/dashboard/mini-mastery-programs/enroll/${prog.id}`} className="flex-[2]">
+// //                   <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100">
+// //                     Enroll
+// //                   </button>
+// //                 </Link>
+// //                 <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
+// //                   <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+// //                     Info
+// //                   </button>
+// //                 </Link>
+// //               </div>
+// //             </div>
+// //           </div>
+// //         ))}
+// //       </div>
+
+// //       {/* Footer Load More */}
+// //       <div className="mt-20 flex flex-col items-center gap-4">
+// //         <button className="px-8 py-3.5 border-2 border-slate-200 text-slate-900 text-xs font-black rounded-2xl hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all active:scale-95 shadow-sm">
+// //           Load More Programs
+// //         </button>
+// //         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">Showing 6 of 42 programs</p>
+// //       </div>
+// //     </div>
+// //   );
+// // };
+
+// // export default Page;
+// "use client";
+
+// import React, { useState } from "react";
+// import axios from "axios";
+// import { useQuery, keepPreviousData } from "@tanstack/react-query";
+// import {
+//   ChevronDown, ArrowUpDown, Sparkles,
+//   Loader2, ServerCrash, ChevronLeft, ChevronRight,
+//   SlidersHorizontal, X, BookOpen,
+// } from "lucide-react";
+// import Link from "next/link";
+
+// // ─── Types ────────────────────────────────────────────────────────────────────
+
+// interface Creator {
+//   id: string;
+//   name: string;
+//   image: string | null;
+// }
+
+// interface Program {
+//   id: string;
+//   name: string;
+//   slug: string;
+//   description: string | null;
+//   durationDays: number | null;
+//   unlockType: string | null;
+//   price: number | null;
+//   currency: string | null;
+//   achievements: unknown;
+//   modules: unknown;
+//   status: string | null;
+//   isActive: boolean;
+//   createdAt: string;
+//   creator: Creator | null;
+// }
+
+// interface Pagination {
+//   page: number;
+//   limit: number;
+//   total: number;
+//   totalPages: number;
+// }
+
+// interface ApiResponse {
+//   programs: Program[];
+//   pagination: Pagination;
+// }
+
+// // ─── Filter types ─────────────────────────────────────────────────────────────
+
+// type PricingFilter  = "all" | "free" | "paid";
+// type DurationFilter = "all" | "7" | "14" | "21" | "30";
+// type SortOption     = "newest" | "price_asc" | "price_desc";
+
+// interface Filters {
+//   pricing:  PricingFilter;
+//   duration: DurationFilter;
+//   sort:     SortOption;
+// }
+
+// // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// const LIMIT = 9;
+
+// function formatPrice(price: number | null, currency: string | null): string {
+//   if (!price || price === 0) return "FREE";
+//   const symbol = currency === "USD" ? "$" : "₹";
+//   return `${symbol}${price.toLocaleString("en-IN")}`;
+// }
+
+// function moduleCount(modules: unknown): number {
+//   return Array.isArray(modules) ? modules.length : 0;
+// }
+
+// const SORT_LABELS: Record<SortOption, string> = {
+//   newest:     "Newest",
+//   price_asc:  "Price: Low → High",
+//   price_desc: "Price: High → Low",
+// };
+
+// const DURATION_OPTIONS: { label: string; value: DurationFilter }[] = [
+//   { label: "Any Duration", value: "all" },
+//   { label: "7 Days",       value: "7"   },
+//   { label: "14 Days",      value: "14"  },
+//   { label: "21 Days",      value: "21"  },
+//   { label: "30 Days",      value: "30"  },
+// ];
+
+// // Gradient palettes cycled per card index — replaces image
+// const CARD_GRADIENTS = [
+//   "from-blue-500 via-blue-600 to-indigo-700",
+//   "from-violet-500 via-purple-600 to-purple-800",
+//   "from-emerald-400 via-teal-500 to-cyan-700",
+//   "from-orange-400 via-rose-500 to-pink-600",
+//   "from-amber-400 via-orange-500 to-red-600",
+//   "from-sky-400 via-blue-500 to-blue-700",
+//   "from-fuchsia-500 via-pink-500 to-rose-600",
+//   "from-lime-400 via-green-500 to-emerald-700",
+//   "from-indigo-400 via-violet-500 to-purple-700",
+// ] as const;
+
+// // Large background letter from program name — used as decorative element
+// function getBgLetter(name: string): string {
+//   return name.trim()[0]?.toUpperCase() ?? "M";
+// }
+
+// // ─── API fetcher ──────────────────────────────────────────────────────────────
+
+// async function fetchPublicPrograms(
+//   page: number,
+//   filters: Filters,
+// ): Promise<ApiResponse> {
+//   const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+//   if (filters.pricing  !== "all") params.set("pricing",  filters.pricing);
+//   if (filters.duration !== "all") params.set("duration", filters.duration);
+//   params.set("sort", filters.sort);
+
+//   const { data } = await axios.get<ApiResponse>(
+//     `/api/mini-mastery-programs/public?${params.toString()}`,
+//   );
+//   return data;
+// }
+
+// // ─── Skeleton card ────────────────────────────────────────────────────────────
+
+// function SkeletonCard() {
 //   return (
-//     <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
-//       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-        
-//         {/* Header Section - Responsive Flex */}
-//         <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-//           <div>
-//             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">Create a Mini-Mastery Program</h1>
-//             <p className="text-gray-500 mt-1 md:mt-2 text-sm md:text-lg">Design a structured, self-paced program for autonomous learning.</p>
-//           </div>
-//           <Link href="/dashboard/mini-mastery-programs/create-new" className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
-//             <Plus size={20} strokeWidth={3} /> Create New Program
-//           </Link>
+//     <div className="bg-white rounded-[28px] border border-slate-100 overflow-hidden animate-pulse">
+//       <div className="h-[140px] bg-slate-100" />
+//       <div className="p-5 space-y-4">
+//         <div className="space-y-2">
+//           <div className="h-4 w-3/4 bg-slate-100 rounded-lg" />
+//           <div className="h-3 w-full bg-slate-100 rounded-lg" />
+//           <div className="h-3 w-2/3 bg-slate-100 rounded-lg" />
 //         </div>
-
-//         {/* Stats Grid - 1 col on mobile, 2 on tablet, 4 on desktop */}
-//         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-//           {stats.map((stat, idx) => (
-//             <div key={idx} className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
-//               <div className="flex justify-between items-start mb-3 md:mb-4">
-//                 <span className="text-[10px] md:text-xs font-bold text-gray-400 tracking-wider uppercase">{stat.label}</span>
-//                 <div className={`${stat.bg} p-2 rounded-lg`}>{stat.icon}</div>
-//               </div>
-//               <div className="text-xl md:text-2xl font-bold text-gray-900">{stat.value}</div>
-//               <div className="text-[10px] md:text-xs mt-2 font-medium text-green-500 flex items-center gap-1">
-//                 {stat.trend}
-//               </div>
-//             </div>
-//           ))}
+//         <div className="flex justify-between items-center py-3 border-y border-slate-50">
+//           <div className="h-3 w-24 bg-slate-100 rounded" />
+//           <div className="h-3 w-16 bg-slate-100 rounded" />
 //         </div>
-
-//         {/* Programs Table Container - Horizontal Scroll on Mobile */}
-//         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-//           <div className="p-5 md:p-6 flex justify-between items-center border-b border-gray-50">
-//             <h2 className="text-lg md:text-xl font-bold text-gray-800">Existing Programs</h2>
-//             <button className="p-2 border rounded-lg hover:bg-gray-50 text-gray-500 transition-colors">
-//               <Filter size={18} />
-//             </button>
-//           </div>
-          
-//           <div className="overflow-x-auto">
-//             <table className="w-full text-left min-w-[800px]">
-//               <thead>
-//                 <tr className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-//                   <th className="px-6 py-4">Program Title</th>
-//                   <th className="px-6 py-4">Status</th>
-//                   <th className="px-6 py-4">Students</th>
-//                   <th className="px-6 py-4">Revenue</th>
-//                   <th className="px-6 py-4">Last Updated</th>
-//                   <th className="px-6 py-4 text-right">Actions</th>
-//                 </tr>
-//               </thead>
-//               <tbody className="divide-y divide-gray-50">
-//                 {programs.map((item, idx) => (
-//                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors group">
-//                     <td className="px-6 py-4">
-//                       <div className="flex items-center gap-3">
-//                         <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-50" />
-//                         <div>
-//                           <div className="font-bold text-gray-800 text-sm md:text-base">{item.title}</div>
-//                           <div className="text-[11px] md:text-xs text-gray-400">{item.type}</div>
-//                         </div>
-//                       </div>
-//                     </td>
-//                     <td className="px-6 py-4">
-//                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${item.color}`}>
-//                         {item.status}
-//                       </span>
-//                     </td>
-//                     <td className="px-6 py-4 font-medium text-gray-600 text-sm">{item.students}</td>
-//                     <td className="px-6 py-4 font-bold text-gray-800 text-sm">{item.revenue}</td>
-//                     <td className="px-6 py-4 text-xs md:text-sm text-gray-500">{item.updated}</td>
-//                     <td className="px-6 py-4 text-right">
-//                       <button className="text-gray-400 hover:text-gray-900 transition-colors">
-//                         <MoreVertical size={18}/>
-//                       </button>
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-          
-//           <div className="p-4 flex flex-col sm:flex-row justify-between items-center border-t border-gray-50 gap-4 text-xs md:text-sm text-gray-500">
-//             <span>Showing 4 of 4 programs</span>
-//             <div className="flex gap-2 w-full sm:w-auto">
-//               <button className="flex-1 sm:flex-none px-4 py-2 border rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed font-medium">Previous</button>
-//               <button className="flex-1 sm:flex-none px-4 py-2 border rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all font-medium">Next</button>
-//             </div>
-//           </div>
+//         <div className="flex gap-2 pt-1">
+//           <div className="flex-[2] h-10 bg-slate-100 rounded-xl" />
+//           <div className="flex-1 h-10 bg-slate-100 rounded-xl" />
 //         </div>
-
-//         {/* Bottom Cards - Stack on Mobile */}
-//         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-//           {/* Card 1 */}
-//           <div className="bg-green-50/50 border border-green-100 p-6 md:p-8 rounded-2xl relative overflow-hidden group">
-//             <div className="flex items-center gap-2 text-green-600 mb-3 md:mb-4 font-bold text-sm md:text-base">
-//               <Lightbulb size={20} /> Quick Tip: Increase Engagement
-//             </div>
-//             <p className="text-gray-600 text-sm md:text-base mb-6 leading-relaxed relative z-10">
-//               Add a 5-minute video introduction to each module. Programs with video openers see a 40% higher completion rate.
-//             </p>
-//             <a href="#" className="inline-block text-black font-bold text-sm underline underline-offset-4 hover:text-green-700 transition-colors">
-//               Read Guide
-//             </a>
-//           </div>
-
-//           {/* Card 2 */}
-//           <div className="bg-white border border-gray-100 p-6 md:p-8 rounded-2xl shadow-sm">
-//             <div className="flex items-center gap-2 text-gray-800 mb-3 md:mb-4 font-bold text-sm md:text-base">
-//               <HelpCircle size={20} className="text-blue-500" /> Need Assistance?
-//             </div>
-//             <p className="text-gray-500 text-sm md:text-base mb-6 leading-relaxed">
-//               Our program designers are here to help you structure your course for maximum impact. Schedule a review.
-//             </p>
-//             <button className="w-full sm:w-auto px-6 py-2.5 border-2 border-gray-900 rounded-xl font-bold hover:bg-gray-900 hover:text-white transition-all active:scale-95 text-sm md:text-base">
-//               Book a Session
-//             </button>
-//           </div>
-//         </div>
-
 //       </div>
 //     </div>
 //   );
-// };
+// }
 
-// export default Dashboard;
+// // ─── Dropdown ─────────────────────────────────────────────────────────────────
+
+// interface DropdownProps<T extends string> {
+//   label: string;
+//   value: T;
+//   options: { label: string; value: T }[];
+//   onChange: (v: T) => void;
+// }
+
+// function Dropdown<T extends string>({ label, value, options, onChange }: DropdownProps<T>) {
+//   const [open, setOpen] = useState(false);
+//   const active = options.find((o) => o.value === value);
+
+//   return (
+//     <div className="relative">
+//       <button
+//         onClick={() => setOpen((o) => !o)}
+//         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${
+//           open
+//             ? "bg-slate-900 text-white border-slate-900"
+//             : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+//         }`}
+//       >
+//         {active?.label ?? label}
+//         <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+//       </button>
+
+//       {open && (
+//         <>
+//           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+//           <div className="absolute top-full mt-2 left-0 z-20 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden w-44 py-1">
+//             {options.map((opt) => (
+//               <button
+//                 key={opt.value}
+//                 onClick={() => { onChange(opt.value); setOpen(false); }}
+//                 className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+//                   value === opt.value
+//                     ? "bg-blue-50 text-blue-700"
+//                     : "hover:bg-slate-50 text-slate-600"
+//                 }`}
+//               >
+//                 {opt.label}
+//               </button>
+//             ))}
+//           </div>
+//         </>
+//       )}
+//     </div>
+//   );
+// }
+
+// // ─── Page ─────────────────────────────────────────────────────────────────────
+
+// export default function EnrollPage() {
+//   const [page, setPage]       = useState(1);
+//   const [filters, setFilters] = useState<Filters>({
+//     pricing:  "all",
+//     duration: "all",
+//     sort:     "newest",
+//   });
+//   const [sortOpen, setSortOpen] = useState(false);
+
+//   const setFilter = <K extends keyof Filters>(key: K, val: Filters[K]) => {
+//     setFilters((f) => ({ ...f, [key]: val }));
+//     setPage(1);
+//   };
+
+//   const clearFilters = () => {
+//     setFilters({ pricing: "all", duration: "all", sort: "newest" });
+//     setPage(1);
+//   };
+
+//   const hasActiveFilters = filters.pricing !== "all" || filters.duration !== "all";
+
+//   const { data, isLoading, isError, error } = useQuery({
+//     queryKey: ["mmp-enroll", page, filters],
+//     queryFn: () => fetchPublicPrograms(page, filters),
+//     placeholderData: keepPreviousData,
+//     staleTime: 30_000,
+//   });
+
+//   const programs    = data?.programs    ?? [];
+//   const pagination  = data?.pagination;
+
+//   return (
+//     <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto font-sans">
+
+//       {/* ── Header ─────────────────────────────────────────────────────────── */}
+//       <header className="mb-12 space-y-6">
+//         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+//           <div className="space-y-3">
+//             <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
+//               <Sparkles size={14} /> SGE Discovery
+//             </div>
+//             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none">
+//               Mini-Mastery Programs
+//             </h1>
+//             <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl leading-relaxed">
+//               Bite-sized daily transformations. Expert-led skills in under 15 minutes a day.
+//             </p>
+//           </div>
+
+//           <div className="bg-white px-4 py-2.5 rounded-2xl text-[11px] font-bold text-slate-600 flex items-center gap-3 shadow-sm border border-slate-100 self-start md:mb-1">
+//             <div className="flex -space-x-2">
+//               {[1, 2, 3].map((i) => (
+//                 <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200" />
+//               ))}
+//             </div>
+//             <span>Join <span className="text-blue-600 font-black">1,200+</span> growing members</span>
+//           </div>
+//         </div>
+//       </header>
+
+//       {/* ── Filters & Sort ─────────────────────────────────────────────────── */}
+//       <div className="flex flex-wrap items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-200/60">
+//         <div className="flex flex-wrap items-center gap-2">
+//           <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">
+//             <SlidersHorizontal size={12} /> Filters
+//           </div>
+
+//           {/* Pricing filter */}
+//           <Dropdown<PricingFilter>
+//             label="Pricing"
+//             value={filters.pricing}
+//             options={[
+//               { label: "All Pricing", value: "all"  },
+//               { label: "Free Only",   value: "free" },
+//               { label: "Paid Only",   value: "paid" },
+//             ]}
+//             onChange={(v) => setFilter("pricing", v)}
+//           />
+
+//           {/* Duration filter */}
+//           <Dropdown<DurationFilter>
+//             label="Duration"
+//             value={filters.duration}
+//             options={DURATION_OPTIONS}
+//             onChange={(v) => setFilter("duration", v)}
+//           />
+
+//           {/* Clear filters pill */}
+//           {hasActiveFilters && (
+//             <button
+//               onClick={clearFilters}
+//               className="flex items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-black text-red-500 bg-red-50 border border-red-100 hover:bg-red-100 transition-all"
+//             >
+//               <X size={10} /> Clear
+//             </button>
+//           )}
+
+//           {/* Total count */}
+//           {!isLoading && pagination && (
+//             <span className="text-[10px] font-bold text-slate-400 ml-1">
+//               {pagination.total} programs
+//             </span>
+//           )}
+//         </div>
+
+//         {/* Sort */}
+//         <div className="relative">
+//           <button
+//             onClick={() => setSortOpen((o) => !o)}
+//             className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
+//           >
+//             Sort:{" "}
+//             <span className="text-slate-900 font-black uppercase tracking-tighter">
+//               {SORT_LABELS[filters.sort]}
+//             </span>
+//             <ArrowUpDown size={12} />
+//           </button>
+
+//           {sortOpen && (
+//             <>
+//               <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+//               <div className="absolute right-0 top-full mt-2 z-20 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden w-48 py-1">
+//                 {(Object.keys(SORT_LABELS) as SortOption[]).map((s) => (
+//                   <button
+//                     key={s}
+//                     onClick={() => { setFilter("sort", s); setSortOpen(false); }}
+//                     className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+//                       filters.sort === s
+//                         ? "bg-blue-50 text-blue-700"
+//                         : "hover:bg-slate-50 text-slate-600"
+//                     }`}
+//                   >
+//                     {SORT_LABELS[s]}
+//                   </button>
+//                 ))}
+//               </div>
+//             </>
+//           )}
+//         </div>
+//       </div>
+
+//       {/* ── Error state ─────────────────────────────────────────────────────── */}
+//       {isError && (
+//         <div className="flex flex-col items-center gap-3 py-24 text-center">
+//           <ServerCrash size={36} className="text-slate-300" />
+//           <p className="text-slate-500 font-bold text-sm">
+//             {axios.isAxiosError(error) && error.response?.data
+//               ? (error.response.data as { message?: string }).message ?? "Something went wrong."
+//               : "Could not load programs. Please try again."}
+//           </p>
+//           <button
+//             onClick={() => setPage(1)}
+//             className="mt-2 px-6 py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-700 transition-all"
+//           >
+//             Retry
+//           </button>
+//         </div>
+//       )}
+
+//       {/* ── Program Grid ────────────────────────────────────────────────────── */}
+//       {!isError && (
+//         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+//           {isLoading
+//             ? Array.from({ length: LIMIT }).map((_, i) => <SkeletonCard key={i} />)
+//             : programs.length === 0
+//             ? (
+//               <div className="col-span-full flex flex-col items-center gap-3 py-24">
+//                 <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+//                   <Sparkles size={24} className="text-slate-300" />
+//                 </div>
+//                 <p className="text-slate-500 font-bold text-sm">No programs match your filters.</p>
+//                 {hasActiveFilters && (
+//                   <button
+//                     onClick={clearFilters}
+//                     className="text-blue-600 text-xs font-black underline underline-offset-4"
+//                   >
+//                     Clear all filters
+//                   </button>
+//                 )}
+//               </div>
+//             )
+//             : programs.map((prog, idx) => {
+//               const isPaid   = (prog.price ?? 0) > 0;
+//               const modules  = moduleCount(prog.modules);
+//               const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
+//               const bgLetter = getBgLetter(prog.name);
+
+//               return (
+//                 <div
+//                   key={prog.id}
+//                   className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
+//                 >
+//                   {/* ── Gradient Banner (replaces image) ── */}
+//                   <div className={`relative h-[140px] bg-gradient-to-br ${gradient} overflow-hidden`}>
+//                     {/* Decorative large letter */}
+//                     <span className="absolute -bottom-4 -right-3 text-[120px] font-black text-white/10 leading-none select-none pointer-events-none">
+//                       {bgLetter}
+//                     </span>
+
+//                     {/* Decorative circles */}
+//                     <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/10" />
+//                     <div className="absolute top-4 right-16 w-8 h-8 rounded-full bg-white/10" />
+
+//                     {/* Icon center */}
+//                     <div className="absolute inset-0 flex items-center justify-center">
+//                       <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-300">
+//                         <BookOpen size={22} className="text-white" />
+//                       </div>
+//                     </div>
+
+//                     {/* Duration badge */}
+//                     <div className="absolute bottom-3 left-3 bg-black/30 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight flex items-center gap-1 border border-white/10">
+//                       {prog.durationDays ?? "?"} Days
+//                     </div>
+
+//                     {/* Price badge */}
+//                     <div className={`absolute bottom-3 right-3 ${isPaid ? "bg-white text-blue-600" : "bg-white text-slate-900"} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md`}>
+//                       {formatPrice(prog.price, prog.currency)}
+//                     </div>
+//                   </div>
+
+//                   {/* ── Content ── */}
+//                   <div className="p-5 flex flex-col flex-1 space-y-4">
+//                     <div className="space-y-1.5">
+//                       <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
+//                         {prog.name}
+//                       </h3>
+//                       <p className="text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
+//                         {prog.description ?? "Experience a complete transformation with expert-guided sessions designed for your busy lifestyle."}
+//                       </p>
+//                     </div>
+
+//                     {/* Meta row */}
+//                     <div className="flex items-center justify-between border-y border-slate-50 py-3">
+//                       <div className="flex items-center gap-2">
+//                         {prog.creator?.image ? (
+//                           <img
+//                             src={prog.creator.image}
+//                             alt={prog.creator.name}
+//                             className="w-5 h-5 rounded-full object-cover border border-slate-200"
+//                           />
+//                         ) : (
+//                           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 border border-slate-200 flex items-center justify-center text-white text-[8px] font-black">
+//                             {prog.creator?.name?.[0]?.toUpperCase() ?? "C"}
+//                           </div>
+//                         )}
+//                         <span className="text-[10px] font-bold text-slate-400 italic">
+//                           {prog.creator?.name ?? "Expert Coach"}
+//                         </span>
+//                       </div>
+//                       <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-md">
+//                         {modules} Modules
+//                       </div>
+//                     </div>
+
+//                     {/* CTA buttons */}
+//                     <div className="flex gap-2 pt-1 mt-auto">
+//                       <Link href={`/dashboard/mini-mastery-programs/enroll/${prog.id}`} className="flex-[2]">
+//                         <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100">
+//                           Enroll
+//                         </button>
+//                       </Link>
+//                       <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
+//                         <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+//                           Info
+//                         </button>
+//                       </Link>
+//                     </div>
+//                   </div>
+//                 </div>
+//               );
+//             })}
+//         </div>
+//       )}
+
+//       {/* ── Pagination ──────────────────────────────────────────────────────── */}
+//       {pagination && pagination.totalPages > 1 && !isLoading && (
+//         <div className="mt-16 flex flex-col items-center gap-5">
+//           <div className="flex items-center gap-2">
+//             {/* Prev */}
+//             <button
+//               onClick={() => setPage((p) => Math.max(1, p - 1))}
+//               disabled={page === 1}
+//               className="flex items-center gap-1 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+//             >
+//               <ChevronLeft size={14} /> Prev
+//             </button>
+
+//             {/* Page pills */}
+//             <div className="flex items-center gap-1">
+//               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+//                 .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
+//                 .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+//                   if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+//                     acc.push("...");
+//                   }
+//                   acc.push(p);
+//                   return acc;
+//                 }, [])
+//                 .map((p, idx) =>
+//                   p === "..." ? (
+//                     <span key={`e-${idx}`} className="px-1 text-slate-400 text-xs">…</span>
+//                   ) : (
+//                     <button
+//                       key={p}
+//                       onClick={() => setPage(p as number)}
+//                       className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
+//                         page === p
+//                           ? "bg-slate-900 text-white shadow-md"
+//                           : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
+//                       }`}
+//                     >
+//                       {p}
+//                     </button>
+//                   )
+//                 )}
+//             </div>
+
+//             {/* Next */}
+//             <button
+//               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+//               disabled={page >= pagination.totalPages}
+//               className="flex items-center gap-1 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+//             >
+//               Next <ChevronRight size={14} />
+//             </button>
+//           </div>
+
+//           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+//             Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, pagination.total)} of {pagination.total} programs
+//           </p>
+//         </div>
+//       )}
+
+//       {/* No pagination needed state */}
+//       {pagination && pagination.totalPages <= 1 && !isLoading && programs.length > 0 && (
+//         <p className="mt-12 text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+//           Showing all {pagination.total} programs
+//         </p>
+//       )}
+//     </div>
+//   );
+// }
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
+import axios from "axios";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
-  Plus, TrendingUp, Users, CheckCircle, Star,
-  MoreVertical, Filter, Lightbulb, HelpCircle,
-  ChevronLeft, ChevronRight, Loader2, RefreshCw,
-  X,
+  ChevronDown, ArrowUpDown, Sparkles, Zap,
+  Loader2, ServerCrash, ChevronLeft, ChevronRight,
+  SlidersHorizontal, X,
 } from "lucide-react";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ProgramStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED";
+interface Creator {
+  id: string;
+  name: string;
+  image: string | null;
+}
 
 interface Program {
   id: string;
@@ -172,14 +698,12 @@ interface Program {
   unlockType: string | null;
   price: number | null;
   currency: string | null;
-  completionThreshold: number | null;
-  certificateTitle: string | null;
   achievements: unknown;
   modules: unknown;
   status: string | null;
   isActive: boolean;
   createdAt: string;
-  updatedAt: string;
+  creator: Creator | null;
 }
 
 interface Pagination {
@@ -194,462 +718,480 @@ interface ApiResponse {
   pagination: Pagination;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Filter types ─────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<ProgramStatus, { label: string; color: string }> = {
-  PUBLISHED:    { label: "Published",    color: "bg-green-100 text-green-700" },
-  UNDER_REVIEW: { label: "Under Review", color: "bg-blue-100 text-blue-700"  },
-  DRAFT:        { label: "Draft",        color: "bg-gray-100 text-gray-600"  },
-};
+type PricingFilter  = "all" | "free" | "paid";
+type DurationFilter = "all" | "7" | "14" | "21" | "30";
+type SortOption     = "newest" | "price_asc" | "price_desc";
 
-const ALL_STATUSES: ProgramStatus[] = ["PUBLISHED", "UNDER_REVIEW", "DRAFT"];
-
-function formatCurrency(price: number | null, currency: string | null): string {
-  if (!price || price === 0) return "Free";
-  const symbol = currency === "USD" ? "$" : "₹";
-  return `${symbol}${price.toLocaleString()}`;
+interface Filters {
+  pricing:  PricingFilter;
+  duration: DurationFilter;
+  sort:     SortOption;
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
-  });
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const LIMIT = 9;
+
+function formatPrice(price: number | null, currency: string | null): string {
+  if (!price || price === 0) return "FREE";
+  const symbol = currency === "USD" ? "$" : "₹";
+  return `${symbol}${price.toLocaleString("en-IN")}`;
 }
 
 function moduleCount(modules: unknown): number {
-  if (!Array.isArray(modules)) return 0;
-  return modules.length;
+  return Array.isArray(modules) ? modules.length : 0;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+const SORT_LABELS: Record<SortOption, string> = {
+  newest:     "Newest",
+  price_asc:  "Price: Low → High",
+  price_desc: "Price: High → Low",
+};
 
-const LIMIT = 8;
+const DURATION_OPTIONS: { label: string; value: DurationFilter }[] = [
+  { label: "Any Duration", value: "all" },
+  { label: "7 Days",       value: "7"   },
+  { label: "14 Days",      value: "14"  },
+  { label: "21 Days",      value: "21"  },
+  { label: "30 Days",      value: "30"  },
+];
 
-export default function Dashboard() {
-  const [programs, setPrograms]       = useState<Program[]>([]);
-  const [pagination, setPagination]   = useState<Pagination>({ page: 1, limit: LIMIT, total: 0, totalPages: 0 });
-  const [statusFilter, setStatusFilter] = useState<ProgramStatus | "ALL">("ALL");
-  const [page, setPage]               = useState(1);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
+// Unsplash cover images cycled by index as placeholder
+const COVER_IMAGES = [
+  "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=600",
+  "https://images.unsplash.com/photo-1495364141860-b0d03eccd065?auto=format&fit=crop&q=80&w=600",
+  "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=600",
+  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=600",
+  "https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&q=80&w=600",
+  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=600",
+];
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
-  const fetchPrograms = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(LIMIT),
-      });
-      if (statusFilter !== "ALL") params.set("status", statusFilter);
+// ─── API fetcher ──────────────────────────────────────────────────────────────
 
-      const res = await fetch(`/api/mini-mastery-programs?${params.toString()}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { message?: string };
-        throw new Error(data.message ?? `Error ${res.status}`);
-      }
-      const data = await res.json() as ApiResponse;
-      setPrograms(data.programs);
-      setPagination(data.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter]);
+async function fetchPublicPrograms(
+  page: number,
+  filters: Filters,
+): Promise<ApiResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+  if (filters.pricing  !== "all") params.set("pricing",  filters.pricing);
+  if (filters.duration !== "all") params.set("duration", filters.duration);
+  params.set("sort", filters.sort);
 
-  useEffect(() => {
-    void fetchPrograms();
-  }, [fetchPrograms]);
+  const { data } = await axios.get<ApiResponse>(
+    `/api/mini-mastery-programs/public?${params.toString()}`,
+  );
+  return data;
+}
 
-  // Reset to page 1 when filter changes
-  const handleStatusFilter = (s: ProgramStatus | "ALL") => {
-    setStatusFilter(s);
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-[28px] border border-slate-100 overflow-hidden animate-pulse">
+      <div className="aspect-[16/10] bg-slate-100" />
+      <div className="p-5 space-y-4">
+        <div className="space-y-2">
+          <div className="h-4 w-3/4 bg-slate-100 rounded-lg" />
+          <div className="h-3 w-full bg-slate-100 rounded-lg" />
+          <div className="h-3 w-2/3 bg-slate-100 rounded-lg" />
+        </div>
+        <div className="flex justify-between items-center py-3 border-y border-slate-50">
+          <div className="h-3 w-24 bg-slate-100 rounded" />
+          <div className="h-3 w-16 bg-slate-100 rounded" />
+        </div>
+        <div className="flex gap-2 pt-1">
+          <div className="flex-[2] h-10 bg-slate-100 rounded-xl" />
+          <div className="flex-1 h-10 bg-slate-100 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dropdown ─────────────────────────────────────────────────────────────────
+
+interface DropdownProps<T extends string> {
+  label: string;
+  value: T;
+  options: { label: string; value: T }[];
+  onChange: (v: T) => void;
+}
+
+function Dropdown<T extends string>({ label, value, options, onChange }: DropdownProps<T>) {
+  const [open, setOpen] = useState(false);
+  const active = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${
+          open
+            ? "bg-slate-900 text-white border-slate-900"
+            : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+        }`}
+      >
+        {active?.label ?? label}
+        <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full mt-2 left-0 z-20 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden w-44 py-1">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+                  value === opt.value
+                    ? "bg-blue-50 text-blue-700"
+                    : "hover:bg-slate-50 text-slate-600"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function EnrollPage() {
+  const [page, setPage]       = useState(1);
+  const [filters, setFilters] = useState<Filters>({
+    pricing:  "all",
+    duration: "all",
+    sort:     "newest",
+  });
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const setFilter = <K extends keyof Filters>(key: K, val: Filters[K]) => {
+    setFilters((f) => ({ ...f, [key]: val }));
     setPage(1);
-    setShowFilterMenu(false);
   };
 
-  // ── Stats (derived from current page — replace with real API if needed) ────
-  const stats = [
-    {
-      label: "TOTAL PROGRAMS",
-      value: String(pagination.total),
-      trend: `${programs.filter(p => p.status === "PUBLISHED").length} published`,
-      icon: <TrendingUp className="text-green-500" size={20} />,
-      bg: "bg-green-50",
-    },
-    {
-      label: "ACTIVE PROGRAMS",
-      value: String(programs.filter(p => p.isActive).length),
-      trend: "Currently active",
-      icon: <Users className="text-blue-500" size={20} />,
-      bg: "bg-blue-50",
-    },
-    {
-      label: "UNDER REVIEW",
-      value: String(programs.filter(p => p.status === "UNDER_REVIEW").length),
-      trend: "Awaiting approval",
-      icon: <CheckCircle className="text-orange-500" size={20} />,
-      bg: "bg-orange-50",
-    },
-    {
-      label: "AVG. PRICE",
-      value: (() => {
-        const paid = programs.filter(p => p.price && p.price > 0);
-        if (!paid.length) return "Free";
-        const avg = paid.reduce((s, p) => s + (p.price ?? 0), 0) / paid.length;
-        return `₹${Math.round(avg)}`;
-      })(),
-      trend: `${programs.filter(p => !p.price || p.price === 0).length} free programs`,
-      icon: <Star className="text-yellow-500" size={20} />,
-      bg: "bg-yellow-50",
-    },
-  ];
+  const clearFilters = () => {
+    setFilters({ pricing: "all", duration: "all", sort: "newest" });
+    setPage(1);
+  };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const hasActiveFilters = filters.pricing !== "all" || filters.duration !== "all";
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["mmp-enroll", page, filters],
+    queryFn: () => fetchPublicPrograms(page, filters),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+  console.log({ data });
+  const programs    = data?.programs    ?? [];
+  const pagination  = data?.pagination;
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto font-sans">
 
-        {/* Header */}
-        <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <header className="mb-12 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
+              <Sparkles size={14} /> SGE Discovery
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none">
               Mini-Mastery Programs
             </h1>
-            <p className="text-gray-500 mt-1 md:mt-2 text-sm md:text-lg">
-              Design structured, self-paced programs for autonomous learning.
+            <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl leading-relaxed">
+              Bite-sized daily transformations. Expert-led skills in under 15 minutes a day.
             </p>
           </div>
-          <Link
-            href="/dashboard/mini-mastery-programs/create-new"
-            className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
-          >
-            <Plus size={20} strokeWidth={3} /> Create New Program
-          </Link>
+
+          <div className="bg-white px-4 py-2.5 rounded-2xl text-[11px] font-bold text-slate-600 flex items-center gap-3 shadow-sm border border-slate-100 self-start md:mb-1">
+            <div className="flex -space-x-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200" />
+              ))}
+            </div>
+            <span>Join <span className="text-blue-600 font-black">1,200+</span> growing members</span>
+          </div>
         </div>
+      </header>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {stats.map((stat, idx) => (
-            <div key={idx} className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-start mb-3 md:mb-4">
-                <span className="text-[10px] md:text-xs font-bold text-gray-400 tracking-wider uppercase">
-                  {stat.label}
-                </span>
-                <div className={`${stat.bg} p-2 rounded-lg`}>{stat.icon}</div>
-              </div>
-              <div className="text-xl md:text-2xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-[10px] md:text-xs mt-2 font-medium text-green-500">
-                {stat.trend}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Programs Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-
-          {/* Table Header */}
-          <div className="p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-50">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg md:text-xl font-bold text-gray-800">Your Programs</h2>
-              {!loading && (
-                <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {pagination.total}
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              {/* Active filter pill */}
-              {statusFilter !== "ALL" && (
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${STATUS_CONFIG[statusFilter].color}`}>
-                  {STATUS_CONFIG[statusFilter].label}
-                  <button onClick={() => handleStatusFilter("ALL")}>
-                    <X size={12} />
-                  </button>
-                </div>
-              )}
-
-              {/* Filter dropdown */}
-              <div className="relative ml-auto sm:ml-0">
-                <button
-                  onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className={`p-2 border rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium ${
-                    showFilterMenu ? "bg-gray-900 text-white border-gray-900" : "hover:bg-gray-50 text-gray-500"
-                  }`}
-                >
-                  <Filter size={16} />
-                  <span className="hidden sm:inline">Filter</span>
-                </button>
-
-                {showFilterMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden">
-                    <div className="p-2 space-y-0.5">
-                      <button
-                        onClick={() => handleStatusFilter("ALL")}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          statusFilter === "ALL" ? "bg-gray-900 text-white" : "hover:bg-gray-50 text-gray-600"
-                        }`}
-                      >
-                        All Programs
-                      </button>
-                      {ALL_STATUSES.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => handleStatusFilter(s)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            statusFilter === s ? "bg-gray-900 text-white" : "hover:bg-gray-50 text-gray-600"
-                          }`}
-                        >
-                          {STATUS_CONFIG[s].label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Refresh */}
-              <button
-                onClick={() => void fetchPrograms()}
-                disabled={loading}
-                className="p-2 border rounded-lg hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-40"
-                title="Refresh"
-              >
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-              </button>
-            </div>
+      {/* ── Filters & Sort ─────────────────────────────────────────────────── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-200/60">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">
+            <SlidersHorizontal size={12} /> Filters
           </div>
 
-          {/* Error state */}
-          {error && (
-            <div className="mx-6 my-4 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 font-medium">
-              {error}
-            </div>
+          {/* Pricing filter */}
+          <Dropdown<PricingFilter>
+            label="Pricing"
+            value={filters.pricing}
+            options={[
+              { label: "All Pricing", value: "all"  },
+              { label: "Free Only",   value: "free" },
+              { label: "Paid Only",   value: "paid" },
+            ]}
+            onChange={(v) => setFilter("pricing", v)}
+          />
+
+          {/* Duration filter */}
+          <Dropdown<DurationFilter>
+            label="Duration"
+            value={filters.duration}
+            options={DURATION_OPTIONS}
+            onChange={(v) => setFilter("duration", v)}
+          />
+
+          {/* Clear filters pill */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl text-[10px] font-black text-red-500 bg-red-50 border border-red-100 hover:bg-red-100 transition-all"
+            >
+              <X size={10} /> Clear
+            </button>
           )}
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[800px]">
-              <thead>
-                <tr className="text-[10px] md:text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">
-                  <th className="px-6 py-4">Program Title</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Modules</th>
-                  <th className="px-6 py-4">Price</th>
-                  <th className="px-6 py-4">Last Updated</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-
-                {/* Loading rows */}
-                {loading && Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg shrink-0" />
-                        <div className="space-y-2">
-                          <div className="h-3.5 w-40 bg-gray-100 rounded" />
-                          <div className="h-2.5 w-24 bg-gray-100 rounded" />
-                        </div>
-                      </div>
-                    </td>
-                    {[...Array(5)].map((_, j) => (
-                      <td key={j} className="px-6 py-4">
-                        <div className="h-3 w-16 bg-gray-100 rounded" />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-
-                {/* Empty state */}
-                {!loading && programs.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                          <Plus size={20} className="text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium text-sm">
-                          {statusFilter !== "ALL"
-                            ? `No ${STATUS_CONFIG[statusFilter].label.toLowerCase()} programs found.`
-                            : "No programs yet. Create your first one!"}
-                        </p>
-                        {statusFilter !== "ALL" && (
-                          <button
-                            onClick={() => handleStatusFilter("ALL")}
-                            className="text-blue-600 text-sm font-bold underline underline-offset-4"
-                          >
-                            Clear filter
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-
-                {/* Data rows */}
-                {!loading && programs.map((program) => {
-                  const statusKey = (program.status ?? "DRAFT") as ProgramStatus;
-                  const cfg = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.DRAFT;
-
-                  return (
-                    <tr key={program.id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center shrink-0 border border-blue-50 text-blue-600 font-black text-sm">
-                            {program.durationDays ?? "?"}
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-800 text-sm md:text-base leading-tight">
-                              {program.name}
-                            </div>
-                            <div className="text-[11px] md:text-xs text-gray-400 mt-0.5">
-                              {program.unlockType === "daily" ? "Daily unlock" : "All unlocked"} •{" "}
-                              {program.durationDays ?? "?"} days
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${cfg.color}`}>
-                          {cfg.label}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 font-medium text-gray-600 text-sm">
-                        {moduleCount(program.modules)} modules
-                      </td>
-
-                      <td className="px-6 py-4 font-bold text-gray-800 text-sm">
-                        {formatCurrency(program.price, program.currency)}
-                      </td>
-
-                      <td className="px-6 py-4 text-xs md:text-sm text-gray-500">
-                        {formatDate(program.updatedAt)}
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-gray-400 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100">
-                          <MoreVertical size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="p-4 flex flex-col sm:flex-row justify-between items-center border-t border-gray-50 gap-4">
-            <span className="text-xs md:text-sm text-gray-500">
-              {loading ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader2 size={14} className="animate-spin" /> Loading...
-                </span>
-              ) : (
-                <>
-                  Showing{" "}
-                  <span className="font-bold text-gray-700">
-                    {pagination.total === 0 ? 0 : (page - 1) * LIMIT + 1}–
-                    {Math.min(page * LIMIT, pagination.total)}
-                  </span>{" "}
-                  of <span className="font-bold text-gray-700">{pagination.total}</span> programs
-                </>
-              )}
+          {/* Total count */}
+          {!isLoading && pagination && (
+            <span className="text-[10px] font-bold text-slate-400 ml-1">
+              {pagination.total} programs
             </span>
-
-            <div className="flex items-center gap-2">
-              {/* Page number pills */}
-              <div className="hidden sm:flex items-center gap-1">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                  .filter(p => {
-                    // Show first, last, current, and neighbors
-                    return (
-                      p === 1 ||
-                      p === pagination.totalPages ||
-                      Math.abs(p - page) <= 1
-                    );
-                  })
-                  .reduce<(number | "...")[]>((acc, p, idx, arr) => {
-                    if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
-                      acc.push("...");
-                    }
-                    acc.push(p);
-                    return acc;
-                  }, [])
-                  .map((p, idx) =>
-                    p === "..." ? (
-                      <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-sm">…</span>
-                    ) : (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p as number)}
-                        className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${
-                          page === p
-                            ? "bg-gray-900 text-white"
-                            : "hover:bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    )
-                  )}
-              </div>
-
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
-                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600"
-              >
-                <ChevronLeft size={16} /> Prev
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                disabled={page >= pagination.totalPages || loading}
-                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600"
-              >
-                Next <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Bottom Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          <div className="bg-green-50/50 border border-green-100 p-6 md:p-8 rounded-2xl relative overflow-hidden">
-            <div className="flex items-center gap-2 text-green-600 mb-3 md:mb-4 font-bold text-sm md:text-base">
-              <Lightbulb size={20} /> Quick Tip: Increase Engagement
-            </div>
-            <p className="text-gray-600 text-sm md:text-base mb-6 leading-relaxed">
-              Add a 5-minute video introduction to each module. Programs with video openers see a 40% higher completion rate.
-            </p>
-            <a href="#" className="inline-block text-black font-bold text-sm underline underline-offset-4 hover:text-green-700 transition-colors">
-              Read Guide
-            </a>
-          </div>
+        {/* Sort */}
+        <div className="relative">
+          <button
+            onClick={() => setSortOpen((o) => !o)}
+            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
+          >
+            Sort:{" "}
+            <span className="text-slate-900 font-black uppercase tracking-tighter">
+              {SORT_LABELS[filters.sort]}
+            </span>
+            <ArrowUpDown size={12} />
+          </button>
 
-          <div className="bg-white border border-gray-100 p-6 md:p-8 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-2 text-gray-800 mb-3 md:mb-4 font-bold text-sm md:text-base">
-              <HelpCircle size={20} className="text-blue-500" /> Need Assistance?
+          {sortOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+              <div className="absolute right-0 top-full mt-2 z-20 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden w-48 py-1">
+                {(Object.keys(SORT_LABELS) as SortOption[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => { setFilter("sort", s); setSortOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+                      filters.sort === s
+                        ? "bg-blue-50 text-blue-700"
+                        : "hover:bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    {SORT_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── Error state ─────────────────────────────────────────────────────── */}
+      {isError && (
+        <div className="flex flex-col items-center gap-3 py-24 text-center">
+          <ServerCrash size={36} className="text-slate-300" />
+          <p className="text-slate-500 font-bold text-sm">
+            {axios.isAxiosError(error) && error.response?.data
+              ? (error.response.data as { message?: string }).message ?? "Something went wrong."
+              : "Could not load programs. Please try again."}
+          </p>
+          <button
+            onClick={() => setPage(1)}
+            className="mt-2 px-6 py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-700 transition-all"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* ── Program Grid ────────────────────────────────────────────────────── */}
+      {!isError && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading
+            ? Array.from({ length: LIMIT }).map((_, i) => <SkeletonCard key={i} />)
+            : programs.length === 0
+            ? (
+              <div className="col-span-full flex flex-col items-center gap-3 py-24">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Sparkles size={24} className="text-slate-300" />
+                </div>
+                <p className="text-slate-500 font-bold text-sm">No programs match your filters.</p>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-blue-600 text-xs font-black underline underline-offset-4"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+            )
+            : programs.map((prog, idx) => {
+              const isPaid  = (prog.price ?? 0) > 0;
+              const cover   = COVER_IMAGES[idx % COVER_IMAGES.length];
+              const modules = moduleCount(prog.modules);
+
+              return (
+                <div
+                  key={prog.id}
+                  className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
+                >
+                  {/* Image */}
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <img
+                      src={cover}
+                      alt={prog.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+
+                    {/* Duration badge */}
+                    <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm text-slate-900 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-sm flex items-center gap-1">
+                      <Zap size={10} className="text-blue-500 fill-blue-500" />
+                      {prog.durationDays ?? "?"} Days
+                    </div>
+
+                    {/* Price badge */}
+                    <div className={`absolute top-3 right-3 ${isPaid ? "bg-blue-500" : "bg-slate-900"} text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-lg`}>
+                      {formatPrice(prog.price, prog.currency)}
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5 flex flex-col flex-1 space-y-4">
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
+                        {prog.name}
+                      </h3>
+                      <p className="text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
+                        {prog.description ?? "Experience a complete transformation with expert-guided sessions designed for your busy lifestyle."}
+                      </p>
+                    </div>
+
+                    {/* Meta row */}
+                    <div className="flex items-center justify-between border-y border-slate-50 py-3">
+                      <div className="flex items-center gap-2">
+                        {prog.creator?.image ? (
+                          <img
+                            src={prog.creator.image}
+                            alt={prog.creator.name}
+                            className="w-5 h-5 rounded-full object-cover border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-slate-100 border border-slate-200" />
+                        )}
+                        <span className="text-[10px] font-bold text-slate-400 italic">
+                          {prog.creator?.name ?? "Expert Coach"}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-md">
+                        {modules} Modules
+                      </div>
+                    </div>
+
+                    {/* CTA buttons */}
+                    <div className="flex gap-2 pt-1 mt-auto">
+                      <Link href={`/dashboard/mini-mastery-programs/enroll/${prog.id}`} className="flex-[2]">
+                        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100">
+                          Enroll
+                        </button>
+                      </Link>
+                      <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
+                        <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+                          Info
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+
+      {/* ── Pagination ──────────────────────────────────────────────────────── */}
+      {pagination && pagination.totalPages > 1 && !isLoading && (
+        <div className="mt-16 flex flex-col items-center gap-5">
+          <div className="flex items-center gap-2">
+            {/* Prev */}
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex items-center gap-1 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+            >
+              <ChevronLeft size={14} /> Prev
+            </button>
+
+            {/* Page pills */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
+                .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+                    acc.push("...");
+                  }
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === "..." ? (
+                    <span key={`e-${idx}`} className="px-1 text-slate-400 text-xs">…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
+                        page === p
+                          ? "bg-slate-900 text-white shadow-md"
+                          : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
             </div>
-            <p className="text-gray-500 text-sm md:text-base mb-6 leading-relaxed">
-              Our program designers are here to help you structure your course for maximum impact. Schedule a review.
-            </p>
-            <button className="w-full sm:w-auto px-6 py-2.5 border-2 border-gray-900 rounded-xl font-bold hover:bg-gray-900 hover:text-white transition-all active:scale-95 text-sm md:text-base">
-              Book a Session
+
+            {/* Next */}
+            <button
+              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              disabled={page >= pagination.totalPages}
+              className="flex items-center gap-1 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+            >
+              Next <ChevronRight size={14} />
             </button>
           </div>
-        </div>
 
-      </div>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+            Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, pagination.total)} of {pagination.total} programs
+          </p>
+        </div>
+      )}
+
+      {/* No pagination needed state */}
+      {pagination && pagination.totalPages <= 1 && !isLoading && programs.length > 0 && (
+        <p className="mt-12 text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+          Showing all {pagination.total} programs
+        </p>
+      )}
     </div>
   );
 }
