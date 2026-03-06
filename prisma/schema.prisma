@@ -1487,6 +1487,7 @@ model Program {
   
   // Step 1: Unlock Logic
   unlockType        String?  @default("daily") // "daily" or "all"
+  thumbnailUrl  String?   // Supabase public URL for MMP thumbnail
 
   // Step 2: What will participants achieve?
   achievements      Json?    // Stores: ["Master focus", "Early rising", ...]
