@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       }
 
       await prisma.$transaction(async (tx) => {
-        await tx.paymentOrder.update({
+        const updatedOrder = await tx.paymentOrder.update({
           where: { id: existingOrder.id },
           data: {
             status: PaymentStatus.PAID,
@@ -70,7 +70,19 @@ export async function POST(req: NextRequest) {
             paidAt: new Date(),
           },
         });
-
+        if (updatedOrder.challengeId) {
+          await tx.challengePayment.create({
+            data: {
+              userId: updatedOrder.userId,
+              challengeId: updatedOrder.challengeId,
+              paymentOrderId: updatedOrder.id,
+              amountPaid: updatedOrder.totalAmount,
+              currency: updatedOrder.currency,
+              status: PaymentStatus.PAID,
+              paidAt: new Date(),
+            },
+          });
+        }
       });
     }
 

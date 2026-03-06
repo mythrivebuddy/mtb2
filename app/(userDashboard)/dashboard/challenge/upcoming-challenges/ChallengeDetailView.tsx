@@ -262,11 +262,11 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
                         )}
                         )
 
-                        {challenge.cost > 0 && " + "}
+                        {" + "}
                       </>
                     )}{" "}
 
-                    {challenge.cost > 0 ? `${challenge.cost} GP` : "+ Free GP"}
+                    {challenge.cost > 0 ? `${challenge.cost} GP +` : "Free GP"}
                   </div>
                 </div>
               </div>

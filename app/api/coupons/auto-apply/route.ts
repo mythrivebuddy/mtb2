@@ -55,9 +55,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ coupon: null });
     }
 
+
+
     // 2. Filter coupons
     const validCoupons = coupons.filter((coupon) => {
       // A. Global usage limit
+      if (coupon.scope === "CHALLENGE" && !challengeId) {
+        return false;
+      }
+
+      if (coupon.scope === "SUBSCRIPTION" && !planId) {
+        return false;
+      }
       if (coupon.maxGlobalUses && (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses) {
         return false;
       }

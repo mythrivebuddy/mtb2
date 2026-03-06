@@ -235,7 +235,7 @@ export const featureConfig = {
                     canCreatePaidChallenge: false,
                     canIssueCertificate: false,
                     groupChatLimit: 1,
-                    joinLimit: 2,
+                    joinLimit: -1,
                     limitType: "MONTHLY",
                 },
             },

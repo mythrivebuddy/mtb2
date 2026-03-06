@@ -11,7 +11,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.log(billingCountry);
+
     const now = new Date();
 
     // 1. Fetch coupon
@@ -29,6 +29,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
     }
 
+   
+    if (coupon.scope === "CHALLENGE" && !challengeId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for challenges",
+      });
+    }
+
+    if (coupon.scope === "SUBSCRIPTION" && !planId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for subscriptions",
+      });
+    }
     const userUses = await prisma.couponRedemption.count({
       where: {
         couponId: coupon.id,

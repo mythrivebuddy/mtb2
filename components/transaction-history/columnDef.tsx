@@ -32,9 +32,19 @@ export const columns: ColumnDef<Transaction>[] = [
   },
   {
     accessorKey: "jpAmount",
-    header: "GP Amount",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.jpAmount} GP</div>
-    ),
+    header: "Amount",
+    cell: ({ row }) => {
+      const type = row.original.activity.transactionType;
+      const currency = (row.original as any).currency || "GP";
+
+      return (
+        <div
+          className={`font-medium ${type === "CREDIT" ? "text-green-600" : "text-red-600"
+            }`}
+        >
+          {type === "CREDIT" ? "+" : "-"} {row.original.jpAmount} {currency}
+        </div>
+      );
+    },
   },
 ];

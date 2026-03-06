@@ -122,6 +122,7 @@ model User {
   createdItems                  Item[]                            @relation("ItemCreator")
   approvedItems                 Item[]                            @relation("ItemApprover")
   coachChallengePayouts ChallengePayout[]
+  challengePayments ChallengePayment[]
 
   @@index([name])
 }
@@ -690,6 +691,7 @@ model Challenge {
   paymentOrders PaymentOrder[]
   payout ChallengePayout[]
   coupons   Coupon[] @relation("ChallengeCoupons")
+  challengePayments ChallengePayment[]
 
   @@map("challenges")
 }
@@ -778,6 +780,30 @@ enum PayoutStatus {
   APPROVED
   PAID
   REJECTED
+}
+model ChallengePayment {
+  id             String   @id @default(cuid())
+
+  userId         String
+  challengeId    String
+  paymentOrderId String   @unique
+
+  amountPaid     Float
+  currency       String
+
+  status         PaymentStatus
+  joinedAt       DateTime @default(now())
+  paidAt         DateTime?
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge      Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@index([challengeId])
+  @@map("challenge_payments")
 }
 model ChallengeMessage {
   id          String   @id @default(cuid())
@@ -1309,6 +1335,7 @@ model PaymentOrder {
   challenge     Challenge?        @relation(fields: [challengeId], references: [id])
   storeOrder  Order?            @relation(fields: [storeOrderId], references: [id])
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
+  challengePayment ChallengePayment?
 
 
   @@index([planId])
