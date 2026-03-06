@@ -1109,6 +1109,7 @@ export default function EnrollPage() {
 
                     {/* CTA buttons */}
                     <div className="flex gap-2 pt-1 mt-auto">
+                      {/* /dashboard/membership/checkout?plan=${prog.id} */}
                       <Link href={`/dashboard/mini-mastery-programs/enroll/${prog.id}`} className="flex-[2]">
                         <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100">
                           Enroll

@@ -28,7 +28,33 @@ function convertToEmbedUrl(url: string): string {
     return url;
   }
 }
-function buildDBPayload(data: FullFormData): ProgramDBPayload {
+// function buildDBPayload(data: FullFormData): ProgramDBPayload {
+//   return {
+//     name: data.step1.title,
+//     slug: data.step1.title
+//       .toLowerCase()
+//       .trim()
+//       .replace(/[^\w\s-]/g, "")
+//       .replace(/[\s_-]+/g, "-")
+//       .replace(/^-+|-+$/g, ""),
+//     description: data.step1.subtitle,
+//     durationDays: parseInt(data.step1.duration),
+//     unlockType: data.step1.unlockType,
+//     achievements: data.step2.achievements.map((a) => a.value),
+//     modules: data.step3.modules.map((m) => ({
+//       ...m,
+//       videoUrl: m.type === "video" && m.videoUrl
+//         ? convertToEmbedUrl(m.videoUrl)
+//         : m.videoUrl,
+//     })),
+//     price: data.step4.isPaid ? parseFloat(data.step4.price) : 0,
+//     currency: data.step4.currency,
+//     completionThreshold: data.step5.threshold,
+//     certificateTitle: data.step5.certTitle,
+//     status: "UNDER_REVIEW",
+//   };
+// }
+export function buildDBPayload(data: FullFormData): ProgramDBPayload {
   return {
     name: data.step1.title,
     slug: data.step1.title
@@ -51,6 +77,7 @@ function buildDBPayload(data: FullFormData): ProgramDBPayload {
     currency: data.step4.currency,
     completionThreshold: data.step5.threshold,
     certificateTitle: data.step5.certTitle,
+    thumbnailUrl: data.step1.thumbnailUrl,
     status: "UNDER_REVIEW",
   };
 }
