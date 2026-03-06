@@ -4,7 +4,15 @@ import { format } from "date-fns";
 export interface Transaction {
   id: string;
   createdAt: string;
+  currency?: string;
   jpAmount: number;
+  breakdown?: {
+    baseAmount: number;
+    commission: number;
+    commissionPercent?: number;
+    finalAmount: number;
+
+  };
   activity: {
     activity: string;
     transactionType: string;
@@ -34,17 +42,33 @@ export const columns: ColumnDef<Transaction>[] = [
     accessorKey: "jpAmount",
     header: "Amount",
     cell: ({ row }) => {
-      const type = row.original.activity.transactionType;
-      const currency = (row.original as any).currency || "GP";
+      const data = row.original;
+      const isCredit = data.activity.transactionType === "CREDIT";
+
+      if (data.breakdown) {
+        return (
+          <div className="text-sm text-start">
+            <div
+              className={`font-medium ${isCredit ? "text-green-600" : "text-red-600"
+                }`}
+            >
+              {isCredit ? "+" : "-"} {data.currency} {data.breakdown.finalAmount}
+            </div>
+
+            <div className="text-xs  text-gray-500">
+              {data.currency} {data.breakdown.baseAmount}
+              {" - "}
+              {data.currency} {data.breakdown.commission} commision
+            </div>
+          </div>
+        );
+      }
 
       return (
-        <div
-          className={`font-medium ${type === "CREDIT" ? "text-green-600" : "text-red-600"
-            }`}
-        >
-          {type === "CREDIT" ? "+" : "-"} {row.original.jpAmount} {currency}
-        </div>
+        <span className={isCredit ? "text-green-600" : "text-red-600"}>
+          {isCredit ? "+" : "-"} {data.currency} {data.jpAmount}
+        </span>
       );
     },
-  },
+  }
 ];

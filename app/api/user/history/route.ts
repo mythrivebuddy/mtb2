@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { activityDisplayMap, activityDisplayMapV3 } from "@/lib/constants/activityNames";
 import { PaymentStatus } from "@prisma/client";
+import { checkFeature } from "@/lib/access-control/checkFeature";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -33,17 +34,30 @@ export async function GET(request: Request) {
         })
         : Promise.resolve([]);
 
+    const coachChallengeEarningsPromise =
+      filter === "ALL" || filter === "COACH_EARNING"
+        ? prisma.challengePayment.findMany({
+          where: {
+            status: PaymentStatus.PAID,
+            challenge: {
+              creatorId: userId, // coach owns the challenge
+            },
+          },
+          include: {
+            challenge: true,
+            user: true, // the participant
+          },
+        })
+        : Promise.resolve([]);
     const paymentOrdersPromise =
       filter === "ALL" || filter === "SUBSCRIPTION" || filter === "STORE_ORDER"
         ? prisma.paymentOrder.findMany({
           where: {
             userId,
             status: PaymentStatus.PAID,
-            ...(filter === "SUBSCRIPTION"
-              ? { contextType: "SUBSCRIPTION" }
-              : filter === "STORE_ORDER"
-                ? { contextType: "STORE_ORDER" }
-                : {}),
+            contextType: {
+              in: ["SUBSCRIPTION", "STORE_ORDER"], // exclude CHALLENGE
+            },
           },
           include: {
             plan: true,
@@ -54,18 +68,18 @@ export async function GET(request: Request) {
     const cmpPurchasesPromise =
       filter === "ALL" || filter === "CMP"
         ? prisma.oneTimeProgramPurchase.findMany({
-          where: { userId,status:PaymentStatus.PAID },
+          where: { userId, status: PaymentStatus.PAID },
           include: {
             product: true,
           },
         })
         : Promise.resolve([]);
 
-    const [transactions, total, challengePayments, paymentOrders, cmpPurchases] =
+    const [transactions, total, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
       await Promise.all([
         filter === "ALL" || filter === "GP"
           ? prisma.transaction.findMany({
-            where: { userId},
+            where: { userId },
             include: { activity: true },
             orderBy: { createdAt: "desc" },
           })
@@ -78,6 +92,7 @@ export async function GET(request: Request) {
         challengePaymentsPromise,
         paymentOrdersPromise,
         cmpPurchasesPromise,
+        coachChallengeEarningsPromise
       ]);
 
 
@@ -135,11 +150,47 @@ export async function GET(request: Request) {
       },
     }));
 
+    const coachEarningsHistory = coachChallengeEarnings.map((cp) => {
+      const feature = checkFeature({
+        feature: "challenges",
+        user: {
+          userType: session.user.userType,
+          membership: session.user.membership
+        }
+      });
+
+      const commissionPercent = feature.allowed
+        ? (feature.config as { commissionPercent?: number }).commissionPercent ?? 0
+        : 0;
+
+      const baseAmount = cp.amountPaid;
+      const commission = (baseAmount * commissionPercent) / 100;
+      const finalAmount = baseAmount - commission
+
+      return {
+        id: `coach-${cp.id}`,
+        createdAt: cp.paidAt || cp.joinedAt,
+        jpAmount: finalAmount,
+        currency: cp.currency,
+        breakdown: {
+          baseAmount,
+          commission,
+          finalAmount,
+        },
+        activity: {
+          activity: "CHALLENGE_EARNING",
+          transactionType: "CREDIT",
+          displayName: `${cp.user.name} joined ${cp.challenge.title}`,
+        },
+      };
+    });
+
     const combined = [
       ...gpHistory,
       ...challengeHistory,
       ...paymentHistory,
       ...cmpHistory,
+      ...coachEarningsHistory
     ];
 
     combined.sort(
