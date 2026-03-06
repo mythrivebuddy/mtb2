@@ -46,10 +46,11 @@ export async function POST(req: NextRequest) {
     // 3️⃣ Subscription dates
     const startDate = new Date();
     const endDate = new Date(startDate);
+    
 
-    if (paymentOrder.plan.interval === "MONTHLY") {
+    if (paymentOrder?.plan?.interval === "MONTHLY") {
       endDate.setMonth(endDate.getMonth() + 1);
-    } else if (paymentOrder.plan.interval === "YEARLY") {
+    } else if (paymentOrder?.plan?.interval === "YEARLY") {
       endDate.setFullYear(endDate.getFullYear() + 1);
     } else {
       endDate.setFullYear(endDate.getFullYear() + 100); // lifetime
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     const subscription = await prisma.subscription.create({
       data: {
         userId: paymentOrder.userId,
-        planId: paymentOrder.planId,
+        planId: paymentOrder.planId!,
         paymentOrderId: paymentOrder.id,
         orderId: razorpay_order_id,
         status: "ACTIVE",
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
       data: {
         subscriptionId: subscription.id,
         userId: paymentOrder.userId,
-        planId: paymentOrder.planId,
+        planId: paymentOrder.planId!,
         baseAmount: paymentOrder.baseAmount,
         gstAmount: paymentOrder.gstAmount,
         totalAmount: paymentOrder.totalAmount,

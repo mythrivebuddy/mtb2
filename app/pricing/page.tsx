@@ -296,7 +296,7 @@ export default function PricingPage() {
                             )
                           ) {
                             router.push(
-                              `/dashboard/membership/checkout?plan=${p.id}`,
+                              `/dashboard/membership/checkout?context=SUBSCRIPTION&plan=${p.id}`,
                             );
                           }
                         }}
@@ -380,7 +380,7 @@ export default function PricingPage() {
             {user &&
               (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
                 // <Link href={`/dashboard/membership/checkout?plan=${enthusiastPlan.id}`}>
-                <Link href={`/dashboard/membership/checkout?plan=${p.id}`}>
+                <Link href={`/dashboard/membership/checkout?context=SUBSCRIPTION&plan=${p.id}`}>
                   <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
                     Start Annual Membership
                   </button>

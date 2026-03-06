@@ -3,15 +3,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { code, planId, currency, billingCountry,userId } = await req.json();
+    const { code, planId, currency, challengeId, userId } = await req.json();
 
-    if (!code || !planId) {
+    if (!code || (!planId && !challengeId)) {
       return NextResponse.json(
-        { valid: false, message: "Missing code or plan details." },
+        { valid: false, message: "Missing code or details." },
         { status: 400 }
       );
     }
-    console.log(billingCountry);
+
     const now = new Date();
 
     // 1. Fetch coupon
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       where: { couponCode: code.toUpperCase() },
       include: {
         applicablePlans: { select: { id: true } },
+        applicableChallenges: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -28,19 +29,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
     }
 
-    const alreadyRedeemed = await prisma.couponRedemption.findFirst({
+   
+    if (coupon.scope === "CHALLENGE" && !challengeId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for challenges",
+      });
+    }
+
+    if (coupon.scope === "SUBSCRIPTION" && !planId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for subscriptions",
+      });
+    }
+    const userUses = await prisma.couponRedemption.count({
       where: {
         couponId: coupon.id,
         userId,
       },
     });
 
-if (alreadyRedeemed) {
-  return NextResponse.json({
-    valid: false,
-    message: "You have already used this coupon."
-  }, { status: 400 });
-}
+    if (coupon.maxUsesPerUser && userUses >= coupon.maxUsesPerUser) {
+      return NextResponse.json({
+        valid: false,
+        message: "You have already used this coupon."
+      }, { status: 400 });
+    }
 
 
     if (coupon.status !== "ACTIVE") {
@@ -66,11 +81,26 @@ if (alreadyRedeemed) {
     }
 
     // 4. Plan applicability
-    if (coupon.applicablePlans.length > 0) {
+    // Plan applicability
+    if (planId && coupon.applicablePlans.length > 0) {
       const isPlanValid = coupon.applicablePlans.some((p) => p.id === planId);
       if (!isPlanValid) {
         return NextResponse.json(
           { valid: false, message: "Coupon not applicable for this plan." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Challenge applicability
+    if (challengeId && coupon.applicableChallenges.length > 0) {
+      const isChallengeValid = coupon.applicableChallenges.some(
+        (c) => c.id === challengeId
+      );
+
+      if (!isChallengeValid) {
+        return NextResponse.json(
+          { valid: false, message: "Coupon not applicable for this challenge." },
           { status: 400 }
         );
       }

@@ -23,12 +23,14 @@ function getFixedAmount(
 
 export async function POST(req: Request) {
   try {
-    const { planId, currency, billingCountry, userType,userId } = await req.json();
+    const { planId, challengeId, currency, billingCountry, userType, userId } = await req.json();
 
-    if (!planId) {
-      return NextResponse.json({ coupon: null, message: "Plan ID required" }, { status: 400 });
+    if (!planId && !challengeId) {
+      return NextResponse.json(
+        { coupon: null, message: "Plan or Challenge required" },
+        { status: 400 }
+      );
     }
-
     const now = new Date();
 
     // 1. Fetch auto-apply coupons
@@ -38,12 +40,13 @@ export async function POST(req: Request) {
         status: "ACTIVE",
         startDate: { lte: now },
         endDate: { gte: now },
-           redemptions: {
-      none: { userId } // 👈 key line
-    }
+        redemptions: {
+          none: { userId } // 👈 key line
+        }
       },
       include: {
         applicablePlans: { select: { id: true } },
+        applicableChallenges: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -52,17 +55,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ coupon: null });
     }
 
+
+
     // 2. Filter coupons
     const validCoupons = coupons.filter((coupon) => {
       // A. Global usage limit
+      if (coupon.scope === "CHALLENGE" && !challengeId) {
+        return false;
+      }
+
+      if (coupon.scope === "SUBSCRIPTION" && !planId) {
+        return false;
+      }
       if (coupon.maxGlobalUses && (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses) {
         return false;
       }
 
       // B. Plan applicability
-      if (coupon.applicablePlans.length > 0) {
+      // Plan filter
+      if (planId && coupon.applicablePlans.length > 0) {
         const isPlanValid = coupon.applicablePlans.some((p) => p.id === planId);
         if (!isPlanValid) return false;
+      }
+
+      // Challenge filter
+      if (challengeId && coupon.applicableChallenges.length > 0) {
+        const isChallengeValid = coupon.applicableChallenges.some(
+          (c) => c.id === challengeId
+        );
+        if (!isChallengeValid) return false;
       }
 
       // C. Currency applicability
@@ -110,7 +131,7 @@ export async function POST(req: Request) {
 
       // Fixed discounts – higher first
       if (a.type === "FIXED" && b.type === "FIXED") {
-       return getFixedAmount(b, currency) - getFixedAmount(a, currency);
+        return getFixedAmount(b, currency) - getFixedAmount(a, currency);
       }
 
       return 0;
