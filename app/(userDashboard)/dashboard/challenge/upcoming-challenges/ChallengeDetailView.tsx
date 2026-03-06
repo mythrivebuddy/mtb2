@@ -254,7 +254,14 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
                   <div className="font-semibold text-slate-700">
                     {challenge.challengeJoiningType === ChallengeJoiningType.PAID && (
                       <>
-                        {challenge.challengeJoiningFee.toLocaleString()}{" "} {challenge.challengeJoiningFeeCurrency}
+                        ({challenge.challengeJoiningFee.toLocaleString()}{" "}
+                        {challenge.challengeJoiningFeeCurrency}
+
+                        {challenge.challengeJoiningFeeCurrency === "INR" && (
+                          <span className="text-xs"> + GST</span>
+                        )}
+                        )
+
                         {challenge.cost > 0 && " + "}
                       </>
                     )}{" "}

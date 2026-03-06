@@ -34,7 +34,6 @@ export async function GET(req: NextRequest) {
       razorpayOrderId: true,
     },
   });
-  console.log("🔍 [verify-success] paymentOrder:", order);
 
   // Razorpay-only: webhook not finished yet
   if (
@@ -42,7 +41,6 @@ export async function GET(req: NextRequest) {
     order.status !== PaymentStatus.PAID
   ) {
 
-  console.log("⏳ [verify-success] pending because order not PAID");
     return NextResponse.json(
       { ok: false, pending: true },
       { status: 202 }

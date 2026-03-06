@@ -91,8 +91,8 @@ type CouponFormPayload = {
   freeDays: string | number;
   applicableUserTypes: string[];
   applicablePlanIds: string[];
-  scope: "SUBSCRIPTION" | "CHALLENGE"; 
-  applicableChallengeIds: string[];   
+  scope: "SUBSCRIPTION" | "CHALLENGE";
+  applicableChallengeIds: string[];
 
   applicableCurrencies: string[];
   firstCycleOnly: boolean;
@@ -131,6 +131,7 @@ type Coupon = {
   autoApply: boolean;
   applicablePlans: Plan[];
   description?: string;
+  scope: "SUBSCRIPTION" | "CHALLENGE" | "STORE";
 };
 
 const fetchChallenges = async () => {
@@ -260,7 +261,7 @@ export default function CouponsManagementPage() {
     },
   });
 
-  const filteredCoupons = coupons.filter((coupon: any) => {
+  const filteredCoupons = coupons.filter((coupon: Coupon) => {
     if (activeTab === "SUBSCRIPTION") return coupon.scope === "SUBSCRIPTION"
     if (activeTab === "CHALLENGE") return coupon.scope === "CHALLENGE"
     if (activeTab === "STORE") return coupon.scope === "STORE"
@@ -300,9 +301,9 @@ export default function CouponsManagementPage() {
       maxUsesPerUser: coupon.maxUsesPerUser || 1,
       autoApply: coupon.autoApply,
       autoApplyConditions: {},
-      scope: "SUBSCRIPTION",          
-      applicableChallengeIds: [],     
-     
+      scope: "SUBSCRIPTION",
+      applicableChallengeIds: [],
+
     });
 
     setIsDialogOpen(true);
@@ -818,7 +819,7 @@ export default function CouponsManagementPage() {
                   <div className="space-y-0.5">
                     <Label className="text-base">Auto Apply Logic</Label>
                     <p className="text-sm text-muted-foreground">
-                      Automatically apply this coupon based on triggers.
+                      If turned on then this coupon will be auto applied during checkout
                     </p>
                   </div>
                   <Switch
@@ -869,7 +870,9 @@ export default function CouponsManagementPage() {
       <Card>
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as any)}
+          onValueChange={(v) =>
+            setActiveTab(v as "SUBSCRIPTION" | "CHALLENGE" | "STORE")
+          }
           className="px-6 pt-6 flex justify-self-center"
         >
           <TabsList>

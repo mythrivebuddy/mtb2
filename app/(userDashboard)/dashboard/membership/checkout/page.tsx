@@ -66,6 +66,12 @@ export default function CheckoutPage() {
 
   const [plan, setPlan] = useState<Plan | null>(null);
   const [challenge, setChallenge] = useState<CheckoutChallenge | null>(null);
+  const [challengePricing, setChallengePricing] = useState<{
+    amountINR: number;
+    amountUSD: number;
+    baseCurrency: "INR" | "USD";
+  } | null>(null);
+
 
   // to get active gateway
   const [activeGateway, setActiveGateway] =
@@ -96,6 +102,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
+  const [challengeLoading, setChallengeLoading] = useState(false);
 
   // get active gateway on load
   useEffect(() => {
@@ -189,10 +196,6 @@ export default function CheckoutPage() {
       const isRecurring =
         plan?.interval === "MONTHLY" || plan?.interval === "YEARLY";
       const isIndia = billingDetails.country === "IN";
-
-      const planAmount = isIndia
-        ? (plan?.amountINR ?? plan?.amount ?? 0)
-        : (plan?.amountUSD ?? plan?.amount ?? 0);
 
       let endpoint = "";
 
@@ -402,6 +405,7 @@ export default function CheckoutPage() {
       try {
         // ✅ CHALLENGE CONTEXT
         if (context === "CHALLENGE" && challengeId) {
+          setChallengeLoading(true);
           const res = await axios.get(`/api/challenge/${challengeId}`);
 
           if (!res.data.success) {
@@ -409,7 +413,9 @@ export default function CheckoutPage() {
           }
 
           setChallenge(res.data.challenge);
+          setChallengePricing(res.data.pricing);
           setPlan(null);
+          setChallengeLoading(false);
           return;
         }
 
@@ -517,14 +523,14 @@ export default function CheckoutPage() {
     }
 
     init();
-  }, [planId, challengeId, context, billingDetails.country]);
+  }, [planId, challengeId, context]);
   // Note: We don't depend on billingDetails.country here to avoid refetching loop, logic handles dynamic currency below
 
   // ---------------------------
   // 2. MANUAL VERIFY
   // ---------------------------
   const handleVerifyCoupon = async () => {
-   if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge)) return;
+    if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge)) return;
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
@@ -600,8 +606,13 @@ export default function CheckoutPage() {
     // CHALLENGE BILLING
     // -----------------------
     if (context === "CHALLENGE" && challenge) {
-      const subtotal = challenge.challengeJoiningFee;
-      const currency = challenge.challengeJoiningFeeCurrency;
+      const isIndia = billingDetails.country === "IN";
+
+      const subtotal = isIndia
+        ? (challengePricing?.amountINR ?? challenge.challengeJoiningFee)
+        : (challengePricing?.amountUSD ?? challenge.challengeJoiningFee);
+
+      const currency = isIndia ? "INR" : "USD";
 
       let discount = 0;
 
@@ -699,7 +710,7 @@ export default function CheckoutPage() {
       total: parseFloat(total.toFixed(2)),
       currency,
     };
-  }, [plan, challenge, context, appliedCoupon, billingDetails.country]);
+  }, [plan, challenge, challengePricing, context, appliedCoupon, billingDetails.country]);
 
   // Handle Input Changes
   const handleInputChange = (
@@ -861,14 +872,14 @@ export default function CheckoutPage() {
     }
   };
 
-  if (loading)
+  if (loading || challengeLoading)
     return (
       <div className="flex justify-center h-screen items-center">
         <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
       </div>
     );
   if (!plan && context === "SUBSCRIPTION") return <div>Plan not found</div>;
-  if (context === "CHALLENGE" && !challenge)
+  if (context === "CHALLENGE" && !challenge && !challengeLoading)
     return <div>Challenge not found</div>;
 
   return (

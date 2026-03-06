@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
-import { calculateDiscount, calculateFinal } from "@/lib/payment/payment.utils";
+import { calculateDiscount, calculateFinal, convertCurrency } from "@/lib/payment/payment.utils";
 
 
 interface BillingDetails {
@@ -69,6 +69,17 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const userCurrency =
+  billingDetails.country === "IN" ? "INR" : "USD"
+
+let amount = challenge.challengeJoiningFee
+let currency = challenge.challengeJoiningFeeCurrency
+
+// convert if needed
+if (currency !== userCurrency) {
+  amount = await convertCurrency(amount, currency, userCurrency)
+  currency = userCurrency
+}
     let coupon = null;
 
     if (couponCode) {
@@ -118,10 +129,10 @@ export async function POST(req: NextRequest) {
       mode,
     } = await getRazorpayConfig();
 
-    const baseAmount = challenge.challengeJoiningFee;
+    const baseAmount = amount;
 
     const isIndia = billingDetails.country === "IN";
-    const currency = challenge.challengeJoiningFeeCurrency as "INR" | "USD";
+    // const currency = challenge.challengeJoiningFeeCurrency as "INR" | "USD";
 
     const discount = calculateDiscount(baseAmount, coupon, currency);
 
@@ -148,7 +159,7 @@ export async function POST(req: NextRequest) {
 
     const order = await razorpay.orders.create({
       amount: Math.round(totalAmount * 100),
-      currency: challenge.challengeJoiningFeeCurrency,
+      currency: currency,
       receipt: crypto.randomBytes(10).toString("hex"),
     });
     console.log("order", order, "total amount: ", totalAmount, "baseAmt : ", baseAmount);
@@ -195,7 +206,7 @@ export async function POST(req: NextRequest) {
         totalAmount,
         // couponCode: coupon?.couponCode ?? null,
         couponId: coupon?.id ?? null,
-        currency: challenge.challengeJoiningFeeCurrency,
+        currency: currency,
         status: "PENDING",
         billingInfoId: billing.id,
       },

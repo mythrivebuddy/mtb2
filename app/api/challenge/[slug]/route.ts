@@ -1,6 +1,7 @@
 // /api/challenge/[slug]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; // ✅ FIX 1: Use the shared Prisma instance
+import { convertCurrency } from "@/lib/payment/payment.utils";
 
 /**
  * @brief Handles GET requests to fetch a single challenge by its combined slug and UUID.
@@ -27,16 +28,16 @@ export async function GET(
     const uuid = parts[parts.length - 1];
 
     if (!uuid) {
-        return NextResponse.json(
-            { success: false, message: "Invalid challenge link format." },
-            { status: 400 }
-        );
+      return NextResponse.json(
+        { success: false, message: "Invalid challenge link format." },
+        { status: 400 }
+      );
     }
-    
+
     // ✅ FIX 2: Correct the Prisma query to only find by the unique ID.
     const challenge = await prisma.challenge.findUnique({
       where: {
-        id: uuid, 
+        id: uuid,
       },
     });
 
@@ -47,8 +48,34 @@ export async function GET(
       );
     }
 
+    let amountINR: number;
+    let amountUSD: number;
+
+    if (challenge.challengeJoiningFeeCurrency === "INR") {
+      amountINR = challenge.challengeJoiningFee;
+      amountUSD = await convertCurrency(
+        challenge.challengeJoiningFee,
+        "INR",
+        "USD"
+      );
+    } else {
+      amountUSD = challenge.challengeJoiningFee;
+      amountINR = await convertCurrency(
+        challenge.challengeJoiningFee,
+        "USD",
+        "INR"
+      );
+    }
+    console.log({ challenge });
+
     // Return the fetched challenge data in the format the client expects
-    return NextResponse.json({ success: true, challenge: challenge }, { status: 200 });
+    return NextResponse.json({
+      success: true, challenge: challenge, pricing: {
+        amountINR,
+        amountUSD,
+        baseCurrency: challenge.challengeJoiningFeeCurrency
+      }
+    }, { status: 200 });
 
   } catch (error) {
     console.error("Failed to fetch challenge:", error);

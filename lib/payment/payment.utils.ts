@@ -270,3 +270,21 @@ export async function handleFailedPayment(paymentOrderId: string) {
   });
 }
 
+
+
+export async function convertCurrency(
+  amount: number,
+  from: "INR" | "USD",
+  to: "INR" | "USD"
+): Promise<number> {
+
+  if (from === to) return amount;
+
+  const res = await fetch(
+    `https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`
+  );
+
+  const data = await res.json();
+
+  return Math.round(data.rates[to] * 100) / 100;
+}
