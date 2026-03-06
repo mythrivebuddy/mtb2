@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         })
         : Promise.resolve([]);
 
-    const [transactions, total, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
+    const [transactions, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
       await Promise.all([
         filter === "ALL" || filter === "GP"
           ? prisma.transaction.findMany({
@@ -84,10 +84,6 @@ export async function GET(request: Request) {
             orderBy: { createdAt: "desc" },
           })
           : Promise.resolve([]),
-
-        prisma.transaction.count({
-          where: { userId },
-        }),
 
         challengePaymentsPromise,
         paymentOrdersPromise,
@@ -208,6 +204,7 @@ export async function GET(request: Request) {
       limit,
       totalPages,
       version: versionFlag ? "v3" : "default",
+      currentPage,
     });
   } catch (error) {
     console.error("Error fetching user history:", error);

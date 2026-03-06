@@ -195,7 +195,6 @@ export default function CheckoutPage() {
       const isLifetime = plan?.interval === "LIFETIME";
       const isRecurring =
         plan?.interval === "MONTHLY" || plan?.interval === "YEARLY";
-      const isIndia = billingDetails.country === "IN";
 
       let endpoint = "";
 
@@ -730,7 +729,8 @@ export default function CheckoutPage() {
   const handleSubscribe = async () => {
     if (context === "SUBSCRIPTION" && !plan) return;
     if (context === "CHALLENGE" && !challenge) return;
-
+    console.log(activeGateway);
+    
     // Basic Validation
     if (
       !billingDetails.addressLine1 ||
