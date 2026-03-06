@@ -96,6 +96,10 @@ export default function ProductManagement() {
       const response = await axios.get<{ items: Item[] }>("/api/admin/store/items");
       return response.data.items;
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true, // ✅ Refetch when user switches back to this tab
+    refetchInterval: 5000, // ✅ Auto-refetch every 5 seconds
+    refetchIntervalInBackground: false, // ✅ Pause refetching when tab is in background
   });
 
   const {
@@ -108,6 +112,10 @@ export default function ProductManagement() {
       const response = await axios.get<{ categories: Category[] }>("/api/admin/store/items/categories");
       return response.data.categories;
     },
+    refetchOnMount: true,
+    refetchOnWindowFocus: true, // ✅ Refetch when user switches back to this tab
+    refetchInterval: 5000, // ✅ Auto-refetch every 5 seconds
+    refetchIntervalInBackground: false, // ✅ Pause refetching when tab is in background
   });
 
   useEffect(() => {

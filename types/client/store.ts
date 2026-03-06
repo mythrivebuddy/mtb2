@@ -1,32 +1,17 @@
+// Store Types for Client-side usage
 
-// export interface Item {
-//   id: string;
-//   name: string;
-//   imageUrl: string;
-//   basePrice: number;
-//   monthlyPrice: number;
-//   yearlyPrice: number;
-//   lifetimePrice: number;
-//   category: {
-//     id: string;
-//     name: string;
-//   };
-// }
+export interface BillingInfo {
+  fullName: string;
+  email: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
 
-// export interface Item {
-//   id: string;
-//   name: string;
-//   categoryId: string;
-//   imageUrl: string;
-//   basePrice: number;
-//   monthlyPrice: number;
-//   yearlyPrice: number;
-//   lifetimePrice: number;
-//   category: {
-//     id: string;
-//     name: string;
-//   };
-// }
 export interface Category {
   id: string;
   name: string;
@@ -37,7 +22,7 @@ export interface Category {
 export interface Item {
   id: string;
   name: string;
-  category: Category;           // ✅ CHANGED from string to Category object
+  category: Category;
   categoryId: string;
   basePrice: number;
   monthlyPrice: number;
@@ -88,11 +73,12 @@ export interface Order {
 }
 
 export interface CartItem {
-  id: string;
-  itemId: string;
-  userId: string;
-  quantity: number;
-  item: Item;
+  id?: string;
+  itemId?: string;
+  item_id?: string;
+  userId?: string;
+  quantity?: number;
+  item?: Item | { id: string };
   wasInWishlist?: boolean;
 }
 
@@ -102,3 +88,7 @@ export interface WishlistItem {
   item: Item;
 }
 
+export interface DropdownOption {
+  value: string;
+  label: string;
+}

@@ -23,7 +23,7 @@ import {
 import Link from "next/link";
 import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { Item } from "@/types/client/store";
+import { Item, BillingInfo } from "@/types/client/store";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 
@@ -65,19 +65,6 @@ const DollarIcon = ({ className }: { className?: string }) => (
 );
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface BillingInfo {
-  id?: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-}
 
 const EMPTY_BILLING: BillingInfo = {
   fullName: "",
@@ -472,7 +459,7 @@ const CheckoutContent = () => {
   const uniqueCurrencies = [...new Set(itemCurrencies)];
   const isMixedCurrency = uniqueCurrencies.length > 1;
 
-  // ✅ Get display price for an item
+  // ✅ Get display price for an item (base price only)
   const getDisplayPrice = (item: Item, index: number) => {
     const itemCurrency = item.currency || "INR";
     const rawPrice = item.basePrice * parsedCartItems[index].quantity;

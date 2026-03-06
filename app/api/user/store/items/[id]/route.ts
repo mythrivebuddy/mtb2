@@ -22,7 +22,7 @@ function extractStoragePath(url: string | null | undefined): string | null {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -31,7 +31,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const itemId = params.id;
+    const { id: itemId } = await params;
 
     const existingItem = await prisma.item.findUnique({
       where: { id: itemId },
@@ -43,7 +43,6 @@ export async function PUT(
         isApproved: true,
       },
     });
-
     if (!existingItem) {
       return NextResponse.json({ error: "Item not found" }, { status: 404 });
     }
