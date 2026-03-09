@@ -44,8 +44,8 @@ export async function GET(req: NextRequest) {
 
   // ── Where clause ────────────────────────────────────────────────────────────
   const where: Prisma.ProgramWhereInput = {
-    status:  "UNDER_REVIEW",
-    // status:  "PUBLISHED",
+    // status:  "UNDER_REVIEW",
+    status:  "PUBLISHED",
     isActive: true,
     modules: { not: Prisma.JsonNull }, // only MMP programs
     ...(duration ? { durationDays: parseInt(duration) } : {}),
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
         status:              true,
         isActive:            true,
         createdAt:           true,
+        thumbnailUrl:       true,
         // Include creator name for "Coach" display
         creator: {
           select: { id: true, name: true, image: true },

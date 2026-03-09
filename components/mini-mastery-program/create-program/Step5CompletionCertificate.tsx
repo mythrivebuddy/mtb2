@@ -3,7 +3,8 @@
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, Info, Award } from "lucide-react";
-import { step5MMPSchema, type Step5Data, type FullFormData, MMP_STORAGE_KEY } from "@/schema/zodSchema";
+import { step5MMPSchema, type Step5Data, type FullFormData } from "@/schema/zodSchema";
+import { MMP_STORAGE_KEY } from "@/types/client/mini-mastery-program";
 
 interface Props {
   onNext: (data: Step5Data) => void;

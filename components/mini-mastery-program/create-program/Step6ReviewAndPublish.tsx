@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CheckCircle2, ArrowLeft, Send, Save, Loader2 } from "lucide-react";
-import { type FullFormData, type ProgramDBPayload } from "@/schema/zodSchema";
+import { type FullFormData } from "@/schema/zodSchema";
+import { ProgramDBPayload } from "@/types/client/mini-mastery-program";
 
 interface Props {
   formData: FullFormData;

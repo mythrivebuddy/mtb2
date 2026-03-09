@@ -529,7 +529,8 @@ import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ChevronDown, ArrowRight, Upload, X, Loader2, ImageIcon } from "lucide-react";
-import { step1MMPSchema, type Step1Data, type FullFormData, MMP_STORAGE_KEY } from "@/schema/zodSchema";
+import { step1MMPSchema, type Step1Data, type FullFormData } from "@/schema/zodSchema";
+import { MMP_STORAGE_KEY } from "@/types/client/mini-mastery-program";
 
 const BUCKET      = "mini-mastery-program";
 const FOLDER      = "thumbnail-image";
@@ -643,7 +644,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
     try {
       const ext      = file.name.split(".").pop() ?? "jpg";
       const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const filePath = `${FOLDER}/${fileName}`;
+      // const filePath = `${FOLDER}/${fileName}`;
 
       const formData = new FormData();
       formData.append("file", file);
