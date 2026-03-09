@@ -102,3 +102,4 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
 };
 
 export default WishlistSection;
+

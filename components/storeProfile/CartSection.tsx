@@ -61,6 +61,10 @@ interface CartSectionProps {
   purchasingItemId: string | null;
 }
 
+// ─── Type guard ────────────────────────────────────────────────────────────────
+const isFullItem = (item: Item | { id: string } | undefined): item is Item =>
+  item != null && "basePrice" in item;
+
 const CartSection: React.FC<CartSectionProps> = ({
   cart,
   getPriceForMembership,
@@ -74,24 +78,29 @@ const CartSection: React.FC<CartSectionProps> = ({
 
   const resolveCurrencySymbol = getCurrencySymbolProp ?? getCurrencySymbol;
 
-  // Derive cart-level currency symbol if not passed from parent
-  const cartCurrencies = [...new Set(cart.map((c) =>
-    (c.item as Item & { currency?: string }).currency ?? "INR"
-  ))];
+  // Derive cart-level currency symbol from full items only
+  const cartCurrencies = [
+    ...new Set(
+      cart
+        .filter((c) => isFullItem(c.item))
+        .map((c) => (c.item as Item).currency ?? "INR")
+    ),
+  ];
 
   // ✅ Calculate totals per currency
   const calculateTotalsByCurrency = () => {
     const totals: Record<string, number> = {};
-    
+
     cart.forEach((cartItem) => {
-      const itemCurrency = (cartItem.item as Item & { currency?: string }).currency ?? "INR";
+      if (!isFullItem(cartItem.item)) return;
+      const itemCurrency = cartItem.item.currency ?? "INR";
       const price = getPriceForMembership(cartItem.item);
       const effectivePrice = price ?? cartItem.item.basePrice;
-      const lineTotal = effectivePrice * cartItem.quantity;
-      
+      const lineTotal = effectivePrice * (cartItem.quantity ?? 1);
+
       totals[itemCurrency] = (totals[itemCurrency] || 0) + lineTotal;
     });
-    
+
     return totals;
   };
 
@@ -118,7 +127,7 @@ const CartSection: React.FC<CartSectionProps> = ({
     updateQuantityMutation.mutate({ cartItemId, quantity: newQuantity });
   };
 
-  if (!cart || cart.some((c) => !c.item)) {
+  if (!cart || cart.some((c) => !isFullItem(c.item))) {
     return <p className="text-gray-500">Cart data is unavailable.</p>;
   }
 
@@ -138,11 +147,14 @@ const CartSection: React.FC<CartSectionProps> = ({
         <>
           <ul className="space-y-4">
             {cart.map((cartItem) => {
-              const itemCurrency = (cartItem.item as Item & { currency?: string }).currency ?? "INR";
+              if (!isFullItem(cartItem.item)) return null;
+
+              const itemCurrency = cartItem.item.currency ?? "INR";
               const isINR        = itemCurrency === "INR";
               const sym          = resolveCurrencySymbol(itemCurrency);
               const price        = getPriceForMembership(cartItem.item);
               const effectivePrice = price ?? cartItem.item.basePrice;
+              const quantity     = cartItem.quantity ?? 1;
 
               return (
                 <li
@@ -196,15 +208,15 @@ const CartSection: React.FC<CartSectionProps> = ({
                     {/* Quantity stepper */}
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity - 1)}
+                        onClick={() => handleQuantityChange(cartItem.id!, quantity - 1)}
                         disabled={updateQuantityMutation.isPending}
                         className="bg-gray-200 px-2 py-1 rounded"
                       >
                         -
                       </button>
-                      <span>{cartItem.quantity}</span>
+                      <span>{quantity}</span>
                       <button
-                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity + 1)}
+                        onClick={() => handleQuantityChange(cartItem.id!, quantity + 1)}
                         disabled={updateQuantityMutation.isPending}
                         className="bg-gray-200 px-2 py-1 rounded"
                       >
@@ -214,11 +226,11 @@ const CartSection: React.FC<CartSectionProps> = ({
 
                     {/* Line total */}
                     <span className="text-green-600 font-semibold">
-                      {sym}{Number(effectivePrice * cartItem.quantity).toFixed(2)}
+                      {sym}{Number(effectivePrice * quantity).toFixed(2)}
                     </span>
 
                     <button
-                      onClick={() => handleRemoveFromCart(cartItem.id)}
+                      onClick={() => handleRemoveFromCart(cartItem.id!)}
                       className="bg-red-600 text-white px-4 py-2 rounded-md"
                     >
                       Remove
@@ -238,7 +250,7 @@ const CartSection: React.FC<CartSectionProps> = ({
                   {Object.entries(totalsByCurrency).map(([currency, total]) => {
                     const sym = resolveCurrencySymbol(currency);
                     const isINR = currency === "INR";
-                    
+
                     return (
                       <div
                         key={currency}

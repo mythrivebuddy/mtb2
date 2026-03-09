@@ -385,10 +385,12 @@ model Category {
   updatedAt DateTime @updatedAt
   items     Item[]
 }
+
 model Order {
   id          String      @id @default(cuid())
   userId      String
   totalAmount Float
+  currency    String?     // Currency used for this order (INR, USD, etc.)
   status      String      @default("processing")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -405,6 +407,8 @@ model OrderItem {
   itemId          String
   quantity        Int
   priceAtPurchase Float
+  originalPrice    Float?   @default(0) // optional
+  originalCurrency String?  @default("INR") // optional
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   item            Item     @relation(fields: [itemId], references: [id])
