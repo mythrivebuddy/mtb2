@@ -82,6 +82,7 @@ model User {
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
+  progressLogs  MiniMasteryProgressLog[]
   userBilling                UserBillingInformation?
   referralsReceived             Referral[]                        @relation("Referred")
   referralsMade                 Referral[]                        @relation("Referrer")
@@ -1559,6 +1560,32 @@ model RazorpayPlanCache {
 
 // membership model end
 
+// mini mastery progress log
+model MiniMasteryProgressLog {
+  id        String   @id @default(cuid())
+
+  userId    String
+  programId String
+  dayNumber Int      // which day module this log is for (1-indexed)
+
+  // Completion state
+  completedAt DateTime?   // null = not yet completed
+  isCompleted Boolean     @default(false)
+
+  // Optional response the user wrote for the actionTask
+  actionResponse String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, dayNumber])   // one log per user per day per program
+  @@index([userId, programId])
+}
+
+
 // program models start
 model Program {
   id               String   @id @default(cuid())
@@ -1610,6 +1637,7 @@ model Program {
   plans              SubscriptionPlan[] @relation("ProgramPlans")
   purchases          OneTimeProgramPurchase[]
   userProgramStates UserProgramState[]
+  progressLogs  MiniMasteryProgressLog[]
 
   createdBy   String?
   creator     User?   @relation("ProgramCreator", fields: [createdBy], references: [id])

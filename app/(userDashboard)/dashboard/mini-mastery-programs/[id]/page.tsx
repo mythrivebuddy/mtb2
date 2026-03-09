@@ -721,7 +721,7 @@ const ProgramDetails = () => {
                     {formatPrice(program.price, program.currency)}
                   </p>
                 </div>
-                <Link href={`/dashboard/mini-mastery-programs/enroll/${program.id}`}>
+                <Link href={`/dashboard/mini-mastery-programs/program/${program.id}`}>
                   <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm">
                     {isPaid ? "Enroll Now" : "Start Free"} <ArrowRight size={18} />
                   </button>
