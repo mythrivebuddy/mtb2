@@ -61,12 +61,15 @@ export interface OrderItem {
   id: string;
   quantity: number;
   priceAtPurchase: number;
+  originalPrice?: number; // ✅ Original price before conversion
+  originalCurrency?: string;
   item: Item;
 }
 
 export interface Order {
   id: string;
   totalAmount: number;
+  currency?: string;
   status: string;
   createdAt: string;
   items: OrderItem[];
