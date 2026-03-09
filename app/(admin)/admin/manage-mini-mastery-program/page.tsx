@@ -20,7 +20,7 @@ interface Creator {
   name: string | null;
   email: string | null;
   image: string | null;
-}
+} 
 
 interface Program {
   id: string;
