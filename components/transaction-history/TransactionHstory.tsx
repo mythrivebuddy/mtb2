@@ -53,7 +53,7 @@ type Balances = {
 /* BALANCE CARDS */
 /* ------------------------------------------------ */
 
-const BalanceCards = ({ balances }: {balances?: Balances}) => {
+const BalanceCards = ({ balances }: { balances?: Balances }) => {
 
   const items = [
     { label: "Total GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
@@ -279,15 +279,17 @@ const TransactionHistoryContent = () => {
   const to = searchParams.get("to");
 
   const updateParams = (updates: Record<string, string | number | undefined>) => {
-
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([k, v]) => {
-      if (!v) params.delete(k);
+      if (v === undefined) params.delete(k);
       else params.set(k, String(v));
     });
 
-    params.set("page", "1");
+    // reset page ONLY if page is not being updated
+    if (!("page" in updates)) {
+      params.set("page", "1");
+    }
 
     router.push(`/dashboard/transactions-history?${params.toString()}`);
   };

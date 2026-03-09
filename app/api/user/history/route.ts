@@ -29,7 +29,12 @@ export async function GET(request: Request) {
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
 
+  if (toDate) {
+    toDate.setHours(23, 59, 59, 999);
+  }
 
 
   try {
@@ -240,6 +245,10 @@ export async function GET(request: Request) {
       const fromDate = from ? new Date(from) : null;
       const toDate = to ? new Date(to) : null;
 
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+      }
+
       combined = combined.filter((tx) => {
         const txDate = new Date(tx.createdAt);
 
@@ -257,10 +266,16 @@ export async function GET(request: Request) {
     combined.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
     const totalItems = combined.length;
-    const paginated = combined.slice(skip, skip + limit);
     const totalPages = Math.ceil(totalItems / limit);
+
     const currentPage = page > totalPages ? totalPages : page;
+
+    // calculate skip AFTER correcting page
+    const skipSafe = (currentPage - 1) * limit;
+
+    const paginated = combined.slice(skipSafe, skipSafe + limit);
 
     // GP balance (from GP transactions)
     const gpBalanceResult = await prisma.transaction.aggregate({
