@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     console.error("Challenge Callback Error:", error);
 
     return NextResponse.redirect(
-      new URL("/payment-failed?reason=server_error", req.url)
+      new URL("/dashboard/membership/failure?reason=server_error", req.url)
     );
   }
 }

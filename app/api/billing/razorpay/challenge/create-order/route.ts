@@ -162,7 +162,6 @@ if (currency !== userCurrency) {
       currency: currency,
       receipt: crypto.randomBytes(10).toString("hex"),
     });
-    console.log("order", order, "total amount: ", totalAmount, "baseAmt : ", baseAmount);
 
 
     // Upsert Billing Info
