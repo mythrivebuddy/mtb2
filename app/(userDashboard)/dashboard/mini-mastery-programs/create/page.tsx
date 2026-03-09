@@ -8,41 +8,8 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { ApiResponse, Pagination, Program, ProgramStatus } from "@/types/client/mini-mastery-program";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ProgramStatus = "DRAFT" | "UNDER_REVIEW" | "PUBLISHED";
-
-interface Program {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  durationDays: number | null;
-  unlockType: string | null;
-  price: number | null;
-  currency: string | null;
-  completionThreshold: number | null;
-  certificateTitle: string | null;
-  achievements: unknown;
-  modules: unknown;
-  status: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-interface ApiResponse {
-  programs: Program[];
-  pagination: Pagination;
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -352,9 +319,17 @@ export default function Dashboard() {
                     <tr key={program.id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center shrink-0 border border-blue-50 text-blue-600 font-black text-sm">
-                            {program.durationDays ?? "?"}
-                          </div>
+                          {program.thumbnailUrl ? (
+                            <img
+                              src={program.thumbnailUrl}
+                              alt={program.name}
+                              className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center shrink-0 border border-blue-50 text-blue-600 font-black text-sm">
+                              {program.durationDays ?? "?"}
+                            </div>
+                          )}
                           <div>
                             <div className="font-bold text-gray-800 text-sm md:text-base leading-tight">
                               {program.name}

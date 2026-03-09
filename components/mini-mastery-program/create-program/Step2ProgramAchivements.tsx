@@ -3,7 +3,8 @@
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
-import { step2MMPSchema, type Step2Data, type FullFormData, MMP_STORAGE_KEY } from "@/schema/zodSchema";
+import { step2MMPSchema, type Step2Data, type FullFormData } from "@/schema/zodSchema";
+import { MMP_STORAGE_KEY } from "@/types/client/mini-mastery-program";
 
 interface Props {
   onNext: (data: Step2Data) => void;

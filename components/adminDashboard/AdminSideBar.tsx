@@ -157,6 +157,10 @@ const Sidebar = () => {
                 href="/admin/manage-store-product"
                 label="Product Management"
               />
+              <NavItem
+                href="/admin/manage-mini-mastery-program"
+                label="Mini Mastery Program Management"
+              />
             </NavSection>
           </div>
         </div>
