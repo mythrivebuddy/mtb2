@@ -185,6 +185,7 @@ export default function CheckoutPage() {
     const loaded = await loadRazorpayScript();
     if (!loaded) {
       toast.error("Razorpay SDK failed to load");
+      setProcessingPayment(false);
       return;
     }
 
@@ -298,6 +299,13 @@ export default function CheckoutPage() {
         // ✅ FAILURE / CLOSE HANDLING
         modal: {
           ondismiss: () => {
+            if (context === "CHALLENGE") {
+              window.location.href =
+                `/dashboard/membership/failure?type=challenge` +
+                (challengeId ? `&challengeId=${challengeId}` : "") +
+                `&reason=checkout_closed`;
+              return;
+            }
             const type = isLifetime ? "lifetime" : "subscription"; // ✅ clearer type
 
             window.location.href =
@@ -341,6 +349,14 @@ export default function CheckoutPage() {
           response?.error?.description ||
           response?.error?.reason ||
           "payment_failed";
+
+        if (context === "CHALLENGE") {
+          window.location.href =
+            `/dashboard/membership/failure?type=challenge` +
+            (challengeId ? `&challengeId=${challengeId}` : "") +
+            `&reason=${encodeURIComponent(reason)}`;
+          return;
+        }
 
         const type = isLifetime ? "lifetime" : "subscription"; // ✅ was "mandate"
         window.location.href =
@@ -727,10 +743,11 @@ export default function CheckoutPage() {
   // ---------------------------
 
   const handleSubscribe = async () => {
+    if (processingPayment) return;
     if (context === "SUBSCRIPTION" && !plan) return;
     if (context === "CHALLENGE" && !challenge) return;
     console.log(activeGateway);
-    
+
     // Basic Validation
     if (
       !billingDetails.addressLine1 ||

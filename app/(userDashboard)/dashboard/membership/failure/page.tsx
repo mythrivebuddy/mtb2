@@ -24,13 +24,29 @@ export default function FailurePage() {
     "Cashfree did not return error details. User did not complete the payment.";
 
 
-  const heading = typeParam === "subscription" ? "Mandate Failed" : "Payment Failed";
+  const heading =
+    typeParam === "subscription"
+      ? "Mandate Failed"
+      : typeParam === "challenge"
+        ? "Challenge Payment Failed"
+        : "Payment Failed";
 
-  const description = typeParam === "subscription"
-    ? "We couldn't set up your recurring payment mandate."
-    : "Your one-time payment could not be completed.";
+  const description =
+    typeParam === "subscription"
+      ? "We couldn't create your automatic recurring payment mandate. No amount has been charged."
+      : typeParam === "challenge"
+        ? "Your payment for enrolling in the challenge could not be completed. This may happen if the payment was cancelled, declined, or interrupted."
+        : "Your payment could not be completed.";
 
   const reference = typeParam === "subscription" ? subId : orderId;
+  const challengeId = searchParams.get("challengeId");
+
+  const retryUrl =
+    typeParam === "challenge"
+      ? challengeId
+        ? `/dashboard/membership/checkout?context=CHALLENGE&challengeId=${challengeId}`
+        : "/dashboard/challenge"
+      : "/pricing";
 
   const referenceLabel = typeParam === "subscription" ? "Subscription ID" : "Order ID";
 
@@ -89,18 +105,20 @@ export default function FailurePage() {
               asChild
               className="w-full bg-slate-900 hover:bg-slate-800 h-12"
             >
-              <Link href="/pricing">
+              <Link href={retryUrl}>
                 <RefreshCcw className="mr-2 w-4 h-4" /> Try Again
               </Link>
             </Button>
 
             <div className="grid grid-cols-1 gap-3">
 
-              <Button asChild variant="outline" className="text-sm">
-                <Link href="/pricing">
-                  <ArrowLeft className="mr-2 w-4 h-4" /> Back to Plans
-                </Link>
-              </Button>
+              {typeParam !== "challenge" && (
+                <Button asChild variant="outline" className="text-sm">
+                  <Link href="/pricing">
+                    <ArrowLeft className="mr-2 w-4 h-4" /> Back to Plans
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

@@ -5,12 +5,17 @@ import { activityDisplayMap, activityDisplayMapV3 } from "@/lib/constants/activi
 import { PaymentStatus } from "@prisma/client";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 
+type TransactionMetadata = {
+  joinerName?: string;
+  challengeTitle?: string;
+};
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "6");
   const filter = searchParams.get("filter") || "ALL";
-  const skip = (page - 1) * limit;
+  const currency = searchParams.get("currency") || "ALL";
+  // const skip = (page - 1) * limit;
 
   // ✅ Determine version flag
   const versionFlag =
@@ -21,6 +26,16 @@ export async function GET(request: Request) {
 
   const session = await checkRole("USER");
   const userId = session.user.id;
+
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  // const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
+
+  if (toDate) {
+    toDate.setHours(23, 59, 59, 999);
+  }
+
 
   try {
     const challengePaymentsPromise =
@@ -35,7 +50,7 @@ export async function GET(request: Request) {
         : Promise.resolve([]);
 
     const coachChallengeEarningsPromise =
-      filter === "ALL" || filter === "COACH_EARNING"
+      filter === "ALL" || filter === "COACH_EARNING" || filter === "CHALLENGE"
         ? prisma.challengePayment.findMany({
           where: {
             status: PaymentStatus.PAID,
@@ -77,9 +92,24 @@ export async function GET(request: Request) {
 
     const [transactions, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
       await Promise.all([
-        filter === "ALL" || filter === "GP"
+        filter === "ALL" || filter === "GP" || filter === "CHALLENGE"
           ? prisma.transaction.findMany({
-            where: { userId },
+            where: {
+              userId,
+              ...(filter === "CHALLENGE" && {
+                activity: {
+                  activity: {
+                    in: [
+                      "CHALLENGE_JOINING_FEE",
+                      "CHALLENGE_FEE_EARNED",
+                      "CHALLENGE_PENALTY",
+                      "CHALLENGE_REWARD",
+                      "CHALLENGE_CREATION_FEE"
+                    ]
+                  }
+                }
+              })
+            },
             include: { activity: true },
             orderBy: { createdAt: "desc" },
           })
@@ -133,18 +163,30 @@ export async function GET(request: Request) {
         displayName: `${cp.product.name}`,
       },
     }));
-    const gpHistory = transactions.map((tx) => ({
-      id: tx.id,
-      createdAt: tx.createdAt,
-      jpAmount: tx.jpAmount,
-      currency: "GP",
-      activity: {
-        activity: tx.activity.activity,
-        transactionType: tx.activity.transactionType,
-        displayName:
-          displayMap[tx.activity.activity] || tx.activity.activity,
-      },
-    }));
+
+    const gpHistory = transactions.map((tx) => {
+      let displayName =
+        displayMap[tx.activity.activity] || tx.activity.activity;
+
+      const meta = tx.metadata as TransactionMetadata | null;
+
+      if (meta?.joinerName && meta?.challengeTitle) {
+        displayName = `${meta.joinerName} joined ${meta.challengeTitle}`;
+      }
+
+      return {
+        id: tx.id,
+        createdAt: tx.createdAt,
+        jpAmount: tx.jpAmount,
+        currency: "GP",
+        activity: {
+          activity: tx.activity.activity,
+          transactionType: tx.activity.transactionType,
+          displayName,
+        },
+        activityMeta: meta ?? null,
+      };
+    });
 
     const coachEarningsHistory = coachChallengeEarnings.map((cp) => {
       const feature = checkFeature({
@@ -163,25 +205,34 @@ export async function GET(request: Request) {
       const commission = (baseAmount * commissionPercent) / 100;
       const finalAmount = baseAmount - commission
 
+
       return {
         id: `coach-${cp.id}`,
         createdAt: cp.paidAt || cp.joinedAt,
         jpAmount: finalAmount,
         currency: cp.currency,
+
         breakdown: {
           baseAmount,
           commission,
           finalAmount,
         },
+
         activity: {
           activity: "CHALLENGE_EARNING",
           transactionType: "CREDIT",
           displayName: `${cp.user.name} joined ${cp.challenge.title}`,
         },
+
+        activityMeta: {
+          userId: cp.user.id,
+          userName: cp.user.name,
+          challengeTitle: cp.challenge.title
+        }
       };
     });
 
-    const combined = [
+    let combined = [
       ...gpHistory,
       ...challengeHistory,
       ...paymentHistory,
@@ -189,13 +240,84 @@ export async function GET(request: Request) {
       ...coachEarningsHistory
     ];
 
+    // ✅ Apply date range filter
+    if (from || to) {
+      const fromDate = from ? new Date(from) : null;
+      const toDate = to ? new Date(to) : null;
+
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+      }
+
+      combined = combined.filter((tx) => {
+        const txDate = new Date(tx.createdAt);
+
+        if (fromDate && txDate < fromDate) return false;
+        if (toDate && txDate > toDate) return false;
+
+        return true;
+      });
+    }
+
+    if (currency !== "ALL") {
+      combined = combined.filter((tx) => tx.currency === currency);
+    }
+
     combined.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+
     const totalItems = combined.length;
-    const paginated = combined.slice(skip, skip + limit);
     const totalPages = Math.ceil(totalItems / limit);
+
     const currentPage = page > totalPages ? totalPages : page;
+
+    // calculate skip AFTER correcting page
+    const skipSafe = (currentPage - 1) * limit;
+
+    const paginated = combined.slice(skipSafe, skipSafe + limit);
+
+    // GP balance (from GP transactions)
+    const gpBalanceResult = await prisma.transaction.aggregate({
+      where: { userId },
+      _sum: { jpAmount: true },
+    });
+
+    const gpBalance = gpBalanceResult._sum.jpAmount ?? 0;
+    const feature = checkFeature({
+      feature: "challenges",
+      user: {
+        userType: session.user.userType,
+        membership: session.user.membership,
+      },
+    });
+
+    const commissionPercent = feature.allowed
+      ? (feature.config as { commissionPercent?: number }).commissionPercent ?? 0
+      : 0;
+    // INR balance (coach challenge earnings after commission)
+    const inrBalance = coachChallengeEarnings
+      .filter((cp) => cp.currency === "INR")
+      .reduce((sum, cp) => {
+        const commission = (cp.amountPaid * commissionPercent) / 100;
+        const finalAmount = cp.amountPaid - commission;
+        return sum + finalAmount;
+      }, 0);
+
+
+    const usdCredits = coachChallengeEarnings
+      .filter((cp) => cp.currency === "USD")
+      .reduce((sum, cp) => {
+        const commission = (cp.amountPaid * commissionPercent) / 100;
+        const finalAmount = cp.amountPaid - commission;
+        return sum + finalAmount;
+      }, 0);
+
+    const usdDebits = paymentOrders
+      .filter((po) => po.currency === "USD")
+      .reduce((sum, po) => sum + po.totalAmount, 0);
+
+    const usdBalance = usdCredits - usdDebits;
 
     return NextResponse.json({
       transactions: paginated,
@@ -205,6 +327,11 @@ export async function GET(request: Request) {
       totalPages,
       version: versionFlag ? "v3" : "default",
       currentPage,
+      balances: {
+        GP: gpBalance,
+        INR: inrBalance,
+        USD: usdBalance,
+      },
     });
   } catch (error) {
     console.error("Error fetching user history:", error);

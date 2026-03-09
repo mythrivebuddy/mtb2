@@ -1,6 +1,7 @@
 "use client";
 // dashboard/challenge/upcoming-challenges/[challengeId]/page.tsx
 import { useState, useEffect } from "react";
+import { useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
@@ -12,7 +13,7 @@ import ChallengeDescription from "@/components/Dompurify";
 import { toast } from "sonner";
 //import { useSearchParams } from "next/navigation";
 
-// NOTE: The type definitions are assumed to be correct.
+
 type Creator = Pick<User, "id" | "name">;
 
 type ChallengeWithTasksAndCount = Challenge & {
@@ -56,15 +57,18 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
   } | null>(null);
 
   const [isEnrollSuccessModalOpen, setIsEnrollSuccessModalOpen] = useState(false);
+  const [autoEnrollAttempted, setAutoEnrollAttempted] = useState(false);
+
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
 
   const [hasPaidOrder, setHasPaidOrder] = useState(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const autoEnrollTriggered = useRef(false);
 
   useEffect(() => {
-    if (!orderId || enrollment) return;
+    if (!orderId || enrollment || autoEnrollAttempted) return;
 
     const verifyPayment = async () => {
       try {
@@ -74,8 +78,38 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
           `/api/billing/razorpay/challenge/verify-payment?orderId=${orderId}&challengeId=${challenge.id}`
         );
 
-        if (res.data?.paid) {
+        if (res.data?.paid && !autoEnrollTriggered.current) {
+          autoEnrollTriggered.current = true;
           setHasPaidOrder(true);
+          setAutoEnrollAttempted(true);
+          try {
+            setIsEnrolling(true);
+
+            await autoEnrollWithRetry(challenge.id);
+
+            const enrollmentResp = await axios.get(`/api/challenge/enrollments/${challenge.id}`);
+            setEnrollment(enrollmentResp.data.enrollment);
+
+
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ["myChallenges", "hosted"] }),
+              queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
+              queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] }),
+            ]);
+            toast.success("You have successfully enrolled in this challenge.");
+
+            router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
+
+          } catch (err) {
+            console.error("Auto enroll failed", err);
+
+            await axios.post("/api/challenge/enroll-failure", {
+              challengeId: challenge.id,
+              orderId,
+            });
+          } finally {
+            setIsEnrolling(false);
+          }
         }
       } catch (err) {
         console.error("Payment verification failed", err);
@@ -85,7 +119,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
     };
 
     verifyPayment();
-  }, [orderId, challenge.id, enrollment]);
+  }, [orderId, challenge.id]);
 
   useEffect(() => {
     if (enrollment && enrollment.userTasks.length === 0 && !hasPaidOrder) {
@@ -155,6 +189,29 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
     }
   };
 
+  const autoEnrollWithRetry = async (challengeId: string, retries = 3) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await axios.post("/api/challenge/enroll", { challengeId });
+        return true;
+      } catch (err) {
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+
+          // already enrolled → stop retries
+          if (status === 409) return true;
+
+          // client errors should not retry
+          if (status && status < 500) throw err;
+        }
+
+        if (attempt === retries) throw err;
+
+        await new Promise((r) => setTimeout(r, 1500 * attempt));
+      }
+    }
+  };
+
   const handleJoinClick = () => {
     if (sessionStatus === "loading") return;
 
@@ -178,7 +235,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
       queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
     ]);
 
-    router.back();
+    router.replace(`/dashboard/challenge/my-challenges/${challenge.id}`);
 
   };
 
@@ -357,7 +414,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
                         <span className="font-semibold">
-                          You purchased this challenge. Click below to join.
+                          You purchased this challenge.
                         </span>
                       </div>
 

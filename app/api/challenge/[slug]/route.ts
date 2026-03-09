@@ -66,7 +66,6 @@ export async function GET(
         "INR"
       );
     }
-    console.log({ challenge });
 
     // Return the fetched challenge data in the format the client expects
     return NextResponse.json({
