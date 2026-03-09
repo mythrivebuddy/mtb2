@@ -82,6 +82,7 @@ model User {
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
+  progressLogs  MiniMasteryProgressLog[]
   userBilling                UserBillingInformation?
   referralsReceived             Referral[]                        @relation("Referred")
   referralsMade                 Referral[]                        @relation("Referrer")
@@ -124,6 +125,7 @@ model User {
   coachChallengePayouts ChallengePayout[]
   challengePayments ChallengePayment[]
 
+  createdPrograms  Program[]  @relation("ProgramCreator")
   @@index([name])
 }
 
@@ -1558,6 +1560,32 @@ model RazorpayPlanCache {
 
 // membership model end
 
+// mini mastery progress log
+model MiniMasteryProgressLog {
+  id        String   @id @default(cuid())
+
+  userId    String
+  programId String
+  dayNumber Int      // which day module this log is for (1-indexed)
+
+  // Completion state
+  completedAt DateTime?   // null = not yet completed
+  isCompleted Boolean     @default(false)
+
+  // Optional response the user wrote for the actionTask
+  actionResponse String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, dayNumber])   // one log per user per day per program
+  @@index([userId, programId])
+}
+
+
 // program models start
 model Program {
   id               String   @id @default(cuid())
@@ -1581,10 +1609,38 @@ model Program {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // --- 🆕 Mini-Mastery Program (MMP) Specific Fields ---
+  
+  // Step 1: Unlock Logic
+  unlockType        String?  @default("daily") // "daily" or "all"
+  thumbnailUrl  String?   // Supabase public URL for MMP thumbnail
+
+  // Step 2: What will participants achieve?
+  achievements      Json?    // Stores: ["Master focus", "Early rising", ...]
+
+  // Step 3: Daily Module Builder
+  // for each day title, type, videoUrl, instructions, action task
+  modules           Json?    // Stores: [{day: 1, title: "Intro", type: "video", ...}]
+
+  // Step 4: Pricing
+  price             Float?   @default(0)
+  currency          String?  @default("INR")
+
+  // Step 5: Certificate Settings
+  completionThreshold Int?    @default(100)
+  certificateTitle    String?
+
+  // Step 6: Status handling
+  status            String?  @default("DRAFT") // "DRAFT", "UNDER_REVIEW", "PUBLISHED"
+
   // Relations
   plans              SubscriptionPlan[] @relation("ProgramPlans")
   purchases          OneTimeProgramPurchase[]
   userProgramStates UserProgramState[]
+  progressLogs  MiniMasteryProgressLog[]
+
+  createdBy   String?
+  creator     User?   @relation("ProgramCreator", fields: [createdBy], references: [id])
 }
 model OneTimeProgramPurchase {
   id                 String   @id @default(cuid())
