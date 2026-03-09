@@ -156,15 +156,15 @@ export async function POST(request: Request) {
       async (tx) => {
         // 1. Handle JP cost if applicable
         if (challengeToJoin.cost > 0 && creator) {
-          await Promise.all([
-            deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
+          
+           await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
               amount: challengeToJoin.cost,
             }),
-            assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
+           await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
               amount: challengeToJoin.cost,
-            }),
-          ]);
-        }
+            })
+        }  
+        
 
         // 2. Create the enrollment record
         const enrollment = await tx.challengeEnrollment.create({

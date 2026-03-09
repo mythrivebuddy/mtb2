@@ -14,10 +14,9 @@ export async function GET(req: NextRequest) {
 
     if (!paymentId || !orderId || !signature) {
       return NextResponse.redirect(
-        new URL("/payment-failed?reason=missing_params", req.url)
+        new URL("/payment-failed?type=challenge&reason=missing_params", req.url)
       );
     }
-
     const { razorpayKeySecret } = await getRazorpayConfig();
 
     const generatedSignature = crypto
@@ -38,23 +37,24 @@ export async function GET(req: NextRequest) {
 
     if (!order) {
       return NextResponse.redirect(
-        new URL("/payment-failed?reason=order_not_found", req.url)
+        new URL("/payment-failed?type=challenge&reason=order_not_found", req.url)
       );
     }
+
 
     // Do NOT mark success here — webhook will handle that
 
     return NextResponse.redirect(
-  new URL(
-    `/dashboard/challenge/upcoming-challenges/${order.challengeId}?orderId=${orderId}`,
-    req.url
-  )
-);
+      new URL(
+        `/dashboard/challenge/upcoming-challenges/${order.challengeId}?orderId=${orderId}`,
+        req.url
+      )
+    );
   } catch (error: unknown) {
     console.error("Challenge Callback Error:", error);
 
     return NextResponse.redirect(
-      new URL("/dashboard/membership/failure?reason=server_error", req.url)
+      new URL("/dashboard/membership/failure?type=challenge&reason=server_error", req.url)
     );
   }
 }
