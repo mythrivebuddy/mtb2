@@ -163,21 +163,30 @@ export async function GET(request: Request) {
       const commission = (baseAmount * commissionPercent) / 100;
       const finalAmount = baseAmount - commission
 
+
       return {
         id: `coach-${cp.id}`,
         createdAt: cp.paidAt || cp.joinedAt,
         jpAmount: finalAmount,
         currency: cp.currency,
+
         breakdown: {
           baseAmount,
           commission,
           finalAmount,
         },
+
         activity: {
           activity: "CHALLENGE_EARNING",
           transactionType: "CREDIT",
           displayName: `${cp.user.name} joined ${cp.challenge.title}`,
         },
+
+        activityMeta: {
+          userId: cp.user.id,
+          userName: cp.user.name,
+          challengeTitle: cp.challenge.title
+        }
       };
     });
 

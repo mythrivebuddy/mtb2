@@ -1,17 +1,30 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
+import Link from "next/link";
 
 export interface Transaction {
   id: string;
   createdAt: string;
   currency?: string;
   jpAmount: number;
+
+  user?: {
+    id: string;
+    name: string;
+  };
+
+  challengeTitle?: string;
+
   breakdown?: {
     baseAmount: number;
     commission: number;
     commissionPercent?: number;
     finalAmount: number;
-
+  };
+  activityMeta?: {
+    userId?: string;
+    userName?: string;
+    challengeTitle?: string;
   };
   activity: {
     activity: string;
@@ -31,8 +44,28 @@ export const columns: ColumnDef<Transaction>[] = [
     ),
   },
   {
-    accessorKey: "activity.displayName",
+    id: "activity",
     header: "Activity",
+    cell: ({ row }) => {
+      const data = row.original;
+
+      if (data.activityMeta?.userId) {
+        return (
+          <div>
+            <Link
+              href={`/profile/${data.activityMeta.userId}`}
+              className=" hover:underline"
+              target="_blank"
+            >
+              {data.activityMeta.userName}
+            </Link>{" "}
+            joined {data.activityMeta.challengeTitle}
+          </div>
+        );
+      }
+
+      return <span>{data.activity.displayName}</span>;
+    },
   },
   {
     accessorKey: "activity.transactionType",
@@ -52,13 +85,13 @@ export const columns: ColumnDef<Transaction>[] = [
               className={`font-medium ${isCredit ? "text-green-600" : "text-red-600"
                 }`}
             >
-              {isCredit ? "+" : "-"} {data.currency} {data.breakdown.finalAmount}
+              {isCredit ? "+" : "-"} {data.currency} {data.breakdown.finalAmount.toFixed(2)}
             </div>
 
             <div className="text-xs  text-gray-500">
-              {data.currency} {data.breakdown.baseAmount}
+              {data.currency} {data.breakdown.baseAmount.toFixed(2)}
               {" - "}
-              {data.currency} {data.breakdown.commission} commision
+              {data.currency} {data.breakdown.commission.toFixed(2)} commision
             </div>
           </div>
         );
