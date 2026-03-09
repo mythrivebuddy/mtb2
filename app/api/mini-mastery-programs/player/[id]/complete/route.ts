@@ -51,7 +51,7 @@ export async function POST(
 
   if (undo) {
     // Un-complete the day
-    const log = await prisma.miniMasteryProgressLog.updateMany({
+    await prisma.miniMasteryProgressLog.updateMany({
       where: { userId, programId, dayNumber },
       data:  { isCompleted: false, completedAt: null },
     });
