@@ -135,6 +135,7 @@ model Transaction {
   activityId String
   createdAt  DateTime @default(now())
   jpAmount   Int
+  metadata   Json?  
   activity   Activity @relation(fields: [activityId], references: [id])
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { CouponType } from "@prisma/client"
 import { checkRole } from "@/lib/utils/auth"
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const session = await checkRole("USER")
         if (session.user.userType != "COACH") {
@@ -33,6 +33,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json(challenges)
     } catch (error) {
+        console.error(error)
         return NextResponse.json(
             { error: "Failed to fetch challenges" },
             { status: 500 }

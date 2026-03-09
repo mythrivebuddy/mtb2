@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Loader2, Percent } from "lucide-react";
 import { toast } from "sonner";
@@ -129,9 +129,9 @@ export default function CoachCouponsPage() {
             setCouponError("");
         },
 
-        onError: (error: any) => {
+        onError: (error: AxiosError<{ error?: string }>) => {
             const message =
-                error?.response?.data?.error || "Failed to create coupon";
+                error.response?.data?.error ?? "Failed to create coupon";
 
             toast.error(message);
 

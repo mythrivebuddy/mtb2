@@ -29,7 +29,7 @@ export async function assignJp(
   prismaClient:
     | Prisma.TransactionClient
     | PrismaClient = prisma,
-  options?: { amount?: number } // Optional parameter for dynamic amounts
+  options?: { amount?: number, metadata?: Prisma.InputJsonValue } // Optional parameter for dynamic amounts
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
@@ -64,6 +64,7 @@ export async function assignJp(
           create: {
             activityId: activityData.id,
             jpAmount: jpToAdd,
+            metadata: options?.metadata ?? undefined
           },
         },
       },
@@ -85,7 +86,7 @@ export async function deductJp(
   prismaClient:
     | Prisma.TransactionClient
     | PrismaClient = prisma,
-  options?: { amount?: number } // Optional parameter for dynamic amounts
+  options?: { amount?: number, metadata?: Prisma.InputJsonValue } // Optional parameter for dynamic amounts
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
@@ -124,6 +125,7 @@ export async function deductJp(
           create: {
             activityId: activityData.id,
             jpAmount: jpToDeduct,
+            metadata: options?.metadata ?? undefined
           },
         },
       },
