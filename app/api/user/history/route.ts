@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get("limit") || "6");
   const filter = searchParams.get("filter") || "ALL";
   const currency = searchParams.get("currency") || "ALL";
-  const skip = (page - 1) * limit;
+  // const skip = (page - 1) * limit;
 
   // ✅ Determine version flag
   const versionFlag =
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
-  const fromDate = from ? new Date(from) : null;
+  // const fromDate = from ? new Date(from) : null;
   const toDate = to ? new Date(to) : null;
 
   if (toDate) {
