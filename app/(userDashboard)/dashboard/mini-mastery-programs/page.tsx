@@ -7,6 +7,7 @@ import {
   ChevronDown, ArrowUpDown, Sparkles,
   ServerCrash, ChevronLeft, ChevronRight,
   SlidersHorizontal, X, BookOpen,
+  CheckCircle2, PlayCircle, Trophy,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -46,6 +47,15 @@ interface Pagination {
 interface ApiResponse {
   programs: Program[];
   pagination: Pagination;
+}
+
+interface ProgramStatus {
+  enrolled:  boolean;
+  completed: boolean;
+}
+
+interface MyStatusResponse {
+  statuses: Record<string, ProgramStatus>;
 }
 
 // ─── Filter types ─────────────────────────────────────────────────────────────
@@ -88,7 +98,6 @@ const DURATION_OPTIONS: { label: string; value: DurationFilter }[] = [
   { label: "30 Days",      value: "30"  },
 ];
 
-// Gradient palettes cycled per card index — replaces image
 const CARD_GRADIENTS = [
   "from-blue-500 via-blue-600 to-indigo-700",
   "from-violet-500 via-purple-600 to-purple-800",
@@ -101,26 +110,23 @@ const CARD_GRADIENTS = [
   "from-indigo-400 via-violet-500 to-purple-700",
 ] as const;
 
-// Large background letter from program name — used as decorative element
 function getBgLetter(name: string): string {
   return name.trim()[0]?.toUpperCase() ?? "M";
 }
 
-// ─── API fetcher ──────────────────────────────────────────────────────────────
+// ─── API fetchers ─────────────────────────────────────────────────────────────
 
-async function fetchPublicPrograms(
-  page: number,
-  filters: Filters,
-): Promise<ApiResponse> {
+async function fetchPublicPrograms(page: number, filters: Filters): Promise<ApiResponse> {
   const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
   if (filters.pricing  !== "all") params.set("pricing",  filters.pricing);
   if (filters.duration !== "all") params.set("duration", filters.duration);
   params.set("sort", filters.sort);
+  const { data } = await axios.get<ApiResponse>(`/api/mini-mastery-programs/public?${params.toString()}`);
+  return data;
+}
 
-  const { data } = await axios.get<ApiResponse>(
-    `/api/mini-mastery-programs/public?${params.toString()}`,
-  );
-  console.log("Fetched programs:", data);
+async function fetchMyStatuses(): Promise<MyStatusResponse> {
+  const { data } = await axios.get<MyStatusResponse>("/api/mini-mastery-programs/my-status");
   return data;
 }
 
@@ -185,9 +191,7 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
                 key={opt.value}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
                 className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
-                  value === opt.value
-                    ? "bg-blue-50 text-blue-700"
-                    : "hover:bg-slate-50 text-slate-600"
+                  value === opt.value ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
                 }`}
               >
                 {opt.label}
@@ -198,6 +202,82 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
       )}
     </div>
   );
+}
+
+// ─── CTA Button ───────────────────────────────────────────────────────────────
+
+function ProgramCTA({ prog, status }: { prog: Program; status?: ProgramStatus }) {
+  if (status?.completed) {
+    // Completed — go to player, show completed state
+    return (
+      <div className="flex gap-2 pt-1 mt-auto">
+        <Link href={`/dashboard/mini-mastery-programs/program/${prog.id}`} className="flex-[2]">
+          <button className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-green-100 flex items-center justify-center gap-1.5">
+            <Trophy size={13} /> Completed
+          </button>
+        </Link>
+        <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
+          <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+            Info
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (status?.enrolled) {
+    // Enrolled but not completed — continue learning
+    return (
+      <div className="flex gap-2 pt-1 mt-auto">
+        <Link href={`/dashboard/mini-mastery-programs/program/${prog.id}`} className="flex-[2]">
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5">
+            <PlayCircle size={13} /> Continue Learning
+          </button>
+        </Link>
+        <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
+          <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+            Info
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Not enrolled — show Enroll
+  return (
+    <div className="flex gap-2 pt-1 mt-auto">
+      <Link href={`/dashboard/mini-mastery-programs/program/${prog.id}`} className="flex-[2]">
+        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100">
+          Enroll
+        </button>
+      </Link>
+      <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
+        <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+          Info
+        </button>
+      </Link>
+    </div>
+  );
+}
+
+// ─── Status Badge (top-left of card cover) ────────────────────────────────────
+
+function CardStatusBadge({ status }: { status?: ProgramStatus }) {
+  if (status?.completed) {
+    return (
+      <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-md">
+        <CheckCircle2 size={10} /> Completed
+      </div>
+    );
+  }
+  if (status?.enrolled) {
+    return (
+      <div className="absolute top-3 left-3 flex items-center gap-1 bg-blue-600 text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-md">
+        <PlayCircle size={10} /> Enrolled
+      </div>
+    );
+  }
+  return null;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -223,14 +303,24 @@ export default function EnrollPage() {
 
   const hasActiveFilters = filters.pricing !== "all" || filters.duration !== "all";
 
+  // Programs list
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["mmp-enroll", page, filters],
-    queryFn: () => fetchPublicPrograms(page, filters),
+    queryKey:        ["mmp-enroll", page, filters],
+    queryFn:         () => fetchPublicPrograms(page, filters),
     placeholderData: keepPreviousData,
-    staleTime: 30_000,
+    staleTime:       30_000,
   });
-  const programs    = data?.programs    ?? [];
-  const pagination  = data?.pagination;
+
+  // User enrollment + completion status (single call, all programs)
+  const { data: statusData } = useQuery({
+    queryKey:  ["mmp-my-status"],
+    queryFn:   fetchMyStatuses,
+    staleTime: 60_000,
+  });
+
+  const programs   = data?.programs   ?? [];
+  const pagination = data?.pagination;
+  const statuses   = statusData?.statuses ?? {};
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto font-sans">
@@ -268,7 +358,6 @@ export default function EnrollPage() {
             <SlidersHorizontal size={12} /> Filters
           </div>
 
-          {/* Pricing filter */}
           <Dropdown<PricingFilter>
             label="Pricing"
             value={filters.pricing}
@@ -280,7 +369,6 @@ export default function EnrollPage() {
             onChange={(v) => setFilter("pricing", v)}
           />
 
-          {/* Duration filter */}
           <Dropdown<DurationFilter>
             label="Duration"
             value={filters.duration}
@@ -288,7 +376,6 @@ export default function EnrollPage() {
             onChange={(v) => setFilter("duration", v)}
           />
 
-          {/* Clear filters pill */}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -298,7 +385,6 @@ export default function EnrollPage() {
             </button>
           )}
 
-          {/* Total count */}
           {!isLoading && pagination && (
             <span className="text-[10px] font-bold text-slate-400 ml-1">
               {pagination.total} programs
@@ -328,9 +414,7 @@ export default function EnrollPage() {
                     key={s}
                     onClick={() => { setFilter("sort", s); setSortOpen(false); }}
                     className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
-                      filters.sort === s
-                        ? "bg-blue-50 text-blue-700"
-                        : "hover:bg-slate-50 text-slate-600"
+                      filters.sort === s ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
                     }`}
                   >
                     {SORT_LABELS[s]}
@@ -373,27 +457,25 @@ export default function EnrollPage() {
                 </div>
                 <p className="text-slate-500 font-bold text-sm">No programs match your filters.</p>
                 {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-blue-600 text-xs font-black underline underline-offset-4"
-                  >
+                  <button onClick={clearFilters} className="text-blue-600 text-xs font-black underline underline-offset-4">
                     Clear all filters
                   </button>
                 )}
               </div>
             )
             : programs.map((prog, idx) => {
-              const isPaid   = (prog.price ?? 0) > 0;
-              const modules  = moduleCount(prog.modules);
-              const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
-              const bgLetter = getBgLetter(prog.name);
+              const isPaid    = (prog.price ?? 0) > 0;
+              const modules   = moduleCount(prog.modules);
+              const gradient  = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
+              const bgLetter  = getBgLetter(prog.name);
+              const progStatus = statuses[prog.id];
 
               return (
                 <div
                   key={prog.id}
                   className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
                 >
-                  {/* ── Cover: real thumbnail or gradient fallback ── */}
+                  {/* ── Cover ── */}
                   <div className="relative h-[160px] overflow-hidden">
                     {prog.thumbnailUrl ? (
                       <img
@@ -413,10 +495,12 @@ export default function EnrollPage() {
                       </div>
                     )}
 
-                    {/* Subtle gradient overlay on real images for badge readability */}
                     {prog.thumbnailUrl && (
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                     )}
+
+                    {/* Enrollment / completion status badge */}
+                    <CardStatusBadge status={progStatus} />
 
                     {/* Duration badge */}
                     <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight flex items-center gap-1 border border-white/10">
@@ -444,11 +528,7 @@ export default function EnrollPage() {
                     <div className="flex items-center justify-between border-y border-slate-50 py-3">
                       <div className="flex items-center gap-2">
                         {prog.creator?.image ? (
-                          <img
-                            src={prog.creator.image}
-                            alt={prog.creator.name}
-                            className="w-5 h-5 rounded-full object-cover border border-slate-200"
-                          />
+                          <img src={prog.creator.image} alt={prog.creator.name} className="w-5 h-5 rounded-full object-cover border border-slate-200" />
                         ) : (
                           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 border border-slate-200 flex items-center justify-center text-white text-[8px] font-black">
                             {prog.creator?.name?.[0]?.toUpperCase() ?? "C"}
@@ -463,19 +543,8 @@ export default function EnrollPage() {
                       </div>
                     </div>
 
-                    {/* CTA buttons */}
-                    <div className="flex gap-2 pt-1 mt-auto">
-                      <Link href={`/dashboard/mini-mastery-programs/program/${prog.id}`} className="flex-[2]">
-                        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100">
-                          Enroll
-                        </button>
-                      </Link>
-                      <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1">
-                        <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
-                          Info
-                        </button>
-                      </Link>
-                    </div>
+                    {/* Dynamic CTA */}
+                    <ProgramCTA prog={prog} status={progStatus} />
                   </div>
                 </div>
               );
@@ -487,7 +556,6 @@ export default function EnrollPage() {
       {pagination && pagination.totalPages > 1 && !isLoading && (
         <div className="mt-16 flex flex-col items-center gap-5">
           <div className="flex items-center gap-2">
-            {/* Prev */}
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
@@ -496,14 +564,11 @@ export default function EnrollPage() {
               <ChevronLeft size={14} /> Prev
             </button>
 
-            {/* Page pills */}
             <div className="flex items-center gap-1">
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
                 .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
                 .reduce<(number | "...")[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
-                    acc.push("...");
-                  }
+                  if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
                   acc.push(p);
                   return acc;
                 }, [])
@@ -515,9 +580,7 @@ export default function EnrollPage() {
                       key={p}
                       onClick={() => setPage(p as number)}
                       className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
-                        page === p
-                          ? "bg-slate-900 text-white shadow-md"
-                          : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
+                        page === p ? "bg-slate-900 text-white shadow-md" : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
                       }`}
                     >
                       {p}
@@ -526,7 +589,6 @@ export default function EnrollPage() {
                 )}
             </div>
 
-            {/* Next */}
             <button
               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
               disabled={page >= pagination.totalPages}
@@ -542,7 +604,6 @@ export default function EnrollPage() {
         </div>
       )}
 
-      {/* No pagination needed state */}
       {pagination && pagination.totalPages <= 1 && !isLoading && programs.length > 0 && (
         <p className="mt-12 text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
           Showing all {pagination.total} programs

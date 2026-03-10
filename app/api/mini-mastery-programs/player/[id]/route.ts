@@ -12,14 +12,13 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  console.log("*********************get api called.**************************")
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
   }
 
   const userId    = session.user.id;
-  const programId = await params.id;
+  const programId = params.id;
 
   if (!programId) {
     return NextResponse.json({ message: "Program ID is required." }, { status: 400 });
@@ -77,6 +76,19 @@ export async function GET(
     orderBy: { dayNumber: "asc" },
   });
 
+  // ── 3b. Fetch course completion record ─────────────────────────────────────
+  const courseCompletion = await prisma.miniMasteryCourseCompletion.findUnique({
+    where:  { userId_programId: { userId, programId } },
+    select: {
+      id:                      true,
+      courseCompleted:         true,
+      courseCompletedAt:       true,
+      certificateDownloaded:   true,
+      certificateDownloadedAt: true,
+      certificatePath:         true,
+    },
+  });
+
   // ── 4. Compute summary ──────────────────────────────────────────────────────
   const totalDays      = program.durationDays ?? 0;
   const completedCount = logs.filter((l) => l.isCompleted).length;
@@ -91,6 +103,25 @@ export async function GET(
     activeDayNumber = totalDays; // all done
   }
 
+  const isFullyCompleted = completedCount >= totalDays;
+
+  // ── 5. Auto-mark courseCompleted if all days done and not yet recorded ──────
+  if (isFullyCompleted && !courseCompletion?.courseCompleted) {
+    await prisma.miniMasteryCourseCompletion.upsert({
+      where:  { userId_programId: { userId, programId } },
+      create: {
+        userId,
+        programId,
+        courseCompleted:   true,
+        courseCompletedAt: new Date(),
+      },
+      update: {
+        courseCompleted:   true,
+        courseCompletedAt: new Date(),
+      },
+    });
+  }
+
   return NextResponse.json({
     enrolled: true,
     program,
@@ -101,7 +132,14 @@ export async function GET(
       totalDays,
       progressPct,
       activeDayNumber,
-      isFullyCompleted: completedCount >= totalDays,
+      isFullyCompleted,
+    },
+    courseCompletion: courseCompletion ?? {
+      courseCompleted:         isFullyCompleted,
+      courseCompletedAt:       null,
+      certificateDownloaded:   false,
+      certificateDownloadedAt: null,
+      certificatePath:         null,
     },
   });
 }

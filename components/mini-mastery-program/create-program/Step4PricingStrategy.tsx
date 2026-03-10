@@ -24,7 +24,7 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
     defaultValues: {
       isPaid: true,
       currency: "INR",
-      price: "500",
+      price: "0",
       ...defaultValues,
     },
   });
@@ -39,35 +39,31 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
     localStorage.setItem(MMP_STORAGE_KEY, JSON.stringify({ ...parsed, step4: values }));
   };
 
-  // const setAndPersist = <K extends keyof Step4Data>(key: K, value: Step4Data[K]) => {
-  //   setValue(key, value, { shouldValidate: true });
-  //   persistToStorage({ ...allValues, [key]: value } as Partial<Step4Data>);
-  // };
-const setAndPersist = <K extends Path<Step4Data>>(
-  key: K,
-  value: PathValue<Step4Data, K>
-) => {
-  setValue(key, value, { shouldValidate: true });
+  const setAndPersist = <K extends Path<Step4Data>>(
+    key: K,
+    value: PathValue<Step4Data, K>
+  ) => {
+    setValue(key, value, { shouldValidate: true });
+    persistToStorage({
+      ...allValues,
+      [key]: value,
+    } as Partial<Step4Data>);
+  };
 
-  persistToStorage({
-    ...allValues,
-    [key]: value,
-  } as Partial<Step4Data>);
-};
   return (
     <form
       onSubmit={handleSubmit(onNext)}
       className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500"
       noValidate
     >
-      <header className="text-center md:text-left">
-        <h2 className="text-4xl font-bold text-[#1e293b]">Set your MMP Pricing</h2>
-        <p className="text-gray-500 mt-3 text-lg">
+      <header className="text-left">
+        <h2 className="text-3xl font-bold text-[#1e293b]">Set your MMP Pricing</h2>
+        <p className="text-gray-500 mt-2 text-base">
           Choose how you want to offer your Mini-Mastery Program to your audience.
         </p>
       </header>
 
-      <div className="max-w-md mx-auto md:mx-0 space-y-8">
+      <div className="max-w-md space-y-8">
         {/* Program Type Toggle */}
         <div className="space-y-3">
           <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
@@ -79,7 +75,7 @@ const setAndPersist = <K extends Path<Step4Data>>(
                 key={String(paid)}
                 type="button"
                 onClick={() => setAndPersist("isPaid", paid)}
-                className={`flex-1 py-4 rounded-[20px] font-bold text-sm transition-all duration-300 ${
+                className={`flex-1 py-3 rounded-[20px] font-bold text-sm transition-all duration-300 ${
                   isPaid === paid
                     ? `bg-white shadow-md ${paid ? "text-blue-600" : "text-gray-900"}`
                     : "text-gray-500 hover:text-gray-700"
@@ -126,7 +122,7 @@ const setAndPersist = <K extends Path<Step4Data>>(
                 Set Price ({currency ?? "INR"})
               </label>
               <div className="relative flex items-center group">
-                <span className="absolute left-6 text-gray-400 font-bold text-2xl transition-colors group-focus-within:text-blue-500">
+                <span className="absolute left-5 text-gray-400 font-bold text-xl transition-colors group-focus-within:text-blue-500">
                   {currency === "USD" ? "$" : "₹"}
                 </span>
                 <input
@@ -134,17 +130,15 @@ const setAndPersist = <K extends Path<Step4Data>>(
                     onChange: () => persistToStorage(allValues as Partial<Step4Data>),
                   })}
                   type="number"
-                  placeholder="0.00"
-                  className={`w-full pl-14 pr-24 py-6 border-2 rounded-[30px] text-2xl font-black text-gray-800 focus:ring-4 outline-none transition-all ${
+                  placeholder="0"
+                  className={`w-full pl-12 pr-4 py-5 border-2 rounded-[24px] text-xl font-black text-gray-800 focus:ring-4 outline-none transition-all ${
                     errors.price
                       ? "bg-red-50/30 border-red-400 focus:ring-red-400/10"
                       : "bg-gray-50/50 border-gray-100 focus:ring-blue-400/10 focus:border-blue-400"
                   }`}
                 />
-                <span className="absolute right-8 text-gray-400 text-xs font-bold uppercase tracking-tighter">
-                  Per Enrollment
-                </span>
               </div>
+              <p className="text-[11px] text-gray-400 pl-1">Per enrollment</p>
               {errors.price?.message && (
                 <p className="text-[11px] text-red-500 font-medium pl-2">{errors.price.message}</p>
               )}
@@ -153,10 +147,10 @@ const setAndPersist = <K extends Path<Step4Data>>(
         )}
 
         {/* Earning Info */}
-        <div className="bg-white border border-gray-100 p-6 rounded-[32px] flex gap-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white border border-gray-100 p-5 rounded-[24px] flex gap-4 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-blue-400" />
-          <div className="bg-blue-100 p-2 rounded-xl h-fit">
-            <Info size={18} className="text-blue-600" />
+          <div className="bg-blue-100 p-2 rounded-xl h-fit shrink-0">
+            <Info size={16} className="text-blue-600" />
           </div>
           <div className="space-y-1">
             <h4 className="font-bold text-gray-900 text-sm italic">Earning Calculator</h4>
@@ -169,19 +163,19 @@ const setAndPersist = <K extends Path<Step4Data>>(
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-10">
+      <div className="flex flex-wrap justify-between items-center gap-3 pt-10">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all text-sm"
         >
           <ArrowLeft size={18} /> Back
         </button>
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
         >
-          Save & Continue <ArrowRight size={20} />
+          Save & Continue <ArrowRight size={18} />
         </button>
       </div>
     </form>

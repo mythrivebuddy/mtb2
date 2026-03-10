@@ -223,6 +223,7 @@ export default function CreateProgramPage() {
             onNext={handleStep5Next}
             onBack={handleBack}
             defaultValues={formData.step5}
+            programTitle={formData.step1?.title}
           />
         )}
         {currentStep === 6 && isFormComplete && (

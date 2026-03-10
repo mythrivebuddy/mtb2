@@ -10,9 +10,10 @@ interface Props {
   onNext: (data: Step5Data) => void;
   onBack: () => void;
   defaultValues?: Partial<Step5Data>;
+  programTitle: string | undefined,
 }
 
-export default function Step5CompletionCertificate({ onNext, onBack, defaultValues }: Props) {
+export default function Step5CompletionCertificate({ onNext, onBack, defaultValues, programTitle  }: Props) {
   const {
     register,
     handleSubmit,
@@ -23,7 +24,7 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
     resolver: zodResolver(step5MMPSchema),
     defaultValues: {
       threshold: 100,
-      certTitle: "Mastery in Sustainable Living Fundamentals",
+      certTitle: defaultValues?.certTitle || (programTitle ? `Mastery in ${programTitle}` : ""),
       ...defaultValues,
     },
   });
@@ -45,18 +46,18 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
       noValidate
     >
       <header>
-        <h2 className="text-4xl font-bold text-[#1e293b]">Completion & Certificate</h2>
-        <p className="text-gray-500 mt-2 text-lg">
+        <h2 className="text-3xl font-bold text-[#1e293b]">Completion & Certificate</h2>
+        <p className="text-gray-500 mt-2 text-base">
           Define the requirements for participants to earn their certificate.
         </p>
       </header>
 
-      <div className="space-y-10">
+      <div className="space-y-8">
         {/* Threshold Slider */}
-        <div className="bg-white border border-gray-100 p-8 rounded-[32px] shadow-sm space-y-6">
-          <div className="flex justify-between items-center">
+        <div className="bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm space-y-6">
+          <div className="flex flex-wrap justify-between items-center gap-3">
             <div>
-              <h3 className="font-bold text-gray-900">Completion Threshold</h3>
+              <h3 className="font-bold text-gray-900 text-sm">Completion Threshold</h3>
               <p className="text-xs text-gray-400 mt-1">
                 Minimum percentage of course material to be consumed.
               </p>
@@ -66,7 +67,7 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
             </span>
           </div>
 
-          <div className="relative pt-4">
+          <div className="relative pt-2">
             <input
               type="range"
               min="0"
@@ -93,18 +94,20 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         </div>
 
         {/* Certificate Title */}
-        <div className="bg-white border border-gray-100 p-8 rounded-[32px] shadow-sm space-y-4">
-          <h3 className="font-bold text-gray-900">Certificate Title</h3>
-          <p className="text-xs text-gray-400">
-            This title will appear prominently on the issued digital certificate.
-          </p>
+        <div className="bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm space-y-4">
+          <div>
+            <h3 className="font-bold text-gray-900 text-sm">Certificate Title</h3>
+            <p className="text-xs text-gray-400 mt-1">
+              This title will appear prominently on the issued digital certificate.
+            </p>
+          </div>
           <input
             {...register("certTitle", {
               onChange: () => persistToStorage(allValues as Partial<Step5Data>),
             })}
             type="text"
             placeholder="Enter certificate title..."
-            className={`w-full p-5 border rounded-2xl font-medium text-gray-700 focus:ring-2 outline-none transition-all ${
+            className={`w-full p-4 border rounded-2xl font-medium text-gray-700 text-sm focus:ring-2 outline-none transition-all ${
               errors.certTitle
                 ? "bg-red-50/30 border-red-400 focus:ring-red-400"
                 : "bg-gray-50/50 border-gray-100 focus:ring-blue-400"
@@ -116,9 +119,9 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         </div>
 
         {/* Info Note */}
-        <div className="bg-blue-50/60 border border-blue-100 p-6 rounded-[24px] flex gap-4">
-          <div className="bg-blue-500 p-1 rounded-full h-fit mt-1">
-            <Info size={14} className="text-white" />
+        <div className="bg-blue-50/60 border border-blue-100 p-5 rounded-[24px] flex gap-4">
+          <div className="bg-blue-500 p-1 rounded-full h-fit mt-0.5 shrink-0">
+            <Info size={13} className="text-white" />
           </div>
           <div className="space-y-1">
             <h4 className="font-bold text-gray-900 text-sm">Mandatory Feedback</h4>
@@ -130,16 +133,16 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         </div>
 
         {/* Certificate Preview */}
-        <div className="relative border-2 border-dashed border-gray-200 rounded-[32px] p-12 flex flex-col items-center justify-center bg-gray-50/30 overflow-hidden">
-          <div className="absolute top-4 right-6 bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
+        <div className="relative border-2 border-dashed border-gray-200 rounded-[32px] p-8 flex flex-col items-center justify-center bg-gray-50/30 overflow-hidden">
+          <div className="absolute top-4 right-5 bg-blue-100 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider">
             Preview
           </div>
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
-              <Award className="text-gray-400" size={32} />
+            <div className="w-14 h-14 bg-gray-200 rounded-full mx-auto flex items-center justify-center">
+              <Award className="text-gray-400" size={28} />
             </div>
-            <h4 className="font-serif text-2xl text-gray-400 italic">Certificate of Completion</h4>
-            <div className="w-48 h-px bg-gray-200 mx-auto" />
+            <h4 className="text-xl text-gray-400 italic">Certificate of Completion</h4>
+            <div className="w-40 h-px bg-gray-200 mx-auto" />
             <p className="text-sm text-gray-400 max-w-xs mx-auto">
               {certTitle || "The title will be dynamically updated based on your input above."}
             </p>
@@ -147,19 +150,19 @@ export default function Step5CompletionCertificate({ onNext, onBack, defaultValu
         </div>
       </div>
 
-      <div className="flex justify-between items-center pt-10">
+      <div className="flex flex-wrap justify-between items-center gap-3 pt-6">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all text-sm"
         >
           <ArrowLeft size={18} /> Back
         </button>
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
         >
-          Save & Continue <ArrowRight size={20} />
+          Save & Continue <ArrowRight size={18} />
         </button>
       </div>
     </form>
