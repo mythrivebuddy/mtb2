@@ -65,7 +65,8 @@ export async function GET(request: Request) {
         })
         : Promise.resolve([]);
     const paymentOrdersPromise =
-      filter === "ALL" || filter === "SUBSCRIPTION" || filter === "STORE_ORDER"
+      filter === "ALL" || filter === "SUBSCRIPTION" 
+      // || filter === "STORE_ORDER"
         ? prisma.paymentOrder.findMany({
           where: {
             userId,
