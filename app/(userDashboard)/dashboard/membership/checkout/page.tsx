@@ -41,6 +41,14 @@ interface Plan {
   features?: string[];
   isProgramPlan: boolean;
 }
+interface MMPProgram {
+  id: string
+  name: string
+  // title: string
+  description: string
+  priceINR: number
+  priceUSD: number
+}
 
 interface CouponResponse {
   valid: boolean;
@@ -60,8 +68,9 @@ export default function CheckoutPage() {
   const { data: session } = useSession(); // Get User Session
   const searchParams = useSearchParams();
   const planId = searchParams.get("plan");
-  const context = searchParams.get("context"); // e.g. CHALLENGE , STORE_PRODUCT
+  const context = searchParams.get("context"); // e.g. CHALLENGE , STORE_PRODUCT, MMP_PROGRAM
   const challengeId = searchParams.get("challengeId"); // present if context is challenge
+  const mmp_programId = searchParams.get("mmp_programId");
   // const router = useRouter();
 
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -72,7 +81,7 @@ export default function CheckoutPage() {
     baseCurrency: "INR" | "USD";
   } | null>(null);
 
-
+  const [mmpProgram, setmmpProgram] = useState<MMPProgram | null>(null)
   // to get active gateway
   const [activeGateway, setActiveGateway] =
     useState<PaymentGateway>("CASHFREE");
@@ -103,6 +112,7 @@ export default function CheckoutPage() {
   const [verifyingCoupon, setVerifyingCoupon] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [challengeLoading, setChallengeLoading] = useState(false);
+  const [mmpLoading, setMmpLoading] = useState(false);
 
   // get active gateway on load
   useEffect(() => {
@@ -191,6 +201,7 @@ export default function CheckoutPage() {
 
     if (context == "SUBSCRIPTION" && !plan) return;
     if (context === "CHALLENGE" && !challenge) return;
+    if (context === "MMP_PROGRAM" && !mmpProgram) return;
 
     try {
       const isLifetime = plan?.interval === "LIFETIME";
@@ -200,7 +211,7 @@ export default function CheckoutPage() {
       let endpoint = "";
 
       // ✅ CHALLENGE FLOW
-      if (context === "CHALLENGE") {
+      if (context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT") {
         endpoint = "/api/billing/razorpay/challenge/create-order";
 
         // payload = {
@@ -223,19 +234,18 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(
-          context === "CHALLENGE"
-            ? {
-              challengeId,
-              couponCode: appliedCoupon?.code || null,
-              billingDetails,
-            }
-            : {
-              planId: plan?.id,
-              couponCode: appliedCoupon?.code || null,
-              billingDetails,
-            },
-        ),
+        body: JSON.stringify({
+          planId: context === "SUBSCRIPTION" ? plan?.id : undefined,
+          entityId:
+            context === "CHALLENGE"
+              ? challengeId
+              : context === "MMP_PROGRAM"
+                ? mmp_programId
+                : undefined,
+          context,
+          couponCode: appliedCoupon?.code || null,
+          billingDetails,
+        })
       });
 
       const data = await res.json();
@@ -249,19 +259,21 @@ export default function CheckoutPage() {
         name: "mythrivebuddy.com",
         description:
           context === "CHALLENGE"
-            ? (challenge?.title ?? "")
-            : (plan?.name ?? ""),
+            ? challenge?.title ?? ""
+            : context === "MMP_PROGRAM"
+              ? mmpProgram?.name ?? ""
+              : plan?.name ?? "",
         theme: { color: "#0f172a" },
 
         // Inside handleWithRazorpay -> options object
         handler: function (response: RazorpaySuccessResponse) {
           const callbackUrl = new URL(
-            context === "CHALLENGE"
+            context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT"
               ? "/api/billing/razorpay/challenge/callback"
               : "/api/billing/razorpay/callback",
             window.location.origin,
           );
-          if (context === "CHALLENGE") {
+          if (context === "CHALLENGE" || context === "STORE_PRODUCT" || context === "MMP_PROGRAM") {
             callbackUrl.searchParams.set(
               "order_id",
               response.razorpay_order_id!,
@@ -306,6 +318,24 @@ export default function CheckoutPage() {
                 `&reason=checkout_closed`;
               return;
             }
+            /* ---------- MINI MASTERY PROGRAM ---------- */
+
+            if (context === "MMP_PROGRAM") {
+              window.location.href =
+                `/dashboard/membership/failure?type=mmp_program` +
+                (mmp_programId ? `&mmp_programId=${mmp_programId}` : "") +
+                `&reason=checkout_closed`;
+              return;
+            }
+
+            /* ---------- STORE PRODUCT ---------- */
+
+            if (context === "STORE_PRODUCT") {
+              window.location.href =
+                `/dashboard/membership/failure?type=store_product` +
+                `&reason=checkout_closed`;
+              return;
+            }
             const type = isLifetime ? "lifetime" : "subscription"; // ✅ clearer type
 
             window.location.href =
@@ -324,7 +354,7 @@ export default function CheckoutPage() {
 
       // 4️⃣ Attach identifiers
       // ✅ Attach identifiers properly
-      if (context === "CHALLENGE") {
+      if (context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT") {
         options.order_id = data.orderId;
       } else if (isLifetime) {
         options.order_id = data.orderId;
@@ -354,6 +384,22 @@ export default function CheckoutPage() {
           window.location.href =
             `/dashboard/membership/failure?type=challenge` +
             (challengeId ? `&challengeId=${challengeId}` : "") +
+            `&reason=${encodeURIComponent(reason)}`;
+          return;
+        }
+        if (context === "MMP_PROGRAM") {
+          window.location.href =
+            `/dashboard/membership/failure?type=mmp_program` +
+            (mmp_programId ? `&mmp_programId=${mmp_programId}` : "") +
+            `&reason=${encodeURIComponent(reason)}`;
+          return;
+        }
+
+        /* ---------- STORE PRODUCT ---------- */
+
+        if (context === "STORE_PRODUCT") {
+          window.location.href =
+            `/dashboard/membership/failure?type=store_product` +
             `&reason=${encodeURIComponent(reason)}`;
           return;
         }
@@ -445,6 +491,27 @@ export default function CheckoutPage() {
           setChallenge(null);
           return;
         }
+        // ✅ MMP PROGRAM CONTEXT
+        if (context === "MMP_PROGRAM" && mmp_programId) {
+          setMmpLoading(true);
+          const res = await axios.get(`/api/mini-mastery-programs/public/${mmp_programId}`)
+
+          const p = res.data.program
+
+          setmmpProgram({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            priceINR: p.priceINR,
+            priceUSD: p.priceUSD,
+          })
+          setPlan(null);
+          setChallenge(null);
+
+          setMmpLoading(false);
+
+          return
+        }
       } catch (error) {
         console.error("Checkout init error:", error);
       } finally {
@@ -453,7 +520,7 @@ export default function CheckoutPage() {
     }
 
     init();
-  }, [context, challengeId, planId]);
+  }, [context, challengeId, planId, mmp_programId]);
 
 
   useEffect(() => {
@@ -620,6 +687,43 @@ export default function CheckoutPage() {
     // -----------------------
     // CHALLENGE BILLING
     // -----------------------
+    // -----------------------
+    // PROGRAM BILLING
+    // -----------------------
+    if (context === "MMP_PROGRAM" && mmpProgram) {
+
+      const isIndia = billingDetails.country === "IN"
+
+      const currency: "INR" | "USD" = isIndia ? "INR" : "USD"
+
+      const subtotal =
+        currency === "INR"
+          ? mmpProgram.priceINR
+          : mmpProgram.priceUSD
+
+      let discount = 0
+
+      if (appliedCoupon?.type === "PERCENTAGE") {
+        discount =
+          (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100
+      }
+
+      const taxableAmount = subtotal - discount
+
+      const taxRate = currency === "INR" ? 0.18 : 0
+      const tax = taxableAmount * taxRate
+
+      const total = taxableAmount + tax
+
+      return {
+        base: subtotal,
+        discount,
+        taxableAmount,
+        tax,
+        total: Number(total.toFixed(2)),
+        currency,
+      }
+    }
     if (context === "CHALLENGE" && challenge) {
       const isIndia = billingDetails.country === "IN";
 
@@ -725,7 +829,7 @@ export default function CheckoutPage() {
       total: parseFloat(total.toFixed(2)),
       currency,
     };
-  }, [plan, challenge, challengePricing, context, appliedCoupon, billingDetails.country]);
+  }, [plan, challenge, challengePricing, context, appliedCoupon, billingDetails.country, mmpProgram]);
 
   // Handle Input Changes
   const handleInputChange = (
@@ -779,7 +883,7 @@ export default function CheckoutPage() {
 
       // ✅ ADDITION: Non-program plans handled separately (Razorpay)
       // 🔥 CHALLENGE must always use Razorpay
-      if (context === "CHALLENGE") {
+      if (context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT") {
         try {
           await handleWithRazorpay();
         } finally {
@@ -889,7 +993,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (loading || challengeLoading)
+  if (loading || challengeLoading || mmpLoading)
     return (
       <div className="flex justify-center h-screen items-center">
         <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
@@ -898,6 +1002,7 @@ export default function CheckoutPage() {
   if (!plan && context === "SUBSCRIPTION") return <div>Plan not found</div>;
   if (context === "CHALLENGE" && !challenge && !challengeLoading)
     return <div>Challenge not found</div>;
+  if (!mmpProgram && context === "MMP_PROGRAM" && !mmpLoading) return <div className="text-center flex justify-center items-center h-lvh text-2xl">Mini mastery program not found</div>;
 
   return (
     <div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -906,7 +1011,8 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-extrabold text-gray-900">
             {context === "CHALLENGE"
               ? "Complete Challenge Payment"
-              : "Complete Your Subscription"}
+              : context === "MMP_PROGRAM" ? "Purchase Program"
+                : "Complete Your Subscription"}
           </h1>
           <p className="mt-2 text-gray-600">
             {context === "CHALLENGE"
@@ -930,6 +1036,16 @@ export default function CheckoutPage() {
                       </span>
                       <h2 className="mt-3 text-2xl font-bold text-gray-900">
                         {challenge?.title}
+                      </h2>
+                    </>
+                  ) : context === "MMP_PROGRAM" ? (
+                    <>
+                      <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold uppercase tracking-wide">
+                        Mini Mastery Program
+                      </span>
+
+                      <h2 className="mt-3 text-2xl font-bold text-gray-900">
+                        {mmpProgram?.name}
                       </h2>
                     </>
                   ) : (
@@ -963,6 +1079,19 @@ export default function CheckoutPage() {
                       }}
                     />
                   </div>
+                ) : context === "MMP_PROGRAM" ? (
+
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      Program Details
+                    </h3>
+
+                    <div className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-500 mt-1" />
+                      {mmpProgram?.description || "Access to exclusive mini mastery program content and resources."}
+                    </div>
+                  </div>
+
                 ) : (
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(plan?.features || ["Access to all modules"]).map(
