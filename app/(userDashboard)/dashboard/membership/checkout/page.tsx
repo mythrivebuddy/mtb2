@@ -408,7 +408,7 @@ export default function CheckoutPage() {
       }
     };
     detectCountry();
-  }, [session]);
+  }, []);
 
   // ---------------------------
   // 1. FETCH PLAN + AUTO APPLY

@@ -5,40 +5,68 @@ import { CouponType } from "@prisma/client"
 import { checkRole } from "@/lib/utils/auth"
 
 export async function GET() {
-    try {
-        const session = await checkRole("USER")
-        if (session.user.userType != "COACH") {
-            return NextResponse.json({ message: "You are not allowed to make this action" })
-        }
-        const userId = session.user.id;
+  try {
+    const session = await checkRole("USER");
 
-        if (!userId) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
-
-        const challenges = await prisma.challenge.findMany({
-            where: {
-                creatorId: userId,
-            },
-            select: {
-                id: true,
-                title: true,
-                challengeJoiningFee: true,
-                challengeJoiningFeeCurrency: true,
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-        })
-
-        return NextResponse.json(challenges)
-    } catch (error) {
-        console.error(error)
-        return NextResponse.json(
-            { error: "Failed to fetch challenges" },
-            { status: 500 }
-        )
+    if (session.user.userType !== "COACH") {
+      return NextResponse.json(
+        { message: "You are not allowed to make this action" },
+        { status: 403 }
+      );
     }
+
+    const userId = session.user.id;
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const [challenges, coupons] = await Promise.all([
+      prisma.challenge.findMany({
+        where: {
+          creatorId: userId,
+        },
+        select: {
+          id: true,
+          title: true,
+          challengeJoiningFee: true,
+          challengeJoiningFeeCurrency: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+
+      prisma.coupon.findMany({
+        where: {
+          creatorUserId: userId,
+        },
+        select: {
+          id: true,
+          couponCode: true,
+          type: true,
+          status: true,
+          scope: true,
+          autoApply: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      challenges,
+      coupons,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      { error: "Failed to fetch data" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: Request) {

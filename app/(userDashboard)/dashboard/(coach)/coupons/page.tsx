@@ -65,6 +65,10 @@ type Coupon = {
     scope?: "CHALLENGE" | "STORE" | "MMP";
     autoApply?: boolean;
 };
+type CoachDataResponse = {
+    challenges: Challenge[];
+    coupons: Coupon[];
+};
 
 type CouponForm = {
     couponCode: string;
@@ -78,11 +82,10 @@ type CouponForm = {
     autoApply: boolean;
 };
 
-const fetchChallenges = async (): Promise<Challenge[]> => {
-    const { data } = await axios.get("/api/coupons/coach");
+const fetchCoachData = async (): Promise<CoachDataResponse> => {
+    const { data } = await axios.get<CoachDataResponse>("/api/coupons/coach");
     return data;
 };
-
 const createCoupon = async (payload: CouponForm) => {
     const { data } = await axios.post("/api/coupons/coach", payload);
     return data;
@@ -90,7 +93,6 @@ const createCoupon = async (payload: CouponForm) => {
 
 export default function CoachCouponsPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [couponError, setCouponError] = useState("");
 
     const [activeTab, setActiveTab] = useState<
@@ -111,19 +113,19 @@ export default function CoachCouponsPage() {
 
     const [formData, setFormData] = useState(initialForm);
 
-    const { data: challenges = [], isLoading } = useQuery({
-        queryKey: ["coach-challenges"],
-        queryFn: fetchChallenges,
+    const { data, isLoading } = useQuery<CoachDataResponse>({
+        queryKey: ["coach-data"],
+        queryFn: fetchCoachData,
     });
+
+    const challenges = data?.challenges ?? [];
+    const coupons = data?.coupons ?? [];
 
     const createMutation = useMutation({
         mutationFn: createCoupon,
 
         onSuccess: (newCoupon) => {
             toast.success("Coupon created");
-
-            setCoupons((prev) => [newCoupon, ...prev]);
-
             setFormData(initialForm);
             setDialogOpen(false);
             setCouponError("");
@@ -156,11 +158,10 @@ export default function CoachCouponsPage() {
         createMutation.mutate(formData);
     };
 
-    const filteredCoupons = coupons.filter((coupon) => {
+    const filteredCoupons = coupons.filter((coupon: Coupon) => {
         if (activeTab === "ALL") return true;
         return coupon.scope === activeTab;
     });
-
     return (
         <div className="p-8 space-y-8 bg-muted/30 min-h-screen">
 
@@ -334,7 +335,7 @@ export default function CoachCouponsPage() {
 
                                 <div className="grid grid-cols-2 gap-2">
 
-                                    {challenges.map((challenge) => (
+                                    {Array.isArray(challenges) && challenges?.map((challenge) => (
 
                                         <div
                                             key={challenge.id}
@@ -501,7 +502,7 @@ export default function CoachCouponsPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredCoupons.map((coupon) => (
+                                filteredCoupons?.map((coupon: Coupon) => (
 
                                     <TableRow key={coupon.id}>
 
