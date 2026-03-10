@@ -254,7 +254,7 @@ const FilterSelect = ({
       <SelectItem value="CHALLENGE">Challenges</SelectItem>
       <SelectItem value="SUBSCRIPTION">Membership</SelectItem>
       <SelectItem value="STORE_ORDER">Store</SelectItem>
-      <SelectItem value="GP">GP</SelectItem>
+      {/* <SelectItem value="GP">GP</SelectItem> */}
     </SelectContent>
   </Select>
 );

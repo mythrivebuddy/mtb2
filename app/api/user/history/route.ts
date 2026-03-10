@@ -65,7 +65,8 @@ export async function GET(request: Request) {
         })
         : Promise.resolve([]);
     const paymentOrdersPromise =
-      filter === "ALL" || filter === "SUBSCRIPTION" || filter === "STORE_ORDER"
+      filter === "ALL" || filter === "SUBSCRIPTION" 
+      // || filter === "STORE_ORDER"
         ? prisma.paymentOrder.findMany({
           where: {
             userId,
@@ -90,8 +91,14 @@ export async function GET(request: Request) {
         })
         : Promise.resolve([]);
 
-    const [transactions, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
+    const [user, transactions, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
       await Promise.all([
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            jpBalance: true,
+          },
+        }),
         filter === "ALL" || filter === "GP" || filter === "CHALLENGE"
           ? prisma.transaction.findMany({
             where: {
@@ -277,13 +284,9 @@ export async function GET(request: Request) {
 
     const paginated = combined.slice(skipSafe, skipSafe + limit);
 
-    // GP balance (from GP transactions)
-    const gpBalanceResult = await prisma.transaction.aggregate({
-      where: { userId },
-      _sum: { jpAmount: true },
-    });
 
-    const gpBalance = gpBalanceResult._sum.jpAmount ?? 0;
+
+    const gpBalance = user?.jpBalance ?? 0;
     const feature = checkFeature({
       feature: "challenges",
       user: {
@@ -296,13 +299,25 @@ export async function GET(request: Request) {
       ? (feature.config as { commissionPercent?: number }).commissionPercent ?? 0
       : 0;
     // INR balance (coach challenge earnings after commission)
-    const inrBalance = coachChallengeEarnings
+    const inrCredits = coachChallengeEarnings
       .filter((cp) => cp.currency === "INR")
       .reduce((sum, cp) => {
         const commission = (cp.amountPaid * commissionPercent) / 100;
         const finalAmount = cp.amountPaid - commission;
         return sum + finalAmount;
       }, 0);
+
+    const inrPaymentDebits = paymentOrders
+      .filter((po) => po.currency === "INR")
+      .reduce((sum, po) => sum + po.totalAmount, 0);
+
+    const inrCmpDebits = cmpPurchases
+      .filter((cp) => cp.currency === "INR")
+      .reduce((sum, cp) => sum + cp.totalAmount, 0);
+
+    const inrDebits = inrPaymentDebits + inrCmpDebits;
+
+    const inrBalance = inrCredits - inrDebits;
 
 
     const usdCredits = coachChallengeEarnings
