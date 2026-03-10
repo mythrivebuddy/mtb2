@@ -25,6 +25,8 @@ export interface Transaction {
     userId?: string;
     userName?: string;
     challengeTitle?: string;
+    joinerId?: string;
+    joinerName?: string;
   };
   activity: {
     activity: string;
@@ -49,17 +51,23 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const data = row.original;
 
-      if (data.activityMeta?.userId) {
+      const userId =
+        data.activityMeta?.userId || data.activityMeta?.joinerId;
+
+      const userName =
+        data.activityMeta?.userName || data.activityMeta?.joinerName;
+
+      if (userId && userName) {
         return (
           <div>
             <Link
-              href={`/profile/${data.activityMeta.userId}`}
-              className=" hover:underline"
+              href={`/profile/${userId}`}
+              className="hover:underline text-blue-700 hover:text-blue-800"
               target="_blank"
             >
-              {data.activityMeta.userName}
+              {userName?.trim()}
             </Link>{" "}
-            joined {data.activityMeta.challengeTitle}
+            joined {data.activityMeta?.challengeTitle}
           </div>
         );
       }
