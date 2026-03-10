@@ -414,7 +414,7 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
                         <span className="font-semibold">
-                          You purchased this challenge.
+                          You purchased this challenge. Please wait while we confirm your enrollment.
                         </span>
                       </div>
 

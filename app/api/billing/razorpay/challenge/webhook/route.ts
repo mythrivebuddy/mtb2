@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
 import { PaymentStatus } from "@prisma/client";
+import { processPayment } from "@/lib/payment/processPayment";
 
 
 export async function POST(req: NextRequest) {
@@ -25,69 +26,49 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Invalid signature", { status: 400 });
     }
 
-    const event = JSON.parse(rawBody) as {
-      event: string;
-      payload: {
-        payment?: {
-          entity: {
-            id: string;
-            order_id: string;
-            status: string;
-          };
-        };
-      };
-    };
+    const event = JSON.parse(rawBody);
 
-    if (event.event === "payment.captured") {
-      const paymentEntity = event.payload.payment?.entity;
-
-      if (!paymentEntity) {
-        return new NextResponse("Invalid payload", { status: 400 });
-      }
-
-      const razorpayOrderId = paymentEntity.order_id;
-      const paymentId = paymentEntity.id;
-
-      const existingOrder = await prisma.paymentOrder.findFirst({
-        where: { razorpayOrderId },
-      });
-
-      if (!existingOrder) {
-        return new NextResponse("Order not found", { status: 200 });
-      }
-
-      // Idempotency: if already SUCCESS, exit
-      if (existingOrder.status === PaymentStatus.PAID) {
-        return new NextResponse("Already processed", { status: 200 });
-      }
-
-      await prisma.$transaction(async (tx) => {
-        const updatedOrder = await tx.paymentOrder.update({
-          where: { id: existingOrder.id },
-          data: {
-            status: PaymentStatus.PAID,
-            paymentId,
-            paidAt: new Date(),
-          },
-        });
-        if (updatedOrder.challengeId) {
-          await tx.challengePayment.create({
-            data: {
-              userId: updatedOrder.userId,
-              challengeId: updatedOrder.challengeId,
-              paymentOrderId: updatedOrder.id,
-              amountPaid: updatedOrder.totalAmount,
-              currency: updatedOrder.currency,
-              status: PaymentStatus.PAID,
-              paidAt: new Date(),
-            },
-          });
-        }
-      });
+    if (event.event !== "payment.captured") {
+      return new NextResponse("Event ignored", { status: 200 });
     }
 
+    const payment = event.payload?.payment?.entity;
+
+    if (!payment) {
+      return new NextResponse("Invalid payload", { status: 400 });
+    }
+
+    const razorpayOrderId = payment.order_id;
+    const paymentId = payment.id;
+
+    const existingOrder = await prisma.paymentOrder.findFirst({
+      where: { razorpayOrderId },
+    });
+
+    if (!existingOrder) {
+      return new NextResponse("Order not found", { status: 200 });
+    }
+
+    if (existingOrder.status === PaymentStatus.PAID) {
+      return new NextResponse("Already processed", { status: 200 });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const updatedOrder = await tx.paymentOrder.update({
+        where: { id: existingOrder.id },
+        data: {
+          status: PaymentStatus.PAID,
+          paymentId,
+          paidAt: new Date(),
+        },
+      });
+
+      await processPayment(tx, updatedOrder);
+    });
+
     return new NextResponse("OK", { status: 200 });
-  } catch (error: unknown) {
+
+  } catch (error) {
     console.error("Razorpay Webhook Error:", error);
     return new NextResponse("Webhook error", { status: 500 });
   }

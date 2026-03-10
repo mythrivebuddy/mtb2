@@ -1,30 +1,35 @@
-// app/api/billing/razorpay/challenge/create-order/route.ts
-
-import Razorpay from "razorpay";
-import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { NextRequest, NextResponse } from "next/server";
-import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
-import { calculateDiscount, calculateFinal, convertCurrency } from "@/lib/payment/payment.utils";
 
+import { convertCurrency } from "@/lib/payment/payment.utils";
+import { createRazorpayOrder } from "@/lib/payment/createRazorpayOrder";
+import { createPaymentOrder } from "@/lib/payment/paymentOrder.service";
+import { validateCoupon } from "@/lib/payment/coupons/coupons.service";
+import { calculatePayment } from "@/lib/payment/pricingService";
+import { upsertBilling } from "@/lib/payment/billingService";
+
+type PurchaseContext = "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT";
+
+type Currency = "INR" | "USD";
 
 interface BillingDetails {
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   phone?: string;
   addressLine1: string;
   city: string;
-  state: string;
+  state?: string;
   postalCode: string;
   country: string;
   gstNumber?: string;
 }
 
-interface RequestBody {
-  challengeId: string;
-  couponCode?: string;
+interface CreateOrderRequest {
+  context: PurchaseContext;
+  entityId: string;
   billingDetails: BillingDetails;
+  couponCode?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -38,12 +43,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body: RequestBody = await req.json();
-    const { challengeId, billingDetails, couponCode } = body;
+    const body: CreateOrderRequest = await req.json();
+    const { context, entityId, billingDetails, couponCode } = body;
 
-    if (!challengeId) {
+    if (!context || !entityId) {
       return NextResponse.json(
-        { success: false, error: "Challenge ID is required" },
+        { success: false, error: "Invalid request data" },
         { status: 400 }
       );
     }
@@ -59,179 +64,163 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const challenge = await prisma.challenge.findUnique({
-      where: { id: challengeId },
-    });
+    // --------------------------
+    // 1️⃣ FETCH ENTITY
+    // --------------------------
 
-    if (!challenge || challenge.challengeJoiningType !== "PAID") {
-      return NextResponse.json(
-        { success: false, error: "Invalid challenge" },
-        { status: 400 }
-      );
-    }
-    const userCurrency =
-  billingDetails.country === "IN" ? "INR" : "USD"
+    let amount: number;
+    let currency: Currency;
+    let programId: string | null = null;
 
-let amount = challenge.challengeJoiningFee
-let currency = challenge.challengeJoiningFeeCurrency
-
-// convert if needed
-if (currency !== userCurrency) {
-  amount = await convertCurrency(amount, currency, userCurrency)
-  currency = userCurrency
-}
-    let coupon = null;
-
-    if (couponCode) {
-      coupon = await prisma.coupon.findFirst({
-        where: {
-          couponCode: couponCode.toUpperCase(),
-          status: "ACTIVE",
-          scope: "CHALLENGE",
-          startDate: { lte: new Date() },
-          endDate: { gte: new Date() },
-          applicableChallenges: {
-            some: {
-              id: challengeId,
-            },
-          },
-        },
+    if (context === "CHALLENGE") {
+      const challenge = await prisma.challenge.findUnique({
+        where: { id: entityId },
       });
 
-      if (!coupon) {
+      if (!challenge) {
         return NextResponse.json(
-          { success: false, error: "Invalid or expired coupon" },
+          { success: false, error: "Challenge not found" },
           { status: 400 }
         );
       }
+
+      amount = challenge.challengeJoiningFee ?? 0;
+      currency = challenge.challengeJoiningFeeCurrency as Currency;
     }
 
-    // Prevent duplicate enrollment
-    const existingEnrollment = await prisma.challengeEnrollment.findUnique({
-      where: {
-        userId_challengeId: {
-          userId: session.user.id,
-          challengeId,
-        },
-      },
-    });
+    else if (context === "MMP_PROGRAM") {
+      const program = await prisma.program.findUnique({
+        where: { id: entityId },
+      });
 
-    if (existingEnrollment) {
+      if (!program) {
+        return NextResponse.json(
+          { success: false, error: "MMP Program not found" },
+          { status: 400 }
+        );
+      }
+      programId = program.id;
+      amount = program.price ?? 0;
+      currency = program.currency as Currency;
+    }
+
+    // else if (context === "STORE_PRODUCT") {
+    //   const product = await prisma.storeProduct.findUnique({
+    //     where: { id: entityId },
+    //   });
+
+    //   if (!product) {
+    //     return NextResponse.json(
+    //       { success: false, error: "Product not found" },
+    //       { status: 400 }
+    //     );
+    //   }
+
+    //   amount = product.price ?? 0;
+    //   currency = product.currency as Currency;
+    // }
+
+    else {
       return NextResponse.json(
-        { success: false, error: "Already enrolled in this challenge" },
+        { success: false, error: "Invalid purchase context" },
         { status: 400 }
       );
     }
 
-    const {
-      razorpayKeyId,
-      razorpayKeySecret,
-      mode,
-    } = await getRazorpayConfig();
+    // --------------------------
+    // 2️⃣ CURRENCY CONVERSION
+    // --------------------------
 
-    const baseAmount = amount;
+    const userCurrency: Currency =
+      billingDetails.country === "IN" ? "INR" : "USD";
+
+    if (currency !== userCurrency) {
+      amount = await convertCurrency(amount, currency, userCurrency);
+      currency = userCurrency;
+    }
+
+    // --------------------------
+    // 3️⃣ COUPON VALIDATION
+    // --------------------------
+
+    const coupon = await validateCoupon({
+      couponCode,
+      scope: context,
+      entityId,
+    });
 
     const isIndia = billingDetails.country === "IN";
-    // const currency = challenge.challengeJoiningFeeCurrency as "INR" | "USD";
 
-    const discount = calculateDiscount(baseAmount, coupon, currency);
+    // --------------------------
+    // 4️⃣ PRICE CALCULATION
+    // --------------------------
 
-    let totalAmount = calculateFinal(
-      baseAmount,
-      discount,
+    const { discount, totalAmount, gst } = calculatePayment({
+      baseAmount: amount,
+      coupon,
+      currency,
       isIndia,
-      true,
-      0.18
+    });
+
+    // --------------------------
+    // 5️⃣ CREATE RAZORPAY ORDER
+    // --------------------------
+
+    const { order, key } = await createRazorpayOrder(
+      totalAmount,
+      currency
     );
 
-    // Razorpay does not allow 0 amount
-    if (totalAmount <= 0) {
-      totalAmount = 1;
-    }
+    // --------------------------
+    // 6️⃣ SAVE BILLING
+    // --------------------------
 
-    const gstRate = isIndia ? 0.18 : 0;
-    const gst = (baseAmount - discount) * gstRate;
+    const billing = await upsertBilling(
+      session.user.id,
+      billingDetails
+    );
 
-    const razorpay = new Razorpay({
-      key_id: razorpayKeyId,
-      key_secret: razorpayKeySecret,
+    // --------------------------
+    // 7️⃣ CREATE PAYMENT ORDER
+    // --------------------------
+
+    await createPaymentOrder({
+      userId: session.user.id,
+      contextType: context,
+      entityId,
+      razorpayOrderId: order.id,
+      baseAmount: amount,
+      discount,
+      gst,
+      totalAmount,
+      currency,
+      couponId: coupon?.id ?? null,
+      billingInfoId: billing.id,
+      programId,
     });
 
-    const order = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100),
-      currency: currency,
-      receipt: crypto.randomBytes(10).toString("hex"),
-    });
-
-
-    // Upsert Billing Info
-    const billing = await prisma.billingInformation.upsert({
-      where: { userId: session.user.id },
-      update: {
-        fullName: billingDetails.name,
-        email: billingDetails.email,
-        phone: billingDetails.phone,
-        addressLine1: billingDetails.addressLine1,
-        city: billingDetails.city,
-        state: billingDetails.state,
-        postalCode: billingDetails.postalCode,
-        country: billingDetails.country,
-        gstNumber: billingDetails.gstNumber ?? null,
-      },
-      create: {
-        userId: session.user.id,
-        fullName: billingDetails.name,
-        email: billingDetails.email,
-        phone: billingDetails.phone,
-        addressLine1: billingDetails.addressLine1,
-        city: billingDetails.city,
-        state: billingDetails.state,
-        postalCode: billingDetails.postalCode,
-        country: billingDetails.country,
-        gstNumber: billingDetails.gstNumber ?? null,
-      },
-    });
-
-    await prisma.paymentOrder.create({
-      data: {
-        userId: session.user.id,
-        challengeId,
-        contextType: "CHALLENGE",
-        razorpayOrderId: order.id,
-        orderId: order.id,
-        baseAmount,
-        discountApplied: discount,
-        gstAmount: gst,
-        totalAmount,
-        // couponCode: coupon?.couponCode ?? null,
-        couponId: coupon?.id ?? null,
-        currency: currency,
-        status: "PENDING",
-        billingInfoId: billing.id,
-      },
-    });
-
+    // --------------------------
+    // RESPONSE
+    // --------------------------
+    console.log({
+  context,
+  entityId,
+  amount,
+  discount,
+  gst,
+  totalAmount
+});
     return NextResponse.json({
       success: true,
-      key: razorpayKeyId,
+      key,
       orderId: order.id,
-      mode,
     });
 
-  } catch (error: unknown) {
-    console.error("Challenge Order Creation Error:", error);
-
-    let message = "Unable to create payment order";
-
-    if (error instanceof Error) {
-      message =
-        process.env.NODE_ENV === "development"
-          ? error.message
-          : message;
-    }
+  } catch (error) {
+    console.error("Payment Order Error:", error);
 
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: "Unable to create order" },
       { status: 500 }
     );
   }

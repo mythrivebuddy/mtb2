@@ -2,12 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  AlertCircle,
-  RefreshCcw,
-  ArrowLeft,
-  Hash,
-} from "lucide-react";
+import { AlertCircle, RefreshCcw, ArrowLeft, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
@@ -23,32 +18,50 @@ export default function FailurePage() {
     searchParams.get("reason") ||
     "Cashfree did not return error details. User did not complete the payment.";
 
-
   const heading =
     typeParam === "subscription"
       ? "Mandate Failed"
       : typeParam === "challenge"
         ? "Challenge Payment Failed"
-        : "Payment Failed";
+        : typeParam === "mmp_program"
+          ? "Program Purchase Failed"
+          : typeParam === "store_product"
+            ? "Product Purchase Failed"
+            : "Payment Failed";
 
   const description =
     typeParam === "subscription"
       ? "We couldn't create your automatic recurring payment mandate. No amount has been charged."
       : typeParam === "challenge"
-        ? "Your payment for enrolling in the challenge could not be completed. This may happen if the payment was cancelled, declined, or interrupted."
-        : "Your payment could not be completed.";
+        ? "Your payment for enrolling in the challenge could not be completed."
+        : typeParam === "mmp_program"
+          ? "Your purchase of this Mini Mastery Program could not be completed."
+          : typeParam === "store_product"
+            ? "Your product purchase could not be completed."
+            : "Your payment could not be completed.";
 
   const reference = typeParam === "subscription" ? subId : orderId;
   const challengeId = searchParams.get("challengeId");
+  const programId = searchParams.get("mmp_programId");
+  const storeOrderId = searchParams.get("storeOrderId");
 
   const retryUrl =
     typeParam === "challenge"
       ? challengeId
         ? `/dashboard/membership/checkout?context=CHALLENGE&challengeId=${challengeId}`
         : "/dashboard/challenge"
-      : "/pricing";
+      : typeParam === "mmp_program"
+        ? programId
+          ? `/dashboard/membership/checkout?context=MMP_PROGRAM&mmp_programId=${programId}`
+          : "/dashboard/mini-mastery-programs"
+        : typeParam === "store_product"
+          ? storeOrderId
+            ? `/dashboard/store/product/${storeOrderId}`
+            : "/dashboard/store"
+          : "/pricing";
 
-  const referenceLabel = typeParam === "subscription" ? "Subscription ID" : "Order ID";
+  const referenceLabel =
+    typeParam === "subscription" ? "Subscription ID" : "Order ID";
 
   // -----------------------------------------------------------------------
   // 3. Render UI
@@ -111,7 +124,6 @@ export default function FailurePage() {
             </Button>
 
             <div className="grid grid-cols-1 gap-3">
-
               {typeParam !== "challenge" && (
                 <Button asChild variant="outline" className="text-sm">
                   <Link href="/pricing">
