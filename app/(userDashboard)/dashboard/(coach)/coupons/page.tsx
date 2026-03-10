@@ -124,7 +124,7 @@ export default function CoachCouponsPage() {
     const createMutation = useMutation({
         mutationFn: createCoupon,
 
-        onSuccess: (newCoupon) => {
+        onSuccess: () => {
             toast.success("Coupon created");
             setFormData(initialForm);
             setDialogOpen(false);
