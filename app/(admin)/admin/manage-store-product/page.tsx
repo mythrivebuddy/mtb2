@@ -14,6 +14,7 @@ import { CheckCircle, XCircle, Pencil, Trash2, Eye } from "lucide-react";
 const CURRENCIES = [
   { value: "INR", label: "INR", symbol: "₹" },
   { value: "USD", label: "USD", symbol: "$" },
+  { value: "GP", label: "GP", symbol: "GP" }, // Growth Points
 ];
 
 const getCurrencySymbol = (currency: string) =>
@@ -73,6 +74,22 @@ const DollarIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+const GPIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" />
+  </svg>
+);
+
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function ProductManagement() {
   const router = useRouter();
@@ -97,9 +114,9 @@ export default function ProductManagement() {
       return response.data.items;
     },
     refetchOnMount: true,
-    refetchOnWindowFocus: true, // ✅ Refetch when user switches back to this tab
-    refetchInterval: 5000, // ✅ Auto-refetch every 5 seconds
-    refetchIntervalInBackground: false, // ✅ Pause refetching when tab is in background
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   });
 
   const {
@@ -113,9 +130,9 @@ export default function ProductManagement() {
       return response.data.categories;
     },
     refetchOnMount: true,
-    refetchOnWindowFocus: true, // ✅ Refetch when user switches back to this tab
-    refetchInterval: 5000, // ✅ Auto-refetch every 5 seconds
-    refetchIntervalInBackground: false, // ✅ Pause refetching when tab is in background
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   });
 
   useEffect(() => {
@@ -278,7 +295,6 @@ export default function ProductManagement() {
     setFormData((prev) => {
       const currentValue = Number(prev[key]) || 0;
       const newValue = Math.max(0, currentValue + delta);
-      // Round to 2 decimal places
       return {
         ...prev,
         [key]: Math.round(newValue * 100) / 100,
@@ -292,7 +308,6 @@ export default function ProductManagement() {
       return;
     }
     
-    // Allow decimal numbers
     const value = parseFloat(raw);
     if (!isNaN(value) && value >= 0) {
       setFormData((prev) => ({ ...prev, [key]: value }));
@@ -377,38 +392,21 @@ export default function ProductManagement() {
                 </div>
               </div>
 
-              {/* ── Currency Selector ── */}
+              {/* ── Currency Dropdown ── */}
               <div>
                 <label className="block text-sm font-medium mb-1">Currency *</label>
-                <div className="flex gap-2">
-                  {/* INR button */}
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, currency: "INR" })}
-                    className={`flex-1 px-4 py-2.5 rounded-lg border-2 font-semibold transition-all flex items-center justify-center gap-2 ${
-                      formData.currency === "INR"
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                    }`}
-                  >
-                    <RupeeIcon className="w-4 h-4" />
-                    INR
-                  </button>
-
-                  {/* USD button */}
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, currency: "USD" })}
-                    className={`flex-1 px-4 py-2.5 rounded-lg border-2 font-semibold transition-all flex items-center justify-center gap-2 ${
-                      formData.currency === "USD"
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-                    }`}
-                  >
-                    <DollarIcon className="w-4 h-4" />
-                    USD
-                  </button>
-                </div>
+                <select
+                  value={formData.currency ?? "INR"}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                >
+                  {CURRENCIES.map((curr) => (
+                    <option key={curr.value} value={curr.value}>
+                      {curr.label} ({curr.symbol})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* ── Price Fields ── */}
@@ -663,6 +661,8 @@ export default function ProductManagement() {
                 const category = typedCategories.find((cat) => cat.id === item.categoryId);
                 const sym      = getCurrencySymbol(item.currency ?? "INR");
                 const isINR    = (item.currency ?? "INR") === "INR";
+                const isUSD    = (item.currency ?? "INR") === "USD";
+                const isGP     = (item.currency ?? "INR") === "GP";
 
                 return (
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
@@ -696,29 +696,37 @@ export default function ProductManagement() {
                         className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-full ${
                           isINR
                             ? "bg-orange-100 text-orange-700"
-                            : "bg-green-100 text-green-700"
+                            : isUSD
+                            ? "bg-green-100 text-green-700"
+                            : "bg-purple-100 text-purple-700"
                         }`}
                       >
-                        {isINR ? <RupeeIcon className="w-3 h-3" /> : <DollarIcon className="w-3 h-3" />}
+                        {isINR ? (
+                          <RupeeIcon className="w-3 h-3" />
+                        ) : isUSD ? (
+                          <DollarIcon className="w-3 h-3" />
+                        ) : (
+                          <GPIcon className="w-3 h-3" />
+                        )}
                         {item.currency ?? "INR"}
                       </span>
                     </td>
 
                     {/* Prices */}
                     <td className="px-4 py-3 text-gray-600 text-center">
-                      {sym}{Number(item.basePrice).toFixed(2)}
+                      {sym}{isGP ? Number(item.basePrice).toFixed(0) : Number(item.basePrice).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-center">
-                      {sym}{Number(item.monthlyPrice).toFixed(2)}
+                      {sym}{isGP ? Number(item.monthlyPrice).toFixed(0) : Number(item.monthlyPrice).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-center">
-                      {sym}{Number(item.yearlyPrice).toFixed(2)}
+                      {sym}{isGP ? Number(item.yearlyPrice).toFixed(0) : Number(item.yearlyPrice).toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-center">
-                      {sym}{Number(item.lifetimePrice).toFixed(2)}
+                      {sym}{isGP ? Number(item.lifetimePrice).toFixed(0) : Number(item.lifetimePrice).toFixed(2)}
                     </td>
 
-                    {/* Creator (Show name with different colors for Admin vs Coach) */}
+                    {/* Creator */}
                     <td className="px-4 py-3 text-sm whitespace-nowrap text-center">
                       {item.createdByRole === "ADMIN" ? (
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200">

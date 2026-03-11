@@ -1,3 +1,4 @@
+//items/[id]/route.ts
 import { prisma } from '@/lib/prisma';
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
@@ -69,8 +70,9 @@ export async function PUT(
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
 
+    // ✅ Updated to include GP currency
     const rawCurrency = (formData.get("currency") as string) || existingItem.currency || "INR";
-    const currency = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
+    const currency = ["USD", "INR", "GP"].includes(rawCurrency) ? rawCurrency : "INR";
 
     if (!name || !category || isNaN(basePrice)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -78,7 +80,8 @@ export async function PUT(
 
     let imageUrl = existingItem.imageUrl;
     let downloadUrl = existingItem.downloadUrl;
-// Replace Image
+    
+    // Replace Image
     if (imageFile && imageFile.size > 0) {
       const oldImagePath = extractStoragePath(existingItem.imageUrl);
       if (oldImagePath) {
@@ -95,6 +98,7 @@ export async function PUT(
       }
       downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
     }
+    
     // Update Item
     const updatedItem = await prisma.item.update({
       where: { id: itemId },

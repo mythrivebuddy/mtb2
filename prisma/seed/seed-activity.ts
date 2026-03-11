@@ -211,6 +211,11 @@ async function main() {
       activity: ActivityType.COACH_REWARD_SPEND,
       jpAmount: 0,
       transactionType: TransactionType.DEBIT
+    },
+     {
+      activity: ActivityType.STORE_PURCHASE,
+      jpAmount: 0, // Dynamic amount based on item prices
+      transactionType: TransactionType.DEBIT, // Spending GP
     }
   ];
 
