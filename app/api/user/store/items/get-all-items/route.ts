@@ -1,3 +1,4 @@
+// get-all-items
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { Item } from "@prisma/client";

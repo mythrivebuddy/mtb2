@@ -54,13 +54,12 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const currency = (formData.get("currency") as string) || "USD";
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
-
-    if (!["USD", "INR"].includes(currency)) {
-      return NextResponse.json(
-        { error: "Invalid currency. Must be USD or INR." },
-        { status: 400 }
-      );
-    }
+if (!["USD", "INR", "GP", "JP"].includes(currency)) {
+  return NextResponse.json(
+    { error: "Invalid currency. Must be USD, INR, GP, or JP." },
+    { status: 400 }
+  );
+}
 
     if (!name || !categoryId || isNaN(basePrice)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });

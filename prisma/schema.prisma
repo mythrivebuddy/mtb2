@@ -419,7 +419,7 @@ model OrderItem {
   originalCurrency String?  @default("INR") // optional
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  item            Item     @relation(fields: [itemId], references: [id])
+  item            Item     @relation(fields: [itemId], references: [id], onDelete:Cascade)
   order           Order    @relation(fields: [orderId], references: [id])
 
   @@index([orderId])
@@ -2252,6 +2252,8 @@ enum ActivityType {
   REWARD_JP_TO_MEMBER_BY_COACH
   COACH_REWARD_SPEND      // For the admin's deduction
   COACH_REWARD_RECEIVE    // For the member's credit
+  STORE_PURCHASE  // When users buy items from store using GP
+
 }
 
 enum TransactionType {

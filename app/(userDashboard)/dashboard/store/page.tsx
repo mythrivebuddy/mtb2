@@ -11,8 +11,15 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { Item, WishlistItem, Category } from "@/types/client/store";
 import Image from "next/image";
 
-const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$" };
-const getCurrencySymbol = (currency?: string): string => CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
+// ✅ Updated to include GP
+const CURRENCY_SYMBOLS: Record<string, string> = { 
+  INR: "₹", 
+  USD: "$", 
+  GP: "GP" 
+};
+
+const getCurrencySymbol = (currency?: string): string => 
+  CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
 type ProductFilter = "ALL" | "ADMIN" | "COACH";
 
@@ -156,7 +163,7 @@ const StorePage: React.FC = () => {
     queryFn: fetchWishlist, 
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    refetchInterval: 5000, // ✅ Auto-refetch every 5 seconds
+    refetchInterval: 5000,
     refetchIntervalInBackground: false,
   });
 
@@ -164,9 +171,9 @@ const StorePage: React.FC = () => {
     queryKey: ["cart"], 
     queryFn: fetchCartItems, 
     refetchOnMount: true,
-    refetchOnWindowFocus: true, // ✅ Refetch when switching back to tab
-    refetchInterval: 5000, // ✅ Auto-refetch every 5 seconds
-    refetchIntervalInBackground: false, // ✅ Pause when tab is hidden
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
   });
 
   const { data: items = [], isLoading: itemsLoading } = useQuery({
@@ -323,8 +330,10 @@ const StorePage: React.FC = () => {
         ) : (
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredItems.map((item) => {
+              // ✅ Updated to handle GP currency
               const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
               const sym = getCurrencySymbol(itemCurrency);
+              const isGP = itemCurrency === "GP";
               const price = getPrice(item);
               const inCart = isItemInCart(cartItems, item.id);
 
@@ -338,12 +347,28 @@ const StorePage: React.FC = () => {
                     <div className="absolute top-3 left-3">
                       <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-blue-600 text-xs font-semibold rounded-full shadow-md">{item.category.name}</span>
                     </div>
+                    
+                    {/* ✅ Currency Badge */}
+                    {itemCurrency !== "INR" && (
+                      <div className="absolute bottom-3 left-3">
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full shadow-md ${
+                          itemCurrency === "USD" 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-purple-100 text-purple-700"
+                        }`}>
+                          {itemCurrency}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-5 flex flex-col flex-1">
                     <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-2xl font-bold text-green-600">{sym}{Number(price).toFixed(2)}</span>
+                      {/* ✅ Dynamic price formatting: no decimals for GP */}
+                      <span className="text-2xl font-bold text-green-600">
+                        {sym}{isGP ? Number(price).toFixed(0) : Number(price).toFixed(2)}
+                      </span>
                     </div>
 
                     <div className="flex gap-2 mt-auto">

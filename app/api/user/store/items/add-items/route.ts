@@ -1,3 +1,4 @@
+// add-items/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
@@ -26,8 +27,9 @@ export async function POST(request: NextRequest) {
     const imageFile     = formData.get("image") as File;
     const downloadFile  = formData.get("download") as File | null;
 
+    // ✅ Updated to include GP currency
     const rawCurrency = (formData.get("currency") as string) || "INR";
-    const currency    = ["USD", "INR"].includes(rawCurrency) ? rawCurrency : "INR";
+    const currency    = ["USD", "INR", "GP"].includes(rawCurrency) ? rawCurrency : "INR";
 
     if (!name || !category || !imageFile || isNaN(basePrice)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -52,7 +54,6 @@ export async function POST(request: NextRequest) {
         currency,
         imageUrl,
         downloadUrl,
-        // imagePath and downloadPath removed
         isApproved: false,
         createdByUserId: session.user.id,
         createdByRole: "USER",

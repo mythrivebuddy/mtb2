@@ -6,7 +6,7 @@ import axios from "axios";
 import { Pencil, Trash2, PlusCircle, LayoutGrid, List, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
- import PageLoader from "@/components/PageLoader";
+import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Category, ItemFormData } from "@/types/client/manage-store-product";
 import { Item } from "@/types/client/store";
@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 const CURRENCIES = [
   { value: "INR", label: "INR (₹)", symbol: "₹" },
   { value: "USD", label: "USD ($)", symbol: "$" },
+  { value: "GP", label: "GP (Growth Points)", symbol: "GP" },
 ];
 
 const getCurrencySymbol = (currency?: string) =>
@@ -241,6 +242,7 @@ const ManageStorePage: React.FC = () => {
   };
 
   const currencySymbol = getCurrencySymbol(formData.currency);
+  const isGP = formData.currency === "GP";
 
   // ─── JSX ──────────────────────────────────────────────────────────────────────
   return (
@@ -408,8 +410,8 @@ const ManageStorePage: React.FC = () => {
                           <input
                             type="number"
                             min="0"
-                            step="0.01"
-                            placeholder="0.00"
+                            step={isGP ? "1" : "0.01"}
+                            placeholder={isGP ? "0" : "0.00"}
                             value={
                               formData[key] === "" || formData[key] === undefined
                                 ? ""
@@ -425,7 +427,7 @@ const ManageStorePage: React.FC = () => {
                           <div className="flex flex-col border-l-2 border-gray-200">
                             <button
                               type="button"
-                              onClick={() => stepPrice(key, 0.01)}
+                              onClick={() => stepPrice(key, isGP ? 1 : 0.01)}
                               className="px-2 py-[4px] bg-gray-50 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors select-none border-b border-gray-200 leading-none"
                               title="Increase"
                             >
@@ -435,7 +437,7 @@ const ManageStorePage: React.FC = () => {
                             </button>
                             <button
                               type="button"
-                              onClick={() => stepPrice(key, -0.01)}
+                              onClick={() => stepPrice(key, isGP ? -1 : -0.01)}
                               className="px-2 py-[4px] bg-gray-50 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors select-none leading-none"
                               title="Decrease"
                             >
@@ -581,6 +583,7 @@ const ManageStorePage: React.FC = () => {
               {filteredItems.map((item) => {
                 const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
                 const sym = getCurrencySymbol(itemCurrency);
+                const isItemGP = itemCurrency === "GP";
                 return (
                   <div
                     key={item.id}
@@ -637,7 +640,7 @@ const ManageStorePage: React.FC = () => {
                           <div key={label} className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-2 border border-gray-100">
                             <span className="text-gray-500 text-xs block mb-0.5">{label}</span>
                             <span className="text-green-600 font-bold text-sm block">
-                              {sym}{Number(val).toFixed(2)}
+                              {sym}{isItemGP ? Number(val).toFixed(0) : Number(val).toFixed(2)}
                             </span>
                           </div>
                         ))}
@@ -684,6 +687,7 @@ const ManageStorePage: React.FC = () => {
                   {filteredItems.map((item) => {
                     const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
                     const sym = getCurrencySymbol(itemCurrency);
+                    const isItemGP = itemCurrency === "GP";
                     return (
                       <tr key={item.id} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors">
                         <td className="py-4 px-4">
@@ -716,11 +720,11 @@ const ManageStorePage: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-green-600 font-bold">
-                          {sym}{Number(item.basePrice).toFixed(2)}
+                          {sym}{isItemGP ? Number(item.basePrice).toFixed(0) : Number(item.basePrice).toFixed(2)}
                         </td>
-                        <td className="py-4 px-4 text-gray-700">{sym}{Number(item.monthlyPrice).toFixed(2)}</td>
-                        <td className="py-4 px-4 text-gray-700">{sym}{Number(item.yearlyPrice).toFixed(2)}</td>
-                        <td className="py-4 px-4 text-gray-700">{sym}{Number(item.lifetimePrice).toFixed(2)}</td>
+                        <td className="py-4 px-4 text-gray-700">{sym}{isItemGP ? Number(item.monthlyPrice).toFixed(0) : Number(item.monthlyPrice).toFixed(2)}</td>
+                        <td className="py-4 px-4 text-gray-700">{sym}{isItemGP ? Number(item.yearlyPrice).toFixed(0) : Number(item.yearlyPrice).toFixed(2)}</td>
+                        <td className="py-4 px-4 text-gray-700">{sym}{isItemGP ? Number(item.lifetimePrice).toFixed(0) : Number(item.lifetimePrice).toFixed(2)}</td>
                         <td className="py-4 px-4">
                           <div className="flex gap-2 justify-end">
                             <button
