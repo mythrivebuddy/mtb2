@@ -13,7 +13,6 @@ import {
   Tag,
   Calendar,
   Download,
-  DollarSign,
   User,
   ShieldCheck,
   Package,
@@ -74,6 +73,8 @@ async function fetchProduct(productId: string): Promise<ProductDetailData> {
 const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: "₹",
   USD: "$",
+  GP: "GP",
+  JP: "JP",
 };
 
 function getCurrencySymbol(currency?: string): string {
@@ -82,7 +83,8 @@ function getCurrencySymbol(currency?: string): string {
 
 function formatPrice(price: number | null, currency?: string): string {
   if (price === null || price === undefined) return "—";
-  return `${getCurrencySymbol(currency)}${price.toFixed(0)}`;
+  const isPoints = currency === "GP" || currency === "JP";
+  return `${getCurrencySymbol(currency)}${isPoints ? Math.ceil(price) : price.toFixed(2)}`;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -129,6 +131,39 @@ const DollarIcon = ({ className }: { className?: string }) => (
   >
     <line x1="12" y1="1" x2="12" y2="23" />
     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
+
+const GPIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" />
+  </svg>
+);
+
+const JPIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v12" />
+    <path d="M15 9h-3.5a2.5 2.5 0 1 0 0 5h2a2.5 2.5 0 1 1 0 5H9" />
   </svg>
 );
 
@@ -231,9 +266,23 @@ export default function ProductDetailPage() {
     );
   }
 
-  const currency    = product.currency ?? "INR";
-  const isINR       = currency === "INR";
+  const currency = product.currency ?? "INR";
+  const isINR = currency === "INR";
+  const isUSD = currency === "USD";
+  const isGP = currency === "GP";
+  const isJP = currency === "JP";
   const currencySym = getCurrencySymbol(currency);
+
+  // Helper to get currency icon
+  const CurrencyIcon = isINR 
+    ? RupeeIcon 
+    : isUSD 
+    ? DollarIcon 
+    : isGP
+    ? GPIcon
+    : isJP
+    ? JPIcon
+    : RupeeIcon;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
@@ -263,13 +312,12 @@ export default function ProductDetailPage() {
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full backdrop-blur-sm border ${
                   isINR
                     ? "bg-orange-400/20 text-orange-100 border-orange-300/40"
-                    : "bg-green-400/20 text-green-100 border-green-300/40"
+                    : isUSD
+                    ? "bg-green-400/20 text-green-100 border-green-300/40"
+                    : "bg-purple-400/20 text-purple-100 border-purple-300/40"
                 }`}
               >
-                {isINR
-                  ? <RupeeIcon className="w-3.5 h-3.5" />
-                  : <DollarIcon className="w-3.5 h-3.5" />
-                }
+                <CurrencyIcon className="w-3.5 h-3.5" />
                 {currency}
               </span>
               {/* Approval badge */}
@@ -352,10 +400,7 @@ export default function ProductDetailPage() {
               {/* Pricing Cards */}
               <div>
                 <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  {isINR
-                    ? <RupeeIcon className="w-4 h-4" />
-                    : <DollarSign className="w-4 h-4" />
-                  }
+                  <CurrencyIcon className="w-4 h-4" />
                   Pricing ({currency})
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -393,12 +438,16 @@ export default function ProductDetailPage() {
                       value={product.category.name}
                     />
                     <InfoRow
-                      icon={isINR ? <RupeeIcon className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
+                      icon={<CurrencyIcon className="w-4 h-4" />}
                       label="Currency"
                       value={
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold rounded-full ${
-                            isINR ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"
+                            isINR
+                              ? "bg-orange-100 text-orange-700"
+                              : isUSD
+                              ? "bg-green-100 text-green-700"
+                              : "bg-purple-100 text-purple-700"
                           }`}
                         >
                           {currencySym} {currency}

@@ -1,195 +1,46 @@
+// app/api/user/store/items/place-order/route.ts
 
-// import { NextResponse } from "next/server";
-// import { prisma } from "@/lib/prisma";
-// import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
-// import { getServerSession } from "next-auth";
-// import { sendEmailUsingTemplate } from "utils/sendEmail"; // ✅ adjust path if needed
-
-// export async function POST(req: Request) {
-//   try {
-//     const session = await getServerSession(authConfig);
-//     if (!session?.user) {
-//       return new NextResponse("Unauthorized", { status: 401 });
-//     }
-
-//     const body = await req.json();
-//     const { items } = body as { items: { itemId: string; quantity: number }[] };
-
-//     if (!items || items.length === 0) {
-//       return new NextResponse("Items are required", { status: 400 });
-//     }
-
-//     // Get user with membership info
-//     const user = await prisma.user.findUnique({
-//       where: { id: session.user.id },
-//       select: { id: true, membership: true, email: true, name: true },
-//     });
-
-//     if (!user) {
-//       return new NextResponse("User not found", { status: 404 });
-//     }
-
-//     // Build order items and calculate total
-//     let totalAmount = 0;
-//     const orderItemsData: {
-//       itemId: string;
-//       quantity: number;
-//       priceAtPurchase: number;
-//     }[] = [];
-
-//     // ✅ Also collect item names + currencies for the email
-//     const itemDetails: { name: string; currency: string; price: number }[] = [];
-
-//     for (const { itemId, quantity } of items) {
-//       if (!itemId) {
-//         return new NextResponse("Item ID is required", { status: 400 });
-//       }
-//       if (!quantity || quantity < 1) {
-//         return new NextResponse("Valid quantity is required", { status: 400 });
-//       }
-
-//       const item = await prisma.item.findUnique({ where: { id: itemId } });
-
-//       if (!item) {
-//         return new NextResponse(`Item ${itemId} not found`, { status: 404 });
-//       }
-
-//       // Calculate price based on membership
-//       let finalPrice = item.basePrice;
-//       switch (user.membership) {
-//         case "MONTHLY":
-//           finalPrice = item.monthlyPrice ?? item.basePrice;
-//           break;
-//         case "YEARLY":
-//           finalPrice = item.yearlyPrice ?? item.basePrice;
-//           break;
-//         case "LIFETIME":
-//           finalPrice = item.lifetimePrice ?? item.basePrice;
-//           break;
-//       }
-
-//       totalAmount += finalPrice * quantity;
-//       orderItemsData.push({ itemId: item.id, quantity, priceAtPurchase: finalPrice });
-//       itemDetails.push({ name: item.name, currency: item.currency || "INR", price: finalPrice });
-//     }
-
-//     // ✅ Create order + clear cart in one transaction
-//     const [order] = await prisma.$transaction([
-//       prisma.order.create({
-//         data: {
-//           userId: user.id,
-//           totalAmount,
-//           status: "COMPLETED",
-//           items: {
-//             create: orderItemsData,
-//           },
-//         },
-//         include: {
-//           items: {
-//             include: { item: true },
-//           },
-//         },
-//       }),
-//       prisma.cart.deleteMany({
-//         where: { userId: user.id },
-//       }),
-//     ]);
-
-//     // ✅ Send order confirmation email (non-blocking — won't fail the order if email errors)
-//     try {
-//       const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
-//         day: "numeric",
-//         month: "long",
-//         year: "numeric",
-//       });
-
-//       // Build a readable total amount string
-//       // Group by currency since mixed carts are possible
-//       const currencyTotals: Record<string, number> = {};
-//       itemDetails.forEach((d, i) => {
-//         const cur = d.currency;
-//         const amt = d.price * orderItemsData[i].quantity;
-//         currencyTotals[cur] = (currencyTotals[cur] || 0) + amt;
-//       });
-//       const totalAmountStr = Object.entries(currencyTotals)
-//         .map(([cur, amt]) => `${cur === "INR" ? "₹" : "$"}${Number(amt).toFixed(2)}`)
-//         .join(" + ");
-
-//       const itemNames = itemDetails.map((d) => d.name).join(", ");
-//       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
-
-//       await sendEmailUsingTemplate({
-//         toEmail: user.email!,
-//         toName: user.name ?? "Customer",
-//         templateId: "order-placed",
-//         templateData: {
-//           username: user.name ?? "Customer",
-//           orderId: order.id,
-//           orderDate,
-//           totalAmount: totalAmountStr,
-//           status: order.status,
-//           itemCount: orderItemsData.length,
-//           itemNames,
-//           orderUrl: `${appUrl}/dashboard/store/profile`,
-//         },
-//       });
-
-//       // ✅ Success log
-//       console.log("\n[ORDER_EMAIL_SENT] ✅ Email sent successfully!");
-//       console.log(`  → To:       ${user.email}`);
-//       console.log(`  → Name:     ${user.name ?? "Customer"}`);
-//       console.log(`  → Order ID: ${order.id}`);
-//       console.log(`  → Amount:   ${totalAmountStr}`);
-//       console.log(`  → Items:    ${itemNames}\n`);
-
-//     } catch (emailError) {
-//       // Log but don't fail the request — order is already placed
-//       console.error("[ORDER_EMAIL_FAILED] ❌", emailError);
-//     }
-
-//     return NextResponse.json({
-//       order: {
-//         id: order.id,
-//         totalAmount: order.totalAmount,
-//         status: order.status,
-//         createdAt: order.createdAt,
-//         items: order.items.map((orderItem) => ({
-//           id: orderItem.id,
-//           quantity: orderItem.quantity,
-//           priceAtPurchase: orderItem.priceAtPurchase,
-//           item: {
-//             id: orderItem.item.id,
-//             name: orderItem.item.name,
-//             imageUrl: orderItem.item.imageUrl,
-//           },
-//         })),
-//       },
-//     });
-//   } catch (error) {
-//     console.error("[ORDER_CREATE]", error);
-//     return new NextResponse("Internal Error", { status: 500 });
-//   }
-// }
-  
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { getServerSession } from "next-auth";
 import { sendEmailUsingTemplate } from "utils/sendEmail";
+import { deductJp } from "@/lib/utils/jp";
 
-// ✅ Conversion rates (same as frontend)
+// ✅ TypeScript interfaces
+interface OrderItemInput {
+  itemId: string;
+  quantity: number;
+}
+
+interface ItemDetail {
+  name: string;
+  currency: string;
+  price: number;
+  originalPrice: number;
+  originalCurrency: string;
+}
+
 const CONVERSION_RATES: Record<string, Record<string, number>> = {
   USD: { INR: 83.5, USD: 1 },
   INR: { USD: 1 / 83.5, INR: 1 },
+  GP: { GP: 1 },
+  JP: { JP: 1 },
 };
 
 const convertPrice = (amount: number, from: string, to: string): number => {
   if (from === to) return amount;
+  if (from === "GP" || to === "GP") {
+    throw new Error("GP items cannot be converted to other currencies");
+  }
+  if (from === "JP" || to === "JP") {
+    throw new Error("JP items cannot be converted to other currencies");
+  }
   return amount * (CONVERSION_RATES[from]?.[to] ?? 1);
 };
 
 const getCurrencySymbol = (currency: string): string => {
-  const symbols: Record<string, string> = { INR: "₹", USD: "$" };
+  const symbols: Record<string, string> = { INR: "₹", USD: "$", GP: "GP", JP: "JP" };
   return symbols[currency] ?? currency;
 };
 
@@ -202,8 +53,8 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { items, currency } = body as {
-      items: { itemId: string; quantity: number }[];
-      currency: string; // ✅ Required selected currency (INR or USD)
+      items: OrderItemInput[];
+      currency: string;
     };
 
     if (!items || items.length === 0) {
@@ -214,18 +65,77 @@ export async function POST(req: Request) {
       return new NextResponse("Currency is required", { status: 400 });
     }
 
-    // Get user with membership info
+    // ✅ FIXED: Get user with plan relationship for deductJp compatibility
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, membership: true, email: true, name: true },
+      include: {
+        plan: true,
+      },
+      omit: {
+        password: true,
+      },
     });
 
     if (!user) {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // ✅ Build order items with currency conversion
-    let totalAmount = 0;
+    const itemIds = items.map((i) => i.itemId);
+    const dbItems = await prisma.item.findMany({
+      where: { id: { in: itemIds } },
+      select: {
+        id: true,
+        name: true,
+        currency: true,
+        basePrice: true,
+        monthlyPrice: true,
+        yearlyPrice: true,
+        lifetimePrice: true,
+      },
+    });
+
+    // ✅ FIXED: Separate items by currency type - removed unused variables
+    const regularItems = dbItems.filter((item) => item.currency !== "GP" && item.currency !== "JP");
+
+    const hasGPItems = dbItems.some((item) => item.currency === "GP");
+    const hasJPItems = dbItems.some((item) => item.currency === "JP");
+    const hasRegularItems = regularItems.length > 0;
+
+    // ✅ Validation: Cannot mix GP and JP
+    if (hasGPItems && hasJPItems) {
+      return new NextResponse(
+        "Cannot purchase GP and JP items together. Please checkout separately.",
+        { status: 400 }
+      );
+    }
+
+    // ✅ Determine points type
+    const pointsType = hasGPItems ? "GP" : hasJPItems ? "JP" : null;
+
+    // ✅ Validate currency for hybrid or single-currency orders
+    if (currency === "MIXED") {
+      // Hybrid payment - must have both points and regular items
+      if (!pointsType || !hasRegularItems) {
+        return new NextResponse(
+          "Mixed payment requires both points items and regular items",
+          { status: 400 }
+        );
+      }
+    } else if (currency === "GP" || currency === "JP") {
+      // Pure points payment - cannot have regular items
+      if (hasRegularItems) {
+        return new NextResponse(
+          `${currency} can only be used for ${currency} items`,
+          { status: 400 }
+        );
+      }
+    } else if (!["INR", "USD"].includes(currency)) {
+      return new NextResponse("Invalid currency", { status: 400 });
+    }
+
+    // ✅ Calculate totals
+    let pointsTotal = 0;
+    let regularTotal = 0;
     const orderItemsData: {
       itemId: string;
       quantity: number;
@@ -234,14 +144,7 @@ export async function POST(req: Request) {
       originalCurrency: string;
     }[] = [];
 
-    // Collect item details for email
-    const itemDetails: {
-      name: string;
-      currency: string;
-      price: number;
-      originalPrice: number;
-      originalCurrency: string;
-    }[] = [];
+    const itemDetails: ItemDetail[] = [];
 
     for (const { itemId, quantity } of items) {
       if (!itemId) {
@@ -251,8 +154,7 @@ export async function POST(req: Request) {
         return new NextResponse("Valid quantity is required", { status: 400 });
       }
 
-      const item = await prisma.item.findUnique({ where: { id: itemId } });
-
+      const item = dbItems.find((i) => i.id === itemId);
       if (!item) {
         return new NextResponse(`Item ${itemId} not found`, { status: 404 });
       }
@@ -274,71 +176,140 @@ export async function POST(req: Request) {
       const itemCurrency = item.currency || "INR";
       const originalPrice = finalPrice;
 
-      // ✅ Convert price to selected order currency
-      const convertedPrice = convertPrice(finalPrice, itemCurrency, currency);
-
-      totalAmount += convertedPrice * quantity;
-
-      orderItemsData.push({
-        itemId: item.id,
-        quantity,
-        priceAtPurchase: convertedPrice, // ✅ Price in order currency
-        originalPrice, // ✅ Store original price
-        originalCurrency: itemCurrency, // ✅ Store original currency
-      });
-
-      itemDetails.push({
-        name: item.name,
-        currency: itemCurrency,
-        price: convertedPrice,
-        originalPrice,
-        originalCurrency: itemCurrency,
-      });
+      // Handle points items (GP or JP)
+      if (itemCurrency === "GP" || itemCurrency === "JP") {
+        pointsTotal += finalPrice * quantity;
+        orderItemsData.push({
+          itemId: item.id,
+          quantity,
+          priceAtPurchase: finalPrice,
+          originalPrice: finalPrice,
+          originalCurrency: itemCurrency,
+        });
+        itemDetails.push({
+          name: item.name,
+          currency: itemCurrency,
+          price: finalPrice,
+          originalPrice: finalPrice,
+          originalCurrency: itemCurrency,
+        });
+      } else {
+        // Handle regular currency items
+        const targetCurrency = currency === "MIXED" ? "INR" : currency;
+        const convertedPrice = convertPrice(finalPrice, itemCurrency, targetCurrency);
+        regularTotal += convertedPrice * quantity;
+        
+        orderItemsData.push({
+          itemId: item.id,
+          quantity,
+          priceAtPurchase: convertedPrice,
+          originalPrice,
+          originalCurrency: itemCurrency,
+        });
+        itemDetails.push({
+          name: item.name,
+          currency: itemCurrency,
+          price: convertedPrice,
+          originalPrice,
+          originalCurrency: itemCurrency,
+        });
+      }
     }
 
-    // ✅ Create order with currency field
-    const [order] = await prisma.$transaction([
-      prisma.order.create({
+    // ✅ Check if user has enough points (if points items exist)
+    if (pointsTotal > 0 && user.jpBalance < pointsTotal) {
+      return new NextResponse(
+        `Insufficient ${pointsType} balance. You have ${user.jpBalance} ${pointsType} but need ${Math.ceil(pointsTotal)} ${pointsType}.`,
+        { status: 400 }
+      );
+    }
+
+    // ✅ Determine final order currency and total
+    let orderCurrency: string;
+    let orderTotal: number;
+
+    if (currency === "MIXED") {
+      // Hybrid payment: store the regular currency total
+      orderCurrency = "INR";
+      orderTotal = regularTotal;
+    } else if (currency === "GP" || currency === "JP") {
+      // Pure points payment
+      orderCurrency = currency;
+      orderTotal = pointsTotal;
+    } else {
+      // Pure regular currency payment
+      orderCurrency = currency;
+      orderTotal = regularTotal;
+    }
+
+    // ✅ FIXED: Create order with transaction - user now has plan property
+    const result = await prisma.$transaction(async (tx) => {
+      // Deduct points if there are points items
+      if (pointsTotal > 0 && pointsType) {
+        // ✅ FIXED: Pass the full user object with plan relationship
+        await deductJp(user, "STORE_PURCHASE", tx, { amount: pointsTotal });
+      }
+
+      // Create the order - ALL orders are COMPLETED for now (no payment gateway)
+      const order = await tx.order.create({
         data: {
           userId: user.id,
-          totalAmount,
-          currency, // ✅ Store selected order currency
+          totalAmount: Math.ceil(orderTotal),
+          currency: orderCurrency,
           status: "COMPLETED",
-          items: {
-            create: orderItemsData,
-          },
+          items: { create: orderItemsData },
         },
-        include: {
-          items: {
-            include: { item: true },
-          },
-        },
-      }),
-      prisma.cart.deleteMany({
-        where: { userId: user.id },
-      }),
-    ]);
+        include: { items: { include: { item: true } } },
+      });
 
-    // ✅ Send order confirmation email
+      // Clear cart items
+      await tx.cart.deleteMany({
+        where: { userId: user.id, itemId: { in: itemIds } },
+      });
+
+      return order;
+    });
+
+    // ✅ Send confirmation email
     try {
-      const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
+      const orderDate = new Date(result.createdAt).toLocaleDateString("en-IN", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
 
-      // Build total amount string
-      const totalAmountStr = `${getCurrencySymbol(currency)}${Number(totalAmount).toFixed(2)}`;
+      // Build email content based on payment type
+      let totalAmountStr: string;
+      let paymentDetails: string;
 
-      // Build item details with conversion info
+      if (currency === "MIXED") {
+        // Hybrid payment
+        totalAmountStr = `${getCurrencySymbol(orderCurrency)}${regularTotal.toFixed(2)} + ${Math.ceil(pointsTotal)} ${pointsType}`;
+        paymentDetails = `Payment split: ${Math.ceil(pointsTotal)} ${pointsType} deducted from balance, ${getCurrencySymbol(orderCurrency)}${regularTotal.toFixed(2)} paid via ${orderCurrency}`;
+      } else if (currency === "GP" || currency === "JP") {
+        // Pure points payment
+        totalAmountStr = `${Math.ceil(pointsTotal)} ${currency}`;
+        paymentDetails = `Paid entirely with ${currency} from your balance`;
+      } else {
+        // Pure regular currency payment
+        totalAmountStr = `${getCurrencySymbol(orderCurrency)}${regularTotal.toFixed(2)}`;
+        paymentDetails = `Paid in ${orderCurrency}`;
+      }
+
       const itemNamesWithDetails = itemDetails
-        .map((d, i) => {
-          const item = d.name;
+        .map((d: ItemDetail, i: number) => {
           const qty = orderItemsData[i].quantity;
-          if (d.originalCurrency !== currency) {
-            return `${item} (×${qty}) - ${getCurrencySymbol(d.originalCurrency)}${d.originalPrice.toFixed(2)} → ${getCurrencySymbol(currency)}${d.price.toFixed(2)}`;
+          const itemCurrency = d.originalCurrency;
+          
+          if (itemCurrency === "GP" || itemCurrency === "JP") {
+            return `${d.name} (×${qty}) - ${Math.ceil(d.price)} ${itemCurrency}`;
           }
-          return `${item} (×${qty}) - ${getCurrencySymbol(currency)}${d.price.toFixed(2)}`;
+          
+          if (d.originalCurrency !== orderCurrency && currency !== "MIXED") {
+            return `${d.name} (×${qty}) - ${getCurrencySymbol(d.originalCurrency)}${d.originalPrice.toFixed(2)} → ${getCurrencySymbol(orderCurrency)}${d.price.toFixed(2)}`;
+          }
+          
+          return `${d.name} (×${qty}) - ${getCurrencySymbol(orderCurrency)}${d.price.toFixed(2)}`;
         })
         .join(", ");
 
@@ -350,41 +321,48 @@ export async function POST(req: Request) {
         templateId: "order-placed",
         templateData: {
           username: user.name ?? "Customer",
-          orderId: order.id,
+          orderId: result.id,
           orderDate,
           totalAmount: totalAmountStr,
-          status: order.status,
+          status: "COMPLETED",
           itemCount: orderItemsData.length,
           itemNames: itemNamesWithDetails,
           orderUrl: `${appUrl}/dashboard/store/profile`,
-          currency, // ✅ Include currency in email
+          currency: orderCurrency,
+          paymentDetails,
         },
       });
 
       console.log("\n[ORDER_EMAIL_SENT] ✅ Email sent successfully!");
-      console.log(`  → To:       ${user.email}`);
-      console.log(`  → Name:     ${user.name ?? "Customer"}`);
-      console.log(`  → Order ID: ${order.id}`);
-      console.log(`  → Currency: ${currency}`);
-      console.log(`  → Amount:   ${totalAmountStr}`);
-      console.log(`  → Items:    ${itemNamesWithDetails}\n`);
+      console.log(`  → Order ID: ${result.id}`);
+      console.log(`  → Payment Type: ${currency === "MIXED" ? "Hybrid" : currency}`);
+      if (pointsTotal > 0) {
+        console.log(`  → ${pointsType} Deducted: ${Math.ceil(pointsTotal)}`);
+      }
+      if (regularTotal > 0) {
+        console.log(`  → ${orderCurrency} Amount: ${getCurrencySymbol(orderCurrency)}${regularTotal.toFixed(2)}`);
+      }
     } catch (emailError) {
       console.error("[ORDER_EMAIL_FAILED] ❌", emailError);
     }
 
+    // ✅ Return order details
     return NextResponse.json({
       order: {
-        id: order.id,
-        totalAmount: order.totalAmount,
-        currency: order.currency, // ✅ Return currency in response
-        status: order.status,
-        createdAt: order.createdAt,
-        items: order.items.map((orderItem) => ({
+        id: result.id,
+        totalAmount: result.totalAmount,
+        currency: result.currency,
+        status: "COMPLETED",
+        createdAt: result.createdAt,
+        pointsDeducted: pointsTotal > 0 ? Math.ceil(pointsTotal) : null,
+        pointsType: pointsType,
+        regularAmount: regularTotal > 0 ? regularTotal : null,
+        items: result.items.map((orderItem) => ({
           id: orderItem.id,
           quantity: orderItem.quantity,
           priceAtPurchase: orderItem.priceAtPurchase,
-          originalPrice: orderItem.originalPrice, // ✅ Return original price
-          originalCurrency: orderItem.originalCurrency, // ✅ Return original currency
+          originalPrice: orderItem.originalPrice,
+          originalCurrency: orderItem.originalCurrency,
           item: {
             id: orderItem.item.id,
             name: orderItem.item.name,
@@ -395,6 +373,17 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("[ORDER_CREATE]", error);
+
+    const errorMessage = error instanceof Error ? error.message : "Internal Error";
+
+    if (
+      errorMessage.includes("GP items cannot be converted") ||
+      errorMessage.includes("JP items cannot be converted") ||
+      errorMessage.includes("Insufficient")
+    ) {
+      return new NextResponse(errorMessage, { status: 400 });
+    }
+
     return new NextResponse("Internal Error", { status: 500 });
   }
 }

@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Item, CartItem } from "@/types/client/store";
 import Image from "next/image";
 
-// ─── Currency helpers ──────────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: "₹",
   USD: "$",
+  GP: "GP",
 };
 
 const getCurrencySymbol = (currency?: string): string =>
@@ -17,40 +17,51 @@ const getCurrencySymbol = (currency?: string): string =>
 
 // ─── SVG Icons ─────────────────────────────────────────────────────────────────
 const RupeeIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M6 3h12" />
-    <path d="M6 8h12" />
-    <path d="M6 13l8.5 8" />
-    <path d="M6 13h3a4 4 0 0 0 0-8" />
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 3h12" /><path d="M6 8h12" /><path d="M6 13l8.5 8" /><path d="M6 13h3a4 4 0 0 0 0-8" />
   </svg>
 );
 
 const DollarIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
   </svg>
 );
 
-// ─── Props ─────────────────────────────────────────────────────────────────────
+const GPIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><path d="M12 6v12" /><path d="M15 9h-3.5a2.5 2.5 0 1 0 0 5h2a2.5 2.5 0 1 1 0 5H9" />
+  </svg>
+);
+
+const CurrencyBadge = ({ currency }: { currency: string }) => {
+  const badgeClass =
+    currency === "GP"
+      ? "bg-purple-100 text-purple-700"
+      : currency === "INR"
+      ? "bg-orange-100 text-orange-700"
+      : "bg-green-100 text-green-700";
+
+  return (
+    <span className={`absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full ${badgeClass}`}>
+      {currency === "GP" ? (
+        <GPIcon className="w-2.5 h-2.5" />
+      ) : currency === "INR" ? (
+        <RupeeIcon className="w-2.5 h-2.5" />
+      ) : (
+        <DollarIcon className="w-2.5 h-2.5" />
+      )}
+      {currency}
+    </span>
+  );
+};
+
+const CurrencyTotalIcon = ({ currency }: { currency: string }) => {
+  if (currency === "GP") return <GPIcon className="w-4 h-4" />;
+  if (currency === "INR") return <RupeeIcon className="w-4 h-4" />;
+  return <DollarIcon className="w-4 h-4" />;
+};
+
 interface CartSectionProps {
   cart: CartItem[];
   getPriceForMembership: (item: Item) => number | null;
@@ -61,9 +72,13 @@ interface CartSectionProps {
   purchasingItemId: string | null;
 }
 
-// ─── Type guard ────────────────────────────────────────────────────────────────
 const isFullItem = (item: Item | { id: string } | undefined): item is Item =>
   item != null && "basePrice" in item;
+
+const formatPrice = (price: number, currency: string, sym: string) =>
+  currency === "GP"
+    ? `${Math.ceil(price)} GP`
+    : `${sym}${Number(price).toFixed(2)}`;
 
 const CartSection: React.FC<CartSectionProps> = ({
   cart,
@@ -75,10 +90,8 @@ const CartSection: React.FC<CartSectionProps> = ({
   purchasingItemId,
 }) => {
   const queryClient = useQueryClient();
-
   const resolveCurrencySymbol = getCurrencySymbolProp ?? getCurrencySymbol;
 
-  // Derive cart-level currency symbol from full items only
   const cartCurrencies = [
     ...new Set(
       cart
@@ -87,29 +100,22 @@ const CartSection: React.FC<CartSectionProps> = ({
     ),
   ];
 
-  // ✅ Calculate totals per currency
   const calculateTotalsByCurrency = () => {
     const totals: Record<string, number> = {};
-
     cart.forEach((cartItem) => {
       if (!isFullItem(cartItem.item)) return;
       const itemCurrency = cartItem.item.currency ?? "INR";
       const price = getPriceForMembership(cartItem.item);
       const effectivePrice = price ?? cartItem.item.basePrice;
       const lineTotal = effectivePrice * (cartItem.quantity ?? 1);
-
       totals[itemCurrency] = (totals[itemCurrency] || 0) + lineTotal;
     });
-
     return totals;
   };
 
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
-      const response = await axios.put(
-        "/api/user/store/items/cart/update-item-quantity",
-        { cartItemId, quantity }
-      );
+      const response = await axios.put("/api/user/store/items/cart/update-item-quantity", { cartItemId, quantity });
       return response.data;
     },
     onSuccess: () => {
@@ -150,19 +156,15 @@ const CartSection: React.FC<CartSectionProps> = ({
               if (!isFullItem(cartItem.item)) return null;
 
               const itemCurrency = cartItem.item.currency ?? "INR";
-              const isINR        = itemCurrency === "INR";
-              const sym          = resolveCurrencySymbol(itemCurrency);
-              const price        = getPriceForMembership(cartItem.item);
+              const isGP = itemCurrency === "GP";
+              const sym = resolveCurrencySymbol(itemCurrency);
+              const price = getPriceForMembership(cartItem.item);
               const effectivePrice = price ?? cartItem.item.basePrice;
-              const quantity     = cartItem.quantity ?? 1;
+              const quantity = cartItem.quantity ?? 1;
 
               return (
-                <li
-                  key={cartItem.id}
-                  className="flex justify-between items-center border-b pb-4"
-                >
+                <li key={cartItem.id} className="flex justify-between items-center border-b pb-4">
                   <div className="flex items-center gap-4">
-                    {/* Image with currency badge */}
                     <div className="relative">
                       <Image
                         src={cartItem.item.imageUrl || "/placeholder-image.jpg"}
@@ -171,30 +173,18 @@ const CartSection: React.FC<CartSectionProps> = ({
                         height={64}
                         className="object-cover rounded-md"
                       />
-                      <span
-                        className={`absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
-                          isINR
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {isINR
-                          ? <RupeeIcon className="w-2.5 h-2.5" />
-                          : <DollarIcon className="w-2.5 h-2.5" />
-                        }
-                        {itemCurrency}
-                      </span>
+                      <CurrencyBadge currency={itemCurrency} />
                     </div>
 
                     <div>
                       <h4 className="text-lg font-medium">{cartItem.item.name}</h4>
                       <div className="flex items-center gap-2">
-                        <span className="text-green-600 font-semibold">
-                          {sym}{Number(effectivePrice).toFixed(2)}
+                        <span className={`font-semibold ${isGP ? "text-purple-600" : "text-green-600"}`}>
+                          {formatPrice(effectivePrice, itemCurrency, sym)}
                         </span>
                         {price !== cartItem.item.basePrice && (
                           <span className="text-gray-500 line-through text-sm">
-                            {sym}{Number(cartItem.item.basePrice).toFixed(2)}
+                            {formatPrice(cartItem.item.basePrice, itemCurrency, sym)}
                           </span>
                         )}
                       </div>
@@ -205,7 +195,6 @@ const CartSection: React.FC<CartSectionProps> = ({
                   </div>
 
                   <div className="flex items-center gap-4">
-                    {/* Quantity stepper */}
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleQuantityChange(cartItem.id!, quantity - 1)}
@@ -224,9 +213,8 @@ const CartSection: React.FC<CartSectionProps> = ({
                       </button>
                     </div>
 
-                    {/* Line total */}
-                    <span className="text-green-600 font-semibold">
-                      {sym}{Number(effectivePrice * quantity).toFixed(2)}
+                    <span className={`font-semibold ${isGP ? "text-purple-600" : "text-green-600"}`}>
+                      {formatPrice(effectivePrice * quantity, itemCurrency, sym)}
                     </span>
 
                     <button
@@ -241,7 +229,7 @@ const CartSection: React.FC<CartSectionProps> = ({
             })}
           </ul>
 
-          {/* ✅ Updated Cart total - Shows per-currency breakdown */}
+          {/* Cart totals */}
           <div className="mt-4 text-right">
             {hasMixedCurrencies ? (
               <div className="space-y-2">
@@ -249,27 +237,21 @@ const CartSection: React.FC<CartSectionProps> = ({
                 <div className="flex flex-col items-end gap-1">
                   {Object.entries(totalsByCurrency).map(([currency, total]) => {
                     const sym = resolveCurrencySymbol(currency);
-                    const isINR = currency === "INR";
+                    const isGP = currency === "GP";
+                    const colorClass = isGP
+                      ? "text-purple-600"
+                      : currency === "INR"
+                      ? "text-orange-600"
+                      : "text-green-600";
 
                     return (
-                      <div
-                        key={currency}
-                        className="flex items-center gap-2 text-lg font-bold"
-                      >
-                        <span className={`inline-flex items-center gap-1 ${
-                          isINR ? "text-orange-600" : "text-green-600"
-                        }`}>
-                          {isINR ? (
-                            <RupeeIcon className="w-4 h-4" />
-                          ) : (
-                            <DollarIcon className="w-4 h-4" />
+                      <div key={currency} className="flex items-center gap-2 text-lg font-bold">
+                        <span className={`inline-flex items-center gap-1 ${colorClass}`}>
+                          <CurrencyTotalIcon currency={currency} />
+                          <span>{formatPrice(total, currency, sym)}</span>
+                          {!isGP && (
+                            <span className="text-sm text-gray-500 font-normal">{currency}</span>
                           )}
-                          <span>
-                            {sym}{Number(total).toFixed(2)}
-                          </span>
-                          <span className="text-sm text-gray-500 font-normal">
-                            {currency}
-                          </span>
                         </span>
                       </div>
                     );
@@ -282,9 +264,12 @@ const CartSection: React.FC<CartSectionProps> = ({
             ) : (
               <div className="text-xl font-bold">
                 Total Amount:{" "}
-                <span className="text-green-600">
-                  {resolveCurrencySymbol(cartCurrencies[0])}
-                  {Number(calculateTotal()).toFixed(2)}
+                <span className={cartCurrencies[0] === "GP" ? "text-purple-600" : "text-green-600"}>
+                  {formatPrice(
+                    calculateTotal(),
+                    cartCurrencies[0] ?? "INR",
+                    resolveCurrencySymbol(cartCurrencies[0])
+                  )}
                 </span>
               </div>
             )}
