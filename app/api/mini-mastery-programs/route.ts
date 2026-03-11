@@ -6,7 +6,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 
 // ─── Request body validation schema ──────────────────────────────────────────
-// Mirrors ProgramDBPayload from @/types/mini-mastery-program — validated again on server
+// Mirrors ProgramDBPayload from @/schema/zodSchema — validated again on server
 // so we never trust raw client input directly into Prisma
 
 const moduleItemSchema = z.object({
@@ -206,4 +206,59 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(total / limit),
     },
   });
+}
+
+// ─── PATCH /api/mini-mastery-programs  →  Submit for Review ──────────────────
+// User can only move their own DRAFT → UNDER_REVIEW
+
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  let body: unknown;
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ message: "Invalid JSON." }, { status: 400 }); }
+
+  const schema = z.object({
+    id:     z.string().cuid(),
+    status: z.literal("UNDER_REVIEW"),   // user can only submit for review, not publish
+  });
+
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: "Validation failed.", errors: parsed.error.flatten().fieldErrors },
+      { status: 422 },
+    );
+  }
+
+  const { id } = parsed.data;
+
+  // Confirm program belongs to this user and is currently DRAFT
+  const program = await prisma.program.findFirst({
+    where: { id, createdBy: userId },
+    select: { id: true, status: true },
+  });
+
+  if (!program) {
+    return NextResponse.json({ message: "Program not found." }, { status: 404 });
+  }
+
+  if (program.status !== "DRAFT") {
+    return NextResponse.json(
+      { message: "Only DRAFT programs can be submitted for review." },
+      { status: 409 },
+    );
+  }
+
+  const updated = await prisma.program.update({
+    where: { id },
+    data:  { status: "UNDER_REVIEW" },
+    select: { id: true, name: true, status: true },
+  });
+
+  return NextResponse.json({ message: "Program submitted for review.", program: updated });
 }

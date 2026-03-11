@@ -82,7 +82,6 @@ model User {
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
-  progressLogs  MiniMasteryProgressLog[]
   userBilling                UserBillingInformation?
   referralsReceived             Referral[]                        @relation("Referred")
   referralsMade                 Referral[]                        @relation("Referrer")
@@ -124,6 +123,8 @@ model User {
   approvedItems                 Item[]                            @relation("ItemApprover")
   coachChallengePayouts ChallengePayout[]
   challengePayments ChallengePayment[]
+  progressLogs  MiniMasteryProgressLog[]
+  courseCompletions  MiniMasteryCourseCompletion[]
   miniMasteryProgramPayments MiniMasteryProgramPayment[]
 
   createdPrograms  Program[]  @relation("ProgramCreator")
@@ -1566,7 +1567,7 @@ model RazorpayPlanCache {
 
 // membership model end
 
-// mini mastery progress log
+// mini mastery additional models
 model MiniMasteryProgressLog {
   id        String   @id @default(cuid())
 
@@ -1590,9 +1591,33 @@ model MiniMasteryProgressLog {
   @@unique([userId, programId, dayNumber])   // one log per user per day per program
   @@index([userId, programId])
 }
+model MiniMasteryCourseCompletion {
+  id        String  @id @default(cuid())
+
+  userId    String
+  programId String
+
+  // Course completion
+  courseCompleted   Boolean   @default(false)
+  courseCompletedAt DateTime?
+
+  // Certificate
+  certificateDownloaded   Boolean   @default(false)
+  certificateDownloadedAt DateTime?
+  certificatePath         String?   // Supabase / S3 path or URL to the generated PDF
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId])   // one record per user per program
+  @@index([userId])
+  @@index([programId])
+}
 model MiniMasteryProgramPayment {
   id             String   @id @default(cuid())
-
   userId         String
   programId      String
   paymentOrderId String   @unique
@@ -1662,6 +1687,8 @@ model Program {
   purchases          OneTimeProgramPurchase[]
   userProgramStates UserProgramState[]
   progressLogs  MiniMasteryProgressLog[]
+  courseCompletions  MiniMasteryCourseCompletion[]
+
   miniMasteryProgramPayments MiniMasteryProgramPayment[]
   createdBy   String?
   creator     User?   @relation("ProgramCreator", fields: [createdBy], references: [id])

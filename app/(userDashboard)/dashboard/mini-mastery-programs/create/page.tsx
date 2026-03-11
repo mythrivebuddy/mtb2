@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Plus, TrendingUp, Users, CheckCircle, Star,
-  MoreVertical, Filter, Lightbulb, HelpCircle,
+  Filter, Lightbulb, HelpCircle,
   ChevronLeft, ChevronRight, Loader2, RefreshCw,
-  X,
+  X, Send,
 } from "lucide-react";
 import Link from "next/link";
 import { ApiResponse, Pagination, Program, ProgramStatus } from "@/types/client/mini-mastery-program";
@@ -28,8 +28,8 @@ function formatCurrency(price: number | null, currency: string | null): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-IN", {
-    day: "2-digit", month: "short", year: "numeric",
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short", day: "2-digit", year: "numeric",
   });
 }
 
@@ -37,6 +37,8 @@ function moduleCount(modules: unknown): number {
   if (!Array.isArray(modules)) return 0;
   return modules.length;
 }
+
+
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -50,16 +52,14 @@ export default function Dashboard() {
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchPrograms = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: String(LIMIT),
-      });
+      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
       if (statusFilter !== "ALL") params.set("status", statusFilter);
 
       const res = await fetch(`/api/mini-mastery-programs?${params.toString()}`);
@@ -77,18 +77,39 @@ export default function Dashboard() {
     }
   }, [page, statusFilter]);
 
-  useEffect(() => {
-    void fetchPrograms();
-  }, [fetchPrograms]);
+  useEffect(() => { void fetchPrograms(); }, [fetchPrograms]);
 
-  // Reset to page 1 when filter changes
   const handleStatusFilter = (s: ProgramStatus | "ALL") => {
     setStatusFilter(s);
     setPage(1);
     setShowFilterMenu(false);
   };
 
-  // ── Stats (derived from current page — replace with real API if needed) ────
+  // ── Submit for review ──────────────────────────────────────────────────────
+  const handleSubmitForReview = async (id: string) => {
+    setSubmittingId(id);
+    try {
+      const res = await fetch("/api/mini-mastery-programs", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "UNDER_REVIEW" }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(d.message ?? "Failed to update status.");
+      }
+      // Optimistic update in local state
+      setPrograms((prev) =>
+        prev.map((p) => p.id === id ? { ...p, status: "UNDER_REVIEW" } : p)
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setSubmittingId(null);
+    }
+  };
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
   const stats = [
     {
       label: "TOTAL PROGRAMS",
@@ -159,9 +180,7 @@ export default function Dashboard() {
                 <div className={`${stat.bg} p-2 rounded-lg`}>{stat.icon}</div>
               </div>
               <div className="text-xl md:text-2xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-[10px] md:text-xs mt-2 font-medium text-green-500">
-                {stat.trend}
-              </div>
+              <div className="text-[10px] md:text-xs mt-2 font-medium text-green-500">{stat.trend}</div>
             </div>
           ))}
         </div>
@@ -181,17 +200,13 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              {/* Active filter pill */}
               {statusFilter !== "ALL" && (
                 <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${STATUS_CONFIG[statusFilter].color}`}>
                   {STATUS_CONFIG[statusFilter].label}
-                  <button onClick={() => handleStatusFilter("ALL")}>
-                    <X size={12} />
-                  </button>
+                  <button onClick={() => handleStatusFilter("ALL")}><X size={12} /></button>
                 </div>
               )}
 
-              {/* Filter dropdown */}
               <div className="relative ml-auto sm:ml-0">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
@@ -215,13 +230,10 @@ export default function Dashboard() {
                         All Programs
                       </button>
                       {ALL_STATUSES.map((s) => (
-                        <button
-                          key={s}
-                          onClick={() => handleStatusFilter(s)}
+                        <button key={s} onClick={() => handleStatusFilter(s)}
                           className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                             statusFilter === s ? "bg-gray-900 text-white" : "hover:bg-gray-50 text-gray-600"
-                          }`}
-                        >
+                          }`}>
                           {STATUS_CONFIG[s].label}
                         </button>
                       ))}
@@ -230,19 +242,13 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Refresh */}
-              <button
-                onClick={() => void fetchPrograms()}
-                disabled={loading}
-                className="p-2 border rounded-lg hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-40"
-                title="Refresh"
-              >
+              <button onClick={() => void fetchPrograms()} disabled={loading}
+                className="p-2 border rounded-lg hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-40" title="Refresh">
                 <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               </button>
             </div>
           </div>
 
-          {/* Error state */}
           {error && (
             <div className="mx-6 my-4 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600 font-medium">
               {error}
@@ -264,7 +270,6 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-gray-50">
 
-                {/* Loading rows */}
                 {loading && Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
                     <td className="px-6 py-4">
@@ -277,14 +282,11 @@ export default function Dashboard() {
                       </div>
                     </td>
                     {[...Array(5)].map((_, j) => (
-                      <td key={j} className="px-6 py-4">
-                        <div className="h-3 w-16 bg-gray-100 rounded" />
-                      </td>
+                      <td key={j} className="px-6 py-4"><div className="h-3 w-16 bg-gray-100 rounded" /></td>
                     ))}
                   </tr>
                 ))}
 
-                {/* Empty state */}
                 {!loading && programs.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-6 py-16 text-center">
@@ -298,10 +300,8 @@ export default function Dashboard() {
                             : "No programs yet. Create your first one!"}
                         </p>
                         {statusFilter !== "ALL" && (
-                          <button
-                            onClick={() => handleStatusFilter("ALL")}
-                            className="text-blue-600 text-sm font-bold underline underline-offset-4"
-                          >
+                          <button onClick={() => handleStatusFilter("ALL")}
+                            className="text-blue-600 text-sm font-bold underline underline-offset-4">
                             Clear filter
                           </button>
                         )}
@@ -310,7 +310,6 @@ export default function Dashboard() {
                   </tr>
                 )}
 
-                {/* Data rows */}
                 {!loading && programs.map((program) => {
                   const statusKey = (program.status ?? "DRAFT") as ProgramStatus;
                   const cfg = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.DRAFT;
@@ -320,20 +319,15 @@ export default function Dashboard() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {program.thumbnailUrl ? (
-                            <img
-                              src={program.thumbnailUrl}
-                              alt={program.name}
-                              className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100"
-                            />
+                            <img src={program.thumbnailUrl} alt={program.name}
+                              className="w-10 h-10 rounded-lg object-cover shrink-0 border border-gray-100" />
                           ) : (
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg flex items-center justify-center shrink-0 border border-blue-50 text-blue-600 font-black text-sm">
                               {program.durationDays ?? "?"}
                             </div>
                           )}
                           <div>
-                            <div className="font-bold text-gray-800 text-sm md:text-base leading-tight">
-                              {program.name}
-                            </div>
+                            <div className="font-bold text-gray-800 text-sm md:text-base leading-tight">{program.name}</div>
                             <div className="text-[11px] md:text-xs text-gray-400 mt-0.5">
                               {program.unlockType === "daily" ? "Daily unlock" : "All unlocked"} •{" "}
                               {program.durationDays ?? "?"} days
@@ -360,10 +354,21 @@ export default function Dashboard() {
                         {formatDate(program.updatedAt)}
                       </td>
 
+                      {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        <button className="text-gray-400 hover:text-gray-900 transition-colors opacity-0 group-hover:opacity-100">
-                          <MoreVertical size={18} />
-                        </button>
+                        {program.status === "DRAFT" && (
+                          <button
+                            onClick={() => handleSubmitForReview(program.id)}
+                            disabled={submittingId === program.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
+                          >
+                            {submittingId === program.id
+                              ? <Loader2 size={13} className="animate-spin" />
+                              : <Send size={13} />
+                            }
+                            Submit for Review
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -383,8 +388,7 @@ export default function Dashboard() {
                 <>
                   Showing{" "}
                   <span className="font-bold text-gray-700">
-                    {pagination.total === 0 ? 0 : (page - 1) * LIMIT + 1}–
-                    {Math.min(page * LIMIT, pagination.total)}
+                    {pagination.total === 0 ? 0 : (page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, pagination.total)}
                   </span>{" "}
                   of <span className="font-bold text-gray-700">{pagination.total}</span> programs
                 </>
@@ -392,55 +396,29 @@ export default function Dashboard() {
             </span>
 
             <div className="flex items-center gap-2">
-              {/* Page number pills */}
               <div className="hidden sm:flex items-center gap-1">
                 {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                  .filter(p => {
-                    // Show first, last, current, and neighbors
-                    return (
-                      p === 1 ||
-                      p === pagination.totalPages ||
-                      Math.abs(p - page) <= 1
-                    );
-                  })
+                  .filter(p => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
                   .reduce<(number | "...")[]>((acc, p, idx, arr) => {
-                    if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) {
+                    if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1)
                       acc.push("...");
-                    }
-                    acc.push(p);
-                    return acc;
+                    acc.push(p); return acc;
                   }, [])
-                  .map((p, idx) =>
-                    p === "..." ? (
-                      <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-sm">…</span>
-                    ) : (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p as number)}
-                        className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${
-                          page === p
-                            ? "bg-gray-900 text-white"
-                            : "hover:bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    )
-                  )}
+                  .map((p, idx) => p === "..." ? (
+                    <span key={`e-${idx}`} className="px-1 text-gray-400 text-sm">…</span>
+                  ) : (
+                    <button key={p} onClick={() => setPage(p as number)}
+                      className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${
+                        page === p ? "bg-gray-900 text-white" : "hover:bg-gray-100 text-gray-500"
+                      }`}>{p}</button>
+                  ))}
               </div>
-
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
-                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600"
-              >
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || loading}
+                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600">
                 <ChevronLeft size={16} /> Prev
               </button>
-              <button
-                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                disabled={page >= pagination.totalPages || loading}
-                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600"
-              >
+              <button onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))} disabled={page >= pagination.totalPages || loading}
+                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600">
                 Next <ChevronRight size={16} />
               </button>
             </div>

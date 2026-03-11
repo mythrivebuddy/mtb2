@@ -29,7 +29,6 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
 
   const { fields, append, remove } = useFieldArray({ control, name: "achievements" });
 
-  // useWatch for localStorage persistence — no useEffect dependency warning
   const allValues = useWatch({ control });
 
   const persistToStorage = (values: Partial<Step2Data>) => {
@@ -38,8 +37,6 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
     localStorage.setItem(MMP_STORAGE_KEY, JSON.stringify({ ...parsed, step2: values }));
   };
 
-  // achievements is a ZodArray — root error lives on the array itself, not on a field key
-  // FieldArrayPath errors come as errors.achievements (array-level) or errors.achievements[n].value
   const arrayLevelError: string | undefined =
     errors.achievements?.message ??
     (errors.achievements as { root?: { message?: string } } | undefined)?.root?.message;
@@ -51,10 +48,10 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
       noValidate
     >
       <header>
-        <h2 className="text-4xl font-serif font-bold text-[#1e293b]">
+        <h2 className="text-3xl font-bold text-[#1e293b]">
           What Will Participants Achieve?
         </h2>
-        <p className="text-gray-400 mt-4 text-lg">
+        <p className="text-gray-400 mt-2 text-base">
           Define the transformation participants will experience through your Mini-Mastery Program.
         </p>
       </header>
@@ -73,7 +70,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
                 })}
                 type="text"
                 placeholder="e.g. Develop a consistent morning routine"
-                className={`w-full p-6 border rounded-[24px] focus:ring-2 outline-none transition-all text-gray-700 ${
+                className={`w-full p-4 border rounded-[24px] focus:ring-2 outline-none transition-all text-gray-700 text-sm ${
                   errors.achievements?.[index]?.value
                     ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                     : "bg-gray-50/50 border-gray-100 focus:ring-blue-400"
@@ -88,7 +85,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
                   }}
                   className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-gray-300 hover:text-red-400 transition-colors"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               )}
             </div>
@@ -113,19 +110,19 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
         </button>
       </div>
 
-      <div className="flex justify-between items-center pt-10">
+      <div className="flex flex-wrap justify-between items-center gap-3 pt-6">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-8 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all text-sm"
         >
           <ArrowLeft size={18} /> Back
         </button>
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
         >
-          Save & Continue <ArrowRight size={20} />
+          Save & Continue <ArrowRight size={18} />
         </button>
       </div>
     </form>
