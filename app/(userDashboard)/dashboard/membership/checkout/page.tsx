@@ -553,6 +553,7 @@ export default function CheckoutPage() {
               body: JSON.stringify({
                 planId: context === "SUBSCRIPTION" ? planId : null,
                 challengeId: context === "CHALLENGE" ? challengeId : null,
+                mmp_programId: context === "MMP_PROGRAM" ? mmp_programId : null,
                 currency: currency,
                 billingCountry: billingDetails.country, // Use detected country
                 userType: session?.user.userType,
@@ -612,7 +613,9 @@ export default function CheckoutPage() {
   // 2. MANUAL VERIFY
   // ---------------------------
   const handleVerifyCoupon = async () => {
-    if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge)) return;
+    if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge) ||
+      (context === "MMP_PROGRAM" && !mmpProgram)
+    ) return;
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
@@ -628,6 +631,7 @@ export default function CheckoutPage() {
             code: couponCode,
             planId: context === "SUBSCRIPTION" ? plan?.id : null,
             challengeId: context === "CHALLENGE" ? challenge?.id : null,
+            mmp_programId: context === "MMP_PROGRAM" ? mmpProgram?.id : null,
             currency: currency,
             billingCountry: billingDetails.country,
             userType: session?.user.userType,
@@ -706,7 +710,19 @@ export default function CheckoutPage() {
       if (appliedCoupon?.type === "PERCENTAGE") {
         discount =
           (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100
+      } else if (appliedCoupon?.type === "FIXED") {
+        discount =
+          currency === "INR"
+            ? appliedCoupon.discountAmountINR ?? 0
+            : appliedCoupon.discountAmountUSD ?? 0
       }
+      else if (
+        appliedCoupon?.type === "FREE_DURATION" ||
+        appliedCoupon?.type === "FULL_DISCOUNT"
+      ) {
+        discount = subtotal
+      }
+      discount = Math.min(discount, subtotal)
 
       const taxableAmount = subtotal - discount
 

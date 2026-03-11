@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (!["SUBSCRIPTION", "CHALLENGE"].includes(scope)) {
+    if (!["SUBSCRIPTION", "CHALLENGE", "MMP_PROGRAM"].includes(scope)) {
       return NextResponse.json(
         { error: "Invalid coupon scope" },
         { status: 400 }

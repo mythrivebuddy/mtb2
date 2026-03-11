@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { code, planId, currency, challengeId, userId } = await req.json();
+    const { code, planId, currency, challengeId, userId, mmpProgramId } = await req.json();
 
-    if (!code || (!planId && !challengeId)) {
+    if (!code || (!planId && !challengeId && !mmpProgramId)) {
       return NextResponse.json(
         { valid: false, message: "Missing code or details." },
         { status: 400 }
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
+        applicableMmpPrograms: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
     }
 
-   
+
     if (coupon.scope === "CHALLENGE" && !challengeId) {
       return NextResponse.json({
         valid: false,
@@ -41,6 +42,12 @@ export async function POST(req: Request) {
       return NextResponse.json({
         valid: false,
         message: "This coupon is only valid for subscriptions",
+      });
+    }
+    if (coupon.scope === "MMP_PROGRAM" && !mmpProgramId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for MMP programs",
       });
     }
     const userUses = await prisma.couponRedemption.count({
@@ -101,6 +108,19 @@ export async function POST(req: Request) {
       if (!isChallengeValid) {
         return NextResponse.json(
           { valid: false, message: "Coupon not applicable for this challenge." },
+          { status: 400 }
+        );
+      }
+    }
+    // MMP Program applicability
+    if (mmpProgramId && coupon.applicableMmpPrograms.length > 0) {
+      const isProgramValid = coupon.applicableMmpPrograms.some(
+        (p) => p.id === mmpProgramId
+      );
+
+      if (!isProgramValid) {
+        return NextResponse.json(
+          { valid: false, message: "Coupon not applicable for this program." },
           { status: 400 }
         );
       }
