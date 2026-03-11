@@ -342,7 +342,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem
                   href="/dashboard/store"
                   icon={<ShoppingCartIcon size={20} />}
-                  label="Store"
+                  label="Growth Store"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
 
@@ -457,8 +457,26 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       onLinkClick={toggleSidebar}
                     />
                   </ComingSoonWrapper> */}
-                    
-                  
+                    <div className="flex items-center ">
+                      <Link
+                        href="/dashboard/mini-mastery-programs/create"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
+                      >
+                        <GraduationCap size={20} className="w-7" />
+
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-2">
+                          Promote Mini Mastery Programs
+                        </span>
+                      </Link>
+                    </div>
+                    <NavItem
+                      href="/dashboard/manage-store"
+                      icon={<ShoppingCartIcon size={20} />}
+                      label="Manage Growth Store"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
 
                     {/* <NavItem
                   href="/dashboard/faq"

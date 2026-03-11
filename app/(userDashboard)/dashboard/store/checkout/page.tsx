@@ -579,7 +579,7 @@ useEffect(() => {
     <div className="min-h-screen bg-gray-100">
       <div className="mb-3 mt-3 px-4">
         <Link href="/dashboard/store" className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600">
-          Back to Store
+          Back to Growth Store
         </Link>
       </div>
 
