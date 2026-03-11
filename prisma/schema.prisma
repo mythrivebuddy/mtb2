@@ -125,6 +125,7 @@ model User {
   challengePayments ChallengePayment[]
   progressLogs  MiniMasteryProgressLog[]
   courseCompletions  MiniMasteryCourseCompletion[]
+  miniMasteryProgramPayments MiniMasteryProgramPayment[]
 
   createdPrograms  Program[]  @relation("ProgramCreator")
   @@index([name])
@@ -1312,6 +1313,7 @@ model PaymentOrder {
   userId        String
   planId        String?
   challengeId   String?
+  programId     String?
   storeOrderId         String?    // Todo realtion needs to define when working with the storeProductId
   contextType   PaymentContextType?    // first optional then backfill then make required
 
@@ -1344,7 +1346,7 @@ model PaymentOrder {
   storeOrder  Order?            @relation(fields: [storeOrderId], references: [id])
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
   challengePayment ChallengePayment?
-
+  miniMasteryProgramPayment MiniMasteryProgramPayment?
 
   @@index([planId])
   @@index([challengeId])
@@ -1356,6 +1358,8 @@ enum PaymentContextType {
   SUBSCRIPTION
   CHALLENGE
   STORE_ORDER
+  STORE_PRODUCT
+  MMP_PROGRAM
 }
 
 
@@ -1447,6 +1451,7 @@ enum CouponScope  {
   SUBSCRIPTION
   CHALLENGE
   STORE_PRODUCT
+  MMP_PROGRAM
 }
 enum CouponType {
   PERCENTAGE
@@ -1562,7 +1567,7 @@ model RazorpayPlanCache {
 
 // membership model end
 
-// mini mastery progress log
+// mini mastery additional models
 model MiniMasteryProgressLog {
   id        String   @id @default(cuid())
 
@@ -1586,7 +1591,6 @@ model MiniMasteryProgressLog {
   @@unique([userId, programId, dayNumber])   // one log per user per day per program
   @@index([userId, programId])
 }
-
 model MiniMasteryCourseCompletion {
   id        String  @id @default(cuid())
 
@@ -1612,8 +1616,24 @@ model MiniMasteryCourseCompletion {
   @@index([userId])
   @@index([programId])
 }
+model MiniMasteryProgramPayment {
+  id             String   @id @default(cuid())
+  userId         String
+  programId      String
+  paymentOrderId String   @unique
 
+  amountPaid     Float
+  currency       String
 
+  status         PaymentStatus
+  purchasedAt    DateTime @default(now())
+  paidAt         DateTime?
+
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program        Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+}
 
 // program models start
 model Program {
@@ -1669,6 +1689,7 @@ model Program {
   progressLogs  MiniMasteryProgressLog[]
   courseCompletions  MiniMasteryCourseCompletion[]
 
+  miniMasteryProgramPayments MiniMasteryProgramPayment[]
   createdBy   String?
   creator     User?   @relation("ProgramCreator", fields: [createdBy], references: [id])
 }
