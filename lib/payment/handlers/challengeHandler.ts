@@ -18,5 +18,26 @@ export async function handleChallengePayment(
             paidAt: new Date(),
         },
     });
+    if (order.couponId) {
+
+        const existing = await tx.couponRedemption.findFirst({
+            where: {
+                couponId: order.couponId,
+                userId: order.userId,
+                appliedPlan: "CHALLENGE",
+            },
+        });
+        if (!existing) {
+            await tx.couponRedemption.create({
+                data: {
+                    couponId: order.couponId,
+                    userId: order.userId,
+                    redeemed: true,
+                    appliedPlan: "CHALLENGE",
+                    discountApplied: order.discountApplied, // optional if you store exact discount
+                },
+            });
+        }
+    }
 
 }

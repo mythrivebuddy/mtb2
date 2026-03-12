@@ -111,18 +111,19 @@ export async function GET(req: NextRequest) {
       /* ---------- STORE PRODUCT ---------- */
 
       case "STORE_PRODUCT":
-        if (!order.storeOrderId) {
-          return NextResponse.redirect(
-            new URL(
-              "/dashboard/membership/failure?reason=store_order_missing",
-              req.url
-            )
-          );
-        }
+        // if (!order.storeOrderId) {
+        //   return NextResponse.redirect(
+        //     new URL(
+        //       "/dashboard/membership/failure?reason=store_order_missing",
+        //       req.url
+        //     )
+        //   );
+        // }
 
         return NextResponse.redirect(
           new URL(
-            `/dashboard/store/orders/${order.storeOrderId}?payment=success`,
+            // `/dashboard/store/orders/${order.storeOrderId}?payment=success`,
+            `/dashboard/store/profile?payment=success&orderId=${orderId}`,
             req.url
           )
         );

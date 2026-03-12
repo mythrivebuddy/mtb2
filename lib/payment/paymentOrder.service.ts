@@ -31,6 +31,8 @@ export async function createPaymentOrder(data: {
             programId: data.programId ?? null,
             challengeId:
                 data.contextType === "CHALLENGE" ? data.entityId : undefined,
+                storeOrderId:
+        data.contextType === "STORE_PRODUCT" ? data.entityId : undefined,
         },
     });
 }

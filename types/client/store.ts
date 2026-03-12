@@ -10,6 +10,7 @@ export interface BillingInfo {
   state: string;
   postalCode: string;
   country: string;
+  gstNumber?: string 
 }
 
 export interface Category {
