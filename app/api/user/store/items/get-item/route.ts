@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     if (!itemId) {
       return new NextResponse("Item ID is required", { status: 400 });
     }
+    
 
     const item = await prisma.item.findUnique({
       where: {

@@ -1342,7 +1342,7 @@ model PaymentOrder {
 
   createdAt     DateTime @default(now())
   paidAt        DateTime?
-
+  cartSnapshot  Json?
   user          User             @relation(fields: [userId], references: [id])
   plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
   challenge     Challenge?        @relation(fields: [challengeId], references: [id])
@@ -1518,6 +1518,7 @@ model UserBillingInformation {
   id           String   @id
   userId       String   @unique
   phone        String?
+  gstNumber     String? 
   addressLine1 String
   addressLine2 String?
   city         String

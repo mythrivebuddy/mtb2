@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import {  useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -17,22 +17,41 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { Item, BillingInfo } from "@/types/client/store";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import { GST_REGEX } from "@/lib/constant";
+import { openRazorpayCheckout } from "@/lib/razorpay/client/razorpay-client";
+import { convertCurrency } from "@/lib/payment/payment.utils";
 
 // ─── Currency helpers ──────────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GP: "GP" };
 const getCurrencySymbol = (currency?: string): string => CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
-const CONVERSION_RATES: Record<string, Record<string, number>> = {
-  USD: { INR: 83.5, USD: 1 },
-  INR: { USD: 1 / 83.5, INR: 1 },
-  GP: { GP: 1 },
-};
+// const CONVERSION_RATES: Record<string, Record<string, number>> = {
+//   USD: { INR: 83.5, USD: 1 },
+//   INR: { USD: 1 / 83.5, INR: 1 },
+//   GP: { GP: 1 },
+// };
 
-const convertPrice = (amount: number, from: string, to: string): number => {
-  if (from === to) return amount;
-  if (from === "GP" || to === "GP") return amount;
-  return amount * (CONVERSION_RATES[from]?.[to] ?? 1);
-};
+// const convertPrice = (amount: number, from: string, to: string): number => {
+//   if (from === to) return amount;
+//   if (from === "GP" || to === "GP") return amount;
+//   return amount * (CONVERSION_RATES[from]?.[to] ?? 1);
+// };
+const convertPrice = (
+  amount: number,
+  from: string,
+  to: string,
+  rate?: number
+): number => {
+
+  if (from === to) return amount
+  if (from === "GP" || to === "GP") return amount
+  if (!rate) return amount
+
+  if (from === "USD" && to === "INR") return amount * rate
+  if (from === "INR" && to === "USD") return amount / rate
+
+  return amount
+}
 
 // ─── SVG Icons ─────────────────────────────────────────────────────────────────
 const RupeeIcon = ({ className }: { className?: string }) => (
@@ -56,7 +75,7 @@ const GPIcon = ({ className }: { className?: string }) => (
 // ─── Constants ────────────────────────────────────────────────────────────────
 const EMPTY_BILLING: BillingInfo = {
   fullName: "", email: "", phone: "", addressLine1: "", addressLine2: "",
-  city: "", state: "", postalCode: "", country: "IN",
+  city: "", state: "", postalCode: "", country: "IN", gstNumber: "",
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -70,8 +89,15 @@ interface BillingFormProps {
 
 const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: BillingFormProps) => {
   const [form, setForm] = useState<BillingInfo>(billing);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "gstNumber" ? value.toUpperCase() : value,
+      ...(name === "country" && value !== "IN" ? { gstNumber: "" } : {})
+    }))
+  }
   const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave(form); };
 
   return (
@@ -103,6 +129,27 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
               <input type="tel" name="phone" value={form.phone} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border" placeholder="9876543210" />
             </div>
           </div>
+          {/* GST NUMBER (OPTIONAL - INDIA ONLY) */}
+          {form.country === "IN" && (
+            <div className="col-span-full">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                GST Number (Optional)
+              </label>
+
+              <input
+                type="text"
+                name="gstNumber"
+                value={form.gstNumber || ""}
+                onChange={handleChange}
+                placeholder="22AAAAA0000A1Z5"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border uppercase"
+              />
+
+              <p className="text-xs text-gray-400 mt-1">
+                Enter GST number if you want GST invoice for business.
+              </p>
+            </div>
+          )}
           <div className="col-span-full">
             <label className="block text-xs font-medium text-gray-700 mb-1">Address <span className="text-red-500">*</span></label>
             <input type="text" name="addressLine1" value={form.addressLine1} onChange={handleChange} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border" placeholder="Street Address" required />
@@ -166,6 +213,9 @@ const BillingSummary = ({ billing, onEdit }: { billing: BillingInfo; onEdit: () 
         </p>
         {billing.phone && <p className="text-gray-500 text-sm">📞 {billing.phone}</p>}
         <p className="text-gray-500 text-sm">✉️ {billing.email}</p>
+        {billing.gstNumber && (
+          <p className="text-gray-500 text-sm">GST: {billing.gstNumber}</p>
+        )}
       </div>
       <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 ml-4">
         <Pencil className="w-3.5 h-3.5" /> CHANGE
@@ -178,8 +228,8 @@ const CurrencyIcon = ({ currency, className }: { currency: string; className?: s
   switch (currency) {
     case "INR": return <RupeeIcon className={className} />;
     case "USD": return <DollarIcon className={className} />;
-    case "GP":  return <GPIcon className={className} />;
-    default:    return <RupeeIcon className={className} />;
+    case "GP": return <GPIcon className={className} />;
+    default: return <RupeeIcon className={className} />;
   }
 };
 
@@ -218,7 +268,7 @@ const GPBalanceBanner = ({ gpBalance, requiredGP, isInsufficient }: { gpBalance:
 
 // ─── Main Checkout Content ────────────────────────────────────────────────────
 const CheckoutContent = () => {
-  const router = useRouter();
+  // const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
 
@@ -251,6 +301,8 @@ const CheckoutContent = () => {
     enabled: cartItems.length > 0,
   });
 
+
+
   const { data: billingData, isLoading: isBillingLoading, refetch: refetchBilling } = useQuery({
     queryKey: ["billingInfo"],
     queryFn: async () => {
@@ -266,10 +318,21 @@ const CheckoutContent = () => {
       return res.data as { balance: number; earned: number; spent: number };
     },
   });
+const { data: usdToInrRate } = useQuery({
+  queryKey: ["usdToInrRate"],
+  queryFn: async () => convertCurrency(1, "USD", "INR"),
+  enabled: selectedCurrency !== "GP"
+});
 
   // ── useMutation ───────────────────────────────────────────────────────────
   const saveBillingMutation = useMutation({
     mutationFn: async (data: BillingInfo) => {
+      const gst = data.gstNumber?.trim()
+
+      if (data.country === "IN" && gst && !GST_REGEX.test(gst)) {
+        toast.error("Invalid GST Number format")
+        return;
+      }
       const res = await axios.post("/api/user/store/items/checkout/billinginfo", data);
       return res.data.billingInfo as BillingInfo;
     },
@@ -281,21 +344,78 @@ const CheckoutContent = () => {
     onError: (error) => toast.error(getAxiosErrorMessage(error, "Failed to save address")),
   });
 
+  // const placeOrderMutation = useMutation({
+  //   mutationFn: async () => {
+  //     if (!selectedCurrency) throw new Error("Currency not selected");
+  //     await axios.post("/api/user/store/items/place-order", {
+  //       items: parsedCartItems.map(({ itemId, quantity }) => ({ itemId, quantity })),
+  //       currency: selectedCurrency,
+  //     });
+  //   },
+  //   onSuccess: () => {
+  //     toast.success("Order placed successfully!");
+  //     router.push("/dashboard/store/profile");
+  //   },
+  //   onError: (error) => toast.error(getAxiosErrorMessage(error, "Failed to place order")),
+  // });
   const placeOrderMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedCurrency) throw new Error("Currency not selected");
-      await axios.post("/api/user/store/items/place-order", {
-        items: parsedCartItems.map(({ itemId, quantity }) => ({ itemId, quantity })),
-        currency: selectedCurrency,
-      });
-    },
-    onSuccess: () => {
-      toast.success("Order placed successfully!");
-      router.push("/dashboard/store/profile");
-    },
-    onError: (error) => toast.error(getAxiosErrorMessage(error, "Failed to place order")),
-  });
+      if (!selectedCurrency) throw new Error("Currency not selected")
 
+      const res = await axios.post(
+        "/api/billing/razorpay/store/create-order",
+        {
+          context: "STORE_PRODUCT",
+          items: parsedCartItems.map(({ itemId, quantity }) => ({
+            itemId,
+            quantity,
+          })),
+          currency: selectedCurrency,
+        }
+      )
+
+      return res.data
+    },
+
+
+    onSuccess: async (data) => {
+      try {
+        await openRazorpayCheckout({
+          orderId: data.orderId,
+          key: data.key,
+          name: "mythrivebuddy.com",
+          description: "Store Purchase",
+
+          prefill: {
+            name: session?.user?.name || "",
+            email: session?.user?.email || "",
+            contact: "",
+          },
+
+          callbackUrl: "/api/billing/razorpay/challenge/callback",
+
+          onDismiss: () => {
+            window.location.href =
+              `/dashboard/membership/failure?type=store_product` +
+              `&reason=checkout_closed`
+          },
+
+          onFailure: (reason, metadata) => {
+            window.location.href =
+              `/dashboard/membership/failure?type=store_product` +
+              (metadata?.order_id ? `&orderId=${metadata.order_id}` : "") +
+              `&reason=${encodeURIComponent(reason)}`
+          }
+        })
+      } catch (err) {
+        console.error("Error initiating Razorpay checkout:", err);
+        toast.error("Failed to start payment .")
+      }
+    },
+
+    onError: (error) =>
+      toast.error(getAxiosErrorMessage(error, "Failed to initiate payment")),
+  })
   // ── Derived values via useMemo — stable, no new arrays each render ────────
   const itemCurrencies = useMemo(
     () => items?.map((item) => item.currency || "INR") ?? [],
@@ -321,28 +441,7 @@ const CheckoutContent = () => {
 
   const isGPInsufficient = isGPCart && gpBalance < gpTotal;
 
-  // ── useEffect — stable deps now that uniqueCurrencies is memoized ─────────
-  useEffect(() => {
-    if (items && !isMixedCurrency && uniqueCurrencies.length === 1 && !selectedCurrency) {
-      setSelectedCurrency(uniqueCurrencies[0] as "INR" | "USD" | "GP");
-    }
-  }, [items, isMixedCurrency, uniqueCurrencies, selectedCurrency]);
-
-  // ── ALL hooks above this line — early returns are safe below ──────────────
-  const isLoading = isItemsLoading || isBillingLoading || isGPLoading;
-  if (isLoading) return <PageLoader />;
-
-  if (!items || items.length === 0) {
-    return (
-      <div className="container mx-auto p-4 text-center">
-        <h1 className="text-2xl font-bold text-red-600">No items found</h1>
-        <Link href="/dashboard/store" className="text-blue-600 hover:underline mt-4 inline-block">Return to Store</Link>
-      </div>
-    );
-  }
-
-  // ── Pure derived values (no hooks) ────────────────────────────────────────
-  const savedBilling: BillingInfo | null = billingData ?? null;
+    const savedBilling: BillingInfo | null = billingData ?? null;
   const hasBilling = !!savedBilling?.addressLine1;
 
   const defaultBilling: BillingInfo = {
@@ -359,6 +458,60 @@ const CheckoutContent = () => {
     ? { ...savedBilling, fullName: session?.user?.name ?? savedBilling.fullName, email: session?.user?.email ?? savedBilling.email }
     : null;
 
+  // ── useEffect — stable deps now that uniqueCurrencies is memoized ─────────
+useEffect(() => {
+
+  if (!items || !displayBilling) return;
+
+  // GP always GP
+  if (uniqueCurrencies.length === 1 && uniqueCurrencies[0] === "GP") {
+    setSelectedCurrency("GP");
+    return;
+  }
+
+  // SINGLE ITEM → auto by country
+  if (items.length === 1) {
+    const newCurrency = displayBilling.country === "IN" ? "INR" : "USD";
+
+    if (selectedCurrency !== newCurrency) {
+      setSelectedCurrency(newCurrency);
+    }
+
+    return;
+  }
+
+  // MULTIPLE ITEMS SAME CURRENCY
+  if (!isMixedCurrency && uniqueCurrencies.length === 1) {
+    const newCurrency = uniqueCurrencies[0] as "INR" | "USD";
+
+    if (selectedCurrency !== newCurrency) {
+      setSelectedCurrency(newCurrency);
+    }
+  }
+
+}, [
+  items,
+  displayBilling?.country,
+  uniqueCurrencies,
+  isMixedCurrency
+]);
+
+  // ── ALL hooks above this line — early returns are safe below ──────────────
+  const isLoading = isItemsLoading || isBillingLoading || isGPLoading;
+  if (isLoading) return <PageLoader />;
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="container mx-auto p-4 text-center">
+        <h1 className="text-2xl font-bold text-red-600">No items found</h1>
+        <Link href="/dashboard/store" className="text-blue-600 hover:underline mt-4 inline-block">Return to Store</Link>
+      </div>
+    );
+  }
+
+  // ── Pure derived values (no hooks) ────────────────────────────────────────
+
+
   const getDisplayPrice = (item: Item, index: number) => {
     const itemCurrency = item.currency || "INR";
     const rawPrice = item.basePrice * parsedCartItems[index].quantity;
@@ -367,7 +520,7 @@ const CheckoutContent = () => {
     }
     if (selectedCurrency && selectedCurrency !== "GP" && selectedCurrency !== itemCurrency) {
       return {
-        price: convertPrice(rawPrice, itemCurrency, selectedCurrency),
+        price: convertPrice(rawPrice, itemCurrency, selectedCurrency, usdToInrRate),
         symbol: getCurrencySymbol(selectedCurrency),
         currency: selectedCurrency,
         isConverted: true,
@@ -394,10 +547,30 @@ const CheckoutContent = () => {
       currency: selectedCurrency,
       total: items.reduce((sum, item, i) => {
         const c = item.currency || "INR";
-        return sum + convertPrice(item.basePrice * parsedCartItems[i].quantity, c, selectedCurrency);
+        return sum + convertPrice(
+          item.basePrice * parsedCartItems[i].quantity,
+          c,
+          selectedCurrency,
+          usdToInrRate
+        );
       }, 0),
     };
   })();
+
+  const GST_RATE = 0.18;
+
+  const isIndianGSTApplicable =
+    displayBilling?.country === "IN" &&
+    selectedCurrency === "INR" &&
+    !isGPCart;
+
+  const gstAmount = singleTotal && isIndianGSTApplicable
+    ? singleTotal.total * GST_RATE
+    : 0;
+
+  const finalTotal = singleTotal
+    ? singleTotal.total + gstAmount
+    : 0;
 
   const canProceed = hasBilling && !isEditingBilling && selectedCurrency !== null && !isGPInsufficient;
 
@@ -458,7 +631,7 @@ const CheckoutContent = () => {
             )}
 
             {/* 3/4. Currency Selection — only for mixed non-GP carts */}
-            {isMixedCurrency && !itemCurrencies.includes("GP") && (
+            {isMixedCurrency && items.length > 1 && !itemCurrencies.includes("GP") && (
               <div className="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl shadow-md border-2 border-orange-300">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-orange-600 rounded-lg animate-pulse">
@@ -508,11 +681,10 @@ const CheckoutContent = () => {
                     <button
                       key={currency}
                       onClick={() => setSelectedCurrency(currency as "INR" | "USD" | "GP")}
-                      className={`p-5 rounded-xl border-2 transition-all duration-200 ${
-                        selectedCurrency === currency
-                          ? "border-green-600 bg-green-600 text-white shadow-xl scale-105 ring-4 ring-green-200"
-                          : "border-orange-300 bg-white hover:border-orange-500 hover:shadow-md"
-                      }`}
+                      className={`p-5 rounded-xl border-2 transition-all duration-200 ${selectedCurrency === currency
+                        ? "border-green-600 bg-green-600 text-white shadow-xl scale-105 ring-4 ring-green-200"
+                        : "border-orange-300 bg-white hover:border-orange-500 hover:shadow-md"
+                        }`}
                     >
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-2 text-3xl font-bold mb-2">
@@ -537,7 +709,7 @@ const CheckoutContent = () => {
                       <Check className="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
                         <p className="text-sm font-bold text-green-900 mb-1">Payment Currency Selected: {selectedCurrency}</p>
-                        <p className="text-xs text-green-800">All items will be converted to {selectedCurrency} at checkout. Exchange rate: 1 USD = ₹83.50</p>
+                        <p className="text-xs text-green-800">All items will be converted to {selectedCurrency} at checkout. Exchange rate: 1 USD = ₹{usdToInrRate?.toFixed(2)}</p>
                         <button onClick={() => setSelectedCurrency(null)} className="mt-2 text-xs font-semibold text-green-700 hover:text-green-900 underline">
                           Change Currency
                         </button>
@@ -573,7 +745,7 @@ const CheckoutContent = () => {
                     <Check className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-bold text-green-900 mb-1">Paying in {selectedCurrency}</p>
-                      <p className="text-sm text-green-800">All prices converted using rate: 1 USD = ₹83.50</p>
+                      <p className="text-sm text-green-800">All prices converted using rate: 1 USD = ₹{usdToInrRate?.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -591,11 +763,10 @@ const CheckoutContent = () => {
                     <div key={item.id} className="flex gap-4 pb-5 border-b border-gray-200 last:border-b-0">
                       <div className="relative flex-shrink-0">
                         <Image src={item.imageUrl} alt={item.name} width={120} height={120} className="w-28 h-28 object-cover rounded-lg shadow-sm" />
-                        <span className={`absolute -top-2 -left-2 inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full shadow-md border-2 ${
-                          isGP ? "bg-purple-500 text-white border-purple-600"
+                        <span className={`absolute -top-2 -left-2 inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full shadow-md border-2 ${isGP ? "bg-purple-500 text-white border-purple-600"
                           : originalCurrency === "INR" ? "bg-orange-500 text-white border-orange-600"
-                          : "bg-green-500 text-white border-green-600"
-                        }`}>
+                            : "bg-green-500 text-white border-green-600"
+                          }`}>
                           <CurrencyIcon currency={originalCurrency} className="w-3 h-3" />
                           {originalCurrency}
                         </span>
@@ -732,6 +903,14 @@ const CheckoutContent = () => {
                   <span className="text-gray-700 font-medium">Delivery Charges</span>
                   <span className="text-green-600 font-bold">FREE</span>
                 </div>
+                {isIndianGSTApplicable && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-medium">GST (18%)</span>
+                    <span className="text-gray-900 font-bold">
+                      ₹{gstAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Total Payable */}
@@ -741,8 +920,8 @@ const CheckoutContent = () => {
                     <span className="text-lg font-bold text-gray-900">Total Payable</span>
                     <span className={`text-2xl font-bold ${singleTotal.currency === "GP" ? "text-purple-600" : "text-green-600"}`}>
                       {singleTotal.currency === "GP"
-                        ? `${Math.ceil(singleTotal.total)} GP`
-                        : `${getCurrencySymbol(singleTotal.currency)}${Number(singleTotal.total).toFixed(2)}`}
+                        ? `${Math.ceil(finalTotal)} GP`
+                        : `${getCurrencySymbol(singleTotal.currency)}${Number(finalTotal).toFixed(2)}`}
                     </span>
                   </div>
                 ) : isMixedCurrency ? (
@@ -819,11 +998,10 @@ const CheckoutContent = () => {
                 <button
                   onClick={() => placeOrderMutation.mutate()}
                   disabled={!canProceed || placeOrderMutation.isPending}
-                  className={`w-full py-4 text-white font-bold text-lg rounded-xl transition-all duration-200 ${
-                    !canProceed || placeOrderMutation.isPending
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-                  }`}
+                  className={`w-full py-4 text-white font-bold text-lg rounded-xl transition-all duration-200 ${!canProceed || placeOrderMutation.isPending
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    }`}
                 >
                   {placeOrderMutation.isPending ? (
                     <span className="flex items-center justify-center gap-2">

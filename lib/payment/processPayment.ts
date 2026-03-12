@@ -14,7 +14,7 @@ export async function processPayment(tx: Prisma.TransactionClient, order: Paymen
         return handleProgramPayment(tx, order);
     }
 
-    if (order.storeOrderId) {
+    if (order.contextType === "STORE_PRODUCT") {
         return handleStorePayment(tx, order);
     }
 

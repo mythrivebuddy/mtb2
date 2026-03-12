@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
+import { GST_REGEX } from "@/lib/constant";
 
 // GET - fetch billing info for the current user
 export async function GET() {
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
       state,
       postalCode,
       country,
+      gstNumber
     } = body;
 
     if (!addressLine1 || !city || !state || !postalCode || !country) {
@@ -71,7 +73,14 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const gst = gstNumber?.trim()?.toUpperCase();
 
+    if (country === "IN" && gst && !GST_REGEX.test(gst)) {
+      return NextResponse.json(
+        { error: "Invalid GST Number format" },
+        { status: 400 }
+      );
+    }
     const billingInfo = await prisma.userBillingInformation.upsert({
       where: { userId: user.id },
       update: {
@@ -82,6 +91,7 @@ export async function POST(req: NextRequest) {
         state,
         postalCode,
         country,
+        gstNumber: gst || null,
       },
       create: {
         id: crypto.randomUUID(),
@@ -93,6 +103,7 @@ export async function POST(req: NextRequest) {
         state,
         postalCode,
         country,
+         gstNumber: gst || null,
       },
     });
 
