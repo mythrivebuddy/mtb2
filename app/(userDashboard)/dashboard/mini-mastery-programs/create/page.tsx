@@ -5,7 +5,7 @@ import {
   Plus, TrendingUp, Users, CheckCircle, Star,
   Filter, Lightbulb, HelpCircle,
   ChevronLeft, ChevronRight, Loader2, RefreshCw,
-  X, Send,
+  X, Send, Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { ApiResponse, Pagination, Program, ProgramStatus } from "@/types/client/mini-mastery-program";
@@ -28,8 +28,8 @@ function formatCurrency(price: number | null, currency: string | null): string {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "2-digit", year: "numeric",
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric",
   });
 }
 
@@ -356,19 +356,32 @@ export default function Dashboard() {
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        {program.status === "DRAFT" && (
-                          <button
-                            onClick={() => handleSubmitForReview(program.id)}
-                            disabled={submittingId === program.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ml-auto"
-                          >
-                            {submittingId === program.id
-                              ? <Loader2 size={13} className="animate-spin" />
-                              : <Send size={13} />
-                            }
-                            Submit for Review
-                          </button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Edit — available for DRAFT and PUBLISHED programs */}
+                          {(program.status === "DRAFT" || program.status === "PUBLISHED") && (
+                            <Link
+                              href={`/dashboard/mini-mastery-programs/create/edit/${program.id}`}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                            >
+                              <Pencil size={13} /> Edit
+                            </Link>
+                          )}
+
+                          {/* Submit for Review — only for DRAFT */}
+                          {program.status === "DRAFT" && (
+                            <button
+                              onClick={() => handleSubmitForReview(program.id)}
+                              disabled={submittingId === program.id}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {submittingId === program.id
+                                ? <Loader2 size={13} className="animate-spin" />
+                                : <Send size={13} />
+                              }
+                              Submit for Review
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

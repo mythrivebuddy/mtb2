@@ -8,7 +8,7 @@ import {
   PlayCircle, CheckCircle2, Lock, Clock, ChevronRight,
   Lightbulb, ArrowLeft, MoreVertical, BookOpen,
   Loader2, AlertCircle, AlignLeft, Star,
-  Download, Award, PartyPopper, X,
+  Download, Award, PartyPopper, X, Trophy,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -38,6 +38,8 @@ interface CourseCompletion {
   certificateDownloaded:   boolean;
   certificateDownloadedAt: string | null;
   certificatePath:         string | null;
+  certificateUrl?:         string | null;
+  certificateId?:          string | null;
 }
 
 interface PlayerData {
@@ -107,6 +109,104 @@ function getDayStatus(
   return "active";
 }
 
+// ─── Confetti ─────────────────────────────────────────────────────────────────
+
+const CONFETTI_COLORS = [
+  "#3B82F6", "#8B5CF6", "#EC4899", "#F59E0B",
+  "#10B981", "#EF4444", "#06B6D4", "#F97316",
+];
+
+interface ConfettiPiece {
+  id:      number;
+  x:       number;
+  color:   string;
+  size:    number;
+  delay:   number;
+  duration: number;
+  shape:   "rect" | "circle" | "star";
+  rotation: number;
+}
+
+function Confetti({ active }: { active: boolean }) {
+  const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
+
+  useEffect(() => {
+    if (!active) return;
+    const newPieces: ConfettiPiece[] = Array.from({ length: 80 }, (_, i) => ({
+      id:       i,
+      x:        Math.random() * 100,
+      color:    CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      size:     Math.random() * 10 + 6,
+      delay:    Math.random() * 1.2,
+      duration: Math.random() * 2 + 2.5,
+      shape:    (["rect", "circle", "star"] as const)[Math.floor(Math.random() * 3)],
+      rotation: Math.random() * 360,
+    }));
+    setPieces(newPieces);
+
+    // Auto-cleanup after animation
+    const t = setTimeout(() => setPieces([]), 5000);
+    return () => clearTimeout(t);
+  }, [active]);
+
+  if (!pieces.length) return null;
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[60] overflow-hidden">
+      {pieces.map((p) => (
+        <div
+          key={p.id}
+          className="absolute top-0"
+          style={{
+            left:      `${p.x}%`,
+            animation: `confettiFall ${p.duration}s ${p.delay}s ease-in forwards`,
+          }}
+        >
+          {p.shape === "circle" ? (
+            <div
+              style={{
+                width:           p.size,
+                height:          p.size,
+                borderRadius:    "50%",
+                backgroundColor: p.color,
+                transform:       `rotate(${p.rotation}deg)`,
+              }}
+            />
+          ) : p.shape === "star" ? (
+            <div
+              style={{
+                width:           p.size,
+                height:          p.size,
+                backgroundColor: p.color,
+                clipPath:        "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
+                transform:       `rotate(${p.rotation}deg)`,
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width:           p.size,
+                height:          p.size * 0.5,
+                backgroundColor: p.color,
+                borderRadius:    2,
+                transform:       `rotate(${p.rotation}deg)`,
+              }}
+            />
+          )}
+        </div>
+      ))}
+
+      <style>{`
+        @keyframes confettiFall {
+          0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+          80%  { opacity: 1; }
+          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function PlayerSkeleton() {
@@ -157,7 +257,6 @@ function CourseCompletedModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden relative">
-        {/* Close */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
@@ -165,7 +264,6 @@ function CourseCompletedModal({
           <X size={18} />
         </button>
 
-        {/* Header gradient */}
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white relative overflow-hidden">
           <div className="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full" />
           <div className="absolute -left-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full" />
@@ -180,7 +278,6 @@ function CourseCompletedModal({
           </div>
         </div>
 
-        {/* Body */}
         <div className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <p className="text-slate-600 font-medium text-sm leading-relaxed">
@@ -188,7 +285,6 @@ function CourseCompletedModal({
             </p>
           </div>
 
-          {/* Certificate preview card */}
           <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-100 rounded-2xl p-5 flex items-center gap-4">
             <div className="w-12 h-12 bg-amber-400 rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-amber-100">
               <Award size={24} className="text-white" />
@@ -199,7 +295,6 @@ function CourseCompletedModal({
             </div>
           </div>
 
-          {/* Actions */}
           <div className="space-y-3">
             <button
               onClick={onDownload}
@@ -224,14 +319,97 @@ function CourseCompletedModal({
   );
 }
 
-// ─── Certificate Downloaded Modal ─────────────────────────────────────────────
+// ─── 🎉 Full Completion Celebration Modal ─────────────────────────────────────
+
+function CourseFinishedCelebrationModal({
+  programName,
+  totalDays,
+  onClose,
+}: {
+  programName: string;
+  totalDays:   number;
+  onClose:     () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-sm overflow-hidden relative text-center">
+
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+        >
+          <X size={18} />
+        </button>
+
+        {/* Top gradient burst */}
+        <div className="bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-500 pt-10 pb-8 px-8 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-20"
+            style={{ backgroundImage: "radial-gradient(circle at 30% 50%, white 1px, transparent 1px), radial-gradient(circle at 70% 20%, white 1px, transparent 1px)", backgroundSize: "30px 30px" }}
+          />
+          {/* Trophy icon with glow */}
+          <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-white/30 blur-xl" />
+            <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl">
+              <Trophy size={40} className="text-yellow-500" />
+            </div>
+          </div>
+          <p className="text-white/80 text-[10px] font-black uppercase tracking-widest mt-4">
+            🎊 You did it!
+          </p>
+          <h2 className="text-white text-2xl font-black mt-1 leading-tight drop-shadow-sm">
+            Course Complete!
+          </h2>
+        </div>
+
+        {/* Body */}
+        <div className="px-8 py-7 space-y-5">
+
+          <div className="space-y-1">
+            <p className="text-slate-800 font-black text-base leading-snug">{programName}</p>
+            <p className="text-slate-500 text-sm font-medium">
+              You completed all {totalDays} days. That&apos;s incredible dedication! 🔥
+            </p>
+          </div>
+
+          {/* Stats strip */}
+          <div className="flex gap-3">
+            <div className="flex-1 bg-green-50 border border-green-100 rounded-2xl py-3 px-2 text-center">
+              <p className="text-2xl font-black text-green-600">{totalDays}</p>
+              <p className="text-[10px] font-bold text-green-500 uppercase tracking-wide">Days Done</p>
+            </div>
+            <div className="flex-1 bg-blue-50 border border-blue-100 rounded-2xl py-3 px-2 text-center">
+              <p className="text-2xl font-black text-blue-600">100%</p>
+              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide">Complete</p>
+            </div>
+            <div className="flex-1 bg-amber-50 border border-amber-100 rounded-2xl py-3 px-2 text-center">
+              <p className="text-2xl font-black text-amber-500">🏆</p>
+              <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide">Champion</p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-blue-100 active:scale-95"
+          >
+            Awesome! 🎉
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Certificate Downloaded / Error Modal ─────────────────────────────────────
 
 function CertificateDownloadedModal({
   certTitle,
   onClose,
+  isError = false,
 }: {
   certTitle: string;
-  onClose: () => void;
+  onClose:   () => void;
+  isError?:  boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -244,29 +422,37 @@ function CertificateDownloadedModal({
         </button>
 
         <div className="p-8 text-center space-y-5">
-          {/* Icon */}
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 size={40} className="text-green-500" />
+          <div className={`w-20 h-20 ${isError ? "bg-red-100" : "bg-green-100"} rounded-full flex items-center justify-center mx-auto`}>
+            {isError
+              ? <AlertCircle size={40} className="text-red-500" />
+              : <CheckCircle2 size={40} className="text-green-500" />
+            }
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-xl font-black text-slate-900">Certificate Downloaded!</h3>
+            <h3 className="text-xl font-black text-slate-900">
+              {isError ? "Download Failed" : "Certificate Downloaded!"}
+            </h3>
             <p className="text-sm text-slate-500 font-medium">
-              Your certificate has been saved to your device.
+              {isError
+                ? "Something went wrong while downloading your certificate. Please try again."
+                : "Your certificate has been saved to your device."
+              }
             </p>
           </div>
 
-          {/* Certificate name */}
-          <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Certificate</p>
-            <p className="text-sm font-black text-slate-700 mt-0.5">{certTitle}</p>
-          </div>
+          {!isError && (
+            <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Certificate</p>
+              <p className="text-sm font-black text-slate-700 mt-0.5">{certTitle}</p>
+            </div>
+          )}
 
           <button
             onClick={onClose}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3.5 rounded-2xl transition-all active:scale-95"
+            className={`w-full ${isError ? "bg-red-500 hover:bg-red-600" : "bg-slate-900 hover:bg-slate-800"} text-white font-black py-3.5 rounded-2xl transition-all active:scale-95`}
           >
-            Done
+            {isError ? "Close" : "Done"}
           </button>
         </div>
       </div>
@@ -274,7 +460,7 @@ function CertificateDownloadedModal({
   );
 }
 
-// ─── Certificate Card (shown in sidebar when threshold met) ───────────────────
+// ─── Certificate Card ─────────────────────────────────────────────────────────
 
 function CertificateCard({
   certTitle,
@@ -284,12 +470,12 @@ function CertificateCard({
   alreadyDownloaded = false,
   isDownloading = false,
 }: {
-  certTitle: string;
-  progressPct: number;
-  threshold: number;
-  onDownload: () => void;
+  certTitle:         string;
+  progressPct:       number;
+  threshold:         number;
+  onDownload:        () => void;
   alreadyDownloaded?: boolean;
-  isDownloading?: boolean;
+  isDownloading?:    boolean;
 }) {
   const unlocked = progressPct >= threshold;
 
@@ -384,10 +570,15 @@ export default function ProgramPlayer() {
   const [showResponse,     setShowResponse]     = useState(false);
 
   // Modal states
-  const [showCompletionModal,  setShowCompletionModal]  = useState(false);
-  const [showDownloadedModal,  setShowDownloadedModal]  = useState(false);
-  const [completionModalShown, setCompletionModalShown] = useState(false);
-  const [certDownloading,      setCertDownloading]      = useState(false);
+  const CELEBRATION_KEY = `mmp-celebration-shown-${programId}`;
+
+  const [showCompletionModal,      setShowCompletionModal]      = useState(false);
+  const [showCelebrationModal,     setShowCelebrationModal]     = useState(false);
+  const [showDownloadedModal,      setShowDownloadedModal]      = useState(false);
+  const [completionModalShown,     setCompletionModalShown]     = useState(false);
+  const [confettiActive,           setConfettiActive]           = useState(false);
+  const [certDownloading,          setCertDownloading]          = useState(false);
+  const [downloadError,            setDownloadError]            = useState(false);
 
   // ── Fetch player data ──────────────────────────────────────────────────────
   const { data, isLoading, isError } = useQuery<PlayerData>({
@@ -398,7 +589,7 @@ export default function ProgramPlayer() {
       );
       return res.data;
     },
-    enabled: !!programId,
+    enabled:   !!programId,
     staleTime: 30_000,
   });
 
@@ -416,27 +607,58 @@ export default function ProgramPlayer() {
     }
   }, [data?.progress?.activeDayNumber]);
 
-  // Show completion modal when all modules done — only once per session
-  // Skip if certificate already downloaded (user has seen it before)
+  // 🎉 Show CELEBRATION when all modules fully done (100%) — only ONCE ever
+  // Persisted in localStorage so it never re-shows after the first visit
+  useEffect(() => {
+    if (!data?.progress?.isFullyCompleted) return;
+    if (typeof window === "undefined") return;
+
+    const alreadyShown = localStorage.getItem(CELEBRATION_KEY) === "1";
+    if (alreadyShown) return;
+
+    localStorage.setItem(CELEBRATION_KEY, "1");
+    setConfettiActive(true);
+    setTimeout(() => setShowCelebrationModal(true), 300);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.progress?.isFullyCompleted]);
+
+  // Show cert download modal when courseCompleted=true but not yet downloaded
+  // Only if celebration was NOT just shown (avoid double modal)
   useEffect(() => {
     if (
-      data?.progress?.isFullyCompleted &&
+      data?.courseCompletion?.courseCompleted &&
+      !data?.courseCompletion?.certificateDownloaded &&
       !completionModalShown &&
-      !data?.courseCompletion?.certificateDownloaded
+      !data?.progress?.isFullyCompleted // don't show — celebration handles it
     ) {
       setShowCompletionModal(true);
       setCompletionModalShown(true);
     }
-  }, [data?.progress?.isFullyCompleted, data?.courseCompletion?.certificateDownloaded, completionModalShown]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.courseCompletion?.courseCompleted]);
 
   // ── Complete day mutation ──────────────────────────────────────────────────
   const completeMutation = useMutation({
     mutationFn: (vars: { dayNumber: number; actionResponse?: string; undo?: boolean }) =>
       axios.post(`/api/mini-mastery-programs/player/${programId}/complete`, vars),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["program-player", programId] });
+    onSuccess: async (_, vars) => {
       setShowResponse(false);
       setActionResponse("");
+
+      if (!vars.undo) {
+        const current    = qc.getQueryData<PlayerData>(["program-player", programId]);
+        const totalDays  = current?.progress?.totalDays ?? 0;
+        const completed  = current?.progress?.completedCount ?? 0;
+        const isLastDay  = totalDays > 0 && (completed + 1) >= totalDays;
+        const notRecorded = !current?.courseCompletion?.courseCompleted;
+
+        if (isLastDay && notRecorded) {
+          await markCompleteMutation.mutateAsync();
+          return;
+        }
+      }
+
+      void qc.invalidateQueries({ queryKey: ["program-player", programId] });
     },
   });
 
@@ -451,47 +673,41 @@ export default function ProgramPlayer() {
     },
   });
 
-  // ── Mark certificate downloaded mutation ───────────────────────────────────
-  const markCertDownloadedMutation = useMutation({
-    mutationFn: (certificatePath?: string) =>
-      axios.post(`/api/mini-mastery-programs/player/${programId}/completion`, {
-        action: "mark_certificate_downloaded",
-        ...(certificatePath && { certificatePath }),
-      }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["program-player", programId] });
-    },
-  });
-
   // ── Certificate download handler ───────────────────────────────────────────
   async function handleDownloadCertificate() {
     setCertDownloading(true);
+    setShowCompletionModal(false);
     try {
-      // TODO: Replace with actual certificate PDF generation/download
-      // e.g. const res = await axios.get(`/api/certificates/${programId}`, { responseType: "blob" });
-      // For now simulate a short delay then record in DB
-      await new Promise((r) => setTimeout(r, 800));
+      const res = await axios.post<{
+        success:     boolean;
+        certificate: { certificateUrl: string; certificateId: string };
+        pngUrl:      string;
+      }>(`/api/mini-mastery-programs/player/${programId}/certificate`);
 
-      // Record download in DB
-      await markCertDownloadedMutation.mutateAsync(undefined);
+      const certUrl = res.data.pngUrl ?? res.data.certificate?.certificateUrl;
 
-      setShowCompletionModal(false);
+      if (certUrl) {
+        const link    = document.createElement("a");
+        link.href     = certUrl;
+        link.download = `certificate-${programId}.webp`;
+        link.target   = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      void qc.invalidateQueries({ queryKey: ["program-player", programId] });
+
+      setDownloadError(false);
+      setShowDownloadedModal(true);
+    } catch (err) {
+      console.error("Certificate download failed:", err);
+      setDownloadError(true);
       setShowDownloadedModal(true);
     } finally {
       setCertDownloading(false);
     }
   }
-
-  // Auto mark course complete in DB when all days done
-  useEffect(() => {
-    if (
-      data?.progress?.isFullyCompleted &&
-      !data?.courseCompletion?.courseCompleted
-    ) {
-      markCompleteMutation.mutate();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.progress?.isFullyCompleted, data?.courseCompletion?.courseCompleted]);
 
   // ─────────────────────────────────────────────────────────────────────────
   if (isLoading) return <PlayerSkeleton />;
@@ -522,12 +738,27 @@ export default function ProgramPlayer() {
   const dayStatus     = getDayStatus(activeDay, logs, program.unlockType, enrolledAt);
   const isLocked      = dayStatus === "locked";
 
-  // Certificate unlock check happens inside CertificateCard component
-
   return (
     <div className="min-h-screen bg-slate-50">
 
+      {/* ── Confetti ── */}
+      <Confetti active={confettiActive} />
+
       {/* ── Modals ── */}
+      {showCelebrationModal && (
+        <CourseFinishedCelebrationModal
+          programName={program.name}
+          totalDays={progress.totalDays}
+          onClose={() => {
+            setShowCelebrationModal(false);
+            // After celebration closes — show cert download modal if not yet downloaded
+            if (!data.courseCompletion?.certificateDownloaded && !completionModalShown) {
+              setCompletionModalShown(true);
+              setTimeout(() => setShowCompletionModal(true), 200);
+            }
+          }}
+        />
+      )}
       {showCompletionModal && (
         <CourseCompletedModal
           certTitle={program.certificateTitle}
@@ -540,7 +771,8 @@ export default function ProgramPlayer() {
       {showDownloadedModal && (
         <CertificateDownloadedModal
           certTitle={program.certificateTitle}
-          onClose={() => setShowDownloadedModal(false)}
+          onClose={() => { setShowDownloadedModal(false); setDownloadError(false); }}
+          isError={downloadError}
         />
       )}
 
@@ -577,10 +809,9 @@ export default function ProgramPlayer() {
 
       <div className="max-w-7xl mx-auto p-6 lg:p-10 flex flex-col lg:flex-row gap-10">
 
-        {/* ── LEFT: Main Content ── */}
+        {/* ── LEFT ── */}
         <div className="flex-1 space-y-8">
 
-          {/* Locked day overlay */}
           {isLocked ? (
             <div className="aspect-video bg-slate-100 rounded-[40px] flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-200">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
@@ -595,7 +826,6 @@ export default function ProgramPlayer() {
             </div>
           ) : (
             <>
-              {/* ── Video / Text Module ── */}
               {currentModule?.type === "video" && currentModule.videoUrl ? (
                 <div className="aspect-video bg-slate-900 rounded-[40px] overflow-hidden shadow-2xl relative">
                   <iframe
@@ -655,7 +885,6 @@ export default function ProgramPlayer() {
                 </div>
               )}
 
-              {/* ── Module Description ── */}
               {currentModule && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
@@ -671,7 +900,6 @@ export default function ProgramPlayer() {
                 </div>
               )}
 
-              {/* ── Action Task Card ── */}
               {currentModule && (
                 <div className={`border rounded-[32px] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all ${
                   isDayComplete ? "bg-green-50 border-green-100" : "bg-white border-blue-100"
@@ -748,7 +976,6 @@ export default function ProgramPlayer() {
         {/* ── RIGHT: Sidebar ── */}
         <div className="w-full lg:w-80 space-y-6">
 
-          {/* Progress Card */}
           <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Program Progress</span>
@@ -762,11 +989,15 @@ export default function ProgramPlayer() {
               <p className="text-[11px] font-bold text-slate-400">
                 {progress.completedCount} of {progress.totalDays} Days
               </p>
-              <div className="flex items-center gap-1 text-[11px] font-black text-blue-600 uppercase italic">
-                <Clock size={12} /> Active
+              <div className={`flex items-center gap-1 text-[11px] font-black uppercase italic ${
+                progress.isFullyCompleted ? "text-green-600" : "text-blue-600"
+              }`}>
+                {progress.isFullyCompleted
+                  ? <><Trophy size={12} /> Complete!</>
+                  : <><Clock size={12} /> Active</>
+                }
               </div>
             </div>
-            {/* Day dots */}
             <div className="flex flex-wrap gap-1.5 mt-4">
               {modules.map((_, i) => {
                 const dn = i + 1;
@@ -790,7 +1021,6 @@ export default function ProgramPlayer() {
             </div>
           </div>
 
-          {/* ── Certificate Card — unlocked when threshold met ── */}
           <CertificateCard
             certTitle={program.certificateTitle}
             progressPct={progress.progressPct}
@@ -800,7 +1030,6 @@ export default function ProgramPlayer() {
             isDownloading={certDownloading}
           />
 
-          {/* Curriculum List */}
           <div className="space-y-4">
             <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Curriculum</h4>
             <div className="space-y-2">
@@ -857,7 +1086,6 @@ export default function ProgramPlayer() {
             </div>
           </div>
 
-          {/* Pro Tip Box */}
           <div className="bg-blue-600 rounded-[32px] p-6 text-white space-y-4 relative overflow-hidden group shadow-lg shadow-blue-100">
             <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
               <Lightbulb size={80} />
