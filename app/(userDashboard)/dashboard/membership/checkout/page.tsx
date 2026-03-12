@@ -1033,7 +1033,7 @@ export default function CheckoutPage() {
           <p className="mt-2 text-gray-600">
             {context === "CHALLENGE"
               ? `Join the "${challenge?.title}" challenge.`
-              : `Unlock your potential with the ${plan?.name} plan.`}
+              : plan?.name && `Unlock your potential with the ${plan?.name} plan.`}
           </p>
         </div>
 
@@ -1042,7 +1042,6 @@ export default function CheckoutPage() {
           <div className="md:col-span-2 space-y-6">
             {/* PLAN SUMMARY CARD */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              {/* ... (Existing Plan Summary UI - kept concise for brevity) ... */}
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                   {context === "CHALLENGE" ? (
