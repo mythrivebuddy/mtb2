@@ -20,13 +20,10 @@ import {
   Search,
   BellRing,
   Crown,
-  PhoneCall,
-  Video,
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
 import { SearchUser } from "@/types/client/nav";
