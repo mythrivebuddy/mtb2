@@ -50,6 +50,7 @@ interface Program {
   createdAt: string;
   thumbnailUrl: string | null;
   creator: Creator | null;
+  createdBy: string;
 }
 
 interface Pagination {
@@ -108,17 +109,17 @@ function parseModules(raw: unknown): ModuleItem[] {
 }
 
 const SORT_LABELS: Record<SortOption, string> = {
-  newest:     "Newest",
-  price_asc:  "Price: Low → High",
+  newest: "Newest",
+  price_asc: "Price: Low → High",
   price_desc: "Price: High → Low",
 };
 
 const DURATION_OPTIONS: { label: string; value: DurationFilter }[] = [
   { label: "Any Duration", value: "all" },
-  { label: "7 Days",       value: "7"   },
-  { label: "14 Days",      value: "14"  },
-  { label: "21 Days",      value: "21"  },
-  { label: "30 Days",      value: "30"  },
+  { label: "7 Days", value: "7" },
+  { label: "14 Days", value: "14" },
+  { label: "21 Days", value: "21" },
+  { label: "30 Days", value: "30" },
 ];
 
 const CARD_GRADIENTS = [
@@ -233,11 +234,10 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${
-          open
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${open
             ? "bg-slate-900 text-white border-slate-900"
             : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
-        }`}
+          }`}
       >
         {active?.label ?? label}
         <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
@@ -251,9 +251,8 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
               <button
                 key={opt.value}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
-                  value === opt.value ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
-                }`}
+                className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${value === opt.value ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
+                  }`}
               >
                 {opt.label}
               </button>
@@ -271,10 +270,10 @@ function ProgramCTA({
   prog,
   status,
   isLoggedIn,
-  }: {
-  prog:        Program;
-  status?:     ProgramStatus;
-  isLoggedIn:  boolean;
+}: {
+  prog: Program;
+  status?: ProgramStatus;
+  isLoggedIn: boolean;
   onInfoClick: (prog: Program) => void;
 }) {
   // Not logged in — both buttons redirect to signIn
@@ -375,20 +374,20 @@ function ProgramDetailModal({
   isLoggedIn,
   onClose,
 }: {
-  programId:  string;
+  programId: string;
   isLoggedIn: boolean;
-  onClose:    () => void;
+  onClose: () => void;
 }) {
   const { data: program, isLoading, isError } = useQuery({
-    queryKey:  ["mmp-detail-modal", programId],
-    queryFn:   () => fetchProgramDetail(programId),
+    queryKey: ["mmp-detail-modal", programId],
+    queryFn: () => fetchProgramDetail(programId),
     staleTime: 60_000,
   });
 
   const achievements = program ? parseAchievements(program.achievements) : [];
-  const modules      = program ? parseModules(program.modules) : [];
-  const isPaid       = (program?.price ?? 0) > 0;
-  const hasCert      = !!program?.certificateTitle;
+  const modules = program ? parseModules(program.modules) : [];
+  const isPaid = (program?.price ?? 0) > 0;
+  const hasCert = !!program?.certificateTitle;
 
   function handleEnroll() {
     if (!isLoggedIn) {
@@ -462,10 +461,10 @@ function ProgramDetailModal({
             {/* Stats strip */}
             <div className="grid grid-cols-4 gap-2">
               {[
-                { icon: <Clock size={14} />,          label: "Duration",  value: `${program.durationDays ?? "?"} Days` },
-                { icon: <BookOpen size={14} />,       label: "Modules",   value: `${modules.length}` },
-                { icon: <GraduationCap size={14} />,  label: "Cert",      value: hasCert ? "Included" : "None" },
-                { icon: <Zap size={14} />,            label: "Unlock",    value: program.unlockType === "daily" ? "Daily" : "All" },
+                { icon: <Clock size={14} />, label: "Duration", value: `${program.durationDays ?? "?"} Days` },
+                { icon: <BookOpen size={14} />, label: "Modules", value: `${modules.length}` },
+                { icon: <GraduationCap size={14} />, label: "Cert", value: hasCert ? "Included" : "None" },
+                { icon: <Zap size={14} />, label: "Unlock", value: program.unlockType === "daily" ? "Daily" : "All" },
               ].map(({ icon, label, value }) => (
                 <div key={label} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
                   <div className="flex justify-center text-blue-500 mb-1">{icon}</div>
@@ -560,8 +559,8 @@ function ProgramDetailModal({
                 {!isLoggedIn
                   ? <><LogIn size={16} /> Sign In to Enroll</>
                   : isPaid
-                  ? <>Enroll Now <ArrowRight size={16} /></>
-                  : <>Start Free <ArrowRight size={16} /></>
+                    ? <>Enroll Now <ArrowRight size={16} /></>
+                    : <>Start Free <ArrowRight size={16} /></>
                 }
               </button>
             </div>
@@ -580,11 +579,11 @@ export default function EnrollPage() {
 
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<Filters>({
-    pricing:  "all",
+    pricing: "all",
     duration: "all",
-    sort:     "newest",
+    sort: "newest",
   });
-  const [sortOpen,         setSortOpen]         = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const [selectedInfoProg, setSelectedInfoProg] = useState<Program | null>(null);
 
   const setFilter = <K extends keyof Filters>(key: K, val: Filters[K]) => {
@@ -600,25 +599,25 @@ export default function EnrollPage() {
   const hasActiveFilters = filters.pricing !== "all" || filters.duration !== "all";
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey:        ["mmp-enroll", page, filters],
-    queryFn:         () => fetchPublicPrograms(page, filters),
+    queryKey: ["mmp-enroll", page, filters],
+    queryFn: () => fetchPublicPrograms(page, filters),
     placeholderData: keepPreviousData,
-    staleTime:       30_000,
+    staleTime: 30_000,
   });
 
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
-    queryFn:  fetchMyStatuses,
+    queryFn: fetchMyStatuses,
     staleTime: 60_000,
-    enabled:  isLoggedIn,
+    enabled: isLoggedIn,
   });
 
-  const programs   = data?.programs ?? [];
+  const programs = data?.programs ?? [];
   const pagination = data?.pagination;
-  const statuses   = statusData?.statuses ?? {};
+  const statuses = statusData?.statuses ?? {};
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto font-sans">
+    <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto">
 
       {/* ── Info Modal ── */}
       {selectedInfoProg && (
@@ -669,9 +668,9 @@ export default function EnrollPage() {
             label="Pricing"
             value={filters.pricing}
             options={[
-              { label: "All Pricing", value: "all"  },
-              { label: "Free Only",   value: "free" },
-              { label: "Paid Only",   value: "paid" },
+              { label: "All Pricing", value: "all" },
+              { label: "Free Only", value: "free" },
+              { label: "Paid Only", value: "paid" },
             ]}
             onChange={(v) => setFilter("pricing", v)}
           />
@@ -719,9 +718,8 @@ export default function EnrollPage() {
                   <button
                     key={s}
                     onClick={() => { setFilter("sort", s); setSortOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
-                      filters.sort === s ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${filters.sort === s ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
+                      }`}
                   >
                     {SORT_LABELS[s]}
                   </button>
@@ -756,24 +754,24 @@ export default function EnrollPage() {
           {isLoading
             ? Array.from({ length: LIMIT }).map((_, i) => <SkeletonCard key={i} />)
             : programs.length === 0
-            ? (
-              <div className="col-span-full flex flex-col items-center gap-3 py-24">
-                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                  <Sparkles size={24} className="text-slate-300" />
+              ? (
+                <div className="col-span-full flex flex-col items-center gap-3 py-24">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                    <Sparkles size={24} className="text-slate-300" />
+                  </div>
+                  <p className="text-slate-500 font-bold text-sm">No programs match your filters.</p>
+                  {hasActiveFilters && (
+                    <button onClick={clearFilters} className="text-blue-600 text-xs font-black underline underline-offset-4">
+                      Clear all filters
+                    </button>
+                  )}
                 </div>
-                <p className="text-slate-500 font-bold text-sm">No programs match your filters.</p>
-                {hasActiveFilters && (
-                  <button onClick={clearFilters} className="text-blue-600 text-xs font-black underline underline-offset-4">
-                    Clear all filters
-                  </button>
-                )}
-              </div>
-            )
-            : programs.map((prog, idx) => {
-                const isPaid    = (prog.price ?? 0) > 0;
-                const modules   = moduleCount(prog.modules);
-                const gradient  = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
-                const bgLetter  = getBgLetter(prog.name);
+              )
+              : programs.map((prog, idx) => {
+                const isPaid = (prog.price ?? 0) > 0;
+                const modules = moduleCount(prog.modules);
+                const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
+                const bgLetter = getBgLetter(prog.name);
                 const progStatus = isLoggedIn ? statuses[prog.id] : undefined;
 
                 return (
@@ -830,7 +828,7 @@ export default function EnrollPage() {
                         <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
                           {prog.name}
                         </h3>
-                        <p className="text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
+                        <p className="h-9 text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
                           {prog.description ?? "Experience a complete transformation with expert-guided sessions designed for your busy lifestyle."}
                         </p>
                       </div>
@@ -844,9 +842,15 @@ export default function EnrollPage() {
                               {prog.creator?.name?.[0]?.toUpperCase() ?? "C"}
                             </div>
                           )}
-                          <span className="text-[10px] font-bold text-slate-400 italic">
+                          {/* <span className="text-[10px] font-bold text-slate-400 italic hover:text-underline">
+                            <Link href={`/profile/${prog.createdBy}`}>{prog.creator?.name ?? "Expert Coach"}</Link>
+                          </span> */}
+                          <Link
+                            href={`/profile/${prog.createdBy}`}
+                            className="text-[10px] font-bold italic text-slate-400 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+                          >
                             {prog.creator?.name ?? "Expert Coach"}
-                          </span>
+                          </Link>
                         </div>
                         <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-md">
                           {modules} Modules
@@ -893,11 +897,10 @@ export default function EnrollPage() {
                     <button
                       key={p}
                       onClick={() => setPage(p as number)}
-                      className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
-                        page === p
+                      className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${page === p
                           ? "bg-slate-900 text-white shadow-md"
                           : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
-                      }`}
+                        }`}
                     >
                       {p}
                     </button>

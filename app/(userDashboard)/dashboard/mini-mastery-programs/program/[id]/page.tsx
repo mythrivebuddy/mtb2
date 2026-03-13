@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -11,64 +11,65 @@ import {
   Download, Award, PartyPopper, X, Trophy,
 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ModuleItem {
-  id:           number;
-  title:        string;
-  type:         "video" | "text";
-  videoUrl?:    string;
+  id: number;
+  title: string;
+  type: "video" | "text";
+  videoUrl?: string;
   instructions: string;
-  actionTask:   string;
+  actionTask: string;
 }
 
 interface ProgressLog {
-  id:             string;
-  dayNumber:      number;
-  isCompleted:    boolean;
-  completedAt:    string | null;
+  id: string;
+  dayNumber: number;
+  isCompleted: boolean;
+  completedAt: string | null;
   actionResponse: string | null;
 }
 
 interface CourseCompletion {
-  id?:                     string;
-  courseCompleted:         boolean;
-  courseCompletedAt:       string | null;
-  certificateDownloaded:   boolean;
+  id?: string;
+  courseCompleted: boolean;
+  courseCompletedAt: string | null;
+  certificateDownloaded: boolean;
   certificateDownloadedAt: string | null;
-  certificatePath:         string | null;
-  certificateUrl?:         string | null;
-  certificateId?:          string | null;
+  certificatePath: string | null;
+  certificateUrl?: string | null;
+  certificateId?: string | null;
 }
 
 interface PlayerData {
   enrolled: boolean;
   program?: {
-    id:                  string;
-    name:                string;
-    description:         string | null;
-    durationDays:        number;
-    unlockType:          string;
-    modules:             unknown;
+    id: string;
+    name: string;
+    description: string | null;
+    durationDays: number;
+    unlockType: string;
+    modules: unknown;
     completionThreshold: number;
-    certificateTitle:    string;
-    thumbnailUrl:        string | null;
-    creator:             { id: string; name: string | null; image: string | null } | null;
+    certificateTitle: string;
+    thumbnailUrl: string | null;
+    creator: { id: string; name: string | null; image: string | null } | null;
   };
   state?: {
-    id:           string;
-    onboarded:    boolean;
-    onboardedAt:  string | null;
-    createdAt:    string;
+    id: string;
+    onboarded: boolean;
+    onboardedAt: string | null;
+    createdAt: string;
   };
   progress?: {
-    logs:              ProgressLog[];
-    completedCount:    number;
-    totalDays:         number;
-    progressPct:       number;
-    activeDayNumber:   number;
-    isFullyCompleted:  boolean;
+    logs: ProgressLog[];
+    completedCount: number;
+    totalDays: number;
+    progressPct: number;
+    activeDayNumber: number;
+    isFullyCompleted: boolean;
   };
   courseCompletion?: CourseCompletion;
 }
@@ -117,13 +118,13 @@ const CONFETTI_COLORS = [
 ];
 
 interface ConfettiPiece {
-  id:      number;
-  x:       number;
-  color:   string;
-  size:    number;
-  delay:   number;
+  id: number;
+  x: number;
+  color: string;
+  size: number;
+  delay: number;
   duration: number;
-  shape:   "rect" | "circle" | "star";
+  shape: "rect" | "circle" | "star";
   rotation: number;
 }
 
@@ -133,13 +134,13 @@ function Confetti({ active }: { active: boolean }) {
   useEffect(() => {
     if (!active) return;
     const newPieces: ConfettiPiece[] = Array.from({ length: 80 }, (_, i) => ({
-      id:       i,
-      x:        Math.random() * 100,
-      color:    CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
-      size:     Math.random() * 10 + 6,
-      delay:    Math.random() * 1.2,
+      id: i,
+      x: Math.random() * 100,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      size: Math.random() * 10 + 6,
+      delay: Math.random() * 1.2,
       duration: Math.random() * 2 + 2.5,
-      shape:    (["rect", "circle", "star"] as const)[Math.floor(Math.random() * 3)],
+      shape: (["rect", "circle", "star"] as const)[Math.floor(Math.random() * 3)],
       rotation: Math.random() * 360,
     }));
     setPieces(newPieces);
@@ -158,38 +159,38 @@ function Confetti({ active }: { active: boolean }) {
           key={p.id}
           className="absolute top-0"
           style={{
-            left:      `${p.x}%`,
+            left: `${p.x}%`,
             animation: `confettiFall ${p.duration}s ${p.delay}s ease-in forwards`,
           }}
         >
           {p.shape === "circle" ? (
             <div
               style={{
-                width:           p.size,
-                height:          p.size,
-                borderRadius:    "50%",
+                width: p.size,
+                height: p.size,
+                borderRadius: "50%",
                 backgroundColor: p.color,
-                transform:       `rotate(${p.rotation}deg)`,
+                transform: `rotate(${p.rotation}deg)`,
               }}
             />
           ) : p.shape === "star" ? (
             <div
               style={{
-                width:           p.size,
-                height:          p.size,
+                width: p.size,
+                height: p.size,
                 backgroundColor: p.color,
-                clipPath:        "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
-                transform:       `rotate(${p.rotation}deg)`,
+                clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
+                transform: `rotate(${p.rotation}deg)`,
               }}
             />
           ) : (
             <div
               style={{
-                width:           p.size,
-                height:          p.size * 0.5,
+                width: p.size,
+                height: p.size * 0.5,
                 backgroundColor: p.color,
-                borderRadius:    2,
-                transform:       `rotate(${p.rotation}deg)`,
+                borderRadius: 2,
+                transform: `rotate(${p.rotation}deg)`,
               }}
             />
           )}
@@ -327,8 +328,8 @@ function CourseFinishedCelebrationModal({
   onClose,
 }: {
   programName: string;
-  totalDays:   number;
-  onClose:     () => void;
+  totalDays: number;
+  onClose: () => void;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
@@ -408,8 +409,8 @@ function CertificateDownloadedModal({
   isError = false,
 }: {
   certTitle: string;
-  onClose:   () => void;
-  isError?:  boolean;
+  onClose: () => void;
+  isError?: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
@@ -470,21 +471,20 @@ function CertificateCard({
   alreadyDownloaded = false,
   isDownloading = false,
 }: {
-  certTitle:         string;
-  progressPct:       number;
-  threshold:         number;
-  onDownload:        () => void;
+  certTitle: string;
+  progressPct: number;
+  threshold: number;
+  onDownload: () => void;
   alreadyDownloaded?: boolean;
-  isDownloading?:    boolean;
+  isDownloading?: boolean;
 }) {
   const unlocked = progressPct >= threshold;
 
   return (
-    <div className={`rounded-[32px] p-6 border space-y-4 relative overflow-hidden transition-all ${
-      unlocked
-        ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg shadow-amber-50"
-        : "bg-white border-slate-100"
-    }`}>
+    <div className={`rounded-[32px] p-6 border space-y-4 relative overflow-hidden transition-all ${unlocked
+      ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg shadow-amber-50"
+      : "bg-white border-slate-100"
+      }`}>
       {unlocked && (
         <>
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl pointer-events-none" />
@@ -492,15 +492,13 @@ function CertificateCard({
         </>
       )}
       <div className="relative flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-          unlocked ? "bg-amber-400 shadow-md shadow-amber-100" : "bg-slate-100"
-        }`}>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${unlocked ? "bg-amber-400 shadow-md shadow-amber-100" : "bg-slate-100"
+          }`}>
           <Award size={20} className={unlocked ? "text-white" : "text-slate-300"} />
         </div>
         <div>
-          <p className={`text-[10px] font-black uppercase tracking-widest ${
-            unlocked ? "text-amber-600" : "text-slate-400"
-          }`}>
+          <p className={`text-[10px] font-black uppercase tracking-widest ${unlocked ? "text-amber-600" : "text-slate-400"
+            }`}>
             {unlocked ? "🎓 Certificate Unlocked" : "Certificate"}
           </p>
           <p className="text-sm font-black text-slate-800 leading-tight truncate max-w-[160px]">
@@ -560,38 +558,55 @@ function CertificateCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProgramPlayer() {
-  const params    = useParams();
-  const router    = useRouter();
-  const qc        = useQueryClient();
+  const params = useParams();
+  const router = useRouter();
+  const qc = useQueryClient();
   const programId = params?.id as string;
 
-  const [activeDay,        setActiveDay]        = useState<number>(1);
-  const [actionResponse,   setActionResponse]   = useState<string>("");
-  const [showResponse,     setShowResponse]     = useState(false);
+  const [activeDay, setActiveDay] = useState<number>(1);
+  const [actionResponse, setActionResponse] = useState<string>("");
+  const [showResponse, setShowResponse] = useState(false);
 
   // Modal states
   const CELEBRATION_KEY = `mmp-celebration-shown-${programId}`;
 
-  const [showCompletionModal,      setShowCompletionModal]      = useState(false);
-  const [showCelebrationModal,     setShowCelebrationModal]     = useState(false);
-  const [showDownloadedModal,      setShowDownloadedModal]      = useState(false);
-  const [completionModalShown,     setCompletionModalShown]     = useState(false);
-  const [confettiActive,           setConfettiActive]           = useState(false);
-  const [certDownloading,          setCertDownloading]          = useState(false);
-  const [downloadError,            setDownloadError]            = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+  const [showDownloadedModal, setShowDownloadedModal] = useState(false);
+  const [completionModalShown, setCompletionModalShown] = useState(false);
+  const [confettiActive, setConfettiActive] = useState(false);
+  const [certDownloading, setCertDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(false);
 
   // ── Fetch player data ──────────────────────────────────────────────────────
   const { data, isLoading, isError } = useQuery<PlayerData>({
     queryKey: ["program-player", programId],
-    queryFn:  async () => {
+    queryFn: async () => {
       const res = await axios.get<PlayerData>(
         `/api/mini-mastery-programs/player/${programId}`
       );
       return res.data;
     },
-    enabled:   !!programId,
+    enabled: !!programId,
     staleTime: 30_000,
   });
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("payment") === "success") {
+      toast.custom(() => (
+        <div className="flex items-center gap-3 bg-green-100 border border-green-200 text-green-800 font-bold text-sm px-5 py-3.5 rounded-2xl shadow-lg">
+          <span className="text-lg">🎉</span> You have purchased the program!
+        </div>
+      ), { duration: 5000 });
+      // URL clean karo without reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("payment");
+      url.searchParams.delete("orderId");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
 
   // Redirect if not enrolled
   useEffect(() => {
@@ -619,7 +634,7 @@ export default function ProgramPlayer() {
     localStorage.setItem(CELEBRATION_KEY, "1");
     setConfettiActive(true);
     setTimeout(() => setShowCelebrationModal(true), 300);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.progress?.isFullyCompleted]);
 
   // Show cert download modal when courseCompleted=true but not yet downloaded
@@ -634,7 +649,7 @@ export default function ProgramPlayer() {
       setShowCompletionModal(true);
       setCompletionModalShown(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.courseCompletion?.courseCompleted]);
 
   // ── Complete day mutation ──────────────────────────────────────────────────
@@ -646,10 +661,10 @@ export default function ProgramPlayer() {
       setActionResponse("");
 
       if (!vars.undo) {
-        const current    = qc.getQueryData<PlayerData>(["program-player", programId]);
-        const totalDays  = current?.progress?.totalDays ?? 0;
-        const completed  = current?.progress?.completedCount ?? 0;
-        const isLastDay  = totalDays > 0 && (completed + 1) >= totalDays;
+        const current = qc.getQueryData<PlayerData>(["program-player", programId]);
+        const totalDays = current?.progress?.totalDays ?? 0;
+        const completed = current?.progress?.completedCount ?? 0;
+        const isLastDay = totalDays > 0 && (completed + 1) >= totalDays;
         const notRecorded = !current?.courseCompletion?.courseCompleted;
 
         if (isLastDay && notRecorded) {
@@ -679,23 +694,26 @@ export default function ProgramPlayer() {
     setShowCompletionModal(false);
     try {
       const res = await axios.post<{
-        success:     boolean;
+        success: boolean;
         certificate: { certificateUrl: string; certificateId: string };
-        pngUrl:      string;
+        pngUrl: string;
       }>(`/api/mini-mastery-programs/player/${programId}/certificate`);
 
       const certUrl = res.data.pngUrl ?? res.data.certificate?.certificateUrl;
-
       if (certUrl) {
-        const link    = document.createElement("a");
-        link.href     = certUrl;
+        const response = await fetch(certUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = blobUrl;
         link.download = `certificate-${programId}.webp`;
-        link.target   = "_blank";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-      }
 
+        URL.revokeObjectURL(blobUrl);
+      }
       void qc.invalidateQueries({ queryKey: ["program-player", programId] });
 
       setDownloadError(false);
@@ -728,15 +746,15 @@ export default function ProgramPlayer() {
   }
 
   const { program, progress } = data;
-  const modules       = parseModules(program.modules);
+  const modules = parseModules(program.modules);
   const currentModule = modules[activeDay - 1];
-  const logs          = progress.logs;
-  const enrolledAt    = data.state?.createdAt ?? new Date().toISOString();
+  const logs = progress.logs;
+  const enrolledAt = data.state?.createdAt ?? new Date().toISOString();
 
-  const currentLog    = logs.find((l) => l.dayNumber === activeDay);
+  const currentLog = logs.find((l) => l.dayNumber === activeDay);
   const isDayComplete = currentLog?.isCompleted ?? false;
-  const dayStatus     = getDayStatus(activeDay, logs, program.unlockType, enrolledAt);
-  const isLocked      = dayStatus === "locked";
+  const dayStatus = getDayStatus(activeDay, logs, program.unlockType, enrolledAt);
+  const isLocked = dayStatus === "locked";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -869,9 +887,8 @@ export default function ProgramPlayer() {
                   <div className="relative flex items-center justify-between">
                     <div className="flex -space-x-1.5">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`w-6 h-6 rounded-full border-2 border-blue-950 ${
-                          i === 0 ? "bg-blue-400" : i === 1 ? "bg-indigo-400" : "bg-slate-500"
-                        }`} />
+                        <div key={i} className={`w-6 h-6 rounded-full border-2 border-blue-950 ${i === 0 ? "bg-blue-400" : i === 1 ? "bg-indigo-400" : "bg-slate-500"
+                          }`} />
                       ))}
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-400 uppercase tracking-widest">
@@ -901,14 +918,12 @@ export default function ProgramPlayer() {
               )}
 
               {currentModule && (
-                <div className={`border rounded-[32px] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all ${
-                  isDayComplete ? "bg-green-50 border-green-100" : "bg-white border-blue-100"
-                }`}>
+                <div className={`border rounded-[32px] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all ${isDayComplete ? "bg-green-50 border-green-100" : "bg-white border-blue-100"
+                  }`}>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl" />
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${
-                      isDayComplete ? "bg-green-500" : "bg-blue-600"
-                    }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${isDayComplete ? "bg-green-500" : "bg-blue-600"
+                      }`}>
                       <CheckCircle2 size={20} />
                     </div>
                     <h3 className="text-xl font-black text-slate-900">
@@ -989,9 +1004,8 @@ export default function ProgramPlayer() {
               <p className="text-[11px] font-bold text-slate-400">
                 {progress.completedCount} of {progress.totalDays} Days
               </p>
-              <div className={`flex items-center gap-1 text-[11px] font-black uppercase italic ${
-                progress.isFullyCompleted ? "text-green-600" : "text-blue-600"
-              }`}>
+              <div className={`flex items-center gap-1 text-[11px] font-black uppercase italic ${progress.isFullyCompleted ? "text-green-600" : "text-blue-600"
+                }`}>
                 {progress.isFullyCompleted
                   ? <><Trophy size={12} /> Complete!</>
                   : <><Clock size={12} /> Active</>
@@ -1005,15 +1019,14 @@ export default function ProgramPlayer() {
                 return (
                   <button key={dn} onClick={() => st !== "locked" && setActiveDay(dn)}
                     disabled={st === "locked"} title={`Day ${dn}`}
-                    className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${
-                      dn === activeDay
-                        ? "bg-blue-600 text-white scale-110 shadow-md shadow-blue-200"
-                        : st === "completed"
+                    className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${dn === activeDay
+                      ? "bg-blue-600 text-white scale-110 shadow-md shadow-blue-200"
+                      : st === "completed"
                         ? "bg-green-100 text-green-600 hover:bg-green-200"
                         : st === "locked"
-                        ? "bg-slate-100 text-slate-300 cursor-not-allowed"
-                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                    }`}>
+                          ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                      }`}>
                     {dn}
                   </button>
                 );
@@ -1034,22 +1047,21 @@ export default function ProgramPlayer() {
             <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Curriculum</h4>
             <div className="space-y-2">
               {modules.map((mod, i) => {
-                const dn     = i + 1;
+                const dn = i + 1;
                 const status = getDayStatus(dn, logs, program.unlockType, enrolledAt);
                 const isActive = dn === activeDay;
                 return (
                   <button key={mod.id ?? dn}
                     onClick={() => status !== "locked" && setActiveDay(dn)}
                     disabled={status === "locked"}
-                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${
-                      isActive
-                        ? "bg-blue-50 border-blue-200 shadow-sm"
-                        : status === "completed"
+                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${isActive
+                      ? "bg-blue-50 border-blue-200 shadow-sm"
+                      : status === "completed"
                         ? "bg-white border-slate-100 opacity-70 hover:opacity-100"
                         : status === "locked"
-                        ? "bg-white border-slate-50 opacity-40 cursor-not-allowed"
-                        : "bg-white border-slate-100 hover:border-blue-100 hover:bg-blue-50/30"
-                    }`}>
+                          ? "bg-white border-slate-50 opacity-40 cursor-not-allowed"
+                          : "bg-white border-slate-100 hover:border-blue-100 hover:bg-blue-50/30"
+                      }`}>
                     <div className="flex items-center gap-3">
                       <div className="shrink-0">
                         {status === "completed" ? (

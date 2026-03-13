@@ -14,21 +14,17 @@ interface Step6TrustProps {
   isLoading: boolean
 }
 
-export default function Step7Trust({
-  back,
-  submit,
-  isLoading
-}: Step6TrustProps) {
+export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps) {
   const {
     register,
     setValue,
-    trigger,
     getValues,
     formState: { errors },
   } = useFormContext<Step6TrustValues>()
 
   const [preview, setPreview] = useState<string | null>(null)
 
+  // Load existing photo from localStorage
   useEffect(() => {
     const storedData = localStorage.getItem(
       process.env.LOCALSTORAGE_PROFILE_KEY || "business_profile_draft"
@@ -42,36 +38,19 @@ export default function Step7Trust({
     }
   }, [setValue])
 
-  /* =========================
-     YOUTUBE → EMBED CONVERTER
-  ==========================*/
   const convertToEmbedUrl = (url: string) => {
     if (!url) return url
-
     try {
       const parsed = new URL(url)
-
-      // Already embed link
-      if (parsed.pathname.includes("/embed/")) {
-        return url
-      }
-
-      // Standard youtube link
+      if (parsed.pathname.includes("/embed/")) return url
       if (parsed.hostname.includes("youtube.com")) {
         const videoId = parsed.searchParams.get("v")
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
-        }
+        if (videoId) return `https://www.youtube.com/embed/${videoId}`
       }
-
-      // Short youtu.be link
       if (parsed.hostname.includes("youtu.be")) {
         const videoId = parsed.pathname.replace("/", "")
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`
-        }
+        if (videoId) return `https://www.youtube.com/embed/${videoId}`
       }
-
       return url
     } catch {
       return url
@@ -81,35 +60,24 @@ export default function Step7Trust({
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    setValue("profilePhoto", file)
-
+    setValue("profilePhoto", file, { shouldValidate: true })
     const reader = new FileReader()
-    reader.onloadend = () => {
-      setPreview(reader.result as string)
-    }
+    reader.onloadend = () => setPreview(reader.result as string)
     reader.readAsDataURL(file)
   }
 
   const handleRemovePhoto = () => {
     setPreview(null)
-    setValue("profilePhoto", "")
+    setValue("profilePhoto", "", { shouldValidate: true })
   }
 
-  /* =========================
-     SUBMIT HANDLER UPDATED
-  ==========================*/
-  const handleSubmit = async () => {
-    const valid = await trigger(["profilePhoto", "introVideo", "linkedin"])
-    if (!valid) return
-
+  const handleFormSubmit = () => {
+    // Convert introVideo to embed URL before submitting
     const introVideoValue = getValues("introVideo")
-
     if (introVideoValue) {
-      const embedUrl = convertToEmbedUrl(introVideoValue)
-      setValue("introVideo", embedUrl)
+      setValue("introVideo", convertToEmbedUrl(introVideoValue))
     }
-
+    console.log("Step7 handleFormSubmit calling submit prop")
     submit()
   }
 
@@ -125,53 +93,45 @@ export default function Step7Trust({
         </p>
       </div>
 
-      {/* Profile Photo Section */}
+      {/* Profile Photo */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <label className="font-medium">
             Profile Photo <span className="text-red-500">*</span>
           </label>
-
           <span className="text-xs font-semibold bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
             REQUIRED
           </span>
         </div>
 
+        {/* Hidden input so RHF tracks this field */}
+        <input type="hidden" {...register("profilePhoto")} />
+
         <div className="border border-gray-200 rounded-xl p-6 flex items-center gap-6">
           <div className="relative w-24 h-24">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border">
               {preview ? (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
+                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                   No Photo
                 </div>
               )}
             </div>
-
             {preview && (
               <div className="absolute bottom-1 right-1 w-5 h-5 bg-blue-500 border-2 border-white rounded-full" />
             )}
           </div>
 
           <div className="flex-1">
-            <p className="font-medium mb-1">
-              Upload a professional headshot
-            </p>
-            <p className="text-sm text-gray-500 mb-3">
-              JPG, PNG or GIF. Max size 5MB.
-            </p>
+            <p className="font-medium mb-1">Upload a professional headshot</p>
+            <p className="text-sm text-gray-500 mb-3">JPG, PNG or GIF. Max size 5MB.</p>
 
             <div className="flex items-center gap-4">
               <div className="relative inline-block">
                 <span className="text-blue-600 font-medium cursor-pointer">
-                  Change Photo
+                  {preview ? "Change Photo" : "Upload Photo"}
                 </span>
-
                 <input
                   type="file"
                   accept="image/*"
@@ -179,7 +139,6 @@ export default function Step7Trust({
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
               </div>
-
               {preview && (
                 <button
                   type="button"
@@ -203,21 +162,19 @@ export default function Step7Trust({
       {/* Intro Video */}
       <div className="mb-4">
         <label className="block font-medium mb-1">
-          Intro Video URL <span className="text-gray-400 text-sm">OPTIONAL</span>
+          Intro Video URL{" "}
+          <span className="text-gray-400 text-sm font-normal">OPTIONAL</span>
         </label>
-
         <input
           {...register("introVideo")}
           placeholder="https://youtube.com/watch?v=..."
           className="w-full border border-gray-200 p-3 rounded-lg"
         />
-
         {errors.introVideo && (
           <p className="text-red-500 text-sm mt-1">
             {errors.introVideo.message as string}
           </p>
         )}
-
         <p className="text-xs text-gray-400 mt-1">
           Example: A 60-second video introducing your coaching style.
         </p>
@@ -226,15 +183,14 @@ export default function Step7Trust({
       {/* LinkedIn */}
       <div className="mb-6">
         <label className="block font-medium mb-1">
-          Primary Social Link <span className="text-gray-400 text-sm">OPTIONAL</span>
+          Primary Social Link{" "}
+          <span className="text-gray-400 text-sm font-normal">OPTIONAL</span>
         </label>
-
         <input
           {...register("linkedin")}
           placeholder="https://linkedin.com/in/username"
           className="w-full border border-gray-200 p-3 rounded-lg"
         />
-
         {errors.linkedin && (
           <p className="text-red-500 text-sm mt-1">
             {errors.linkedin.message as string}
@@ -242,7 +198,7 @@ export default function Step7Trust({
         )}
       </div>
 
-      {/* Navigation Buttons */}
+      {/* Navigation */}
       <div className="flex justify-between mt-8">
         <button
           type="button"
@@ -251,15 +207,16 @@ export default function Step7Trust({
         >
           Back
         </button>
-
         <button
           type="button"
-          onClick={handleSubmit}
-          className="flex bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+          onClick={handleFormSubmit}
+          disabled={isLoading}
+          className="flex items-center bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white px-6 py-2 rounded-lg transition-colors"
         >
-          Submit
-          {isLoading && (
-            <Loader2 className="ml-2 h-4 w-4 my-1 animate-spin" />
+          {isLoading ? (
+            <>Saving... <Loader2 className="ml-2 h-4 w-4 animate-spin" /></>
+          ) : (
+            "Submit"
           )}
         </button>
       </div>
