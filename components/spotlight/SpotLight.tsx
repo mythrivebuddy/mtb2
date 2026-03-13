@@ -22,11 +22,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import UpgradeMessageModal from "../common/UpgradeMessageModal";
 
 export default function SpotlightPage() {
   const [isChecked, setIsChecked] = useState(false);
   const [jpAmount, setJpAmount] = useState<number | null>(null);
   const [isDialogBoxOpen, setIsDialogBoxOpen] = useState<boolean>(false);
+
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+  });
+
   const router = useRouter();
 
   const { data: session } = useSession();
@@ -44,8 +56,6 @@ export default function SpotlightPage() {
     enabled: !!session?.user?.id,
   });
 
-  console.log(spotlights);
-
   const createSpotlight = async () => {
     const response = await axios.post("/api/user/spotlight", {
       userId: session?.user?.id,
@@ -55,18 +65,32 @@ export default function SpotlightPage() {
 
   const mutation = useMutation({
     mutationFn: createSpotlight,
-    onSuccess: (data) => {
-      console.log(data);
+    onSuccess: () => {
       toast.success(
-        "Spotlight application submitted successfully, check your email for more information."
+        "Spotlight application submitted successfully, check your email for more information.",
       );
       queryClient.invalidateQueries({ queryKey: ["spotlight"] }); // Refetch spotlight data
       queryClient.invalidateQueries({ queryKey: ["userInfo"] }); // Refetch user data
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     },
     onError: (error) => {
-      if(getAxiosErrorMessage(error).includes("Complete your business profile before applying for spotlight")){
+      if (
+        getAxiosErrorMessage(error).includes(
+          "Complete your business profile before applying for spotlight",
+        )
+      ) {
         setIsDialogBoxOpen(true);
+        return;
+      }
+      const message = getAxiosErrorMessage(error);
+
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        setUpgradeModal({
+          open: true,
+          title: "Upgrade Required",
+          message,
+        });
+        return;
       }
       toast.error(getAxiosErrorMessage(error));
     },
@@ -80,7 +104,7 @@ export default function SpotlightPage() {
   const getStatusMessage = () => {
     if (!spotlights) return null;
     const currentSpotlight = spotlights.find((spotlight) =>
-      ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(spotlight.status)
+      ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(spotlight.status),
     );
 
     if (currentSpotlight) {
@@ -103,6 +127,13 @@ export default function SpotlightPage() {
   return (
     <>
       <CustomAccordion />
+      <UpgradeMessageModal
+        isOpen={upgradeModal.open}
+        onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+        title={upgradeModal.title}
+        message={upgradeModal.message}
+        redirectToPricingUrl={`/pricing?ref=spotlight`}
+      />
       <div className="container mx-auto px-4 py-8">
         {/* <h1 className="text-3xl font-bold mb-8">Spotlight Feature</h1> */}
 
@@ -158,7 +189,7 @@ export default function SpotlightPage() {
             <h3 className="text-xl font-semibold mb-4"> Requirements:</h3>
             <ul className="list-disc pl-6 text-gray-600 mb-8">
               <li className="mb-2">
-                You must have {jpAmount} JP tokens to apply (lower amounts for
+                You must have {jpAmount} GP tokens to apply (lower amounts for
                 premium plan members).
               </li>
               <li className="mb-2">
@@ -199,8 +230,8 @@ export default function SpotlightPage() {
                 (spotlights &&
                   spotlights.some((spotlight) =>
                     ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
-                      spotlight.status
-                    )
+                      spotlight.status,
+                    ),
                   ))
               }
             >
@@ -211,8 +242,8 @@ export default function SpotlightPage() {
                   (spotlights &&
                     spotlights.some((spotlight) =>
                       ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
-                        spotlight.status
-                      )
+                        spotlight.status,
+                      ),
                     ))
                 }
                 className={`mt-4 px-4 py-2 rounded text-white transition-colors duration-200`}
@@ -237,18 +268,22 @@ export default function SpotlightPage() {
               Spotlight.
             </p>
             <DialogFooter>
-
-            <Button variant="outline" onClick={()=>{
-              setIsDialogBoxOpen(false);
-            }}>Cancel</Button>
-            <Button
-              onClick={() => {
-                setIsDialogBoxOpen(false);
-                router.push("/dashboard/business-profile");
-              }}
-            >
-              Create Business Profile
-            </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDialogBoxOpen(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsDialogBoxOpen(false);
+                  router.push("/dashboard/business-profile");
+                }}
+              >
+                Create Business Profile
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

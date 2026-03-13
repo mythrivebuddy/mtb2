@@ -8,6 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType, Prisma } from "@prisma/client";
 import { dailyBloomSchema, DailyBloomFormType } from "@/schema/zodSchema";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { UNLIMITED } from "@/lib/access-control/featureConfig";
+import { checkRole } from "@/lib/utils/auth";
 //import { combineDateAndTime } from "@/lib/utils/dateUtils";
 
 // --- authOptions (unchanged) ---
@@ -61,6 +64,10 @@ const nextDateUTC = (
 };
 
 // --- GET Function (unchanged) ---
+type DailyBloomPlanConfig = {
+  dailyLimit: number;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -185,7 +192,7 @@ export async function GET(request: NextRequest) {
 export async function POST(req: NextRequest) {
   // --- Replace the existing try...catch block in your POST function ---
   try {
-    const session = await getServerSession(authOptions);
+    const session = await checkRole("USER")
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -211,7 +218,57 @@ export async function POST(req: NextRequest) {
       finalDescription = `${finalDescription} ${timeString}`.trim();
     }
 
+    const featureResult = checkFeature({
+      feature: "dailyBlooms",
+      user: session.user,
+    });
 
+    if (!featureResult.allowed) {
+      return NextResponse.json(
+        { error: featureResult.reason },
+        { status: 403 }
+      );
+    }
+
+    const planConfig =
+      typeof featureResult.config === "object"
+        ? (featureResult.config as DailyBloomPlanConfig)
+        : null;
+
+    if (!planConfig) {
+      return NextResponse.json(
+        { error: "Daily Bloom configuration not found" },
+        { status: 500 }
+      );
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const bloomsToday = await prisma.todo.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+    });
+
+    if (
+      planConfig.dailyLimit !== UNLIMITED &&
+      bloomsToday >= planConfig.dailyLimit
+    ) {
+      return NextResponse.json(
+        {
+          message: `You have reached your daily limit of ${planConfig.dailyLimit} Daily Blooms.`,
+        },
+        { status: 403 }
+      );
+    }
     // Create the bloom in a single database call
     const newBloom = await prisma.todo.create({
       data: {
@@ -240,7 +297,7 @@ export async function POST(req: NextRequest) {
           data: { taskAddJP: true },
         });
       } catch (error) {
-        console.error(`Error while assigning JP:`, error);
+        console.error(`Error while assigning GP:`, error);
       }
     }
 
@@ -314,7 +371,7 @@ export async function PUT(req: NextRequest) {
             data: { taskCompleteJP: true },
           });
         } catch (error) {
-          console.error(`Error while assigning JP:`, error);
+          console.error(`Error while assigning GP:`, error);
         }
       }
     }

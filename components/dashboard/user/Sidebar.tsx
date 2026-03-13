@@ -20,13 +20,10 @@ import {
   Search,
   BellRing,
   Crown,
-  PhoneCall,
-  Video,
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
 import { SearchUser } from "@/types/client/nav";
@@ -109,7 +106,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
   const pathname = usePathname();
   // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
   const session = useSession();
-  console.log("User type:", session.data?.user.userType);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -277,13 +273,19 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem
                   href="/dashboard/miracle-log"
                   icon={<WandSparklesIcon size={20} />}
-                  label="Log Serendipities"
+                  label="Log Miracles"
                   onLinkClick={toggleSidebar}
                 />
                 <NavItem
                   href="/dashboard/challenge"
                   icon={<Swords size={20} />}
                   label="Join Challenges"
+                  onLinkClick={toggleSidebar}
+                />
+                <NavItem
+                  href="/dashboard/mini-mastery-programs"
+                  icon={<GraduationCap size={20} />}
+                  label="Join Mini Mastery Programs"
                   onLinkClick={toggleSidebar}
                 />
                 <div className="flex items-center ">
@@ -337,128 +339,172 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   )}
                 </div> */}
 
-                <ComingSoonWrapper>
+                <NavItem
+                  href="/dashboard/store"
+                  icon={<ShoppingCartIcon size={20} />}
+                  label="Growth Store"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
+
+
+                {/* <ComingSoonWrapper>
                   <NavItem
                     icon={<ShoppingCartIcon size={20} />}
                     label="Store"
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
-                </ComingSoonWrapper>
+                </ComingSoonWrapper> */}
               </NavSection>
               {/* Settings Section */}
               {(session.data?.user.userType == "COACH" ||
                 session.data?.user.userType == "SOLOPRENEUR") && (
-                <NavSection title="For Coach/Solopreneur">
-                  <NavItem
-                    href="/dashboard/spotlight"
-                    icon={<Sparkles size={20} />}
-                    label="Get a Spotlight"
-                    onLinkClick={toggleSidebar} // Pass toggleSidebar
-                  />
-                  <NavItem
-                    href="/dashboard/business-profile"
-                    icon={<User size={20} />}
-                    label="Setup Business Profile"
-                    onLinkClick={toggleSidebar} // Pass toggleSidebar
-                  />
-                  <NavItem
-                    href="/dashboard/prosperity"
-                    icon={<Droplet size={20} />}
-                    label="Apply for a Grant"
-                    onLinkClick={toggleSidebar} // Pass toggleSidebar
-                  />
-                  <NavItem
-                    href="/dashboard/challenge"
-                    icon={<Swords size={20} />}
-                    label="Create a Challenge"
-                    onLinkClick={toggleSidebar}
-                  />
-                  {/* <NavItem
+                  <NavSection title="For Coach/Solopreneur">
+                    <NavItem
+                      href="/dashboard/business-profile"
+                      icon={<User size={20} />}
+                      label="Setup Business Profile"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/spotlight"
+                      icon={<Sparkles size={20} />}
+                      label="Get a Spotlight"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                                        <NavItem
+                      href="/dashboard/challenge"
+                      icon={<Swords size={20} />}
+                      label="Create a Challenge"
+                      onLinkClick={toggleSidebar}
+                    />
+                    
+                    <div className="flex items-center ">
+                      <Link
+                        href="/dashboard/mini-mastery-programs/create"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
+                      >
+                        <GraduationCap size={20} className="w-7" />
+
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-3">
+                          Promote Mini Mastery Programs
+                        </span>
+                      </Link>
+                    </div>
+                      <NavItem
+                      href="/dashboard/manage-store"
+                      icon={<ShoppingCartIcon size={20} />}
+                      label="Manage Your Store"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                                        <li>
+                      <Link
+                        href="/dashboard/accountability/home"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/accountability/home" ? "text-jp-orange" : ""}`}
+                      >
+                        <LayoutDashboard size={20} className="w-7" />
+
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-2">
+                          Create Accountability Group
+                        </span>
+                      </Link>
+                    </li>
+                    
+                    <NavItem
+                      href="/dashboard/buddy-lens"
+                      icon={<HomeIcon size={20} />}
+                      label="Get a Profile Audit"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                    <NavItem
+                      href="/dashboard/prosperity"
+                      icon={<Droplet size={20} />}
+                      label="Apply for a Grant"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+
+                    {/* <NavItem
                     href="/dashboard/accountability/home"
                     icon={<LayoutDashboard size={20} />}
                     label="Create Accountability Group"
                     onLinkClick={toggleSidebar}
                   /> */}
-                  <li>
-                    <Link
-                      href="/dashboard/accountability/home"
-                      onClick={toggleSidebar}
-                      className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/accountability/home" ? "text-jp-orange" : ""}`}
-                    >
-                      <LayoutDashboard size={20} className="w-7" />
 
-                      {/* Extra gap added here */}
-                      <span className="font-normal text-[17px] ml-2">
-                        Create Accountability Group
-                      </span>
-                    </Link>
-                  </li>
 
-                  <NavItem
-                    href="/dashboard/buddy-lens"
-                    icon={<HomeIcon size={20} />}
-                    label="Get a Profile Audit"
-                    onLinkClick={toggleSidebar} // Pass toggleSidebar
-                  />
-                  <ComingSoonWrapper>
-                    <NavItem
-                      icon={<PhoneCall size={20} />}
-                      label="Promote Discovery Calls"
-                      onLinkClick={toggleSidebar}
-                    />
-                  </ComingSoonWrapper>
+                    {/* <ComingSoonWrapper>
+                      <NavItem
+                        icon={<PhoneCall size={20} />}
+                        label="Promote Discovery Calls"
+                        onLinkClick={toggleSidebar}
+                      />
+                    </ComingSoonWrapper>
 
-                  <ComingSoonWrapper>
-                    <NavItem
-                      icon={<Video size={20} />}
-                      label="Promote Webinars"
-                      onLinkClick={toggleSidebar}
-                    />
-                  </ComingSoonWrapper>
+                    <ComingSoonWrapper>
+                      <NavItem
+                        icon={<Video size={20} />}
+                        label="Promote Webinars"
+                        onLinkClick={toggleSidebar}
+                      />
+                    </ComingSoonWrapper> */}
 
-                  {/* <ComingSoonWrapper>
+                    {/* <ComingSoonWrapper>
                     <NavItem
                       icon={<GraduationCap size={20} />}
                       label="Promote Mini Mastery Programs"
                       onLinkClick={toggleSidebar}
                     />
                   </ComingSoonWrapper> */}
-                  <div className="flex items-center ">
-                    <ComingSoonWrapper>
-                      <span className="flex items-center gap-2 py-2 hover:text-jp-orange cursor-pointer  text-[#6C7894]">
+                    <div className="flex items-center ">
+                      <Link
+                        href="/dashboard/mini-mastery-programs/create"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
+                      >
                         <GraduationCap size={20} className="w-7" />
-                        Promote Mini Mastery Programs
-                      </span>
-                    </ComingSoonWrapper>
-                  </div>
 
-                  {/* <NavItem
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-2">
+                          Promote Mini Mastery Programs
+                        </span>
+                      </Link>
+                    </div>
+                    <NavItem
+                      href="/dashboard/manage-store"
+                      icon={<ShoppingCartIcon size={20} />}
+                      label="Manage Growth Store"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+
+                    {/* <NavItem
                   href="/dashboard/faq"
                   icon={<HelpCircle size={20} />}
                   label="FAQ's"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 /> */}
-                  {/* <NavItem
+                    {/* <NavItem
                   href="/contact"
                   icon={<Phone size={20} />}
                   label="Contact us"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 /> */}
-                  {/* <NavItem
+                    {/* <NavItem
                   href="/blog"
                   icon={<BookOpen size={20} />}
                   label="Blog"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 /> */}
 
-                  {/* <NavItem
+                    {/* <NavItem
                   href="/about-us"
                   icon={<GlobeLock size={20} />}
                   label="About us"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 /> */}
-                </NavSection>
-              )}
+                  </NavSection>
+                )}
             </div>
           </div>
         </aside>

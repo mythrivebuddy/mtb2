@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType, StreakType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
 import { startOfDay } from "date-fns";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 
 export async function GET() {
   try {
@@ -47,6 +49,23 @@ export async function POST(req: Request) {
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
+    const featureCheck = checkFeature({
+      feature: "onePercentProgressVault",
+      user: {
+        userType: session.user.userType,
+        membership: session.user.membership, // "FREE" | "PAID"
+      },
+    });
+
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        { message: "Feature not available for your plan" },
+        { status: 403 }
+      );
+    }
+
+    const { dailyLimit } = featureCheck.config as { dailyLimit: number };
+
     // Count active (non-deleted) logs for today
     const activeLogsToday = await prisma.progressVault.count({
       where: {
@@ -59,12 +78,13 @@ export async function POST(req: Request) {
       }
     });
 
-    if (activeLogsToday >= 3) {
-      return NextResponse.json(
-        { error: "Daily limit of 3 entries reached. You cannot add more entries today." },
-        { status: 400 }
-      );
-    }
+    const limitResponse = await enforceLimitResponse({
+      limit: dailyLimit,
+      currentCount: activeLogsToday,
+      message: "Daily Progress Vault limit reached. Upgrade to increase your limit.",
+    });
+
+    if (limitResponse) return limitResponse;
 
     // Create a new log
     const log = await prisma.progressVault.create({

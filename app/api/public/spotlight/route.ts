@@ -27,7 +27,7 @@ export async function GET() {
       },
     });
 
-    console.log("activeSpotlight", activeSpotlight); //?dev
+    
 
     // If no active spotlight found, return null
     if (!activeSpotlight) {

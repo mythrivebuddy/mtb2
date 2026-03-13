@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay } from "date-fns";
+import { inngest } from "@/lib/inngest";
 
 // Note: We're using a CRON job at /api/cron/aligned-actions-reminders
 // to handle sending emails before actions start, which is more reliable
@@ -12,37 +13,37 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
     
+
     if (!session || !session.user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
-    
+
     const userId = session.user.id;
-    console.log("userId", userId);
+  
     const body = await req.json();
-    console.log("body", body);
     
+
     // Add userId to body for validation
     // const dataToValidate = {
     //   ...body,
     //   userId,
     // };
-    
+
     // Validate the request body against the schema
     // const validationResult = AlignedActionSchema.safeParse(dataToValidate);
-    // console.log("result", validationResult);
     // if (!validationResult.success) {
     //   return NextResponse.json(
     //     { error: "Invalid request data", details: validationResult.error.format() },
     //     { status: 400 }
     //   );
     // }
-    
+
     const data = body;
-    
-    
+
+
     // Check if user already has an aligned action for today
     const today = new Date();
     const existingAction = await prisma.alignedAction.findFirst({
@@ -54,14 +55,14 @@ export async function POST(req: NextRequest) {
         },
       },
     });
-    
+
     if (existingAction) {
       return NextResponse.json(
         { error: "You already created an aligned action for today" },
         { status: 409 }
       );
     }
-    
+
     // Create the aligned action
     const alignedAction = await prisma.alignedAction.create({
       data: {
@@ -75,7 +76,17 @@ export async function POST(req: NextRequest) {
         reminderSent: false,
       },
     });
-    
+
+    await inngest.send({
+      name: "aligned-action/created",
+      data: {
+        actionId: alignedAction.id,
+        userId,
+        timeFrom: alignedAction.timeFrom,
+        timeTo: alignedAction.timeTo,
+      },
+    });
+
     return NextResponse.json(alignedAction, { status: 201 });
   } catch (error) {
     console.error("Error creating 1% Start action:", error);
@@ -89,20 +100,20 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    
+
     if (!session || !session.user) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
       );
     }
-    
+
     const userId = session.user.id;
     const url = new URL(req.url);
     const date = url.searchParams.get("date");
-    
+
     let dateFilter = {};
-    
+
     if (date) {
       const queryDate = new Date(date);
       dateFilter = {
@@ -112,7 +123,7 @@ export async function GET(req: NextRequest) {
         },
       };
     }
-    
+
     const alignedActions = await prisma.alignedAction.findMany({
       where: {
         userId,
@@ -122,7 +133,7 @@ export async function GET(req: NextRequest) {
         createdAt: "desc",
       },
     });
-    
+
     return NextResponse.json(alignedActions);
   } catch (error) {
     console.error("Error fetching 1% Start actions:", error);

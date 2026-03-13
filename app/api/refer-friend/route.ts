@@ -32,7 +32,7 @@ const senderEmail = process.env.CONTACT_SENDER_EMAIL;
       <p>${userName} has invited you to join our platform.</p>
       <p>Use their referral code: <strong>${referralCode}</strong></p>
       <p>Or click this link to sign up: <a href="${referralUrl}">${referralUrl}</a></p>
-      <p>When you sign up, you'll receive 300 JP, and ${userName} will receive 500 JP!</p>
+      <p>When you sign up, you'll receive 300 GP, and ${userName} will receive 500 GP!</p>
     `,
   };
 
@@ -48,7 +48,7 @@ const senderEmail = process.env.CONTACT_SENDER_EMAIL;
 // GET: Fetch referral stats
 export async function GET() {
   try {
-    console.log('fetching referral stats itz working');
+    
     const session = await getServerSession(authConfig);
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });

@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     });
 
     if (!user || user.jpBalance < jpCost) {
-      return new NextResponse("Insufficient JoyPearls", { status: 400 });
+      return new NextResponse("Insufficient Growth Points", { status: 400 });
     }
 
     // Create the request

@@ -115,8 +115,8 @@ export default function ProsperityReviewPage() {
             <p>{format(new Date(application.user.createdAt), "PPP")}</p>
           </div>
           <div>
-            <h3 className="font-semibold">Current JP Balance</h3>
-            <p>{application.user.jpBalance} JP</p>
+            <h3 className="font-semibold">Current GP Balance</h3>
+            <p>{application.user.jpBalance} GP</p>
           </div>
         </CardContent>
       </Card>

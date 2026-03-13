@@ -91,7 +91,7 @@ describe("RightPanel Component", () => {
     expect(screen.getByText("Earned for Reward")).toBeInTheDocument();
 
     // Check amounts
-    expect(screen.getByText("100 JP")).toBeInTheDocument();
-    expect(screen.getByText("50 JP")).toBeInTheDocument();
+    expect(screen.getByText("100 GP")).toBeInTheDocument();
+    expect(screen.getByText("50 GP")).toBeInTheDocument();
   });
 });

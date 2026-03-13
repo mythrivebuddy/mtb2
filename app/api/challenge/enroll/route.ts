@@ -6,8 +6,12 @@ import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { deductJp, assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
 import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { LimitType } from "@/lib/access-control/featureConfig";
+import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 
 
 export const maxDuration = 60; // 60 seconds
@@ -45,19 +49,6 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-
-    // Fetch the template tasks associated with this challenge.
-    const templateTasks = await prisma.challengeTask.findMany({
-      where: { challengeId: challengeId },
-    });
-
-    if (challengeToJoin.creatorId === joinerId) {
-      return NextResponse.json(
-        { error: "You cannot join a challenge you created." },
-        { status: 400 }
-      );
-    }
-
     // Fetch the joiner and check for existing enrollment concurrently.
     const [joiner, existingEnrollment] = await Promise.all([
       prisma.user.findUnique({
@@ -79,6 +70,70 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
+    // 🚦 Enforce join limit ONLY for MANUAL challenges
+    // 🚦 Enforce join limit ONLY for MANUAL challenges
+    if (challengeToJoin.joinMode === "MANUAL") {
+      const featureCheck = checkFeature({
+        feature: "challenges",
+        user: {
+          userType: joiner.userType,
+          membership: joiner.membership,
+        },
+      });
+
+      if (!featureCheck.allowed) {
+        return NextResponse.json(
+          { error: "Challenge access not allowed" },
+          { status: 403 }
+        );
+      }
+
+      const { joinLimit, limitType, isUpgradeFlagShow } = featureCheck.config as {
+        joinLimit: number;
+        limitType: LimitType;
+        isUpgradeFlagShow: boolean;
+      };
+
+      const periodStart = getLimitPeriodStart(limitType);
+
+      const joinedCount = await prisma.challengeEnrollment.count({
+        where: {
+          userId: joinerId,
+          ...(periodStart && {
+            joinedAt: { gte: periodStart },
+          }),
+        },
+      });
+
+      const limitResponse = await enforceLimitResponse({
+        limit: joinLimit,
+        currentCount: joinedCount,
+        message:
+          joiner.membership === "PAID"
+            ? "You have reached your challenge join limit."
+            : `You have reached your challenge join limit.`,
+        statusCode: joiner.membership === "PAID" ? 400 : 403,
+        isUpgradeFlagShow,
+      });
+
+      if (limitResponse) {
+        return limitResponse;
+      }
+    }
+
+
+    // Fetch the template tasks associated with this challenge.
+    const templateTasks = await prisma.challengeTask.findMany({
+      where: { challengeId: challengeId },
+    });
+
+    if (challengeToJoin.creatorId === joinerId) {
+      return NextResponse.json(
+        { error: "You cannot join a challenge you created." },
+        { status: 400 }
+      );
+    }
+
 
     // Fetch creator only if there's a cost
     const creator =
@@ -101,15 +156,24 @@ export async function POST(request: Request) {
       async (tx) => {
         // 1. Handle JP cost if applicable
         if (challengeToJoin.cost > 0 && creator) {
-          await Promise.all([
-            deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
-              amount: challengeToJoin.cost,
-            }),
-            assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
-              amount: challengeToJoin.cost,
-            }),
-          ]);
+
+          await deductJp(joiner, ActivityType.CHALLENGE_JOINING_FEE, tx, {
+            amount: challengeToJoin.cost,
+            metadata: {
+              challengeId: challengeToJoin.id,
+              challengeTitle: challengeToJoin.title
+            }
+          });
+          await assignJp(creator, ActivityType.CHALLENGE_FEE_EARNED, tx, {
+            amount: challengeToJoin.cost,
+            metadata: {
+              joinerId: joiner.id,
+              joinerName: joiner.name,
+              challengeTitle: challengeToJoin.title
+            }
+          });
         }
+
 
         // 2. Create the enrollment record
         const enrollment = await tx.challengeEnrollment.create({
@@ -143,12 +207,23 @@ export async function POST(request: Request) {
     const userName = session?.user?.name || "Someone"
     const joinedUserId = session.user.id;
 
-    void sendMessageForJoining(challengeId,userName,null,"SYSTEM",joinedUserId);
-    
-    sendPushNotificationToUser(
-      challengeToJoin.creatorId,
+    void sendMessageForJoining(challengeId, userName, null, "SYSTEM", joinedUserId);
+
+    const existingEnrollments = await prisma.challengeEnrollment.findMany({
+      where: { challengeId },
+      select: { userId: true },
+    });
+
+    const participantIds = existingEnrollments.map((e) => e.userId);
+    const notificationRecipients = Array.from(
+      new Set([challengeToJoin.creatorId, ...participantIds])
+    ).filter((id) => id !== joinedUserId); // Don't notify the person who just joined
+
+    // 3. Use your new batch function
+    void sendPushNotificationMultipleUsers(
+      notificationRecipients,
       "New challenger alert 🚀",
-      `${session.user.name} joined "${challengeToJoin.title}"!`,
+      `${userName} joined "${challengeToJoin.title}"!`,
       { url: "/dashboard/challenge/my-challenges" }
     );
 
@@ -166,9 +241,9 @@ export async function POST(request: Request) {
     console.error("Enrollment transaction failed:", error);
 
     if (error instanceof Error) {
-      if (error.message.includes("Insufficient JP balance")) {
+      if (error.message.includes("Insufficient GP balance")) {
         return NextResponse.json(
-          { error: "You do not have enough JP to join this challenge." },
+          { error: "You do not have enough GP to join this challenge." },
           { status: 400 }
         );
       }

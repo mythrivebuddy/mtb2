@@ -2,12 +2,20 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { activityDisplayMap, activityDisplayMapV3 } from "@/lib/constants/activityNames";
+import { PaymentStatus } from "@prisma/client";
+import { checkFeature } from "@/lib/access-control/checkFeature";
 
+type TransactionMetadata = {
+  joinerName?: string;
+  challengeTitle?: string;
+};
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "6");
-  const skip = (page - 1) * limit;
+  const filter = searchParams.get("filter") || "ALL";
+  const currency = searchParams.get("currency") || "ALL";
+  // const skip = (page - 1) * limit;
 
   // ✅ Determine version flag
   const versionFlag =
@@ -19,39 +27,326 @@ export async function GET(request: Request) {
   const session = await checkRole("USER");
   const userId = session.user.id;
 
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  // const fromDate = from ? new Date(from) : null;
+  const toDate = to ? new Date(to) : null;
+
+  if (toDate) {
+    toDate.setHours(23, 59, 59, 999);
+  }
+
+
   try {
-    const [transactions, total] = await Promise.all([
-      prisma.transaction.findMany({
-        where: { userId },
-        include: { activity: true },
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        skip,
-      }),
-      prisma.transaction.count({
-        where: { userId },
-      }),
-    ]);
+    const challengePaymentsPromise =
+      filter === "ALL" || filter === "CHALLENGE"
+        ? prisma.challengePayment.findMany({
+          where: { userId },
+          include: {
+            challenge: true,
+            paymentOrder: true,
+          },
+        })
+        : Promise.resolve([]);
 
-    const totalPages = Math.ceil(total / limit);
-    const currentPage = page > totalPages ? totalPages : page;
+    const coachChallengeEarningsPromise =
+      filter === "ALL" || filter === "COACH_EARNING" || filter === "CHALLENGE"
+        ? prisma.challengePayment.findMany({
+          where: {
+            status: PaymentStatus.PAID,
+            challenge: {
+              creatorId: userId, // coach owns the challenge
+            },
+          },
+          include: {
+            challenge: true,
+            user: true, // the participant
+          },
+        })
+        : Promise.resolve([]);
+    const paymentOrdersPromise =
+      filter === "ALL" || filter === "SUBSCRIPTION" 
+      // || filter === "STORE_ORDER"
+        ? prisma.paymentOrder.findMany({
+          where: {
+            userId,
+            status: PaymentStatus.PAID,
+            contextType: {
+              in: ["SUBSCRIPTION", "STORE_ORDER"], // exclude CHALLENGE
+            },
+          },
+          include: {
+            plan: true,
+          },
+        })
+        : Promise.resolve([]);
 
-    const formattedTransactions = transactions.map((tx) => ({
-      ...tx,
+    const cmpPurchasesPromise =
+      filter === "ALL" || filter === "CMP"
+        ? prisma.oneTimeProgramPurchase.findMany({
+          where: { userId, status: PaymentStatus.PAID },
+          include: {
+            product: true,
+          },
+        })
+        : Promise.resolve([]);
+
+    const [user, transactions, challengePayments, paymentOrders, cmpPurchases, coachChallengeEarnings] =
+      await Promise.all([
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            jpBalance: true,
+          },
+        }),
+        filter === "ALL" || filter === "GP" || filter === "CHALLENGE"
+          ? prisma.transaction.findMany({
+            where: {
+              userId,
+              ...(filter === "CHALLENGE" && {
+                activity: {
+                  activity: {
+                    in: [
+                      "CHALLENGE_JOINING_FEE",
+                      "CHALLENGE_FEE_EARNED",
+                      "CHALLENGE_PENALTY",
+                      "CHALLENGE_REWARD",
+                      "CHALLENGE_CREATION_FEE"
+                    ]
+                  }
+                }
+              })
+            },
+            include: { activity: true },
+            orderBy: { createdAt: "desc" },
+          })
+          : Promise.resolve([]),
+
+        challengePaymentsPromise,
+        paymentOrdersPromise,
+        cmpPurchasesPromise,
+        coachChallengeEarningsPromise
+      ]);
+
+
+    const challengeHistory = challengePayments.map((cp) => ({
+      id: cp.id,
+      createdAt: cp.paidAt || cp.joinedAt,
+      jpAmount: cp.amountPaid,
+      currency: cp.currency,
       activity: {
-        ...tx.activity,
-        displayName:
-          displayMap[tx.activity.activity] || tx.activity.activity,
+        activity: "CHALLENGE_JOIN",
+        transactionType: "DEBIT",
+        displayName: `Joined Challenge: ${cp.challenge.title}`,
       },
     }));
 
+    const paymentHistory = paymentOrders.map((po) => ({
+      id: po.id,
+      createdAt: po.paidAt || po.createdAt,
+      jpAmount: po.totalAmount,
+      currency: po.currency,
+      activity: {
+        activity: po.contextType,
+        transactionType: "DEBIT",
+        displayName:
+          po.contextType === "SUBSCRIPTION"
+            ? `Membership: ${po.plan?.name}`
+            : po.contextType === "STORE_ORDER"
+              ? `Store Purchase`
+              : po.plan?.name || "Payment",
+      },
+    }));
+
+
+    const cmpHistory = cmpPurchases.map((cp) => ({
+      id: cp.id,
+      createdAt: cp.purchasedAt,
+      jpAmount: cp.totalAmount,
+      currency: cp.currency,
+      activity: {
+        activity: "CMP_PURCHASE",
+        transactionType: "DEBIT",
+        displayName: `${cp.product.name}`,
+      },
+    }));
+
+    const gpHistory = transactions.map((tx) => {
+      let displayName =
+        displayMap[tx.activity.activity] || tx.activity.activity;
+
+      const meta = tx.metadata as TransactionMetadata | null;
+
+      if (meta?.joinerName && meta?.challengeTitle) {
+        displayName = `${meta.joinerName} joined ${meta.challengeTitle}`;
+      }
+
+      return {
+        id: tx.id,
+        createdAt: tx.createdAt,
+        jpAmount: tx.jpAmount,
+        currency: "GP",
+        activity: {
+          activity: tx.activity.activity,
+          transactionType: tx.activity.transactionType,
+          displayName,
+        },
+        activityMeta: meta ?? null,
+      };
+    });
+
+    const coachEarningsHistory = coachChallengeEarnings.map((cp) => {
+      const feature = checkFeature({
+        feature: "challenges",
+        user: {
+          userType: session.user.userType,
+          membership: session.user.membership
+        }
+      });
+
+      const commissionPercent = feature.allowed
+        ? (feature.config as { commissionPercent?: number }).commissionPercent ?? 0
+        : 0;
+
+      const baseAmount = cp.amountPaid;
+      const commission = (baseAmount * commissionPercent) / 100;
+      const finalAmount = baseAmount - commission
+
+
+      return {
+        id: `coach-${cp.id}`,
+        createdAt: cp.paidAt || cp.joinedAt,
+        jpAmount: finalAmount,
+        currency: cp.currency,
+
+        breakdown: {
+          baseAmount,
+          commission,
+          finalAmount,
+        },
+
+        activity: {
+          activity: "CHALLENGE_EARNING",
+          transactionType: "CREDIT",
+          displayName: `${cp.user.name} joined ${cp.challenge.title}`,
+        },
+
+        activityMeta: {
+          userId: cp.user.id,
+          userName: cp.user.name,
+          challengeTitle: cp.challenge.title
+        }
+      };
+    });
+
+    let combined = [
+      ...gpHistory,
+      ...challengeHistory,
+      ...paymentHistory,
+      ...cmpHistory,
+      ...coachEarningsHistory
+    ];
+
+    // ✅ Apply date range filter
+    if (from || to) {
+      const fromDate = from ? new Date(from) : null;
+      const toDate = to ? new Date(to) : null;
+
+      if (toDate) {
+        toDate.setHours(23, 59, 59, 999);
+      }
+
+      combined = combined.filter((tx) => {
+        const txDate = new Date(tx.createdAt);
+
+        if (fromDate && txDate < fromDate) return false;
+        if (toDate && txDate > toDate) return false;
+
+        return true;
+      });
+    }
+
+    if (currency !== "ALL") {
+      combined = combined.filter((tx) => tx.currency === currency);
+    }
+
+    combined.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const totalItems = combined.length;
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const currentPage = page > totalPages ? totalPages : page;
+
+    // calculate skip AFTER correcting page
+    const skipSafe = (currentPage - 1) * limit;
+
+    const paginated = combined.slice(skipSafe, skipSafe + limit);
+
+
+
+    const gpBalance = user?.jpBalance ?? 0;
+    const feature = checkFeature({
+      feature: "challenges",
+      user: {
+        userType: session.user.userType,
+        membership: session.user.membership,
+      },
+    });
+
+    const commissionPercent = feature.allowed
+      ? (feature.config as { commissionPercent?: number }).commissionPercent ?? 0
+      : 0;
+    // INR balance (coach challenge earnings after commission)
+    const inrCredits = coachChallengeEarnings
+      .filter((cp) => cp.currency === "INR")
+      .reduce((sum, cp) => {
+        const commission = (cp.amountPaid * commissionPercent) / 100;
+        const finalAmount = cp.amountPaid - commission;
+        return sum + finalAmount;
+      }, 0);
+
+    const inrPaymentDebits = paymentOrders
+      .filter((po) => po.currency === "INR")
+      .reduce((sum, po) => sum + po.totalAmount, 0);
+
+    const inrCmpDebits = cmpPurchases
+      .filter((cp) => cp.currency === "INR")
+      .reduce((sum, cp) => sum + cp.totalAmount, 0);
+
+    const inrDebits = inrPaymentDebits + inrCmpDebits;
+
+    const inrBalance = inrCredits - inrDebits;
+
+
+    const usdCredits = coachChallengeEarnings
+      .filter((cp) => cp.currency === "USD")
+      .reduce((sum, cp) => {
+        const commission = (cp.amountPaid * commissionPercent) / 100;
+        const finalAmount = cp.amountPaid - commission;
+        return sum + finalAmount;
+      }, 0);
+
+    const usdDebits = paymentOrders
+      .filter((po) => po.currency === "USD")
+      .reduce((sum, po) => sum + po.totalAmount, 0);
+
+    const usdBalance = usdCredits - usdDebits;
+
     return NextResponse.json({
-      transactions: formattedTransactions,
-      total,
-      page: currentPage,
+      transactions: paginated,
+      total: totalItems,
+      page,
       limit,
       totalPages,
       version: versionFlag ? "v3" : "default",
+      currentPage,
+      balances: {
+        GP: gpBalance,
+        INR: inrBalance,
+        USD: usdBalance,
+      },
     });
   } catch (error) {
     console.error("Error fetching user history:", error);

@@ -323,7 +323,7 @@ export default function UpcomingChallengesPage() {
                       </div>
                       <div className="flex items-center gap-2 text-purple-700 font-bold">
                         <Gift className="w-4 h-4" />
-                        <span>{challenge.reward} JP</span>
+                        <span>{challenge.reward} GP</span>
                       </div>
                     </div>
                   </div>

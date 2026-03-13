@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
-
+import { ChallengeJoinMode } from "@prisma/client";
 
 export async function GET() {
   try {
-    // 1. Fetch the notification template by type
+    const todayUtc = new Date();
+    todayUtc.setUTCHours(0, 0, 0, 0);
+
+    // 1️⃣ Notification template
     const template = await prisma.notificationSettings.findUnique({
       where: { notification_type: "DAILY_CHALLENGE_PUSH_NOTIFICATION" },
     });
 
     const title = template?.title ?? "Daily Challenge Reminder";
-    const message = template?.message ?? "Don't forget to check your daily challenges!";    
-    // 2. Fetch subscribed users
+    const message =
+      template?.message ?? "Don't forget to check your daily challenges!";
+
+    // 2️⃣ Subscribed users
     const subscribedUsers = await prisma.pushSubscription.findMany({
       select: { userId: true },
       distinct: ["userId"],
@@ -20,55 +25,78 @@ export async function GET() {
 
     const eligibleUsers: {
       userId: string;
-      // completedCount: number;
       inProgressCount: number;
     }[] = [];
 
-    // 3. Determine eligible users
+    // 3️⃣ Eligibility logic
     await Promise.all(
       subscribedUsers.map(async ({ userId }) => {
-        // const completed = await prisma.challengeEnrollment.count({
-        //   where: { userId, status: "COMPLETED" },
-        // });
-
-          const inProgress = await prisma.challengeEnrollment.count({
-            where: { userId, status: "IN_PROGRESS" },
+        // Active challenges
+        const activeEnrollments = await prisma.challengeEnrollment.findMany({
+          where: {
+            userId,
+            status: "IN_PROGRESS",
+            challenge: {
+              status: "ACTIVE",
+              joinMode: ChallengeJoinMode.MANUAL,
+            },
+          },
+          select: { challengeId: true },
         });
 
-        if (
-          // completed > 0 ||
-           inProgress > 0) {
-          eligibleUsers.push({
-            userId,
-            // completedCount: completed,
-            inProgressCount: inProgress,      
-          });
+        if (activeEnrollments.length === 0) {
+          return;
         }
-      })
+
+        const activeChallengeIds = activeEnrollments.map((e) => e.challengeId);
+
+        // Completed challenges today
+        const completedToday = await prisma.completionRecord.findMany({
+          where: {
+            userId,
+            challengeId: { in: activeChallengeIds },
+            status: "COMPLETED",
+            date: todayUtc,
+          },
+          select: { challengeId: true, date: true },
+        });
+
+        // Decision
+        if (completedToday.length === activeChallengeIds.length) {
+          return;
+        }
+
+        const inProgressCount =
+          activeChallengeIds.length - completedToday.length;
+
+        eligibleUsers.push({
+          userId,
+          inProgressCount,
+        });
+      }),
     );
 
-    // 4. Send notifications using fetched template
+    // 4️⃣ Send notifications
     const results = await Promise.allSettled(
-      eligibleUsers.map(
-        async ({ userId }) =>
-          await sendPushNotificationToUser(userId, title, message, {
-            url: "/dashboard/challenge",
-          })
-      )
+      eligibleUsers.map(({ userId }) =>
+        sendPushNotificationToUser(userId, title, message, {
+          url: "/dashboard/challenge",
+        }),
+      ),
     );
-    console.log("success ", results);
 
     return NextResponse.json({
       message: "Daily challenge notifications sent.",
       total: eligibleUsers.length,
+      eligibleUsers,
       success: results.filter((r) => r.status === "fulfilled").length,
       failed: results.filter((r) => r.status === "rejected").length,
     });
   } catch (error) {
-    console.error("Daily Challenge Push Error:", error);
+    console.error("🔥 Daily Challenge Push Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -12,6 +12,9 @@ export async function GET() {
         applicablePlans: {
           select: { id: true, name: true },
         },
+        applicableChallenges: {
+          select: { id: true, title: true },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -25,7 +28,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    
+
     // Destructure and validate
     const {
       couponCode,
@@ -36,6 +39,7 @@ export async function POST(req: Request) {
       freeDays,
       applicableUserTypes, // Array of ENUMs
       applicablePlanIds,   // Array of Strings (IDs)
+      applicableChallengeIds,
       applicableCurrencies, // Array of ENUMs
       firstCycleOnly,
       multiCycle,
@@ -45,7 +49,8 @@ export async function POST(req: Request) {
       maxUsesPerUser,
       autoApply,
       autoApplyConditions,
-      description
+      description,
+      scope
     } = body;
 
     // Basic Validation
@@ -53,29 +58,69 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+
+    const isChallengeCoupon = scope === "CHALLENGE";
+    if (scope === "CHALLENGE" && !applicableChallengeIds?.length) {
+      return NextResponse.json(
+        { error: "Challenge coupons must target at least one challenge" },
+        { status: 400 }
+      );
+    }
+    if (!["SUBSCRIPTION", "CHALLENGE", "MMP_PROGRAM"].includes(scope)) {
+      return NextResponse.json(
+        { error: "Invalid coupon scope" },
+        { status: 400 }
+      );
+    }
+
+
+    const safeFirstCycleOnly = isChallengeCoupon ? true : !!firstCycleOnly;
+    const safeMultiCycle = isChallengeCoupon ? false : !!multiCycle;
+
+    const existingCoupon = await prisma.coupon.findUnique({
+      where: { couponCode: couponCode.toUpperCase() },
+    });
+
+    if (existingCoupon) {
+      return NextResponse.json(
+        { error: "Coupon code already exists" },
+        { status: 409 }
+      );
+    }
+
     const newCoupon = await prisma.coupon.create({
       data: {
-        couponCode: couponCode.toUpperCase(),
+        couponCode: couponCode.trim().toUpperCase(),
         type: type as CouponType,
         description,
         status: "ACTIVE", // Default to active on creation
-        
+
         // Discount Logic
         discountPercentage: discountPercentage ? parseFloat(discountPercentage) : null,
         discountAmountUSD: discountAmountUSD ? parseFloat(discountAmountUSD) : null,
         discountAmountINR: discountAmountINR ? parseFloat(discountAmountINR) : null,
         freeDays: freeDays ? parseInt(freeDays) : null,
-
+        scope: scope,
         // Applicability
         applicableUserTypes: applicableUserTypes as CouponUserType[], // Postgres scalar list
         applicableCurrencies: applicableCurrencies as SubscriptionPlanCurrency[],
-        firstCycleOnly: !!firstCycleOnly,
-        multiCycle: !!multiCycle,
-        
+        firstCycleOnly: safeFirstCycleOnly,
+        multiCycle: safeMultiCycle,
+
         // Connect Plans (Many-to-Many)
-        applicablePlans: {
-            connect: applicablePlanIds?.map((id: string) => ({ id })) || []
-        },
+        applicablePlans:
+          scope === "SUBSCRIPTION"
+            ? {
+              connect: applicablePlanIds?.map((id: string) => ({ id })) || [],
+            }
+            : undefined,
+        applicableChallenges:
+          scope === "CHALLENGE"
+            ? {
+              connect:
+                applicableChallengeIds?.map((id: string) => ({ id })) || [],
+            }
+            : undefined,
 
         // Validity
         startDate: new Date(startDate),

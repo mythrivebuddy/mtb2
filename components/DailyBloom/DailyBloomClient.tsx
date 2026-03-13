@@ -67,9 +67,9 @@ import CustomAccordion from "../dashboard/user/ CustomAccordion";
 import DailyBloomCalendar from "@/components/DailyBloomCalendar";
 import { Switch } from "@/components/ui/switch";
 
-
 // Add this near your other imports at the top
 import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
+import UpgradeMessageModal from "../common/UpgradeMessageModal";
 // FIX: Define a specific type for extendedProps
 interface CalendarEventExtendedProps {
   isBloom?: boolean;
@@ -162,10 +162,19 @@ export default function DailyBloomClient() {
   const [statusFilter, setStatusFilter] = useState("Pending");
   const itemsPerPage = 8;
   const [addInputType, setAddInputType] = useState<"frequency" | "date">(
-    "date"
+    "date",
   );
   const [hoveredBloomId, setHoveredBloomId] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false); // New state for calendar dialog
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+  });
   useOnlineUserLeaderBoard();
 
   // --- In DailyBloomClient.tsx ---
@@ -183,12 +192,13 @@ export default function DailyBloomClient() {
       isCompleted: false,
       addToCalendar: true, // This is the crucial flag
       frequency: undefined,
-      startTime: payload.dueDate ? format(new Date(payload.dueDate), 'HH:mm') : "",
+      startTime: payload.dueDate
+        ? format(new Date(payload.dueDate), "HH:mm")
+        : "",
       endTime: "", // Let the user set this later if they want
       taskAddJP: false,
       taskCompleteJP: false,
       isFromEvent: true, // Mark this bloom as created from an even
-
     });
   };
 
@@ -250,7 +260,7 @@ export default function DailyBloomClient() {
       queryKey: ["dailyBloom", frequencyFilter, statusFilter],
       queryFn: async ({ pageParam = 1 }) => {
         const res = await axios.get(
-          `/api/user/daily-bloom?frequency=${frequencyFilter}&status=${statusFilter}&page=${pageParam}&limit=${itemsPerPage}`
+          `/api/user/daily-bloom?frequency=${frequencyFilter}&status=${statusFilter}&page=${pageParam}&limit=${itemsPerPage}`,
         );
         return res.data;
       },
@@ -258,7 +268,7 @@ export default function DailyBloomClient() {
       getNextPageParam: (lastPage, allPages) => {
         const totalFetched = allPages.reduce(
           (acc, page) => acc + page.data.length,
-          0
+          0,
         );
         if (totalFetched < lastPage.totalCount) {
           return allPages.length + 1;
@@ -291,7 +301,10 @@ export default function DailyBloomClient() {
   const createMutation = useMutation({
     mutationFn: async (newData: DailyBloomFormType) => {
       // Expects the API to return the created bloom object
-      const { data } = await axios.post<DailyBloom>("/api/user/daily-bloom", newData);
+      const { data } = await axios.post<DailyBloom>(
+        "/api/user/daily-bloom",
+        newData,
+      );
       return data;
     },
     onMutate: async (newBloom) => {
@@ -300,31 +313,40 @@ export default function DailyBloomClient() {
 
       const previousBlooms = queryClient.getQueryData(queryKey);
 
-      queryClient.setQueryData<InfiniteData<DailyBloomPage>>(queryKey, (oldData) => {
-        const optimisticBloom: DailyBloom = {
-          ...newBloom,
-          id: `temp-${Date.now()}`,
-          dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : new Date(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isCompleted: false,
-          isFromEvent: newBloom.addToCalendar || false,
-          description: newBloom.description ?? "",
-        };
+      queryClient.setQueryData<InfiniteData<DailyBloomPage>>(
+        queryKey,
+        (oldData) => {
+          const optimisticBloom: DailyBloom = {
+            ...newBloom,
+            id: `temp-${Date.now()}`,
+            dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : new Date(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            isCompleted: false,
+            isFromEvent: newBloom.addToCalendar || false,
+            description: newBloom.description ?? "",
+          };
 
-        if (!oldData || !oldData.pages) {
-          return { pages: [{ data: [optimisticBloom], totalCount: 1 }], pageParams: [1] };
-        }
+          if (!oldData || !oldData.pages) {
+            return {
+              pages: [{ data: [optimisticBloom], totalCount: 1 }],
+              pageParams: [1],
+            };
+          }
 
-        const firstPage = oldData.pages[0];
-        const updatedFirstPage = {
-          ...firstPage,
-          data: [optimisticBloom, ...firstPage.data],
-          totalCount: firstPage.totalCount + 1,
-        };
+          const firstPage = oldData.pages[0];
+          const updatedFirstPage = {
+            ...firstPage,
+            data: [optimisticBloom, ...firstPage.data],
+            totalCount: firstPage.totalCount + 1,
+          };
 
-        return { ...oldData, pages: [updatedFirstPage, ...oldData.pages.slice(1)] };
-      });
+          return {
+            ...oldData,
+            pages: [updatedFirstPage, ...oldData.pages.slice(1)],
+          };
+        },
+      );
 
       return { previousBlooms, queryKey };
     },
@@ -333,26 +355,39 @@ export default function DailyBloomClient() {
       if (!context) return;
 
       // This replaces the temporary bloom with the real one from the API
-      queryClient.setQueryData<InfiniteData<DailyBloomPage>>(context.queryKey, (oldData) => {
-        if (!oldData) return;
-        return {
-          ...oldData,
-          pages: oldData.pages.map(page => ({
-            ...page,
-            data: page.data.map(bloom =>
-              bloom.id.startsWith('temp-') ? createdBloom : bloom
-            ),
-          })),
-        };
-      });
+      queryClient.setQueryData<InfiniteData<DailyBloomPage>>(
+        context.queryKey,
+        (oldData) => {
+          if (!oldData) return;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              data: page.data.map((bloom) =>
+                bloom.id.startsWith("temp-") ? createdBloom : bloom,
+              ),
+            })),
+          };
+        },
+      );
       toast.success("Bloom created successfully!");
     },
     onError: (err, newBloom, context) => {
       if (context?.previousBlooms) {
         queryClient.setQueryData(context.queryKey, context.previousBlooms);
       }
-      const errorMessage = getAxiosErrorMessage(err, "An error occurred while creating Daily Bloom.");
-      toast.error(errorMessage);
+      const message = getAxiosErrorMessage(err);
+
+      if (axios.isAxiosError(err) && err.response?.status === 403) {
+        setUpgradeModal({
+          open: true,
+          title: "Upgrade Required",
+          message,
+        });
+        return;
+      }
+
+      toast.error(message);
     },
     // ✅ CHANGE 2: Modify onSettled to NOT invalidate 'dailyBloom' query
     onSettled: () => {
@@ -370,7 +405,7 @@ export default function DailyBloomClient() {
     }) => {
       const res = await axios.put(
         `/api/user/daily-bloom/${payload.id}`,
-        payload.updatedData
+        payload.updatedData,
       );
       return res.data;
     },
@@ -382,9 +417,8 @@ export default function DailyBloomClient() {
       await queryClient.cancelQueries({ queryKey });
 
       // 2. Snapshot the previous value
-      const previousBlooms = queryClient.getQueryData<
-        InfiniteData<DailyBloomPage>
-      >(queryKey);
+      const previousBlooms =
+        queryClient.getQueryData<InfiniteData<DailyBloomPage>>(queryKey);
 
       // 3. Optimistically update to the new value
       queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
@@ -399,11 +433,11 @@ export default function DailyBloomClient() {
               data: page.data.map((bloom) =>
                 bloom.id === newBloomData.id
                   ? { ...bloom, ...newBloomData.updatedData }
-                  : bloom
+                  : bloom,
               ),
             })),
           };
-        }
+        },
       );
 
       // 4. Return a context object with the snapshotted value
@@ -417,7 +451,7 @@ export default function DailyBloomClient() {
       }
       const errorMessage = getAxiosErrorMessage(
         error,
-        "Failed to update task. Reverting changes."
+        "Failed to update task. Reverting changes.",
       );
       toast.error(errorMessage);
     },
@@ -443,7 +477,7 @@ export default function DailyBloomClient() {
     onError: (error: AxiosError) => {
       const errorMessage = getAxiosErrorMessage(
         error,
-        "Failed to delete task."
+        "Failed to delete task.",
       );
       toast.error(errorMessage);
     },
@@ -465,9 +499,10 @@ export default function DailyBloomClient() {
 
     // The `as any` is used here to accommodate the extra `isFromEvent` property,
     // similar to how your `handleCreateBloomFromEvent` function works.
-    createMutation.mutate(payload as unknown as DailyBloomFormType & { isFromEvent?: boolean });
+    createMutation.mutate(
+      payload as unknown as DailyBloomFormType & { isFromEvent?: boolean },
+    );
   };
-
 
   const onUpdate = (formData: DailyBloomFormType) => {
     if (editData) {
@@ -478,7 +513,7 @@ export default function DailyBloomClient() {
             toast.success("Updated successfully");
             setEditData(null);
           },
-        }
+        },
       );
     }
   };
@@ -504,10 +539,10 @@ export default function DailyBloomClient() {
       {
         onSuccess: () => {
           toast.success(
-            `Task marked as ${isCompleted ? "complete" : "pending"}.`
+            `Task marked as ${isCompleted ? "complete" : "pending"}.`,
           );
         },
-      }
+      },
     );
   };
 
@@ -523,23 +558,29 @@ export default function DailyBloomClient() {
     };
   }) => {
     // CRITICAL: Clean the ID from the "bloom-" prefix
-    const actualBloomId = payload.id.replace('bloom-', '');
+    const actualBloomId = payload.id.replace("bloom-", "");
 
     // 1. Find the original, full bloom object from our local state.
     const originalBloom = dailyBloom.find((b) => b.id === actualBloomId);
 
-    // If the bloom somehow isn't in our local cache yet (race condition), 
+    // If the bloom somehow isn't in our local cache yet (race condition),
     // we can't update it. Invalidate queries to sync up.
     if (!originalBloom) {
-      console.warn(`Could not find bloom with id: ${actualBloomId} to update from calendar. Refetching.`);
+      console.warn(
+        `Could not find bloom with id: ${actualBloomId} to update from calendar. Refetching.`,
+      );
       queryClient.invalidateQueries({ queryKey: ["dailyBloom"] });
       return;
     }
 
     // 2. Construct the *complete* form data object for the update.
     // We use the original bloom data as the base and overwrite it with changes.
-    const newDueDate = payload.updatedData.dueDate ? new Date(payload.updatedData.dueDate) : new Date(originalBloom.dueDate || new Date());
-    const newEndDate = payload.updatedData.end ? new Date(payload.updatedData.end) : null;
+    const newDueDate = payload.updatedData.dueDate
+      ? new Date(payload.updatedData.dueDate)
+      : new Date(originalBloom.dueDate || new Date());
+    const newEndDate = payload.updatedData.end
+      ? new Date(payload.updatedData.end)
+      : null;
 
     const updatedBloomData: DailyBloomFormType = {
       // Start with all original data
@@ -550,14 +591,14 @@ export default function DailyBloomClient() {
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
-      startTime: format(newDueDate, 'HH:mm'),
-      endTime: newEndDate ? format(newEndDate, 'HH:mm') : originalBloom.endTime,
+      startTime: format(newDueDate, "HH:mm"),
+      endTime: newEndDate ? format(newEndDate, "HH:mm") : originalBloom.endTime,
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
     updateMutation.mutate({
       id: actualBloomId,
-      updatedData: updatedBloomData
+      updatedData: updatedBloomData,
     });
   };
   const handleDeleteBloom = (bloomId: string) => {
@@ -581,14 +622,14 @@ export default function DailyBloomClient() {
         // query invalidation and showing a success toast.
         // You can add extra logging here if needed.
         console.log(
-          `Deletion successfully triggered for bloom: ${actualBloomId}`
+          `Deletion successfully triggered for bloom: ${actualBloomId}`,
         );
       },
       onError: (error) => {
         // Optional: Add specific error handling for calendar deletions.
         console.error(
           `Failed to delete bloom ${actualBloomId} from calendar:`,
-          error
+          error,
         );
       },
     });
@@ -610,72 +651,79 @@ export default function DailyBloomClient() {
     isFromEvent: b.isFromEvent ?? false,
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
-const combinedCalendarItems = useMemo(() => {
+  const combinedCalendarItems = useMemo(() => {
     // 1. Process blooms to create calendar events
     const bloomEvents = uniqueBlooms.reduce<CalendarEvent[]>((acc, bloom) => {
-        if (bloom.isFromEvent && bloom.dueDate) {
-            const startDate = new Date(bloom.dueDate);
-            let endDate = new Date(startDate);
+      if (bloom.isFromEvent && bloom.dueDate) {
+        const startDate = new Date(bloom.dueDate);
+        let endDate = new Date(startDate);
 
-            // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
-            const safeDescription = bloom.description || '';
-            
-            // Use regex to parse time from the safe description string
-            const timeMatch = safeDescription.match(/\[Time: (\d{2}:\d{2})(?:-(\d{2}:\d{2}))?\]/);
+        // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
+        const safeDescription = bloom.description || "";
 
-            if (timeMatch) {
-                const extractedStartTime = timeMatch[1];
-                const extractedEndTime = timeMatch[2];
+        // Use regex to parse time from the safe description string
+        const timeMatch = safeDescription.match(
+          /\[Time: (\d{2}:\d{2})(?:-(\d{2}:\d{2}))?\]/,
+        );
 
-                const [startHours, startMinutes] = extractedStartTime.split(':');
-                startDate.setHours(Number(startHours), Number(startMinutes), 0, 0);
-                endDate = new Date(startDate);
+        if (timeMatch) {
+          const extractedStartTime = timeMatch[1];
+          const extractedEndTime = timeMatch[2];
 
-                if (extractedEndTime) {
-                    const [endHours, endMinutes] = extractedEndTime.split(':');
-                    endDate.setHours(Number(endHours), Number(endMinutes), 0, 0);
-                }
-            }
-            
-            acc.push({
-                id: `bloom-${bloom.id}`,
-                title: bloom.title,
-                start: startDate.toISOString(),
-                end: endDate.toISOString(),
-                extendedProps: {
-                    description: safeDescription.replace(/\[Time:.*?\]/, '').trim(),
-                    isBloom: true,
-                    isCompleted: bloom.isCompleted,
-                },
-            });
+          const [startHours, startMinutes] = extractedStartTime.split(":");
+          startDate.setHours(Number(startHours), Number(startMinutes), 0, 0);
+          endDate = new Date(startDate);
+
+          if (extractedEndTime) {
+            const [endHours, endMinutes] = extractedEndTime.split(":");
+            endDate.setHours(Number(endHours), Number(endMinutes), 0, 0);
+          }
         }
-        return acc;
+
+        acc.push({
+          id: `bloom-${bloom.id}`,
+          title: bloom.title,
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+          extendedProps: {
+            description: safeDescription.replace(/\[Time:.*?\]/, "").trim(),
+            isBloom: true,
+            isCompleted: bloom.isCompleted,
+          },
+        });
+      }
+      return acc;
     }, []);
 
     // 2. Filter out any "ghost" events (logic unchanged)
     const bloomEventIdentifiers = new Set(
-        bloomEvents.map(be => {
-            const date = new Date(be.start).toISOString().split('T')[0];
-            return `${date}_${be.title}`;
-        })
+      bloomEvents.map((be) => {
+        const date = new Date(be.start).toISOString().split("T")[0];
+        return `${date}_${be.title}`;
+      }),
     );
 
-    const pureEvents = (events ?? [])
-        .filter(event => {
-            if (event.extendedProps?.isBloom) return false;
-            const eventDate = new Date(event.start).toISOString().split('T')[0];
-            const eventIdentifier = `${eventDate}_${event.title}`;
-            return !bloomEventIdentifiers.has(eventIdentifier);
-        });
+    const pureEvents = (events ?? []).filter((event) => {
+      if (event.extendedProps?.isBloom) return false;
+      const eventDate = new Date(event.start).toISOString().split("T")[0];
+      const eventIdentifier = `${eventDate}_${event.title}`;
+      return !bloomEventIdentifiers.has(eventIdentifier);
+    });
 
     // 3. Combine the clean lists
     return [...pureEvents, ...bloomEvents];
-
-}, [uniqueBlooms, events]);
+  }, [uniqueBlooms, events]);
 
   return (
     <div>
       <CustomAccordion />
+      <UpgradeMessageModal
+        isOpen={upgradeModal.open}
+        onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
+        title={upgradeModal.title}
+        message={upgradeModal.message}
+        redirectToPricingUrl={`/pricing?ref=daily-blooms`}
+      />
       <div className="container mx-auto p-3 max-w-4xl">
         <Card className="mb-8">
           <CardHeader>
@@ -860,7 +908,7 @@ const combinedCalendarItems = useMemo(() => {
                                 onChange={(e) =>
                                   handleUpdateCompletion(
                                     bloom,
-                                    e.target.checked
+                                    e.target.checked,
                                   )
                                 }
                                 className="w-5 h-5 rounded-md cursor-pointer flex-shrink-0"
@@ -884,7 +932,7 @@ const combinedCalendarItems = useMemo(() => {
                                   <span>
                                     Due:{" "}
                                     {new Date(bloom.dueDate).toLocaleDateString(
-                                      "en-IN"
+                                      "en-IN",
                                     )}
                                   </span>
                                 </div>
@@ -938,7 +986,7 @@ const combinedCalendarItems = useMemo(() => {
                                 onChange={(e) =>
                                   handleUpdateCompletion(
                                     bloom,
-                                    e.target.checked
+                                    e.target.checked,
                                   )
                                 }
                                 className="w-4 h-4 rounded-md cursor-pointer"
@@ -971,7 +1019,7 @@ const combinedCalendarItems = useMemo(() => {
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                  "en-IN"
+                                  "en-IN",
                                 )
                                 : "-"}
                             </TableCell>
@@ -1111,7 +1159,7 @@ const combinedCalendarItems = useMemo(() => {
                               field.onChange(
                                 e.target.value
                                   ? new Date(e.target.value)
-                                  : undefined
+                                  : undefined,
                               )
                             }
                           />
@@ -1137,7 +1185,10 @@ const combinedCalendarItems = useMemo(() => {
                           />
                         )}
                       />
-                      <Label htmlFor="add-to-calendar" className="cursor-pointer">
+                      <Label
+                        htmlFor="add-to-calendar"
+                        className="cursor-pointer"
+                      >
                         Add to Calendar
                       </Label>
                     </div>
@@ -1275,7 +1326,7 @@ const combinedCalendarItems = useMemo(() => {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
-                          }
+                          },
                         )}
                       </p>
                     </div>
@@ -1359,7 +1410,7 @@ const combinedCalendarItems = useMemo(() => {
                             field.onChange(
                               e.target.value
                                 ? new Date(e.target.value)
-                                : undefined
+                                : undefined,
                             )
                           }
                         />

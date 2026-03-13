@@ -4,7 +4,11 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import EmailTemplateEditor from "@/components/EmailTemplateEditor";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { EmailTemplate, TemplateFormData } from "@/types/client/email-template";
+import {
+  EmailTemplate,
+  EmailTemplatesResponse,
+  TemplateFormData,
+} from "@/types/client/email-template";
 
 const fetchTemplate = async (id: string): Promise<EmailTemplate> => {
   const response = await fetch(`/api/admin/email-templates/${id}`);
@@ -22,7 +26,7 @@ const saveTemplate = async ({
   id: string;
   data: TemplateFormData;
   isNew: boolean;
-}): Promise<void> => {
+}): Promise<EmailTemplate> => {
   const url = isNew
     ? `/api/admin/email-templates`
     : `/api/admin/email-templates/${id}`;
@@ -39,6 +43,7 @@ const saveTemplate = async ({
   if (!response.ok) {
     throw new Error("Failed to save template");
   }
+  return await response.json();
 };
 
 export default function EditEmailTemplatePage() {
@@ -53,16 +58,37 @@ export default function EditEmailTemplatePage() {
   const initialEditorMode = isNew ? editorType || "simple" : "simple";
 
   const { data: template, isLoading } = useQuery<EmailTemplate, Error>({
-    queryKey: ["emailTemplate", id],
+    queryKey: ["email-template", id],
     queryFn: () => fetchTemplate(id),
     enabled: !isNew,
   });
 
   const mutation = useMutation({
     mutationFn: saveTemplate,
-    onSuccess: () => {
+    onSuccess: (savedTemplate) => {
+      queryClient.setQueriesData<EmailTemplatesResponse>(
+        { queryKey: ["email-templates"], exact: false },
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.templates)) {
+            return oldData;
+          }
+
+          const exists = oldData.templates.some(
+            (t) => t.id === savedTemplate.id,
+          );
+
+          return {
+            ...oldData,
+            templates: exists
+              ? oldData.templates.map((t) =>
+                  t.id === savedTemplate.id ? savedTemplate : t,
+                )
+              : [savedTemplate, ...oldData.templates],
+          };
+        },
+      );
+
       toast.success("Template saved successfully");
-      queryClient.invalidateQueries({ queryKey: ["emailTemplates"] });
       router.push("/admin/email-templates");
     },
     onError: (error: Error) => {

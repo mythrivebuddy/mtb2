@@ -1,7 +1,8 @@
 // /api/cron/daily-cmp-reminders/sunday-morning with post
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { NotificationType } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -12,7 +13,9 @@ export async function GET() {
 
   let sent = 0;
 
-  const {title,description,url} = CMP_NOTIFICATIONS.SUNDAY_MORNING
+  const notification = await getCMPNotification(NotificationType.CMP_SUNDAY_MORNING);
+  if (!notification) return NextResponse.json({ message: "no_notification_template for sunday morning" });
+  const { title, description, url } = notification;
   for (const { userId } of users) {
     await sendPushNotificationToUser(
       userId,

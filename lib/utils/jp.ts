@@ -8,6 +8,9 @@ import {
   createJPEarnedNotification,
   createJpSpentNotification,
 } from "./notifications";
+import { checkFeature } from "../access-control/checkFeature";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth";
 
 type UserWithPlan = Prisma.UserGetPayload<{
   include: { plan: true };
@@ -26,10 +29,12 @@ export async function assignJp(
   prismaClient:
     | Prisma.TransactionClient
     | PrismaClient = prisma,
-  options?: { amount?: number } // Optional parameter for dynamic amounts
+  options?: { amount?: number, metadata?: Prisma.InputJsonValue } // Optional parameter for dynamic amounts
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
+    // const session = await getServerSession(authOptions);
+
     const activityData = await prismaClient.activity.findUnique({
       where: { activity },
     });
@@ -44,8 +49,8 @@ export async function assignJp(
     const baseAmount = options?.amount ?? activityData.jpAmount;
 
     // 3. Calculate the final amount to add after applying any plan multipliers.
-    const isActive = isPlanActive(user);
-    const multiplier = isActive ? user?.plan?.jpMultiplier || 1 : 1;
+    const joyPearlsConfig = await getJoyPearlsConfig(user);
+    const multiplier = joyPearlsConfig?.earnRateMultiplier ?? 1;
     const jpToAdd = Math.ceil(baseAmount * multiplier);
 
     // 4. Update the user's JP balance and create a transaction record.
@@ -59,6 +64,7 @@ export async function assignJp(
           create: {
             activityId: activityData.id,
             jpAmount: jpToAdd,
+            metadata: options?.metadata ?? undefined
           },
         },
       },
@@ -80,7 +86,7 @@ export async function deductJp(
   prismaClient:
     | Prisma.TransactionClient
     | PrismaClient = prisma,
-  options?: { amount?: number } // Optional parameter for dynamic amounts
+  options?: { amount?: number, metadata?: Prisma.InputJsonValue } // Optional parameter for dynamic amounts
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
@@ -98,13 +104,14 @@ export async function deductJp(
     const baseAmount = options?.amount ?? activityData.jpAmount;
 
     // 3. Calculate the final amount to deduct after applying any discounts.
-    const isActive = isPlanActive(user);
-    const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
-    const jpToDeduct = Math.ceil(baseAmount * (1 - discount / 100));
+    const joyPearlsConfig = await getJoyPearlsConfig(user);
+    const spendMultiplier = joyPearlsConfig?.spendRateMultiplier ?? 1;
+    const jpToDeduct = Math.ceil(baseAmount * spendMultiplier);
+
 
     // 4. Check if the user has a sufficient balance.
     if (user.jpBalance < jpToDeduct) {
-      throw new Error("Insufficient JP balance");
+      throw new Error("Insufficient GP balance");
     }
 
     // 5. Update the user's JP balance and create a transaction record.
@@ -118,6 +125,7 @@ export async function deductJp(
           create: {
             activityId: activityData.id,
             jpAmount: jpToDeduct,
+            metadata: options?.metadata ?? undefined
           },
         },
       },
@@ -136,4 +144,24 @@ export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
   const isActive = isPlanActive(user);
   const discount = isActive ? user?.plan?.discountPercent || 0 : 0;
   return Math.ceil(activityData.jpAmount * (1 - discount / 100));
+}
+
+async function getJoyPearlsConfig(user: UserWithPlan) {
+  const session = await getServerSession(authOptions);
+
+  const result = checkFeature({
+    feature: "joyPearls",
+    user: session?.user ?? user, // Pass session user if available, otherwise fallback to provided user
+  });
+
+
+  if (!result.allowed) {
+    return null;
+  }
+
+  return result.config as {
+    earnRateMultiplier?: number;
+    spendRateMultiplier?: number;
+    bonusEligible?: boolean;
+  };
 }

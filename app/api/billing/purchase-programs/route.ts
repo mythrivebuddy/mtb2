@@ -5,28 +5,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { PaymentStatus } from "@prisma/client";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
+import { calculateDiscount } from "@/lib/payment/payment.utils";
 
 // ----- Helpers -----
-type CouponLike = {
-  type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
-  discountPercentage?: number | null;
-  discountAmount?: number | null;
-  freeDays?: number | null;
-};
-function calculateDiscount(base: number, coupon: CouponLike | null): number {
-  if (!coupon) return 0;
+// type CouponLike = {
+//   type: "PERCENTAGE" | "FIXED" | "FREE_DURATION" | "FULL_DISCOUNT" | "AUTO_APPLY";
+//   discountPercentage?: number | null;
+//   discountAmount?: number | null;
+//   freeDays?: number | null;
+// };
+// function calculateDiscount(base: number, coupon: CouponLike | null): number {
+//   if (!coupon) return 0;
 
-  if (coupon.type === "PERCENTAGE")
-    return (base * (coupon.discountPercentage || 0)) / 100;
+//   if (coupon.type === "PERCENTAGE")
+//     return (base * (coupon.discountPercentage || 0)) / 100;
 
-  if (coupon.type === "FIXED")
-    return coupon.discountAmount || 0;
+//   if (coupon.type === "FIXED")
+//     return coupon.discountAmount || 0;
 
-  if (coupon.type === "FULL_DISCOUNT")
-    return base;
+//   if (coupon.type === "FULL_DISCOUNT")
+//     return base;
 
-  return 0;
-}
+//   return 0;
+// }
 
 function calculateFinal(
   base: number,
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
       if (!coupon) return NextResponse.json({ error: "Invalid coupon" }, { status: 400 });
     }
 
-    const discountValue = calculateDiscount(baseAmount, coupon);
+    const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
     // 3. Final amount
     const finalAmount = calculateFinal(
@@ -127,6 +128,7 @@ export async function POST(req: Request) {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       },
       create: {
         userId,
@@ -139,6 +141,7 @@ export async function POST(req: Request) {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
+        gstNumber: billingDetails.gstNumber || null,
       }
     });
 
@@ -156,7 +159,7 @@ export async function POST(req: Request) {
       order_meta: {
         purchase_id: internalId,
         return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/program-callback?purchase_id=${internalId}&order_id=${orderId}`,
-        notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/billing/webhook/cashfree-programs`
+        notify_url: `https://078d-2402-8100-3869-d36f-e109-addc-7b25-95fe.ngrok-free.app/api/billing/webhook/cashfree-programs`
       },
       order_note: `Program Purchase: ${plan.program.name}`
     };

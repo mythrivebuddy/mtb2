@@ -177,7 +177,7 @@ export default function TopBar({ user }: { user?: UserType }) {
               height={12}
               className="rounded-xl mr-1"
             />
-            <span className="font-medium text-xs sm:text-base">JP</span>
+            <span className="font-medium text-xs sm:text-base">GP</span>
             <span className="font-bold text-blue-500 ml-1 text-xs sm:text-base">
               {formatJP(user?.jpBalance || 0)}
             </span>

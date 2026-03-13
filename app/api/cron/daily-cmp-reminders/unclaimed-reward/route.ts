@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
+import { NotificationType } from "@prisma/client";
 
 
 export async function GET() {
@@ -29,8 +30,15 @@ export async function GET() {
     return NextResponse.json({ sent: 0 });
   }
 
-  const { title, description, url } =
-    CMP_NOTIFICATIONS.REWARD_UNCLAIMED;
+
+  const notification = await getCMPNotification(
+    NotificationType.CMP_REWARD_UNCLAIMED
+  );
+  if (!notification) {
+    console.error("No notification template for unclaimed reward");
+    return NextResponse.json({ message: "No notification template for unclaimed reward" });
+  }
+  const { title, description, url } = notification;
 
   // 2️⃣ send reminders + mark as sent
   for (const reward of rewards) {

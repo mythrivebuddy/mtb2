@@ -26,6 +26,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 
+// function roundUpTo30Min(date: Date) {
+//   const d = new Date(date);
+//   const m = d.getMinutes();
+//   const next = m <= 30 ? 30 : 60;
+//   d.setMinutes(next === 60 ? 0 : 30, 0, 0);
+//   if (next === 60) d.setHours(d.getHours() + 1);
+//   return d;
+// }
+
 export default function AlignedActionWizard({
   onComplete,
   onCancel,
@@ -110,7 +119,7 @@ export default function AlignedActionWizard({
         error.message.includes("already created an 1% Startaction for today")
       ) {
         toast.error(
-          "You can only create one 1% Start action per day. Please try again tomorrow."
+          "You can only create one 1% Start action per day. Please try again tomorrow.",
         );
       } else {
         toast.error(error.message || "Failed to create 1% Start action");

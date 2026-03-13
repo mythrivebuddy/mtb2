@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Eye, Loader2, Info, AlertTriangle } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Eye,
+  Loader2,
+  Info,
+  AlertTriangle,
+} from "lucide-react";
 import {
   progressvaultSchema,
   type progressVaultFormType,
@@ -45,6 +52,7 @@ import {
   ProgressVaultClientProps,
 } from "@/types/client/progress-vault";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
+import Link from "next/link";
 
 // --- START: useMediaQuery Hook ---
 // This custom hook helps determine the screen size for responsive rendering.
@@ -71,6 +79,8 @@ const useMediaQuery = (query: string) => {
 export default function ProgressVaultClient({
   initialLogs,
   initialStreak,
+  dailyLimit,
+  isUpgradeFlagShow,
 }: ProgressVaultClientProps) {
   const [editingLog, setEditingLog] = useState<ProgressVault | null>(null);
   const [viewLog, setViewLog] = useState<ProgressVault | null>(null);
@@ -147,7 +157,7 @@ export default function ProgressVaultClient({
       const errorMessage = getAxiosErrorMessage(error, "An error occurred");
       if (errorMessage.includes("Daily limit of 3 entries reached")) {
         toast.error(
-          "You've reached the daily limit of 3 entries. Please try again tomorrow."
+          `You've reached the daily limit of ${dailyLimit === 1 ? "entry" : "entries"}. Please try again tomorrow.`,
         );
       } else {
         toast.error(errorMessage);
@@ -225,19 +235,35 @@ export default function ProgressVaultClient({
             </div>
           </CardHeader>
           <CardContent>
-            {todayEntriesCount >= 3 ? (
+            {todayEntriesCount >= dailyLimit ? (
               <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-yellow-800 flex items-center">
-                  <Info className="w-4 h-4 mr-2" />
-                  You have reached the daily limit of 3 entries. You can add
-                  more entries tomorrow.
+                  <Info className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span>
+                    You have reached the daily limit of {dailyLimit}{" "}
+                    {dailyLimit === 1 ? "entry" : "entries"}. You can add more
+                    entries tomorrow
+                    {isUpgradeFlagShow && (
+                      <>
+                        {" "}
+                        or{" "}
+                        <Link
+                          href="/pricing?ref=progress-vault"
+                          className="underline underline-offset-4 font-medium"
+                        >
+                          upgrade
+                        </Link>{" "}
+                        to increase the limit.
+                      </>
+                    )}
+                  </span>
                 </p>
               </div>
             ) : (
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-blue-800 text-sm">
-                  You can add up to 3 entries per day ({todayEntriesCount}/3
-                  used today)
+                  You can add up to {dailyLimit === 1 ? "entry" : "entries"} per
+                  day ({todayEntriesCount}/{dailyLimit} used today)
                 </p>
               </div>
             )}
@@ -250,7 +276,7 @@ export default function ProgressVaultClient({
                   disabled={
                     isSubmitting ||
                     createMutation.isPending ||
-                    todayEntriesCount >= 3
+                    todayEntriesCount >= dailyLimit
                   }
                 />
                 {errors.content && (
@@ -265,7 +291,7 @@ export default function ProgressVaultClient({
                   disabled={
                     isSubmitting ||
                     createMutation.isPending ||
-                    todayEntriesCount >= 3
+                    todayEntriesCount >= dailyLimit
                   }
                 >
                   {createMutation.isPending && (

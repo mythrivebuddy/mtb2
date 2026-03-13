@@ -66,6 +66,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // --- Types ---
 type Plan = {
@@ -74,6 +75,18 @@ type Plan = {
   interval: string;
   userType: string;
 };
+type Challenge = {
+  id: string
+  title: string
+  challengeJoiningFee: number
+  challengeJoiningFeeCurrency: "INR" | "USD"
+}
+type MmpProgram = {
+  id: string
+  name: string
+  price: number
+  currency: "INR" | "USD"
+}
 type CouponFormPayload = {
   couponCode: string;
   description: string;
@@ -84,6 +97,10 @@ type CouponFormPayload = {
   freeDays: string | number;
   applicableUserTypes: string[];
   applicablePlanIds: string[];
+  scope: "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM";
+  applicableChallengeIds: string[];
+  applicableMmpProgramIds: string[];
+
   applicableCurrencies: string[];
   firstCycleOnly: boolean;
   multiCycle: boolean;
@@ -99,11 +116,11 @@ type Coupon = {
   id: string;
   couponCode: string;
   type:
-    | "PERCENTAGE"
-    | "FIXED"
-    | "FREE_DURATION"
-    | "FULL_DISCOUNT"
-    | "AUTO_APPLY";
+  | "PERCENTAGE"
+  | "FIXED"
+  | "FREE_DURATION"
+  | "FULL_DISCOUNT"
+  | "AUTO_APPLY";
   status: "ACTIVE" | "INACTIVE" | "EXPIRED";
   discountPercentage?: number;
   discountAmountUSD?: number;
@@ -119,16 +136,25 @@ type Coupon = {
   applicableCurrencies: string[];
   _count?: { redemptions: number };
   autoApply: boolean;
-  //   autoApplyConditions?: any;
   applicablePlans: Plan[];
   description?: string;
+  scope: "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM";
 };
 
+const fetchChallenges = async () => {
+  const res = await axios.get<Challenge[]>("/api/admin/challenge")
+  return res.data
+}
 // --- API Helpers ---
 const fetchCoupons = async () => {
   const response = await axios.get<Coupon[]>("/api/admin/coupons");
   return response.data;
 };
+
+const fetchMmpPrograms = async () => {
+  const res = await axios.get("/api/mini-mastery-programs")
+  return res.data.programs
+}
 
 const fetchPlans = async () => {
   const response = await axios.get<Plan[]>("/api/subscription-plans");
@@ -161,6 +187,7 @@ export default function CouponsManagementPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"ALL" | "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM">("ALL")
 
   // --- Form State ---
   const initialFormState: CouponFormPayload = {
@@ -173,6 +200,9 @@ export default function CouponsManagementPage() {
     freeDays: "",
     applicableUserTypes: ["ENTHUSIAST"],
     applicablePlanIds: [],
+    scope: "SUBSCRIPTION",
+    applicableChallengeIds: [],
+    applicableMmpProgramIds: [],
     applicableCurrencies: ["INR", "USD"],
     firstCycleOnly: false,
     multiCycle: false,
@@ -196,7 +226,15 @@ export default function CouponsManagementPage() {
     queryKey: ["plans"],
     queryFn: fetchPlans,
   });
-
+  const { data: challenges = [] } = useQuery({
+    queryKey: ["paid-challenges"],
+    queryFn: fetchChallenges,
+  });
+  const { data: mmpPrograms  = [] } = useQuery({
+    queryKey: ["mmp-programs"],
+    queryFn: fetchMmpPrograms,
+    enabled: formData.scope === "MMP_PROGRAM",
+  })
   const createMutation = useMutation({
     mutationFn: (data: CouponFormPayload) => createCouponApi(data),
 
@@ -240,6 +278,10 @@ export default function CouponsManagementPage() {
     },
   });
 
+  const filteredCoupons = coupons.filter((coupon: Coupon) => {
+    if (activeTab === "ALL") return true
+    return coupon.scope === activeTab
+  })
   // --- Handlers ---
   const resetForm = () => {
     setFormData(initialFormState);
@@ -274,7 +316,10 @@ export default function CouponsManagementPage() {
       maxUsesPerUser: coupon.maxUsesPerUser || 1,
       autoApply: coupon.autoApply,
       autoApplyConditions: {},
-      //   autoApplyConditions: JSON.stringify(coupon.autoApplyConditions || {}, null, 2),
+      scope: coupon.scope as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM",
+      applicableChallengeIds: [],
+      applicableMmpProgramIds: [],
+
     });
 
     setIsDialogOpen(true);
@@ -293,27 +338,18 @@ export default function CouponsManagementPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // JSON Validation
-    // let parsedConditions = {};
-    // try {
-    // parsedConditions = JSON.parse(formData.autoApplyConditions);
-    // } catch (e) {
-    //     toast.error("Invalid JSON in Auto Apply logic.");
-    //     return;
-    // }
+    const payload: CouponFormPayload = {
+      ...formData,
+      discountAmountUSD:
+        formData.discountAmountUSD && formData.type === "FIXED"
+          ? Number(formData.discountAmountUSD)
+          : null,
 
-   const payload: CouponFormPayload = {
-  ...formData,
-  discountAmountUSD:
-    formData.discountAmountUSD && formData.type === "FIXED"
-      ? Number(formData.discountAmountUSD)
-      : null,
-
-  discountAmountINR:
-    formData.discountAmountINR && formData.type === "FIXED"
-      ? Number(formData.discountAmountINR)
-      : null,
-};
+      discountAmountINR:
+        formData.discountAmountINR && formData.type === "FIXED"
+          ? Number(formData.discountAmountINR)
+          : null,
+    };
 
 
 
@@ -331,20 +367,37 @@ export default function CouponsManagementPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // const toggleSelection = (
+  //   field: "applicablePlanIds" | "applicableCurrencies" | "applicableUserTypes",
+  //   value: string
+  // ) => {
+  //   setFormData((prev) => {
+  //     const current = prev[field] as string[];
+  //     return current.includes(value)
+  //       ? { ...prev, [field]: current.filter((item) => item !== value) }
+  //       : { ...prev, [field]: [...current, value] };
+  //   });
+  // };
   const toggleSelection = (
-    field: "applicablePlanIds" | "applicableCurrencies" | "applicableUserTypes",
+    field:
+      | "applicablePlanIds"
+      | "applicableCurrencies"
+      | "applicableUserTypes"
+      | "applicableChallengeIds"
+      | "applicableMmpProgramIds",
     value: string
   ) => {
     setFormData((prev) => {
       const current = prev[field] as string[];
+
       return current.includes(value)
-        ? { ...prev, [field]: current.filter((item) => item !== value) }
+        ? { ...prev, [field]: current.filter((i) => i !== value) }
         : { ...prev, [field]: [...current, value] };
     });
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-
+  const hasMultipleChallenges = challenges.length > 1
   return (
     <div className="p-8 space-y-8 bg-muted/30 min-h-screen">
       {/* Header */}
@@ -499,78 +552,210 @@ export default function CouponsManagementPage() {
                     )}
                     {(formData.type === "FREE_DURATION" ||
                       formData.type === "AUTO_APPLY") && (
-                      <div className="space-y-2">
-                        <Label>Free Days</Label>
-                        <div className="relative">
-                          <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            className="pl-9"
-                            value={formData.freeDays}
-                            onChange={(e) =>
-                              handleInputChange("freeDays", e.target.value)
-                            }
-                          />
+                        <div className="space-y-2">
+                          <Label>Free Days</Label>
+                          <div className="relative">
+                            <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="number"
+                              className="pl-9"
+                              value={formData.freeDays}
+                              onChange={(e) =>
+                                handleInputChange("freeDays", e.target.value)
+                              }
+                            />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
 
-                  <div className="flex gap-6 mt-6">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="firstCycle"
-                        checked={formData.firstCycleOnly}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("firstCycleOnly", checked === true)
-                        }
-                      />
-                      <Label htmlFor="firstCycle">First Cycle Only</Label>
+                  {formData.scope === "SUBSCRIPTION" && (
+                    <div className="flex gap-6 mt-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="firstCycle"
+                          checked={formData.firstCycleOnly}
+                          onCheckedChange={(checked) =>
+                            handleInputChange("firstCycleOnly", checked === true)
+                          }
+                        />
+                        <Label htmlFor="firstCycle">First Cycle Only</Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="multiCycle"
+                          checked={formData.multiCycle}
+                          onCheckedChange={(checked) =>
+                            handleInputChange("multiCycle", checked === true)
+                          }
+                        />
+                        <Label htmlFor="multiCycle">Multi-Cycle Renewal</Label>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="multiCycle"
-                        checked={formData.multiCycle}
-                        onCheckedChange={(checked) =>
-                          handleInputChange("multiCycle", checked === true)
-                        }
-                      />
-                      <Label htmlFor="multiCycle">Multi-Cycle Renewal</Label>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Applicability */}
-              <div className="space-y-3">
-                <Label>Applicable Plans</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {plans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      onClick={() =>
-                        toggleSelection("applicablePlanIds", plan.id)
-                      }
-                      className={`
+              <div className="space-y-2">
+                <Label>Coupon Scope</Label>
+                <Select
+                  value={formData.scope}
+                  onValueChange={(val) => {
+                    handleInputChange("scope", val as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM")
+
+                    if (val === "SUBSCRIPTION") {
+                      handleInputChange("applicableChallengeIds", [])
+                    }
+
+                    if (val === "CHALLENGE") {
+                      handleInputChange("firstCycleOnly", true)
+                      handleInputChange("multiCycle", false)
+                      handleInputChange("applicableMmpProgramIds", [])
+                    }
+                    if (val === "MMP_PROGRAM") {
+                      handleInputChange("applicableChallengeIds", [])
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
+                    <SelectItem value="CHALLENGE">Challenge</SelectItem>
+                    <SelectItem value="MMP_PROGRAM">MMP Program</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {formData.scope === "SUBSCRIPTION" && (
+                <div className="space-y-3">
+                  <Label>Applicable Plans</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {plans.map((plan) => (
+                      <div
+                        key={plan.id}
+                        onClick={() =>
+                          toggleSelection("applicablePlanIds", plan.id)
+                        }
+                        className={`
                                         cursor-pointer rounded-md border p-3 text-sm transition-all
-                                        ${
-                                          formData.applicablePlanIds.includes(
-                                            plan.id
-                                          )
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                                            : "hover:bg-accent hover:text-accent-foreground"
-                                        }
+                                        ${formData.applicablePlanIds.includes(
+                          plan.id
+                        )
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "hover:bg-accent hover:text-accent-foreground"
+                          }
                                     `}
+                      >
+                        <div className="font-medium">{plan.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {plan.interval} • {plan.userType}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {formData.scope === "CHALLENGE" && (
+                <div className="space-y-3">
+                  <Label>Applicable Challenges</Label>
+
+                  {/* Apply to All */}
+                  {/* Apply to All */}
+                  {hasMultipleChallenges && (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="all-challenges"
+                        checked={formData.applicableChallengeIds.length === 0}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handleInputChange("applicableChallengeIds", [])
+                          }
+                        }}
+                      />
+                      <Label htmlFor="all-challenges" className="font-normal">
+                        Apply to ALL Challenges
+                      </Label>
+                    </div>
+                  )}
+                  {hasMultipleChallenges && (
+                    <div
+                      onClick={() => handleInputChange("applicableChallengeIds", [])}
+                      className={`cursor-pointer rounded-md border p-3 text-sm transition-all
+      ${formData.applicableChallengeIds.length === 0
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "hover:bg-accent"
+                        }`}
                     >
-                      <div className="font-medium">{plan.name}</div>
+                      <div className="font-medium">All Active Challenges</div>
                       <div className="text-xs text-muted-foreground">
-                        {plan.interval} • {plan.userType}
+                        Applies to every active paid challenge
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  )}
 
+                  {/* Challenge List */}
+                  {/* Challenge List */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {challenges.map((challenge) => (
+                      <div
+                        key={challenge.id}
+                        onClick={() => {
+                          if (formData.applicableChallengeIds.includes(challenge.id)) {
+                            toggleSelection("applicableChallengeIds", challenge.id)
+                          } else {
+                            handleInputChange("applicableChallengeIds", [challenge.id])
+                          }
+                        }}
+                        className={`cursor-pointer rounded-md border p-3 text-sm transition-all
+              ${formData.applicableChallengeIds.includes(challenge.id)
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "hover:bg-accent"
+                          }`}
+                      >
+                        <div className="font-medium">{challenge.title}</div>
+
+                        <div className="text-xs text-muted-foreground">
+                          {challenge.challengeJoiningFeeCurrency} {challenge.challengeJoiningFee}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* </div> */}
+                </div>
+              )}
+              {formData.scope === "MMP_PROGRAM" && (
+                <div className="space-y-3">
+                  <Label>Applicable MMP Programs</Label>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {mmpPrograms.map((mmpProgram: MmpProgram) => (
+                      <div
+                        key={mmpProgram.id}
+                        onClick={() =>
+                          toggleSelection("applicableMmpProgramIds", mmpProgram.id)
+                        }
+                        className={`
+            cursor-pointer rounded-md border p-3 text-sm transition-all
+            ${formData.applicableMmpProgramIds.includes(mmpProgram.id)
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "hover:bg-accent"
+                          }
+          `}
+                      >
+                        <div className="font-medium">{mmpProgram.name}</div>
+
+                        <div className="text-xs text-muted-foreground">
+                          {mmpProgram.currency} {mmpProgram.price}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-3">
                   <Label>User Types</Label>
@@ -685,7 +870,7 @@ export default function CouponsManagementPage() {
                   <div className="space-y-0.5">
                     <Label className="text-base">Auto Apply Logic</Label>
                     <p className="text-sm text-muted-foreground">
-                      Automatically apply this coupon based on triggers.
+                      If turned on then this coupon will be auto applied during checkout
                     </p>
                   </div>
                   <Switch
@@ -734,6 +919,21 @@ export default function CouponsManagementPage() {
 
       {/* Data Table */}
       <Card>
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) =>
+            setActiveTab(v as "ALL" | "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM")
+          }
+          className="px-6 pt-6 flex justify-self-center"
+        >
+          <TabsList>
+            <TabsTrigger value="ALL">All</TabsTrigger>
+            <TabsTrigger value="SUBSCRIPTION">Membership </TabsTrigger>
+            <TabsTrigger value="CHALLENGE">Challenges</TabsTrigger>
+            <TabsTrigger value="STORE">Store</TabsTrigger>
+            <TabsTrigger value="MMP_PROGRAM">MMP</TabsTrigger>
+          </TabsList>
+        </Tabs>
         <CardHeader>
           <CardTitle>Active Coupons</CardTitle>
           <CardDescription>Viewing {coupons.length} coupons.</CardDescription>
@@ -744,6 +944,7 @@ export default function CouponsManagementPage() {
               <TableRow>
                 <TableHead className="w-[150px]">Code</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Scope</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Validity</TableHead>
@@ -764,7 +965,7 @@ export default function CouponsManagementPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : coupons.length === 0 ? (
+              ) : filteredCoupons.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={7}
@@ -774,7 +975,7 @@ export default function CouponsManagementPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                coupons.map((coupon) => (
+                filteredCoupons.map((coupon) => (
                   <TableRow key={coupon.id}>
                     <TableCell className="font-medium font-mono">
                       <div className="flex items-center gap-2">
@@ -795,6 +996,9 @@ export default function CouponsManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Badge variant="outline">{coupon.scope}</Badge>
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant={
                           coupon.status === "ACTIVE"
@@ -812,13 +1016,13 @@ export default function CouponsManagementPage() {
                         `${coupon.discountPercentage}%`}
                       {(coupon.discountAmountUSD ||
                         coupon.discountAmountINR) && (
-                        <div className="flex flex-col">
-                          {coupon.discountAmountUSD &&
-                            `USD $${coupon.discountAmountUSD}`}
-                          {coupon.discountAmountINR &&
-                            `INR ₹${coupon.discountAmountINR}`}
-                        </div>
-                      )}
+                          <div className="flex flex-col">
+                            {coupon.discountAmountUSD &&
+                              `USD $${coupon.discountAmountUSD}`}
+                            {coupon.discountAmountINR &&
+                              `INR ₹${coupon.discountAmountINR}`}
+                          </div>
+                        )}
                       {coupon.freeDays && `${coupon.freeDays} Days`}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">

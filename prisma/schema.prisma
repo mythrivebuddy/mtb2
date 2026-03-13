@@ -9,130 +9,128 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
+// updated user for item table , updating the model for product purcahsing using razorpay
 model User {
-  id                            String                @id @default(uuid())
-  email                         String                @unique
+  id                            String                            @id @default(uuid())
+  email                         String                            @unique
   password                      String?
   name                          String
-  createdAt                     DateTime              @default(now())
-  updatedAt                     DateTime              @updatedAt
+  createdAt                     DateTime                          @default(now())
+  updatedAt                     DateTime                          @updatedAt
   role                          Role
   image                         String?
-  jpEarned                      Int                   @default(0)
-  jpSpent                       Int                   @default(0)
-  authMethod                    AuthMethod            @default(CREDENTIALS)
+  jpEarned                      Int                               @default(0)
+  jpSpent                       Int                               @default(0)
+  authMethod                    AuthMethod                        @default(CREDENTIALS)
   planEnd                       DateTime?
   planId                        String?
   planStart                     DateTime?
-  jpBalance                     Int                   @default(0)
-  jpTransaction                 Int                   @default(0)
-  isBlocked                     Boolean?              @default(false)
+  jpBalance                     Int                               @default(0)
+  jpTransaction                 Int                               @default(0)
+  isBlocked                     Boolean?                          @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
-  isEmailVerified               Boolean               @default(false)
+  isEmailVerified               Boolean                           @default(false)
   achievements                  String?
   goals                         String?
   keyOfferings                  String?
-  referralCode                  String?               @unique
+  referralCode                  String?                           @unique
   referredById                  String?
   socialHandles                 Json?
   website                       String?
-  membership                    String                @default("FREE")
+  membership                    String                            @default("FREE")
   subscriptionEnd               DateTime?
-  subscriptionId                String?               @unique
+  subscriptionId                String?                           @unique
   subscriptionStart             DateTime?
   subscriptionStatus            String?
   bio                           String?
-  isOnline                      Boolean?              @default(false)
-  isFirstTimeSurvey             Boolean?              @default(true)
+  isOnline                      Boolean?                          @default(false)
+  isFirstTimeSurvey             Boolean?                          @default(true)
   lastSurveyTime                DateTime?
-  challenge_limit               Int                   @default(1)
+  challenge_limit               Int                               @default(1)
+  currentCurrency               SubscriptionPlanCurrency?
+  currentPlanId                 String?
+  currentPlanInterval           PlanInterval?
+  userType                      PlanUserType?
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
+  billingInformation            BillingInformation[]
   blockedUsers                  BlockedUsers?
-  buddyLensRequests             BuddyLensRequest[]    @relation("BuddyLensRequests")
-  BuddyLensReviewer             BuddyLensRequest[]    @relation("BuddyLensReviewer")
+  buddyLensRequests             BuddyLensRequest[]                @relation("BuddyLensRequests")
+  BuddyLensReviewer             BuddyLensRequest[]                @relation("BuddyLensReviewer")
   BuddyLensReview               BuddyLensReview[]
   cart                          Cart[]
-  accountabilityComments        Comment[]             @relation("AccountabilityComments")
-  groupsOwned                   Group[]               @relation("CoachGroups")
-  Group_Group_creatorIdToUser   Group[]               @relation("Group_creatorIdToUser")
-  accountabilityMemberships     GroupMember[]         @relation("AccountabilityMemberships")
+  challengeCreatorSignature     ChallengeCreatorSignature?
+  challengeMessageReactions     ChallengeMessageReaction[]
+  accountabilityComments        Comment[]                         @relation("AccountabilityComments")
+  couponRedemptions             CouponRedemption[]
+  groupsOwned                   Group[]                           @relation("CoachGroups")
+  Group_Group_creatorIdToUser   Group[]                           @relation("Group_creatorIdToUser")
+  accountabilityMemberships     GroupMember[]                     @relation("AccountabilityMemberships")
   invoice                       Invoice[]
   magicBoxes                    MagicBox[]
+  buddyChecker                  MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyTarget")
+  buddyDoer                     MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyOwner")
+  makeoverProgressLogs          MakeoverProgressLog[]
+  mandates                      Mandate[]
   miracleLog                    MiracleLog[]
   Notification                  Notification[]
+  oneTimePurchases              OneTimeProgramPurchase[]
   orders                        Order[]
+  paymentOrders                 PaymentOrder[]
   profileViews                  ProfileView[]
   progressVault                 ProgressVault[]
   prosperityDrops               ProsperityDrop[]
   pushSubscriptions             PushSubscription[]
-  referralsReceived             Referral[]            @relation("Referred")
-  referralsMade                 Referral[]            @relation("Referrer")
+  userBilling                UserBillingInformation?
+  referralsReceived             Referral[]                        @relation("Referred")
+  referralsMade                 Referral[]                        @relation("Referrer")
   reminders                     Reminder[]
-  rewardsGiven                  Reward[]              @relation("AdminRewards")
-  rewardsReceived               Reward[]              @relation("MemberRewards")
+  rewardsGiven                  Reward[]                          @relation("AdminRewards")
+  rewardsReceived               Reward[]                          @relation("MemberRewards")
   spotlight                     Spotlight[]
   streak                        Streak[]
   streakHistory                 StreakHistory[]
+  subscriptions                 Subscription[]
+  invoices                      SubscriptionInvoice[]             @relation("UserInvoices")
+  sundayProgressLogs            SundayProgressLog[]
   todos                         Todo[]
   transaction                   Transaction[]
-  plan                          Plan?                 @relation(fields: [planId], references: [id])
-  referredBy                    User?                 @relation("UserReferrer", fields: [referredById], references: [id])
-  referrals                     User[]                @relation("UserReferrer")
+  plan                          Plan?                             @relation(fields: [planId], references: [id])
+  referredBy                    User?                             @relation("UserReferrer", fields: [referredById], references: [id])
+  referrals                     User[]                            @relation("UserReferrer")
   userBusinessProfile           UserBusinessProfile?
-  userNotifications             UserNotification[]    @relation("UserNotifications")
+  makeoverAreas                 UserMakeoverArea[]
+  makeoverBadges                UserMakeoverBadge[]
+  makeoverChallengeEnrollments  UserMakeoverChallengeEnrollment[]
+  makeoverCommitments           UserMakeoverCommitment[]
+  makeoverLevels                UserMakeoverLevel[]
+  selfRewards                   UserMakeoverSelfReward[]
+  userNotifications             UserNotification[]                @relation("UserNotifications")
+  programStates                 UserProgramState[]
   userStreak                    UserStreak?
+  visionImages                  UserVisionImage[]
   wishlists                     Wishlist[]
+  certificatesIssued            ChallengeCertificate[]            @relation("CertificatesIssuedByUser")
+  certificatesReceived          ChallengeCertificate[]            @relation("CertificatesReceivedByUser")
   enrollments                   ChallengeEnrollment[]
-  createdChallenges             Challenge[]           @relation("CreatedChallenges")
-  buddyLensReviews              BuddyLensRequest[]    @relation("BuddyLensReviews")
-  Goal                          Goal[]                @relation("GoalToUser")
-  sentChallengeMessages   ChallengeMessage[]          @relation("UserMessages")
-  challengeMessageReactions ChallengeMessageReaction[]
-  challengePollVotes ChallengeMessagePollVote[]
+  sentChallengeMessages         ChallengeMessage[]                @relation("UserMessages")
+  challengePollVotes            ChallengeMessagePollVote[]
+  createdChallenges             Challenge[]                       @relation("CreatedChallenges")
+  buddyLensReviews              BuddyLensRequest[]                @relation("BuddyLensReviews")
+  Goal                          Goal[]                            @relation("GoalToUser")
+  createdItems                  Item[]                            @relation("ItemCreator")
+  approvedItems                 Item[]                            @relation("ItemApprover")
+  coachChallengePayouts ChallengePayout[]
+  challengePayments ChallengePayment[]
+  progressLogs  MiniMasteryProgressLog[]
+  courseCompletions  MiniMasteryCourseCompletion[]
+  miniMasteryProgramPayments MiniMasteryProgramPayment[]
+  mmCertificatesReceived     MiniMasteryCertificate[]         @relation("MMCertificatesReceived")
+  mmCertificatesIssued       MiniMasteryCertificate[]         @relation("MMCertificatesIssued")
+  mmCreatorSignature         MiniMasteryCreatorSignature?
 
-   certificatesReceived ChallengeCertificate[] @relation("CertificatesReceivedByUser")
-   certificatesIssued   ChallengeCertificate[] @relation("CertificatesIssuedByUser")
-
-  challengeCreatorSignature ChallengeCreatorSignature?
-
-  // membership 
-  userType                      PlanUserType?        // COACH | ENTHUSIAST | SOLOPRENEUR
-  currentPlanId        String?
-  currentPlanInterval  PlanInterval?     // MONTHLY | YEARLY | LIFETIME
-  currentCurrency      SubscriptionPlanCurrency?     // INR | USD
-
-    // NEW MEMBERSHIP RELATIONS
-  mandates           Mandate[]
-  subscriptions      Subscription[]
-  invoices        SubscriptionInvoice[]          @relation("UserInvoices")
-
-
-  couponRedemptions  CouponRedemption[]
-  billingInformation  BillingInformation[]
-
-  oneTimePurchases OneTimeProgramPurchase[]
-  paymentOrders PaymentOrder[] 
-
-    // Makeover relations ===============================
-  makeoverAreas        UserMakeoverArea[]
-  makeoverCommitments  UserMakeoverCommitment[]
-  makeoverProgressLogs MakeoverProgressLog[]
-  sundayProgressLogs SundayProgressLog[]
-  makeoverLevels       UserMakeoverLevel[]
-  makeoverBadges       UserMakeoverBadge[]
-  makeoverChallengeEnrollments UserMakeoverChallengeEnrollment[]
-  visionImages UserVisionImage[]
-  programStates UserProgramState[]
-
-  selfRewards UserMakeoverSelfReward[]
-
-  //Makeover Accountability Buddy
-  buddyDoer    MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyOwner")
-  buddyChecker MakeoverAccountabilityBuddy[] @relation("MakeoverBuddyTarget")
-
-
+  createdPrograms  Program[]  @relation("ProgramCreator")
   @@index([name])
 }
 
@@ -142,6 +140,7 @@ model Transaction {
   activityId String
   createdAt  DateTime @default(now())
   jpAmount   Int
+  metadata   Json?  
   activity   Activity @relation(fields: [activityId], references: [id])
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -210,6 +209,45 @@ model UserBusinessProfile {
   phone               String?
   website             String?
   socialHandles       Json?
+
+  // /* -------- BASIC INFO -------- */
+  tagline             String?
+
+  // /* -------- NICHE -------- */
+  coachingDomains     Json?
+  targetAudience      Json?
+
+  // /* -------- TRANSFORMATION -------- */
+  transformation      String?
+  typicalResults      Json?
+
+  // /* -------- SESSION STYLE -------- */
+  sessionStyles       Json?
+  methodology         String?
+  toolsFrameworks     Json?
+
+  // /* -------- SERVICES -------- */
+  servicesOffered     Json?
+
+  // /* -------- SESSION & PRICING -------- */
+  languages           Json?
+  timezone            String?
+  sessionFormat       String?
+  sessionDuration     String?
+  priceMin            Float?
+  priceMax            Float?
+
+  // /* -------- AUTHORITY -------- */
+  yearsOfExperience   Int?
+  certifications      Json?
+  shortBio            String?
+  testimonials        Json?
+
+  // /* -------- TRUST -------- */
+  profilePhoto        String
+  introVideo          String?
+  linkedin            String?
+
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   featuredWorkDesc    String?
@@ -302,26 +340,52 @@ model ProgressVault {
   user             User      @relation(fields: [userId], references: [id])
 }
 
+// updated Item 
 model Item {
-  id            String      @id @default(cuid())
-  name          String
+  id   String @id @default(cuid())
+  name String
+
+  // Pricing
   basePrice     Float
   monthlyPrice  Float?
   yearlyPrice   Float?
   lifetimePrice Float?
-  imageUrl      String
-  createdAt     DateTime    @default(now())
-  downloadUrl   String?
-  categoryId    String
-  updatedAt     DateTime    @default(now()) @updatedAt
-  cart          Cart[]
-  category      Category    @relation(fields: [categoryId], references: [id])
-  orderItems    OrderItem[]
-  wishlists     Wishlist[]
+
+  // Media
+  imageUrl    String
+  downloadUrl String?
+
+  // Category
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  // Ownership (NEW)
+  createdByUserId String
+  createdByRole   String // ADMIN | COACH
+  creator         User   @relation("ItemCreator", fields: [createdByUserId], references: [id])
+
+  // Approval system (NEW)
+  isApproved       Boolean   @default(false)
+  approvedByUserId String?
+  approvedAt       DateTime?
+  approver         User?     @relation("ItemApprover", fields: [approvedByUserId], references: [id])
+  // Currency selector
+  currency      String @default("INR") //  NEW: "USD" | "INR"
+  // Existing relations
+  cart       Cart[]
+  orderItems OrderItem[]
+  wishlists  Wishlist[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([categoryId])
+  @@index([createdByUserId])
+  @@index([isApproved])
 }
 
+// category  model
 model Category {
   id        String   @id @default(cuid())
   name      String
@@ -334,12 +398,14 @@ model Order {
   id          String      @id @default(cuid())
   userId      String
   totalAmount Float
+  currency    String?     // Currency used for this order (INR, USD, etc.)
   status      String      @default("processing")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   user        User        @relation(fields: [userId], references: [id])
   items       OrderItem[]
 
+  paymentOrders PaymentOrder[] 
   @@index([userId])
 }
 
@@ -349,9 +415,11 @@ model OrderItem {
   itemId          String
   quantity        Int
   priceAtPurchase Float
+  originalPrice    Float?   @default(0) // optional
+  originalCurrency String?  @default("INR") // optional
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  item            Item     @relation(fields: [itemId], references: [id])
+  item            Item     @relation(fields: [itemId], references: [id], onDelete:Cascade)
   order           Order    @relation(fields: [orderId], references: [id])
 
   @@index([orderId])
@@ -363,7 +431,7 @@ model Wishlist {
   userId    String
   itemId    String
   createdAt DateTime @default(now())
-  item      Item     @relation(fields: [itemId], references: [id])
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, itemId])
@@ -377,7 +445,7 @@ model Cart {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   wasInWishlist Boolean  @default(false)
-  item          Item     @relation(fields: [itemId], references: [id])
+  item          Item     @relation(fields: [itemId], references: [id], onDelete:Cascade)
   user          User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, itemId])
@@ -534,6 +602,13 @@ model AlignedAction {
   tasks        String[]
   timeFrom     DateTime
   timeTo       DateTime
+  
+  activeReminder   String?   // "START" | "END" | "SNOOZE"
+  reminderAt       DateTime? // when reminder was triggered
+  popupShown       Boolean   @default(false)
+
+  snoozedUntill    DateTime?
+
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
@@ -622,8 +697,24 @@ model Challenge {
   makeoverAreaMaps        MakeoverAreaChallengeMap[]
   makeoverEnrollments     UserMakeoverChallengeEnrollment[]
   joinMode    ChallengeJoinMode @default(MANUAL)
+  challengeJoiningType  ChallengeJoiningType   @default(FREE)
+  challengeJoiningFee    Int                   @default(0)
+  challengeJoiningFeeCurrency   challengeJoiningFeeCurrency   @default(INR)
+  paymentOrders PaymentOrder[]
+  payout ChallengePayout[]
+  coupons   Coupon[] @relation("ChallengeCoupons")
+  challengePayments ChallengePayment[]
 
   @@map("challenges")
+}
+
+enum ChallengeJoiningType {
+  FREE
+  PAID
+}
+enum challengeJoiningFeeCurrency {
+  INR 
+  USD
 }
 
 enum ChallengeJoinMode {
@@ -672,6 +763,59 @@ model ChallengeEnrollment {
 
   @@unique([userId, challengeId])
   @@map("challenge_enrollments")
+}
+
+// paid challenge payout model 
+model ChallengePayout {
+  id                String   @id @default(cuid())
+
+  challengeId       String 
+  creatorId         String
+
+  totalRevenue      Float
+  platformFee       Float
+  netPayable        Float
+
+  status            PayoutStatus
+
+  processedByAdminId String?
+  processedAt        DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  challenge         Challenge @relation(fields: [challengeId], references: [id])
+  creator           User      @relation(fields: [creatorId], references: [id])
+}
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+model ChallengePayment {
+  id             String   @id @default(cuid())
+
+  userId         String
+  challengeId    String
+  paymentOrderId String   @unique
+
+  amountPaid     Float
+  currency       String
+
+  status         PaymentStatus
+  joinedAt       DateTime @default(now())
+  paidAt         DateTime?
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge      Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@index([challengeId])
+  @@map("challenge_payments")
 }
 model ChallengeMessage {
   id          String   @id @default(cuid())
@@ -802,6 +946,8 @@ model NotificationSettings {
   notification_type NotificationType @unique
   title             String
   message           String
+  url               String?
+  isDynamic         Boolean          @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
@@ -1063,6 +1209,8 @@ model SubscriptionPlan {
   gstEnabled     Boolean   @default(true)
   gstPercentage  Float     @default(18)
 
+   razorpayPlanId   String?  @unique 
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -1073,6 +1221,7 @@ model SubscriptionPlan {
   invoices SubscriptionInvoice[]
   oneTimePurchases OneTimeProgramPurchase[]
   paymentOrders PaymentOrder[] 
+  razorpayPlanCache RazorpayPlanCache[]
 }
 enum SubscriptionPlanCurrency {
   INR
@@ -1130,6 +1279,7 @@ model Subscription {
   orderId          String?     // optional
   couponId         String?     // optional
   paymentOrderId String?  
+  razorpaySubscriptionId  String?
 
   grantedByPurchaseId String?   @unique// if the user purchase our program we grant them membership
   status           SubscriptionStatus // ACTIVE | CANCELLED | EXPIRED | FREE_TRIAL | CANCELLATION_PENDING
@@ -1164,9 +1314,14 @@ enum SubscriptionStatus {
 model PaymentOrder {
   id            String   @id @default(cuid())
   userId        String
-  planId        String
+  planId        String?
+  challengeId   String?
+  programId     String?
+  storeOrderId         String?    // Todo realtion needs to define when working with the storeProductId
+  contextType   PaymentContextType?    // first optional then backfill then make required
 
-  orderId       String?   @unique
+
+  orderId       String?   @unique   // Gateway order reference
   cashfreeOrderId    String?
   baseAmount         Float
   gstAmount          Float @default(0)
@@ -1181,12 +1336,33 @@ model PaymentOrder {
   couponId      String?
   billingInfoId String?
 
+  razorpayOrderId String?
+  razorpaySubscriptionId String?
+  razorpayReceipt String?
+
   createdAt     DateTime @default(now())
   paidAt        DateTime?
-
+  cartSnapshot  Json?
   user          User             @relation(fields: [userId], references: [id])
-  plan          SubscriptionPlan @relation(fields: [planId], references: [id])
+  plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
+  challenge     Challenge?        @relation(fields: [challengeId], references: [id])
+  storeOrder  Order?            @relation(fields: [storeOrderId], references: [id])
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
+  challengePayment ChallengePayment?
+  miniMasteryProgramPayment MiniMasteryProgramPayment?
+
+  @@index([planId])
+  @@index([challengeId])
+  @@index([storeOrderId])
+  @@index([contextType])
+
+}
+enum PaymentContextType {
+  SUBSCRIPTION
+  CHALLENGE
+  STORE_ORDER
+  STORE_PRODUCT
+  MMP_PROGRAM
 }
 
 
@@ -1229,16 +1405,19 @@ model Coupon {
   description         String?
 
   type                CouponType
-
+  scope               CouponScope @default(SUBSCRIPTION)
   // Discount types
   discountPercentage  Float?
   discountAmountUSD   Float?
   discountAmountINR   Float?
   freeDays            Int?
-
+  creatorUserId           String?
+  challengeCreatorType        CouponCreatorType?  // "COACH","ADMIN","SYSTEM"
   // Applicability
+  applicableChallenges Challenge[] @relation("ChallengeCoupons")
   applicableUserTypes  CouponUserType[]
   applicablePlans      SubscriptionPlan[]           @relation("PlanCoupons")
+  applicableMmpPrograms Program[] @relation("ProgramCoupons")
   applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
   firstCycleOnly        Boolean @default(false)
   multiCycle            Boolean @default(false)
@@ -1262,8 +1441,22 @@ model Coupon {
   redemptions         CouponRedemption[]
   oneTimePurchases OneTimeProgramPurchase[]
   paymentOrders PaymentOrder[] 
-}
 
+  @@index([couponCode])
+  @@index([scope])
+  @@index([status])
+}
+enum CouponCreatorType {
+  COACH
+  ADMIN
+  SYSTEM
+}
+enum CouponScope  {
+  SUBSCRIPTION
+  CHALLENGE
+  STORE_PRODUCT
+  MMP_PROGRAM
+}
 enum CouponType {
   PERCENTAGE
   FIXED
@@ -1289,6 +1482,7 @@ model CouponRedemption {
   id          String   @id @default(cuid())
   couponId    String
   userId      String
+  redeemed        Boolean  @default(false)
   usedAt      DateTime @default(now())
   appliedPlan String
   discountApplied Float
@@ -1309,11 +1503,31 @@ model BillingInformation {
   state         String
   postalCode    String
   country       String   // "IN" or "US" etc.
+
+  gstNumber     String? 
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id])
+}
+
+// userbilling for products
+
+model UserBillingInformation {
+  id           String   @id
+  userId       String   @unique
+  phone        String?
+  gstNumber     String? 
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String
+  country      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id])
 }
 
 model AdminCashfreeConfigSettings {
@@ -1322,8 +1536,156 @@ model AdminCashfreeConfigSettings {
   updatedAt    DateTime @updatedAt
 }
 
+model AdminRazorpayConfigSettings {
+  id            Int      @id @default(autoincrement())
+  razorpayMode  String   @default("test") // "test" | "live"
+  updatedAt     DateTime @updatedAt
+}
+
+model AdminPaymentGatewayConfig {
+  id            Int      @id @default(autoincrement())
+  activeGateway String   @default("CASHFREE") // "CASHFREE" | "RAZORPAY"
+  updatedAt     DateTime @updatedAt
+}
+
+model RazorpayPlanCache {
+  id                  String   @id @default(cuid())
+  razorpayPlanId      String   @unique
+  razorpayItemId      String?  // optional, Razorpay internally creates item
+  amount              Decimal  @db.Decimal(10, 2)
+  currency            String
+  interval            PlanInterval  // MONTHLY | YEARLY
+  intervalCount       Int      @default(1)
+  gstEnabled          Boolean
+  gstPercentage       Decimal  @db.Decimal(5, 2)
+  planName            String
+  description         String?
+  subscriptionPlanId  String?
+  environment          String   @default("test") // "test" | "live"
+  subscriptionPlan    SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  @@index([amount, currency, interval])
+  @@unique([amount, currency, interval, intervalCount, environment])
+}
+
 
 // membership model end
+
+// mini mastery additional models
+model MiniMasteryProgressLog {
+  id        String   @id @default(cuid())
+
+  userId    String
+  programId String
+  dayNumber Int      // which day module this log is for (1-indexed)
+
+  // Completion state
+  completedAt DateTime?   // null = not yet completed
+  isCompleted Boolean     @default(false)
+
+  // Optional response the user wrote for the actionTask
+  actionResponse String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId, dayNumber])   // one log per user per day per program
+  @@index([userId, programId])
+}
+model MiniMasteryCourseCompletion {
+  id        String  @id @default(cuid())
+
+  userId    String
+  programId String
+
+  // Course completion
+  courseCompleted   Boolean   @default(false)
+  courseCompletedAt DateTime?
+
+  // Certificate
+  certificateDownloaded   Boolean   @default(false)
+  certificateDownloadedAt DateTime?
+  certificatePath         String?   // Supabase / S3 path or URL to the generated PDF
+  certificateId    String?   // → MiniMasteryCertificate.certificateId
+  certificateUrl   String?   // Supabase public URL (replaces certificatePath)
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId])   // one record per user per program
+  @@index([userId])
+  @@index([programId])
+}
+model MiniMasteryProgramPayment {
+  id             String   @id @default(cuid())
+  userId         String
+  programId      String
+  paymentOrderId String   @unique
+
+  amountPaid     Float
+  currency       String
+
+  status         PaymentStatus
+  purchasedAt    DateTime @default(now())
+  paidAt         DateTime?
+
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program        Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+}
+model MiniMasteryCreatorSignature {
+  id        String   @id @default(cuid())
+  userId    String   @unique             // one signature per creator
+
+  type      String                       // "IMAGE" | "TEXT" | "DRAWN"
+  text      String?                      // text signature value
+  imageUrl  String?                      // Supabase URL for IMAGE or DRAWN type
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mini_mastery_creator_signatures")
+}
+
+model MiniMasteryCertificate {
+  id               String   @id @default(cuid())
+
+  certificateId    String   @unique   // e.g. "MMP-CRT-XXXXXX"
+  verificationHash String   @unique   // SHA-256 hash for /verify/[hash] page
+
+  participantId    String             // → User.id (who received it)
+  programId        String             // → Program.id
+  issuedById       String             // → User.id (program creator)
+
+  // Certificate assets
+  certificateUrl   String             // Supabase public URL (webp image)
+  storagePath      String             // Supabase storage path (for deletion/re-gen)
+  qrCodeUrl        String?            // QR code URL if stored separately
+
+  issuedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  participant      User    @relation("MMCertificatesReceived", fields: [participantId], references: [id], onDelete: Cascade)
+  program          Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  issuedBy         User    @relation("MMCertificatesIssued", fields: [issuedById], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+  @@index([programId])
+  @@index([issuedById])
+  @@map("mini_mastery_certificates")
+}
 
 // program models start
 model Program {
@@ -1348,10 +1710,42 @@ model Program {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // --- 🆕 Mini-Mastery Program (MMP) Specific Fields ---
+  
+  // Step 1: Unlock Logic
+  unlockType        String?  @default("daily") // "daily" or "all"
+  thumbnailUrl  String?   // Supabase public URL for MMP thumbnail
+
+  // Step 2: What will participants achieve?
+  achievements      Json?    // Stores: ["Master focus", "Early rising", ...]
+
+  // Step 3: Daily Module Builder
+  // for each day title, type, videoUrl, instructions, action task
+  modules           Json?    // Stores: [{day: 1, title: "Intro", type: "video", ...}]
+
+  // Step 4: Pricing
+  price             Float?   @default(0)
+  currency          String?  @default("INR")
+
+  // Step 5: Certificate Settings
+  completionThreshold Int?    @default(100)
+  certificateTitle    String?
+
+  // Step 6: Status handling
+  status            String?  @default("DRAFT") // "DRAFT", "UNDER_REVIEW", "PUBLISHED"
+
   // Relations
   plans              SubscriptionPlan[] @relation("ProgramPlans")
   purchases          OneTimeProgramPurchase[]
   userProgramStates UserProgramState[]
+  progressLogs  MiniMasteryProgressLog[]
+  courseCompletions  MiniMasteryCourseCompletion[]
+  mmCertificates             MiniMasteryCertificate[]
+
+  miniMasteryProgramPayments MiniMasteryProgramPayment[]
+  coupons Coupon[] @relation("ProgramCoupons")
+  createdBy   String?
+  creator     User?   @relation("ProgramCreator", fields: [createdBy], references: [id])
 }
 model OneTimeProgramPurchase {
   id                 String   @id @default(cuid())
@@ -1447,7 +1841,7 @@ model MakeoverGoalLibrary {
   @@unique([areaId, title])
 }
 
-model MakeoverIdentityLibrary {
+model MakeoverIdentityLibrary{
   id        String @id @default(cuid())
   areaId    Int
   statement String
@@ -1861,6 +2255,8 @@ enum ActivityType {
   REWARD_JP_TO_MEMBER_BY_COACH
   COACH_REWARD_SPEND      // For the admin's deduction
   COACH_REWARD_RECEIVE    // For the member's credit
+  STORE_PURCHASE  // When users buy items from store using GP
+
 }
 
 enum TransactionType {
@@ -1923,6 +2319,20 @@ enum NotificationType {
   DAILY_BLOOM_REMINDER
   DAILY_BLOOM_PUSH_NOTIFICATION
   DAILY_CHALLENGE_PUSH_NOTIFICATION
+  CMP_DAILY_PRIMARY
+  CMP_DAILY_GENTLE_NUDGE
+  CMP_SUNDAY_MORNING
+  CMP_SUNDAY_EVENING_PENDING
+  CMP_QUARTER_ENDING_SOON
+  CMP_QUARTER_RESET
+  CMP_REWARD_UNLOCKED
+  CMP_REWARD_UNCLAIMED
+  CMP_LEVEL_UP
+  CMP_GOA_PROGRESS_MILESTONE
+  CMP_GOA_ELIGIBLE
+  CMP_INACTIVITY_3_DAYS
+  CMP_INACTIVITY_7_DAYS
+  CMP_ONBOARDING_PENDING
 }
 
 enum BreathWorkType {

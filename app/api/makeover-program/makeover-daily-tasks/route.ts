@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { normalizeDateUTC } from "@/lib/utils/normalizeDate";
-import { createLogWin } from "@/lib/utils/makeover-program/makeover-daily-tasks/createLogWin";
+import { sharedInChallengeGroup } from "@/lib/utils/makeover-program/makeover-daily-tasks/sharedInGroup";
 function normalizeToUTCStartOfDay(date: Date): Date {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
@@ -398,10 +398,11 @@ export async function POST(req: Request) {
     const prettyDate = formatDayWithOrdinal(new Date(today));
 
     try {
-      await createLogWin({
-        userId: user.id,
-        content: `Done ${actionText.trim()} on ${prettyDate}`,
-      });
+      // await createLogWin({
+      //   userId: user.id,
+      //   content: `Done ${actionText.trim()} on ${prettyDate}`,
+      // });
+      await sharedInChallengeGroup(user.id, `I have completed ${actionText.trim() ?? "today's tasks"} on ${prettyDate}`, enrollment?.challengeId ?? "");
     } catch (err) {
       console.error("Log win failed:", err);
     }

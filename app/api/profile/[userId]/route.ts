@@ -67,6 +67,7 @@ export async function GET(
    const profile = user.userBusinessProfile; 
 
     const response = {
+      ...profile,
       name: user.name,
       email: user.email,
       image: user.image,

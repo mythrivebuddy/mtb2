@@ -7,7 +7,8 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
     const searchParams = req.nextUrl.searchParams;
-    const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || null;
+    const redirect =
+      searchParams.get("redirect") || searchParams.get("callbackUrl") || null;
     const redirectUrl =
       redirect && redirect.startsWith("/")
         ? `${req.nextUrl.origin}${redirect}`
@@ -16,6 +17,12 @@ export default withAuth(
     // Handle authenticated users accessing /signin
     if (token && path === "/signin" && redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, req.url));
+    }
+    // Block non-COACH users from manage-store
+    if (path.startsWith("/dashboard/manage-store")) {
+      if (!token || token.userType !== "COACH") {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
     }
 
     // Redirect admins accessing /dashboard to /admin/dashboard
@@ -31,9 +38,7 @@ export default withAuth(
       const isAllowed = allowedAdminRoutes.some((r) => path.startsWith(r));
 
       if (!isAllowed) {
-        return NextResponse.redirect(
-          new URL("/admin/dashboard", req.url)
-        );
+        return NextResponse.redirect(new URL("/admin/dashboard", req.url));
       }
     }
 
@@ -65,6 +70,16 @@ export default withAuth(
         if (isPublicChallengePage(path)) {
           return true;
         }
+        
+        // Allow public access to Mini Mastery Programs
+if (path.startsWith("/dashboard/mini-mastery-programs")) {
+  return true;
+}
+
+// Allow public access to Growth Store
+if (path.startsWith("/dashboard/store")) {
+  return true;
+}
 
         // Require authentication for all other pages
         return !!token;
@@ -73,7 +88,7 @@ export default withAuth(
     pages: {
       signIn: "/signin",
     },
-  }
+  },
 );
 
 function isPublicChallengePage(path: string): boolean {
@@ -86,7 +101,7 @@ function isPublicChallengePage(path: string): boolean {
 
   const isMainChallengePage = path === "/dashboard/challenge";
   const isPrivateSubPage = privateChallengePrefixes.some((prefix) =>
-    path.startsWith(prefix)
+    path.startsWith(prefix),
   );
 
   return (
@@ -97,5 +112,5 @@ function isPublicChallengePage(path: string): boolean {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*","/signin"],
+  matcher: ["/dashboard/:path*", "/leaderboard", "/admin/:path*", "/signin"],
 };

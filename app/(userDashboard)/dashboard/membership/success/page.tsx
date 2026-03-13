@@ -13,10 +13,18 @@ import { Button } from "@/components/ui/button";
 import ConfettiClient from "./_components/ConfettiClient";
 import InfoRow from "./_components/InfoRow";
 import CountdownTimer from "./_components/CountdownTimer";
+type MembershipInfo = {
+  planName: string;
+  interval: "MONTHLY" | "YEARLY" | "LIFETIME";
+  startDate: string;
+  endDate?: string | null;
+};
+
 
 export default function SuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [membership, setMembership] = useState<MembershipInfo | null>(null);
 
   const pid = searchParams.get("pid");
   const type = searchParams.get("type");
@@ -37,7 +45,7 @@ export default function SuccessPage() {
     }
 
     let retries = 0;
-    const MAX_RETRIES = 5;
+    const MAX_RETRIES = 10;
 
     const verify = async () => {
       try {
@@ -49,6 +57,9 @@ export default function SuccessPage() {
         if (res.data?.ok) {
           setRedirectTo(res.data.redirect);
           setYearlyPlanName(res.data.yearlyPlanName ?? null);
+            if (res.data.membership) {
+    setMembership(res.data.membership);
+  }
           setVerified(true);
           setLoading(false);
           return;
@@ -95,6 +106,7 @@ export default function SuccessPage() {
   /* --------------------------------------------------------------- */
 
   const isProgram = type === "program";
+  const isMembership = type === "membership";
   const programStart = new Date("2026-01-07T12:00:00+05:30");
 
   return (
@@ -126,6 +138,37 @@ export default function SuccessPage() {
           <h1 className="text-3xl font-bold text-slate-900">
             Payment Successful
           </h1>
+          {isMembership && membership && (
+  <>
+    <p className="text-slate-600 leading-relaxed">
+      🎉 Your <strong>{membership.planName}</strong> membership is now active.
+    </p>
+
+    <InfoRow text={`Plan type: ${membership.interval}`} />
+
+    <InfoRow
+      text={`Activated on: ${new Date(
+        membership.startDate
+      ).toLocaleDateString()}`}
+    />
+
+    {membership.endDate && membership.interval !== "LIFETIME" && (
+      <InfoRow
+        text={`Valid until: ${new Date(
+          membership.endDate
+        ).toLocaleDateString()}`}
+      />
+    )}
+
+    {!membership.endDate && membership.interval === "LIFETIME" && (
+      <InfoRow text="This is a lifetime membership — no renewals required." />
+    )}
+
+    <p className="text-sm text-slate-700">
+      You now have full access to all features included in your plan.
+    </p>
+  </>
+)}
 
           {isProgram && (
             <>
@@ -171,3 +214,107 @@ export default function SuccessPage() {
     </div>
   );
 }
+
+// /api/billing/verify-success/route.ts
+//
+// Called by the success page to confirm the purchase and get redirect info.
+// Handles three types: "lifetime", "subscription", "program"
+//
+// GET /api/billing/verify-success?pid=<internal_db_id>&type=<type>
+
+// import { NextRequest, NextResponse } from "next/server";
+// import { prisma } from "@/lib/prisma";
+// import { getServerSession } from "next-auth";
+// import { authOptions } from "@/lib/auth";
+
+// export async function GET(req: NextRequest) {
+//   const session = await getServerSession(authOptions);
+//   if (!session?.user?.id) {
+//     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+//   }
+
+//   const url = new URL(req.url);
+//   const pid = url.searchParams.get("pid");
+//   const type = url.searchParams.get("type");
+
+//   if (!pid || !type) {
+//     return NextResponse.json({ ok: false, error: "Missing params" }, { status: 400 });
+//   }
+
+//   try {
+//     // ─── LIFETIME ─────────────────────────────────────────────────────────────
+//     if (type === "lifetime") {
+//       const order = await prisma.paymentOrder.findFirst({
+//         where: { id: pid, userId: session.user.id },
+//       });
+
+//       if (!order || order.status !== "PAID") {
+//         return NextResponse.json({ ok: false, error: "Order not verified" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard",
+//       });
+//     }
+
+//     // ─── SUBSCRIPTION (MONTHLY / YEARLY via Razorpay) ────────────────────────
+//     if (type === "subscription") {
+//       const sub = await prisma.subscription.findFirst({
+//         where: { id: pid, userId: session.user.id },
+//         include: { plan: true },
+//       });
+
+//       if (!sub || sub.status !== "ACTIVE") {
+//         return NextResponse.json({ ok: false, error: "Subscription not active" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard",
+//         yearlyPlanName: sub.plan?.name ?? null,
+//       });
+//     }
+
+//     // ─── PROGRAM (Cashfree one-time purchase) ─────────────────────────────────
+//     if (type === "program") {
+//       const purchase = await prisma.programPurchase.findFirst({
+//         where: { id: pid, userId: session.user.id },
+//         include: { plan: true },
+//       });
+
+//       if (!purchase) {
+//         return NextResponse.json({ ok: false, error: "Purchase not found" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard/programs",
+//         yearlyPlanName: purchase.plan?.name ?? null,
+//       });
+//     }
+
+//     // ─── MEMBERSHIP (legacy Cashfree flow) ────────────────────────────────────
+//     if (type === "membership") {
+//       const user = await prisma.user.findUnique({
+//         where: { id: session.user.id },
+//         select: { membership: true },
+//       });
+
+//       if (user?.membership !== "PAID") {
+//         return NextResponse.json({ ok: false, error: "Membership not active" }, { status: 400 });
+//       }
+
+//       return NextResponse.json({
+//         ok: true,
+//         redirect: "/dashboard",
+//       });
+//     }
+
+//     return NextResponse.json({ ok: false, error: "Unknown type" }, { status: 400 });
+
+//   } catch (error) {
+//     console.error("verify-success error:", error);
+//     return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 });
+//   }
+// }
