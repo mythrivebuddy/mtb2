@@ -12,13 +12,13 @@ import { Item, WishlistItem, Category } from "@/types/client/store";
 import Image from "next/image";
 
 // ✅ Updated to include GP
-const CURRENCY_SYMBOLS: Record<string, string> = { 
-  INR: "₹", 
-  USD: "$", 
-  GP: "GP" 
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  GP: "GP"
 };
 
-const getCurrencySymbol = (currency?: string): string => 
+const getCurrencySymbol = (currency?: string): string =>
   CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
 type ProductFilter = "ALL" | "ADMIN" | "COACH";
@@ -83,8 +83,8 @@ const CustomDropdown = ({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={`w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border-2 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none ${open
-            ? `shadow-lg ring-2 ${ringClass}`
-            : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+          ? `shadow-lg ring-2 ${ringClass}`
+          : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
           }`}
       >
         <span className={value ? "text-gray-800" : "text-gray-700"}>{selectedLabel}</span>
@@ -151,25 +151,25 @@ const StorePage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({ 
-    queryKey: ["categories"], 
-    queryFn: fetchCategories, 
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: fetchCategories,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
-  const { data: wishlist = [], isLoading: wishlistLoading } = useQuery({ 
-    queryKey: ["wishlist"], 
-    queryFn: fetchWishlist, 
+  const { data: wishlist = [], isLoading: wishlistLoading } = useQuery({
+    queryKey: ["wishlist"],
+    queryFn: fetchWishlist,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchInterval: 5000,
     refetchIntervalInBackground: false,
   });
 
-  const { data: cartItems = [], isLoading: cartLoading } = useQuery({ 
-    queryKey: ["cart"], 
-    queryFn: fetchCartItems, 
+  const { data: cartItems = [], isLoading: cartLoading } = useQuery({
+    queryKey: ["cart"],
+    queryFn: fetchCartItems,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchInterval: 5000,
@@ -186,15 +186,55 @@ const StorePage: React.FC = () => {
 
   const toggleWishlistMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      if (wishlist.some((item) => item.itemId === itemId)) {
+      const exists = wishlist.some((item) => item.itemId === itemId);
+
+      if (exists) {
         await axios.delete("/api/user/store/items/wishlist", { data: { itemId } });
-        toast.info("Removed from wishlist");
       } else {
         await axios.post("/api/user/store/items/wishlist", { itemId });
+      }
+
+      return { itemId, exists };
+    },
+
+    // ⭐ Optimistic Update - FIXED TYPE ERRORS
+    onMutate: async (itemId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["wishlist"] });
+
+      const previousWishlist = queryClient.getQueryData<WishlistItem[]>(["wishlist"]);
+
+      queryClient.setQueryData<WishlistItem[]>(["wishlist"], (old = []) => {
+        const exists = old.some((item) => item.itemId === itemId);
+
+        if (exists) {
+          return old.filter((item) => item.itemId !== itemId);
+        }
+
+        // Create a proper WishlistItem object
+        return [...old, { itemId, id: itemId, item: { id: itemId } } as WishlistItem];
+      });
+
+      return { previousWishlist };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.previousWishlist) {
+        queryClient.setQueryData(["wishlist"], context.previousWishlist);
+      }
+      toast.error("Something went wrong");
+    },
+
+    onSuccess: (data) => {
+      if (data.exists) {
+        toast.info("Removed from wishlist");
+      } else {
         toast.success("Added to wishlist");
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    },
   });
 
   const addToCartMutation = useMutation({
@@ -255,19 +295,19 @@ const StorePage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">🛍 Store</h1>
-              <p className="text-gray-600 mt-1">Discover amazing products</p>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">🛍 Growth Store</h1>
+              <p className="text-gray-600 mt-1">Explore curated products that support your growth, clarity, and transformation.</p>
             </div>
             <div className="flex gap-3 flex-wrap">
-              <Link 
-                href="/dashboard/store/order-history" 
+              <Link
+                href="/dashboard/store/order-history"
                 className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 <History className="w-4 h-4" />
                 Order History
               </Link>
-              <Link 
-                href="/dashboard/store/profile" 
+              <Link
+                href="/dashboard/store/profile"
                 className="bg-[#3b82f5] text-white font-semibold text-sm rounded-lg px-6 py-3 hover:bg-[#2563eb] transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 <ShoppingCart className="w-4 h-4" />
@@ -341,21 +381,29 @@ const StorePage: React.FC = () => {
                 <div key={item.id} className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group flex flex-col">
                   <div className="relative w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                     <Image src={item.imageUrl || "/placeholder-image.jpg"} alt={item.name} width={300} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                    <button onClick={() => toggleWishlistMutation.mutate(item.id)} className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-300">
-                      <Heart className={wishlist.some((w) => w.itemId === item.id) ? "text-red-500 w-5 h-5 fill-red-500" : "text-gray-600 w-5 h-5"} />
+                    <button
+                      onClick={() => toggleWishlistMutation.mutate(item.id)}
+                      className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-all duration-300"
+                    >
+                      <Heart
+                        className={
+                          wishlist.some((w) => w.itemId === item.id)
+                            ? "text-red-500 w-5 h-5 fill-red-500 transition"
+                            : "text-gray-600 w-5 h-5 transition"
+                        }
+                      />
                     </button>
                     <div className="absolute top-3 left-3">
                       <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-blue-600 text-xs font-semibold rounded-full shadow-md">{item.category.name}</span>
                     </div>
-                    
+
                     {/* ✅ Currency Badge */}
                     {itemCurrency !== "INR" && (
                       <div className="absolute bottom-3 left-3">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full shadow-md ${
-                          itemCurrency === "USD" 
-                            ? "bg-green-100 text-green-700" 
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full shadow-md ${itemCurrency === "USD"
+                            ? "bg-green-100 text-green-700"
                             : "bg-purple-100 text-purple-700"
-                        }`}>
+                          }`}>
                           {itemCurrency}
                         </span>
                       </div>
@@ -365,9 +413,9 @@ const StorePage: React.FC = () => {
                   <div className="p-5 flex flex-col flex-1">
                     <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
                     <div className="flex items-baseline gap-2 mb-4">
-                      {/* ✅ Dynamic price formatting: no decimals for GP */}
+                      {/* ✅ FIXED: Added space after GP symbol */}
                       <span className="text-2xl font-bold text-green-600">
-                        {sym}{isGP ? Number(price).toFixed(0) : Number(price).toFixed(2)}
+                        {isGP ? `${sym} ${Number(price).toFixed(0)}` : `${sym}${Number(price).toFixed(2)}`}
                       </span>
                     </div>
 
@@ -395,6 +443,7 @@ const StorePage: React.FC = () => {
                         <span>Buy Now</span>
                       </button>
                     </div>
+                    
                   </div>
                 </div>
               );

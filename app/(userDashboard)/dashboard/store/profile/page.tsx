@@ -151,7 +151,7 @@ function ProfilePage() {
               className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Store
+              Back to Growth Store
             </Link>
           </div>
         </div>
