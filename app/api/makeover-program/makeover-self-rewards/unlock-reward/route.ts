@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { CMP_NOTIFICATIONS } from "@/lib/constant";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
+import { NotificationType } from "@prisma/client";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -69,16 +71,21 @@ export async function GET(req: Request) {
   });
 
   // 5️⃣ notify (fire & forget)
-  const { title, description, url } = CMP_NOTIFICATIONS.REWARD_UNLOCKED;
 
- newlyUnlocked.forEach(() => {
-  void sendPushNotificationToUser(
-    session.user.id,
-    title,
-    description,
-    { url }
+  const notification = await getCMPNotification(
+    NotificationType.CMP_REWARD_UNLOCKED
   );
-});
+
+  const { title, description, url } = notification || CMP_NOTIFICATIONS.REWARD_UNLOCKED;
+
+  newlyUnlocked.forEach(() => {
+    void sendPushNotificationToUser(
+      session.user.id,
+      title,
+      description,
+      { url }
+    );
+  });
 
 
   return NextResponse.json({

@@ -98,7 +98,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       queryClient.invalidateQueries({ queryKey: ["magicBoxStatus"] });
       queryClient.invalidateQueries({ queryKey: ["userInfo"] });
       toast.success(
-        `You received ${data.jpEarned} JP and shared ${data.shared.jpAmount} JP!`
+        `You received ${data.jpEarned} GP and shared ${data.shared.jpAmount} GP!`
       );
       refetchBox();
     },
@@ -180,7 +180,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
           <Gift className="h-16 w-16 text-yellow-500 mb-4" />
           <p className="text-xl font-semibold mb-2">Your Magic Box</p>
           <p className="text-gray-600 mb-6">
-            Click to get your daily JP rewards!
+            Click to get your daily GP rewards!
           </p>
           <Button onClick={() => refetchBox()}>Check for Magic Box</Button>
         </div>
@@ -194,8 +194,8 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       return (
         <div className="flex flex-col items-center justify-center p-8">
           <Clock className="h-16 w-16 text-blue-500 mb-4" />
-          <p className="text-xl font-semibold mb-2">Magic Box Redeemed</p>
-          <p className="text-gray-600 mb-2">
+          <p className="text-lg sm:text-xl text-center font-semibold mb-2">Magic Box Redeemed</p>
+          <p className="text-gray-600 text-center mb-2">
             You&apos;ve already opened today&apos;s Magic Box
           </p>
           <p className="text-blue-600 font-medium mb-6">
@@ -205,7 +205,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
             <div className="mr-3">
               <Image
                 src="/Pearls.png"
-                alt="JP"
+                alt="GP"
                 width={30}
                 height={30}
                 className="rounded-xl"
@@ -214,7 +214,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
             <div>
               <p className="text-sm text-gray-600">You earned</p>
               <p className="text-lg font-bold text-blue-600">
-                {magicBox.jpAmount ? magicBox.jpAmount / 2 : 0} JP
+                {magicBox.jpAmount ? magicBox.jpAmount / 2 : 0} GP
               </p>
             </div>
           </div>
@@ -229,7 +229,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
           <Gift className="h-16 w-16 text-yellow-500 mb-4" />
           <p className="text-xl font-semibold mb-2">Magic Box</p>
           <p className="text-gray-600 mb-6">
-            Open your magic box to get JP rewards!
+            Open your magic box to get GP rewards!
           </p>
           <Button
             onClick={handleOpenBox}
@@ -253,14 +253,14 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
           )} */}
           <Sparkles className="h-12 w-12 text-yellow-500 mb-2" />
           <p className="text-xl font-semibold mb-1">
-            You found {magicBox.jpAmount} JP!
+            You found {magicBox.jpAmount} GP!
           </p>
           <p className="text-gray-600 mb-6">
             Choose a user to share half with (
-            {Math.floor((magicBox.jpAmount || 0) / 2)} JP each)
+            {Math.floor((magicBox.jpAmount || 0) / 2)} GP each)
           </p>
 
-          <div className="grid grid-cols-2 gap-4 w-full mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-6">
             {randomUsers.map((user: RandomUser) => (
               <div
                 key={user.id}
@@ -271,7 +271,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
                 }`}
               >
                 <div
-                  className="flex max-sm:flex-col justify-center sm:items-center cursor-pointer min-w-0 gap-2"
+                  className="flex  justify-center items-center cursor-pointer min-w-0 gap-2"
                   onClick={() => setSelectedUser(user.id)}
                 >
                   <Avatar className="h-10  w-10 mr-3">
@@ -285,7 +285,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
 
                 <a
                   href={`/profile/${user.id}`}
-                  className="text-sm flex items-center max-sm:mt-6   text-blue-600 hover:text-blue-800"
+                  className="text-sm flex items-center   text-blue-600 hover:text-blue-800"
                   onClick={(e) => e.stopPropagation()}
                   target="_blank"
                 >

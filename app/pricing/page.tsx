@@ -24,8 +24,10 @@ import axios from "axios";
 import NavLink from "@/components/navbars/navbar/NavLink";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import Link from "next/link";
+import { PlanInterval } from "@prisma/client";
+import { PLAN_PRIORITY } from "@/lib/subscription";
+import { useRouter } from "next/navigation";
 
 // --- Types (Based on the previous context) ---
 interface Plan {
@@ -88,13 +90,27 @@ export default function PricingPage() {
     queryFn: fetchPlans,
   });
 
+  // get plan priority
+  const { data: planPriority, isLoading: isPlanPriorityLoading } =
+    useQuery<number>({
+      queryKey: ["user-plan-priority"],
+      queryFn: async () => {
+        const res = await fetch("/api/subscription/active-plan-priority");
+        const data = await res.json();
+        return data.priority;
+      },
+      refetchOnMount: true, //  refetch on page revisit
+      staleTime: 0,
+    });
+  const userPriority = planPriority ? planPriority : PLAN_PRIORITY.FREE;
+
   // const filteredPlans =
   //   plans?.filter((plan) => plan.userType === activeTab) || [];
 
   const enthusiastPlan = plans?.find((plan) => plan.userType === "ENTHUSIAST");
   const solopreneurPlans = plans
     ?.filter(
-      (plan) => plan.userType === "SOLOPRENEUR" || plan.userType === "COACH"
+      (plan) => plan.userType === "SOLOPRENEUR" || plan.userType === "COACH",
     )
     .sort((a, b) => a.amountUSD - b.amountUSD);
 
@@ -119,6 +135,49 @@ export default function PricingPage() {
 
     return { price, period, priceINR };
   };
+  const isBestValuePlan = (planInterval: PlanInterval) => {
+    // 🟢 Logged-out users → always highlight YEARLY
+    if (session.status !== "authenticated") {
+      return planInterval === "YEARLY";
+    }
+    if (user?.userType === "ENTHUSIAST") {
+      return false;
+    }
+
+    // 🟢 Logged-in users → only if it's an upgrade
+    return (
+      planInterval === "YEARLY" && PLAN_PRIORITY[planInterval] > userPriority
+    );
+  };
+
+  const shouldShowCoachFreeCurrentPlan = (planInterval: PlanInterval) => {
+    if (session.status !== "authenticated") return false;
+
+    if (user?.userType !== "COACH") return false;
+
+    if (user?.membership !== "FREE") return false;
+
+    // lowest coach plan only
+    return PLAN_PRIORITY[planInterval] === PLAN_PRIORITY.FREE;
+  };
+  const isPaidCurrentPlan = (plan: Plan) => {
+    if (session.status !== "authenticated") return false;
+    if (user?.membership === "FREE") return false;
+
+    // ENTHUSIAST plans must match exactly
+    if (user?.userType === "ENTHUSIAST") {
+      return (
+        plan.userType === "ENTHUSIAST" &&
+        PLAN_PRIORITY[plan.interval] === userPriority
+      );
+    }
+
+    // COACH & SOLOPRENEUR are the SAME
+    return (
+      (plan.userType === "COACH" || plan.userType === "SOLOPRENEUR") &&
+      PLAN_PRIORITY[plan.interval] === userPriority
+    );
+  };
 
   // --- Render Functions ---
 
@@ -139,111 +198,154 @@ export default function PricingPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
-        {solopreneurPlans?.map((p) => {
-          const { price, period } = getPriceDisplay(p);
-          const badgeText = p.interval === "YEARLY" ? "BEST VALUE" : null;
+        {isPlanPriorityLoading
+          ? renderLoadingState()
+          : solopreneurPlans?.map((p) => {
+              const { price, period } = getPriceDisplay(p);
+              const badgeText =
+                shouldShowCoachFreeCurrentPlan(p.interval) ||
+                isPaidCurrentPlan(p)
+                  ? "Current Plan"
+                  : isBestValuePlan(p.interval)
+                    ? "BEST VALUE"
+                    : null;
 
-          return (
-            <div
-              key={p.id}
-              className={`relative rounded-2xl p-6 shadow-sm text-center flex flex-col h-full bg-white dark:bg-slate-900 transition-all hover:shadow-md ${
-                p.amountUSD === 299
-                  ? "border-2 border-blue-600 ring-4 ring-blue-600/10 z-10 transform sm:-translate-y-2"
-                  : "border border-slate-200 dark:border-slate-800"
-              }`}
-            >
-              {badgeText && (
-                <div className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-lg uppercase">
-                  {badgeText}
-                </div>
-              )}
+              return (
+                <div
+                  key={p.id}
+                  className={`relative rounded-2xl p-6 shadow-sm text-center flex flex-col h-full bg-white dark:bg-slate-900 transition-all hover:shadow-md 
+                  ${
+                    shouldShowCoachFreeCurrentPlan(p.interval)
+                      ? "border-2 border-green-600 ring-4 ring-green-600/10 z-10 transform sm:-translate-y-2"
+                      : isPaidCurrentPlan(p)
+                        ? "border-2 border-green-600 ring-4 ring-green-600/10 z-10 transform sm:-translate-y-2"
+                        : isBestValuePlan(p.interval)
+                          ? "border-2 border-blue-600 ring-4 ring-blue-600/10 z-10 transform sm:-translate-y-2"
+                          : "border border-slate-200 dark:border-slate-800"
+                  }`}
+                >
+                  {badgeText && (
+                    /* Fixed Positioning: -top-[2px] and -right-[2px] aligns it perfectly with the 2px border */
+                    <div
+                      className={`absolute -top-[2px] -right-[2px] text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl uppercase z-20 ${
+                        shouldShowCoachFreeCurrentPlan(p.interval) ||
+                        isPaidCurrentPlan(p)
+                          ? "bg-green-600"
+                          : isBestValuePlan(p.interval)
+                            ? "bg-blue-600"
+                            : ""
+                      }`}
+                    >
+                      {badgeText}
+                    </div>
+                  )}
 
-              <h4
-                className={`text-sm font-bold uppercase ${p.highlight ? "text-blue-600" : "text-slate-500 dark:text-slate-400"}`}
-              >
-                {p.name.replace(" Pro", "").replace("Tier", "")}
-              </h4>
+                  <h4
+                    className={`text-sm font-bold uppercase ${p.highlight ? "text-blue-600" : "text-slate-500 dark:text-slate-400"}`}
+                  >
+                    {p.name.replace(" Pro", "").replace("Tier", "")}
+                  </h4>
 
-              <p className="mt-4 text-3xl font-bold text-slate-900 dark:text-white leading-tight">
-                {getPriceDisplay(p).priceINR} + GST
-                {/* INR DISPLAY  */}
-                {p.interval === "LIFETIME" ? (
-                  <span className="block text-sm font-medium text-slate-500 mt-1">
-                    {period}
-                  </span>
-                ) : (
-                  p.amountUSD > 0 && (
-                    <span className="text-sm font-medium text-slate-700 ml-1">
-                      {period}
-                    </span>
-                  )
-                )}
-                <span className="block text-sm font-medium text-slate-400 dark:text-slate-500 mt-2">
-                  or {price}
-                  {period === "one-time" && " "} {period}
-                </span>
-              </p>
-
-              <div className="flex-grow mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
-                <ul className="space-y-3 text-sm text-left">
-                  {p.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <CheckCircle
-                        className="text-blue-600 shrink-0 mt-0.5"
-                        size={16}
-                      />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        {f}
+                  <p className="mt-4 text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                    {getPriceDisplay(p).priceINR} + GST
+                    {p.interval === "LIFETIME" ? (
+                      <span className="block text-sm font-medium text-slate-500 mt-1">
+                        {period}
                       </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {session?.data?.user &&
-                (user?.userType === "COACH" ||
-                  user?.userType === "SOLOPRENEUR" ||
-                  user?.role === "ADMIN") && (
-                  // Eligible CTA
-                  <ComingSoonWrapper>
-                    {/* <NavLink href="/dashboard/subscription"> */}
-                    <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
-                      Get Started for FREE Now
-                    </button>
-                    {/* </NavLink> */}
-                  </ComingSoonWrapper>
-                )}
-              {!session.data?.user && (
-                // Not logged in CTA
-                <NavLink href="/signin?callbackUrl=/pricing">
-                  <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
-                    Get Started for FREE Now
-                  </button>
-                </NavLink>
-              )}
-              {session.data?.user && user?.userType === "ENTHUSIAST" && (
-                // Not Eligible CTA
-                <button
-                  onClick={() =>
-                    toast.warning(
-                      "You are not eligible for this plan because you are a self growth enthusiast"
-                    )
-                  }
-                  className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-gray-300 text-gray-600 "
-                >
-                  Not eligible for this plan
-                </button>
-              )}
+                    ) : (
+                      p.amountUSD > 0 && (
+                        <span className="text-sm font-medium text-slate-700 ml-1">
+                          {period}
+                        </span>
+                      )
+                    )}
+                    <span className="block text-sm font-medium text-slate-400 dark:text-slate-500 mt-2">
+                      or {price} {period === "one-time" && " "} {period}
+                    </span>
+                  </p>
 
-              {/* <NavLink href="/dashboard/subscription">
-                <button
-                  className={`mt-8 w-full py-3 rounded-xl text-sm font-bold transition-colors ${"bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20"}`}
-                >
-                  Get Started for FREE Now
-                </button>
-              </NavLink> */}
-            </div>
-          );
-        })}
+                  <div className="flex-grow mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <ul className="space-y-3 text-sm text-left">
+                      {p.features.map((f, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <CheckCircle
+                            className="text-blue-600 shrink-0 mt-0.5"
+                            size={16}
+                          />
+                          <span className="text-slate-600 dark:text-slate-300">
+                            {f}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {session?.data?.user &&
+                    (user?.userType === "COACH" ||
+                      user?.userType === "SOLOPRENEUR" ||
+                      user?.role === "ADMIN") && (
+                      <button
+                        onClick={() => {
+                          const level = getPlanLevel(p.interval);
+                          // Only push if it's NOT the current plan AND NOT a blocked downgrade
+                          if (
+                            level !== 0 &&
+                            !(
+                              level === -1 &&
+                              userPriority === PLAN_PRIORITY.LIFETIME
+                            )
+                          ) {
+                            router.push(
+                              `/dashboard/membership/checkout?context=SUBSCRIPTION&plan=${p.id}`,
+                            );
+                          }
+                        }}
+                        // ✅ Disable if it's the current plan OR if it's a blocked downgrade
+                        disabled={
+                          getPlanLevel(p.interval) === -1 &&
+                          userPriority === PLAN_PRIORITY.LIFETIME
+                        }
+                        className={`mt-8 w-full py-3 rounded-xl text-sm font-bold text-white transition-all 
+      ${
+        getPlanLevel(p.interval) === -1 &&
+        userPriority === PLAN_PRIORITY.LIFETIME
+          ? "bg-gray-400 cursor-not-allowed pointer-events-none"
+          : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+      }`}
+                      >
+                        {getPlanLevel(p.interval) === -1
+                          ? "Switch to Lower Plan"
+                          : getPlanLevel(p.interval) === 0
+                            ? "Current Plan"
+                            : "Switch to Higher Plan"}
+                      </button>
+                    )}
+
+                  {!session.data?.user && (
+                    <NavLink href="/signin?callbackUrl=/pricing">
+                      <button className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+                        {p.interval === "FREE"
+                          ? "Get Started for FREE Now"
+                          : "Buy Now"}
+                      </button>
+                    </NavLink>
+                  )}
+
+                  {session.data?.user && user?.userType === "ENTHUSIAST" && (
+                    <button
+                      onClick={() =>
+                        toast.warning(
+                          "You are not eligible for this plan because you are a self growth enthusiast",
+                        )
+                      }
+                      className="mt-8 w-full py-3 rounded-xl text-sm font-bold bg-gray-300 text-gray-600"
+                    >
+                      Not eligible for this plan
+                    </button>
+                  )}
+                </div>
+              );
+            })}
       </div>
     </div>
   );
@@ -278,7 +380,7 @@ export default function PricingPage() {
             {user &&
               (user.role === "ADMIN" || user?.userType == "ENTHUSIAST") && (
                 // <Link href={`/dashboard/membership/checkout?plan=${enthusiastPlan.id}`}>
-                <Link href={`/MTB-2026-the-complete-makeover-program`}>
+                <Link href={`/dashboard/membership/checkout?context=SUBSCRIPTION&plan=${p.id}`}>
                   <button className="mt-6 w-full py-2 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 shadow-lg shadow-green-600/20">
                     Start Annual Membership
                   </button>
@@ -300,7 +402,7 @@ export default function PricingPage() {
                 <button
                   onClick={() => {
                     toast.warning(
-                      `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`
+                      `You are a ${user?.userType}. Please purchase the COACH/SOLOPRENEUR subscriptions.`,
                     );
                   }}
                   className="mt-6 w-full py-3 rounded-xl bg-gray-300 text-gray-700 text-sm font-bold cursor-not-allowed"
@@ -345,6 +447,14 @@ export default function PricingPage() {
     );
   };
 
+  const getPlanLevel = (planInterval: PlanInterval) => {
+    if (session.status !== "authenticated") return 1;
+    if (PLAN_PRIORITY[planInterval] < userPriority) return -1;
+    else if (PLAN_PRIORITY[planInterval] === userPriority) return 0;
+    else return 1;
+  };
+
+  const router = useRouter();
   return (
     <>
       <Head>

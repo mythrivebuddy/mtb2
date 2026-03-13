@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import ChallengeDetailView from "../ChallengeDetailView";
 import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
 
+
 export type EnrollmentWithTasks = ChallengeEnrollment & {
   userTasks: UserChallengeTask[];
 };

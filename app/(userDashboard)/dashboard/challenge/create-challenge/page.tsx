@@ -8,31 +8,18 @@ import {
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { challengeSchema, challengeSchemaFormType } from "@/schema/zodSchema";
-import {
-  PlusCircle,
-  X,
-  Calendar as CalendarIcon,
-  AlertTriangle,
-} from "lucide-react";
+import { PlusCircle, X, Calendar as CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { getJpAmountForActivity } from "@/lib/utils/jpAmount";
 import { ActivityType } from "@prisma/client";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  // DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Editor } from "@tinymce/tinymce-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import UpgradeMessageModal from "@/components/common/UpgradeMessageModal";
 
 // --- Helper function to generate a URL-friendly slug from a title ---
 const generateSlug = (title: string) => {
@@ -47,52 +34,7 @@ const generateSlug = (title: string) => {
 
 type CreateChallengeProps = {
   onSuccess?: () => void;
-};
-
-// --- A reusable modal component for displaying messages ---
-const MessageModal = ({
-  isOpen,
-  onClose,
-  title,
-  message,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-}) => {
-  const router = useRouter();
-  if (!isOpen) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md ">
-        <DialogHeader className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-            <AlertTriangle className="h-8 w-8 text-red-600" />
-          </div>
-          <DialogTitle className="text-2xl font-bold text-slate-800">
-            {title}
-          </DialogTitle>
-          <DialogDescription className="text-md text-slate-600 mt-2">
-            {message}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="!flex !flex-col gap-2">
-          <Button onClick={onClose} className="bg-red-600  hover:bg-red-700 ">
-            Continue with Free Plan
-          </Button>
-          <Button
-            onClick={() => router.push(`/dashboard/subscription`)}
-            className="bg-green-700 hover:bg-green-800"
-          >
-            Upgrade Now
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+  canIssueCertificate?: boolean;
 };
 
 // --- Type definitions ---
@@ -123,7 +65,9 @@ const formatDateForInput = (date: Date | null | undefined): string => {
   return date.toISOString().split("T")[0];
 };
 
-export default function CreateChallenge({}: CreateChallengeProps) {
+export default function CreateChallenge({
+  canIssueCertificate,
+}: CreateChallengeProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [modalContent, setModalContent] = useState<{
@@ -169,6 +113,9 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       description: "",
       mode: "PUBLIC",
       tasks: [{ description: "" }],
+      challengeType: "FREE",
+      challengeJoiningFee: undefined,
+      challengeJoiningFeeCurrency: "INR",
       cost: 50,
       reward: 50,
       penalty: 0,
@@ -177,9 +124,10 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       social_link_task: "",
     },
   });
- 
+
   const startDate = watch("startDate");
   const endDate = watch("endDate");
+  const challengeType = watch("challengeType");
 
   const { fields, append, remove } = useFieldArray({ name: "tasks", control });
 
@@ -200,7 +148,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
         toast.success(data.data?.message || "Challenge created successfully");
         queryClient.invalidateQueries({ queryKey: ["getAllChallenges"] });
         router.push(
-          `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`
+          `/dashboard/challenge/let-others-roll?slug=${slug}&uuid=${challengeId}`,
         );
       } else {
         setModalContent({
@@ -211,27 +159,33 @@ export default function CreateChallenge({}: CreateChallengeProps) {
       }
     },
     onError: (error) => {
-  let message = "Something went wrong. Please try again.";
+      let message = "Something went wrong. Please try again.";
 
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
-
-    if (typeof data === "string") {
-      message = data;
-    } else if (typeof data?.message === "string") {
-      message = data.message;
-    } else if (typeof error.message === "string") {
-      message = error.message;
-    }
-  } else if (error instanceof Error) {
-    message = error.message;
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data;
+        const status = Number(error.response?.status ?? 0);
+          if (status == 400) {
+    toast.error(message);
+    return;
   }
+        if (typeof data === "string") {
+          message = data;
+        } else if (typeof data?.message === "string") {
+          message = data.message;
+        } else if (typeof error.message === "string") {
+          message = error.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+     
 
-  setModalContent({
-    title: "Challenge Creation Failed",
-    message,
-  });
-},
+
+      setModalContent({
+        title: "Challenge Creation Failed",
+        message,
+      });
+    },
   });
 
   const onSubmit: SubmitHandler<challengeSchemaFormType> = (data) => {
@@ -246,7 +200,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
     if (user && user.jpBalance < challengeCreationFee) {
       setModalContent({
         title: "Insufficient Balance",
-        message: `You need ${challengeCreationFee} JP to create a challenge, but you only have ${user.jpBalance} JP.`,
+        message: `You need ${challengeCreationFee} GP to create a challenge, but you only have ${user.jpBalance} GP.`,
       });
       return;
     }
@@ -271,8 +225,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
 
     setIsShowingCertificateToggle(diffInDays >= 5);
   }, [startDate, endDate]);
-
-  
 
   if (isUserLoading || isFeeLoading) {
     return (
@@ -299,10 +251,10 @@ export default function CreateChallenge({}: CreateChallengeProps) {
           <div className="mb-8 text-center">
             <div className="mb-4 flex flex-col items-center justify-center gap-2 sm:flex-row sm:justify-end sm:gap-4">
               <div className="rounded-lg bg-blue-100 px-4 py-2 font-bold text-blue-800 shadow-md">
-                Creation Fee: {challengeCreationFee ?? "..."} JP
+                Creation Fee: {challengeCreationFee ?? "..."} GP
               </div>
               <div className="rounded-lg bg-purple-100 px-4 py-2 font-bold text-purple-800 shadow-md">
-                Your JP Balance: {user?.jpBalance ?? "N/A"}
+                Your GP Balance: {user?.jpBalance ?? "N/A"}
               </div>
             </div>
             <h1 className="text-3xl font-extrabold text-slate-800 md:text-4xl">
@@ -345,7 +297,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                   htmlFor="cost"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
-                  Cost (JP)
+                  Cost (GP)
                 </label>
                 <input
                   id="cost"
@@ -367,7 +319,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                   htmlFor="reward"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
-                  Reward (JP)
+                  Reward (GP)
                 </label>
                 <input
                   id="reward"
@@ -554,6 +506,104 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </div>
             </div>
 
+            {/* Challenge Type */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Challenge Type
+              </label>
+
+              <div className="flex gap-6">
+                <label className=" flex cursor-pointer items-start gap-2">
+                  <input
+                    type="radio"
+                    value="FREE"
+                    {...register("challengeType")}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <p className=" text-slate-700">Free Challenge</p>
+                    <p className="text-xs text-slate-500">
+                      Anyone can join without paying fee
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="radio"
+                    value="PAID"
+                    {...register("challengeType")}
+                    className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
+                  />
+                  <div>
+                    <p className=" text-slate-700">Paid Challenge</p>
+                    <p className="text-xs text-slate-500">
+                      Users must pay fee to join
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+            {challengeType === "PAID" && (
+              <div className="mt-4 flex gap-4 items-center">
+                {/* Fee */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Challenge Joining Fee
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Enter joining fee"
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    {...register("challengeJoiningFee", {
+                      valueAsNumber: true,
+                    })}
+                  />
+                  {errors.challengeJoiningFee && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.challengeJoiningFee.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Currency */}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Fee Currency
+                  </label>
+
+                  <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="INR"
+                        {...register("challengeJoiningFeeCurrency")}
+                        className="h-4 w-4 text-purple-600"
+                      />
+                      <span>INR (₹)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="USD"
+                        {...register("challengeJoiningFeeCurrency")}
+                        className="h-4 w-4 text-purple-600"
+                      />
+                      <span>USD ($)</span>
+                    </label>
+                  </div>
+
+                  {errors.challengeJoiningFeeCurrency && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.challengeJoiningFeeCurrency.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -593,7 +643,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                   htmlFor="penalty"
                   className="mb-1 block text-sm font-medium text-slate-700"
                 >
-                  Penalty (JP)
+                  Penalty (GP)
                 </label>
                 <input
                   id="penalty"
@@ -699,7 +749,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </p>
             </div>
 
-            {isShowingCertificateToggle && (
+            {isShowingCertificateToggle && canIssueCertificate && (
               <div className="flex gap-4 items-center">
                 <Label
                   htmlFor="multiple"
@@ -721,7 +771,6 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               </div>
             )}
 
-
             <div className="mt-8 flex flex-col-reverse gap-4 pt-6 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -738,7 +787,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
                 {mutation.isPending ? "Creating..." : "Create Challenge"}
               </button>
             </div>
-            <MessageModal
+            <UpgradeMessageModal
               isOpen={!!modalContent}
               onClose={() => {
                 setModalContent(null);
@@ -751,6 +800,7 @@ export default function CreateChallenge({}: CreateChallengeProps) {
               }}
               title={modalContent?.title ?? ""}
               message={modalContent?.message ?? ""}
+              redirectToPricingUrl={`/pricing?ref=create-challenge`}
             />
           </form>
         </div>

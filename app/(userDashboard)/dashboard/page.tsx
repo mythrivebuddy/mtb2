@@ -87,9 +87,9 @@ export default function DashboardPage() {
         {/* Main Dashboard Content */}
         <div className="flex-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
-            <JPCard value={userData?.jpEarned || 0} label="Total JP Earned" />
-            <JPCard value={userData?.jpSpent || 0} label="Total JP Spent" />
-            <JPCard value={userData?.jpBalance || 0} label="JP Balance" />
+            <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
+            <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
+            <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
           </div>
           {session?.user.userType === "ENTHUSIAST" ? (
           <div className=""></div>

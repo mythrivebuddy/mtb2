@@ -3,6 +3,10 @@ import { BuddyLensReviewStatus, Prisma } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authConfig } from "../../auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
+import { checkFeature } from "@/lib/access-control/checkFeature";
+import { checkRole } from "@/lib/utils/auth";
+import { LimitType, UNLIMITED } from "@/lib/access-control/featureConfig";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 
 // Helper to return error response
 
@@ -20,10 +24,6 @@ function errorResponse(message: string, status: number = 400) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log(
-      "body ---------------------------------- -------------- -----",
-      body
-    );
     const {
       requesterId,
       reviewerId,
@@ -34,11 +34,7 @@ export async function POST(req: NextRequest) {
       jpCost,
       // expiresAt,
     } = body;
-    console.log(
-      "reviewerId -----------------------------------------",
-      reviewerId
-    );
-
+  
     if (
       !requesterId ||
       !socialMediaUrl ||
@@ -60,6 +56,72 @@ export async function POST(req: NextRequest) {
     // }
 
     // Validate requesterId exists and has USER role
+    const session = await checkRole("USER");
+    const featureCheck = checkFeature({
+      feature: "buddyLens",
+      user: {
+        userType: session.user.userType,   // COACH / ENTHUSIAST
+        membership: session.user.membership, // FREE / PAID
+      },
+    });
+
+    if (!featureCheck.allowed) {
+      return errorResponse("BuddyLens access not allowed", 403);
+    }
+    const {
+      requestLimitType,
+      requestLimit,
+      // earnJPPerReview,
+    } = featureCheck.config as {
+      requestLimitType: LimitType;
+      requestLimit: number;
+      // earnJPPerReview: number;
+    };
+    if (requestLimit !== UNLIMITED) {
+      const now = new Date();
+
+      let dateFilter: Prisma.BuddyLensRequestWhereInput = {};
+
+      if (requestLimitType === "MONTHLY") {
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          },
+        };
+      }
+
+      if (requestLimitType === "YEARLY") {
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getFullYear(), 0, 1),
+          },
+        };
+      }
+
+      // LIFETIME → no date filter
+
+      const usedCount = await prisma.buddyLensRequest.count({
+        where: {
+          requesterId,
+          ...dateFilter,
+          isDeleted: false,
+        },
+      });
+
+      const limitResponse = await enforceLimitResponse({
+        limit: requestLimit,
+        currentCount: usedCount,
+        message: `You have reached your ${requestLimit} ${requestLimitType.toLowerCase()} BuddyLens limit.`,
+
+        statusCode: 403,
+      });
+
+      if (limitResponse) {
+        return limitResponse;
+      }
+    }
+
+
     const requester = await prisma.user.findUnique({
       where: { id: requesterId },
       select: {
@@ -71,22 +133,16 @@ export async function POST(req: NextRequest) {
       }, // Include jpBalance
     });
     if (!requester) {
-      console.log("Requester not found");
       return errorResponse("Invalid requester ID", 400);
     }
     if (requester.role !== "USER") {
       return errorResponse("Requester must have USER role", 403);
     }
-    console.log("Requester validated:", {
-      id: requester.id,
-      email: requester.email,
-    });
-
+    
     // Validate if the requester has enough Joy Pearls to set for the review
     if (requester.jpBalance < jpCost) {
-      console.log("insufficeint JP for requesta");
       return errorResponse(
-        "Insufficient Joy Pearls to create the request",
+        "Insufficient Growth Points to create the request",
         400
       );
     }
@@ -125,12 +181,6 @@ export async function POST(req: NextRequest) {
         select: { id: true, email: true, name: true },
       });
 
-      // Log reviewers for debugging
-      console.log(
-        "Reviewers queried:",
-        reviewers.map((r) => ({ id: r.id, email: r.email, name: r.name }))
-      );
-
       // Triple-check requester is not in reviewers
       const filteredReviewers = reviewers.filter((r) => r.id !== requesterId);
       if (filteredReviewers.length !== reviewers.length) {
@@ -140,7 +190,6 @@ export async function POST(req: NextRequest) {
         );
       }
       if (filteredReviewers.some((r) => r.id === requesterId)) {
-        console.error("Requester still in filtered reviewers:", requesterId);
         return errorResponse(
           "Internal error: Requester included in reviewers",
           500
@@ -159,18 +208,10 @@ export async function POST(req: NextRequest) {
         await prisma.userNotification.createMany({
           data: notifications,
         });
-        console.log(
-          "Notifications created for",
-          notifications.length,
-          "reviewers"
-        );
-      } else {
-        console.log("No other USER role users found to notify");
-      }
+      } 
 
       return request;
     });
-    console.log("Request created: --------------------------", newRequest);
 
     return NextResponse.json(
       { message: "Request created successfully", data: newRequest },
@@ -224,7 +265,6 @@ export async function GET(req: NextRequest) {
         return errorResponse("Request not found", 404);
       }
 
-      console.log("single request", request);
       return NextResponse.json(request, { status: 200 });
     } else {
       const requests = await prisma.buddyLensRequest.findMany({
@@ -263,8 +303,6 @@ export async function GET(req: NextRequest) {
           // transaction: true, //! deepak chnges
         },
       });
-      console.log("UserId", UserId);
-      console.log("Requests fetched: ", requests);
 
       return NextResponse.json(requests, { status: 200 });
     }

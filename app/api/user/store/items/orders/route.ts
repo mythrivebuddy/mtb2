@@ -10,7 +10,7 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Get user's internal ID from Clerk's external ID
+    // Get user's internal ID from session
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { id: true },
@@ -43,20 +43,25 @@ export async function GET() {
       orders: orders.map((order) => ({
         id: order.id,
         totalAmount: order.totalAmount,
+        currency: order.currency, // ✅ Order's payment currency
         status: order.status,
         createdAt: order.createdAt,
         items: order.items.map((orderItem) => ({
           id: orderItem.id,
           quantity: orderItem.quantity,
-          priceAtPurchase: orderItem.priceAtPurchase,
+          priceAtPurchase: orderItem.priceAtPurchase, // ✅ Converted price
+          originalPrice: orderItem.originalPrice, // ✅ Original price before conversion
+          originalCurrency: orderItem.originalCurrency, // ✅ Original currency
           item: {
             id: orderItem.item.id,
             name: orderItem.item.name,
             imageUrl: orderItem.item.imageUrl,
             basePrice: orderItem.item.basePrice,
             monthlyPrice: orderItem.item.monthlyPrice,
+            downloadUrl: orderItem.item.downloadUrl,
             yearlyPrice: orderItem.item.yearlyPrice,
             lifetimePrice: orderItem.item.lifetimePrice,
+            currency: orderItem.item.currency, // ✅ Item's native currency
             category: orderItem.item.category,
           },
         })),

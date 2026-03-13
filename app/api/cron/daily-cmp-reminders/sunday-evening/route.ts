@@ -1,8 +1,9 @@
 // /api/cron/daily-cmp-reminders/sunday-evening with get
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfWeek, getISTStartOfWeek } from "@/lib/utils/dateUtils";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { NotificationType } from "@prisma/client";
 
 export async function GET() {
   const weekStart = getISTStartOfWeek();
@@ -14,7 +15,11 @@ export async function GET() {
   });
 
   let sent = 0;
-  const { title, description, url } = CMP_NOTIFICATIONS.SUNDAY_EVENING_PENDING
+
+  const notification = await getCMPNotification(
+    NotificationType.CMP_SUNDAY_EVENING_PENDING
+  );
+  if (!notification) return Response.json({ message: "no_notification_template for sunday evening pending" });
   for (const { userId } of users) {
     const completed = await prisma.sundayProgressLog.findFirst({
       where: {
@@ -34,10 +39,10 @@ export async function GET() {
 
     await sendPushNotificationToUser(
       userId,
-      title,
-      description,
+      notification.title,
+      notification.description,
       {
-        url,
+        url: notification.url,
       }
     );
 

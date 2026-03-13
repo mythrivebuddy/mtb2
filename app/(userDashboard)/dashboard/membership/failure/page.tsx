@@ -2,12 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  AlertCircle,
-  RefreshCcw,
-  ArrowLeft,
-  Hash,
-} from "lucide-react";
+import { AlertCircle, RefreshCcw, ArrowLeft, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSearchParams } from "next/navigation";
@@ -16,38 +11,57 @@ import { Separator } from "@/components/ui/separator";
 export default function FailurePage() {
   const searchParams = useSearchParams();
 
-  const typeParam = searchParams.get("type"); // "lifetime" or "mandate"
+  const typeParam = searchParams.get("type");
   const orderId = searchParams.get("orderId");
   const subId = searchParams.get("sub_id");
   const reason =
     searchParams.get("reason") ||
     "Cashfree did not return error details. User did not complete the payment.";
 
-  // -----------------------------------------------------------------------
-  // 1. Determine *correct* payment type (MANDATE or LIFETIME)
-  // -----------------------------------------------------------------------
+  const heading =
+    typeParam === "subscription"
+      ? "Mandate Failed"
+      : typeParam === "challenge"
+        ? "Challenge Payment Failed"
+        : typeParam === "mmp_program"
+          ? "Program Purchase Failed"
+          : typeParam === "store_product"
+            ? "Product Purchase Failed"
+            : "Payment Failed";
 
-  let isLifetime = false;
+  const description =
+    typeParam === "subscription"
+      ? "We couldn't create your automatic recurring payment mandate. No amount has been charged."
+      : typeParam === "challenge"
+        ? "Your payment for enrolling in the challenge could not be completed."
+        : typeParam === "mmp_program"
+          ? "Your purchase of this Mini Mastery Program could not be completed."
+          : typeParam === "store_product"
+            ? "Your product purchase could not be completed."
+            : "Your payment could not be completed.";
 
-  if (typeParam === "lifetime") isLifetime = true;
-  else if (typeParam === "mandate") isLifetime = false;
-  else if (orderId && !subId) isLifetime = true; // If orderId exists, it's lifetime
-  else if (subId) isLifetime = false; // If subId exists, it's mandate
-  else isLifetime = true; // Default fallback = lifetime (safer)
+  const reference = typeParam === "subscription" ? subId : orderId;
+  const challengeId = searchParams.get("challengeId");
+  const programId = searchParams.get("mmp_programId");
+  const storeOrderId = searchParams.get("storeOrderId");
 
-  // -----------------------------------------------------------------------
-  // 2. Labels
-  // -----------------------------------------------------------------------
+  const retryUrl =
+    typeParam === "challenge"
+      ? challengeId
+        ? `/dashboard/membership/checkout?context=CHALLENGE&challengeId=${challengeId}`
+        : "/dashboard/challenge"
+      : typeParam === "mmp_program"
+        ? programId
+          ? `/dashboard/membership/checkout?context=MMP_PROGRAM&mmp_programId=${programId}`
+          : "/dashboard/mini-mastery-programs"
+        : typeParam === "store_product"
+          ? storeOrderId
+            ? `/dashboard/store/product/${storeOrderId}`
+            : "/dashboard/store"
+          : "/pricing";
 
-  const heading = isLifetime ? "Payment Failed" : "Mandate Failed";
-
-  const description = isLifetime
-    ? "Your one-time payment could not be completed."
-    : "We couldn't set up your recurring payment mandate.";
-
-  const reference = isLifetime ? orderId : subId;
-
-  const referenceLabel = isLifetime ? "Order ID" : "Subscription ID";
+  const referenceLabel =
+    typeParam === "subscription" ? "Subscription ID" : "Order ID";
 
   // -----------------------------------------------------------------------
   // 3. Render UI
@@ -104,18 +118,19 @@ export default function FailurePage() {
               asChild
               className="w-full bg-slate-900 hover:bg-slate-800 h-12"
             >
-              <Link href="/pricing">
+              <Link href={retryUrl}>
                 <RefreshCcw className="mr-2 w-4 h-4" /> Try Again
               </Link>
             </Button>
 
-          <div className="grid grid-cols-1 gap-3">
-
-              <Button asChild variant="outline" className="text-sm">
-                <Link href="/pricing">
-                  <ArrowLeft className="mr-2 w-4 h-4" /> Back to Plans
-                </Link>
-              </Button>
+            <div className="grid grid-cols-1 gap-3">
+              {!(typeParam == "challenge" || typeParam == "store_product" || typeParam === "mmp_program") && (
+                <Button asChild variant="outline" className="text-sm">
+                  <Link href="/pricing">
+                    <ArrowLeft className="mr-2 w-4 h-4" /> Back to Plans
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>

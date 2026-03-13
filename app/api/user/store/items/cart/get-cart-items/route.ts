@@ -13,12 +13,21 @@ export async function GET(): Promise<NextResponse> {
 
     const cartItems = await prisma?.cart.findMany({
       where: { userId: session.user.id },
-      include: { item: true },
+      include: {
+        item: {
+          include: {
+            category: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json({ cart: cartItems }, { status: 200 });
   } catch (error) {
     console.error("Error fetching cart:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

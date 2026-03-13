@@ -15,6 +15,8 @@ export const RESERVED_PUBLIC_ROUTES = [
 export const MAKEOVER_PROGRAM_QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 export const CURRENT_MAKEOVER_PROGRAM_QUARTER = 'Q1';
 
+export const  GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
 export const CMP_NOTIFICATIONS = {
   /* =====================================================
      1️⃣ DAILY REMINDERS (MON–SAT)
@@ -93,7 +95,7 @@ export const CMP_NOTIFICATIONS = {
   ===================================================== */
 
   LEVEL_UP: {
-    title: "🏅 You reached Level {{levelId}} - {{levelName}}",
+    title: "🏅 You reached Level {{levelNumber}} - {{levelName}}",
     description:
       "Your consistency is paying off.",
     url: "/dashboard/complete-makeover-program/makeover-dashboard",
@@ -104,7 +106,7 @@ export const CMP_NOTIFICATIONS = {
   ===================================================== */
 
   GOA_PROGRESS_MILESTONE: {
-    title: "🌴 You’re making real progress",
+    title: "🌴 You’re {{goaProgressMilestone}}% on your Goa Journey",
     description:
       "You’re closer to the Goa journey than you think.",
     url: "/dashboard/complete-makeover-program/makeover-dashboard",

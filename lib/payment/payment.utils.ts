@@ -75,15 +75,21 @@ export function extractMandateFailureReason(data: unknown): string {
 };
 
 // helper to calculate discount 
-export function calculateDiscount(baseAmount: number, coupon: CouponLike | null): number {
+export function calculateDiscount(baseAmount: number, coupon: CouponLike | null,currency:"INR"|"USD"): number {
   if (!coupon) return 0;
 
   switch (coupon.type) {
     case "PERCENTAGE":
       return (baseAmount * (coupon.discountPercentage || 0)) / 100;
 
-    case "FIXED":
-      return coupon.discountAmount || 0;
+          case "FIXED": {
+      const fixedAmount =
+        currency === "INR"
+          ? coupon.discountAmountINR ?? 0
+          : coupon.discountAmountUSD ?? 0;
+
+      return Math.min(baseAmount, fixedAmount);
+    }
 
     case "FREE_DURATION": // Treat free duration as 100% off for lifetime if applicable, or logic specific to you
     case "FULL_DISCOUNT":
@@ -154,7 +160,7 @@ export async function handleSuccessfulPayment(
     console.error("❌ PaymentOrder not found:", paymentOrderId);
     return;
   }
-console.log("Success payment transaction begins");
+
 
   await prisma.$transaction(async (tx) => {
     /**
@@ -187,7 +193,7 @@ console.log("Success payment transaction begins");
     const startDate = new Date();
     const endDate = new Date(startDate);
 
-    switch (paymentOrder.plan.interval) {
+    switch (paymentOrder?.plan?.interval) {
       case PlanInterval.MONTHLY:
         endDate.setMonth(endDate.getMonth() + 1);
         break;
@@ -210,7 +216,7 @@ console.log("Success payment transaction begins");
     await tx.subscription.create({
       data: {
         userId: paymentOrder.userId,
-        planId: paymentOrder.planId,
+        planId: paymentOrder.planId!,
         status: SubscriptionStatus.ACTIVE,
         startDate,
         endDate,
@@ -228,7 +234,7 @@ console.log("Success payment transaction begins");
         data: {
           couponId: paymentOrder.couponId,
           userId: paymentOrder.userId,
-          appliedPlan: paymentOrder.planId,
+          appliedPlan: paymentOrder.planId!,
           discountApplied: paymentOrder.discountApplied
         }
       });
@@ -252,7 +258,7 @@ console.log("Success payment transaction begins");
 
 
 export async function handleFailedPayment(paymentOrderId: string) {
-  console.log("Failed payment transaction begins");
+  
   await prisma.paymentOrder.updateMany({
     where: {
       id: paymentOrderId,
@@ -264,3 +270,21 @@ export async function handleFailedPayment(paymentOrderId: string) {
   });
 }
 
+
+
+export async function convertCurrency(
+  amount: number,
+  from: "INR" | "USD",
+  to: "INR" | "USD"
+): Promise<number> {
+
+  if (from === to) return amount;
+
+  const res = await fetch(
+    `https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`
+  );
+
+  const data = await res.json();
+
+  return Math.round(data.rates[to] * 100) / 100;
+}

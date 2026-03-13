@@ -237,19 +237,31 @@ export default function Navbar() {
             Pricing
           </NavLink>
           <NavLink
+            href="/MTB-2026-the-complete-makeover-program"
+            className="hover:text-brand text-sm font-medium"
+          >
+            Makeover Program 2026
+          </NavLink>
+          <NavLink
             href="/dashboard/challenge"
             className="hover:text-brand text-sm font-medium"
           >
             Challenges
           </NavLink>
           <NavLink
-            href="/MTB-2026-the-complete-makeover-program"
+            href="/dashboard/mini-mastery-programs"
             className="hover:text-brand text-sm font-medium"
           >
-            Makeover Program 2026
+            Mini Mastery Program
+          </NavLink>
+          <NavLink
+            href="/dashboard/store"
+            className="hover:text-brand text-sm font-medium"
+          >
+            Growth Store
           </NavLink>
           {/* <NavLink href="/survey">Survey</NavLink> */}
-          <NavLink
+          {/* <NavLink
             href="/discovery-calls"
             className="hover:text-brand text-sm font-medium"
           >
@@ -260,7 +272,7 @@ export default function Navbar() {
             className="hover:text-brand text-sm font-medium"
           >
             Live Webinars
-          </NavLink>
+          </NavLink> */}
           {/* <NavLink href="/blog">Blog</NavLink> */}
           {/* <NavLink href="/contact">Contact Us</NavLink> */}
           {/* <NavLink href="/about-us">About Us</NavLink> */}
@@ -331,7 +343,6 @@ export default function Navbar() {
       {isMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-white mt-0 p-4 rounded-lg shadow-lg x1260:hidden z-50">
           <div className="flex flex-col space-y-4">
-            {session && <NavLink href="/dashboard">Dashboard</NavLink>}
             <NavLink href="/pricing">Pricing</NavLink>
               <NavLink
             href="/MTB-2026-the-complete-makeover-program"
@@ -340,10 +351,21 @@ export default function Navbar() {
             Makeover Program 2026
           </NavLink>
             <NavLink href="/dashboard/challenge">Challenges</NavLink>
+            <NavLink
+            href="/dashboard/mini-mastery-programs"
+          >
+            Mini Mastery Program
+          </NavLink>
+          <NavLink
+            href="/dashboard/store"
+          >
+            Growth Store
+          </NavLink>
+          {session && <NavLink href="/dashboard">Dashboard</NavLink>}
             {/* // Todo will add links on discovey calls and live webinars */}
-            <NavLink href="/discovery-calls">Discovery Calls</NavLink>
+            {/* <NavLink href="/discovery-calls">Discovery Calls</NavLink>
             <NavLink href="/live-webinars">Live Webinars</NavLink>
-            <NavLink href="/blog">Blog</NavLink>
+            <NavLink href="/blog">Blog</NavLink> */}
             {/* <NavLink href="/contact">Contact Us</NavLink> */}
             {/* <NavLink href="/about-us">About Us</NavLink> */}
             {session ? (

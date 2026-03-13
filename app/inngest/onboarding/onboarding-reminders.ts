@@ -1,6 +1,8 @@
 import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { NotificationType } from "@prisma/client";
 
 
 export const onboardingReminder = inngest.createFunction(
@@ -31,9 +33,14 @@ export const onboardingReminder = inngest.createFunction(
         });
 
         if (hasProgress) return;
+        const notification = await getCMPNotification(
+            NotificationType.CMP_ONBOARDING_PENDING
+        );
 
-        await sendPushNotificationToUser(userId, "Start with today’s card", "CMP works one day at a time.",
-            { url: "/dashboard/complete-makeover-program/todays-actions" }
+        if (!notification) return;
+
+        await sendPushNotificationToUser(userId, notification.title, notification.description,
+            { url: notification.url }
         );
     }
 );

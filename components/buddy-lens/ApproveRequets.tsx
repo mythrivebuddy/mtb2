@@ -196,7 +196,7 @@ export default function BuddyLensApprovePage() {
                 <strong>Tier:</strong> {request.request.tier}
               </p>
               <p>
-                <strong>Reward:</strong> {request.request.jpCost} JoyPearls
+                <strong>Reward:</strong> {request.request.jpCost} Growth Points
               </p>
 
               <p className="flex items-center gap-1">

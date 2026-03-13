@@ -14,7 +14,7 @@ const baseSignupSchema = z.object({
     .min(PASS_LENGTH, "Confirm Password must be at least 8 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   referralCode: z.string().optional(),
-   userType: z.enum(["enthusiast", "coach"], {
+  userType: z.enum(["enthusiast", "coach"], {
     required_error: "Kindly select one user type",
   }),
 });
@@ -30,7 +30,7 @@ export const signupSchema = baseSignupSchema.refine(
 
 // Signin Schema (omit name and confirmPassword from the signup schema)
 export const signinSchema = baseSignupSchema
-  .omit({ name: true, confirmPassword: true,userType: true })
+  .omit({ name: true, confirmPassword: true, userType: true })
   .extend({
     rememberMe: z.boolean().default(false),
   });
@@ -130,6 +130,13 @@ export const challengeSchema = z
     title: z.string().min(1, "Title is required"),
     description: z.string().min(1, "Description is required"),
     mode: z.nativeEnum(ChallengeMode),
+    challengeType: z.enum(["FREE", "PAID"]).default("FREE"),
+
+    challengeJoiningFee: z.preprocess(
+      (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
+      z.number().min(1).optional()
+    ),
+    challengeJoiningFeeCurrency: z.enum(["INR", "USD"]).optional(),
     cost: z.number(),
     reward: z.number(),
     penalty: z.number(),
@@ -165,7 +172,25 @@ export const challengeSchema = z
   .refine((data) => data.endDate > data.startDate, {
     message: "End date must be after the start date.",
     path: ["endDate"],
-  });
+  }).superRefine((data, ctx) => {
+  if (data.challengeType === "PAID") {
+    if (typeof data.challengeJoiningFee !== "number") {
+      ctx.addIssue({
+        path: ["challengeJoiningFee"],
+        message: "Fee is required for paid challenges",
+        code: z.ZodIssueCode.custom,
+      });
+    }
+
+    if (!data.challengeJoiningFeeCurrency) {
+      ctx.addIssue({
+        path: ["challengeJoiningFeeCurrency"],
+        message: "Currency is required for paid challenges",
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  }
+});
 
 // Miracle Log Schema
 export const progressvaultSchema = z.object({
@@ -273,6 +298,328 @@ export const contactFormSchems = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
+const testimonialSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Client name is required"),
+
+  role: z
+    .string()
+    .min(2, "Client role is required"),
+
+  content: z
+    .string()
+    .min(15, "Testimonial must be at least 15 characters")
+    .max(500, "Maximum 500 characters"),
+})
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
+export const businessProfileSchema = z
+  .object({
+    /* ---------------- BASIC INFO ---------------- */
+
+    name: z
+      .string()
+      .min(2, "Name must be at least 2 characters"),
+
+    tagline: z
+      .string()
+      .min(10, "Tagline must be at least 10 characters"),
+
+    /* ---------------- NICHE ---------------- */
+
+    coachingDomains: z
+      .array(z.string())
+      .min(1, "Select at least one coaching domain"),
+
+    targetAudience: z
+      .array(z.string())
+      .min(1, "Select at least one target audience"),
+
+    /* ---------------- TRANSFORMATION ---------------- */
+
+    transformation: z
+      .string()
+      .min(20, "Describe transformation (min 20 characters)"),
+
+    typicalResults: z
+      .array(z.string())
+      .min(1, "Add at least one typical result"),
+
+    /* ---------------- SESSION STYLE ---------------- */
+
+    sessionStyles: z
+      .array(z.string())
+      .min(1, "Select at least one session style"),
+
+    methodology: z
+      .string()
+      .min(20, "Describe your methodology (min 20 characters)")
+      .max(500, "Maximum 500 characters allowed"),
+
+    toolsFrameworks: z
+      .string()
+      .max(300, "Maximum 300 characters allowed")
+      .optional(),
+
+    /* ---------------- SERVICES ---------------- */
+
+    servicesOffered: z
+      .array(z.string())
+      .min(1, "Select at least one service"),
+
+    /* ---------------- SESSION & AVAILABILITY ---------------- */
+
+    languages: z
+      .array(z.string())
+      .min(1, "Select at least one language"),
+
+    timezone: z
+      .string()
+      .min(1, "Please select your timezone"),
+
+    sessionFormat: z
+      .string()
+      .min(1, "Please select session format"),
+
+    sessionDuration: z
+      .string()
+      .min(1, "Please select session duration"),
+
+    priceMin: z
+      .number({
+        required_error: "Enter minimum price",
+        invalid_type_error: "Enter valid minimum price",
+      })
+      .min(1, "Minimum price must be greater than 0"),
+
+    priceMax: z
+      .number({
+        required_error: "Enter maximum price",
+        invalid_type_error: "Enter valid maximum price",
+      })
+      .min(1, "Maximum price must be greater than 0"),
+
+    /* ---------------- AUTHORITY ---------------- */
+
+    yearsOfExperience: z
+      .number({
+        required_error: "Select years of experience",
+        invalid_type_error: "Select years of experience",
+      })
+      .min(0, "Experience cannot be negative"),
+
+    certifications: z
+  .array(
+    z.object({
+      value: z
+        .string()
+        .trim()
+        .min(2, "Certification cannot be empty"),
+    })
+  )
+  .max(10, "Maximum 10 certifications allowed")
+  .optional(),
+
+    shortBio: z
+      .string()
+      .min(30, "Short bio must be at least 30 characters")
+      .max(250, "Short bio cannot exceed 250 characters"),
+
+    testimonials: z
+  .preprocess(
+    (val) => (Array.isArray(val) ? val : []),
+    z.array(testimonialSchema).max(6)
+  )
+  .optional(),
+
+    /* ---------------- TRUST LAST FORM ---------------- */
+    //  profilePhoto: z
+    // .any()
+    // .refine((file) => file instanceof File, "Profile photo is required")
+    // .refine(
+    //   (file) => file instanceof File && file.size <= MAX_FILE_SIZE,
+    //   "Max file size is 5MB"
+    // )
+    // .refine(
+    //   (file) =>
+    //     file instanceof File && ACCEPTED_IMAGE_TYPES.includes(file.type),
+    //   "Only JPG, PNG or GIF allowed"
+    // ),
+      profilePhoto: z
+  .union([
+    z.string().url("Required"), // existing image URL allowed
+
+    z
+      .instanceof(File)
+      .refine((file) => file.size <= MAX_FILE_SIZE, {
+        message: "Max file size is 5MB",
+      })
+      .refine(
+        (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+        {
+          message: "Only JPG, PNG or GIF allowed",
+        }
+      ),
+  ]),
+
+  introVideo: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^https?:\/\/.+/.test(val),
+      "Enter a valid URL"
+    ),
+
+  linkedin: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || /^https?:\/\/.+/.test(val),
+      "Enter a valid URL"
+    ),
+    /* ---------------- OPTIONAL FUTURE EXTENSIONS ---------------- */
+
+    pricingPlans: z.any().optional(),
+    availability: z.any().optional(),
+  })
+
+  /* ---------------- CROSS FIELD VALIDATION ---------------- */
+
+  .refine((data) => data.priceMax >= data.priceMin, {
+    message: "Maximum price must be greater than minimum price",
+    path: ["priceMax"],
+  })
+// ***********************************************************
+// ***********************************************************
+
+// ─── Step 1: Program Basics ───────────────────────────────────────────────────
+export const step1MMPSchema = z.object({
+  title: z
+    .string()
+    .min(5, "Program title must be at least 5 characters")
+    .max(100, "Program title cannot exceed 100 characters"),
+  subtitle: z
+    .string()
+    .min(10, "Transformation promise must be at least 10 characters")
+    .max(300, "Cannot exceed 300 characters"),
+  duration: z.enum(["7 Days", "14 Days", "21 Days", "30 Days"], {
+    errorMap: () => ({ message: "Please select a valid duration" }),
+  }),
+  unlockType: z.enum(["daily", "all"], {
+    errorMap: () => ({ message: "Please select an unlock type" }),
+  }),
+  // Required — must upload before continuing
+  thumbnailUrl: z.string().url("Please upload a thumbnail image to continue"),
+});
+
+
+// ─── Step 2: Achievements ─────────────────────────────────────────────────────
+export const step2MMPSchema = z.object({
+  achievements: z
+    .array(
+      z.object({
+        value: z
+        .string()
+        .min(5, "Achievement must be at least 5 characters")
+        .max(200, "Cannot exceed 200 characters"),
+      })
+    )
+    .min(1, "Add at least one achievement")
+    .max(10, "Maximum 10 achievements allowed"),
+  });
+  
+  
+  // ─── Step 3: Module Builder ───────────────────────────────────────────────────
+  export const moduleSchema = z
+  .object({
+    id: z.number(),
+    title: z
+    .string()
+      .min(3, "Module title must be at least 3 characters")
+      .max(100, "Cannot exceed 100 characters"),
+    type: z.enum(["video", "text"], {
+      errorMap: () => ({ message: "Please select a content type" }),
+    }),
+    videoUrl: z.string().optional(),
+    instructions: z
+      .string()
+      .min(10, "Instructions must be at least 10 characters")
+      .max(2000, "Cannot exceed 2000 characters"),
+    actionTask: z
+      .string()
+      .min(5, "Action task must be at least 5 characters")
+      .max(500, "Cannot exceed 500 characters"),
+  })
+  .superRefine((mod, ctx) => {
+    if (mod.type === "video") {
+      if (!mod.videoUrl || mod.videoUrl.trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Video URL is required for video modules",
+          path: ["videoUrl"],
+        });
+      } else {
+        const urlResult = z.string().url("Please enter a valid URL (YouTube/Vimeo)").safeParse(mod.videoUrl);
+        if (!urlResult.success) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please enter a valid URL (YouTube/Vimeo)",
+            path: ["videoUrl"],
+          });
+        }
+      }
+    }
+  });
+
+export const step3MMPSchema = z.object({
+  modules: z.array(moduleSchema).min(1, "Add at least one module"),
+});
+
+// ─── Step 4: Pricing ──────────────────────────────────────────────────────────
+export const step4MMPSchema = z
+  .object({
+    isPaid: z.boolean(),
+    currency: z.enum(["INR", "USD"]),
+    price: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.isPaid) {
+      const num = parseFloat(data.price);
+      if (!data.price || isNaN(num)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please enter a valid price", path: ["price"] });
+      } else if (num <= 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Price must be greater than 0", path: ["price"] });
+      } else if (data.currency === "INR" && num < 10) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Minimum price for INR is ₹10", path: ["price"] });
+      } else if (data.currency === "USD" && num < 1) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Minimum price for USD is $1", path: ["price"] });
+      }
+    }
+  });
+
+  // ─── Step 5: Completion & Certificate ────────────────────────────────────────
+  export const step5MMPSchema = z.object({
+  threshold: z
+  .number()
+  .min(50, "Completion threshold must be at least 50%")
+  .max(100, "Cannot exceed 100%"),
+  certTitle: z
+  .string()
+  .min(5, "Certificate title must be at least 5 characters")
+  .max(150, "Cannot exceed 150 characters"),
+});
+
+// ─── Full Form Shape (used in main page + localStorage) ──────────────────────
+export const fullFormSchema = z.object({
+  step1: step1MMPSchema,
+  step2: step2MMPSchema,
+  step3: step3MMPSchema,
+  step4: step4MMPSchema,
+  step5: step5MMPSchema,
+});
+
+
 export type ContactForm = z.infer<typeof contactFormSchems>;
 export type ActivityFormValues = z.infer<typeof activitySchema>;
 export type MagicBoxSettings = z.infer<typeof magicBoxSettingsSchema>;
@@ -292,3 +639,11 @@ export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
 export type challengeSchemaFormType = z.infer<typeof challengeSchema>;
+export type BusinessProfileFormValues =z.infer<typeof businessProfileSchema>
+export type Step1Data = z.infer<typeof step1MMPSchema>;
+export type Step2Data = z.infer<typeof step2MMPSchema>;
+export type ModuleData = z.infer<typeof moduleSchema>;
+export type Step3Data = z.infer<typeof step3MMPSchema>;
+export type Step4Data = z.infer<typeof step4MMPSchema>;
+export type Step5Data = z.infer<typeof step5MMPSchema>;
+export type FullFormData = z.infer<typeof fullFormSchema>;

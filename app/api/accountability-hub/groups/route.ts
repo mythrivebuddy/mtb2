@@ -1,22 +1,29 @@
- // app/api/accountability-hub/groups/route.ts
+// app/api/accountability-hub/groups/route.ts
 
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-    Visibility,
-    ProgressStage,
-    NotesPrivacy,
-    CycleDuration,
-    GroupRole,
+  Visibility,
+  ProgressStage,
+  NotesPrivacy,
+  CycleDuration,
+  GroupRole,
 } from "@prisma/client";
 import { logActivity } from "@/lib/activity-logger";
+import {
+  checkFeature,
+  checkFeatureAction,
+} from "@/lib/access-control/checkFeature";
+import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
+import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { LimitType } from "@/lib/access-control/featureConfig";
 
 // Mappings from form values to Prisma enums
 const visibilityMap: Record<string, Visibility> = {
-    members_visible: Visibility.MEMBERS_CAN_SEE_GOALS,
-    admin_only: Visibility.PRIVATE,
+  members_visible: Visibility.MEMBERS_CAN_SEE_GOALS,
+  admin_only: Visibility.PRIVATE,
 };
 
 // // ✅ FIX: Use the correct enum members that actually exist on the NotesPrivacy type.
@@ -25,68 +32,130 @@ const visibilityMap: Record<string, Visibility> = {
 //     admin_only: NotesPrivacy.ADMIN_ONLY,
 // };
 const notesPrivacyMap: Record<string, NotesPrivacy> = {
-  member_and_admin: NotesPrivacy.VISIBLE_TO_GROUP,  // same meaning
+  member_and_admin: NotesPrivacy.VISIBLE_TO_GROUP, // same meaning
   admin_only: NotesPrivacy.PRIVATE_TO_AUTHOR,
 };
 
-
-
 export async function POST(req: Request) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id || !session.user.name) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-        const creatorId = session.user.id;
-
-        const body = await req.json();
-        const { groupName, description, visibility, notesPrivacy, stages } = body;
-
-        if (!groupName) {
-            return NextResponse.json({ error: "Group name is required" }, { status: 400 });
-        }
-
-        const newGroup = await prisma.group.create({
-            data: {
-                name: groupName,
-                description: description,
-                creatorId: creatorId,
-                coachId: creatorId,
-                visibility: visibilityMap[visibility] || Visibility.PRIVATE,
-                progressStage: stages in ProgressStage ? stages as ProgressStage : ProgressStage.STAGE_3,
-                // ✅ FIX: The fallback value must also be a valid enum member.
-                notesPrivacy: notesPrivacyMap[notesPrivacy] ,
-                cycleDuration: CycleDuration.MONTHLY,
-                members: {
-                    create: {
-                        userId: creatorId,
-                        assignedBy: creatorId,
-                        role: GroupRole.ADMIN,
-                    },
-                },
-                cycles: {
-                    create: {
-                        startDate: new Date(),
-                        endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
-                        status: "active",
-                        updatedAt: new Date(),
-                    },
-                },
-            },
-        });
-
-        await logActivity(
-            newGroup.id,
-            creatorId,
-            "group_created",
-            `The group "${newGroup.name}" was created.`
-        );
-
-        return NextResponse.json(newGroup, { status: 201 });
-    } catch (error) {
-        console.error("Error creating group:", error);
-        return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || !session.user.name) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const feature = checkFeature({
+      feature: "accountabilityHub",
+      user: {
+        userType: session.user.userType,
+        membership: session.user.membership,
+      },
+    });
+
+    const canCreate = checkFeatureAction({
+      feature: "accountabilityHub",
+      action: "create",
+      userType: session.user.userType,
+    });
+
+    if (!canCreate) { 
+      return NextResponse.json(
+        { error: "You are not allowed to create groups" },
+        { status: 403 },
+      );
+    }
+    const creatorId = session.user.id;
+    const { createLimit, limitType, isUpgradeFlagShow } = feature.config as {
+      createLimit: number;
+      limitType: LimitType;
+      isUpgradeFlagShow?: boolean;
+    };
+
+    const periodStart = getLimitPeriodStart(limitType);
+
+    const currentCount = await prisma.group.count({
+      where: {
+        creatorId,
+        ...(periodStart && {
+          createdAt: { gte: periodStart },
+        }),
+      },
+    });
+    const isFreeUser = session.user.membership === "FREE";
+
+    const message = isFreeUser
+      ? `Upgrade your plan to create ${createLimit === 0 ? "" : "more"} accountability groups.`
+      : `You’ve reached your ${limitType.toLowerCase()} accountability group creation limit.`;
+    
+    const limitResponse = await enforceLimitResponse({
+      limit: createLimit,
+      currentCount,
+      statusCode: isFreeUser ? 403 : 400,
+      message,
+      isUpgradeFlagShow: isFreeUser ? isUpgradeFlagShow : false,
+    });
+
+    if (limitResponse) return limitResponse;
+
+    const body = await req.json();
+    const { groupName, description, visibility, notesPrivacy, stages } = body;
+
+    if (!groupName) {
+      return NextResponse.json(
+        { error: "Group name is required" },
+        { status: 400 },
+      );
+    }
+
+    const newGroup = await prisma.group.create({
+      data: {
+        name: groupName,
+        description: description,
+        creatorId: creatorId,
+        coachId: creatorId,
+        visibility: visibilityMap[visibility] || Visibility.PRIVATE,
+        progressStage:
+          stages in ProgressStage
+            ? (stages as ProgressStage)
+            : ProgressStage.STAGE_3,
+        // ✅ FIX: The fallback value must also be a valid enum member.
+        notesPrivacy: notesPrivacyMap[notesPrivacy],
+        cycleDuration: CycleDuration.MONTHLY,
+        members: {
+          create: {
+            userId: creatorId,
+            assignedBy: creatorId,
+            role: GroupRole.ADMIN,
+          },
+        },
+        cycles: {
+          create: {
+            startDate: new Date(),
+            endDate: new Date(
+              new Date().getFullYear(),
+              new Date().getMonth() + 1,
+              0,
+            ),
+            status: "active",
+            updatedAt: new Date(),
+          },
+        },
+      },
+    });
+
+    await logActivity(
+      newGroup.id,
+      creatorId,
+      "group_created",
+      `The group "${newGroup.name}" was created.`,
+    );
+
+    return NextResponse.json(newGroup, { status: 201 });
+  } catch (error) {
+    console.error("Error creating group:", error);
+    return NextResponse.json(
+      { error },
+      { status: 500 },
+    );
+  }
 }
 
 // GET function remains the same
@@ -105,39 +174,38 @@ export async function GET(req: Request) {
     if (groupId) {
       const isAdmin = session.user.role === "ADMIN";
 
-const group = await prisma.group.findFirst({
-  where: isAdmin
-    ? { id: groupId } // ✅ admin can view ANY group
-    : {
-        id: groupId,
-        members: {
-          some: { userId },
+      const group = await prisma.group.findFirst({
+        where: isAdmin
+          ? { id: groupId } // ✅ admin can view ANY group
+          : {
+            id: groupId,
+            members: {
+              some: { userId },
+            },
+          },
+        include: {
+          members: {
+            select: {
+              userId: true,
+              role: true,
+              user: true,
+            },
+          },
+          cycles: {
+            where: {
+              status: { in: ["active", "repeat"] },
+            },
+            orderBy: {
+              startDate: "desc",
+            },
+            take: 1,
+            include: {
+              _count: { select: { goals: true } },
+            },
+          },
+          _count: { select: { members: true } },
         },
-      },
-  include: {
-    members: {
-      select: {
-        userId: true,
-        role: true,
-        user: true,
-      },
-    },
-    cycles: {
-      where: {
-        status: { in: ["active", "repeat"] },
-      },
-      orderBy: {
-        startDate: "desc",
-      },
-      take: 1,
-      include: {
-        _count: { select: { goals: true } },
-      },
-    },
-    _count: { select: { members: true } },
-  },
-});
-
+      });
 
       if (!group)
         return NextResponse.json({ error: "Group not found" }, { status: 404 });
@@ -164,7 +232,7 @@ const group = await prisma.group.findFirst({
         },
         cycles: {
           where: {
-           status: { in: ["active", "repeat"] },
+            status: { in: ["active", "repeat"] },
           },
           orderBy: {
             startDate: "desc",
@@ -190,9 +258,7 @@ const group = await prisma.group.findFirst({
     console.error("Error fetching groups:", error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
-

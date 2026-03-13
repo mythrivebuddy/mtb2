@@ -13,6 +13,14 @@ import { Notification } from "@/types/client/notifcation";
 import { useSession } from "next-auth/react";
 
 
+const normalizeText = (text?: string) => {
+  if (!text) return "";
+
+  return text
+    .replace(/JoyPearls/g, "Growth Points")
+    .replace(/\bJP\b/g, "GP");
+};
+
 
 export default function NotificationsPage()  {
   const session = useSession();
@@ -98,9 +106,9 @@ export default function NotificationsPage()  {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{notification.title}</h3>
+                    <h3 className="font-medium">{normalizeText(notification.title)}</h3>
                   </div>
-                  <p className="text-gray-600 mt-1">{notification.message}</p>
+                  <p className="text-gray-600 mt-1">{normalizeText(notification.message)}</p>
                   <div className="flex justify-between mt-2 text-xs text-gray-500">
                     <span>
                       {formatDistanceToNow(new Date(notification.createdAt), {

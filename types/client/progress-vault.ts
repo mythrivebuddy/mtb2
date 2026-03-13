@@ -8,4 +8,6 @@ export interface ProgressVault {
 export interface ProgressVaultClientProps {
   initialLogs: ProgressVault[];
   initialStreak: { count: number };
+  dailyLimit: number;
+  isUpgradeFlagShow: boolean;
 }

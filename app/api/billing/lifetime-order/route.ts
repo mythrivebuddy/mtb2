@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     // ----------------------------
     // 4. COMPUTE AMOUNT (Lifetime Logic)
     // ----------------------------
-    const discountValue = calculateDiscount(baseExclusive, appliedCoupon);
+    const discountValue = calculateDiscount(baseExclusive, appliedCoupon,currency);
 
     const payableAmount = calculateLifetimeTotal(
       baseExclusive,

@@ -1,8 +1,9 @@
 // /api/cron/daily-cmp-reminders/nudge with get
-import { CMP_NOTIFICATIONS } from "@/lib/constant";
 import { prisma } from "@/lib/prisma";
 import { getISTEndOfDay, getISTStartOfDay } from "@/lib/utils/dateUtils";
+import { getCMPNotification } from "@/lib/utils/makeover-program/getNotificationTemplate";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import { NotificationType } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -21,7 +22,10 @@ export async function GET() {
   });
 
   let sentCount = 0;
-  const {title,description,url} = CMP_NOTIFICATIONS.DAILY_GENTLE_NUDGE
+
+
+  const notification = await getCMPNotification(NotificationType.CMP_DAILY_GENTLE_NUDGE);
+  if (!notification) return NextResponse.json({ message: "no_notification_template for the gentle nudge" });
   for (const { userId } of users) {
     // Skip if user completed after primary
     const completed = await prisma.makeoverProgressLog.findFirst({
@@ -36,9 +40,9 @@ export async function GET() {
 
     await sendPushNotificationToUser(
       userId,
-      title,
-      description,
-      { url }
+      notification.title,
+      notification.description,
+      { url: notification.url }
     );
 
     sentCount++;

@@ -4,81 +4,118 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Item, CartItem } from "@/types/client/store";
-import Image from "next/image";
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  INR: "₹",
+  USD: "$",
+  GP: "GP",
+};
+
+const getCurrencySymbol = (currency?: string): string =>
+  CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
+
+const RupeeIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M6 3h12" />
+    <path d="M6 8h12" />
+    <path d="M6 13l8.5 8" />
+    <path d="M6 13h3a4 4 0 0 0 0-8" />
+  </svg>
+);
+
+const DollarIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </svg>
+);
+
+const GPIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v12" />
+    <path d="M15 9h-3.5a2.5 2.5 0 1 0 0 5h2a2.5 2.5 0 1 1 0 5H9" />
+  </svg>
+);
+
+const CurrencyBadge = ({ currency }: { currency: string }) => {
+  const badgeClass =
+    currency === "GP"
+      ? "bg-purple-100 text-purple-700"
+      : currency === "INR"
+        ? "bg-orange-100 text-orange-700"
+        : "bg-green-100 text-green-700";
+
+  return (
+    <span className={`absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded ${badgeClass}`}>
+      {currency === "GP" ? (
+        <GPIcon className="w-2.5 h-2.5" />
+      ) : currency === "INR" ? (
+        <RupeeIcon className="w-2.5 h-2.5" />
+      ) : (
+        <DollarIcon className="w-2.5 h-2.5" />
+      )}
+      {currency}
+    </span>
+  );
+};
 
 interface CartSectionProps {
   cart: CartItem[];
   getPriceForMembership: (item: Item) => number | null;
+  getCurrencySymbol?: (currency?: string) => string;
   handleRemoveFromCart: (id: string) => void;
   calculateTotal: () => number;
-  handleBuyAll: () => Promise<void>;
+  handleBuyAll: () => void;
   purchasingItemId: string | null;
 }
+
+const isFullItem = (item: Item | { id: string } | undefined): item is Item =>
+  item != null && "basePrice" in item;
+
+const formatPrice = (price: number, currency: string, sym: string) =>
+  currency === "GP"
+    ? `${Math.ceil(price)} GP`
+    : `${sym}${Number(price).toFixed(2)}`;
 
 const CartSection: React.FC<CartSectionProps> = ({
   cart,
   getPriceForMembership,
+  getCurrencySymbol: getCurrencySymbolProp,
   handleRemoveFromCart,
-  calculateTotal,
   handleBuyAll,
   purchasingItemId,
 }) => {
   const queryClient = useQueryClient();
+  const resolveCurrencySymbol = getCurrencySymbolProp ?? getCurrencySymbol;
 
   const updateQuantityMutation = useMutation({
     mutationFn: async ({ cartItemId, quantity }: { cartItemId: string; quantity: number }) => {
-      const response = await axios.put(
-        "/api/user/store/items/cart/update-item-quantity",
-        { cartItemId, quantity },
-        { withCredentials: true }
-      );
+      const response = await axios.put("/api/user/store/items/cart/update-item-quantity", { cartItemId, quantity });
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profileData"] });
       toast.success("Quantity updated successfully!");
     },
-    onError: (error) => {
-      console.error("Quantity update error:", error);
-      toast.error("Failed to update quantity.");
-    },
+    onError: () => toast.error("Failed to update quantity."),
   });
-
-  // const removeFromCartMutation = useMutation({
-  //   mutationFn: async (cartItemId: string) => {
-  //     await axios.delete("/api/user/store/items/cart/delete-cart-items", { 
-  //       data: { cartItemId }
-  //     });
-  //   },
-  //   onSuccess: () => {
-  //     queryClient.invalidateQueries({ queryKey: ["profileData"] });
-  //     toast.success("Item removed from cart!");
-  //   },
-  //   onError: () => {
-  //     toast.error("Error removing item from cart.");
-  //   },
-  // });
 
   const handleQuantityChange = (cartItemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
-      if (window.confirm("Quantity will be 0. Remove item from cart?")) {
-        handleRemoveFromCart(cartItemId);
-      }
+      if (window.confirm("Remove item from cart?")) handleRemoveFromCart(cartItemId);
       return;
     }
     updateQuantityMutation.mutate({ cartItemId, quantity: newQuantity });
   };
 
-  // Debug log to verify cart data
-  console.log("Cart items:", cart);
-
-  if (!cart || !Array.isArray(cart) || cart.some((item) => !item.item)) {
+  if (!cart || cart.some((c) => !isFullItem(c.item))) {
     return <p className="text-gray-500">Cart data is unavailable.</p>;
   }
 
   return (
-    <div className="bg-white shadow rounded-xl p-6 col-span-2">
-      <h3 className="text-xl font-bold mb-4 flex items-center">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 col-span-2">
+      <h3 className="text-xl font-bold mb-6 flex items-center">
         <ShoppingCart className="w-5 h-5 mr-2 text-green-500" />
         My Cart
       </h3>
@@ -89,60 +126,75 @@ const CartSection: React.FC<CartSectionProps> = ({
         <>
           <ul className="space-y-4">
             {cart.map((cartItem) => {
+              if (!isFullItem(cartItem.item)) return null;
+
+              const itemCurrency = cartItem.item.currency ?? "INR";
+              const sym = resolveCurrencySymbol(itemCurrency);
               const price = getPriceForMembership(cartItem.item);
+              const effectivePrice = price ?? cartItem.item.basePrice;
+              const quantity = cartItem.quantity ?? 1;
+
               return (
                 <li
                   key={cartItem.id}
-                  className="flex justify-between items-center border-b pb-4"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
                 >
-                  <div className="flex items-center gap-4">
-                    <Image
-                      src={cartItem.item.imageUrl}
-                      alt={cartItem.item.name}
-                      className="w-16 h-16 object-cover rounded-md"
-                    />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="relative">
+                      <img
+                        src={cartItem.item.imageUrl || "/placeholder-image.jpg"}
+                        alt={cartItem.item.name}
+                        // width={64}
+                        // height={64}
+                        className="w-full h-full object-contain sm:w-24 sm:h-24 sm:object-fit  rounded-md"
+                      />
+                      <CurrencyBadge currency={itemCurrency} />
+                    </div>
+
                     <div>
-                      <h4 className="text-lg font-medium text-gray-800">{cartItem.item.name}</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-green-600 font-semibold">
-                          ₹{(price ?? cartItem.item.basePrice).toFixed(2)}
-                        </span>
-                        {price !== cartItem.item.basePrice && (
-                          <span className="text-gray-500 line-through text-sm">
-                            ₹{cartItem.item.basePrice.toFixed(2)}
-                          </span>
-                        )}
-                      </div>
+                      <h4 className="text-md font-semibold text-gray-900">
+                        {cartItem.item.name}
+                      </h4>
+
                       <p className="text-sm text-gray-500">
                         {cartItem.item.category?.name || "Unknown Category"}
                       </p>
+
+                      <span className="font-semibold text-green-600">
+                        {formatPrice(effectivePrice, itemCurrency, sym)}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    {/* Quantity */}
+                    <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
                       <button
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
-                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity - 1)}
-                        disabled={updateQuantityMutation.isPending}
+                        onClick={() => handleQuantityChange(cartItem.id!, quantity - 1)}
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
                       >
                         -
                       </button>
-                      <span className="text-gray-800 font-semibold">{cartItem.quantity}</span>
+
+                      <span className="px-4">{quantity}</span>
+
                       <button
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-2 py-1 rounded cursor-pointer"
-                        onClick={() => handleQuantityChange(cartItem.id, cartItem.quantity + 1)}
-                        disabled={updateQuantityMutation.isPending}
+                        onClick={() => handleQuantityChange(cartItem.id!, quantity + 1)}
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
                       >
                         +
                       </button>
                     </div>
-                    <span className="text-green-600 font-semibold">
-                      ₹{((price ?? cartItem.item.basePrice) * cartItem.quantity).toFixed(2)}
+
+                    {/* Price */}
+                    <span className="font-semibold text-green-600 min-w-[70px] sm:min-w-[90px] text-right">
+                      {formatPrice(effectivePrice * quantity, itemCurrency, sym)}
                     </span>
+
+                    {/* Remove */}
                     <button
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md cursor-pointer"
-                      onClick={() => handleRemoveFromCart(cartItem.id)}
+                      onClick={() => handleRemoveFromCart(cartItem.id!)}
+                      className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs sm:text-sm font-medium"
                     >
                       Remove
                     </button>
@@ -152,15 +204,12 @@ const CartSection: React.FC<CartSectionProps> = ({
             })}
           </ul>
 
-          <div className="mt-4 text-xl font-bold text-right">
-            Total Amount: ₹{calculateTotal().toFixed(2)}
-          </div>
-
-          <div className="flex justify-end">
+          {/* Buy Button */}
+          <div className="flex justify-start mt-6">
             <button
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold mt-4 cursor-pointer disabled:bg-gray-400"
               onClick={handleBuyAll}
               disabled={purchasingItemId !== null}
+              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium disabled:bg-gray-400"
             >
               {purchasingItemId ? "Processing..." : "Buy All"}
             </button>

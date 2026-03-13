@@ -237,9 +237,9 @@ export default function WeekdayActionCard({
               </div>
 
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
-                  Log today’s 1% win
-                </p>
+                  <p className="text-sm font-medium text-slate-700 group-hover:text-[#1990e6] transition-colors">
+                    Share it in group
+                  </p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
                   Documenting small wins compounds over time.
                 </p>

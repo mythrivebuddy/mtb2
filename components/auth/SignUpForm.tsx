@@ -19,10 +19,8 @@ import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  isInAppBrowser,
-  openInExternalBrowser,
-} from "@/lib/utils/isInAppBrowser";
+import {isInAppBrowser} from "@/lib/utils/isInAppBrowser";
+import OpenInBrowserDialog from "./OpenInBrowserDialog";
 
 export default function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +34,9 @@ export default function SignUpForm() {
   const [captchaError, setCaptchaError] = useState<string | null>(null);
   const [prefilledTypes, setPrefilledTypes] = useState<string[]>([]);
   const [userHasChosen, setUserHasChosen] = useState(false);
+
+  // state for Open in Browser dialog
+  const [showOpenBrowserDialog, setShowOpenBrowserDialog] = useState(false);
 
   const userType = searchParams.get("user-type");
 
@@ -123,7 +124,7 @@ export default function SignUpForm() {
       { ...formData, captchaToken: captchaToken as string },
       {
         onSettled: () => setIsLoading(false),
-      }
+      },
     );
   };
 
@@ -132,8 +133,7 @@ export default function SignUpForm() {
       // Get referral code from URL or cookies
       // const referralCode = searchParams.get('ref');
       if (isInAppBrowser()) {
-        toast.info("Opening secure browser for Google sign-in");
-        openInExternalBrowser("/signin");    
+        setShowOpenBrowserDialog(true);
         return;
       }
 
@@ -147,8 +147,8 @@ export default function SignUpForm() {
       toast.error(
         getAxiosErrorMessage(
           error,
-          "Google Sign in failed. Please try again later."
-        )
+          "Google Sign in failed. Please try again later.",
+        ),
       );
     }
   };
@@ -350,6 +350,16 @@ export default function SignUpForm() {
           Sign in
         </Link>
       </p>
+
+      <OpenInBrowserDialog
+        open={showOpenBrowserDialog}
+        onOpenChange={setShowOpenBrowserDialog}
+        onConfirm={() => {
+          // IMPORTANT: navigation happens INSIDE dialog
+          // so here we just close the dialog (optional)
+          setShowOpenBrowserDialog(false);
+        }}
+      />
     </div>
   );
 }

@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const body = JSON.parse(rawBody);
     const type = body.type; // e.g., "SUBSCRIPTION_STATUS_CHANGE"
 
-    console.log("Cashfree Webhook Type:", type);
+    
 
     // --- CASE 1: Initial Activation (or Status Change) ---
     if (type === "SUBSCRIPTION_STATUS_CHANGE") {
