@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Item, CartItem } from "@/types/client/store";
-import Image from "next/image";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: "₹",

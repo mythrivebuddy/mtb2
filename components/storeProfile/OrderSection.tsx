@@ -1,7 +1,6 @@
 import React from "react";
 import { Star, Download } from "lucide-react";
 import { Order } from "@/types/client/store";
-import Image from "next/image";
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   INR: "₹",
@@ -62,11 +61,11 @@ const OrdersSection: React.FC<OrdersSectionProps> = ({
     document.body.removeChild(a);
   };
 
-  const calculateOrderTotal = (order: Order) => {
-    return order.items.reduce((sum, item) => {
-      return sum + item.priceAtPurchase * item.quantity;
-    }, 0);
-  };
+  // const calculateOrderTotal = (order: Order) => {
+  //   return order.items.reduce((sum, item) => {
+  //     return sum + item.priceAtPurchase * item.quantity;
+  //   }, 0);
+  // };
 
   return (
     <div className="bg-white border border-gray-200 shadow-sm rounded-2xl p-6 col-span-2">
