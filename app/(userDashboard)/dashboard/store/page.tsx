@@ -148,7 +148,7 @@ const StorePage: React.FC = () => {
   const [productFilter, setProductFilter] = useState<ProductFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [addingItemId, setAddingItemId] = useState<string | null>(null);
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const router = useRouter();
   const queryClient = useQueryClient();
