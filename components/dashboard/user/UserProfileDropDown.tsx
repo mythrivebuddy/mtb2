@@ -15,6 +15,7 @@ import {
   History,
   MessageSquare,
   LogOut,
+  Trophy,
 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
@@ -60,6 +61,13 @@ const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) =>
               <UserRound size={18} />
               <span>My Profile</span>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setIsComingSoonModalOpen(true)}
+              className="cursor-pointer flex items-center space-x-2"
+            >
+              <Trophy size={20} />
+              <span>My Achievements</span>
+            </DropdownMenuItem>
           </Link>
           <Link href="/dashboard/insights">
             <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
@@ -94,7 +102,7 @@ const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) =>
           </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer flex items-center space-x-2 text-red-500"
-            onSelect={async(e) => {
+            onSelect={async (e) => {
               e.preventDefault()
               await signOut()
             }
