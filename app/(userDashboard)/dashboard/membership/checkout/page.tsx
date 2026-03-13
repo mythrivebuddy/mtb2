@@ -447,7 +447,7 @@ export default function CheckoutPage() {
         // ✅ MMP PROGRAM CONTEXT
         if (context === "MMP_PROGRAM" && mmp_programId) {
           setMmpLoading(true);
-          const res = await axios.get(`/api/mini-mastery-programs/public/${mmp_programId}`)
+          const res = await axios.get(`/api/mini-mastery-programs/for-payment-checkout/${mmp_programId}`)
 
           const p = res.data.program
 
