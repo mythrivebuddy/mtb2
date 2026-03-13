@@ -135,20 +135,20 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      <div className="container mx-auto px-3 py-4 sm:px-4 md:p-6 lg:p-8">
         
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-          <div className="flex justify-between items-center flex-wrap gap-4">
+         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 🛒 My Cart & Orders
               </h1>
-              <p className="text-gray-600 mt-1">Manage your wishlist, cart, and orders</p>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your wishlist, cart, and orders</p>
             </div>
             <Link
               href="/dashboard/store"
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-5 py-2.5 sm:px-6 sm:py-3hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Growth Store
@@ -157,7 +157,7 @@ function ProfilePage() {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <WishlistSection
             wishlist={wishlist}
             getPriceForMembership={getPrice}
@@ -173,7 +173,7 @@ function ProfilePage() {
             purchasingItemId={purchasingItemId}
           />
 
-          <div className="md:col-span-2">
+         <div className="md:col-span-2 mt-2 sm:mt-0">
             <OrderSection orders={orders} />
           </div>
         </div>

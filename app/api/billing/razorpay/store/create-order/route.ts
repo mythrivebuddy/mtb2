@@ -106,10 +106,9 @@ export async function POST(req: NextRequest) {
             })
             : null;
 
-        // const isIndia = billing.country === "IN"; as if user pays in usd then gst should not be applied, so we will check currency instead of country
+
         const isIndia =
-            billing.country === "IN" &&
-            selectedCurrency === "INR";
+            billing.country === "IN";
 
         /* -------------------------------- */
 
