@@ -61,14 +61,15 @@ const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) =>
               <UserRound size={18} />
               <span>My Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setIsComingSoonModalOpen(true)}
-              className="cursor-pointer flex items-center space-x-2"
-            >
-              <Trophy size={20} />
-              <span>My Achievements</span>
-            </DropdownMenuItem>
+
           </Link>
+          <DropdownMenuItem
+            onClick={() => setIsComingSoonModalOpen(true)}
+            className="cursor-pointer flex items-center space-x-2"
+          >
+            <Trophy size={20} />
+            <span>My Achievements</span>
+          </DropdownMenuItem>
           <Link href="/dashboard/insights">
             <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
               <BarChart size={18} />
