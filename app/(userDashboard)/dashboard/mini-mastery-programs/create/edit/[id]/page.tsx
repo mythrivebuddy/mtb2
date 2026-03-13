@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 
@@ -62,6 +62,32 @@ function toDurationEnum(days: number | null): "7 Days" | "14 Days" | "21 Days" |
   return map[days ?? 7] ?? "7 Days";
 }
 
+function buildPartialPayload(data: Partial<FullFormData>): Record<string, unknown> {
+  return {
+    ...(data.step1 && {
+      name:        data.step1.title,
+      description: data.step1.subtitle,
+      durationDays: parseInt(data.step1.duration),
+      unlockType:  data.step1.unlockType,
+      thumbnailUrl: data.step1.thumbnailUrl ?? "",
+    }),
+    ...(data.step2 && {
+      achievements: data.step2.achievements.map((a) => a.value),
+    }),
+    ...(data.step3 && {
+      modules: data.step3.modules,
+    }),
+    ...(data.step4 && {
+      price:    data.step4.isPaid ? parseFloat(data.step4.price) : 0,
+      currency: data.step4.currency,
+    }),
+    ...(data.step5 && {
+      completionThreshold: data.step5.threshold,
+      certificateTitle:    data.step5.certTitle,
+    }),
+  };
+}
+
 function mapProgramToFormData(p: RawProgram): Partial<FullFormData> {
   // DB stores achievements as string[] — step2 expects { value: string }[]
   const achievements = (Array.isArray(p.achievements) ? p.achievements as string[] : [])
@@ -114,6 +140,30 @@ export default function EditProgramPage() {
   const [loading,     setLoading]     = useState(true);
   const [fetchError,  setFetchError]  = useState<string | null>(null);
 
+  // ── Auto-save on each step (PATCH existing program) ───────────────────────
+const formDataRef = useRef<Partial<FullFormData>>({});
+
+// formData update hone pe ref bhi sync karo
+useEffect(() => {
+  formDataRef.current = formData;
+}, [formData]);
+
+const autoSavePatch = async (newStepData: Partial<FullFormData>) => {
+  if (!programId) return;
+  try {
+    // formData state stale ho sakti hai, isliye ref use karo
+    const merged  = { ...formDataRef.current, ...newStepData };
+    const partial = buildPartialPayload(merged);
+
+    await fetch(`/api/mini-mastery-programs/${programId}`, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ ...partial, status: "DRAFT" }),
+    });
+  } catch (err) {
+    console.error("Auto-save patch failed:", err);
+  }
+};
   // ── Fetch existing program on mount ────────────────────────────────────────
   useEffect(() => {
     if (!programId) return;
@@ -141,11 +191,31 @@ export default function EditProgramPage() {
 
   // ── Step handlers ────────────────────────────────────────────────────────
 
-  const handleStep1Next = (data: Step1Data) => { setFormData((p) => ({ ...p, step1: data })); setCurrentStep(2); };
-  const handleStep2Next = (data: Step2Data) => { setFormData((p) => ({ ...p, step2: data })); setCurrentStep(3); };
-  const handleStep3Next = (data: Step3Data) => { setFormData((p) => ({ ...p, step3: data })); setCurrentStep(4); };
-  const handleStep4Next = (data: Step4Data) => { setFormData((p) => ({ ...p, step4: data })); setCurrentStep(5); };
-  const handleStep5Next = (data: Step5Data) => { setFormData((p) => ({ ...p, step5: data })); setCurrentStep(6); };
+  const handleStep1Next = async (data: Step1Data) => { 
+  setFormData((p) => ({ ...p, step1: data })); 
+  await autoSavePatch({ step1: data });
+  setCurrentStep(2); 
+};
+const handleStep2Next = async (data: Step2Data) => { 
+  setFormData((p) => ({ ...p, step2: data })); 
+  await autoSavePatch({ step2: data });
+  setCurrentStep(3); 
+};
+const handleStep3Next = async (data: Step3Data) => { 
+  setFormData((p) => ({ ...p, step3: data })); 
+  await autoSavePatch({ step3: data });
+  setCurrentStep(4); 
+};
+const handleStep4Next = async (data: Step4Data) => { 
+  setFormData((p) => ({ ...p, step4: data })); 
+  await autoSavePatch({ step4: data });
+  setCurrentStep(5); 
+};
+const handleStep5Next = async (data: Step5Data) => { 
+  setFormData((p) => ({ ...p, step5: data })); 
+  await autoSavePatch({ step5: data });
+  setCurrentStep(6); 
+};
   const handleBack = () => setCurrentStep((p) => Math.max(p - 1, 1));
 
   // ── Submit: PUT → update program, auto-sets UNDER_REVIEW on backend ──────
@@ -164,7 +234,7 @@ export default function EditProgramPage() {
         throw new Error(d.message ?? `Server error: ${res.status}`);
       }
 
-      router.push("/dashboard/mini-mastery-programs");
+      router.push("/dashboard/mini-mastery-programs/create");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       setSubmitError(message);

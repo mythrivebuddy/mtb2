@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
         creator: {
           select: { id: true, name: true, image: true },
         },
+        createdBy: true,
       },
     }),
     prisma.program.count({ where }),
