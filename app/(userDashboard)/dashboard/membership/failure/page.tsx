@@ -124,7 +124,7 @@ export default function FailurePage() {
             </Button>
 
             <div className="grid grid-cols-1 gap-3">
-              {typeParam !== "challenge" && (
+              {!(typeParam == "challenge" || typeParam == "store_product" || typeParam === "mmp_program") && (
                 <Button asChild variant="outline" className="text-sm">
                   <Link href="/pricing">
                     <ArrowLeft className="mr-2 w-4 h-4" /> Back to Plans

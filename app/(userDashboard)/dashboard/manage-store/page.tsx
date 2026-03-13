@@ -259,17 +259,17 @@ const ManageStorePage: React.FC = () => {
             <div className="flex gap-3 flex-wrap">
               <button
                 onClick={() => handleOpenModal()}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 <PlusCircle className="w-4 h-4" />
                 Add Product
               </button>
               <Link
                 href="/dashboard/store"
-                className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-orange-600 hover:to-red-600 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                className="bg-[#3b82f5] text-white font-semibold text-sm rounded-lg px-6 py-3 hover:bg-[#2563eb] transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Store
+                Back to Growth Store
               </Link>
             </div>
           </div>
@@ -284,12 +284,12 @@ const ManageStorePage: React.FC = () => {
                   key={f}
                   onClick={() => setFilterStatus(f)}
                   className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 ${filterStatus === f
-                      ? f === "all"
-                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
-                        : f === "approved"
-                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
-                          : "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? f === "all"
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                      : f === "approved"
+                        ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
+                        : "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                 >
                   {f === "all" ? "All Products" : f === "approved" ? "Approved" : "Not Approved"}
@@ -300,8 +300,8 @@ const ManageStorePage: React.FC = () => {
               <button
                 onClick={() => setViewMode("card")}
                 className={`p-3 rounded-lg transition-all duration-200 ${viewMode === "card"
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 title="Card View"
               >
@@ -310,8 +310,8 @@ const ManageStorePage: React.FC = () => {
               <button
                 onClick={() => setViewMode("table")}
                 className={`p-3 rounded-lg transition-all duration-200 ${viewMode === "table"
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 title="Table View"
               >
@@ -598,7 +598,7 @@ const ManageStorePage: React.FC = () => {
                         height={300}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      
+
                       {/* Approval badge — top right */}
                       <div className="absolute top-3 right-3 z-10">
                         {item.isApproved ? (
@@ -630,6 +630,7 @@ const ManageStorePage: React.FC = () => {
                     <div className="p-5 flex flex-col flex-1">
                       <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
 
+                      {/* ✅ FIXED: Added space after GP currency symbol */}
                       <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                         {[
                           { label: "Base", val: item.basePrice },
@@ -640,7 +641,7 @@ const ManageStorePage: React.FC = () => {
                           <div key={label} className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-2 border border-gray-100">
                             <span className="text-gray-500 text-xs block mb-0.5">{label}</span>
                             <span className="text-green-600 font-bold text-sm block">
-                              {sym}{isItemGP ? Number(val).toFixed(0) : Number(val).toFixed(2)}
+                              {isItemGP ? `${sym} ${Number(val).toFixed(0)}` : `${sym}${Number(val).toFixed(2)}`}
                             </span>
                           </div>
                         ))}
@@ -649,15 +650,18 @@ const ManageStorePage: React.FC = () => {
                       <div className="flex gap-2 mt-auto">
                         <button
                           onClick={() => handleOpenModal(item)}
-                          className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2.5 rounded-xl hover:from-blue-600 hover:to-indigo-700 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 font-semibold text-sm"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-white hover:bg-blue-50 active:scale-95 text-blue-600 font-semibold text-xs rounded-xl px-3 py-2 border-2 border-blue-500 hover:border-blue-600 transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          <Pencil className="w-4 h-4" /> Edit
+                          <Pencil className="w-4 h-4 shrink-0" />
+                          <span>Edit</span>
                         </button>
+
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-2.5 rounded-xl hover:from-red-600 hover:to-rose-700 active:scale-95 transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2 font-semibold text-sm"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-br from-orange-400 to-rose-500 hover:from-orange-500 hover:to-rose-600 active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 shadow-sm hover:shadow-md transition-all duration-200"
                         >
-                          <Trash2 className="w-4 h-4" /> Delete
+                          <Trash2 className="w-4 h-4 shrink-0" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </div>
@@ -719,12 +723,19 @@ const ManageStorePage: React.FC = () => {
                             {itemCurrency}
                           </span>
                         </td>
+                        {/* ✅ FIXED: Added space after GP in table view */}
                         <td className="py-4 px-4 text-green-600 font-bold">
-                          {sym}{isItemGP ? Number(item.basePrice).toFixed(0) : Number(item.basePrice).toFixed(2)}
+                          {isItemGP ? `${sym} ${Number(item.basePrice).toFixed(0)}` : `${sym}${Number(item.basePrice).toFixed(2)}`}
                         </td>
-                        <td className="py-4 px-4 text-gray-700">{sym}{isItemGP ? Number(item.monthlyPrice).toFixed(0) : Number(item.monthlyPrice).toFixed(2)}</td>
-                        <td className="py-4 px-4 text-gray-700">{sym}{isItemGP ? Number(item.yearlyPrice).toFixed(0) : Number(item.yearlyPrice).toFixed(2)}</td>
-                        <td className="py-4 px-4 text-gray-700">{sym}{isItemGP ? Number(item.lifetimePrice).toFixed(0) : Number(item.lifetimePrice).toFixed(2)}</td>
+                        <td className="py-4 px-4 text-gray-700">
+                          {isItemGP ? `${sym} ${Number(item.monthlyPrice).toFixed(0)}` : `${sym}${Number(item.monthlyPrice).toFixed(2)}`}
+                        </td>
+                        <td className="py-4 px-4 text-gray-700">
+                          {isItemGP ? `${sym} ${Number(item.yearlyPrice).toFixed(0)}` : `${sym}${Number(item.yearlyPrice).toFixed(2)}`}
+                        </td>
+                        <td className="py-4 px-4 text-gray-700">
+                          {isItemGP ? `${sym} ${Number(item.lifetimePrice).toFixed(0)}` : `${sym}${Number(item.lifetimePrice).toFixed(2)}`}
+                        </td>
                         <td className="py-4 px-4">
                           <div className="flex gap-2 justify-end">
                             <button

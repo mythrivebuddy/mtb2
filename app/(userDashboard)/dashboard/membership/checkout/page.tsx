@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { GST_REGEX } from "@/lib/constant";
 import axios from "axios";
+import { RazorpayCheckoutOptions, RazorpayErrorResponse, RazorpaySuccessResponse, WindowWithRazorpay } from "@/types/client/razorpay-client.types";
 
 // types
 
@@ -141,55 +142,7 @@ export default function CheckoutPage() {
       document.body.appendChild(script);
     });
   };
-  type RazorpayCheckoutOptions = {
-    key: string;
-    name: string;
-    description: string;
-    theme: {
-      color: string;
-    };
-    handler: (response: RazorpaySuccessResponse) => void;
-    prefill: {
-      name: string;
-      email: string;
-      contact: string;
-    };
-    order_id?: string;
-    subscription_id?: string;
-    modal?: {
-      ondismiss: () => void;
-    };
-  };
-  interface RazorpaySuccessResponse {
-    razorpay_payment_id: string;
-    razorpay_order_id?: string;
-    razorpay_subscription_id?: string;
-    razorpay_signature: string;
-  }
 
-  interface RazorpayErrorResponse {
-    error: {
-      code: string;
-      description: string;
-      source: string;
-      step: string;
-      reason: string;
-      metadata: {
-        order_id?: string;
-        payment_id?: string;
-        subscription_id?: string;
-      };
-    };
-  }
-  interface WindowWithRazorpay extends Window {
-    Razorpay: new (options: Record<string, unknown>) => {
-      open: () => void;
-      on: (
-        event: string,
-        callback: (res: RazorpayErrorResponse) => void,
-      ) => void;
-    };
-  }
 
   const handleWithRazorpay = async (): Promise<void> => {
     const loaded = await loadRazorpayScript();
@@ -494,7 +447,7 @@ export default function CheckoutPage() {
         // ✅ MMP PROGRAM CONTEXT
         if (context === "MMP_PROGRAM" && mmp_programId) {
           setMmpLoading(true);
-          const res = await axios.get(`/api/mini-mastery-programs/public/${mmp_programId}`)
+          const res = await axios.get(`/api/mini-mastery-programs/for-payment-checkout/${mmp_programId}`)
 
           const p = res.data.program
 
@@ -553,6 +506,7 @@ export default function CheckoutPage() {
               body: JSON.stringify({
                 planId: context === "SUBSCRIPTION" ? planId : null,
                 challengeId: context === "CHALLENGE" ? challengeId : null,
+                mmp_programId: context === "MMP_PROGRAM" ? mmp_programId : null,
                 currency: currency,
                 billingCountry: billingDetails.country, // Use detected country
                 userType: session?.user.userType,
@@ -612,7 +566,9 @@ export default function CheckoutPage() {
   // 2. MANUAL VERIFY
   // ---------------------------
   const handleVerifyCoupon = async () => {
-    if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge)) return;
+    if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge) ||
+      (context === "MMP_PROGRAM" && !mmpProgram)
+    ) return;
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
@@ -628,6 +584,7 @@ export default function CheckoutPage() {
             code: couponCode,
             planId: context === "SUBSCRIPTION" ? plan?.id : null,
             challengeId: context === "CHALLENGE" ? challenge?.id : null,
+            mmp_programId: context === "MMP_PROGRAM" ? mmpProgram?.id : null,
             currency: currency,
             billingCountry: billingDetails.country,
             userType: session?.user.userType,
@@ -706,10 +663,22 @@ export default function CheckoutPage() {
       if (appliedCoupon?.type === "PERCENTAGE") {
         discount =
           (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100
+      } else if (appliedCoupon?.type === "FIXED") {
+        discount =
+          currency === "INR"
+            ? appliedCoupon.discountAmountINR ?? 0
+            : appliedCoupon.discountAmountUSD ?? 0
       }
+      else if (
+        appliedCoupon?.type === "FREE_DURATION" ||
+        appliedCoupon?.type === "FULL_DISCOUNT"
+      ) {
+        discount = subtotal
+      }
+      discount = Math.min(discount, subtotal)
 
       const taxableAmount = subtotal - discount
-
+      // gst rate 
       const taxRate = currency === "INR" ? 0.18 : 0
       const tax = taxableAmount * taxRate
 
@@ -1017,7 +986,7 @@ export default function CheckoutPage() {
           <p className="mt-2 text-gray-600">
             {context === "CHALLENGE"
               ? `Join the "${challenge?.title}" challenge.`
-              : `Unlock your potential with the ${plan?.name} plan.`}
+              : plan?.name && `Unlock your potential with the ${plan?.name} plan.`}
           </p>
         </div>
 
@@ -1026,7 +995,6 @@ export default function CheckoutPage() {
           <div className="md:col-span-2 space-y-6">
             {/* PLAN SUMMARY CARD */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              {/* ... (Existing Plan Summary UI - kept concise for brevity) ... */}
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                   {context === "CHALLENGE" ? (

@@ -199,17 +199,7 @@ export async function POST(req: NextRequest) {
       programId,
     });
 
-    // --------------------------
-    // RESPONSE
-    // --------------------------
-    console.log({
-  context,
-  entityId,
-  amount,
-  discount,
-  gst,
-  totalAmount
-});
+
     return NextResponse.json({
       success: true,
       key,

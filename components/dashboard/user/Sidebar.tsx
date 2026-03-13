@@ -20,13 +20,10 @@ import {
   Search,
   BellRing,
   Crown,
-  PhoneCall,
-  Video,
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/utils/getInitials";
 import { SearchUser } from "@/types/client/nav";
@@ -345,7 +342,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem
                   href="/dashboard/store"
                   icon={<ShoppingCartIcon size={20} />}
-                  label="Store"
+                  label="Growth Store"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
 
@@ -363,36 +360,45 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 session.data?.user.userType == "SOLOPRENEUR") && (
                   <NavSection title="For Coach/Solopreneur">
                     <NavItem
-                      href="/dashboard/spotlight"
-                      icon={<Sparkles size={20} />}
-                      label="Get a Spotlight"
-                      onLinkClick={toggleSidebar} // Pass toggleSidebar
-                    />
-                    <NavItem
                       href="/dashboard/business-profile"
                       icon={<User size={20} />}
                       label="Setup Business Profile"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
                     <NavItem
-                      href="/dashboard/prosperity"
-                      icon={<Droplet size={20} />}
-                      label="Apply for a Grant"
+                      href="/dashboard/spotlight"
+                      icon={<Sparkles size={20} />}
+                      label="Get a Spotlight"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
-                    <NavItem
+                                        <NavItem
                       href="/dashboard/challenge"
                       icon={<Swords size={20} />}
                       label="Create a Challenge"
                       onLinkClick={toggleSidebar}
                     />
-                    {/* <NavItem
-                    href="/dashboard/accountability/home"
-                    icon={<LayoutDashboard size={20} />}
-                    label="Create Accountability Group"
-                    onLinkClick={toggleSidebar}
-                  /> */}
-                    <li>
+                    
+                    <div className="flex items-center ">
+                      <Link
+                        href="/dashboard/mini-mastery-programs/create"
+                        onClick={toggleSidebar}
+                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
+                      >
+                        <GraduationCap size={20} className="w-7" />
+
+                        {/* Extra gap added here */}
+                        <span className="font-normal text-[17px] ml-3">
+                          Promote Mini Mastery Programs
+                        </span>
+                      </Link>
+                    </div>
+                      <NavItem
+                      href="/dashboard/manage-store"
+                      icon={<ShoppingCartIcon size={20} />}
+                      label="Manage Your Store"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+                                        <li>
                       <Link
                         href="/dashboard/accountability/home"
                         onClick={toggleSidebar}
@@ -406,14 +412,29 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                         </span>
                       </Link>
                     </li>
-
+                    
                     <NavItem
                       href="/dashboard/buddy-lens"
                       icon={<HomeIcon size={20} />}
                       label="Get a Profile Audit"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
-                    <ComingSoonWrapper>
+                    <NavItem
+                      href="/dashboard/prosperity"
+                      icon={<Droplet size={20} />}
+                      label="Apply for a Grant"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
+
+                    {/* <NavItem
+                    href="/dashboard/accountability/home"
+                    icon={<LayoutDashboard size={20} />}
+                    label="Create Accountability Group"
+                    onLinkClick={toggleSidebar}
+                  /> */}
+
+
+                    {/* <ComingSoonWrapper>
                       <NavItem
                         icon={<PhoneCall size={20} />}
                         label="Promote Discovery Calls"
@@ -427,7 +448,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                         label="Promote Webinars"
                         onLinkClick={toggleSidebar}
                       />
-                    </ComingSoonWrapper>
+                    </ComingSoonWrapper> */}
 
                     {/* <ComingSoonWrapper>
                     <NavItem
@@ -453,7 +474,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     <NavItem
                       href="/dashboard/manage-store"
                       icon={<ShoppingCartIcon size={20} />}
-                      label="Manage Store"
+                      label="Manage Growth Store"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
 

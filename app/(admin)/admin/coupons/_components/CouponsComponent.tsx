@@ -81,6 +81,12 @@ type Challenge = {
   challengeJoiningFee: number
   challengeJoiningFeeCurrency: "INR" | "USD"
 }
+type MmpProgram = {
+  id: string
+  name: string
+  price: number
+  currency: "INR" | "USD"
+}
 type CouponFormPayload = {
   couponCode: string;
   description: string;
@@ -91,8 +97,9 @@ type CouponFormPayload = {
   freeDays: string | number;
   applicableUserTypes: string[];
   applicablePlanIds: string[];
-  scope: "SUBSCRIPTION" | "CHALLENGE";
+  scope: "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM";
   applicableChallengeIds: string[];
+  applicableMmpProgramIds: string[];
 
   applicableCurrencies: string[];
   firstCycleOnly: boolean;
@@ -131,7 +138,7 @@ type Coupon = {
   autoApply: boolean;
   applicablePlans: Plan[];
   description?: string;
-  scope: "SUBSCRIPTION" | "CHALLENGE" | "STORE";
+  scope: "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM";
 };
 
 const fetchChallenges = async () => {
@@ -143,6 +150,11 @@ const fetchCoupons = async () => {
   const response = await axios.get<Coupon[]>("/api/admin/coupons");
   return response.data;
 };
+
+const fetchMmpPrograms = async () => {
+  const res = await axios.get("/api/mini-mastery-programs")
+  return res.data.programs
+}
 
 const fetchPlans = async () => {
   const response = await axios.get<Plan[]>("/api/subscription-plans");
@@ -175,7 +187,7 @@ export default function CouponsManagementPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"SUBSCRIPTION" | "CHALLENGE" | "STORE">("SUBSCRIPTION")
+  const [activeTab, setActiveTab] = useState<"ALL" | "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM">("ALL")
 
   // --- Form State ---
   const initialFormState: CouponFormPayload = {
@@ -189,7 +201,8 @@ export default function CouponsManagementPage() {
     applicableUserTypes: ["ENTHUSIAST"],
     applicablePlanIds: [],
     scope: "SUBSCRIPTION",
-    applicableChallengeIds: [],   // ⭐ ADD
+    applicableChallengeIds: [],
+    applicableMmpProgramIds: [],
     applicableCurrencies: ["INR", "USD"],
     firstCycleOnly: false,
     multiCycle: false,
@@ -217,7 +230,11 @@ export default function CouponsManagementPage() {
     queryKey: ["paid-challenges"],
     queryFn: fetchChallenges,
   });
-
+  const { data: mmpPrograms  = [] } = useQuery({
+    queryKey: ["mmp-programs"],
+    queryFn: fetchMmpPrograms,
+    enabled: formData.scope === "MMP_PROGRAM",
+  })
   const createMutation = useMutation({
     mutationFn: (data: CouponFormPayload) => createCouponApi(data),
 
@@ -262,10 +279,8 @@ export default function CouponsManagementPage() {
   });
 
   const filteredCoupons = coupons.filter((coupon: Coupon) => {
-    if (activeTab === "SUBSCRIPTION") return coupon.scope === "SUBSCRIPTION"
-    if (activeTab === "CHALLENGE") return coupon.scope === "CHALLENGE"
-    if (activeTab === "STORE") return coupon.scope === "STORE"
-    return true
+    if (activeTab === "ALL") return true
+    return coupon.scope === activeTab
   })
   // --- Handlers ---
   const resetForm = () => {
@@ -301,8 +316,9 @@ export default function CouponsManagementPage() {
       maxUsesPerUser: coupon.maxUsesPerUser || 1,
       autoApply: coupon.autoApply,
       autoApplyConditions: {},
-      scope: "SUBSCRIPTION",
+      scope: coupon.scope as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM",
       applicableChallengeIds: [],
+      applicableMmpProgramIds: [],
 
     });
 
@@ -367,7 +383,8 @@ export default function CouponsManagementPage() {
       | "applicablePlanIds"
       | "applicableCurrencies"
       | "applicableUserTypes"
-      | "applicableChallengeIds",
+      | "applicableChallengeIds"
+      | "applicableMmpProgramIds",
     value: string
   ) => {
     setFormData((prev) => {
@@ -586,7 +603,7 @@ export default function CouponsManagementPage() {
                 <Select
                   value={formData.scope}
                   onValueChange={(val) => {
-                    handleInputChange("scope", val as "SUBSCRIPTION" | "CHALLENGE")
+                    handleInputChange("scope", val as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM")
 
                     if (val === "SUBSCRIPTION") {
                       handleInputChange("applicableChallengeIds", [])
@@ -595,6 +612,10 @@ export default function CouponsManagementPage() {
                     if (val === "CHALLENGE") {
                       handleInputChange("firstCycleOnly", true)
                       handleInputChange("multiCycle", false)
+                      handleInputChange("applicableMmpProgramIds", [])
+                    }
+                    if (val === "MMP_PROGRAM") {
+                      handleInputChange("applicableChallengeIds", [])
                     }
                   }}
                 >
@@ -604,6 +625,7 @@ export default function CouponsManagementPage() {
                   <SelectContent>
                     <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
                     <SelectItem value="CHALLENGE">Challenge</SelectItem>
+                    <SelectItem value="MMP_PROGRAM">MMP Program</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -703,6 +725,35 @@ export default function CouponsManagementPage() {
                   </div>
 
                   {/* </div> */}
+                </div>
+              )}
+              {formData.scope === "MMP_PROGRAM" && (
+                <div className="space-y-3">
+                  <Label>Applicable MMP Programs</Label>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {mmpPrograms.map((mmpProgram: MmpProgram) => (
+                      <div
+                        key={mmpProgram.id}
+                        onClick={() =>
+                          toggleSelection("applicableMmpProgramIds", mmpProgram.id)
+                        }
+                        className={`
+            cursor-pointer rounded-md border p-3 text-sm transition-all
+            ${formData.applicableMmpProgramIds.includes(mmpProgram.id)
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "hover:bg-accent"
+                          }
+          `}
+                      >
+                        <div className="font-medium">{mmpProgram.name}</div>
+
+                        <div className="text-xs text-muted-foreground">
+                          {mmpProgram.currency} {mmpProgram.price}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-6">
@@ -871,14 +922,16 @@ export default function CouponsManagementPage() {
         <Tabs
           value={activeTab}
           onValueChange={(v) =>
-            setActiveTab(v as "SUBSCRIPTION" | "CHALLENGE" | "STORE")
+            setActiveTab(v as "ALL" | "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM")
           }
           className="px-6 pt-6 flex justify-self-center"
         >
           <TabsList>
+            <TabsTrigger value="ALL">All</TabsTrigger>
             <TabsTrigger value="SUBSCRIPTION">Membership </TabsTrigger>
             <TabsTrigger value="CHALLENGE">Challenges</TabsTrigger>
             <TabsTrigger value="STORE">Store</TabsTrigger>
+            <TabsTrigger value="MMP_PROGRAM">MMP</TabsTrigger>
           </TabsList>
         </Tabs>
         <CardHeader>
@@ -891,6 +944,7 @@ export default function CouponsManagementPage() {
               <TableRow>
                 <TableHead className="w-[150px]">Code</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Scope</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Validity</TableHead>
@@ -940,6 +994,9 @@ export default function CouponsManagementPage() {
                           </span>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{coupon.scope}</Badge>
                     </TableCell>
                     <TableCell>
                       <Badge

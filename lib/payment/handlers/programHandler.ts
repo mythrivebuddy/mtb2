@@ -14,7 +14,7 @@ export async function handleProgramPayment(
     if (!program) {
         throw new Error("Program not found");
     }
-    // 2️⃣ Prevent duplicate webhook processing
+    // ! Prevent duplicate webhook processing
     const existingPayment = await tx.miniMasteryProgramPayment.findUnique({
         where: {
             paymentOrderId: order.id,
@@ -36,22 +36,44 @@ export async function handleProgramPayment(
                 paidAt: new Date(),
             },
         });
-    }
-
-    await tx.userProgramState.upsert({
-        where: {
-            userId_programId: {
+        await tx.userProgramState.upsert({
+            where: {
+                userId_programId: {
+                    userId: order.userId,
+                    programId: program.id,
+                },
+            },
+            update: {},
+            create: {
                 userId: order.userId,
                 programId: program.id,
+                onboarded: true,
+                onboardedAt: new Date(),
             },
-        },
-        update: {},
-        create: {
-            userId: order.userId,
-            programId: program.id,
-            onboarded: true,
-            onboardedAt: new Date(),
-        },
-    });
+        });
+        if (order.couponId) {
+
+            const existing = await tx.couponRedemption.findFirst({
+                where: {
+                    couponId: order.couponId,
+                    userId: order.userId,
+                    appliedPlan: "MMP_PROGRAM",
+                },
+            });
+
+            if (!existing) {
+                await tx.couponRedemption.create({
+                    data: {
+                        couponId: order.couponId,
+                        userId: order.userId,
+                        redeemed: true,
+                        appliedPlan: "MMP_PROGRAM",
+                        discountApplied: order.discountApplied,
+                    },
+                });
+            }
+        }
+    }
+
 
 }

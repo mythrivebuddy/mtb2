@@ -144,7 +144,7 @@ const OrderHistoryPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-6xl">
+      <div className="container mx-auto px-3 py-4 sm:px-4 md:p-6 lg:p-8 max-w-6xl">
 
         {/* Header */}
         <div className="mb-8">
@@ -153,7 +153,7 @@ const OrderHistoryPage: React.FC = () => {
             className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium mb-4 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Store
+            Back to Growth Store
           </Link>
 
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-white/20">
@@ -165,14 +165,14 @@ const OrderHistoryPage: React.FC = () => {
                 <p className="text-slate-600 text-lg">Track all your purchases and orders</p>
               </div>
 
-              <div className="flex gap-4">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg min-w-[140px]">
+              <div className="grid grid-cols-2  sm:flex gap-8 sm:gap-4 w-full sm:w-auto">
+                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg min-w-0">
                   <div className="text-3xl font-bold">{orders.length}</div>
-                  <div className="text-indigo-100 text-sm mt-1">Total Orders</div>
+                  <div className="text-indigo-100 text-sm mt-1 whitespace-nowrap">Total Orders</div>
                 </div>
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-6 text-white shadow-lg min-w-[140px]">
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg min-w-0">
                   <div className="text-3xl font-bold">{completedOrders}</div>
-                  <div className="text-emerald-100 text-sm mt-1">Completed</div>
+                  <div className="text-emerald-100 text-sm mt-1 whitespace-nowrap">Completed</div>
                 </div>
               </div>
             </div>
@@ -212,7 +212,7 @@ const OrderHistoryPage: React.FC = () => {
               const isPoints = orderCurrency === "GP" || orderCurrency === "JP";
 
               // ✅ Calculate exact total from items
-              const exactTotal = calculateExactTotal(order);
+              const exactTotal = order.totalAmount || calculateExactTotal(order);
 
               return (
                 <div
@@ -224,8 +224,8 @@ const OrderHistoryPage: React.FC = () => {
                     className="p-6 cursor-pointer hover:bg-slate-50/50 transition-colors"
                     onClick={() => toggleOrderExpansion(order.id)}
                   >
-                    <div className="flex items-center justify-between gap-4 flex-wrap">
-                      <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
                         <div className={`p-3 rounded-2xl ${statusConfig.bg}`}>
                           <StatusIcon className={`w-6 h-6 ${statusConfig.color}`} />
                         </div>
@@ -240,14 +240,13 @@ const OrderHistoryPage: React.FC = () => {
                               {statusConfig.label}
                             </span>
                             {/* ✅ Currency badge with icon */}
-                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
-                              orderCurrency === "INR"
-                                ? "bg-orange-100 text-orange-700 border border-orange-300"
-                                : orderCurrency === "USD"
-                                  ? "bg-green-100 text-green-700 border border-green-300"
-                                  : orderCurrency === "GP"
-                                    ? "bg-purple-100 text-purple-700 border border-purple-300"
-                                    : "bg-blue-100 text-blue-700 border border-blue-300"
+                            <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${orderCurrency === "INR"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : orderCurrency === "USD"
+                                ? "bg-green-100 text-green-700 border border-green-300"
+                                : orderCurrency === "GP"
+                                  ? "bg-purple-100 text-purple-700 border border-purple-300"
+                                  : "bg-blue-100 text-blue-700 border border-blue-300"
                               }`}>
                               <CurrencyIcon className="w-3 h-3" />
                               {orderCurrency}
@@ -270,12 +269,12 @@ const OrderHistoryPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
                         <div className="text-right">
                           <div className="text-xs text-slate-500 mb-0.5">Total Amount</div>
                           {/* ✅ Show exact calculated total */}
                           <div className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                            {isPoints 
+                            {isPoints
                               ? `${Math.ceil(exactTotal)} ${orderCurrency}`
                               : `${orderSymbol}${exactTotal.toFixed(2)}`
                             }
@@ -310,9 +309,9 @@ const OrderHistoryPage: React.FC = () => {
                             return (
                               <div
                                 key={orderItem.id}
-                                className="flex items-center gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+                                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
                               >
-                                <div className="w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex-shrink-0 relative">
+                                <div className="w-16 h-16 sm:w-20 sm:h-20  rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex-shrink-0 relative">
                                   <Image
                                     src={orderItem.item.imageUrl || "/placeholder-image.jpg"}
                                     alt={orderItem.item.name}
@@ -322,12 +321,11 @@ const OrderHistoryPage: React.FC = () => {
                                   />
                                   {/* ✅ Original currency badge if converted */}
                                   {wasConverted && (
-                                    <span className={`absolute -top-1 -left-1 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                      orderItem.originalCurrency === "INR"
-                                        ? "bg-orange-500 text-white"
-                                        : orderItem.originalCurrency === "USD"
-                                          ? "bg-green-500 text-white"
-                                          : "bg-purple-500 text-white"
+                                    <span className={`absolute -top-1 -left-1 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${orderItem.originalCurrency === "INR"
+                                      ? "bg-orange-500 text-white"
+                                      : orderItem.originalCurrency === "USD"
+                                        ? "bg-green-500 text-white"
+                                        : "bg-purple-500 text-white"
                                       }`}>
                                       <OriginalCurrencyIcon className="w-2 h-2" />
                                       {orderItem.originalCurrency}
@@ -335,7 +333,7 @@ const OrderHistoryPage: React.FC = () => {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h5 className="font-bold text-slate-800 truncate">
+                                  <h5 className="font-bold text-slate-800 break-words">
                                     {orderItem.item.name}
                                   </h5>
                                   <p className="text-sm text-slate-500">
@@ -359,18 +357,18 @@ const OrderHistoryPage: React.FC = () => {
                                     </div>
                                   )}
                                 </div>
-                                <div className="text-right">
+                                <div className="flex sm:block justify-between sm:text-right w-full sm:w-auto">
                                   <div className="text-sm text-slate-500 mb-1">
                                     Qty: {orderItem.quantity}
                                   </div>
                                   <div className="font-bold text-lg text-slate-900">
-                                    {isPoints 
+                                    {isPoints
                                       ? `${Math.ceil(itemTotal)} ${orderCurrency}`
                                       : `${orderSymbol}${itemTotal.toFixed(2)}`
                                     }
                                   </div>
                                   <div className="text-xs text-slate-500 mt-0.5">
-                                    {isPoints 
+                                    {isPoints
                                       ? `${Math.ceil(orderItem.priceAtPurchase)} ${orderCurrency} each`
                                       : `${orderSymbol}${orderItem.priceAtPurchase.toFixed(2)} each`
                                     }
@@ -395,7 +393,7 @@ const OrderHistoryPage: React.FC = () => {
                           <div className="flex justify-between items-center pt-3 border-t border-slate-200">
                             <span className="text-slate-700 font-bold text-lg">Order Total</span>
                             <span className="text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                              {isPoints 
+                              {isPoints
                                 ? `${Math.ceil(exactTotal)} ${orderCurrency}`
                                 : `${orderSymbol}${exactTotal.toFixed(2)}`
                               }

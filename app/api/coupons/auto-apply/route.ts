@@ -23,11 +23,11 @@ function getFixedAmount(
 
 export async function POST(req: Request) {
   try {
-    const { planId, challengeId, currency, billingCountry, userType, userId } = await req.json();
+    const { planId, challengeId, mmp_programId, currency, billingCountry, userType, userId } = await req.json();
 
-    if (!planId && !challengeId) {
+    if (!planId && !challengeId && !mmp_programId) {
       return NextResponse.json(
-        { coupon: null, message: "Plan or Challenge required" },
+        { coupon: null, message: "Plan, Challenge or MMP Program required" },
         { status: 400 }
       );
     }
@@ -65,6 +65,9 @@ export async function POST(req: Request) {
       }
 
       if (coupon.scope === "SUBSCRIPTION" && !planId) {
+        return false;
+      }
+      if (coupon.scope === "MMP_PROGRAM" && !mmp_programId) {
         return false;
       }
       if (coupon.maxGlobalUses && (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses) {
