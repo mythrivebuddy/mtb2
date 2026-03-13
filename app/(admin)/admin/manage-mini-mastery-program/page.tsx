@@ -10,6 +10,7 @@ import {
   Video, FileText, ChevronDown, ChevronUp, Pencil,
   BookOpenCheck, Calendar, DollarSign, Users,
 } from "lucide-react";
+import { Editor } from "@tinymce/tinymce-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -675,12 +676,43 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
                           </div>
                         )}
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-gray-400 uppercase">Instructions *</label>
-                          <textarea value={mod.instructions} onChange={(e) => updateMod(idx, "instructions", e.target.value)}
-                            rows={3} placeholder="What should participants focus on today?"
-                            className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm resize-none" />
-                        </div>
+                       <div className="space-y-1">
+  <label className="text-[10px] font-bold text-gray-400 uppercase">Instructions *</label>
+  <Editor
+    key={`admin-instructions-${mod.id}`}
+    apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+    value={mod.instructions}
+    onEditorChange={(content) => updateMod(idx, "instructions", content)}
+    init={{
+      height: 300,
+      menubar: false,
+      toolbar_mode: "sliding",
+      promotion: false,
+      plugins: [
+        "advlist", "autolink", "lists", "charmap", "preview",
+        "anchor", "searchreplace", "visualblocks", "fullscreen",
+        "insertdatetime", "media", "table", "help", "wordcount",
+      ],
+      toolbar:
+        "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
+      block_formats: "Paragraph=p",
+      valid_elements: "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
+      extended_valid_elements: "",
+      verify_html: false,
+      cleanup: false,
+      forced_root_block: "p",
+      placeholder: "What should participants focus on today?",
+      content_style: `
+        body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
+        p { margin: 0.5rem 0; }
+        h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.5em; font-weight: 600; color: #334155; margin-top: 0.75rem; margin-bottom: 0.5rem; }
+        h3 { font-size: 1.25em; font-weight: 600; color: #475569; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        blockquote { border-left: 3px solid #c084fc; margin-left: 0; padding-left: 1rem; color: #4b5563; font-style: italic; background-color: #f9fafb; border-radius: 0.25rem; }
+      `,
+    }}
+  />
+</div> 
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-gray-400 uppercase">
                             Action Task * <span className="text-blue-500 font-black">Mandatory</span>
@@ -814,7 +846,7 @@ export default function AdminMMPPage() {
   const clearSearch  = () => { setSearchInput(""); setSearch(""); setPage(1); };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow min-h-screen font-sans">
+    <div className="bg-white p-6 rounded-lg shadow min-h-screen">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

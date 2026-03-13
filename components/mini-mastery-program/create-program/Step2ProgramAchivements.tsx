@@ -24,6 +24,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
       achievements: defaultValues?.achievements?.length
         ? defaultValues.achievements
         : [{ value: "" }],
+      ...defaultValues,
     },
   });
 
@@ -70,11 +71,10 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
                 })}
                 type="text"
                 placeholder="e.g. Develop a consistent morning routine"
-                className={`w-full p-4 border rounded-[24px] focus:ring-2 outline-none transition-all text-gray-700 text-sm ${
-                  errors.achievements?.[index]?.value
+                className={`w-full p-4 border rounded-[24px] focus:ring-2 outline-none transition-all text-gray-700 text-sm ${errors.achievements?.[index]?.value
                     ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                     : "bg-gray-50/50 border-gray-100 focus:ring-blue-400"
-                }`}
+                  }`}
               />
               {fields.length > 1 && (
                 <button

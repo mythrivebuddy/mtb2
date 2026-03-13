@@ -275,7 +275,9 @@ export default function UserDetailsPage() {
     toast.success("Profile link copied to clipboard!");
   };
 
-  if (isLoading) return <PageSkeleton type="approve" />;
+  if ((session?.user.userType === "COACH" || session?.user.userType === "SOLOPRENEUR") && isLoading)return <PageSkeleton type="coach-profile" />
+  if (isLoading)return <PageSkeleton type="approve" />;
+
 
   if (error || !userData) {
     return (
