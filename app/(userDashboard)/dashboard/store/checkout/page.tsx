@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from "react";
-import {  useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -217,7 +217,7 @@ const BillingSummary = ({ billing, onEdit }: { billing: BillingInfo; onEdit: () 
           <p className="text-gray-500 text-sm">GST: {billing.gstNumber}</p>
         )}
       </div>
-      <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 ml-4">
+      <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 sm:ml-4">
         <Pencil className="w-3.5 h-3.5" /> CHANGE
       </button>
     </div>
@@ -268,9 +268,10 @@ const GPBalanceBanner = ({ gpBalance, requiredGP, isInsufficient }: { gpBalance:
 
 // ─── Main Checkout Content ────────────────────────────────────────────────────
 const CheckoutContent = () => {
-  // const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+
 
   // ── useState — always first, always unconditional ─────────────────────────
   const [isEditingBilling, setIsEditingBilling] = useState(false);
@@ -318,11 +319,11 @@ const CheckoutContent = () => {
       return res.data as { balance: number; earned: number; spent: number };
     },
   });
-const { data: usdToInrRate } = useQuery({
-  queryKey: ["usdToInrRate"],
-  queryFn: async () => convertCurrency(1, "USD", "INR"),
-  enabled: selectedCurrency !== "GP"
-});
+  const { data: usdToInrRate } = useQuery({
+    queryKey: ["usdToInrRate"],
+    queryFn: async () => convertCurrency(1, "USD", "INR"),
+    enabled: selectedCurrency !== "GP"
+  });
 
   // ── useMutation ───────────────────────────────────────────────────────────
   const saveBillingMutation = useMutation({
@@ -441,7 +442,7 @@ const { data: usdToInrRate } = useQuery({
 
   const isGPInsufficient = isGPCart && gpBalance < gpTotal;
 
-    const savedBilling: BillingInfo | null = billingData ?? null;
+  const savedBilling: BillingInfo | null = billingData ?? null;
   const hasBilling = !!savedBilling?.addressLine1;
 
   const defaultBilling: BillingInfo = {
@@ -459,43 +460,46 @@ const { data: usdToInrRate } = useQuery({
     : null;
 
   // ── useEffect — stable deps now that uniqueCurrencies is memoized ─────────
-useEffect(() => {
+  useEffect(() => {
 
-  if (!items || !displayBilling) return;
+    if (!items || !displayBilling) return;
 
-  // GP always GP
-  if (uniqueCurrencies.length === 1 && uniqueCurrencies[0] === "GP") {
-    setSelectedCurrency("GP");
-    return;
-  }
-
-  // SINGLE ITEM → auto by country
-  if (items.length === 1) {
-    const newCurrency = displayBilling.country === "IN" ? "INR" : "USD";
-
-    if (selectedCurrency !== newCurrency) {
-      setSelectedCurrency(newCurrency);
+    // GP always GP
+    if (uniqueCurrencies.length === 1 && uniqueCurrencies[0] === "GP") {
+      setSelectedCurrency("GP");
+      return;
     }
 
-    return;
-  }
+    // SINGLE ITEM → auto by country
+    if (items.length === 1) {
+      const newCurrency = displayBilling.country === "IN" ? "INR" : "USD";
 
-  // MULTIPLE ITEMS SAME CURRENCY
-  if (!isMixedCurrency && uniqueCurrencies.length === 1) {
-    const newCurrency = uniqueCurrencies[0] as "INR" | "USD";
+      if (selectedCurrency !== newCurrency) {
+        setSelectedCurrency(newCurrency);
+      }
 
-    if (selectedCurrency !== newCurrency) {
-      setSelectedCurrency(newCurrency);
+      return;
     }
+
+    // MULTIPLE ITEMS SAME CURRENCY
+    if (!isMixedCurrency && uniqueCurrencies.length === 1) {
+      const newCurrency = uniqueCurrencies[0] as "INR" | "USD";
+
+      if (selectedCurrency !== newCurrency) {
+        setSelectedCurrency(newCurrency);
+      }
+    }
+
+  }, [
+    items,
+    displayBilling?.country,
+    uniqueCurrencies,
+    isMixedCurrency
+  ]);
+
+  if (status === "loading") {
+    return <PageLoader />
   }
-
-}, [
-  items,
-  displayBilling?.country,
-  uniqueCurrencies,
-  isMixedCurrency
-]);
-
   // ── ALL hooks above this line — early returns are safe below ──────────────
   const isLoading = isItemsLoading || isBillingLoading || isGPLoading;
   if (isLoading) return <PageLoader />;
@@ -560,7 +564,7 @@ useEffect(() => {
   const GST_RATE = 0.18;
 
   const isIndianGSTApplicable =
-    displayBilling?.country === "IN"  &&
+    displayBilling?.country === "IN" &&
     !isGPCart;
 
   const gstAmount = singleTotal && isIndianGSTApplicable
@@ -906,7 +910,7 @@ useEffect(() => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">GST (18%)</span>
                     <span className="text-gray-900 font-bold">
-                      {selectedCurrency ? getCurrencySymbol(selectedCurrency):" "}{gstAmount.toFixed(2)}
+                      {selectedCurrency ? getCurrencySymbol(selectedCurrency) : " "}{gstAmount.toFixed(2)}
                     </span>
                   </div>
                 )}

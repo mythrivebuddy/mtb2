@@ -30,6 +30,7 @@ import { SearchUser } from "@/types/client/nav";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "./Topbar";
 import { useSession } from "next-auth/react";
+import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -371,13 +372,13 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       label="Get a Spotlight"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
-                                        <NavItem
+                    <NavItem
                       href="/dashboard/challenge"
                       icon={<Swords size={20} />}
                       label="Create a Challenge"
                       onLinkClick={toggleSidebar}
                     />
-                    
+
                     <div className="flex items-center ">
                       <Link
                         href="/dashboard/mini-mastery-programs/create"
@@ -388,17 +389,17 @@ const Sidebar = ({ user }: { user?: UserType }) => {
 
                         {/* Extra gap added here */}
                         <span className="font-normal text-[17px] ml-3">
-                          Promote Mini Mastery Programs
+                          Create Mini Mastery Programs
                         </span>
                       </Link>
                     </div>
-                      <NavItem
+                    <NavItem
                       href="/dashboard/manage-store"
                       icon={<ShoppingCartIcon size={20} />}
                       label="Manage Your Store"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
-                                        <li>
+                    <li>
                       <Link
                         href="/dashboard/accountability/home"
                         onClick={toggleSidebar}
@@ -412,7 +413,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                         </span>
                       </Link>
                     </li>
-                    
+
                     <NavItem
                       href="/dashboard/buddy-lens"
                       icon={<HomeIcon size={20} />}
@@ -425,6 +426,14 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       label="Apply for a Grant"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
+                    <ComingSoonWrapper>
+                      <NavItem
+                        href="#"
+                        icon={<Droplet size={20} />}
+                        label="Manage Certificates"
+                        onLinkClick={toggleSidebar} // Pass toggleSidebar
+                      />
+                    </ComingSoonWrapper>
 
                     {/* <NavItem
                     href="/dashboard/accountability/home"
@@ -457,26 +466,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       onLinkClick={toggleSidebar}
                     />
                   </ComingSoonWrapper> */}
-                    <div className="flex items-center ">
-                      <Link
-                        href="/dashboard/mini-mastery-programs/create"
-                        onClick={toggleSidebar}
-                        className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
-                      >
-                        <GraduationCap size={20} className="w-7" />
-
-                        {/* Extra gap added here */}
-                        <span className="font-normal text-[17px] ml-2">
-                          Promote Mini Mastery Programs
-                        </span>
-                      </Link>
-                    </div>
-                    <NavItem
-                      href="/dashboard/manage-store"
-                      icon={<ShoppingCartIcon size={20} />}
-                      label="Manage Growth Store"
-                      onLinkClick={toggleSidebar} // Pass toggleSidebar
-                    />
 
                     {/* <NavItem
                   href="/dashboard/faq"
