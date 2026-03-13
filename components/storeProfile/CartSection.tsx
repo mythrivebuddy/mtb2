@@ -44,8 +44,8 @@ const CurrencyBadge = ({ currency }: { currency: string }) => {
     currency === "GP"
       ? "bg-purple-100 text-purple-700"
       : currency === "INR"
-      ? "bg-orange-100 text-orange-700"
-      : "bg-green-100 text-green-700";
+        ? "bg-orange-100 text-orange-700"
+        : "bg-green-100 text-green-700";
 
   return (
     <span className={`absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded ${badgeClass}`}>
@@ -138,16 +138,16 @@ const CartSection: React.FC<CartSectionProps> = ({
               return (
                 <li
                   key={cartItem.id}
-                  className="flex justify-between items-center border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="relative">
-                      <Image
+                      <img
                         src={cartItem.item.imageUrl || "/placeholder-image.jpg"}
                         alt={cartItem.item.name}
-                        width={64}
-                        height={64}
-                        className="object-cover rounded-md"
+                        // width={64}
+                        // height={64}
+                        className="w-full h-full object-contain sm:w-24 sm:h-24 sm:object-fit  rounded-md"
                       />
                       <CurrencyBadge currency={itemCurrency} />
                     </div>
@@ -167,7 +167,7 @@ const CartSection: React.FC<CartSectionProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     {/* Quantity */}
                     <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
                       <button
@@ -188,14 +188,14 @@ const CartSection: React.FC<CartSectionProps> = ({
                     </div>
 
                     {/* Price */}
-                    <span className="font-semibold text-green-600 min-w-[90px] text-right">
+                    <span className="font-semibold text-green-600 min-w-[70px] sm:min-w-[90px] text-right">
                       {formatPrice(effectivePrice * quantity, itemCurrency, sym)}
                     </span>
 
                     {/* Remove */}
                     <button
                       onClick={() => handleRemoveFromCart(cartItem.id!)}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium"
+                      className="px-3 py-2 sm:px-4 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs sm:text-sm font-medium"
                     >
                       Remove
                     </button>

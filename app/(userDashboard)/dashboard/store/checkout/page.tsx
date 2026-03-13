@@ -560,8 +560,7 @@ useEffect(() => {
   const GST_RATE = 0.18;
 
   const isIndianGSTApplicable =
-    displayBilling?.country === "IN" &&
-    selectedCurrency === "INR" &&
+    displayBilling?.country === "IN"  &&
     !isGPCart;
 
   const gstAmount = singleTotal && isIndianGSTApplicable
@@ -733,7 +732,7 @@ useEffect(() => {
             )}
 
             {/* Order Summary */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
+            <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
               <h2 className="font-bold text-xl mb-5 flex items-center gap-2">
                 <span className="text-gray-400">{isGPCart ? "4" : isMixedCurrency ? "4" : "3"}.</span>
                 ORDER SUMMARY
@@ -760,9 +759,9 @@ useEffect(() => {
                   const isGP = originalCurrency === "GP";
 
                   return (
-                    <div key={item.id} className="flex gap-4 pb-5 border-b border-gray-200 last:border-b-0">
+                    <div key={item.id} className="flex flex-col sm:flex-row gap-4 pb-5 border-b border-gray-200 last:border-b-0">
                       <div className="relative flex-shrink-0">
-                        <Image src={item.imageUrl} alt={item.name} width={120} height={120} className="w-28 h-28 object-cover rounded-lg shadow-sm" />
+                        <Image src={item.imageUrl} alt={item.name} width={120} height={120} className="w-full h-full sm:w-28 sm:h-28 object-cover rounded-lg shadow-sm" />
                         <span className={`absolute -top-2 -left-2 inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full shadow-md border-2 ${isGP ? "bg-purple-500 text-white border-purple-600"
                           : originalCurrency === "INR" ? "bg-orange-500 text-white border-orange-600"
                             : "bg-green-500 text-white border-green-600"
@@ -773,11 +772,11 @@ useEffect(() => {
                       </div>
 
                       <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-1">{item.name}</h3>
+                        <h3 className="font-semibold text-base sm:text-lg mb-1">{item.name}</h3>
                         <p className="text-sm text-gray-500 mb-3">{item.category.name} • Qty: {parsedCartItems[index].quantity}</p>
 
                         <div className="space-y-2">
-                          <div className="flex items-baseline gap-2">
+                          <div className="flex items-baseline gap-2 flex-wrap">
                             <span className={`text-2xl font-bold ${isGP ? "text-purple-700" : "text-gray-900"}`}>
                               {isGP ? `${Math.ceil(unitPrice)} GP` : `${displayData.symbol}${Number(unitPrice).toFixed(2)}`}
                             </span>
@@ -903,11 +902,11 @@ useEffect(() => {
                   <span className="text-gray-700 font-medium">Delivery Charges</span>
                   <span className="text-green-600 font-bold">FREE</span>
                 </div>
-                {isIndianGSTApplicable && (
+                {isIndianGSTApplicable && selectedCurrency && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">GST (18%)</span>
                     <span className="text-gray-900 font-bold">
-                      ₹{gstAmount.toFixed(2)}
+                      {selectedCurrency ? getCurrencySymbol(selectedCurrency):" "}{gstAmount.toFixed(2)}
                     </span>
                   </div>
                 )}
