@@ -16,6 +16,8 @@ import {
 } from "@/schema/zodSchema";
 import type { FieldErrors } from "react-hook-form";
 import { MMP_STORAGE_KEY } from "@/types/client/mini-mastery-program";
+import { Editor } from "@tinymce/tinymce-react";
+import { Controller } from "react-hook-form";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -420,7 +422,7 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                       )}
 
                       {/* Instructions */}
-                      <div className="space-y-1">
+                      {/* <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase">
                           Content Area / Instructions
                         </label>
@@ -439,7 +441,59 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                         {modErrors?.instructions?.message && (
                           <p className="text-[11px] text-red-500 font-medium">{modErrors.instructions.message}</p>
                         )}
-                      </div>
+                      </div> */}
+                      <div className="space-y-1">
+  <label className="text-xs font-bold text-gray-500 uppercase">
+    Content Area / Instructions
+  </label>
+  <Controller
+    name={`modules.${index}.instructions`}
+    control={control}
+    render={({ field }) => (
+      <Editor
+        key={`instructions-${field.name}`}
+        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+        value={field.value}
+        onEditorChange={(content) => {
+          field.onChange(content);
+          persistToStorage({ modules: watchedModules as ModuleData[] });
+        }}
+        init={{
+          height: 300,
+          menubar: false,
+          toolbar_mode: "sliding",
+          promotion: false,
+          plugins: [
+            "advlist", "autolink", "lists", "charmap", "preview",
+            "anchor", "searchreplace", "visualblocks", "fullscreen",
+            "insertdatetime", "media", "table", "help", "wordcount",
+          ],
+          toolbar:
+            "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
+          block_formats: "Paragraph=p",
+          valid_elements: "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
+          extended_valid_elements: "",
+          verify_html: false,
+          cleanup: false,
+          forced_root_block: "p",
+          placeholder: "Describe what participants should focus on today...",
+          content_style: `
+            body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
+            p { margin: 0.5rem 0; }
+            h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
+            h2 { font-size: 1.5em; font-weight: 600; color: #334155; margin-top: 0.75rem; margin-bottom: 0.5rem; }
+            h3 { font-size: 1.25em; font-weight: 600; color: #475569; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+            blockquote { border-left: 3px solid #c084fc; margin-left: 0; padding-left: 1rem; color: #4b5563; font-style: italic; background-color: #f9fafb; border-radius: 0.25rem; }
+          `,
+        }}
+      />
+    )}
+  />
+  {modErrors?.instructions?.message && (
+    <p className="text-[11px] text-red-500 font-medium">{modErrors.instructions.message}</p>
+  )}
+</div>
+
 
                       {/* Action Task */}
                       <div className="space-y-1">

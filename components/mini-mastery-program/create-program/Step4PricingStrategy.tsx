@@ -75,11 +75,10 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
                 key={String(paid)}
                 type="button"
                 onClick={() => setAndPersist("isPaid", paid)}
-                className={`flex-1 py-3 rounded-[20px] font-bold text-sm transition-all duration-300 ${
-                  isPaid === paid
+                className={`flex-1 py-3 rounded-[20px] font-bold text-sm transition-all duration-300 ${isPaid === paid
                     ? `bg-white shadow-md ${paid ? "text-blue-600" : "text-gray-900"}`
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 {paid ? "Paid Program" : "Free Program"}
               </button>
@@ -104,11 +103,10 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
                     key={curr}
                     type="button"
                     onClick={() => setAndPersist("currency", curr)}
-                    className={`flex-1 py-3 rounded-2xl font-bold text-xs border-2 transition-all ${
-                      currency === curr
+                    className={`flex-1 py-3 rounded-2xl font-bold text-xs border-2 transition-all ${currency === curr
                         ? "border-blue-400 bg-blue-50 text-blue-700"
                         : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200"
-                    }`}
+                      }`}
                   >
                     {curr} {curr === "INR" ? "(₹)" : "($)"}
                   </button>
@@ -131,11 +129,11 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
                   })}
                   type="number"
                   placeholder="0"
-                  className={`w-full pl-12 pr-4 py-5 border-2 rounded-[24px] text-xl font-black text-gray-800 focus:ring-4 outline-none transition-all ${
-                    errors.price
+                  defaultValue={defaultValues?.price ?? "0"}
+                  className={`w-full pl-12 pr-4 py-5 border-2 rounded-[24px] text-xl font-black text-gray-800 focus:ring-4 outline-none transition-all ${errors.price
                       ? "bg-red-50/30 border-red-400 focus:ring-red-400/10"
                       : "bg-gray-50/50 border-gray-100 focus:ring-blue-400/10 focus:border-blue-400"
-                  }`}
+                    }`}
                 />
               </div>
               <p className="text-[11px] text-gray-400 pl-1">Per enrollment</p>

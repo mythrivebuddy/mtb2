@@ -44,35 +44,27 @@ export default function BusinessProfileLayout() {
       languages: [],
       certifications: [],
       testimonials: [],
-      profilePhoto: undefined, // IMPORTANT
+      profilePhoto: undefined,
     },
   })
 
-  const { watch, reset, handleSubmit } = methods
+  const { watch, reset, getValues } = methods
 
-function cleanNulls<T>(obj: T): T {
-  if (Array.isArray(obj)) {
-    return obj.map((item) => cleanNulls(item)) as unknown as T
+  function cleanNulls<T>(obj: T): T {
+    if (Array.isArray(obj)) {
+      return obj.map((item) => cleanNulls(item)) as unknown as T
+    }
+    if (obj !== null && typeof obj === "object") {
+      const cleaned = {} as Record<string, unknown>
+      Object.keys(obj as Record<string, unknown>).forEach((key) => {
+        const value = (obj as Record<string, unknown>)[key]
+        cleaned[key] = value === null ? undefined : cleanNulls(value)
+      })
+      return cleaned as T
+    }
+    return obj
   }
 
-  if (obj !== null && typeof obj === "object") {
-    const cleaned = {} as Record<string, unknown>
-
-    Object.keys(obj as Record<string, unknown>).forEach((key) => {
-      const value = (obj as Record<string, unknown>)[key]
-
-      if (value === null) {
-        cleaned[key] = undefined
-      } else {
-        cleaned[key] = cleanNulls(value)
-      }
-    })
-
-    return cleaned as T
-  }
-
-  return obj
-}
   /* ---------------- FETCH PROFILE ON LOAD ---------------- */
 
   useEffect(() => {
@@ -80,29 +72,27 @@ function cleanNulls<T>(obj: T): T {
 
     const fetchProfile = async () => {
       try {
-        const res = await fetch(
-          `/api/user/profile/getProfile?userId=${userId}`
-        )
+        const res = await fetch(`/api/user/profile/getProfile?userId=${userId}`)
         if (res.ok) {
           const data = await res.json()
           if (data.profile) {
             const cleanedProfile = cleanNulls(data.profile)
-  methods.reset({
-  ...cleanedProfile,
-  testimonials: Array.isArray(cleanedProfile.testimonials)
-    ? cleanedProfile.testimonials
-    : [],
-  certifications: Array.isArray(cleanedProfile.certifications)
-    ? cleanedProfile.certifications
-    : [],
-})
+            methods.reset({
+              ...cleanedProfile,
+              testimonials: Array.isArray(cleanedProfile.testimonials)
+                ? cleanedProfile.testimonials
+                : [],
+              certifications: Array.isArray(cleanedProfile.certifications)
+                ? cleanedProfile.certifications
+                : [],
+            })
           }
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error)
       } finally {
-  setProfileLoaded(true)  // ✅ runs whether profile exists, is null, or fetch throws
-}
+        setProfileLoaded(true)
+      }
     }
 
     fetchProfile()
@@ -111,33 +101,24 @@ function cleanNulls<T>(obj: T): T {
   /* ---------------- LOAD DRAFT (SAFE) ---------------- */
 
   useEffect(() => {
-  if (profileLoaded) return
+    if (profileLoaded) return
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) return
+    const parsed = JSON.parse(saved)
+    delete parsed.profilePhoto
+    reset(parsed)
+  }, [reset, profileLoaded])
 
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (!saved) return
-
-  const parsed = JSON.parse(saved)
-  delete parsed.profilePhoto
-
-  reset(parsed)
-}, [reset, profileLoaded])
   /* ---------------- AUTO SAVE (SAFE) ---------------- */
 
   useEffect(() => {
     const subscription = watch((value) => {
       const safeData = { ...value }
-
-      // Never save File to localStorage
       if (safeData.profilePhoto instanceof File) {
         delete safeData.profilePhoto
       }
-
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(safeData)
-      )
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(safeData))
     })
-
     return () => subscription.unsubscribe()
   }, [watch])
 
@@ -149,56 +130,28 @@ function cleanNulls<T>(obj: T): T {
 
       const formData = new FormData()
       Object.entries(data).forEach(([key, value]) => {
-  if (value === undefined || value === null || value === "") return
-
-  //  File → upload
-  if (value instanceof File) {
-    formData.append(key, value)
-    return
-  }
-
-  // Existing photo URL (string)
-  if (key === "profilePhoto" && typeof value === "string") {
-    formData.append(key, value)
-    return
-  }
-
-  // Arrays
-  if (Array.isArray(value)) {
-    formData.append(key, JSON.stringify(value))
-    return
-  }
-
-  //  Objects
-  if (typeof value === "object") {
-    formData.append(key, JSON.stringify(value))
-    return
-  }
-
-  // Everything else
-  formData.append(key, String(value))
-})
+        if (value === undefined || value === null || value === "") return
+        if (value instanceof File) { formData.append(key, value); return }
+        if (key === "profilePhoto" && typeof value === "string") { formData.append(key, value); return }
+        if (Array.isArray(value)) { formData.append(key, JSON.stringify(value)); return }
+        if (typeof value === "object") { formData.append(key, JSON.stringify(value)); return }
+        formData.append(key, String(value))
+      })
 
       formData.append("userId", userId)
 
-      const res = await fetch(
-        `/api/user/profile/updateProfile?userId=${userId}`,
-        {
-          method: "PUT",
-          body: formData,
-        }
-      )
+      const res = await fetch(`/api/user/profile/updateProfile?userId=${userId}`, {
+        method: "PUT",
+        body: formData,
+      })
 
       if (!res.ok) throw new Error("Failed to save profile")
-
       return res.json()
     },
 
     onSuccess: () => {
       localStorage.removeItem(STORAGE_KEY)
-      queryClient.invalidateQueries({
-        queryKey: ["profile", userId],
-      })
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       toast.success("Profile saved successfully 🎉")
     },
 
@@ -207,10 +160,14 @@ function cleanNulls<T>(obj: T): T {
     },
   })
 
-  /* ---------------- SUBMIT ---------------- */
-
-  const onSubmit = (data: BusinessProfileFormValues) => {
-    mutation.mutate(data)
+  /* ---------------- FINAL SUBMIT ---------------- */
+  // Directly calls mutation with getValues() — skips RHF handleSubmit
+  // because handleSubmit validates ALL fields including earlier steps,
+  // which silently blocks submission if any step has an issue.
+  const handleFinalSubmit = () => {
+    const data = getValues()
+    console.log("handleFinalSubmit called", data)
+    mutation.mutate(data as BusinessProfileFormValues)
   }
 
   /* ---------------- SESSION GUARD ---------------- */
@@ -231,51 +188,33 @@ function cleanNulls<T>(obj: T): T {
 
   return (
     <FormProvider {...methods}>
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="max-w-4xl mx-auto p-6"
-      >
+      <div className="max-w-4xl mx-auto p-6">
         <ProgressBar step={step} />
 
         {step === 1 && <Step1Identity next={() => setStep(2)} />}
         {step === 2 && (
-          <Step2Transformation
-            next={() => setStep(3)}
-            back={() => setStep(1)}
-          />
+          <Step2Transformation next={() => setStep(3)} back={() => setStep(1)} />
         )}
         {step === 3 && (
-          <Step3Methodology
-            next={() => setStep(4)}
-            back={() => setStep(2)}
-          />
+          <Step3Methodology next={() => setStep(4)} back={() => setStep(2)} />
         )}
         {step === 4 && (
-          <Step4Authority
-            next={() => setStep(5)}
-            back={() => setStep(3)}
-          />
+          <Step4Authority next={() => setStep(5)} back={() => setStep(3)} />
         )}
         {step === 5 && (
-          <Step5Services
-            next={() => setStep(6)}
-            back={() => setStep(4)}
-          />
+          <Step5Services next={() => setStep(6)} back={() => setStep(4)} />
         )}
         {step === 6 && (
-          <Step6Pricing
-            next={() => setStep(7)}
-            back={() => setStep(5)}
-          />
+          <Step6Pricing next={() => setStep(7)} back={() => setStep(5)} />
         )}
         {step === 7 && (
           <Step7Review
             back={() => setStep(6)}
-            submit={handleSubmit(onSubmit)}
+            submit={handleFinalSubmit}
             isLoading={mutation.isPending}
           />
         )}
-      </form>
+      </div>
     </FormProvider>
   )
 }

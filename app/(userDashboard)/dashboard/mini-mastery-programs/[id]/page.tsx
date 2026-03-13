@@ -79,7 +79,7 @@
 
 // function Skeleton() {
 //   return (
-//     <div className="min-h-screen bg-slate-50 pb-20 font-sans animate-pulse">
+//     <div className="min-h-screen bg-slate-50 pb-20 animate-pulse">
 //       <div className="max-w-6xl mx-auto px-4 pt-10">
 //         <div className="flex flex-col lg:flex-row gap-10 items-center">
 //           <div className="w-full lg:w-1/2 aspect-video rounded-[32px] bg-slate-200 border-4 border-white" />
@@ -165,7 +165,7 @@
 
 // function ErrorState({ message }: { message: string }) {
 //   return (
-//     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 font-sans px-4">
+//     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 px-4">
 //       <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
 //         <AlertCircle size={28} className="text-red-400" />
 //       </div>
@@ -210,7 +210,7 @@
 //   const hasCert      = !!program.certificateTitle;
 
 //   return (
-//     <div className="min-h-screen bg-slate-50 pb-20 font-sans selection:bg-blue-100">
+//     <div className="min-h-screen bg-slate-50 pb-20 selection:bg-blue-100">
 
 //       {/* ── Hero ──────────────────────────────────────────────────────────── */}
 //       <div className="max-w-6xl mx-auto px-4 pt-10">
@@ -496,7 +496,7 @@ async function fetchProgram(id: string): Promise<Program> {
 
 function Skeleton() {
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans animate-pulse">
+    <div className="min-h-screen bg-slate-50 pb-20 animate-pulse">
       <div className="max-w-6xl mx-auto px-4 pt-10">
         <div className="flex flex-col lg:flex-row gap-10 items-center">
           <div className="w-full lg:w-1/2 aspect-video rounded-[32px] bg-slate-200 border-4 border-white" />
@@ -579,7 +579,7 @@ function Skeleton() {
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 font-sans px-4">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4 px-4">
       <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
         <AlertCircle size={28} className="text-red-400" />
       </div>
@@ -624,7 +624,7 @@ const ProgramDetails = () => {
   const hasCert      = !!program.certificateTitle;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-slate-50 pb-20 selection:bg-blue-100">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-4 pt-10">

@@ -21,7 +21,10 @@ import {
 import { MMP_STORAGE_KEY, ProgramDBPayload } from "@/types/client/mini-mastery-program";
 import { toast } from "sonner";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Storage key for draftId ──────────────────────────────────────────────────
+const DRAFT_ID_KEY = `${MMP_STORAGE_KEY}_draftId`;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function loadFromStorage(): Partial<FullFormData> {
   if (typeof window === "undefined") return {};
@@ -33,19 +36,57 @@ function loadFromStorage(): Partial<FullFormData> {
   }
 }
 
+function loadDraftId(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(DRAFT_ID_KEY);
+}
+
+function saveDraftId(id: string) {
+  localStorage.setItem(DRAFT_ID_KEY, id);
+}
+
 function clearStorage() {
   localStorage.removeItem(MMP_STORAGE_KEY);
+  localStorage.removeItem(DRAFT_ID_KEY);
+}
+
+// ─── Partial payload builder (works with incomplete formData) ─────────────────
+
+function buildPartialPayload(data: Partial<FullFormData>): Record<string, unknown> {
+  return {
+    ...(data.step1 && {
+      name:        data.step1.title,
+      description: data.step1.subtitle,
+      durationDays: parseInt(data.step1.duration),
+      unlockType:  data.step1.unlockType,
+      thumbnailUrl: data.step1.thumbnailUrl ?? "",
+    }),
+    ...(data.step2 && {
+      achievements: data.step2.achievements.map((a) => a.value),
+    }),
+    ...(data.step3 && {
+      modules: data.step3.modules,
+    }),
+    ...(data.step4 && {
+      price:    data.step4.isPaid ? parseFloat(data.step4.price) : 0,
+      currency: data.step4.currency,
+    }),
+    ...(data.step5 && {
+      completionThreshold: data.step5.threshold,
+      certificateTitle:    data.step5.certTitle,
+    }),
+  };
 }
 
 // ─── Step Info ────────────────────────────────────────────────────────────────
 
 const STEP_INFO = [
-  { label: "Program Basics",           next: "Content Structure" },
-  { label: "MMP Creation Flow",         next: "Module Builder" },
-  { label: "Daily Module Builder",      next: "Pricing Strategy" },
-  { label: "Pricing Strategy",          next: "Completion & Certificate" },
-  { label: "Completion & Certificate",  next: "Review & Publish" },
-  { label: "Review & Publish",          next: "Finish" },
+  { label: "Program Basics",           next: "Content Structure"        },
+  { label: "MMP Creation Flow",        next: "Module Builder"           },
+  { label: "Daily Module Builder",     next: "Pricing Strategy"         },
+  { label: "Pricing Strategy",         next: "Completion & Certificate" },
+  { label: "Completion & Certificate", next: "Review & Publish"         },
+  { label: "Review & Publish",         next: "Finish"                   },
 ] as const;
 
 const TOTAL_STEPS = 6;
@@ -55,64 +96,148 @@ const TOTAL_STEPS = 6;
 export default function CreateProgramPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-
-  // Central form state — all steps live here
-  const [formData, setFormData] = useState<Partial<FullFormData>>({});
+  const [formData,    setFormData]    = useState<Partial<FullFormData>>({});
+  const [draftId,     setDraftId]     = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Hydrate from localStorage on mount
   useEffect(() => {
     setFormData(loadFromStorage());
+    setDraftId(loadDraftId());
   }, []);
 
   const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
 
+  // ── Auto-save draft to DB ──────────────────────────────────────────────────
+
+  const autoSaveDraft = async (newStepData: Partial<FullFormData>) => {
+    try {
+      const merged  = { ...formData, ...newStepData };
+      const partial = buildPartialPayload(merged);
+
+      // step1 (name) is required to create — skip if not present
+      if (!partial.name) return;
+
+      if (draftId) {
+        // Update existing draft
+        await fetch("/api/mini-mastery-programs", {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ id: draftId, ...partial, status: "DRAFT" }),
+        });
+      } else {
+        // Create new draft — needs minimum required fields
+        const minFields = {
+          name:                partial.name,
+          description: ((partial.description as string)?.trim() || "Draft").slice(0, 300),
+          durationDays:        partial.durationDays ?? 7,
+          unlockType:          partial.unlockType   ?? "daily",
+          achievements:        (partial.achievements as string[])?.length
+                                 ? partial.achievements
+                                 : ["Achievement 1"],
+          modules:             (partial.modules as unknown[])?.length
+                                 ? partial.modules
+                                 : [{
+                                     id: 1, title: "Module 1", type: "text",
+                                     instructions: "Instructions", actionTask: "Action task",
+                                   }],
+          price:               partial.price    ?? 0,
+          currency:            partial.currency ?? "INR",
+          completionThreshold: partial.completionThreshold ?? 100,
+          certificateTitle:    partial.certificateTitle    ?? "Certificate of Completion",
+          thumbnailUrl:        partial.thumbnailUrl        ?? "",
+          status:              "DRAFT",
+        };
+
+        const res = await fetch("/api/mini-mastery-programs", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(minFields),
+        });
+
+        if (res.ok) {
+          const json = await res.json() as { program: { id: string } };
+          setDraftId(json.program.id);
+          saveDraftId(json.program.id);
+        }
+      }
+    } catch (err) {
+      // Silent fail — don't block user
+      console.error("Auto-save draft failed:", err);
+    }
+  };
+
   // ── Step handlers ────────────────────────────────────────────────────────
 
-  const handleStep1Next = (data: Step1Data) => {
+  const handleStep1Next = async (data: Step1Data) => {
     setFormData((prev) => ({ ...prev, step1: data }));
+    await autoSaveDraft({ step1: data });
     setCurrentStep(2);
   };
 
-  const handleStep2Next = (data: Step2Data) => {
+  const handleStep2Next = async (data: Step2Data) => {
     setFormData((prev) => ({ ...prev, step2: data }));
+    await autoSaveDraft({ step2: data });
     setCurrentStep(3);
   };
 
-  const handleStep3Next = (data: Step3Data) => {
+  const handleStep3Next = async (data: Step3Data) => {
     setFormData((prev) => ({ ...prev, step3: data }));
+    await autoSaveDraft({ step3: data });
     setCurrentStep(4);
   };
 
-  const handleStep4Next = (data: Step4Data) => {
+  const handleStep4Next = async (data: Step4Data) => {
     setFormData((prev) => ({ ...prev, step4: data }));
+    await autoSaveDraft({ step4: data });
     setCurrentStep(5);
   };
 
-  const handleStep5Next = (data: Step5Data) => {
+  const handleStep5Next = async (data: Step5Data) => {
     setFormData((prev) => ({ ...prev, step5: data }));
+    await autoSaveDraft({ step5: data });
     setCurrentStep(6);
   };
 
   const handleBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-  // ── API Calls (owned here, passed down to Step6) ─────────────────────────
+  // ── Final submit ─────────────────────────────────────────────────────────
 
   const handleSubmitForReview = async (payload: ProgramDBPayload) => {
     setSubmitError(null);
     try {
-      const res = await fetch("/api/mini-mastery-programs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      if (draftId) {
+        // Update existing draft → UNDER_REVIEW
+        const res = await fetch("/api/mini-mastery-programs", {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            id: draftId,
+            ...buildPartialPayload(formData),
+            status: "UNDER_REVIEW",
+          }),
+        });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.message || `Server error: ${res.status}`);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { message?: string })?.message || `Server error: ${res.status}`);
+        }
+      } else {
+        // No draft yet — create fresh
+        const res = await fetch("/api/mini-mastery-programs", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { message?: string })?.message || `Server error: ${res.status}`);
+        }
       }
 
       clearStorage();
+      setDraftId(null);
       toast.success("Program submitted for review successfully!");
       router.push("/dashboard/mini-mastery-programs/create");
     } catch (err) {
@@ -125,20 +250,38 @@ export default function CreateProgramPage() {
   const handleSaveDraft = async (payload: ProgramDBPayload) => {
     setSubmitError(null);
     try {
-      const res = await fetch("/api/mini-mastery-programs?draft=true", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, status: "DRAFT" }),
-      });
+      if (draftId) {
+        const res = await fetch("/api/mini-mastery-programs", {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            id: draftId,
+            ...buildPartialPayload(formData),
+            status: "DRAFT",
+          }),
+        });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.message || `Server error: ${res.status}`);
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { message?: string })?.message || `Server error: ${res.status}`);
+        }
+      } else {
+        const res = await fetch("/api/mini-mastery-programs?draft=true", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ ...payload, status: "DRAFT" }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error((data as { message?: string })?.message || `Server error: ${res.status}`);
+        }
       }
 
       clearStorage();
+      setDraftId(null);
       toast.success("Draft saved successfully!");
-      router.push("/");
+      router.push("/dashboard/mini-mastery-programs");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not save draft. Please try again.";
       setSubmitError(message);
@@ -146,13 +289,11 @@ export default function CreateProgramPage() {
     }
   };
 
-  // ── Guard: don't render Step6 unless all steps are filled ───────────────
+  // ── Guard ─────────────────────────────────────────────────────────────────
+
   const isFormComplete =
-    !!formData.step1 &&
-    !!formData.step2 &&
-    !!formData.step3 &&
-    !!formData.step4 &&
-    !!formData.step5;
+    !!formData.step1 && !!formData.step2 &&
+    !!formData.step3 && !!formData.step4 && !!formData.step5;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center py-10 px-4">
@@ -167,7 +308,14 @@ export default function CreateProgramPage() {
               {STEP_INFO[currentStep - 1]?.label}
             </h3>
           </div>
-          <span className="text-blue-600 font-bold text-sm">{progress}%</span>
+          <div className="flex items-center gap-3">
+            {draftId && (
+              <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest">
+                ✓ Auto-saved
+              </span>
+            )}
+            <span className="text-blue-600 font-bold text-sm">{progress}%</span>
+          </div>
         </div>
 
         <div className="w-full h-[6px] bg-gray-200 rounded-full">

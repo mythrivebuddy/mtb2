@@ -30,8 +30,30 @@ const updateProgramBodySchema = z.object({
   thumbnailUrl:        z.string().url().optional().or(z.literal("")),
 });
 
+// Loose schema for partial auto-save PATCH (har step pe call hota hai)
+const partialUpdateSchema = z.object({
+  status:              z.enum(["DRAFT", "UNDER_REVIEW"]).optional(),
+  name:                z.string().min(1).max(100).optional(),
+  description:         z.string().optional(),
+  durationDays:        z.number().int().positive().optional(),
+  unlockType:          z.enum(["daily", "all"]).optional(),
+  achievements:        z.array(z.string()).optional(),
+  modules:             z.array(z.object({
+    id:           z.number(),
+    title:        z.string(),
+    type:         z.enum(["video", "text"]),
+    videoUrl:     z.string().optional(),
+    instructions: z.string(),
+    actionTask:   z.string(),
+  })).optional(),
+  price:               z.number().min(0).optional(),
+  currency:            z.enum(["INR", "USD"]).optional(),
+  completionThreshold: z.number().int().min(1).max(100).optional(),
+  certificateTitle:    z.string().optional(),
+  thumbnailUrl:        z.string().optional(),
+});
+
 // ─── GET /api/mini-mastery-programs/[id] ─────────────────────────────────────
-// Fetch a single program owned by the current user — for pre-filling edit form
 
 export async function GET(
   _req: NextRequest,
@@ -68,9 +90,71 @@ export async function GET(
   return NextResponse.json({ program });
 }
 
+// ─── PATCH /api/mini-mastery-programs/[id] ───────────────────────────────────
+// Partial auto-save — har step pe call hota hai, loose validation
+// Status DRAFT rakhta hai jab tak final submit na ho
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  let body: unknown;
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ message: "Invalid JSON." }, { status: 400 }); }
+
+  const parsed = partialUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { message: "Validation failed.", errors: parsed.error.flatten().fieldErrors },
+      { status: 422 }
+    );
+  }
+
+  // Confirm ownership
+  const existing = await prisma.program.findFirst({
+    where: { id: params.id, createdBy: userId },
+    select: { id: true, status: true },
+  });
+
+  if (!existing) {
+    return NextResponse.json({ message: "Program not found." }, { status: 404 });
+  }
+
+  // Published programs ko protect karo
+  if (existing.status === "PUBLISHED") {
+    return NextResponse.json(
+      { message: "Published programs cannot be edited." },
+      { status: 409 }
+    );
+  }
+
+  const { ...updateFields } = parsed.data;
+
+  const updated = await prisma.program.update({
+    where: { id: params.id },
+    data: {
+      ...updateFields,
+      ...(updateFields.achievements
+        ? { achievements: updateFields.achievements as Prisma.InputJsonValue }
+        : {}),
+      ...(updateFields.modules
+        ? { modules: updateFields.modules as Prisma.InputJsonValue }
+        : {}),
+    },
+    select: { id: true, name: true, status: true },
+  });
+
+  return NextResponse.json({ message: "Program auto-saved.", program: updated });
+}
+
 // ─── PUT /api/mini-mastery-programs/[id] ─────────────────────────────────────
-// Update program fields + automatically set status → UNDER_REVIEW
-// Only the program owner can edit; PUBLISHED programs are allowed to be re-edited
+// Full update — final submit, sets status → UNDER_REVIEW
 
 export async function PUT(
   req: NextRequest,
@@ -82,7 +166,6 @@ export async function PUT(
   }
   const userId = session.user.id;
 
-  // Parse body
   let body: unknown;
   try { body = await req.json(); }
   catch { return NextResponse.json({ message: "Invalid JSON." }, { status: 400 }); }
@@ -115,13 +198,12 @@ export async function PUT(
       durationDays:        data.durationDays,
       unlockType:          data.unlockType,
       achievements:        data.achievements as Prisma.InputJsonValue,
-      modules:             data.modules     as Prisma.InputJsonValue,
+      modules:             data.modules      as Prisma.InputJsonValue,
       price:               data.price,
       currency:            data.currency,
       completionThreshold: data.completionThreshold,
       certificateTitle:    data.certificateTitle,
       thumbnailUrl:        data.thumbnailUrl || null,
-      // Always send back to review after any edit
       status:              "UNDER_REVIEW",
     },
     select: { id: true, name: true, status: true },
