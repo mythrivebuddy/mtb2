@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, Suspense } from "react";
-import {  useSearchParams } from "next/navigation";
+import {  useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -217,7 +217,7 @@ const BillingSummary = ({ billing, onEdit }: { billing: BillingInfo; onEdit: () 
           <p className="text-gray-500 text-sm">GST: {billing.gstNumber}</p>
         )}
       </div>
-      <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 ml-4">
+      <button onClick={onEdit} className="flex items-center gap-1 text-blue-600 font-medium text-sm hover:text-blue-800 shrink-0 sm:ml-4">
         <Pencil className="w-3.5 h-3.5" /> CHANGE
       </button>
     </div>
@@ -270,7 +270,12 @@ const GPBalanceBanner = ({ gpBalance, requiredGP, isInsufficient }: { gpBalance:
 const CheckoutContent = () => {
   // const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const router = useRouter();
+  const { data: session,status } = useSession();
+
+  if (status === "loading") {
+  return <PageLoader />
+}
 
   // ── useState — always first, always unconditional ─────────────────────────
   const [isEditingBilling, setIsEditingBilling] = useState(false);

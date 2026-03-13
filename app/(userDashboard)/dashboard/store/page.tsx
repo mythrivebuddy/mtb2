@@ -10,6 +10,7 @@ import PageLoader from "@/components/PageLoader";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { Item, WishlistItem, Category } from "@/types/client/store";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 // ✅ Updated to include GP
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -147,6 +148,7 @@ const StorePage: React.FC = () => {
   const [productFilter, setProductFilter] = useState<ProductFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [addingItemId, setAddingItemId] = useState<string | null>(null);
+  const { data: session, status } = useSession();
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -254,6 +256,9 @@ const StorePage: React.FC = () => {
     },
   });
 
+const redirectToLogin = (callbackUrl: string) => {
+  router.push(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+};
   // Always use base price
   const getPrice = (item: Item): number => {
     return item.basePrice;
@@ -401,8 +406,8 @@ const StorePage: React.FC = () => {
                     {itemCurrency !== "INR" && (
                       <div className="absolute bottom-3 left-3">
                         <span className={`px-2.5 py-1 text-xs font-bold rounded-full shadow-md ${itemCurrency === "USD"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-purple-100 text-purple-700"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-purple-100 text-purple-700"
                           }`}>
                           {itemCurrency}
                         </span>
@@ -428,7 +433,14 @@ const StorePage: React.FC = () => {
                       ) : (
                         <button
                           className="flex-1 flex items-center justify-center gap-1.5 bg-white hover:bg-blue-50 active:scale-95 text-blue-600 font-semibold text-xs rounded-xl px-3 py-2 border-2 border-blue-500 hover:border-blue-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                          onClick={() => addToCartMutation.mutate(item.id)}
+                          onClick={() => {
+                            if (!session) {
+                              redirectToLogin("/dashboard/store");
+                              return;
+                            }
+
+                            addToCartMutation.mutate(item.id);
+                          }}
                           disabled={addingItemId === item.id}
                         >
                           <PlusCircle className="w-4 h-4 shrink-0" />
@@ -437,13 +449,20 @@ const StorePage: React.FC = () => {
                       )}
                       <button
                         className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-br from-orange-400 to-rose-500 hover:from-orange-500 hover:to-rose-600 active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 shadow-sm hover:shadow-md transition-all duration-200"
-                        onClick={() => handleBuyNow(item.id)}
+                        onClick={() => {
+                          if (!session) {
+                            redirectToLogin(`/dashboard/store/checkout?cartItem=${item.id}:1`);
+                            return;
+                          }
+
+                          handleBuyNow(item.id);
+                        }}
                       >
                         <ShoppingCart className="w-4 h-4 shrink-0" />
                         <span>Buy Now</span>
                       </button>
                     </div>
-                    
+
                   </div>
                 </div>
               );

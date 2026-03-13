@@ -4,19 +4,18 @@ import SignInForm from "@/components/auth/SignInForm";
 import AppLayout from "@/components/layout/AppLayout";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const SignInPageContent = () => {
   const { data: session } = useSession();
   const router = useRouter();
-  // const searchParams = useSearchParams();
-  const redirect = "/MTB-2026-the-complete-makeover-program"  // high priority to makeover program
-  // || searchParams.get("redirect") || searchParams.get("callbackUrl")  || "/dashboard"; // Respect redirect parameter
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/MTB-2026-the-complete-makeover-program" || "/dashboard"; // Respect redirect parameter
 
   useEffect(() => {
     if (!session) return;
 
-    console.log("SignInPageContent redirecting:", { redirect, role: session?.user?.role }); // Debug
+    
 
     if (session?.user?.role === "ADMIN") {
       router.push("/admin/dashboard");
