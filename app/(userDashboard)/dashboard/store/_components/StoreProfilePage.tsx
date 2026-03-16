@@ -3,7 +3,7 @@
 "use client";
 import React, { useState } from "react";
 import axios, { AxiosResponse } from "axios";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
