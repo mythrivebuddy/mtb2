@@ -41,7 +41,7 @@ export async function sendEmailUsingTemplate({
   const payload = {
     sender: { email: senderEmail },
     to: [{ email: toEmail, name: toName }],
-    subject: template.subject,
+    subject: renderEmailTemplate(template.subject, templateData),
     htmlContent: emailContent,
   };
 

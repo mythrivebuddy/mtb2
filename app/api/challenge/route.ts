@@ -22,6 +22,9 @@ type ChallengePlanConfig = {
   createLimit: number;
   isUpgradeFlagShow?: boolean;
   limitType: LimitType;
+  canCreatePaidChallenge?: boolean;
+  commissionPercent?: number;
+  canIssueCertificate?: boolean;
 };
 
 
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
 
     if (!featureResult.allowed) {
       return NextResponse.json(
-        { error: featureResult.reason },
+        { message: featureResult.reason },
         { status: 403 },
       );
     }
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
 
     if (!planConfig) {
       return NextResponse.json(
-        { error: "Challenge configuration not found" },
+        { message: "Challenge configuration not found" },
         { status: 500 }
       );
     }
@@ -154,6 +157,19 @@ export async function POST(request: Request) {
       challengeJoiningFee,
       challengeJoiningFeeCurrency,
     } = validationResult.data;
+
+    if (
+      challengeType === "PAID" &&
+      !planConfig.canCreatePaidChallenge
+    ) {
+      return NextResponse.json(
+        {
+          message: "Your current plan doesn't support paid challenges. Upgrade your plan to create them.",
+          isUpgradeFlagShow: true
+        },
+        { status: 403 }
+      );
+    }
 
     // Transaction: create challenge, enroll, deduct JP
     const newChallenge = await prisma.$transaction(

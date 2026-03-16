@@ -7,6 +7,8 @@ import { createRazorpayOrder } from "@/lib/payment/createRazorpayOrder";
 import { validateCoupon } from "@/lib/payment/coupons/coupons.service";
 import { calculatePayment } from "@/lib/payment/pricingService";
 import { Prisma } from "@prisma/client";
+import { assignJp, deductJp } from "@/lib/utils/jp";
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 type Currency = "INR" | "USD";
 
@@ -47,16 +49,37 @@ export async function POST(req: NextRequest) {
             where: { id: { in: productIds } },
             select: {
                 id: true,
+                name: true,
                 basePrice: true,
-                currency: true
-            }
-        });
+                currency: true,
+                createdByUserId: true,
+            },
 
+        });
+        const hasGPItems = products.some(p => p.currency === "GP");
+        const hasJPItems = products.some(p => p.currency === "JP");
+        const hasRegularItems = products.some(p => p.currency !== "GP" && p.currency !== "JP");
+
+
+        if (hasGPItems && hasJPItems) {
+            return NextResponse.json(
+                { success: false, error: "Cannot purchase GP and JP items together" },
+                { status: 400 }
+            );
+        }
         if (products.length !== productIds.length) {
             return NextResponse.json(
                 { success: false, error: "Some products not found" },
                 { status: 400 }
             );
+        }
+
+        if ((hasGPItems || hasJPItems) && !hasRegularItems) {
+            return handleWalletTransaction({
+                userId: session.user.id,
+                items,
+                products
+            });
         }
 
         const productMap = new Map(products.map(p => [p.id, p]));
@@ -173,4 +196,138 @@ export async function POST(req: NextRequest) {
             { status: 500 }
         );
     }
+}
+
+interface HandleWalletTransactionParams {
+    userId: string;
+    items: StoreItem[];
+    products: {
+        id: string;
+        name: string;
+        basePrice: number;
+        currency: string;
+        createdByUserId: string | null;
+    }[];
+}
+
+async function handleWalletTransaction({
+    userId,
+    items,
+    products
+}: HandleWalletTransactionParams) {
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { plan: true }
+    });
+
+    if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const productMap = new Map(products.map(p => [p.id, p]));
+
+    let walletTotal = 0;
+
+    for (const item of items) {
+        const product = productMap.get(item.itemId);
+        if (!product) continue;
+
+        walletTotal += product.basePrice * item.quantity;
+    }
+
+    if (user.jpBalance < walletTotal) {
+        return NextResponse.json(
+            { error: `Insufficient balance. Need ${walletTotal} and you have ${user.jpBalance}` },
+            { status: 400 }
+        );
+    }
+
+    const creatorRewards: Record<string, number> = {};
+
+    const order = await prisma.$transaction(async (tx) => {
+
+        await deductJp(user, "STORE_PURCHASE", tx, { amount: walletTotal });
+
+        const createdOrder = await tx.order.create({
+            data: {
+                userId: user.id,
+                totalAmount: walletTotal,
+                currency: products[0].currency,
+                status: "COMPLETED",
+                items: {
+                    create: items.map(i => ({
+                        itemId: i.itemId,
+                        quantity: i.quantity,
+                        priceAtPurchase: productMap.get(i.itemId)!.basePrice,
+                        originalPrice: productMap.get(i.itemId)!.basePrice,
+                        originalCurrency: productMap.get(i.itemId)!.currency
+                    }))
+                }
+            }
+        });
+
+        await tx.cart.deleteMany({
+            where: {
+                userId: user.id,
+                itemId: { in: items.map(i => i.itemId) }
+            }
+        });
+
+        for (const [creatorId, amount] of Object.entries(creatorRewards)) {
+
+            const creator = await tx.user.findUnique({
+                where: { id: creatorId },
+                include: { plan: true }
+            });
+
+            if (!creator) continue;
+
+            await assignJp(
+                creator,
+                "STORE_SALE",
+                tx,
+                { amount }
+            );
+        }
+
+        return createdOrder;
+    });
+    const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    });
+
+    const itemNames = items
+        .map(i => {
+            const product = productMap.get(i.itemId)!;
+            return `${product.name ?? product.id} (×${i.quantity}) - ${product.basePrice} ${product.currency}`;
+        })
+        .join(", ");
+
+    const appUrl = process.env.NEXT_URL || "";
+    void sendEmailUsingTemplate({
+        toEmail: user.email!,
+        toName: user.name ?? "Customer",
+        templateId: "order-placed",
+        templateData: {
+            username: user.name ?? "Customer",
+            orderId: order.id,
+            orderDate,
+            totalAmount: `${walletTotal} ${products[0].currency}`,
+            status: "COMPLETED",
+            itemCount: items.length,
+            itemNames,
+            orderUrl: `${appUrl}/dashboard/store/profile`,
+            currency: products[0].currency,
+            paymentDetails: `Paid entirely with ${products[0].currency} from your balance`
+        },
+    });
+
+    return NextResponse.json({
+        success: true,
+        type: "WALLET",
+        order
+    });
 }
