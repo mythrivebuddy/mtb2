@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { GST_REGEX } from "@/lib/constant";
 import axios from "axios";
 import { RazorpayCheckoutOptions, RazorpayErrorResponse, RazorpaySuccessResponse, WindowWithRazorpay } from "@/types/client/razorpay-client.types";
+import { useQuery } from "@tanstack/react-query";
 
 // types
 
@@ -64,6 +65,11 @@ interface CouponResponse {
 }
 
 type PaymentGateway = "CASHFREE" | "RAZORPAY";
+
+const fetchBillingInfo = async () => {
+  const res = await axios.get("/api/user/billing-info");
+  return res.data.billingInfo;
+};
 
 export default function CheckoutPage() {
   const { data: session } = useSession(); // Get User Session
@@ -114,6 +120,11 @@ export default function CheckoutPage() {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [challengeLoading, setChallengeLoading] = useState(false);
   const [mmpLoading, setMmpLoading] = useState(false);
+  const { data: billingInfo } = useQuery({
+    queryKey: ["billing-info"],
+    queryFn: fetchBillingInfo,
+    staleTime: 1000 * 60 * 5, // 5 min cache
+  });
 
   // get active gateway on load
   useEffect(() => {
@@ -561,6 +572,22 @@ export default function CheckoutPage() {
     init();
   }, [planId, challengeId, context]);
   // Note: We don't depend on billingDetails.country here to avoid refetching loop, logic handles dynamic currency below
+
+  useEffect(() => {
+  if (!billingInfo) return;
+
+  setBillingDetails((prev) => ({
+    ...prev,
+    phone: billingInfo.phone || "",
+    // gstNumber: billingInfo.gstNumber || "",
+    addressLine1: billingInfo.addressLine1 || "",
+    city: billingInfo.city || "",
+    state: billingInfo.state || "",
+    postalCode: billingInfo.postalCode || "",
+    country: billingInfo.country || prev.country,
+    gstNumber: billingInfo.gstNumber || "",
+  }));
+}, [billingInfo]);
 
   // ---------------------------
   // 2. MANUAL VERIFY
