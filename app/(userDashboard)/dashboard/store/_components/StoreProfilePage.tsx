@@ -51,10 +51,11 @@ function StoreProfilePageComponent() {
     const { data, isLoading } = useQuery({
         queryKey: ["profileData"],
         queryFn: fetchProfileData,
-        refetchOnMount: true,
-        refetchOnWindowFocus: true,
-        refetchInterval: 5000,
-        refetchIntervalInBackground: false,
+         enabled: authStatus === "authenticated",
+        // refetchOnMount: true,
+        // refetchOnWindowFocus: true,
+        // refetchInterval: 5000,
+        // refetchIntervalInBackground: false,
     });
 
     const orders = (data?.orders.orders ?? []) as Order[];
@@ -151,7 +152,7 @@ function StoreProfilePageComponent() {
                         </div>
                         <Link
                             href="/dashboard/store"
-                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-2 py-2.5 sm:px-6 sm:py-3 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Back to Growth Store
@@ -183,7 +184,7 @@ function StoreProfilePageComponent() {
             </div>
         </div>
     )
-
+    console.log("CART DATA:", cart);
     return authStatus === "authenticated" ? (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             {pageContent}

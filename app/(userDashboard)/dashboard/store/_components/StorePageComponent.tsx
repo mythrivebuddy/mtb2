@@ -164,27 +164,19 @@ const StorePageComponent: React.FC = () => {
     const { data: wishlist = [], isLoading: wishlistLoading } = useQuery({
         queryKey: ["wishlist"],
         queryFn: fetchWishlist,
-        // refetchOnMount: true,
-        // refetchOnWindowFocus: true,
-        // refetchInterval: 5000,
-        // refetchIntervalInBackground: false,
+        enabled: authStatus === "authenticated",
     });
 
     const { data: cartItems = [], isLoading: cartLoading } = useQuery({
         queryKey: ["cart"],
         queryFn: fetchCartItems,
-        // refetchOnMount: true,
-        // refetchOnWindowFocus: true,
-        // refetchInterval: 5000,
-        // refetchIntervalInBackground: false,
+        enabled: authStatus === "authenticated",
     });
 
     const { data: items = [], isLoading: itemsLoading } = useQuery({
         queryKey: ["items", selectedCategory],
         queryFn: () => selectedCategory ? fetchItemsByCategory(selectedCategory) : fetchAllItems(),
         placeholderData: (prev) => prev,
-        // refetchOnMount: true,
-        // refetchOnWindowFocus: true,
     });
 
     const toggleWishlistMutation = useMutation({
@@ -246,10 +238,15 @@ const StorePageComponent: React.FC = () => {
             const response = await axios.post("/api/user/store/items/cart/add-cart-items", { itemId });
             return response.data;
         },
-        onSuccess: () => {
+
+        onSuccess: async () => {
             toast.success("Item added to cart");
             setAddingItemId(null);
-            queryClient.invalidateQueries({ queryKey: ["cart"] });
+
+            await queryClient.invalidateQueries({
+                queryKey: ["cart"],
+                refetchType: "active",
+            });
         },
         onError: (error) => {
             setAddingItemId(null);
@@ -267,7 +264,7 @@ const StorePageComponent: React.FC = () => {
 
     const handleBuyNow = (itemId: string) => router.push(`/dashboard/store/checkout?cartItem=${itemId}:1`);
 
-    if (categoriesLoading || wishlistLoading || itemsLoading || cartLoading) return <div className="min-h-screen flex justify-center items-center"> <PageLoader /> </div>;
+    if (categoriesLoading || itemsLoading || (authStatus === "authenticated" && (wishlistLoading || cartLoading))) return <div className="min-h-screen flex justify-center items-center"> <PageLoader /> </div>;
 
     const categoryOptions: DropdownOption[] = [
         { value: "", label: "All Categories" },
@@ -305,7 +302,7 @@ const StorePageComponent: React.FC = () => {
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">🛍 Growth Store</h1>
                             <p className="text-gray-600 mt-1">Explore curated products that support your growth, clarity, and transformation.</p>
                         </div>
-                        <div className="flex gap-3 flex-wrap">
+                        <div className="flex gap-3 flex-col sm:flex-row">
                             <button
                                 onClick={() => {
                                     if (!session) {
@@ -315,14 +312,14 @@ const StorePageComponent: React.FC = () => {
 
                                     router.push("/dashboard/store/order-history");
                                 }}
-                                className="bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                className="bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
                             >
                                 <History className="w-4 h-4" />
                                 Order History
                             </button>
                             <Link
                                 href="/dashboard/store/profile"
-                                className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700  text-white font-semibold text-sm rounded-lg px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700  text-white font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
                             >
                                 <ShoppingCart className="w-4 h-4" />
                                 My Cart & Orders
@@ -334,7 +331,7 @@ const StorePageComponent: React.FC = () => {
                 {/* Filters */}
                 <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
                     <div className="flex gap-4 flex-wrap items-center">
-                        <div className="flex-1 min-w-[250px]">
+                        <div className="flex-1 min-w-[200px]">
                             <div className="relative">
                                 <input
                                     type="text"
@@ -433,7 +430,7 @@ const StorePageComponent: React.FC = () => {
                                             </span>
                                         </div>
 
-                                        <div className="flex gap-2 mt-auto">
+                                        <div className="flex flex-col sm:flex-row gap-2 mt-auto">
                                             {inCart ? (
                                                 <Link href="/dashboard/store/profile" className="flex-1 flex items-center justify-center  bg-green-600  hover:bg-green-700 gap-1.5  active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 transition-all duration-200 shadow-sm hover:shadow-md">
                                                     <ShoppingCart className="w-4 h-4 shrink-0" />

@@ -104,10 +104,10 @@ const OrderHistoryPage: React.FC = () => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["orderHistory"],
     queryFn: fetchOrderHistory,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    staleTime: 0,
-    gcTime: 0,
+    // refetchOnMount: "always",
+    // refetchOnWindowFocus: true,
+    // staleTime: 0,
+    // gcTime: 0,
   });
 
   const toggleOrderExpansion = (orderId: string) => {
