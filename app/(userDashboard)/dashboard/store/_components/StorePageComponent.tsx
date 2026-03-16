@@ -267,7 +267,7 @@ const StorePageComponent: React.FC = () => {
 
     const handleBuyNow = (itemId: string) => router.push(`/dashboard/store/checkout?cartItem=${itemId}:1`);
 
-    if (categoriesLoading || wishlistLoading || itemsLoading || cartLoading) return <PageLoader />;
+    if (categoriesLoading || wishlistLoading || itemsLoading || cartLoading) return <div className="min-h-screen flex justify-center items-center"> <PageLoader /> </div>;
 
     const categoryOptions: DropdownOption[] = [
         { value: "", label: "All Categories" },
@@ -315,14 +315,14 @@ const StorePageComponent: React.FC = () => {
 
                                     router.push("/dashboard/store/order-history");
                                 }}
-                                className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-6 py-3 hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                className="bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
                             >
                                 <History className="w-4 h-4" />
                                 Order History
                             </button>
                             <Link
                                 href="/dashboard/store/profile"
-                                className="bg-[#3b82f5] text-white font-semibold text-sm rounded-lg px-6 py-3 hover:bg-[#2563eb] transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700  text-white font-semibold text-sm rounded-lg px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
                             >
                                 <ShoppingCart className="w-4 h-4" />
                                 My Cart & Orders
@@ -435,7 +435,7 @@ const StorePageComponent: React.FC = () => {
 
                                         <div className="flex gap-2 mt-auto">
                                             {inCart ? (
-                                                <Link href="/dashboard/store/profile" className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 transition-all duration-200 shadow-sm hover:shadow-md">
+                                                <Link href="/dashboard/store/profile" className="flex-1 flex items-center justify-center  bg-green-600  hover:bg-green-700 gap-1.5  active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 transition-all duration-200 shadow-sm hover:shadow-md">
                                                     <ShoppingCart className="w-4 h-4 shrink-0" />
                                                     <span>Cart</span>
                                                 </Link>
@@ -457,7 +457,7 @@ const StorePageComponent: React.FC = () => {
                                                 </button>
                                             )}
                                             <button
-                                                className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-br from-orange-400 to-rose-500 hover:from-orange-500 hover:to-rose-600 active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 shadow-sm hover:shadow-md transition-all duration-200"
+                                                className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700  active:scale-95  font-semibold text-xs rounded-xl px-3 py-2.5 shadow-sm hover:shadow-md transition-all duration-200"
                                                 onClick={() => {
                                                     if (!session) {
                                                         redirectToLogin(`/dashboard/store/checkout?cartItem=${item.id}:1`);

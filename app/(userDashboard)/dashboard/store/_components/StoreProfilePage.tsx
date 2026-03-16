@@ -16,6 +16,7 @@ import { Item, Order, CartItem, WishlistItem } from "@/types/client/store";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import AppLayout from "@/components/layout/AppLayout";
 import { useSession } from "next-auth/react";
+import PageLoader from "@/components/PageLoader";
 
 
 function StoreProfilePageComponent() {
@@ -131,7 +132,7 @@ function StoreProfilePageComponent() {
     if (isLoading || authStatus === "loading") {
         return (
             <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+                <PageLoader/>
             </div>
         );
     }
@@ -150,7 +151,7 @@ function StoreProfilePageComponent() {
                         </div>
                         <Link
                             href="/dashboard/store"
-                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-5 py-2.5 sm:px-6 sm:py-3hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-5 py-2.5 sm:px-6 sm:py-3 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Back to Growth Store

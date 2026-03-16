@@ -122,7 +122,7 @@ const OrderHistoryPage: React.FC = () => {
     });
   };
 
-  if (isLoading) return <PageLoader />;
+  if (isLoading) return <div className="flex min-h-screen items-center justify-center"><PageLoader /></div>;
 
   const completedOrders = orders.filter((o) => o.status.toLowerCase() === "completed" || o.status.toLowerCase() === "delivered").length;
 
@@ -166,7 +166,7 @@ const OrderHistoryPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2  sm:flex gap-8 sm:gap-4 w-full sm:w-auto">
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg min-w-0">
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-4 sm:p-6 text-white shadow-lg min-w-0">
                   <div className="text-3xl font-bold">{orders.length}</div>
                   <div className="text-indigo-100 text-sm mt-1 whitespace-nowrap">Total Orders</div>
                 </div>
@@ -190,7 +190,7 @@ const OrderHistoryPage: React.FC = () => {
               <p className="text-slate-600 mb-8">Start shopping to see your order history here</p>
               <Link
                 href="/dashboard/store"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700 text-white font-bold px-8 py-4 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300"
               >
                 <Package className="w-5 h-5" />
                 Browse Store

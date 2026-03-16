@@ -240,7 +240,7 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
 
           <Link
             href="/dashboard/store"
-            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2 rounded-md transition"
+            className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700   font-medium px-5 py-2 rounded-md transition"
           >
             Browse Store
           </Link>
