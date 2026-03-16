@@ -41,7 +41,7 @@ async function main() {
       description: "Email sent to user when an order is successfully placed.",
       htmlContent: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #f97316, #ef4444); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+         <div style="background: linear-gradient(90deg, #3b82f6, #4f46e5); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
             <h1 style="color: white; margin: 0; font-size: 28px;">Order Confirmed! 🎉</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0;">Thank you for your purchase</p>
           </div>
@@ -89,7 +89,16 @@ async function main() {
             </p>
 
             <div style="text-align: center; margin: 24px 0;">
-              <a href="{{orderUrl}}" style="background: linear-gradient(135deg, #f97316, #ef4444); color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
+              <a href="{{orderUrl}}"  style="
+       background: linear-gradient(90deg, #3b82f6, #4f46e5);
+       color: white;
+       padding: 12px 32px;
+       border-radius: 8px;
+       text-decoration: none;
+       font-weight: 600;
+       font-size: 15px;
+       display: inline-block;
+     ">
                 View My Orders
               </a>
             </div>

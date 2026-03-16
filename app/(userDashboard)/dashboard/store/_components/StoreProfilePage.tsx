@@ -152,7 +152,7 @@ function StoreProfilePageComponent() {
                         </div>
                         <Link
                             href="/dashboard/store"
-                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold text-sm rounded-lg px-2 py-2.5 sm:px-6 sm:py-3 hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold text-sm rounded-lg px-2 py-2.5 sm:px-6 sm:py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
                         >
                             <ArrowLeft className="w-4 h-4" />
                             Back to Growth Store

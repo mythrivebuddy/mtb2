@@ -273,7 +273,7 @@ const StorePageComponent: React.FC = () => {
 
     const productFilterOptions: DropdownOption[] = [
         { value: "ALL", label: "All Products" },
-        { value: "ADMIN", label: "Products by Mtb" },
+        { value: "ADMIN", label: "Products by MTB" },
         { value: "COACH", label: "Products by Coaches" },
     ];
 

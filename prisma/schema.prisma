@@ -2256,7 +2256,7 @@ enum ActivityType {
   COACH_REWARD_SPEND      // For the admin's deduction
   COACH_REWARD_RECEIVE    // For the member's credit
   STORE_PURCHASE  // When users buy items from store using GP
-
+  STORE_SALE
 }
 
 enum TransactionType {
