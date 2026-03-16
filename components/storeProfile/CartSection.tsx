@@ -209,7 +209,7 @@ const CartSection: React.FC<CartSectionProps> = ({
             <button
               onClick={handleBuyAll}
               disabled={purchasingItemId !== null}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium disabled:bg-gray-400"
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700   rounded-xl font-medium disabled:bg-gray-400"
             >
               {purchasingItemId ? "Processing..." : "Buy All"}
             </button>

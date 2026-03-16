@@ -66,7 +66,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isGuest = sessionStatus === "unauthenticated";
   const isChallengeRoute =
   pathname === "/dashboard/challenge" ||
-  pathname.startsWith("/dashboard/challenge/");
+  pathname.startsWith("/dashboard/challenge/") || pathname === "/dashboard/store" || pathname.startsWith("/dashboard/store/") ;
   const shouldUseInheritBg =
   isChallengeRoute &&
   isGuest &&
