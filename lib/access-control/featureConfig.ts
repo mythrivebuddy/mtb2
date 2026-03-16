@@ -204,7 +204,7 @@ export const featureConfig = {
                 COACH: {
                     createLimit: 10,
                     //TODO paid challenge , commission is left
-                    canCreatePaidChallenge: true,
+                    canCreatePaidChallenge: false,
                     commissionPercent: 25,
                     canIssueCertificate: false,
                     groupChatLimit: -1,

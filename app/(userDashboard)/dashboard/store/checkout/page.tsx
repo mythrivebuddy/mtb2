@@ -381,6 +381,14 @@ const CheckoutContent = () => {
 
     onSuccess: async (data) => {
       try {
+        if (data.type === "WALLET") {
+          toast.success("Purchase completed successfully!");
+
+          window.location.href =
+            `/dashboard/store/profile?orderId=${data.order.id}`;
+
+          return;
+        }
         await openRazorpayCheckout({
           orderId: data.orderId,
           key: data.key,
@@ -790,7 +798,7 @@ const CheckoutContent = () => {
                           {isGP && (
                             <div className="bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 flex items-center gap-2">
                               <GPIcon className="w-4 h-4 text-purple-600" />
-                              <p className="text-purple-800 font-medium text-xs">GP item — paid exclusively with Game Points</p>
+                              <p className="text-purple-800 font-medium text-xs">GP item — paid exclusively with Growth Points</p>
                             </div>
                           )}
 

@@ -14,6 +14,7 @@ import {
   LogIn, Zap, Shield,
 } from "lucide-react";
 import Link from "next/link";
+import AppLayout from "@/components/layout/AppLayout";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -235,8 +236,8 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
       <button
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${open
-            ? "bg-slate-900 text-white border-slate-900"
-            : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+          ? "bg-slate-900 text-white border-slate-900"
+          : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
           }`}
       >
         {active?.label ?? label}
@@ -616,7 +617,8 @@ export default function EnrollPage() {
   const pagination = data?.pagination;
   const statuses = statusData?.statuses ?? {};
 
-  return (
+
+  const pageContent = (
     <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto">
 
       {/* ── Info Modal ── */}
@@ -898,8 +900,8 @@ export default function EnrollPage() {
                       key={p}
                       onClick={() => setPage(p as number)}
                       className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${page === p
-                          ? "bg-slate-900 text-white shadow-md"
-                          : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
+                        ? "bg-slate-900 text-white shadow-md"
+                        : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
                         }`}
                     >
                       {p}
@@ -929,5 +931,10 @@ export default function EnrollPage() {
         </p>
       )}
     </div>
+  )
+  return authStatus === "authenticated" ? (
+    pageContent
+  ) : (
+    <AppLayout>{pageContent}</AppLayout>
   );
 }
