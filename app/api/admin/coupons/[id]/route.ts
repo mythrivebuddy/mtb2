@@ -28,38 +28,12 @@ type UpdateCouponDTO = {
   status?: CouponStatus
 };
 
-type UpdateCouponDTO = {
-  couponCode?: string;
-  description?: string;
-  type?: string;
-  discountPercentage?: string;
-  discountAmountINR?: string;
-  discountAmountUSD?: string;
-  freeDays?: string;
-  maxGlobalUses?: string;
-  maxUsesPerUser?: number;
-  startDate?: string;
-  endDate?: string;
-
-  applicableMmpProgramIds?: string[];
-  applicablePlanIds?: string[];
-  applicableChallengeIds?: string[];
-
-  applicableCurrencies?: string[];
-  applicableUserTypes?: string[];
-
-  autoApply?: boolean;
-  autoApplyConditions?: any;
-  status?: string;
-};
-
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = await params;
-<<<<<<< HEAD
     const rawBody = await req.json();
 
     const body: UpdateCouponDTO = {
@@ -68,9 +42,6 @@ export async function PUT(
         ? rawBody.status
         : undefined,
     };
-=======
-    const body: UpdateCouponDTO = await req.json();
->>>>>>> 56e71681cb938526d4c7152fcfacc2c4e6e825ed
 
     // Fields allowed to update
     const {
@@ -95,7 +66,6 @@ export async function PUT(
       status
     } = body;
 
-<<<<<<< HEAD
     const data: Prisma.CouponUpdateInput = {
       ...(couponCode && { couponCode }),
       ...(description !== undefined && { description }),
@@ -104,14 +74,6 @@ export async function PUT(
       }),
 
       ...(discountPercentage !== undefined && {
-=======
-    const data = {
-      ...(couponCode && { couponCode }),
-      ...(description !== undefined && { description }),
-      ...(type && { type }),
-
-      ...(discountPercentage && {
->>>>>>> 56e71681cb938526d4c7152fcfacc2c4e6e825ed
         discountPercentage: parseFloat(discountPercentage)
       }),
 
@@ -134,7 +96,6 @@ export async function PUT(
       ...(startDate && { startDate: new Date(startDate) }),
       ...(endDate && { endDate: new Date(endDate) }),
 
-<<<<<<< HEAD
       ...(autoApply !== undefined && {
         autoApply,
         autoApplyConditions: autoApply
@@ -144,12 +105,6 @@ export async function PUT(
       ...(status && { status }),
       ...(applicableUserTypes !== undefined && { applicableUserTypes }),
       ...(applicableCurrencies !== undefined && { applicableCurrencies }),
-=======
-      ...(autoApply !== undefined && { autoApply }),
-      ...(autoApplyConditions && { autoApplyConditions }),
-      ...(status && { status }),
-      ...(applicableUserTypes !== undefined && { applicableUserTypes }),
->>>>>>> 56e71681cb938526d4c7152fcfacc2c4e6e825ed
     };
 
     if (applicableMmpProgramIds) {
@@ -200,11 +155,7 @@ export async function DELETE(
       // Soft Delete / Deactivate
       await prisma.coupon.update({
         where: { id },
-<<<<<<< HEAD
         data: { status: CouponStatus.INACTIVE }
-=======
-        data: { status: "INACTIVE" }
->>>>>>> 56e71681cb938526d4c7152fcfacc2c4e6e825ed
       });
       return NextResponse.json({ message: "Coupon used previously. Marked as INACTIVE." });
     } else {
