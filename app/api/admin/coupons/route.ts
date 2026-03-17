@@ -15,6 +15,9 @@ export async function GET() {
         applicableChallenges: {
           select: { id: true, title: true },
         },
+        applicableMmpPrograms: {
+          select: { id: true, name: true }
+        }
       },
       orderBy: { createdAt: "desc" },
     });

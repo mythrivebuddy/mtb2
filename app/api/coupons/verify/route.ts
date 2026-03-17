@@ -1,11 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+import { getServerSession } from "next-auth";
+import { checkRole } from "@/lib/utils/auth";
+
+type CouponUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" | "ALL";
+
 export async function POST(req: Request) {
   try {
-    const { code, planId, currency, challengeId, userId, mmpProgramId } = await req.json();
+    const session = await checkRole("USER")
+    if (!session || !session.user.userType) {
+      return NextResponse.json({ valid: false, message: "Not eligible " }, { status: 400 })
+    }
 
-    if (!code || (!planId && !challengeId && !mmpProgramId)) {
+
+    const { code, planId, currency, challengeId, userId, mmp_programId } = await req.json();
+
+    if (!code || (!planId && !challengeId && !mmp_programId)) {
       return NextResponse.json(
         { valid: false, message: "Missing code or details." },
         { status: 400 }
@@ -24,7 +35,7 @@ export async function POST(req: Request) {
         _count: { select: { redemptions: true } },
       },
     });
-
+    const userType = session.user.userType as CouponUserType;
     // 2. Basic checks
     if (!coupon) {
       return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
@@ -44,11 +55,26 @@ export async function POST(req: Request) {
         message: "This coupon is only valid for subscriptions",
       });
     }
-    if (coupon.scope === "MMP_PROGRAM" && !mmpProgramId) {
+    if (coupon.scope === "MMP_PROGRAM" && !mmp_programId) {
       return NextResponse.json({
         valid: false,
         message: "This coupon is only valid for MMP programs",
       });
+    }
+    // 6. User Type applicability
+    if (coupon.applicableUserTypes?.length > 0) {
+      const isUserTypeValid = coupon.applicableUserTypes.includes(userType);
+      const isAll = coupon.applicableUserTypes.includes("ALL");
+
+      if (!isUserTypeValid && !isAll) {
+        return NextResponse.json(
+          {
+            valid: false,
+            message: "This coupon is not valid for your account type.",
+          },
+          { status: 400 }
+        );
+      }
     }
     const userUses = await prisma.couponRedemption.count({
       where: {
@@ -113,9 +139,9 @@ export async function POST(req: Request) {
       }
     }
     // MMP Program applicability
-    if (mmpProgramId && coupon.applicableMmpPrograms.length > 0) {
+    if (mmp_programId && coupon.applicableMmpPrograms.length > 0) {
       const isProgramValid = coupon.applicableMmpPrograms.some(
-        (p) => p.id === mmpProgramId
+        (p) => p.id === mmp_programId
       );
 
       if (!isProgramValid) {

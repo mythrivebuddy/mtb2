@@ -137,6 +137,9 @@ type Coupon = {
   _count?: { redemptions: number };
   autoApply: boolean;
   applicablePlans: Plan[];
+  applicableChallenges:Challenge[];
+   applicableMmpPrograms?: MmpProgram[];
+
   description?: string;
   scope: "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM";
 };
@@ -307,6 +310,11 @@ export default function CouponsManagementPage() {
       freeDays: coupon.freeDays?.toString() || "",
       applicableUserTypes: coupon.applicableUserTypes,
       applicablePlanIds: coupon.applicablePlans.map((p) => p.id),
+      applicableChallengeIds:
+      coupon.applicableChallenges.map((c) => c.id) || [],
+
+    applicableMmpProgramIds:
+      coupon.applicableMmpPrograms?.map((m:MmpProgram) => m.id) || [],
       applicableCurrencies: coupon.applicableCurrencies,
       firstCycleOnly: coupon.firstCycleOnly || false,
       multiCycle: coupon.multiCycle || false,
@@ -317,9 +325,6 @@ export default function CouponsManagementPage() {
       autoApply: coupon.autoApply,
       autoApplyConditions: {},
       scope: coupon.scope as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM",
-      applicableChallengeIds: [],
-      applicableMmpProgramIds: [],
-
     });
 
     setIsDialogOpen(true);
