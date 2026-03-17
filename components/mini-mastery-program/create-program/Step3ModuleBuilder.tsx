@@ -74,9 +74,8 @@ function SidebarPreview({ watchedModules, maxDays, reachedLimit, fields }: Previ
         {/* Header stats */}
         <div className="flex items-center justify-between">
           <h4 className="text-blue-400 font-bold text-sm">Program Preview</h4>
-          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-            reachedLimit ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"
-          }`}>
+          <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${reachedLimit ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"
+            }`}>
             {fields.length} / {maxDays} days
           </span>
         </div>
@@ -88,11 +87,10 @@ function SidebarPreview({ watchedModules, maxDays, reachedLimit, fields }: Previ
               <button
                 key={i}
                 onClick={() => setPreviewIdx(i)}
-                className={`shrink-0 w-8 h-8 rounded-xl text-[11px] font-black transition-all ${
-                  previewIdx === i
+                className={`shrink-0 w-8 h-8 rounded-xl text-[11px] font-black transition-all ${previewIdx === i
                     ? "bg-blue-500 text-white"
                     : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                }`}
+                  }`}
               >
                 {i + 1}
               </button>
@@ -156,9 +154,10 @@ function SidebarPreview({ watchedModules, maxDays, reachedLimit, fields }: Previ
                 <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
                   Instructions
                 </span>
-                <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-4">
-                  {current.instructions}
-                </p>
+                <div
+                  className="text-[11px] text-gray-300 leading-relaxed line-clamp-4"
+                  dangerouslySetInnerHTML={{ __html: current.instructions }}
+                />
               </div>
             )}
 
@@ -319,11 +318,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
               return (
                 <div
                   key={field.id}
-                  className={`border-2 rounded-3xl transition-all ${
-                    isExpanded
+                  className={`border-2 rounded-3xl transition-all ${isExpanded
                       ? hasError ? "border-red-300 p-6" : "border-blue-400 p-6"
                       : hasError ? "border-red-200 p-4 cursor-pointer" : "border-gray-100 p-4 hover:bg-gray-50 cursor-pointer"
-                  }`}
+                    }`}
                 >
                   <div
                     className="flex items-center justify-between"
@@ -331,11 +329,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                   >
                     <div className="flex items-center gap-4">
                       <span
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                          isExpanded ? "bg-blue-500 text-white"
-                          : hasError ? "bg-red-100 text-red-500"
-                          : "bg-gray-100 text-gray-400"
-                        }`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${isExpanded ? "bg-blue-500 text-white"
+                            : hasError ? "bg-red-100 text-red-500"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
                       >
                         {index + 1}
                       </span>
@@ -363,11 +360,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                             {...register(`modules.${index}.title`, {
                               onChange: () => persistToStorage({ modules: watchedModules as ModuleData[] }),
                             })}
-                            className={`w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 border text-sm ${
-                              modErrors?.title
+                            className={`w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 border text-sm ${modErrors?.title
                                 ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                                 : "border-transparent focus:ring-blue-400"
-                            }`}
+                              }`}
                           />
                           {modErrors?.title?.message && (
                             <p className="text-[11px] text-red-500 font-medium">{modErrors.title.message}</p>
@@ -386,11 +382,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                                   setValue(`modules.${index}.type`, t, { shouldValidate: true });
                                   persistToStorage({ modules: watchedModules as ModuleData[] });
                                 }}
-                                className={`flex-1 py-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold transition-all text-sm ${
-                                  moduleType === t
+                                className={`flex-1 py-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold transition-all text-sm ${moduleType === t
                                     ? "border-blue-500 bg-blue-50 text-blue-700"
                                     : "border-gray-100 text-gray-400"
-                                }`}
+                                  }`}
                               >
                                 {t === "video" ? <Video size={16} /> : <FileText size={16} />}
                                 {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -409,11 +404,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                               onChange: () => persistToStorage({ modules: watchedModules as ModuleData[] }),
                             })}
                             placeholder="YouTube or Vimeo link"
-                            className={`w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 border text-sm ${
-                              modErrors?.videoUrl
+                            className={`w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 border text-sm ${modErrors?.videoUrl
                                 ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                                 : "border-transparent focus:ring-blue-400"
-                            }`}
+                              }`}
                           />
                           {modErrors?.videoUrl?.message && (
                             <p className="text-[11px] text-red-500 font-medium">{modErrors.videoUrl.message}</p>
@@ -443,41 +437,41 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                         )}
                       </div> */}
                       <div className="space-y-1">
-  <label className="text-xs font-bold text-gray-500 uppercase">
-    Content Area / Instructions
-  </label>
-  <Controller
-    name={`modules.${index}.instructions`}
-    control={control}
-    render={({ field }) => (
-      <Editor
-        key={`instructions-${field.name}`}
-        apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-        value={field.value}
-        onEditorChange={(content) => {
-          field.onChange(content);
-          persistToStorage({ modules: watchedModules as ModuleData[] });
-        }}
-        init={{
-          height: 300,
-          menubar: false,
-          toolbar_mode: "sliding",
-          promotion: false,
-          plugins: [
-            "advlist", "autolink", "lists", "charmap", "preview",
-            "anchor", "searchreplace", "visualblocks", "fullscreen",
-            "insertdatetime", "media", "table", "help", "wordcount",
-          ],
-          toolbar:
-            "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
-          block_formats: "Paragraph=p",
-          valid_elements: "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
-          extended_valid_elements: "",
-          verify_html: false,
-          cleanup: false,
-          forced_root_block: "p",
-          placeholder: "Describe what participants should focus on today...",
-          content_style: `
+                        <label className="text-xs font-bold text-gray-500 uppercase">
+                          Content Area / Instructions
+                        </label>
+                        <Controller
+                          name={`modules.${index}.instructions`}
+                          control={control}
+                          render={({ field }) => (
+                            <Editor
+                              key={`instructions-${field.name}`}
+                              apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                              value={field.value}
+                              onEditorChange={(content) => {
+                                field.onChange(content);
+                                persistToStorage({ modules: watchedModules as ModuleData[] });
+                              }}
+                              init={{
+                                height: 300,
+                                menubar: false,
+                                toolbar_mode: "sliding",
+                                promotion: false,
+                                plugins: [
+                                  "advlist", "autolink", "lists", "charmap", "preview",
+                                  "anchor", "searchreplace", "visualblocks", "fullscreen",
+                                  "insertdatetime", "media", "table", "help", "wordcount",
+                                ],
+                                toolbar:
+                                  "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
+                                block_formats: "Paragraph=p",
+                                valid_elements: "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
+                                extended_valid_elements: "",
+                                verify_html: false,
+                                cleanup: false,
+                                forced_root_block: "p",
+                                placeholder: "Describe what participants should focus on today...",
+                                content_style: `
             body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
             p { margin: 0.5rem 0; }
             h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
@@ -485,14 +479,14 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
             h3 { font-size: 1.25em; font-weight: 600; color: #475569; margin-top: 0.5rem; margin-bottom: 0.5rem; }
             blockquote { border-left: 3px solid #c084fc; margin-left: 0; padding-left: 1rem; color: #4b5563; font-style: italic; background-color: #f9fafb; border-radius: 0.25rem; }
           `,
-        }}
-      />
-    )}
-  />
-  {modErrors?.instructions?.message && (
-    <p className="text-[11px] text-red-500 font-medium">{modErrors.instructions.message}</p>
-  )}
-</div>
+                              }}
+                            />
+                          )}
+                        />
+                        {modErrors?.instructions?.message && (
+                          <p className="text-[11px] text-red-500 font-medium">{modErrors.instructions.message}</p>
+                        )}
+                      </div>
 
 
                       {/* Action Task */}
@@ -509,11 +503,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
                           })}
                           rows={2}
                           placeholder="Ask a question or give a task..."
-                          className={`w-full p-4 rounded-2xl outline-none focus:ring-2 resize-none border text-sm ${
-                            modErrors?.actionTask
+                          className={`w-full p-4 rounded-2xl outline-none focus:ring-2 resize-none border text-sm ${modErrors?.actionTask
                               ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                               : "border-blue-100 bg-blue-50/30 focus:ring-blue-400"
-                          }`}
+                            }`}
                         />
                         {modErrors?.actionTask?.message && (
                           <p className="text-[11px] text-red-500 font-medium">{modErrors.actionTask.message}</p>
@@ -545,11 +538,10 @@ export default function Step3ModuleBuilder({ onNext, onBack, defaultValues, maxD
               type="button"
               onClick={addModule}
               disabled={reachedLimit}
-              className={`w-full py-5 border-2 border-dashed rounded-3xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${
-                reachedLimit
+              className={`w-full py-5 border-2 border-dashed rounded-3xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${reachedLimit
                   ? "border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50/50"
                   : "border-blue-200 text-blue-600 hover:bg-blue-50"
-              }`}
+                }`}
             >
               <Plus size={18} />
               {reachedLimit
