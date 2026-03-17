@@ -1,7 +1,9 @@
 import TodaysActionsClient from "@/components/complete-makevoer-program/TodaysActions/TodaysActionsClient";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 export default async function TodaysActionsPage() {
   // 1. Data Fetching
@@ -11,9 +13,13 @@ export default async function TodaysActionsPage() {
   if (!userId) {
     return <div>Please log in</div>;
   }
+  const { isPurchased, programId } = await grantProgramAccessToPage();
 
+  if (!isPurchased || !programId) {
+    redirect("/MTB-2026-the-complete-makeover-program");
+  }
   const userProgramState = await prisma.userProgramState.findFirst({
-    where: { userId },
+    where: { userId, programId: programId },
     include: { program: true },
   });
 

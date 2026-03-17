@@ -23,11 +23,18 @@ export async function grantProgramAccess(): Promise<ProgramAccess> {
   }
 
   const userId = session.user.id;
+  const program = await prisma.program.findUnique({
+    where: { slug: "2026-complete-makeover" },
+  });
+  if (!program) {
+    throw new AccessError("Program not found", 403);
+  }
 
   const purchase = await prisma.oneTimeProgramPurchase.findFirst({
     where: {
       userId,
       status: PaymentStatus.PAID,
+      productId: program.id,
     },
     select: {
       productId: true,
@@ -40,7 +47,7 @@ export async function grantProgramAccess(): Promise<ProgramAccess> {
 
   return {
     userId,
-    programId: purchase.productId,
+    programId: program.id,
   };
 }
 
@@ -56,11 +63,17 @@ export async function grantProgramAccessToPage(): Promise<ProgramAccessToPage> {
   }
 
   const userId = session.user.id;
-  
+  const program = await prisma.program.findUnique({
+    where: { slug: "2026-complete-makeover" },
+  });
+  if (!program) {
+    throw new Error("Program not found");
+  }
   const purchase = await prisma.oneTimeProgramPurchase.findFirst({
     where: {
       userId,
       status: PaymentStatus.PAID,
+      productId: program.id,
     },
     select: {
       productId: true,
@@ -69,7 +82,7 @@ export async function grantProgramAccessToPage(): Promise<ProgramAccessToPage> {
 
   return {
     userId,
-    programId: purchase?.productId ?? null,
+    programId: program.id,
     isPurchased: Boolean(purchase),
   };
 }

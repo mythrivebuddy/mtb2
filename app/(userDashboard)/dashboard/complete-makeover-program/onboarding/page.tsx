@@ -18,14 +18,22 @@ export default async function MakeoverOnboardingPage() {
   if (!session?.user?.id) redirect("/login");
 
   const userId = session.user.id;
-  const { isPurchased } = await grantProgramAccessToPage();
-  if (!isPurchased) {
+  const { isPurchased, programId } = await grantProgramAccessToPage();
+
+
+  /* ───────────── FETCH PROGRAM (ALWAYS) ───────────── */
+  const program = await prisma.program.findFirst({
+    where: { slug: "2026-complete-makeover" },
+    select: { id: true, startDate: true },
+  });
+
+  if (!isPurchased || !programId || !program) {
     redirect("/MTB-2026-the-complete-makeover-program");
   }
 
   /* ───────────── PROGRAM STATE ───────────── */
   const programState = await prisma.userProgramState.findFirst({
-    where: { userId },
+    where: { userId, programId: program.id },
     select: {
       onboarded: true,
       program: {
@@ -37,11 +45,7 @@ export default async function MakeoverOnboardingPage() {
     },
   });
 
-  /* ───────────── FETCH PROGRAM (ALWAYS) ───────────── */
-  const program = await prisma.program.findFirst({
-    where: { slug: "2026-complete-makeover" },
-    select: { id: true, startDate: true },
-  });
+
 
   /* ───────────── REDIRECT IF ALREADY STARTED ───────────── */
   const programStarted =
@@ -76,7 +80,7 @@ export default async function MakeoverOnboardingPage() {
       />
     );
   }
-  
+
   /* ───────────── NEW USER ───────────── */
   if (!programState) {
     return (
