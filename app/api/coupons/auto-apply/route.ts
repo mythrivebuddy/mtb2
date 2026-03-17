@@ -47,6 +47,7 @@ export async function POST(req: Request) {
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
+        applicableMmpPrograms: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -88,7 +89,13 @@ export async function POST(req: Request) {
         );
         if (!isChallengeValid) return false;
       }
+      if (mmp_programId && coupon.applicableMmpPrograms?.length > 0) {
+        const isProgramValid = coupon.applicableMmpPrograms.some(
+          (p) => p.id === mmp_programId
+        );
 
+        if (!isProgramValid) return false;
+      }
       // C. Currency applicability
       if (coupon.applicableCurrencies && coupon.applicableCurrencies.length > 0) {
         const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
@@ -113,6 +120,14 @@ export async function POST(req: Request) {
         if (conditions.userType && userType && conditions.userType !== userType) {
           return false;
         }
+      }
+      if (coupon.applicableUserTypes && coupon.applicableUserTypes.length > 0) {
+        const isUserTypeValid = coupon.applicableUserTypes.includes(userType);
+
+        // Optional: support "ALL"
+        const isAll = coupon.applicableUserTypes.includes("ALL");
+
+        if (!isUserTypeValid && !isAll) return false;
       }
 
       return true;

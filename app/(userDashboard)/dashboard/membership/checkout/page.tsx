@@ -574,20 +574,20 @@ export default function CheckoutPage() {
   // Note: We don't depend on billingDetails.country here to avoid refetching loop, logic handles dynamic currency below
 
   useEffect(() => {
-  if (!billingInfo) return;
+    if (!billingInfo) return;
 
-  setBillingDetails((prev) => ({
-    ...prev,
-    phone: billingInfo.phone || "",
-    // gstNumber: billingInfo.gstNumber || "",
-    addressLine1: billingInfo.addressLine1 || "",
-    city: billingInfo.city || "",
-    state: billingInfo.state || "",
-    postalCode: billingInfo.postalCode || "",
-    country: billingInfo.country || prev.country,
-    gstNumber: billingInfo.gstNumber || "",
-  }));
-}, [billingInfo]);
+    setBillingDetails((prev) => ({
+      ...prev,
+      phone: billingInfo.phone || "",
+      // gstNumber: billingInfo.gstNumber || "",
+      addressLine1: billingInfo.addressLine1 || "",
+      city: billingInfo.city || "",
+      state: billingInfo.state || "",
+      postalCode: billingInfo.postalCode || "",
+      country: billingInfo.country || prev.country,
+      gstNumber: billingInfo.gstNumber || "",
+    }));
+  }, [billingInfo]);
 
   // ---------------------------
   // 2. MANUAL VERIFY
@@ -709,14 +709,15 @@ export default function CheckoutPage() {
       const taxRate = currency === "INR" ? 0.18 : 0
       const tax = taxableAmount * taxRate
 
-      const total = taxableAmount + tax
+      const totalRaw = taxableAmount + tax
+      const finalTotal = totalRaw <= 0 ? 1 : totalRaw;
 
       return {
         base: subtotal,
         discount,
         taxableAmount,
         tax,
-        total: Number(total.toFixed(2)),
+        total: Number(finalTotal.toFixed(2)),
         currency,
       }
     }
@@ -754,14 +755,16 @@ export default function CheckoutPage() {
 
       const taxRate = isIndia ? 0.18 : 0;
       const tax = taxableAmount * taxRate;
-      const total = taxableAmount + tax;
+      const totalRaw = taxableAmount + tax;
+
+      const finalTotal = totalRaw <= 0 ? 1 : totalRaw;
 
       return {
         base: subtotal,
         discount,
         taxableAmount,
         tax,
-        total: parseFloat(total.toFixed(2)),
+        total: parseFloat(finalTotal.toFixed(2)),
         currency,
       };
     }
@@ -1361,6 +1364,11 @@ export default function CheckoutPage() {
                       })}
                     </span>
                   </div>
+                  {billing.total === 1 && billing.discount === billing.base && (
+                    <p className="text-green-600 text-xs mt-2">
+                      🎉 Fully discounted — minimal processing fee applied
+                    </p>
+                  )}
                 </div>
 
                 {/* PAY BUTTON */}
