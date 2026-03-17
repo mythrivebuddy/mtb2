@@ -265,7 +265,10 @@ export default function ProgramPreview({ programId }: { programId: string }) {
               </div>
               <div className="relative space-y-5 my-6">
                 <h3 className="text-3xl font-black text-white leading-tight tracking-tight">{currentModule.title}</h3>
-                <p className="text-blue-100/80 text-base font-medium leading-relaxed line-clamp-5">{currentModule.instructions}</p>
+                <div
+                  className="text-blue-100/80 text-base font-medium leading-relaxed line-clamp-5"
+                  dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+                />
               </div>
               <div className="relative flex items-center justify-between">
                 <div className="flex -space-x-1.5">
@@ -293,9 +296,10 @@ export default function ProgramPreview({ programId }: { programId: string }) {
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">
                 Day {activeDay}: {currentModule.title}
               </h1>
-              <p className="text-lg text-slate-500 leading-relaxed font-medium">
-                {currentModule.instructions}
-              </p>
+              <div
+                className="text-lg text-slate-500 leading-relaxed font-medium"
+                dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+              />
             </div>
           )}
 
@@ -309,7 +313,10 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                 </div>
                 <h3 className="text-xl font-black text-slate-900">Today&apos;s Action Task</h3>
               </div>
-              <p className="text-slate-600 font-medium leading-relaxed">{currentModule.actionTask}</p>
+              <div
+                className="text-slate-600 font-medium leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: currentModule.actionTask }}
+              />
 
               {/* Disabled textarea placeholder */}
               <div className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm text-slate-400 font-medium cursor-not-allowed">
@@ -352,8 +359,8 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                 return (
                   <button key={dn} onClick={() => setActiveDay(dn)} title={`Day ${dn}`}
                     className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${dn === activeDay
-                        ? "bg-amber-500 text-white scale-110 shadow-md shadow-amber-200"
-                        : "bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600"
+                      ? "bg-amber-500 text-white scale-110 shadow-md shadow-amber-200"
+                      : "bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600"
                       }`}>
                     {dn}
                   </button>
@@ -379,8 +386,8 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                   <button key={mod.id ?? dn}
                     onClick={() => setActiveDay(dn)}
                     className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${isActive
-                        ? "bg-amber-50 border-amber-200 shadow-sm"
-                        : "bg-white border-slate-100 hover:border-amber-100 hover:bg-amber-50/30"
+                      ? "bg-amber-50 border-amber-200 shadow-sm"
+                      : "bg-white border-slate-100 hover:border-amber-100 hover:bg-amber-50/30"
                       }`}>
                     <div className="flex items-center gap-3">
                       <div className="shrink-0">

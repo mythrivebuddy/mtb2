@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { PaymentStatus } from "@prisma/client";
 import { CURRENT_MAKEOVER_PROGRAM_QUARTER } from "@/lib/constant";
 import { inngest } from "@/lib/inngest";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 
 /* ───────────────── TYPES ───────────────── */
 
@@ -71,21 +71,19 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    const { programId, isPurchased } = await grantProgramAccessToPage();
+    if (!programId) {
+      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
 
-    /* ───────────── PROGRAM OWNERSHIP ───────────── */
-    const purchase = await prisma.oneTimeProgramPurchase.findFirst({
-      where: { userId, status: PaymentStatus.PAID },
-      select: { productId: true },
-    });
-
-    if (!purchase) {
+    if (!isPurchased) {
       return NextResponse.json(
         { error: "User has not purchased this program" },
         { status: 403 }
       );
     }
 
-    const programId = purchase.productId;
+
     const quarter = CURRENT_MAKEOVER_PROGRAM_QUARTER;
     const year = 2026;
 
@@ -168,16 +166,8 @@ export async function POST(req: Request) {
         where: { userId_programId: { userId, programId } },
         data: { onboarded: true, onboardedAt: new Date() },
       });
-      if (!isEdit) {
-        await inngest.send({
-        name: "user.onboarding.completed",
-        data: {
-          userId,
-          programId,
-        },
-      });
-      }
-      
+
+
     });
 
     /* ───────────── PHASE 2: CHALLENGE ENROLLMENT (NO TX) ───────────── */
@@ -242,7 +232,16 @@ export async function POST(req: Request) {
     //     });
     //   }
     // }
-
+    if (!isEdit) {
+      inngest
+        .send({
+          name: "user.onboarding.completed",
+          data: { userId, programId },
+        })
+        .catch((err) =>
+          console.error("Inngest async error:", err)
+        );
+    }
     /* ───────────── RESPONSE ───────────── */
     return NextResponse.json({
       success: true,
