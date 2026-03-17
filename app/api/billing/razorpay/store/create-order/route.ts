@@ -243,11 +243,40 @@ async function handleWalletTransaction({
         );
     }
 
-    const creatorRewards: Record<string, number> = {};
+    const creatorRewards: Record<
+        string,
+        {
+            amount: number;
+            items: {
+                itemId: string;
+                name: string;
+                quantity: number;
+            }[];
+        }> = {};
+    for (const item of items) {
+        const product = productMap.get(item.itemId);
+        if (!product || !product.createdByUserId) continue;
 
+        const creatorId = product.createdByUserId;
+        const amount = product.basePrice * item.quantity;
+
+        if (!creatorRewards[creatorId]) {
+            creatorRewards[creatorId] = {
+                amount: 0,
+                items: []
+            };
+        }
+
+        creatorRewards[creatorId].amount += amount;
+
+        creatorRewards[creatorId].items.push({
+            itemId: item.itemId,
+            name: product.name,
+            quantity: item.quantity
+        });
+    }
     const order = await prisma.$transaction(async (tx) => {
 
-        await deductJp(user, "STORE_PURCHASE", tx, { amount: walletTotal });
 
         const createdOrder = await tx.order.create({
             data: {
@@ -267,6 +296,22 @@ async function handleWalletTransaction({
             }
         });
 
+        await deductJp(user, "STORE_PURCHASE", tx, {
+            amount: walletTotal,
+
+            metadata: {
+                orderId: createdOrder.id,
+                items: items.map((i) => {
+
+                    const product = productMap.get(i.itemId);
+
+                    return {
+                        name: product?.name ?? "Unknown Product",
+                        itemId: i.itemId,
+                    };
+                }),
+            },
+        });
         await tx.cart.deleteMany({
             where: {
                 userId: user.id,
@@ -274,7 +319,8 @@ async function handleWalletTransaction({
             }
         });
 
-        for (const [creatorId, amount] of Object.entries(creatorRewards)) {
+
+        for (const [creatorId, reward] of Object.entries(creatorRewards)) {
 
             const creator = await tx.user.findUnique({
                 where: { id: creatorId },
@@ -287,7 +333,14 @@ async function handleWalletTransaction({
                 creator,
                 "STORE_SALE",
                 tx,
-                { amount }
+                {
+                    amount: reward.amount,
+                    metadata: {
+                        buyerId: user.id,
+                        orderId: createdOrder.id,
+                        items: reward.items
+                    }
+                }
             );
         }
 

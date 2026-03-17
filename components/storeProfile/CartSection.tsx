@@ -205,11 +205,11 @@ const CartSection: React.FC<CartSectionProps> = ({
           </ul>
 
           {/* Buy Button */}
-          <div className="flex justify-start mt-6">
+          <div className="flex justify-end mt-6">
             <button
               onClick={handleBuyAll}
               disabled={purchasingItemId !== null}
-              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700   rounded-xl font-medium disabled:bg-gray-400"
+              className="px-8 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700   rounded-xl font-medium disabled:bg-gray-400"
             >
               {purchasingItemId ? "Processing..." : "Buy All"}
             </button>

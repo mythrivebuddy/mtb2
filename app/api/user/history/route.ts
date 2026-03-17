@@ -8,7 +8,35 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 type TransactionMetadata = {
   joinerName?: string;
   challengeTitle?: string;
+  items?: {
+    name: string;
+    itemId: string;
+  }[];
 };
+// 🔹 helper type for cart items
+type CartItem = {
+  itemId: string;
+  quantity?: number;
+};
+
+// 🔹 safe JSON parser
+function parseCartSnapshot(snapshot: unknown): CartItem[] {
+  if (!snapshot) return [];
+
+  if (typeof snapshot === "string") {
+    try {
+      return JSON.parse(snapshot) as CartItem[];
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(snapshot)) {
+    return snapshot as CartItem[];
+  }
+
+  return [];
+}
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -64,22 +92,78 @@ export async function GET(request: Request) {
           },
         })
         : Promise.resolve([]);
+
+    const mmpOrders = await prisma.paymentOrder.findMany({
+      where: {
+        status: PaymentStatus.PAID,
+        contextType: "MMP_PROGRAM"
+      }
+    });
+    const mmpProgramIds = mmpOrders
+      .map(o => o.programId)
+      .filter((id): id is string => !!id); // ✅ fixes null issue too
+
+    const mmpPrograms = await prisma.program.findMany({
+      where: {
+        id: { in: mmpProgramIds }
+      },
+      select: {
+        id: true,
+        name: true,
+        createdBy: true // 👈 FIXED (see next issue)
+      }
+    });
+
+    const mmpProgramMap = new Map(mmpPrograms.map(p => [p.id, p]));
+
+    const coachMmpEarnings = mmpOrders
+      .filter(po => {
+        const program = mmpProgramMap.get(po.programId!);
+        return program?.createdBy === userId;
+      })
+      .map(po => {
+        const program = mmpProgramMap.get(po.programId!);
+
+        return {
+          id: `mmp-${po.id}`,
+          createdAt: po.paidAt || po.createdAt,
+          jpAmount: po.totalAmount,
+          currency: po.currency,
+
+          activity: {
+            activity: "MMP_EARNING",
+            transactionType: "CREDIT",
+            displayName: `MMP Purchase: ${program?.name}`
+          }
+        };
+      });
     const paymentOrdersPromise =
-      filter === "ALL" || filter === "SUBSCRIPTION" 
-      // || filter === "STORE_ORDER"
+      filter === "ALL" ||
+        filter === "SUBSCRIPTION" ||
+        filter === "STORE_PRODUCT" ||
+        filter === "MMP"
         ? prisma.paymentOrder.findMany({
           where: {
             userId,
             status: PaymentStatus.PAID,
-            contextType: {
-              in: ["SUBSCRIPTION", "STORE_ORDER"], // exclude CHALLENGE
-            },
+            ...(filter !== "ALL" && {
+              contextType:
+                filter === "SUBSCRIPTION"
+                  ? "SUBSCRIPTION"
+                  : filter === "STORE_PRODUCT"
+                    ? "STORE_PRODUCT"
+                    : filter === "MMP"
+                      ? "MMP_PROGRAM"
+                      : undefined,
+            }),
           },
           include: {
             plan: true,
           },
         })
         : Promise.resolve([]);
+
+
 
     const cmpPurchasesPromise =
       filter === "ALL" || filter === "CMP"
@@ -99,7 +183,11 @@ export async function GET(request: Request) {
             jpBalance: true,
           },
         }),
-        filter === "ALL" || filter === "GP" || filter === "CHALLENGE"
+        filter === "ALL" ||
+          filter === "GP" ||
+          filter === "CHALLENGE" ||
+          filter === "STORE_PRODUCT"
+          // || filter === "MMP"
           ? prisma.transaction.findMany({
             where: {
               userId,
@@ -115,7 +203,15 @@ export async function GET(request: Request) {
                     ]
                   }
                 }
-              })
+              }),
+              ...(filter === "STORE_PRODUCT" && {
+                activity: {
+                  activity: {
+                    in: ["STORE_PURCHASE", "STORE_SALE"]
+                  }
+                }
+              }),
+
             },
             include: { activity: true },
             orderBy: { createdAt: "desc" },
@@ -141,22 +237,91 @@ export async function GET(request: Request) {
       },
     }));
 
-    const paymentHistory = paymentOrders.map((po) => ({
-      id: po.id,
-      createdAt: po.paidAt || po.createdAt,
-      jpAmount: po.totalAmount,
-      currency: po.currency,
-      activity: {
-        activity: po.contextType,
-        transactionType: "DEBIT",
-        displayName:
-          po.contextType === "SUBSCRIPTION"
-            ? `Membership: ${po.plan?.name}`
-            : po.contextType === "STORE_ORDER"
-              ? `Store Purchase`
-              : po.plan?.name || "Payment",
+    const programIds = paymentOrders
+      .map((po) => po.programId)
+      .filter(Boolean);
+
+    const programs = await prisma.program.findMany({
+      where: {
+        id: { in: programIds as string[] },
       },
-    }));
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    const storeItemIds = paymentOrders
+      .filter((po) => po.contextType === "STORE_PRODUCT")
+      .flatMap((po) => {
+        const items = parseCartSnapshot(po.cartSnapshot);
+        return items.map((item) => item.itemId);
+      })
+      .filter((id): id is string => Boolean(id));
+
+    const storeProducts = await prisma.item.findMany({
+      where: {
+        id: { in: storeItemIds },
+      },
+    });
+
+    const productMap = new Map(
+      storeProducts.map((p) => [p.id, p.name])
+    );
+
+    const programMap = new Map(
+      programs.map((p) => [p.id, p.name])
+    );
+    const paymentHistory = paymentOrders.map((po) => {
+      let displayName = "Payment";
+
+      if (po.contextType === "SUBSCRIPTION") {
+        displayName = `Membership: ${po.plan?.name}`;
+      }
+
+      if (po.contextType === "STORE_PRODUCT") {
+        const items = parseCartSnapshot(po.cartSnapshot);
+
+        const itemNames = items
+          .map((item) => productMap.get(item.itemId))
+          .filter((name): name is string => Boolean(name));
+
+        if (itemNames.length === 1) {
+          displayName = `Store Purchase ${itemNames[0]}`;
+        } else if (itemNames.length > 1) {
+          displayName = `${itemNames[0]} + ${itemNames.length - 1} more`;
+        } else {
+          displayName = "Store Purchase";
+        }
+      }
+
+      if (po.contextType === "MMP_PROGRAM") {
+        const name = po.programId
+          ? programMap.get(po.programId)
+          : null;
+
+        displayName = name
+          ? `Program Purchase : ${name}`
+          : "Program Purchase";
+      }
+
+      return {
+        id: po.id,
+        createdAt: po.paidAt || po.createdAt,
+        jpAmount: po.totalAmount,
+        currency: po.currency,
+
+        activity: {
+          activity: po.contextType,
+          transactionType: "DEBIT",
+          displayName,
+        },
+
+        activityMeta: {
+          programId: po.programId,
+          storeOrderId: po.storeOrderId,
+        },
+      };
+    });
 
 
     const cmpHistory = cmpPurchases.map((cp) => ({
@@ -177,6 +342,29 @@ export async function GET(request: Request) {
 
       const meta = tx.metadata as TransactionMetadata | null;
 
+      // ✅ STORE PURCHASE
+      if (tx.activity.activity === "STORE_PURCHASE" && meta?.items?.length) {
+        const itemNames = meta.items.map((i) => i.name);
+
+        if (itemNames.length === 1) {
+          displayName = `Store Purchase ${itemNames[0]}`;
+        } else {
+          displayName = `${itemNames[0]} + ${itemNames.length - 1} more`;
+        }
+      }
+
+      // ✅ STORE SALE
+      if (tx.activity.activity === "STORE_SALE" && meta?.items?.length) {
+        const itemNames = meta.items.map((i) => i.name);
+
+        if (itemNames.length === 1) {
+          displayName = `Product Sold : ${itemNames[0]}`;
+        } else {
+          displayName = `${itemNames[0]} + ${itemNames.length - 1} items sold`;
+        }
+      }
+
+      // ✅ Challenge logic (keep this)
       if (meta?.joinerName && meta?.challengeTitle) {
         displayName = `${meta.joinerName} joined ${meta.challengeTitle}`;
       }
@@ -244,7 +432,8 @@ export async function GET(request: Request) {
       ...challengeHistory,
       ...paymentHistory,
       ...cmpHistory,
-      ...coachEarningsHistory
+      ...coachEarningsHistory,
+      ...coachMmpEarnings
     ];
 
     // ✅ Apply date range filter
