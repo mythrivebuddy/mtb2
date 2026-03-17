@@ -6,6 +6,7 @@ import {
   Filter, Lightbulb, HelpCircle,
   ChevronLeft, ChevronRight, Loader2, RefreshCw,
   X, Send, Pencil,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { ApiResponse, Pagination, Program, ProgramStatus } from "@/types/client/mini-mastery-program";
@@ -357,16 +358,6 @@ export default function Dashboard() {
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {/* Edit — available for DRAFT and PUBLISHED programs */}
-                          {(program.status === "DRAFT" || program.status === "PUBLISHED") && (
-                            <Link
-                              href={`/dashboard/mini-mastery-programs/create/edit/${program.id}`}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                            >
-                              <Pencil size={13} /> Edit
-                            </Link>
-                          )}
-
                           {/* Submit for Review — only for DRAFT */}
                           {program.status === "DRAFT" && (
                             <button
@@ -378,9 +369,29 @@ export default function Dashboard() {
                                 ? <Loader2 size={13} className="animate-spin" />
                                 : <Send size={13} />
                               }
-                              Submit for Review
+                              Request Review
                             </button>
                           )}
+  
+                            {/* Edit — available for DRAFT and PUBLISHED programs */}
+                            {(program.status === "DRAFT" || program.status === "PUBLISHED") && (
+                              <Link
+                                href={`/dashboard/mini-mastery-programs/create/edit/${program.id}`}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                              >
+                                <Pencil size={13} />
+                              </Link>
+                            )}
+
+                          {/* view for all status */}
+                          {/* /dashboard/mini-mastery-programs/program-preview/cmmors5s50007u5qouigfd4dx */}
+                          <Link href={`/dashboard/mini-mastery-programs/program-preview/${program.id}`}>
+                          <button
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="View">
+                          <Eye size={15} />
+                        </button>
+                        </Link>
+
                         </div>
                       </td>
                     </tr>
