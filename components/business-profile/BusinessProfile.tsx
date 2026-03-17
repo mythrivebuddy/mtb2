@@ -21,6 +21,7 @@ import Step6Pricing from "./steps/Step6Pricing"
 import Step7Review from "./steps/Step7Review"
 import ProgressBar from "./PrgressBar"
 import PageLoader from "@/components/PageLoader"
+import { useRouter } from "next/navigation"
 
 const STORAGE_KEY = process.env.LOCALSTORAGE_PROFILE_KEY || "business_profile_draft"
 
@@ -31,6 +32,7 @@ export default function BusinessProfileLayout() {
   const [step, setStep] = useState(1)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const queryClient = useQueryClient()
+  const router = useRouter()
 
   const methods = useForm<BusinessProfileFormValues>({
     resolver: zodResolver(businessProfileSchema),
@@ -153,6 +155,7 @@ export default function BusinessProfileLayout() {
       localStorage.removeItem(STORAGE_KEY)
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       toast.success("Profile saved successfully 🎉")
+      router.push(`/profile/${userId}`)
     },
 
     onError: () => {

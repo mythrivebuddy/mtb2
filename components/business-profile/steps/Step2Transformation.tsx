@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useFormContext, useFieldArray } from "react-hook-form"
 
 interface Props {
@@ -22,7 +23,11 @@ export default function Step2Transformation({ next, back }: Props) {
     control,
     name: "typicalResults",
   })
-
+useEffect(() => {
+  if (fields.length === 0) {
+    append("")
+  }
+}, [fields, append])
   const handleNext = async () => {
     const valid = await trigger(["transformation", "typicalResults"])
     if (!valid) return
