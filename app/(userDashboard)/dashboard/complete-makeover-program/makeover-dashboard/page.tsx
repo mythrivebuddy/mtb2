@@ -17,12 +17,17 @@ const DashboardPage = async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
-  const { isPurchased } = await grantProgramAccessToPage();
-  if (!isPurchased) {
+  const { isPurchased, programId } = await grantProgramAccessToPage();
+  if (!isPurchased || !programId) {
     redirect("/MTB-2026-the-complete-makeover-program");
   }
-  const programState = await prisma.userProgramState.findFirst({
-    where: { userId },
+  const programState = await prisma.userProgramState.findUnique({
+    where: {
+      userId_programId: {
+        userId,
+        programId: programId,
+      },
+    },
     include: {
       program: true,
     },
@@ -78,10 +83,10 @@ const DashboardPage = async () => {
     redirect(`/dashboard/complete-makeover-program/daily-actions-task-for-quarter`);
   }
 
- 
+
   const areaIds = validActionCommitments
-  .filter((a): a is typeof a & { areaId: number } => a.areaId !== null)
-  .map((a) => a.areaId);
+    .filter((a): a is typeof a & { areaId: number } => a.areaId !== null)
+    .map((a) => a.areaId);
 
   let isDayLocked = true;
   const today = normalizeDateUTC();
@@ -99,10 +104,10 @@ const DashboardPage = async () => {
         winLogged: true,
       },
     });
-      /* ----------------------------------
-       3️⃣ Compute lock
-    ---------------------------------- */
-     isDayLocked =
+    /* ----------------------------------
+     3️⃣ Compute lock
+  ---------------------------------- */
+    isDayLocked =
       logs.length === areaIds.length &&
       logs.every(
         (l) =>
@@ -111,21 +116,21 @@ const DashboardPage = async () => {
           l.winLogged === true
       );
   }
-     
 
-  
-       
+
+
+
   // if (!isDayLocked) {
   //   redirect(`/dashboard/complete-makeover-program/todays-actions`);
   // }
-  
+
   return (
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <MakeoverDashboardClientGate isDayLocked={isDayLocked} />
 
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Page Header */}
-        <DashboardHeader isProgramStarted={isProgramStarted} hasThreeActions={hasThreeActions} programStartDate={programState.program?.startDate} programEndDate={programState.program.endDate}/>
+        <DashboardHeader isProgramStarted={isProgramStarted} hasThreeActions={hasThreeActions} programStartDate={programState.program?.startDate} programEndDate={programState.program.endDate} />
 
         {/* Top Section: Actions & Insights */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -137,7 +142,7 @@ const DashboardPage = async () => {
         </section>
 
         {/* Global Progress Section */}
-        <GlobalProgress userId={userId} programId={programState.programId} programMaxPoints={programState.program.max_golbal_points ?? 0} lastGoaMileStoneNotified={programState.lastGoaMilestoneNotified ?? 0}/>
+        <GlobalProgress userId={userId} programId={programState.programId} programMaxPoints={programState.program.max_golbal_points ?? 0} lastGoaMileStoneNotified={programState.lastGoaMilestoneNotified ?? 0} />
 
         {/* Area Snapshots */}
         <AreaSnapshots
