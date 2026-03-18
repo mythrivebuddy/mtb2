@@ -11,6 +11,7 @@ import {
 export const POST = async (req: NextRequest) => {
   try {
     const { razorpayWebhookSecret: webhookSecret } = await getRazorpayConfig();
+    
 
     if (!webhookSecret) {
       console.error("❌ Missing RAZORPAY_WEBHOOK_SECRET");
@@ -24,12 +25,14 @@ export const POST = async (req: NextRequest) => {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
 
+    
+
     if (!signature) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
     const isValid = verifyRazorpaySignature(rawBody, signature, webhookSecret);
-
+   
     if (!isValid) {
       console.error("❌ Invalid Razorpay signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });

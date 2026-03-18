@@ -137,6 +137,9 @@ type Coupon = {
   _count?: { redemptions: number };
   autoApply: boolean;
   applicablePlans: Plan[];
+  applicableChallenges: Challenge[];
+  applicableMmpPrograms?: MmpProgram[];
+
   description?: string;
   scope: "SUBSCRIPTION" | "CHALLENGE" | "STORE" | "MMP_PROGRAM";
 };
@@ -230,7 +233,7 @@ export default function CouponsManagementPage() {
     queryKey: ["paid-challenges"],
     queryFn: fetchChallenges,
   });
-  const { data: mmpPrograms  = [] } = useQuery({
+  const { data: mmpPrograms = [] } = useQuery({
     queryKey: ["mmp-programs"],
     queryFn: fetchMmpPrograms,
     enabled: formData.scope === "MMP_PROGRAM",
@@ -307,6 +310,11 @@ export default function CouponsManagementPage() {
       freeDays: coupon.freeDays?.toString() || "",
       applicableUserTypes: coupon.applicableUserTypes,
       applicablePlanIds: coupon.applicablePlans.map((p) => p.id),
+      applicableChallengeIds:
+        coupon.applicableChallenges.map((c) => c.id) || [],
+
+      applicableMmpProgramIds:
+        coupon.applicableMmpPrograms?.map((m: MmpProgram) => m.id) || [],
       applicableCurrencies: coupon.applicableCurrencies,
       firstCycleOnly: coupon.firstCycleOnly || false,
       multiCycle: coupon.multiCycle || false,
@@ -317,9 +325,6 @@ export default function CouponsManagementPage() {
       autoApply: coupon.autoApply,
       autoApplyConditions: {},
       scope: coupon.scope as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM",
-      applicableChallengeIds: [],
-      applicableMmpProgramIds: [],
-
     });
 
     setIsDialogOpen(true);
@@ -334,10 +339,87 @@ export default function CouponsManagementPage() {
       deleteMutation.mutate(id);
     }
   };
+  const validateForm = (): string | null => {
+    // 1. Coupon code
+    if (!formData.couponCode.trim()) {
+      return "Coupon code is required";
+    }
 
+    // 2. Type-based validation
+    if (formData.type === "PERCENTAGE") {
+      if (!formData.discountPercentage || Number(formData.discountPercentage) <= 0) {
+        return "Enter a valid discount percentage";
+      }
+    }
+
+    if (formData.type === "FIXED") {
+      if (
+        !formData.discountAmountUSD &&
+        !formData.discountAmountINR
+      ) {
+        return "Enter at least one fixed amount (USD or INR)";
+      }
+    }
+
+    if (formData.type === "FREE_DURATION") {
+      if (!formData.freeDays || Number(formData.freeDays) <= 0) {
+        return "Enter valid free days";
+      }
+    }
+
+    // 3. User types
+    if (!formData.applicableUserTypes.length) {
+      return "Select at least one user type";
+    }
+
+    // 4. Currency
+    if (!formData.applicableCurrencies.length) {
+      return "Select at least one currency";
+    }
+
+    // 5. Scope-based validation
+    if (formData.scope === "SUBSCRIPTION") {
+      if (formData.applicablePlanIds.length === 0) {
+        return "Select at least one plan or choose ALL";
+      }
+    }
+
+    if (formData.scope === "CHALLENGE") {
+      // optional: allow ALL (empty = all)
+      // but if you want strict:
+      // if (formData.applicableChallengeIds.length === 0) return "Select challenge or ALL"
+    }
+
+    if (formData.scope === "MMP_PROGRAM") {
+      if (formData.applicableMmpProgramIds.length === 0) {
+        return "Select at least one MMP program or ALL";
+      }
+    }
+
+    // 6. Dates
+    if (!formData.startDate || !formData.endDate) {
+      return "Start and End dates are required";
+    }
+
+    if (new Date(formData.startDate) > new Date(formData.endDate)) {
+      return "End date must be after start date";
+    }
+
+    // 7. Max uses
+    if (formData.maxUsesPerUser <= 0) {
+      return "Max uses per user must be at least 1";
+    }
+
+    return null; // ✅ valid
+  };
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const error = validateForm();
 
+    if (error) {
+      toast.error(error);
+      return;
+    }
     const payload: CouponFormPayload = {
       ...formData,
       discountAmountUSD:
@@ -395,6 +477,49 @@ export default function CouponsManagementPage() {
         : { ...prev, [field]: [...current, value] };
     });
   };
+
+  const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
+
+const handleUserTypeChange = (value: string) => {
+  setFormData((prev) => {
+    let updated = [...prev.applicableUserTypes];
+
+    // ✅ If ALL clicked
+    if (value === "ALL") {
+      if (updated.includes("ALL")) {
+        // uncheck ALL → clear all
+        return { ...prev, applicableUserTypes: [] };
+      } else {
+        // check ALL → select everything
+        return {
+          ...prev,
+          applicableUserTypes: [...USER_TYPES, "ALL"],
+        };
+      }
+    }
+
+    // ✅ Toggle individual
+    if (updated.includes(value)) {
+      updated = updated.filter((v) => v !== value);
+    } else {
+      updated.push(value);
+    }
+
+    // ❌ Remove ALL if any individual is removed
+    updated = updated.filter((v) => v !== "ALL");
+
+    // ✅ If all individuals selected → add ALL
+    const allSelected = USER_TYPES.every((type) =>
+      updated.includes(type)
+    );
+
+    if (allSelected) {
+      updated.push("ALL");
+    }
+
+    return { ...prev, applicableUserTypes: updated };
+  });
+};
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const hasMultipleChallenges = challenges.length > 1
@@ -575,9 +700,20 @@ export default function CouponsManagementPage() {
                         <Checkbox
                           id="firstCycle"
                           checked={formData.firstCycleOnly}
-                          onCheckedChange={(checked) =>
-                            handleInputChange("firstCycleOnly", checked === true)
-                          }
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                firstCycleOnly: true,
+                                multiCycle: false, // 🔥 force disable other
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                firstCycleOnly: false,
+                              }));
+                            }
+                          }}
                         />
                         <Label htmlFor="firstCycle">First Cycle Only</Label>
                       </div>
@@ -586,9 +722,20 @@ export default function CouponsManagementPage() {
                         <Checkbox
                           id="multiCycle"
                           checked={formData.multiCycle}
-                          onCheckedChange={(checked) =>
-                            handleInputChange("multiCycle", checked === true)
-                          }
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                multiCycle: true,
+                                firstCycleOnly: false, // 🔥 force disable other
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                multiCycle: false,
+                              }));
+                            }
+                          }}
                         />
                         <Label htmlFor="multiCycle">Multi-Cycle Renewal</Label>
                       </div>
@@ -768,9 +915,7 @@ export default function CouponsManagementPage() {
                             checked={formData.applicableUserTypes.includes(
                               type
                             )}
-                            onCheckedChange={() =>
-                              toggleSelection("applicableUserTypes", type)
-                            }
+                          onCheckedChange={() => handleUserTypeChange(type)}
                           />
                           <Label
                             htmlFor={`user-${type}`}
@@ -1012,10 +1157,20 @@ export default function CouponsManagementPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {coupon.discountPercentage &&
-                        `${coupon.discountPercentage}%`}
-                      {(coupon.discountAmountUSD ||
-                        coupon.discountAmountINR) && (
+                      {/*  FULL DISCOUNT */}
+                      {coupon.type === "FULL_DISCOUNT" && (
+                        <span className="">
+                          100%
+                        </span>
+                      )}
+
+                      {/*  PERCENTAGE */}
+                      {coupon.type === "PERCENTAGE" &&
+                        coupon.discountPercentage && `${coupon.discountPercentage}%`}
+
+                      {/*  FIXED */}
+                      {coupon.type === "FIXED" &&
+                        (coupon.discountAmountUSD || coupon.discountAmountINR) && (
                           <div className="flex flex-col">
                             {coupon.discountAmountUSD &&
                               `USD $${coupon.discountAmountUSD}`}
@@ -1023,7 +1178,10 @@ export default function CouponsManagementPage() {
                               `INR ₹${coupon.discountAmountINR}`}
                           </div>
                         )}
-                      {coupon.freeDays && `${coupon.freeDays} Days`}
+
+                      {/* ✅ FREE DAYS */}
+                      {coupon.type === "FREE_DURATION" &&
+                        coupon.freeDays && `${coupon.freeDays} Days`}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {format(new Date(coupon.startDate), "MMM d, yyyy")} -{" "}

@@ -179,8 +179,10 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
                 <p className="text-xs text-gray-400 uppercase">Years Experience</p>
               </div>
               <div className="bg-white p-6 rounded-2xl border text-center shadow-sm">
-                <p className="text-3xl font-bold text-blue-600">{profile.jpBalance ?? 0}</p>
-                <p className="text-xs text-gray-400 uppercase">JP Balance</p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {profile.jpBalance ?? 0}
+                </p>
+                <p className="text-xs text-gray-400 uppercase">GP Balance</p>
               </div>
             </div>
             {profile.certifications?.length ? (
