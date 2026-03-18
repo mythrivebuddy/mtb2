@@ -38,46 +38,70 @@ export default function SuccessPage() {
   /* Verify payment */
   /* --------------------------------------------------------------- */
 
-  useEffect(() => {
-    if (!pid || !type) {
-      router.replace("/dashboard");
-      return;
-    }
-
-    let retries = 0;
-    const MAX_RETRIES = 10;
-
-    const verify = async () => {
-      try {
-        const res = await axios.get("/api/billing/verify-success", {
-          params: { pid, type },
-          withCredentials: true,
-        });
-
-        if (res.data?.ok) {
-          setRedirectTo(res.data.redirect);
-          setYearlyPlanName(res.data.yearlyPlanName ?? null);
-            if (res.data.membership) {
-    setMembership(res.data.membership);
+ useEffect(() => {
+  if (!pid || !type) {
+    router.replace("/dashboard");
+    return;
   }
-          setVerified(true);
-          setLoading(false);
-          return;
+
+  let retries = 0;
+  const MAX_RETRIES = 10;
+  let timer: NodeJS.Timeout;
+
+  const verify = async () => {
+    try {
+      const res = await axios.get("/api/billing/verify-success", {
+        params: { pid, type },
+        withCredentials: true,
+        validateStatus: () => true, // ✅ IMPORTANT
+      });
+
+      // ✅ SUCCESS
+      if (res.status === 200 && res.data?.ok) {
+        setRedirectTo(res.data.redirect);
+        setYearlyPlanName(res.data.yearlyPlanName ?? null);
+
+        if (res.data.membership) {
+          setMembership(res.data.membership);
         }
 
-        throw new Error();
-      } catch {
+        setVerified(true);
+        setLoading(false);
+        return;
+      }
+
+      // ⏳ PENDING (do NOT treat as error)
+      if (res.status === 202 || res.data?.pending) {
         retries++;
+
         if (retries <= MAX_RETRIES) {
-          setTimeout(verify, 2000);
+          timer = setTimeout(verify, 2000);
         } else {
           router.replace("/dashboard");
         }
-      }
-    };
 
-    verify();
-  }, [pid, type, router]);
+        return;
+      }
+
+      // ❌ REAL FAILURE
+      router.replace("/dashboard");
+
+    } catch {
+      retries++;
+
+      if (retries <= MAX_RETRIES) {
+        timer = setTimeout(verify, 2000);
+      } else {
+        router.replace("/dashboard");
+      }
+    }
+  };
+
+  // ✅ delayed start (correct)
+  timer = setTimeout(verify, 2000);
+
+  return () => clearTimeout(timer);
+}, [pid, type, router]);
 
   /* --------------------------------------------------------------- */
   /* Loading guard */
@@ -139,36 +163,36 @@ export default function SuccessPage() {
             Payment Successful
           </h1>
           {isMembership && membership && (
-  <>
-    <p className="text-slate-600 leading-relaxed">
-      🎉 Your <strong>{membership.planName}</strong> membership is now active.
-    </p>
+            <>
+              <p className="text-slate-600 leading-relaxed">
+                🎉 Your <strong>{membership.planName}</strong> membership is now active.
+              </p>
 
-    <InfoRow text={`Plan type: ${membership.interval}`} />
+              <InfoRow text={`Plan type: ${membership.interval}`} />
 
-    <InfoRow
-      text={`Activated on: ${new Date(
-        membership.startDate
-      ).toLocaleDateString()}`}
-    />
+              <InfoRow
+                text={`Activated on: ${new Date(
+                  membership.startDate
+                ).toLocaleDateString()}`}
+              />
 
-    {membership.endDate && membership.interval !== "LIFETIME" && (
-      <InfoRow
-        text={`Valid until: ${new Date(
-          membership.endDate
-        ).toLocaleDateString()}`}
-      />
-    )}
+              {membership.endDate && membership.interval !== "LIFETIME" && (
+                <InfoRow
+                  text={`Valid until: ${new Date(
+                    membership.endDate
+                  ).toLocaleDateString()}`}
+                />
+              )}
 
-    {!membership.endDate && membership.interval === "LIFETIME" && (
-      <InfoRow text="This is a lifetime membership — no renewals required." />
-    )}
+              {!membership.endDate && membership.interval === "LIFETIME" && (
+                <InfoRow text="This is a lifetime membership — no renewals required." />
+              )}
 
-    <p className="text-sm text-slate-700">
-      You now have full access to all features included in your plan.
-    </p>
-  </>
-)}
+              <p className="text-sm text-slate-700">
+                You now have full access to all features included in your plan.
+              </p>
+            </>
+          )}
 
           {isProgram && (
             <>
