@@ -57,6 +57,8 @@ interface UpdateProfileRequest {
   introVideo?: string
   linkedin?: string
   profilePhoto?: string | null
+  calendlyUrl?: string
+  preferredCurrency?: string
 }
 
 
@@ -286,6 +288,8 @@ export async function PUT(req: Request) {
 
   introVideo: bodyData.introVideo ?? undefined,
   linkedin: bodyData.linkedin ?? undefined,
+  calendlyUrl: bodyData.calendlyUrl ?? undefined,
+  preferredCurrency: bodyData.preferredCurrency ?? undefined,
   profilePhoto: profilePhotoUrl ?? existingProfile?.profilePhoto,
 }
     /* ---------------- USER CHECK ---------------- */

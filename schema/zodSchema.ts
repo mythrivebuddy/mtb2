@@ -173,24 +173,24 @@ export const challengeSchema = z
     message: "End date must be after the start date.",
     path: ["endDate"],
   }).superRefine((data, ctx) => {
-  if (data.challengeType === "PAID") {
-    if (typeof data.challengeJoiningFee !== "number") {
-      ctx.addIssue({
-        path: ["challengeJoiningFee"],
-        message: "Fee is required for paid challenges",
-        code: z.ZodIssueCode.custom,
-      });
-    }
+    if (data.challengeType === "PAID") {
+      if (typeof data.challengeJoiningFee !== "number") {
+        ctx.addIssue({
+          path: ["challengeJoiningFee"],
+          message: "Fee is required for paid challenges",
+          code: z.ZodIssueCode.custom,
+        });
+      }
 
-    if (!data.challengeJoiningFeeCurrency) {
-      ctx.addIssue({
-        path: ["challengeJoiningFeeCurrency"],
-        message: "Currency is required for paid challenges",
-        code: z.ZodIssueCode.custom,
-      });
+      if (!data.challengeJoiningFeeCurrency) {
+        ctx.addIssue({
+          path: ["challengeJoiningFeeCurrency"],
+          message: "Currency is required for paid challenges",
+          code: z.ZodIssueCode.custom,
+        });
+      }
     }
-  }
-});
+  });
 
 // Miracle Log Schema
 export const progressvaultSchema = z.object({
@@ -382,6 +382,18 @@ export const businessProfileSchema = z
       .string()
       .min(1, "Please select session format"),
 
+    calendlyUrl: z
+      .string()
+      .min(1, "Discovery call booking link is required")
+      .url("Please enter a valid URL")
+      .refine(
+        (val) => val.includes("calendly.com"),
+        "Only Calendly links are accepted (e.g. https://calendly.com/your-name)"
+      ),
+    preferredCurrency: z.enum(["INR", "USD"], {
+      required_error: "Please select a currency",
+      invalid_type_error: "Please select a valid currency",
+    }),
     sessionDuration: z
       .string()
       .min(1, "Please select session duration"),
@@ -410,16 +422,16 @@ export const businessProfileSchema = z
       .min(0, "Experience cannot be negative"),
 
     certifications: z
-  .array(
-    z.object({
-      value: z
-        .string()
-        .trim()
-        .min(2, "Certification cannot be empty"),
-    })
-  )
-  .max(10, "Maximum 10 certifications allowed")
-  .optional(),
+      .array(
+        z.object({
+          value: z
+            .string()
+            .trim()
+            .min(2, "Certification cannot be empty"),
+        })
+      )
+      .max(10, "Maximum 10 certifications allowed")
+      .optional(),
 
     shortBio: z
       .string()
@@ -427,11 +439,11 @@ export const businessProfileSchema = z
       .max(250, "Short bio cannot exceed 250 characters"),
 
     testimonials: z
-  .preprocess(
-    (val) => (Array.isArray(val) ? val : []),
-    z.array(testimonialSchema).max(6)
-  )
-  .optional(),
+      .preprocess(
+        (val) => (Array.isArray(val) ? val : []),
+        z.array(testimonialSchema).max(6)
+      )
+      .optional(),
 
     /* ---------------- TRUST LAST FORM ---------------- */
     //  profilePhoto: z
@@ -446,38 +458,38 @@ export const businessProfileSchema = z
     //     file instanceof File && ACCEPTED_IMAGE_TYPES.includes(file.type),
     //   "Only JPG, PNG or GIF allowed"
     // ),
-      profilePhoto: z
-  .union([
-    z.string().url("Required"), // existing image URL allowed
+    profilePhoto: z
+      .union([
+        z.string().url("Required"), // existing image URL allowed
 
-    z
-      .instanceof(File)
-      .refine((file) => file.size <= MAX_FILE_SIZE, {
-        message: "Max file size is 5MB",
-      })
+        z
+          .instanceof(File)
+          .refine((file) => file.size <= MAX_FILE_SIZE, {
+            message: "Max file size is 5MB",
+          })
+          .refine(
+            (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+            {
+              message: "Only JPG, PNG or GIF allowed",
+            }
+          ),
+      ]),
+
+    introVideo: z
+      .string()
+      .optional()
       .refine(
-        (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-        {
-          message: "Only JPG, PNG or GIF allowed",
-        }
+        (val) => !val || /^https?:\/\/.+/.test(val),
+        "Enter a valid URL"
       ),
-  ]),
 
-  introVideo: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || /^https?:\/\/.+/.test(val),
-      "Enter a valid URL"
-    ),
-
-  linkedin: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || /^https?:\/\/.+/.test(val),
-      "Enter a valid URL"
-    ),
+    linkedin: z
+      .string()
+      .min(1, "Primary social link is required")
+      .refine(
+        (val) => /^https?:\/\/.+/.test(val),
+        "Enter a valid URL"
+      ),
     /* ---------------- OPTIONAL FUTURE EXTENSIONS ---------------- */
 
     pricingPlans: z.any().optional(),
@@ -520,22 +532,22 @@ export const step2MMPSchema = z.object({
     .array(
       z.object({
         value: z
-        .string()
-        .min(5, "Achievement must be at least 5 characters")
-        .max(200, "Cannot exceed 200 characters"),
+          .string()
+          .min(5, "Achievement must be at least 5 characters")
+          .max(200, "Cannot exceed 200 characters"),
       })
     )
     .min(1, "Add at least one achievement")
     .max(10, "Maximum 10 achievements allowed"),
-  });
-  
-  
-  // ─── Step 3: Module Builder ───────────────────────────────────────────────────
-  export const moduleSchema = z
+});
+
+
+// ─── Step 3: Module Builder ───────────────────────────────────────────────────
+export const moduleSchema = z
   .object({
     id: z.number(),
     title: z
-    .string()
+      .string()
       .min(3, "Module title must be at least 3 characters")
       .max(100, "Cannot exceed 100 characters"),
     type: z.enum(["video", "text"], {
@@ -598,16 +610,16 @@ export const step4MMPSchema = z
     }
   });
 
-  // ─── Step 5: Completion & Certificate ────────────────────────────────────────
-  export const step5MMPSchema = z.object({
+// ─── Step 5: Completion & Certificate ────────────────────────────────────────
+export const step5MMPSchema = z.object({
   threshold: z
-  .number()
-  .min(50, "Completion threshold must be at least 50%")
-  .max(100, "Cannot exceed 100%"),
+    .number()
+    .min(50, "Completion threshold must be at least 50%")
+    .max(100, "Cannot exceed 100%"),
   certTitle: z
-  .string()
-  .min(5, "Certificate title must be at least 5 characters")
-  .max(150, "Cannot exceed 150 characters"),
+    .string()
+    .min(5, "Certificate title must be at least 5 characters")
+    .max(150, "Cannot exceed 150 characters"),
 });
 
 // ─── Full Form Shape (used in main page + localStorage) ──────────────────────
@@ -639,7 +651,7 @@ export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
 export type challengeSchemaFormType = z.infer<typeof challengeSchema>;
-export type BusinessProfileFormValues =z.infer<typeof businessProfileSchema>
+export type BusinessProfileFormValues = z.infer<typeof businessProfileSchema>
 export type Step1Data = z.infer<typeof step1MMPSchema>;
 export type Step2Data = z.infer<typeof step2MMPSchema>;
 export type ModuleData = z.infer<typeof moduleSchema>;

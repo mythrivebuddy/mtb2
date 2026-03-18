@@ -141,7 +141,9 @@ export default function BusinessProfileLayout() {
       })
 
       formData.append("userId", userId)
-
+      formData.append("calendlyUrl", data.calendlyUrl)
+      formData.append("preferredCurrency", data.preferredCurrency)
+      console.log("*******formData******", formData)
       const res = await fetch(`/api/user/profile/updateProfile?userId=${userId}`, {
         method: "PUT",
         body: formData,

@@ -55,6 +55,7 @@ export interface BusinessProfile {
   timezone: string;
   sessionFormat: string;
   sessionDuration: string;
+  preferredCurrency: string;
   priceMin: number;
   priceMax: number;
   jpBalance: number;
@@ -72,6 +73,7 @@ export interface BusinessProfile {
   profilePhoto: File | string;
   introVideo?: string;
   linkedin?: string;
+  calendlyUrl?: string;
 
   /* -------- SYSTEM -------- */
   completionPercentage?: number;
