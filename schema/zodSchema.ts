@@ -503,7 +503,7 @@ export const step1MMPSchema = z.object({
     .string()
     .min(10, "Transformation promise must be at least 10 characters")
     .max(300, "Cannot exceed 300 characters"),
-  duration: z.enum(["7 Days", "14 Days", "21 Days", "30 Days"], {
+  duration: z.enum(["7 Days", "11 Days", "14 Days", "21 Days", "30 Days"], {
     errorMap: () => ({ message: "Please select a valid duration" }),
   }),
   unlockType: z.enum(["daily", "all"], {

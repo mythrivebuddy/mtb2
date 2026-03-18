@@ -26,12 +26,12 @@ function StoreProfilePageComponent() {
     const { status: authStatus } = useSession();
 
     const fetchProfileData = async () => {
-        const [profileRes, ordersRes, wishlistRes, cartRes] =
+        const [profileRes, ordersRes, wishlistRes] =
             await Promise.allSettled([
                 axios.get("/api/user/store/profile"),
                 axios.get("/api/user/store/items/orders"),
                 axios.get("/api/user/store/items/wishlist"),
-                axios.get("/api/user/store/items/cart/get-cart-items"),
+                // axios.get("/api/user/store/items/cart/get-cart-items"),
             ]);
         const getData = <T,>(
             result: PromiseSettledResult<AxiosResponse<T>>,
@@ -44,23 +44,30 @@ function StoreProfilePageComponent() {
             user: getData(profileRes, { user: {} }),
             orders: getData(ordersRes, { orders: [] }),
             wishlist: getData(wishlistRes, { wishlist: [] }),
-            cart: getData(cartRes, { cart: [] }),
+            // cart: getData(cartRes, { cart: [] }),
         };
     };
 
     const { data, isLoading } = useQuery({
         queryKey: ["profileData"],
         queryFn: fetchProfileData,
-         enabled: authStatus === "authenticated",
+        enabled: authStatus === "authenticated",
         // refetchOnMount: true,
         // refetchOnWindowFocus: true,
         // refetchInterval: 5000,
         // refetchIntervalInBackground: false,
     });
+    const { data: cartRes = [] } = useQuery({
+        queryKey: ["cart"],
+        queryFn: async () => {
+            const res = await axios.get("/api/user/store/items/cart/get-cart-items");
+            return res.data.cart || [];
+        },
+    });
 
     const orders = (data?.orders.orders ?? []) as Order[];
     const wishlist = (data?.wishlist.wishlist ?? []) as WishlistItem[];
-    const cart = (data?.cart.cart ?? []) as CartItem[];
+   const cart = cartRes as CartItem[];
 
     // Always use base price
     const getPrice = (item: Item): number => {
@@ -89,7 +96,7 @@ function StoreProfilePageComponent() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["profileData"] });
+            queryClient.invalidateQueries({ queryKey: ["cart"] });   
             toast.success("Item added to cart");
         },
         onError: (err) => {
@@ -103,7 +110,7 @@ function StoreProfilePageComponent() {
                 data: { cartItemId },
             }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["profileData"] });
+            queryClient.invalidateQueries({ queryKey: ["cart"] });   
             toast.success("Item removed");
         },
     });
@@ -133,7 +140,7 @@ function StoreProfilePageComponent() {
     if (isLoading || authStatus === "loading") {
         return (
             <div className="flex h-screen items-center justify-center">
-                <PageLoader/>
+                <PageLoader />
             </div>
         );
     }

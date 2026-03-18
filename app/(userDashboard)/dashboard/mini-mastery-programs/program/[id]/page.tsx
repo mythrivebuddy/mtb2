@@ -882,7 +882,10 @@ export default function ProgramPlayer() {
                   </div>
                   <div className="relative space-y-5 my-6">
                     <h3 className="text-3xl font-black text-white leading-tight tracking-tight">{currentModule.title}</h3>
-                    <p className="text-blue-100/80 text-base font-medium leading-relaxed line-clamp-5">{currentModule.instructions}</p>
+                    <div
+                      className="text-blue-100/80 text-base font-medium leading-relaxed line-clamp-5"
+                      dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+                    />
                   </div>
                   <div className="relative flex items-center justify-between">
                     <div className="flex -space-x-1.5">
@@ -911,9 +914,10 @@ export default function ProgramPlayer() {
                   <h1 className="text-4xl font-black text-slate-900 tracking-tight">
                     Day {activeDay}: {currentModule.title}
                   </h1>
-                  <p className="text-lg text-slate-500 leading-relaxed font-medium">
-                    {currentModule.instructions}
-                  </p>
+                  <div
+                    className="text-lg text-slate-500 leading-relaxed font-medium"
+                    dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+                  />
                 </div>
               )}
 
@@ -930,7 +934,10 @@ export default function ProgramPlayer() {
                       {isDayComplete ? "Task Completed ✓" : "Today's Action Task"}
                     </h3>
                   </div>
-                  <p className="text-slate-600 font-medium leading-relaxed">{currentModule.actionTask}</p>
+                  <div
+                    className="text-slate-600 font-medium leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: currentModule.actionTask }}
+                  />
 
                   {!isDayComplete && (
                     <div className="space-y-2">
@@ -953,7 +960,10 @@ export default function ProgramPlayer() {
                   {isDayComplete && currentLog?.actionResponse && (
                     <div className="bg-white border border-green-100 rounded-2xl p-4 space-y-1">
                       <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Your Response</p>
-                      <p className="text-sm text-slate-600 font-medium leading-relaxed">{currentLog.actionResponse}</p>
+                      <div
+                        className="text-sm text-slate-600 font-medium leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: currentLog.actionResponse || "" }}
+                      />
                     </div>
                   )}
 

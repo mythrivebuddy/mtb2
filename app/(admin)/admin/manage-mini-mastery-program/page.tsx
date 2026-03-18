@@ -11,6 +11,7 @@ import {
   BookOpenCheck, Calendar, DollarSign, Users,
 } from "lucide-react";
 import { Editor } from "@tinymce/tinymce-react";
+import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,7 +22,7 @@ interface Creator {
   name: string | null;
   email: string | null;
   image: string | null;
-} 
+}
 
 interface Program {
   id: string;
@@ -61,9 +62,9 @@ interface ApiResponse {
 const LIMIT = 10;
 
 const STATUS_CONFIG: Record<ProgramStatus, { label: string; color: string }> = {
-  PUBLISHED:    { label: "Published",    color: "bg-green-100 text-green-700" },
-  UNDER_REVIEW: { label: "Under Review", color: "bg-blue-100 text-blue-700"  },
-  DRAFT:        { label: "Draft",        color: "bg-gray-100 text-gray-600"  },
+  PUBLISHED: { label: "Published", color: "bg-green-100 text-green-700" },
+  UNDER_REVIEW: { label: "Under Review", color: "bg-blue-100 text-blue-700" },
+  DRAFT: { label: "Draft", color: "bg-gray-100 text-gray-600" },
 };
 
 function formatPrice(price: number | null, currency: string | null): string {
@@ -148,7 +149,7 @@ function SkeletonRows() {
 function useImageUpload() {
   const [uploadState, setUploadState] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [previewUrl,  setPreviewUrl]  = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const uploadedPathRef = useRef<string | null>(null);
 
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -174,7 +175,7 @@ function useImageUpload() {
 
   async function handleFile(file: File): Promise<string | null> {
     if (!ALLOWED_TYPES.includes(file.type)) { setUploadError("Only JPG, PNG, or WebP allowed."); return null; }
-    if (file.size > MAX_MB * 1024 * 1024)   { setUploadError(`Max ${MAX_MB}MB allowed.`);        return null; }
+    if (file.size > MAX_MB * 1024 * 1024) { setUploadError(`Max ${MAX_MB}MB allowed.`); return null; }
     if (uploadedPathRef.current) { void deleteFile(uploadedPathRef.current); uploadedPathRef.current = null; }
     setUploadError(null);
     setUploadState("uploading");
@@ -229,10 +230,10 @@ function emptyModule(id: number, idx: number): ModuleRow {
 // ─── View Modal ───────────────────────────────────────────────────────────────
 
 function ViewModal({ program, onClose, onEdit }: { program: Program; onClose: () => void; onEdit: () => void }) {
-  const modules      = Array.isArray(program.modules)      ? program.modules      as ModuleRow[] : [];
-  const achievements = Array.isArray(program.achievements) ? program.achievements as string[]    : [];
-  const statusKey    = (program.status ?? "DRAFT") as ProgramStatus;
-  const cfg          = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.DRAFT;
+  const modules = Array.isArray(program.modules) ? program.modules as ModuleRow[] : [];
+  const achievements = Array.isArray(program.achievements) ? program.achievements as string[] : [];
+  const statusKey = (program.status ?? "DRAFT") as ProgramStatus;
+  const cfg = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.DRAFT;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 px-4">
@@ -266,10 +267,10 @@ function ViewModal({ program, onClose, onEdit }: { program: Program; onClose: ()
           {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: <Calendar size={14} />,     label: "Duration", value: `${program.durationDays ?? "?"} Days` },
-              { icon: <BookOpenCheck size={14} />, label: "Modules",  value: String(modules.length) },
-              { icon: <DollarSign size={14} />,   label: "Price",    value: formatPrice(program.price, program.currency) },
-              { icon: <Users size={14} />,        label: "Unlock",   value: program.unlockType === "daily" ? "Daily" : "All at once" },
+              { icon: <Calendar size={14} />, label: "Duration", value: `${program.durationDays ?? "?"} Days` },
+              { icon: <BookOpenCheck size={14} />, label: "Modules", value: String(modules.length) },
+              { icon: <DollarSign size={14} />, label: "Price", value: formatPrice(program.price, program.currency) },
+              { icon: <Users size={14} />, label: "Unlock", value: program.unlockType === "daily" ? "Daily" : "All at once" },
             ].map((s) => (
               <div key={s.label} className="bg-gray-50 rounded-xl p-3 space-y-1">
                 <div className="flex items-center gap-1.5 text-gray-400">{s.icon}
@@ -311,9 +312,8 @@ function ViewModal({ program, onClose, onEdit }: { program: Program; onClose: ()
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-bold text-gray-800">{mod.title}</p>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                      mod.type === "video" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
-                    }`}>{mod.type?.toUpperCase()}</span>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${mod.type === "video" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
+                      }`}>{mod.type?.toUpperCase()}</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{mod.instructions}</p>
                   <p className="text-xs text-blue-600 font-medium mt-1 line-clamp-1">↳ {mod.actionTask}</p>
@@ -367,11 +367,12 @@ interface CreateModalProps {
 }
 
 function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
-  const isEdit       = !!editData;
+  const isEdit = !!editData;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const imgUpload    = useImageUpload();
+  const imgUpload = useImageUpload();
 
-  function toDurationLabel(days: number | null): "7 Days" | "14 Days" | "21 Days" | "30 Days" {
+  function toDurationLabel(days: number | null): "7 Days" | "11 Days" | "14 Days" | "21 Days" | "30 Days" {
+    if (days === 11) return "11 Days";
     if (days === 14) return "14 Days";
     if (days === 21) return "21 Days";
     if (days === 30) return "30 Days";
@@ -383,12 +384,12 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
     editData?.thumbnailUrl ? imgUpload.extractFilePath(editData.thumbnailUrl) : null
   );
 
-  const [title,        setTitle]        = useState(editData?.name        ?? "");
-  const [subtitle,     setSubtitle]     = useState(editData?.description ?? "");
-  const [duration,     setDuration]     = useState<"7 Days" | "14 Days" | "21 Days" | "30 Days">(
+  const [title, setTitle] = useState(editData?.name ?? "");
+  const [subtitle, setSubtitle] = useState(editData?.description ?? "");
+  const [duration, setDuration] = useState<"7 Days" | "11 Days" | "14 Days" | "21 Days" | "30 Days">(
     toDurationLabel(editData?.durationDays ?? null)
   );
-  const [unlockType,   setUnlockType]   = useState<"daily" | "all">((editData?.unlockType as "daily" | "all") ?? "daily");
+  const [unlockType, setUnlockType] = useState<"daily" | "all">((editData?.unlockType as "daily" | "all") ?? "daily");
   const [thumbnailUrl, setThumbnailUrl] = useState(editData?.thumbnailUrl ?? "");
 
   const initAch: string[] = Array.isArray(editData?.achievements) && (editData!.achievements as string[]).length
@@ -398,16 +399,16 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
   const maxDays = parseInt(duration);
   const initMods: ModuleRow[] = Array.isArray(editData?.modules) && (editData!.modules as ModuleRow[]).length
     ? editData!.modules as ModuleRow[] : [emptyModule(1, 0)];
-  const [modules,     setModules]  = useState<ModuleRow[]>(initMods);
+  const [modules, setModules] = useState<ModuleRow[]>(initMods);
   const [expandedMod, setExpanded] = useState<number>(0);
 
-  const [isPaid,   setIsPaid]   = useState((editData?.price ?? 0) > 0);
-  const [price,    setPrice]    = useState(editData?.price ? String(editData.price) : "");
+  const [isPaid, setIsPaid] = useState((editData?.price ?? 0) > 0);
+  const [price, setPrice] = useState(editData?.price ? String(editData.price) : "");
   const [currency, setCurrency] = useState<"INR" | "USD">((editData?.currency as "INR" | "USD") ?? "INR");
 
   const [threshold, setThreshold] = useState(editData?.completionThreshold ?? 100);
-  const [certTitle, setCertTitle] = useState(editData?.certificateTitle    ?? "");
-  const [status,    setStatus]    = useState<ProgramStatus>((editData?.status as ProgramStatus) ?? "PUBLISHED");
+  const [certTitle, setCertTitle] = useState(editData?.certificateTitle ?? "");
+  const [status, setStatus] = useState<ProgramStatus>((editData?.status as ProgramStatus) ?? "PUBLISHED");
   const [formError, setFormError] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -430,8 +431,8 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!title.trim())     throw new Error("Program title is required.");
-      if (!subtitle.trim())  throw new Error("Subtitle / description is required.");
+      if (!title.trim()) throw new Error("Program title is required.");
+      if (!subtitle.trim()) throw new Error("Subtitle / description is required.");
       if (!certTitle.trim()) throw new Error("Certificate title is required.");
 
       const cleanAchievements = achievements.map((a) => a.trim()).filter(Boolean);
@@ -439,9 +440,9 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
 
       for (let i = 0; i < modules.length; i++) {
         const m = modules[i];
-        if (!m.title.trim())        throw new Error(`Day ${i + 1}: Module title is required.`);
+        if (!m.title.trim()) throw new Error(`Day ${i + 1}: Module title is required.`);
         if (!m.instructions.trim()) throw new Error(`Day ${i + 1}: Instructions are required.`);
-        if (!m.actionTask.trim())   throw new Error(`Day ${i + 1}: Action task is required.`);
+        if (!m.actionTask.trim()) throw new Error(`Day ${i + 1}: Action task is required.`);
         if (m.type === "video" && !m.videoUrl.trim()) throw new Error(`Day ${i + 1}: Video URL is required.`);
       }
 
@@ -463,10 +464,10 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
       };
 
       if (isEdit) await updateProgram(editData!.id, payload);
-      else        await createProgram(payload);
+      else await createProgram(payload);
     },
     onSuccess: () => { onSuccess(); onClose(); },
-    onError:   (err) => setFormError(err instanceof Error ? err.message : "Something went wrong."),
+    onError: (err) => setFormError(err instanceof Error ? err.message : "Something went wrong."),
   });
 
   return (
@@ -510,17 +511,16 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
                 <label className="text-xs font-bold text-gray-500 uppercase">Duration</label>
                 <select value={duration} onChange={(e) => setDuration(e.target.value as typeof duration)}
                   className="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm">
-                  {["7 Days","14 Days","21 Days","30 Days"].map((d) => <option key={d}>{d}</option>)}
+                  {["7 Days", "11 Days", "14 Days", "21 Days", "30 Days"].map((d) => <option key={d}>{d}</option>)}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Unlock Type</label>
                 <div className="flex gap-2">
-                  {(["daily","all"] as const).map((t) => (
+                  {(["daily", "all"] as const).map((t) => (
                     <button key={t} type="button" onClick={() => setUnlockType(t)}
-                      className={`flex-1 py-3 rounded-xl border-2 text-xs font-bold transition-all ${
-                        unlockType === t ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
-                      }`}>
+                      className={`flex-1 py-3 rounded-xl border-2 text-xs font-bold transition-all ${unlockType === t ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
+                        }`}>
                       {t === "daily" ? "Daily" : "All at once"}
                     </button>
                   ))}
@@ -625,26 +625,22 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
               <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
                 Step 3 — Modules ({modules.length}/{maxDays} days)
               </p>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                modules.length >= maxDays ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"
-              }`}>{modules.length >= maxDays ? "Complete" : `${maxDays - modules.length} left`}</span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${modules.length >= maxDays ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"
+                }`}>{modules.length >= maxDays ? "Complete" : `${maxDays - modules.length} left`}</span>
             </div>
             <div className="space-y-2">
               {modules.map((mod, idx) => {
                 const isOpen = expandedMod === idx;
                 return (
-                  <div key={mod.id} className={`border-2 rounded-2xl transition-all ${
-                    isOpen ? "border-blue-400 p-4" : "border-gray-100 p-3 cursor-pointer hover:bg-gray-50"
-                  }`}>
+                  <div key={mod.id} className={`border-2 rounded-2xl transition-all ${isOpen ? "border-blue-400 p-4" : "border-gray-100 p-3 cursor-pointer hover:bg-gray-50"
+                    }`}>
                     <div className="flex items-center justify-between" onClick={() => setExpanded(isOpen ? -1 : idx)}>
                       <div className="flex items-center gap-3">
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
-                          isOpen ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
-                        }`}>{idx + 1}</span>
+                        <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${isOpen ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
+                          }`}>{idx + 1}</span>
                         <span className="text-sm font-bold text-gray-700 truncate max-w-[200px]">{mod.title || "Untitled"}</span>
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
-                          mod.type === "video" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
-                        }`}>{mod.type.toUpperCase()}</span>
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${mod.type === "video" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"
+                          }`}>{mod.type.toUpperCase()}</span>
                       </div>
                       {isOpen ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
                     </div>
@@ -658,11 +654,10 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-gray-400 uppercase">Content Type</label>
                           <div className="flex gap-2">
-                            {(["video","text"] as const).map((t) => (
+                            {(["video", "text"] as const).map((t) => (
                               <button key={t} type="button" onClick={() => updateMod(idx, "type", t)}
-                                className={`flex-1 py-2 rounded-xl border-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                                  mod.type === t ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
-                                }`}>
+                                className={`flex-1 py-2 rounded-xl border-2 text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${mod.type === t ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
+                                  }`}>
                                 {t === "video" ? <><Video size={13} /> Video</> : <><FileText size={13} /> Text</>}
                               </button>
                             ))}
@@ -676,33 +671,33 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
                               className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm" />
                           </div>
                         )}
-                       <div className="space-y-1">
-  <label className="text-[10px] font-bold text-gray-400 uppercase">Instructions *</label>
-  <Editor
-    key={`admin-instructions-${mod.id}`}
-    apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
-    value={mod.instructions}
-    onEditorChange={(content) => updateMod(idx, "instructions", content)}
-    init={{
-      height: 300,
-      menubar: false,
-      toolbar_mode: "sliding",
-      promotion: false,
-      plugins: [
-        "advlist", "autolink", "lists", "charmap", "preview",
-        "anchor", "searchreplace", "visualblocks", "fullscreen",
-        "insertdatetime", "media", "table", "help", "wordcount",
-      ],
-      toolbar:
-        "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
-      block_formats: "Paragraph=p",
-      valid_elements: "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
-      extended_valid_elements: "",
-      verify_html: false,
-      cleanup: false,
-      forced_root_block: "p",
-      placeholder: "What should participants focus on today?",
-      content_style: `
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase">Instructions *</label>
+                          <Editor
+                            key={`admin-instructions-${mod.id}`}
+                            apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                            value={mod.instructions}
+                            onEditorChange={(content) => updateMod(idx, "instructions", content)}
+                            init={{
+                              height: 300,
+                              menubar: false,
+                              toolbar_mode: "sliding",
+                              promotion: false,
+                              plugins: [
+                                "advlist", "autolink", "lists", "charmap", "preview",
+                                "anchor", "searchreplace", "visualblocks", "fullscreen",
+                                "insertdatetime", "media", "table", "help", "wordcount",
+                              ],
+                              toolbar:
+                                "undo redo | blocks | bold italic underline | bullist numlist | alignleft aligncenter alignright alignjustify | removeformat | preview | help",
+                              block_formats: "Paragraph=p",
+                              valid_elements: "p,h1,h2,h3,strong,em,ul,ol,li,blockquote,span,div,br",
+                              extended_valid_elements: "",
+                              verify_html: false,
+                              cleanup: false,
+                              forced_root_block: "p",
+                              placeholder: "What should participants focus on today?",
+                              content_style: `
         body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; line-height: 1.6; }
         p { margin: 0.5rem 0; }
         h1 { font-size: 1.8em; font-weight: 700; color: #1e293b; margin-top: 1rem; margin-bottom: 0.5rem; }
@@ -710,9 +705,9 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
         h3 { font-size: 1.25em; font-weight: 600; color: #475569; margin-top: 0.5rem; margin-bottom: 0.5rem; }
         blockquote { border-left: 3px solid #c084fc; margin-left: 0; padding-left: 1rem; color: #4b5563; font-style: italic; background-color: #f9fafb; border-radius: 0.25rem; }
       `,
-    }}
-  />
-</div> 
+                            }}
+                          />
+                        </div>
                         <div className="space-y-1">
                           <label className="text-[10px] font-bold text-gray-400 uppercase">
                             Action Task * <span className="text-blue-500 font-black">Mandatory</span>
@@ -735,11 +730,10 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
               Step 4 — Pricing
             </p>
             <div className="flex gap-3">
-              {([false,true] as const).map((paid) => (
+              {([false, true] as const).map((paid) => (
                 <button key={String(paid)} type="button" onClick={() => setIsPaid(paid)}
-                  className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${
-                    isPaid === paid ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
-                  }`}>{paid ? "Paid" : "Free"}</button>
+                  className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${isPaid === paid ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
+                    }`}>{paid ? "Paid" : "Free"}</button>
               ))}
             </div>
             {isPaid && (
@@ -747,11 +741,10 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Currency</label>
                   <div className="flex gap-2">
-                    {(["INR","USD"] as const).map((c) => (
+                    {(["INR", "USD"] as const).map((c) => (
                       <button key={c} type="button" onClick={() => setCurrency(c)}
-                        className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${
-                          currency === c ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
-                        }`}>{c === "INR" ? "₹ INR" : "$ USD"}</button>
+                        className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${currency === c ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
+                          }`}>{c === "INR" ? "₹ INR" : "$ USD"}</button>
                     ))}
                   </div>
                 </div>
@@ -790,11 +783,10 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
               Publish Status
             </p>
             <div className="flex gap-2 flex-wrap">
-              {(["PUBLISHED","UNDER_REVIEW","DRAFT"] as ProgramStatus[]).map((s) => (
+              {(["PUBLISHED", "UNDER_REVIEW", "DRAFT"] as ProgramStatus[]).map((s) => (
                 <button key={s} type="button" onClick={() => setStatus(s)}
-                  className={`px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all ${
-                    status === s ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
-                  }`}>{STATUS_CONFIG[s].label}</button>
+                  className={`px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all ${status === s ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-100 text-gray-400"
+                    }`}>{STATUS_CONFIG[s].label}</button>
               ))}
             </div>
           </section>
@@ -819,31 +811,31 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
 export default function AdminMMPPage() {
   const qc = useQueryClient();
 
-  const [page,        setPage]        = useState(1);
-  const [statusFilter, setStatus]     = useState<ProgramStatus | "">("");
-  const [search,       setSearch]     = useState("");
-  const [searchInput,  setSearchInput] = useState("");
-  const [showCreate,   setShowCreate]  = useState(false);
-  const [viewProg,     setViewProg]    = useState<Program | null>(null);
-  const [editProg,     setEditProg]    = useState<Program | null>(null);
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatus] = useState<ProgramStatus | "">("");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [viewProg, setViewProg] = useState<Program | null>(null);
+  const [editProg, setEditProg] = useState<Program | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["admin-mmp", page, statusFilter, search],
-    queryFn:  () => fetchPrograms(page, statusFilter, search),
+    queryFn: () => fetchPrograms(page, statusFilter, search),
     staleTime: 20_000,
   });
 
-  const programs   = data?.programs   ?? [];
+  const programs = data?.programs ?? [];
   const pagination = data?.pagination;
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: ProgramStatus }) => patchStatus(id, status),
-    onSuccess:  () => void qc.invalidateQueries({ queryKey: ["admin-mmp"] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["admin-mmp"] }),
   });
 
   const handleFilter = (s: ProgramStatus | "") => { setStatus(s); setPage(1); };
   const handleSearch = () => { setSearch(searchInput); setPage(1); };
-  const clearSearch  = () => { setSearchInput(""); setSearch(""); setPage(1); };
+  const clearSearch = () => { setSearchInput(""); setSearch(""); setPage(1); };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow min-h-screen">
@@ -908,7 +900,7 @@ export default function AdminMMPPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {["Program","Status","Creator","Modules","Price","Created","Actions"].map((h) => (
+                {["Program", "Status", "Creator", "Modules", "Price", "Created", "Actions"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -921,8 +913,8 @@ export default function AdminMMPPage() {
                   </td>
                 </tr>
               ) : programs.map((prog) => {
-                const statusKey    = (prog.status ?? "DRAFT") as ProgramStatus;
-                const cfg          = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.DRAFT;
+                const statusKey = (prog.status ?? "DRAFT") as ProgramStatus;
+                const cfg = STATUS_CONFIG[statusKey] ?? STATUS_CONFIG.DRAFT;
                 const isProcessing = statusMutation.isPending &&
                   (statusMutation.variables as { id: string })?.id === prog.id;
 
@@ -972,10 +964,13 @@ export default function AdminMMPPage() {
                       <div className="flex items-center gap-1">
 
                         {/* View → modal */}
-                        <button onClick={() => setViewProg(prog)}
+                        
+                        <Link href={`/admin/manage-mini-mastery-program/program-preview/${prog.id}`}>
+                          <button
                           className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="View">
                           <Eye size={15} />
                         </button>
+                        </Link>
 
                         {/* Edit → modal */}
                         <button onClick={() => setEditProg(prog)}
@@ -1038,9 +1033,8 @@ export default function AdminMMPPage() {
                 <span key={`e-${i}`} className="px-1 text-gray-400 text-sm">…</span>
               ) : (
                 <button key={p} onClick={() => setPage(p as number)}
-                  className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${
-                    page === p ? "bg-gray-900 text-white" : "hover:bg-gray-100 text-gray-500 border border-gray-100"
-                  }`}>{p}</button>
+                  className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${page === p ? "bg-gray-900 text-white" : "hover:bg-gray-100 text-gray-500 border border-gray-100"
+                    }`}>{p}</button>
               ))}
             <button onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))} disabled={page >= pagination.totalPages}
               className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-gray-600">
