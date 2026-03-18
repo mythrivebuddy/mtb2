@@ -234,6 +234,7 @@ model UserBusinessProfile {
   timezone            String?
   sessionFormat       String?
   sessionDuration     String?
+  preferredCurrency   String?
   priceMin            Float?
   priceMax            Float?
 
@@ -247,6 +248,7 @@ model UserBusinessProfile {
   profilePhoto        String?
   introVideo          String?
   linkedin            String?
+  calendlyUrl         String?
 
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

@@ -90,6 +90,7 @@ interface UserData {
   timezone?: unknown;
   sessionFormat?: unknown;
   sessionDuration?: unknown;
+  preferredCurrency?: unknown;
   priceMin?: number | null;
   priceMax?: number | null;
   yearsOfExperience?: number | null;
@@ -98,6 +99,7 @@ interface UserData {
   testimonials?: unknown;
   introVideo?: unknown;
   linkedin?: unknown;
+  calendlyUrl?: unknown;
   profilePhoto?: unknown;
   priorityContactLink?: unknown;
 }
@@ -239,6 +241,7 @@ function mapToBusinessProfile(data: UserData): BusinessProfile {
     jpBalance:           data.jpBalance ?? 0,
     yearsOfExperience:   data.yearsOfExperience ?? 0,
     completionPercentage: 0,
+    preferredCurrency: str(data.preferredCurrency),
   };
 }
 
@@ -275,10 +278,11 @@ export default function UserDetailsPage() {
     toast.success("Profile link copied to clipboard!");
   };
 
-  if ((session?.user.userType === "COACH" || session?.user.userType === "SOLOPRENEUR") && isLoading)return <PageSkeleton type="coach-profile" />
-  if (isLoading)return <PageSkeleton type="approve" />;
-
-
+if (isLoading || !session) {
+  if (session?.user.userType === "COACH" || session?.user.userType === "SOLOPRENEUR")
+    return <PageSkeleton type="coach-profile" />;
+  return <PageSkeleton type="approve" />;
+}
   if (error || !userData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center px-4">

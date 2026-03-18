@@ -19,6 +19,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
     register,
     setValue,
     getValues,
+    trigger,
     formState: { errors },
   } = useFormContext<Step6TrustValues>()
 
@@ -71,7 +72,11 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
     setValue("profilePhoto", "", { shouldValidate: true })
   }
 
-  const handleFormSubmit = () => {
+  const handleFormSubmit = async () => {
+    // Trigger validation for this step's fields
+    const isValid = await trigger(["profilePhoto", "linkedin"])
+    if (!isValid) return
+
     // Convert introVideo to embed URL before submitting
     const introVideoValue = getValues("introVideo")
     if (introVideoValue) {
@@ -107,7 +112,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
         {/* Hidden input so RHF tracks this field */}
         <input type="hidden" {...register("profilePhoto")} />
 
-        <div className="border border-gray-200 rounded-xl p-6 flex items-center gap-6">
+        <div className={`border rounded-xl p-6 flex items-center gap-6 ${errors.profilePhoto ? "border-red-400" : "border-gray-200"}`}>
           <div className="relative w-24 h-24">
             <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border">
               {preview ? (
@@ -182,14 +187,18 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
 
       {/* LinkedIn */}
       <div className="mb-6">
-        <label className="block font-medium mb-1">
-          Primary Social Link{" "}
-          <span className="text-gray-400 text-sm font-normal">OPTIONAL</span>
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label className="block font-medium">
+            Primary Social Link <span className="text-red-500">*</span>
+          </label>
+          <span className="text-xs font-semibold bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+            REQUIRED
+          </span>
+        </div>
         <input
           {...register("linkedin")}
           placeholder="https://linkedin.com/in/username"
-          className="w-full border border-gray-200 p-3 rounded-lg"
+          className={`w-full border p-3 rounded-lg ${errors.linkedin ? "border-red-400" : "border-gray-200"}`}
         />
         {errors.linkedin && (
           <p className="text-red-500 text-sm mt-1">
