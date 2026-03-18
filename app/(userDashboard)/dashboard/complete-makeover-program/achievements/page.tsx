@@ -6,6 +6,8 @@ import { getServerSession } from "next-auth";
 
 import ShareAchievementButton from "@/components/complete-makevoer-program/Achievements/ShareAchievementButton";
 import { getBadgeStyles, resolveLevelIcon } from "@/lib/utils/makeover-program/achievements/resolve-badges-levels-icons";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Makeover Achievements",
@@ -22,12 +24,16 @@ export const metadata = {
 export default async function MakeoverAchievementsPage() {
   const session = await getServerSession(authOptions);
   const userId = session?.user?.id;
-  const program = await prisma.program.findFirst({
-    where: {
-      slug: "2026-complete-makeover",
-    },
-  });
-  const programId = program?.id;
+  // const program = await prisma.program.findFirst({
+  //   where: {
+  //     slug: "2026-complete-makeover",
+  //   },
+  // });
+  const {isPurchased,programId} = await grantProgramAccessToPage();
+
+  if (!isPurchased || !programId) {
+    redirect("/MTB-2026-the-complete-makeover-program");
+  }
   const allLevels = await prisma.makeoverLevel.findMany({
     orderBy: { id: "asc" },
     include: {

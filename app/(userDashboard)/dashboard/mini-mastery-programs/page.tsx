@@ -76,7 +76,7 @@ interface MyStatusResponse {
 }
 
 type PricingFilter = "all" | "free" | "paid";
-type DurationFilter = "all" | "7" | "14" | "21" | "30";
+type DurationFilter = "all" | "7" | "11" | "14" | "21" | "30";
 type SortOption = "newest" | "price_asc" | "price_desc";
 
 interface Filters {
@@ -118,6 +118,7 @@ const SORT_LABELS: Record<SortOption, string> = {
 const DURATION_OPTIONS: { label: string; value: DurationFilter }[] = [
   { label: "Any Duration", value: "all" },
   { label: "7 Days", value: "7" },
+  { label: "11 Days", value: "11" },
   { label: "14 Days", value: "14" },
   { label: "21 Days", value: "21" },
   { label: "30 Days", value: "30" },

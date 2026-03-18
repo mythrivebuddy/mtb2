@@ -212,10 +212,15 @@ async function main() {
       jpAmount: 0,
       transactionType: TransactionType.DEBIT
     },
-     {
+    {
       activity: ActivityType.STORE_PURCHASE,
       jpAmount: 0, // Dynamic amount based on item prices
       transactionType: TransactionType.DEBIT, // Spending GP
+    },
+    {
+      activity: ActivityType.STORE_SALE,
+      jpAmount: 0, // dynamic (comes from assignJp)
+      transactionType: TransactionType.CREDIT,
     }
   ];
 

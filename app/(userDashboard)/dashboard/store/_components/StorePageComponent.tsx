@@ -302,29 +302,34 @@ const StorePageComponent: React.FC = () => {
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">🛍 Growth Store</h1>
                             <p className="text-gray-600 mt-1">Explore curated products that support your growth, clarity, and transformation.</p>
                         </div>
-                        <div className="flex gap-3 flex-col sm:flex-row">
-                            <button
-                                onClick={() => {
-                                    if (!session) {
-                                        redirectToLogin("/dashboard/store/order-history");
-                                        return;
-                                    }
+                        {
+                            session?.user && (
+                                <div className="flex gap-3 flex-col sm:flex-row">
+                                    <button
+                                        onClick={() => {
+                                            if (!session) {
+                                                redirectToLogin("/dashboard/store/order-history");
+                                                return;
+                                            }
 
-                                    router.push("/dashboard/store/order-history");
-                                }}
-                                className="bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
-                            >
-                                <History className="w-4 h-4" />
-                                Order History
-                            </button>
-                            <Link
-                                href="/dashboard/store/profile"
-                                className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700  text-white font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
-                            >
-                                <ShoppingCart className="w-4 h-4" />
-                                My Cart & Orders
-                            </Link>
-                        </div>
+                                            router.push("/dashboard/store/order-history");
+                                        }}
+                                        className="bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                    >
+                                        <History className="w-4 h-4" />
+                                        Order History
+                                    </button>
+                                    <Link
+                                        href="/dashboard/store/profile"
+                                        className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700  text-white font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                    >
+                                        <ShoppingCart className="w-4 h-4" />
+                                        My Cart & Orders
+                                    </Link>
+                                </div>
+
+                            )
+                        }
                     </div>
                 </div>
 
@@ -362,7 +367,7 @@ const StorePageComponent: React.FC = () => {
                     <h2 className="text-2xl font-bold text-gray-800">
                         {selectedCategory
                             ? `${categories.find((c) => c.id === selectedCategory)?.name || "Selected"} Items`
-                            : productFilter === "ADMIN" ? "Products by Mtb" : productFilter === "COACH" ? "Products by Coaches" : "All Products"}
+                            : productFilter === "ADMIN" ? "Products by MTB" : productFilter === "COACH" ? "Products by Coaches" : "All Products"}
                     </h2>
                     <span className="text-gray-600 font-medium">{filteredItems.length} {filteredItems.length === 1 ? "product" : "products"} found</span>
                 </div>
