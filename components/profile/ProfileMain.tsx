@@ -330,7 +330,7 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
                 <p className="text-3xl font-bold text-blue-600">
                   {profile.jpBalance ?? 0}
                 </p>
-                <p className="text-xs text-gray-400 uppercase">JP Balance</p>
+                <p className="text-xs text-gray-400 uppercase">GP Balance</p>
               </div>
             </div>
 

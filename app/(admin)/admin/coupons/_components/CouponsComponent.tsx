@@ -478,6 +478,49 @@ export default function CouponsManagementPage() {
     });
   };
 
+  const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
+
+const handleUserTypeChange = (value: string) => {
+  setFormData((prev) => {
+    let updated = [...prev.applicableUserTypes];
+
+    // ✅ If ALL clicked
+    if (value === "ALL") {
+      if (updated.includes("ALL")) {
+        // uncheck ALL → clear all
+        return { ...prev, applicableUserTypes: [] };
+      } else {
+        // check ALL → select everything
+        return {
+          ...prev,
+          applicableUserTypes: [...USER_TYPES, "ALL"],
+        };
+      }
+    }
+
+    // ✅ Toggle individual
+    if (updated.includes(value)) {
+      updated = updated.filter((v) => v !== value);
+    } else {
+      updated.push(value);
+    }
+
+    // ❌ Remove ALL if any individual is removed
+    updated = updated.filter((v) => v !== "ALL");
+
+    // ✅ If all individuals selected → add ALL
+    const allSelected = USER_TYPES.every((type) =>
+      updated.includes(type)
+    );
+
+    if (allSelected) {
+      updated.push("ALL");
+    }
+
+    return { ...prev, applicableUserTypes: updated };
+  });
+};
+
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const hasMultipleChallenges = challenges.length > 1
   return (
@@ -657,9 +700,20 @@ export default function CouponsManagementPage() {
                         <Checkbox
                           id="firstCycle"
                           checked={formData.firstCycleOnly}
-                          onCheckedChange={(checked) =>
-                            handleInputChange("firstCycleOnly", checked === true)
-                          }
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                firstCycleOnly: true,
+                                multiCycle: false, // 🔥 force disable other
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                firstCycleOnly: false,
+                              }));
+                            }
+                          }}
                         />
                         <Label htmlFor="firstCycle">First Cycle Only</Label>
                       </div>
@@ -668,9 +722,20 @@ export default function CouponsManagementPage() {
                         <Checkbox
                           id="multiCycle"
                           checked={formData.multiCycle}
-                          onCheckedChange={(checked) =>
-                            handleInputChange("multiCycle", checked === true)
-                          }
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                multiCycle: true,
+                                firstCycleOnly: false, // 🔥 force disable other
+                              }));
+                            } else {
+                              setFormData((prev) => ({
+                                ...prev,
+                                multiCycle: false,
+                              }));
+                            }
+                          }}
                         />
                         <Label htmlFor="multiCycle">Multi-Cycle Renewal</Label>
                       </div>
@@ -850,9 +915,7 @@ export default function CouponsManagementPage() {
                             checked={formData.applicableUserTypes.includes(
                               type
                             )}
-                            onCheckedChange={() =>
-                              toggleSelection("applicableUserTypes", type)
-                            }
+                          onCheckedChange={() => handleUserTypeChange(type)}
                           />
                           <Label
                             htmlFor={`user-${type}`}
@@ -1097,7 +1160,7 @@ export default function CouponsManagementPage() {
                       {/*  FULL DISCOUNT */}
                       {coupon.type === "FULL_DISCOUNT" && (
                         <span className="">
-                          100% 
+                          100%
                         </span>
                       )}
 
