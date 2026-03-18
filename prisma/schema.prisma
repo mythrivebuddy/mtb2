@@ -2191,6 +2191,89 @@ model UserMakeoverSelfReward {
 }
 
 // makeover programs feature for user ends
+
+// feature config at admin level starts
+
+model Feature {
+  id           String   @id @default(cuid())
+
+  //  matches our feature key in code
+  key          String   @unique
+
+  name         String
+  description  String?
+
+  //  defines dynamic fields for admin UI
+  configSchema Json?
+
+  // REPLACES FeatureAccess TABLE
+  // example: ["COACH", "ENTHUSIAST"]
+ allowedUserTypes FeatureUserType[]
+
+  // REPLACES FeatureAction + FeatureActionAccess
+  // example:
+  // {
+  //   "join": ["COACH", "ENTHUSIAST"],
+  //   "create": ["COACH"]
+  // }
+  actions Json?
+
+  // global ON/OFF
+  isActive     Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  planConfigs  FeaturePlanConfig[]
+}
+
+model FeaturePlanConfig {
+  id          String       @id @default(cuid())
+
+  featureId   String
+  membership  String   
+  userType    FeatureUserType
+
+  isActive    Boolean      @default(true)
+
+  //  ALL dynamic config here
+  config      Json
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  feature     Feature      @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  audits      FeatureConfigAudit[]
+
+  @@unique([featureId, membership, userType])
+  @@index([featureId, membership, userType])
+}
+
+// ----------------------------------------------------------------------
+// AUDIT LOG
+// ----------------------------------------------------------------------
+
+model FeatureConfigAudit {
+  id        String            @id @default(cuid())
+
+  configId  String
+
+  oldConfig Json
+  newConfig Json
+
+  updatedBy String
+  note      String?
+
+  createdAt DateTime          @default(now())
+
+  config    FeaturePlanConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+}
+enum FeatureUserType {
+  COACH
+  SOLOPRENEUR
+  ENTHUSIAST
+}
+// feature config at admin level ends
 // Enum for the AEO/Schema feature
 enum PageSchemaType {
   NONE        // Default
