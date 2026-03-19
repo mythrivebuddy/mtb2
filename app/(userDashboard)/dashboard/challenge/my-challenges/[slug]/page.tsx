@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   XCircle,
   LucideTrash2,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import axios, { AxiosError } from "axios";
@@ -644,7 +645,7 @@ export default function ChallengeManagementPage() {
     loggedInParticipant?.isCertificateIssued === true;
   const daysLeft = Math.ceil(
     (new Date(challenge.endDate).getTime() - new Date().getTime()) /
-      (1000 * 60 * 60 * 24),
+    (1000 * 60 * 60 * 24),
   );
   const totalCompletedDays = (challenge.history || []).filter(
     (day) => day.status === "COMPLETED",
@@ -796,6 +797,13 @@ export default function ChallengeManagementPage() {
               label="Reward"
               value={`${challenge.reward} GP`}
               colorClass="bg-green-500"
+            />
+
+            <StatCard
+              icon={<AlertTriangle className="w-6 h-6 text-white" />}
+              label="Penalty"
+              value={`${challenge.penalty} GP`}
+              colorClass="bg-rose-500"
             />
 
             <StatCard
