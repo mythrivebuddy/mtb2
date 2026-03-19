@@ -622,6 +622,37 @@ export const step5MMPSchema = z.object({
     .max(150, "Cannot exceed 150 characters"),
 });
 
+
+export const FeatureUserTypeEnum = z.enum(["COACH", "SOLOPRENEUR", "ENTHUSIAST"]);
+export const MembershipTypeEnum = z.enum(["FREE", "PAID"]);
+
+// Validate the nested Plan Configs
+export const PlanConfigSchema = z.object({
+  id: z.string().optional(), 
+  membership: MembershipTypeEnum,
+  userType: FeatureUserTypeEnum,
+  isActive: z.boolean().default(true),
+  config: z.record(z.string(), z.any()).default({}), // Ensures it is  a valid JSON object
+});
+
+// Validate the main Feature
+export const FeatureSchema = z.object({
+  key: z.string()
+    .min(2, "Feature key must be at least 2 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Key can only contain letters, numbers, and underscores"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  description: z.string().nullable().optional(),
+  
+  // JSON fields
+  configSchema: z.record(z.string(), z.any()).nullable().optional(),
+  actions: z.record(z.string(), z.array(FeatureUserTypeEnum)).nullable().optional(),
+  
+  allowedUserTypes: z.array(FeatureUserTypeEnum).default([]),
+  isActive: z.boolean().default(true),
+  
+  planConfigs: z.array(PlanConfigSchema).default([]),
+});
+
 // ─── Full Form Shape (used in main page + localStorage) ──────────────────────
 export const fullFormSchema = z.object({
   step1: step1MMPSchema,
