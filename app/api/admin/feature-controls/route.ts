@@ -22,7 +22,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const session = await checkRole("ADMIN");
+    await checkRole("ADMIN");
     const body = await req.json();
 
     const validation = FeatureSchema.safeParse(body);
@@ -78,18 +78,7 @@ export async function POST(req: Request) {
       include: { planConfigs: true },
     });
 
-    await prisma.featureConfigAudit.createMany({
-      data: feature.planConfigs.map((pc) => ({
-        configId: pc.id,
-        oldConfig: Prisma.JsonNull,
-        newConfig:
-          pc.config === null
-            ? Prisma.JsonNull
-            : (pc.config as Prisma.InputJsonValue),
-        updatedBy: session.user.id,
-        note: "Initial config creation",
-      })),
-    });
+
 
     return NextResponse.json({ success: true, data: feature }, { status: 201 });
   } catch (error) {

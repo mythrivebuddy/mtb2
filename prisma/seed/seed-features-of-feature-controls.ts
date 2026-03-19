@@ -280,6 +280,24 @@ const FEATURE_SCHEMAS: Record<string, Record<string, SchemaField>> = {
   },
 };
 
+const FEATURE_NAMES: Record<string, string> = {
+  joyPearls: "Growth Points",
+  miracleLog: "Miracle Log",
+  onePercentStart: "1% Start",
+  onePercentProgressVault: "1% Progress Vault",
+  dailyBlooms: "Daily Blooms",
+  reminders: "Reminders",
+  magicBox: "Magic Box",
+  spotlight: "Spotlight",
+  buddyLens: "Buddy Lens",
+  challenges: "Challenges",
+  accountabilityHub: "Accountability Hub",
+  discoveryCalls: "Discovery Calls",
+  liveWebinars: "Live Webinars",
+  miniMasteryPrograms: "Mini Mastery Programs",
+  prosperityDrops: "Prosperity Drops",
+};
+
 // ==========================================
 // 🔥 3. TYPES
 // ==========================================
@@ -314,7 +332,7 @@ function normalizeConfig(config: Record<string, unknown>, allKeys: string[]): Re
 // ==========================================
 
 async function seedFeatures() {
-  console.log("🌱 Seeding FULL feature config (with rich schema)...");
+  console.log("🌱 Seeding FULL feature config ...");
 
   for (const [key, rawValue] of Object.entries(featureConfig)) {
     const value = rawValue as FeatureConfigEntry;
@@ -331,11 +349,11 @@ async function seedFeatures() {
         allowedUserTypes,
         ...(actions !== undefined && { actions }),
         configSchema: configSchema as Prisma.InputJsonValue,
-        name: key,
+         name: FEATURE_NAMES[key] ?? key,
       },
       create: {
         key,
-        name: key,
+       name: FEATURE_NAMES[key] ?? key,
         description: null,
         allowedUserTypes,
         actions: actions ?? Prisma.JsonNull,
@@ -373,15 +391,6 @@ async function seedFeatures() {
             },
           });
 
-          await prisma.featureConfigAudit.create({
-            data: {
-              configId: created.id,
-              oldConfig: Prisma.JsonNull,
-              newConfig: config as Prisma.InputJsonValue,
-              updatedBy: "SYSTEM",
-              note: "Seeded normalized config",
-            },
-          });
         } else {
           await prisma.featurePlanConfig.update({
             where: { id: existing.id },

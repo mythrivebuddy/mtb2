@@ -2243,7 +2243,6 @@ model FeaturePlanConfig {
   updatedAt   DateTime     @updatedAt
 
   feature     Feature      @relation(fields: [featureId], references: [id], onDelete: Cascade)
-  audits      FeatureConfigAudit[]
 
   @@unique([featureId, membership, userType])
   @@index([featureId, membership, userType])
@@ -2253,21 +2252,7 @@ model FeaturePlanConfig {
 // AUDIT LOG
 // ----------------------------------------------------------------------
 
-model FeatureConfigAudit {
-  id        String            @id @default(cuid())
 
-  configId  String
-
-  oldConfig Json
-  newConfig Json
-
-  updatedBy String
-  note      String?
-
-  createdAt DateTime          @default(now())
-
-  config    FeaturePlanConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
-}
 enum FeatureUserType {
   COACH
   SOLOPRENEUR

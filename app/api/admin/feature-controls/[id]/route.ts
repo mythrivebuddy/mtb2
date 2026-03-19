@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
-    const session = await checkRole("ADMIN");
+     await checkRole("ADMIN");
     const { id } = await params;
     const body = await req.json();
 
@@ -77,9 +77,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         const existingPc = existingMap.get(key);
 
         if (existingPc) {
-          const configChanged =
-            JSON.stringify(existingPc.config) !==
-            JSON.stringify(incomingPc.config);
+
 
           await tx.featurePlanConfig.update({
             where: { id: existingPc.id },
@@ -92,50 +90,21 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
             },
           });
 
-          if (configChanged) {
-            await tx.featureConfigAudit.create({
-              data: {
-                configId: existingPc.id,
-                oldConfig:
-                  existingPc.config === null
-                    ? Prisma.JsonNull
-                    : (existingPc.config as Prisma.InputJsonValue),
-                newConfig:
-                  incomingPc.config === null
-                    ? Prisma.JsonNull
-                    : (incomingPc.config as Prisma.InputJsonValue),
-                updatedBy: session.user.id,
-                note: "Updated via Admin Dashboard",
-              },
-            });
-          }
-        } else {
-          const created = await tx.featurePlanConfig.create({
-            data: {
-              featureId: id,
-              membership: incomingPc.membership,
-              userType: incomingPc.userType,
-              isActive: incomingPc.isActive,
-              config:
-                incomingPc.config === null
-                  ? Prisma.JsonNull
-                  : (incomingPc.config as Prisma.InputJsonValue),
-            },
-          });
 
-          await tx.featureConfigAudit.create({
-            data: {
-              configId: created.id,
-              oldConfig: Prisma.JsonNull,
-              newConfig:
-                incomingPc.config === null
-                  ? Prisma.JsonNull
-                  : (incomingPc.config as Prisma.InputJsonValue),
-              updatedBy: session.user.id,
-              note: "Initial config creation",
-            },
-          });
         }
+         await tx.featurePlanConfig.create({
+          data: {
+            featureId: id,
+            membership: incomingPc.membership,
+            userType: incomingPc.userType,
+            isActive: incomingPc.isActive,
+            config:
+              incomingPc.config === null
+                ? Prisma.JsonNull
+                : (incomingPc.config as Prisma.InputJsonValue),
+          },
+        });
+
       }
 
       for (const existingPc of existingFeature.planConfigs) {
