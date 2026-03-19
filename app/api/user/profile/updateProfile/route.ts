@@ -72,18 +72,6 @@ interface ProfileRequestBody {
 /* HELPERS */
 /* ------------------------------------------------ */
 
-// function parseArray(value: unknown): string[] | undefined {
-//   if (!value) return undefined
-//   if (Array.isArray(value)) return value
-//   if (typeof value === "string") {
-//     try {
-//       return JSON.parse(value)
-//     } catch {
-//       return undefined
-//     }
-//   }
-//   return undefined
-// }
 function parseArray(value: unknown): string[] | undefined {
   if (!value) return undefined
 
@@ -121,15 +109,6 @@ function parseTestimonials(value: unknown): Testimonial[] | undefined {
   }
   return undefined
 }
-
-// function tryParseJson(jsonString: unknown) {
-//   if (typeof jsonString !== "string") return {}
-//   try {
-//     return JSON.parse(jsonString)
-//   } catch {
-//     return {}
-//   }
-// }
 
 /* ------------------------------------------------ */
 /* PUT */
@@ -216,82 +195,77 @@ export async function PUT(req: Request) {
     console.log("Parsed body data:", bodyData)
 
     const updateData = {
-  name: bodyData.name ?? undefined,
-  businessInfo: bodyData.businessInfo ?? undefined,
-  missionStatement: bodyData.missionStatement ?? undefined,
-  goals: bodyData.goals ?? undefined,
-  keyOfferings: bodyData.keyOfferings ?? undefined,
-  achievements: bodyData.achievements ?? undefined,
-  email: bodyData.email === "" ? null : bodyData.email ?? undefined,
-  phone: bodyData.phone ?? undefined,
-  website: bodyData.website ?? undefined,
+      name: bodyData.name ?? undefined,
+      businessInfo: bodyData.businessInfo ?? undefined,
+      missionStatement: bodyData.missionStatement ?? undefined,
+      goals: bodyData.goals ?? undefined,
+      keyOfferings: bodyData.keyOfferings ?? undefined,
+      achievements: bodyData.achievements ?? undefined,
+      email: bodyData.email === "" ? null : bodyData.email ?? undefined,
+      phone: bodyData.phone ?? undefined,
+      website: bodyData.website ?? undefined,
 
-  socialHandles:
-    typeof bodyData.socialHandles === "string"
-      ? bodyData.socialHandles
-      : bodyData.socialHandles
-      ? JSON.stringify(bodyData.socialHandles)
-      : undefined,
+      socialHandles:
+        typeof bodyData.socialHandles === "string"
+          ? bodyData.socialHandles
+          : bodyData.socialHandles
+            ? JSON.stringify(bodyData.socialHandles)
+            : undefined,
 
-  isSpotlightActive:
-    bodyData.isSpotlightActive === true ||
-    bodyData.isSpotlightActive === "true",
+      isSpotlightActive:
+        bodyData.isSpotlightActive === true ||
+        bodyData.isSpotlightActive === "true",
 
-  featuredWorkTitle: bodyData.featuredWorkTitle ?? undefined,
-  featuredWorkDesc: bodyData.featuredWorkDesc ?? undefined,
-  featuredWorkImage: bodyData.featuredWorkImage ?? undefined,
-  priorityContactLink: bodyData.priorityContactLink ?? undefined,
+      featuredWorkTitle: bodyData.featuredWorkTitle ?? undefined,
+      featuredWorkDesc: bodyData.featuredWorkDesc ?? undefined,
+      featuredWorkImage: bodyData.featuredWorkImage ?? undefined,
+      priorityContactLink: bodyData.priorityContactLink ?? undefined,
 
-  tagline: bodyData.tagline ?? undefined,
-  coachingDomains: parseArray(bodyData.coachingDomains),
-  targetAudience: parseArray(bodyData.targetAudience),
-  transformation: bodyData.transformation ?? undefined,
-  typicalResults: parseArray(bodyData.typicalResults),
-  sessionStyles: parseArray(bodyData.sessionStyles),
-  methodology: bodyData.methodology ?? undefined,
+      tagline: bodyData.tagline ?? undefined,
+      coachingDomains: parseArray(bodyData.coachingDomains),
+      targetAudience: parseArray(bodyData.targetAudience),
+      transformation: bodyData.transformation ?? undefined,
+      typicalResults: parseArray(bodyData.typicalResults),
+      sessionStyles: parseArray(bodyData.sessionStyles),
+      methodology: bodyData.methodology ?? undefined,
 
-  // // 🔥 FIXED
-  // toolsFrameworks: parseArray(bodyData.toolsFrameworks)
-  //   ? JSON.stringify(parseArray(bodyData.toolsFrameworks))
-  //   : undefined,
- toolsFrameworks: parseArray(bodyData.toolsFrameworks) ?? undefined,
+      toolsFrameworks: parseArray(bodyData.toolsFrameworks) ?? undefined,
 
-  servicesOffered: parseArray(bodyData.servicesOffered),
-  languages: parseArray(bodyData.languages),
-  timezone: bodyData.timezone ?? undefined,
-  sessionFormat: bodyData.sessionFormat ?? undefined,
-  sessionDuration: bodyData.sessionDuration ?? undefined,
+      servicesOffered: parseArray(bodyData.servicesOffered),
+      languages: parseArray(bodyData.languages),
+      timezone: bodyData.timezone ?? undefined,
+      sessionFormat: bodyData.sessionFormat ?? undefined,
+      sessionDuration: bodyData.sessionDuration ?? undefined,
 
-  priceMin:
-    typeof bodyData.priceMin === "number"
-      ? bodyData.priceMin
-      : Number(bodyData.priceMin) || undefined,
+      priceMin:
+        typeof bodyData.priceMin === "number"
+          ? bodyData.priceMin
+          : Number(bodyData.priceMin) || undefined,
 
-  priceMax:
-    typeof bodyData.priceMax === "number"
-      ? bodyData.priceMax
-      : Number(bodyData.priceMax) || undefined,
+      priceMax:
+        typeof bodyData.priceMax === "number"
+          ? bodyData.priceMax
+          : Number(bodyData.priceMax) || undefined,
 
-  yearsOfExperience:
-    typeof bodyData.yearsOfExperience === "number"
-      ? bodyData.yearsOfExperience
-      : Number(bodyData.yearsOfExperience) || undefined,
+      yearsOfExperience:
+        typeof bodyData.yearsOfExperience === "number"
+          ? bodyData.yearsOfExperience
+          : Number(bodyData.yearsOfExperience) || undefined,
 
-  certifications: parseArray(bodyData.certifications),
+      certifications: parseArray(bodyData.certifications),
 
-  shortBio: bodyData.shortBio ?? undefined,
+      shortBio: bodyData.shortBio ?? undefined,
 
-  // 🔥 FIXED
-  testimonials: parseTestimonials(bodyData.testimonials)
-    ? JSON.stringify(parseTestimonials(bodyData.testimonials))
-    : undefined,
+      testimonials: parseTestimonials(bodyData.testimonials)
+        ? JSON.stringify(parseTestimonials(bodyData.testimonials))
+        : undefined,
 
-  introVideo: bodyData.introVideo ?? undefined,
-  linkedin: bodyData.linkedin ?? undefined,
-  calendlyUrl: bodyData.calendlyUrl ?? undefined,
-  preferredCurrency: bodyData.preferredCurrency ?? undefined,
-  profilePhoto: profilePhotoUrl ?? existingProfile?.profilePhoto,
-}
+      introVideo: bodyData.introVideo ?? undefined,
+      linkedin: bodyData.linkedin ?? undefined,
+      calendlyUrl: bodyData.calendlyUrl ?? undefined,
+      preferredCurrency: bodyData.preferredCurrency ?? undefined,
+      profilePhoto: profilePhotoUrl ?? existingProfile?.profilePhoto,
+    }
     /* ---------------- USER CHECK ---------------- */
 
     const user = await prisma.user.findUnique({
@@ -315,6 +289,14 @@ export async function PUT(req: Request) {
         isProfileComplete: false,
       },
       update: updateData,
+    })
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(bodyData.transformation && { bio: bodyData.transformation }),
+        ...(updateData.profilePhoto && { image: updateData.profilePhoto }),
+      },
     })
 
     /* ---------------- COMPLETION ---------------- */

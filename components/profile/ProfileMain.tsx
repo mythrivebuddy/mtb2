@@ -43,7 +43,6 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
         : null;
 
   const embedUrl = profile.introVideo ? toEmbedUrl(profile.introVideo) : null;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white text-gray-900">
       <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 space-y-28">
@@ -105,11 +104,11 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
               </p>
             )}
             <button
-  onClick={() => profile.calendlyUrl && window.open(profile.calendlyUrl, "_blank")}
-  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition shadow-md"
->
-  Book Discovery Call
-</button>
+              onClick={() => profile.calendlyUrl && window.open(profile.calendlyUrl, "_blank")}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold transition shadow-md"
+            >
+              Book Discovery Call
+            </button>
             <button onClick={() => window.open(profile.linkedin, "_blank")} className="w-full bg-gray-100 hover:bg-gray-200 py-3 rounded-xl font-medium transition">Connect With Me</button>
             <p className="text-xs text-gray-400 text-center">Typical response time: Under 2 hours</p>
           </div>
