@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
         durationDays: true, unlockType: true, price: true, currency: true,
         completionThreshold: true, certificateTitle: true,
         achievements: true, modules: true, status: true,
-        isActive: true, thumbnailUrl: true, createdAt: true, updatedAt: true,
+        isActive: true, thumbnailUrl: true, createdAt: true, updatedAt: true, isComplete: true,
       },
     }),
     prisma.program.count({ where }),
@@ -193,6 +193,7 @@ export async function PATCH(req: NextRequest) {
     completionThreshold: z.number().int().min(50).max(100).optional(),
     certificateTitle:    z.string().optional(),
     thumbnailUrl:        z.string().optional(),
+    isComplete: z.boolean().optional(),
   });
 
   const parsed = schema.safeParse(body);
@@ -204,6 +205,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   const { id, ...updateFields } = parsed.data;
+console.log("PATCH - id:", id)
+console.log("PATCH - userId:", userId)
 
   // Confirm program belongs to this user
   const program = await prisma.program.findFirst({

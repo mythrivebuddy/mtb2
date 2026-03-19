@@ -21,7 +21,7 @@ import {
 import { MMP_STORAGE_KEY, ProgramDBPayload } from "@/types/client/mini-mastery-program";
 import { toast } from "sonner";
 
-// ─── Storage key for draftId ──────────────────────────────────────────────────
+// ─── Storage keys ─────────────────────────────────────────────────────────────
 const DRAFT_ID_KEY = `${MMP_STORAGE_KEY}_draftId`;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,15 +50,15 @@ function clearStorage() {
   localStorage.removeItem(DRAFT_ID_KEY);
 }
 
-// ─── Partial payload builder (works with incomplete formData) ─────────────────
+// ─── Partial payload builder ──────────────────────────────────────────────────
 
 function buildPartialPayload(data: Partial<FullFormData>): Record<string, unknown> {
   return {
     ...(data.step1 && {
-      name:        data.step1.title,
-      description: data.step1.subtitle,
+      name:         data.step1.title,
+      description:  data.step1.subtitle,
       durationDays: parseInt(data.step1.duration),
-      unlockType:  data.step1.unlockType,
+      unlockType:   data.step1.unlockType,
       thumbnailUrl: data.step1.thumbnailUrl ?? "",
     }),
     ...(data.step2 && {
@@ -95,16 +95,30 @@ const TOTAL_STEPS = 6;
 
 export default function CreateProgramPage() {
   const router = useRouter();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData,    setFormData]    = useState<Partial<FullFormData>>({});
   const [draftId,     setDraftId]     = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Hydrate from localStorage on mount
+  // ── Hydrate from localStorage on mount ──────────────────────────────────────
+  // new/page.tsx already clear kar chuka hoga agar naya program hai
+  // toh yahan sirf jo bhi localStorage mein hai woh load karo
   useEffect(() => {
-    setFormData(loadFromStorage());
-    setDraftId(loadDraftId());
-  }, []);
+    const savedDraftId  = loadDraftId();
+    const savedFormData = loadFromStorage();
+
+    // Agar draftId hai but formData nahi — stale/orphan draft, clear karo
+    if (savedDraftId && !savedFormData.step1) {
+      clearStorage();
+      setFormData({});
+      setDraftId(null);
+      return;
+    }
+
+    setFormData(savedFormData);
+    setDraftId(savedDraftId);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
 
@@ -115,21 +129,21 @@ export default function CreateProgramPage() {
       const merged  = { ...formData, ...newStepData };
       const partial = buildPartialPayload(merged);
 
-      // step1 (name) is required to create — skip if not present
       if (!partial.name) return;
 
-      if (draftId) {
-        // Update existing draft
+      // localStorage se fresh read karo — stale closure fix
+      const currentDraftId = loadDraftId();
+
+      if (currentDraftId) {
         await fetch("/api/mini-mastery-programs", {
           method:  "PATCH",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ id: draftId, ...partial, status: "DRAFT" }),
+          body:    JSON.stringify({ id: currentDraftId, ...partial, status: "DRAFT" }),
         });
       } else {
-        // Create new draft — needs minimum required fields
         const minFields = {
           name:                partial.name,
-          description: ((partial.description as string)?.trim() || "Draft").slice(0, 300),
+          description:         ((partial.description as string)?.trim() || "Draft").slice(0, 300),
           durationDays:        partial.durationDays ?? 7,
           unlockType:          partial.unlockType   ?? "daily",
           achievements:        (partial.achievements as string[])?.length
@@ -162,7 +176,6 @@ export default function CreateProgramPage() {
         }
       }
     } catch (err) {
-      // Silent fail — don't block user
       console.error("Auto-save draft failed:", err);
     }
   };
@@ -206,13 +219,14 @@ export default function CreateProgramPage() {
   const handleSubmitForReview = async (payload: ProgramDBPayload) => {
     setSubmitError(null);
     try {
-      if (draftId) {
-        // Update existing draft → UNDER_REVIEW
+      const currentDraftId = loadDraftId();
+
+      if (currentDraftId) {
         const res = await fetch("/api/mini-mastery-programs", {
           method:  "PATCH",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({
-            id: draftId,
+            id: currentDraftId,
             ...buildPartialPayload(formData),
             status: "UNDER_REVIEW",
           }),
@@ -223,7 +237,6 @@ export default function CreateProgramPage() {
           throw new Error((data as { message?: string })?.message || `Server error: ${res.status}`);
         }
       } else {
-        // No draft yet — create fresh
         const res = await fetch("/api/mini-mastery-programs", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
@@ -239,7 +252,7 @@ export default function CreateProgramPage() {
       clearStorage();
       setDraftId(null);
       toast.success("Program submitted for review successfully!");
-      router.push("/dashboard/mini-mastery-programs/create");
+      router.push("/dashboard/mini-mastery-programs");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setSubmitError(message);
@@ -250,12 +263,14 @@ export default function CreateProgramPage() {
   const handleSaveDraft = async (payload: ProgramDBPayload) => {
     setSubmitError(null);
     try {
-      if (draftId) {
+      const currentDraftId = loadDraftId();
+
+      if (currentDraftId) {
         const res = await fetch("/api/mini-mastery-programs", {
           method:  "PATCH",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({
-            id: draftId,
+            id: currentDraftId,
             ...buildPartialPayload(formData),
             status: "DRAFT",
           }),

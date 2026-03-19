@@ -1735,6 +1735,8 @@ model Program {
 
   // Step 6: Status handling
   status            String?  @default("DRAFT") // "DRAFT", "UNDER_REVIEW", "PUBLISHED"
+  isComplete Boolean? @default(false)
+
 
   // Relations
   plans              SubscriptionPlan[] @relation("ProgramPlans")

@@ -359,7 +359,7 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* Submit for Review — only for DRAFT */}
-                          {program.status === "DRAFT" && (
+                          {program.status === "DRAFT" && program.isComplete && (
                             <button
                               onClick={() => handleSubmitForReview(program.id)}
                               disabled={submittingId === program.id}
