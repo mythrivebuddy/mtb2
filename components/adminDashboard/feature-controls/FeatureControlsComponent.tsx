@@ -18,18 +18,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMutation, UseMutationResult, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
+import { FeatureSchema } from "@/schema/zodSchema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import z from "zod";
 
 // ─────────────────────────────────────────────
 // TYPES
 // ─────────────────────────────────────────────
 export type FeatureUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR";
 export type MembershipType = "FREE" | "PAID";
+type JsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | { [key: string]: JsonValue }
+    | JsonValue[];
 
 export interface ConfigSchemaField {
     type: "number" | "boolean" | "string" | "select";
     label: string;
     options?: string[];
-    default?: any;
+    default?: JsonValue;
 }
 
 export interface FeaturePlanConfig {
@@ -37,7 +51,7 @@ export interface FeaturePlanConfig {
     membership: MembershipType;
     userType: FeatureUserType;
     isActive: boolean;
-    config: Record<string, any>;
+    config: Record<string, JsonValue>;
 }
 
 export interface Feature {
@@ -51,303 +65,24 @@ export interface Feature {
     isActive: boolean;
     planConfigs: FeaturePlanConfig[];
 }
+type CreateFeatureInput = {
+    key: string;
+    name: string;
+    description: string | null;
+    configSchema: Record<string, ConfigSchemaField> | null;
+    allowedUserTypes: FeatureUserType[];
+    actions: Record<string, FeatureUserType[]> | null;
+    isActive: boolean;
 
-// ─────────────────────────────────────────────
-// INITIAL DATA
-// ─────────────────────────────────────────────
-const INITIAL_FEATURES: Feature[] = [
-  // ---------- Growth Points ----------
-  {
-    id: "feat_growthPoints",
-    key: "growthPoints",
-    name: "Growth Points",
-    description: "Reward multipliers",
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      earnRateMultiplier: { type: "number", label: "Earn Rate Multiplier", default: 1 },
-      spendRateMultiplier: { type: "number", label: "Spend Rate Multiplier", default: 1 },
-      bonusEligible: { type: "boolean", label: "Bonus Eligible", default: false },
-    },
-    planConfigs: [
-      { id: "jp_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { earnRateMultiplier: 1, spendRateMultiplier: 1.2 } },
-      { id: "jp_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { earnRateMultiplier: 1, spendRateMultiplier: 1.2 } },
-      { id: "jp_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { earnRateMultiplier: 1.5, spendRateMultiplier: 0.8, bonusEligible: true } },
-      { id: "jp_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { earnRateMultiplier: 1.5, spendRateMultiplier: 0.8 } },
-    ],
-  },
+    planConfigs: {
+        membership: MembershipType;
+        userType: FeatureUserType;
+        isActive: boolean;
+        config: Record<string, JsonValue>;
+    }[];
+};
 
-  // ---------- MIRACLE LOG ----------
-  {
-    id: "feat_miracleLog",
-    key: "miracleLog",
-    name: "Miracle Log",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      dailyLimit: { type: "number", label: "Daily Limit", default: 1 },
-      isUpgradeFlagShow: { type: "boolean", label: "Upgrade Flag", default: true },
-    },
-    planConfigs: [
-      { id: "ml_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { dailyLimit: 1, isUpgradeFlagShow: true } },
-      { id: "ml_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 1, isUpgradeFlagShow: true } },
-      { id: "ml_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { dailyLimit: 3 } },
-      { id: "ml_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 3 } },
-    ],
-  },
 
-  {
-  id: "feat_challenges",
-  key: "challenges",
-  name: "Challenges",
-  description: "Create, join and manage challenges",
-  isActive: true,
-  allowedUserTypes: ["ENTHUSIAST", "COACH"],
-  actions: {
-    join: ["ENTHUSIAST", "COACH"],
-    create: ["COACH", "ENTHUSIAST"],
-    issueCertificate: ["COACH"],
-    groupChat: ["ENTHUSIAST", "COACH"],
-  },
-  configSchema: {
-    createLimit: { type: "number", label: "Create Limit", default: 3 },
-    canCreatePaidChallenge: { type: "boolean", label: "Paid Challenge", default: false },
-    commissionPercent: { type: "number", label: "Commission %", default: 25 },
-    canIssueCertificate: { type: "boolean", label: "Issue Certificate", default: false },
-    groupChatLimit: { type: "number", label: "Group Chat Limit", default: -1 },
-    joinLimit: { type: "number", label: "Join Limit", default: -1 },
-    limitType: { type: "select", label: "Limit Type", options: ["MONTHLY","YEARLY","LIFETIME"], default: "MONTHLY" },
-    isUpgradeFlagShow: { type: "boolean", label: "Upgrade Flag", default: false },
-  },
-  planConfigs: [
-    { id: "ch_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { createLimit: 10, canCreatePaidChallenge: false, commissionPercent: 25, canIssueCertificate: false, groupChatLimit: -1, joinLimit: -1, limitType: "LIFETIME", isUpgradeFlagShow: false } },
-    { id: "ch_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { createLimit: 3, groupChatLimit: -1, joinLimit: -1, limitType: "MONTHLY", isUpgradeFlagShow: true } },
-    { id: "ch_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { createLimit: 10, canCreatePaidChallenge: true, commissionPercent: 5, canIssueCertificate: true, groupChatLimit: -1, joinLimit: -1, limitType: "MONTHLY" } },
-    { id: "ch_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { createLimit: 10, canCreatePaidChallenge: false, canIssueCertificate: false, groupChatLimit: 1, joinLimit: -1, limitType: "MONTHLY" } },
-  ],
-},
-{
-  id: "feat_accountabilityHub",
-  key: "accountabilityHub",
-  name: "Accountability Hub",
-  description: "Create accountability groups",
-  isActive: true,
-  allowedUserTypes: ["ENTHUSIAST", "COACH"],
-  actions: {
-    join: ["ENTHUSIAST", "COACH"],
-    create: ["COACH"],
-  },
-  configSchema: {
-    createLimit: { type: "number", label: "Create Limit", default: 1 },
-    limitType: { type: "select", label: "Limit Type", options: ["MONTHLY","YEARLY","LIFETIME"], default: "MONTHLY" },
-  },
-  planConfigs: [
-    { id: "ah_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { createLimit: 1, limitType: "MONTHLY" } },
-    { id: "ah_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { createLimit: 1, limitType: "MONTHLY" } },
-  ],
-},
-{
-  id: "feat_miniMasteryPrograms",
-  key: "miniMasteryPrograms",
-  name: "Mini Mastery Programs",
-  description: "Create and sell programs",
-  isActive: true,
-  allowedUserTypes: ["COACH"],
-  actions: {
-    create: ["COACH"],
-    publishPaidProgram: ["COACH"],
-  },
-  configSchema: {
-    createLimit: { type: "number", label: "Create Limit (-1 unlimited)", default: 1 },
-    commissionPercent: { type: "number", label: "Commission %", default: 20 },
-  },
-  planConfigs: [
-    { id: "mmp_f", membership: "FREE", userType: "COACH", isActive: true, config: { createLimit: 1, commissionPercent: 20 } },
-    { id: "mmp_p", membership: "PAID", userType: "COACH", isActive: true, config: { createLimit: -1, commissionPercent: 10 } },
-  ],
-},
-
-  // ---------- ONE % START ----------
-  {
-    id: "feat_onePercentStart",
-    key: "onePercentStart",
-    name: "1% Start",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      dailyLimit: { type: "number", label: "Daily Limit", default: 1 },
-      isUpgradeFlagShow: { type: "boolean", label: "Upgrade Flag", default: true },
-    },
-    planConfigs: [
-      { id: "ops_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { dailyLimit: 1, isUpgradeFlagShow: true } },
-      { id: "ops_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 1, isUpgradeFlagShow: true } },
-      { id: "ops_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { dailyLimit: 3 } },
-      { id: "ops_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 3 } },
-    ],
-  },
-
-  // ---------- PROGRESS VAULT ----------
-  {
-    id: "feat_onePercentProgressVault",
-    key: "onePercentProgressVault",
-    name: "Progress Vault",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      dailyLimit: { type: "number", label: "Daily Limit", default: 1 },
-      isUpgradeFlagShow: { type: "boolean", label: "Upgrade Flag", default: true },
-    },
-    planConfigs: [
-      { id: "pv_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { dailyLimit: 1, isUpgradeFlagShow: true } },
-      { id: "pv_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 1, isUpgradeFlagShow: true } },
-      { id: "pv_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { dailyLimit: 3 } },
-      { id: "pv_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 3 } },
-    ],
-  },
-
-  // ---------- DAILY BLOOMS ----------
-  {
-    id: "feat_dailyBlooms",
-    key: "dailyBlooms",
-    name: "Daily Blooms",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      dailyLimit: { type: "number", label: "Daily Limit (-1 unlimited)", default: 3 },
-    },
-    planConfigs: [
-      { id: "db_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { dailyLimit: 3 } },
-      { id: "db_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 3 } },
-      { id: "db_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { dailyLimit: -1 } },
-      { id: "db_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: -1 } },
-    ],
-  },
-
-  // ---------- REMINDERS ----------
-  {
-    id: "feat_reminders",
-    key: "reminders",
-    name: "Reminders",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      dailyLimit: { type: "number", label: "Daily Limit (-1 unlimited)", default: 1 },
-    },
-    planConfigs: [
-      { id: "rm_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { dailyLimit: 1 } },
-      { id: "rm_f_e", membership: "FREE", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: 1 } },
-      { id: "rm_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { dailyLimit: -1 } },
-      { id: "rm_p_e", membership: "PAID", userType: "ENTHUSIAST", isActive: true, config: { dailyLimit: -1 } },
-    ],
-  },
-
-  // ---------- MAGIC BOX ----------
-  {
-    id: "feat_magicBox",
-    key: "magicBox",
-    name: "Magic Box",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["ENTHUSIAST", "COACH"],
-    actions: null,
-    configSchema: {
-      dailyOpens: { type: "number", label: "Daily Opens", default: 1 },
-      bonusEligible: { type: "boolean", label: "Bonus Eligible", default: false },
-      bonusMultiplier: { type: "number", label: "Bonus Multiplier", default: 1 },
-      minJp: { type: "number", label: "Min JP", default: 100 },
-      maxJp: { type: "number", label: "Max JP", default: 500 },
-    },
-    planConfigs: [
-      { id: "mb_f_c", membership: "FREE", userType: "COACH", isActive: true, config: { dailyOpens: 1, bonusEligible: false, bonusMultiplier: 1, minJp: 100, maxJp: 500 } },
-      { id: "mb_p_c", membership: "PAID", userType: "COACH", isActive: true, config: { dailyOpens: 3, bonusEligible: true, bonusMultiplier: 1.5, minJp: 100, maxJp: 600 } },
-    ],
-  },
-
-  // ---------- BUDDY LENS ----------
-  {
-    id: "feat_buddyLens",
-    key: "buddyLens",
-    name: "Buddy Lens",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["COACH"],
-    actions: null,
-    configSchema: {
-      requestLimit: { type: "number", label: "Request Limit", default: 1 },
-      earnJPPerReview: { type: "number", label: "Earn JP", default: 1000 },
-    },
-    planConfigs: [
-      { id: "bl_f", membership: "FREE", userType: "COACH", isActive: true, config: { requestLimit: 1, earnJPPerReview: 1000 } },
-      { id: "bl_p", membership: "PAID", userType: "COACH", isActive: true, config: { requestLimit: 6, earnJPPerReview: 1500 } },
-    ],
-  },
-
-  // ---------- DISCOVERY CALLS ----------
-  {
-    id: "feat_discoveryCalls",
-    key: "discoveryCalls",
-    name: "Discovery Calls",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["COACH"],
-    actions: null,
-    configSchema: {
-      activeListings: { type: "number", label: "Active Listings", default: 1 },
-    },
-    planConfigs: [
-      { id: "dc_f", membership: "FREE", userType: "COACH", isActive: true, config: { activeListings: 1 } },
-      { id: "dc_p", membership: "PAID", userType: "COACH", isActive: true, config: { activeListings: -1 } },
-    ],
-  },
-
-  // ---------- LIVE WEBINARS ----------
-  {
-    id: "feat_liveWebinars",
-    key: "liveWebinars",
-    name: "Live Webinars",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["COACH"],
-    actions: null,
-    configSchema: {
-      activeListings: { type: "number", label: "Active Listings", default: 1 },
-    },
-    planConfigs: [
-      { id: "lw_f", membership: "FREE", userType: "COACH", isActive: true, config: { activeListings: 1 } },
-      { id: "lw_p", membership: "PAID", userType: "COACH", isActive: true, config: { activeListings: -1 } },
-    ],
-  },
-
-  // ---------- PROSPERITY DROPS ----------
-  {
-    id: "feat_prosperityDrops",
-    key: "prosperityDrops",
-    name: "Prosperity Drops",
-    description: null,
-    isActive: true,
-    allowedUserTypes: ["COACH"],
-    actions: null,
-    configSchema: {
-      eligible: { type: "boolean", label: "Eligible", default: false },
-      priorityWeight: { type: "number", label: "Priority", default: 0 },
-    },
-    planConfigs: [
-      { id: "pd_f", membership: "FREE", userType: "COACH", isActive: true, config: { eligible: false, priorityWeight: 0 } },
-      { id: "pd_p", membership: "PAID", userType: "COACH", isActive: true, config: { eligible: true, priorityWeight: 1 } },
-    ],
-  },
-];
 
 // ─────────────────────────────────────────────
 // SMART JSON EDITOR
@@ -369,6 +104,41 @@ function getIndent(text: string, pos: number): string {
     const match = text.slice(lineStart, pos).match(/^(\s*)/);
     return match ? match[1] : "";
 }
+// Derives which userTypes should have a config card for a given membership.
+// A userType is included if it's in allowedUserTypes AND either:
+//   - no actions are defined (feature-level access only), OR
+//   - it appears in at least one action value
+function getEffectiveUserTypes(feature: Feature): FeatureUserType[] {
+    if (!feature.actions || Object.keys(feature.actions).length === 0) {
+        return feature.allowedUserTypes;
+    }
+    const actionUserTypes = new Set(Object.values(feature.actions).flat());
+    return feature.allowedUserTypes.filter(t => actionUserTypes.has(t));
+}
+
+// Returns only the configSchema fields relevant to a given userType,
+// based on which actions they have access to.
+// Fields whose key matches an action name are filtered by that action's userTypes.
+// Fields with no matching action are always shown (they're global config).
+function getVisibleSchemaFields(
+    feature: Feature,
+    userType: FeatureUserType
+): [string, ConfigSchemaField][] {
+    if (!feature.configSchema) return [];
+    const entries = Object.entries(feature.configSchema);
+    if (!feature.actions || Object.keys(feature.actions).length === 0) return entries;
+
+    return entries.filter(([key]) => {
+        // Find an action whose name is contained in the field key (e.g. "createLimit" → "create")
+        const matchingAction = Object.entries(feature.actions!).find(([actionName]) =>
+            key.toLowerCase().startsWith(actionName.toLowerCase()) || key.toLowerCase().includes(actionName.toLowerCase())
+        );
+        // If no matching action found → always show (it's a global field)
+        if (!matchingAction) return true;
+        // Show only if userType has this action
+        return matchingAction[1].includes(userType);
+    });
+}
 
 interface JsonEditorProps {
     value: object | null;
@@ -377,9 +147,11 @@ interface JsonEditorProps {
     description?: string;
     minHeight?: string;
     schemaHint?: string;
+    dbHint?: object | null;           // ← add this
+    onApplyHint?: (v: object) => void; // ← add this
 }
 
-function JsonEditor({ value, onChange, label, description, minHeight = "260px", schemaHint }: JsonEditorProps) {
+function JsonEditor({ value, onChange, label, description, minHeight = "260px", schemaHint, dbHint, onApplyHint }: JsonEditorProps) {
     const [raw, setRaw] = useState(() => JSON.stringify(value, null, 2) ?? "{}");
     const [error, setError] = useState<string | null>(null);
     const [cursor, setCursor] = useState({ line: 1, col: 1 });
@@ -406,8 +178,12 @@ function JsonEditor({ value, onChange, label, description, minHeight = "260px", 
             const parsed = JSON.parse(text);
             setError(null);
             onChange(parsed);
-        } catch (err: any) {
-            setError(err.message ?? "Invalid JSON");
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Invalid JSON");
+            }
         }
     }, [onChange]);
 
@@ -608,7 +384,7 @@ function JsonEditor({ value, onChange, label, description, minHeight = "260px", 
                         {error
                             ? <XCircle className="w-3 h-3 text-red-400" />
                             : <CheckCircle2 className="w-3 h-3 text-emerald-400" />}
-                        <span className={`text-[10px] font-mono ${error ? "text-red-400" : "text-emerald-400"}`}>
+                        <span className={`text-[10px]  ${error ? "text-red-400" : "text-emerald-400"}`}>
                             {error ? "error" : "valid"}
                         </span>
                     </div>
@@ -643,7 +419,7 @@ function JsonEditor({ value, onChange, label, description, minHeight = "260px", 
                         spellCheck={false}
                         autoCapitalize="none"
                         autoCorrect="off"
-                        className="flex-1 resize-none bg-transparent font-mono text-[12.5px] pt-3 pr-4 pb-3 pl-3 outline-none border-none focus:ring-0 overflow-auto"
+                        className="flex-1 resize-none bg-transparent text-[12.5px] pt-3 pr-4 pb-3 pl-3 outline-none border-none focus:ring-0 overflow-auto"
                         style={{
                             minHeight,
                             tabSize: 2,
@@ -659,12 +435,12 @@ function JsonEditor({ value, onChange, label, description, minHeight = "260px", 
                     <div className="flex items-start gap-2 px-3 py-2 border-t border-red-500/20"
                         style={{ background: "rgba(239,68,68,0.08)" }}>
                         <AlertCircle className="w-3 h-3 text-red-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-[10px] text-red-300 font-mono break-all">{error}</span>
+                        <span className="text-[10px] text-red-300  break-all">{error}</span>
                     </div>
                 )}
 
                 {/* Status bar */}
-                <div className="flex items-center justify-between px-3 py-1 text-[9px] font-mono"
+                <div className="flex items-center justify-between px-3 py-1 text-[9px] "
                     style={{ background: "#0f3460", color: "rgba(255,255,255,0.45)" }}>
                     <div className="flex items-center gap-3">
                         <span style={{ color: "rgba(255,255,255,0.75)" }}>Ln {cursor.line}, Col {cursor.col}</span>
@@ -677,9 +453,39 @@ function JsonEditor({ value, onChange, label, description, minHeight = "260px", 
             </div>
 
             {/* Collapsible schema hint */}
-            {showHint && schemaHint && (
-                <div className="rounded-lg border border-dashed bg-muted/20 p-3">
-                    <p className="text-[10px] text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap">{schemaHint}</p>
+            {showHint && (
+                <div className="space-y-3">
+                    {/* Generic schema hint (format guide) */}
+                    {schemaHint && (
+                        <div className="rounded-lg border border-dashed bg-muted/20 p-3">
+                            <p className="text-[10px] text-muted-foreground  leading-relaxed whitespace-pre-wrap">{schemaHint}</p>
+                        </div>
+                    )}
+
+                    {/* DB seeder hint with Apply button */}
+                    {dbHint && (
+                        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-amber-500/20 bg-amber-500/10">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                                        DB Seeder Default
+                                    </span>
+
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        if (onApplyHint) onApplyHint(dbHint);
+                                    }}
+                                >
+                                    Apply
+                                </Button>
+                            </div>
+                            <pre className="text-[10px] text-amber-700 dark:text-amber-300  leading-relaxed p-3 overflow-x-auto whitespace-pre">
+                                {JSON.stringify(dbHint, null, 2)}
+                            </pre>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -689,17 +495,16 @@ function JsonEditor({ value, onChange, label, description, minHeight = "260px", 
 // ─────────────────────────────────────────────
 // PAGE HEADER
 // ─────────────────────────────────────────────
-interface PageHeaderProps { onAddNew: () => void; }
-function PageHeader({ onAddNew }: PageHeaderProps) {
+function PageHeader() {
     return (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Feature Control</h1>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage global flags, access rules, and plan limits.</p>
             </div>
-            <Button onClick={onAddNew} className="w-full sm:w-auto gap-2">
+            {/* <Button onClick={onAddNew} className="w-full sm:w-auto gap-2">
                 <Plus className="h-4 w-4" /> Add Feature
-            </Button>
+            </Button> */}
         </div>
     );
 }
@@ -726,6 +531,46 @@ function SearchBar({ value, onChange }: SearchBarProps) {
 // FEATURE TABLE
 // ─────────────────────────────────────────────
 interface FeatureTableProps { features: Feature[]; onEdit: (f: Feature) => void; onToggle: (id: string) => void; }
+function getFeatureSummary(feature: Feature): string[] {
+    if (!feature.configSchema || feature.planConfigs.length === 0) {
+        return ["No limits"];
+    }
+
+    const summaries: string[] = [];
+
+    for (const pc of feature.planConfigs) {
+        if (!pc.isActive) continue;
+
+        const labelParts: string[] = [];
+
+        for (const [key, value] of Object.entries(pc.config)) {
+            const schema = feature.configSchema[key];
+
+            if (!schema) continue;
+
+            // 🔥 smart formatting
+            if (typeof value === "number") {
+                if (value === -1) {
+                    labelParts.push(`${schema.label}: Unlimited`);
+                } else {
+                    labelParts.push(`${schema.label}: ${value}`);
+                }
+            } else if (typeof value === "boolean") {
+                labelParts.push(`${schema.label}: ${value ? "Yes" : "No"}`);
+            } else {
+                labelParts.push(`${schema.label}: ${value}`);
+            }
+        }
+
+        if (labelParts.length > 0) {
+            summaries.push(
+                `${pc.membership} ${pc.userType} → ${labelParts.join(", ")}`
+            );
+        }
+    }
+
+    return summaries;
+}
 function FeatureTable({ features, onEdit, onToggle }: FeatureTableProps) {
     return (
         <Card className="overflow-hidden border shadow-sm">
@@ -748,6 +593,7 @@ function FeatureTable({ features, onEdit, onToggle }: FeatureTableProps) {
                         ) : features.map(f => (
                             <FeatureTableRow key={f.id} feature={f} onEdit={onEdit} onToggle={onToggle} />
                         ))}
+
                     </TableBody>
                 </Table>
             </div>
@@ -759,25 +605,47 @@ interface FeatureTableRowProps { feature: Feature; onEdit: (f: Feature) => void;
 function FeatureTableRow({ feature, onEdit, onToggle }: FeatureTableRowProps) {
     return (
         <TableRow className="hover:bg-muted/30">
-            <TableCell className="font-medium">
-                <div className="flex flex-col">
-                    <span>{feature.name}</span>
-                    <span className="text-xs text-muted-foreground hidden sm:inline-block truncate max-w-[200px]">{feature.description}</span>
-                    <code className="text-[10px] text-muted-foreground sm:hidden mt-1">{feature.key}</code>
+            <TableCell className="py-4">
+                <div className="flex flex-col gap-1.5">
+                    {/* Feature Name and Key */}
+                    <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm sm:text-base">{feature.name}</span>
+
+                    </div>
+
+                    {/* Description */}
+                    {feature.description && (
+                        <span className="text-xs text-muted-foreground line-clamp-1">
+                            {feature.description}
+                        </span>
+                    )}
+
+                    {/* NEW: Inline Capabilities Summary */}
+                    <div className="mt-1 flex flex-col gap-1 border-l-2 border-primary/20 pl-3">
+                        {getFeatureSummary(feature).map((line, i) => (
+                            <div key={i} className="text-[10px] sm:text-xs text-muted-foreground/80 italic">
+                                {line}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </TableCell>
-            <TableCell className="hidden sm:table-cell">
-                <code className="text-xs bg-muted px-2 py-1 rounded border">{feature.key}</code>
+
+            <TableCell>
+                <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded border text-muted-foreground">
+                    {feature.key}
+                </code>
             </TableCell>
             <TableCell>
-                <div className="flex flex-wrap gap-1 max-w-[150px] sm:max-w-none">
+                <div className="flex flex-wrap gap-1 max-w-[120px]">
                     {feature.allowedUserTypes.map(type => (
-                        <Badge key={type} variant="secondary" className="text-[9px] sm:text-[10px] px-1.5 py-0">
-                            {type.substring(0, 4)}<span className="hidden sm:inline">{type.substring(4)}</span>
+                        <Badge key={type} variant="outline" className="text-[9px] px-1">
+                            {type}
                         </Badge>
                     ))}
                 </div>
             </TableCell>
+
             <TableCell>
                 <Switch checked={feature.isActive} onCheckedChange={() => onToggle(feature.id)} />
             </TableCell>
@@ -806,7 +674,7 @@ function GeneralTab({ feature, onChange }: GeneralTabProps) {
                     </div>
                     <div className="space-y-2">
                         <Label>Feature Key (Code)</Label>
-                        <Input value={feature.key} onChange={(e) => onChange({ ...feature, key: e.target.value })} placeholder="e.g. magicBox" className="font-mono text-sm" />
+                        <Input value={feature.key} onChange={(e) => onChange({ ...feature, key: e.target.value })} placeholder="e.g. magicBox" className="text-sm" />
                     </div>
                 </div>
                 <div className="space-y-2">
@@ -855,7 +723,15 @@ function AccessTab({ feature, onChange }: AccessTabProps) {
                 <CardContent className="p-4 sm:p-6 pt-0">
                     <JsonEditor
                         value={feature.actions ?? {}}
-                        onChange={(parsed) => onChange({ ...feature, actions: parsed as Record<string, FeatureUserType[]> })}
+                        onChange={(parsed) => {
+                            const newActions = parsed as Record<string, FeatureUserType[]>;
+                            const activeUserTypes = new Set(Object.values(newActions).flat());
+                            // Remove planConfigs for userTypes no longer in any action
+                            const prunedPlanConfigs = feature.planConfigs.filter(pc =>
+                                activeUserTypes.size === 0 || activeUserTypes.has(pc.userType)
+                            );
+                            onChange({ ...feature, actions: newActions, planConfigs: prunedPlanConfigs });
+                        }}
                         label="actions.json"
                         minHeight="160px"
                         schemaHint={`// Example:\n{\n  "join": ["ENTHUSIAST", "COACH"],\n  "create": ["COACH"],\n  "issueCertificate": ["COACH"]\n}`}
@@ -889,8 +765,8 @@ const SCHEMA_HINT = `// Each key becomes a form field in the Plan Limits tab.
   }
 }`;
 
-interface SchemaTabProps { feature: Feature; onChange: (f: Feature) => void; }
-function SchemaTab({ feature, onChange }: SchemaTabProps) {
+interface SchemaTabProps { feature: Feature; onChange: (f: Feature) => void; dbConfigSchema?: object | null; }
+function SchemaTab({ feature, onChange, dbConfigSchema }: SchemaTabProps) {
     return (
         <Card>
             <CardHeader className="p-4 sm:p-6 pb-2">
@@ -908,78 +784,62 @@ function SchemaTab({ feature, onChange }: SchemaTabProps) {
                     label="configSchema.json"
                     minHeight="340px"
                     schemaHint={SCHEMA_HINT}
+                    dbHint={dbConfigSchema ?? null}
+                    onApplyHint={(v) => onChange({ ...feature, configSchema: v as Record<string, ConfigSchemaField> })}
                 />
             </CardContent>
         </Card>
     );
 }
 
-// ─────────────────────────────────────────────
-// PLAN LIMITS SIDEBAR
-// ─────────────────────────────────────────────
-interface PlanLimitsSidebarProps {
-    feature: Feature;
-    selectedMembership: MembershipType;
-    selectedUser: FeatureUserType;
-    onMembershipChange: (m: MembershipType) => void;
-    onUserChange: (u: FeatureUserType) => void;
-}
-function PlanLimitsSidebar({ feature, selectedMembership, selectedUser, onMembershipChange, onUserChange }: PlanLimitsSidebarProps) {
-    return (
-        <div className="space-y-4 bg-background p-4 rounded-lg border shadow-sm">
-            <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Membership</Label>
-                <div className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-1 md:pb-0">
-                    {(["FREE", "PAID"] as MembershipType[]).map(plan => (
-                        <Button key={plan} variant={selectedMembership === plan ? "default" : "outline"}
-                            className="flex-1 md:justify-start text-xs sm:text-sm whitespace-nowrap"
-                            onClick={() => onMembershipChange(plan)}>{plan}</Button>
-                    ))}
-                </div>
-            </div>
-            <div className="space-y-2 pt-2 md:pt-4 border-t border-dashed">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">User Type</Label>
-                <div className="flex flex-row md:flex-col gap-2 overflow-x-auto pb-1 md:pb-0">
-                    {feature.allowedUserTypes.length === 0 ? (
-                        <div className="text-xs text-muted-foreground p-3 text-center border rounded-lg border-dashed bg-muted/30">
-                            Enable in Access tab.
-                        </div>
-                    ) : feature.allowedUserTypes.map(type => (
-                        <Button key={type} variant={selectedUser === type ? "default" : "outline"}
-                            className="flex-1 md:justify-start text-xs sm:text-sm whitespace-nowrap"
-                            onClick={() => onUserChange(type)}>
-                            <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 opacity-50" /> {type}
-                        </Button>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
+
 
 // ─────────────────────────────────────────────
 // PLAN CONFIG FIELD
 // ─────────────────────────────────────────────
-interface PlanConfigFieldProps { fieldKey: string; field: ConfigSchemaField; value: any; onChange: (key: string, value: any) => void; }
+interface PlanConfigFieldProps { fieldKey: string; field: ConfigSchemaField; value: JsonValue; onChange: (key: string, value: JsonValue) => void; }
 function PlanConfigField({ fieldKey, field, value, onChange }: PlanConfigFieldProps) {
     return (
-        <div className="space-y-2.5 bg-background p-4 rounded-xl border shadow-sm transition-all focus-within:border-primary/50">
-            <Label className="flex justify-between items-center text-sm">
+        <div className="space-y-2.5 bg-background py-4 px-3 rounded-xl border shadow-sm transition-all focus-within:border-primary/50">
+
+            <Label className="flex justify-between gap-4 items-center text-sm">
                 {field.label}
-                <span className="text-[9px] sm:text-[10px] text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">{fieldKey}</span>
+                <span className="text-[9px] sm:text-[10px] text-muted-foreground  bg-muted px-1.5 py-0.5 rounded">{fieldKey}</span>
             </Label>
             {field.type === "number" && (
-                <Input type="number" className="bg-muted/30" value={value}
-                    onChange={(e) => onChange(fieldKey, parseFloat(e.target.value) || 0)} />
+                <Input type="number" className="bg-muted/30"
+                    value={
+                        typeof value === "number"
+                            ? value
+                            : value === ""
+                                ? ""
+                                : typeof field.default === "number"
+                                    ? field.default
+                                    : ""
+                    }
+                    onChange={(e) => {
+                        const val = e.target.value;
+
+                        if (val === "") {
+                            onChange(fieldKey, ""); // allow empty
+                            return;
+                        }
+
+                        const num = Number(val);
+                        if (!isNaN(num)) {
+                            onChange(fieldKey, num);
+                        }
+                    }}
+                />
             )}
             {field.type === "string" && (
-                <Input value={value || ""} className="bg-muted/30" onChange={(e) => onChange(fieldKey, e.target.value)} />
+                <Input value={typeof value === "string" ? value : ""} className="bg-muted/30" onChange={(e) => onChange(fieldKey, e.target.value)} />
             )}
             {field.type === "boolean" && (
                 <div className="pt-1"><Switch checked={!!value} onCheckedChange={(c) => onChange(fieldKey, c)} /></div>
             )}
             {field.type === "select" && field.options && (
-                <Select value={value} onValueChange={(v) => onChange(fieldKey, v)}>
+                <Select value={typeof value === "string" ? value : ""} onValueChange={(v) => onChange(fieldKey, v)}>
                     <SelectTrigger className="bg-muted/30"><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>{field.options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                 </Select>
@@ -1013,12 +873,43 @@ function PlanConfigForm({ feature, selectedMembership, selectedUser, onFeatureCh
 
     const currentConfig = getOrCreateConfig();
 
+    // 🔥 PATCH MISSING KEYS FROM SCHEMA
+    if (feature.configSchema) {
+        const updatedConfig = { ...currentConfig.config };
+
+        let changed = false;
+
+        for (const [key, field] of Object.entries(feature.configSchema)) {
+            if (updatedConfig[key] === undefined) {
+                updatedConfig[key] =
+                    field.default ??
+                    (field.type === "number"
+                        ? 0
+                        : field.type === "boolean"
+                            ? false
+                            : "");
+
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            const updated = feature.planConfigs.map((pc) =>
+                pc.id === currentConfig.id
+                    ? { ...pc, config: updatedConfig }
+                    : pc
+            );
+
+            onFeatureChange({ ...feature, planConfigs: updated });
+        }
+    }
+
     const toggleActive = (v: boolean) => {
         const updated = feature.planConfigs.map(pc => pc.id === currentConfig.id ? { ...pc, isActive: v } : pc);
         onFeatureChange({ ...feature, planConfigs: updated });
     };
 
-    const updateValue = (key: string, value: any) => {
+    const updateValue = (key: string, value: JsonValue) => {
         const updated = feature.planConfigs.map(pc =>
             pc.id === currentConfig.id ? { ...pc, config: { ...pc.config, [key]: value } } : pc
         );
@@ -1044,7 +935,7 @@ function PlanConfigForm({ feature, selectedMembership, selectedUser, onFeatureCh
                     </div>
                 )}
             </CardHeader>
-            <CardContent className="p-4 sm:p-6">
+            <CardContent className="p-4 sm:p-2">
                 {!currentConfig?.isActive ? (
                     <div className="flex flex-col items-center justify-center text-muted-foreground gap-3 py-12">
                         <ShieldAlert className="h-10 w-10 opacity-20" />
@@ -1052,9 +943,14 @@ function PlanConfigForm({ feature, selectedMembership, selectedUser, onFeatureCh
                     </div>
                 ) : hasSchema ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        {Object.entries(feature.configSchema!).map(([key, field]) => (
+                        {getVisibleSchemaFields(feature, selectedUser).map(([key, field]) => (
                             <PlanConfigField key={key} fieldKey={key} field={field}
-                                value={currentConfig.config[key] ?? field.default} onChange={updateValue} />
+                                value={
+                                    (currentConfig.config[key] ??
+                                        field.default ??
+                                        (field.type === "number" ? 0 : field.type === "boolean" ? false : "")
+                                    ) as JsonValue
+                                } onChange={updateValue} />
                         ))}
                     </div>
                 ) : (
@@ -1071,21 +967,41 @@ function PlanConfigForm({ feature, selectedMembership, selectedUser, onFeatureCh
 // PLAN LIMITS TAB
 // ─────────────────────────────────────────────
 interface PlanLimitsTabProps {
-    feature: Feature; onChange: (f: Feature) => void;
-    selectedMembership: MembershipType; selectedUser: FeatureUserType;
-    onMembershipChange: (m: MembershipType) => void; onUserChange: (u: FeatureUserType) => void;
+    feature: Feature;
+    onChange: (f: Feature) => void;
 }
-function PlanLimitsTab({ feature, onChange, selectedMembership, selectedUser, onMembershipChange, onUserChange }: PlanLimitsTabProps) {
+function PlanLimitsTab({ feature, onChange }: PlanLimitsTabProps) {
+    const memberships: MembershipType[] = ["FREE", "PAID"];
+    const effectiveUserTypes = getEffectiveUserTypes(feature);
+
     return (
-        <div className="flex flex-col md:grid md:grid-cols-12 gap-4 h-full">
-            <div className="col-span-12 md:col-span-3">
-                <PlanLimitsSidebar feature={feature} selectedMembership={selectedMembership} selectedUser={selectedUser}
-                    onMembershipChange={onMembershipChange} onUserChange={onUserChange} />
-            </div>
-            <div className="col-span-12 md:col-span-9">
-                <PlanConfigForm feature={feature} selectedMembership={selectedMembership}
-                    selectedUser={selectedUser} onFeatureChange={onChange} />
-            </div>
+        <div className="space-y-6">
+            {memberships.map(membership => (
+                <div key={membership}>
+                    <div className="flex items-center gap-3 mb-3">
+                        <Badge variant={membership === "PAID" ? "default" : "outline"} className="text-xs px-2 py-0.5">
+                            {membership}
+                        </Badge>
+                        <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {effectiveUserTypes.length === 0 ? (
+                            <div className="text-xs text-muted-foreground p-4 border border-dashed rounded-lg col-span-2">
+                                No user types enabled. Go to the Access tab first.
+                            </div>
+                        ) : effectiveUserTypes.map(userType => (
+                            <PlanConfigForm
+                                key={`${membership}-${userType}`}
+                                feature={feature}
+                                selectedMembership={membership}
+                                selectedUser={userType}
+                                onFeatureChange={onChange}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }
@@ -1093,18 +1009,125 @@ function PlanLimitsTab({ feature, onChange, selectedMembership, selectedUser, on
 // ─────────────────────────────────────────────
 // EDITOR MODAL
 // ─────────────────────────────────────────────
+type CreateFeatureResponse = { success: boolean; data: Feature };
+type UpdateFeatureResponse = { success: boolean; data: Feature };
+
+type CreateFeatureMutation = UseMutationResult<
+    CreateFeatureResponse,
+    unknown,
+    CreateFeatureInput
+>;
+
+type UpdateFeatureMutation = UseMutationResult<
+    UpdateFeatureResponse,
+    unknown,
+    Feature
+>;
 interface FeatureEditorModalProps {
-    open: boolean; feature: Feature | null;
-    onClose: () => void; onSave: () => void; onChange: (f: Feature) => void;
+    open: boolean;
+    feature: Feature | null;
+    onClose: () => void;
+    createMutation: CreateFeatureMutation;
+    updateMutation: UpdateFeatureMutation;
+    features: Feature[]; // ← add this
 }
-function FeatureEditorModal({ open, feature, onClose, onSave, onChange }: FeatureEditorModalProps) {
-    const [selectedMembership, setSelectedMembership] = useState<MembershipType>("FREE");
-    const [selectedUser, setSelectedUser] = useState<FeatureUserType>("COACH");
+
+function FeatureEditorModal({ open, feature, onClose, createMutation, updateMutation, features }: FeatureEditorModalProps) {
+
+    const form = useForm<z.infer<typeof FeatureSchema>>({
+        resolver: zodResolver(FeatureSchema),
+        defaultValues: feature ?? {
+            key: "",
+            name: "",
+            description: "",
+            allowedUserTypes: [],
+            actions: null,
+            configSchema: null,
+            planConfigs: [],
+            isActive: true,
+        },
+    });
+
+    const [step, setStep] = useState<"general" | "access" | "schema" | "configs">("general");
+
+    const stepOrder = ["general", "access", "schema", "configs"] as const;
+
 
     useEffect(() => {
-        if (feature?.allowedUserTypes.length) setSelectedUser(feature.allowedUserTypes[0]);
-    }, [feature?.id]);
+        if (feature) {
+            form.reset(feature);
+        }
+    }, [feature]);
+    const isLoading =
+        createMutation.isPending || updateMutation.isPending;
 
+    const handleNextStep = async () => {
+        let fields: (keyof z.infer<typeof FeatureSchema>)[] = [];
+
+        if (step === "general") fields = ["key", "name"];
+        if (step === "access") fields = ["allowedUserTypes"];
+        if (step === "schema") fields = ["configSchema"];
+
+        const valid = await form.trigger(fields);
+
+        if (!valid) {
+            toast.error("Please fix errors before continuing");
+            return;
+        }
+
+        const nextIndex = stepOrder.indexOf(step) + 1;
+        setStep(stepOrder[nextIndex]);
+    };
+
+    const handleSubmitFinal = form.handleSubmit(async (data) => {
+        const isNew = feature?.id.startsWith("feat_new");
+
+        try {
+            if (isNew) {
+                // ✅ CREATE → NO ID
+                const createPayload: CreateFeatureInput = {
+                    ...data,
+                    description: data.description ?? null,
+                    configSchema: data.configSchema ?? null,
+                    actions: data.actions ?? null,
+                    planConfigs: data.planConfigs.map(({ id, ...rest }) => rest),
+                };
+
+                await createMutation.mutateAsync(createPayload);
+
+            } else {
+                // ✅ UPDATE → KEEP ID
+                const updatePayload: Feature = {
+                    ...data,
+                    id: feature!.id,
+                    description: data.description ?? null,
+                    configSchema: data.configSchema ?? null,
+                    actions: data.actions ?? null,
+
+                    // 🔥 IMPORTANT: keep id here
+                    planConfigs: data.planConfigs.map((pc) => ({
+                        ...pc,
+                        id: pc.id ?? `pc_fallback_${Date.now()}`, // safety fallback
+                    })),
+                };
+
+                await updateMutation.mutateAsync(updatePayload);
+            }
+
+            onClose();
+        } catch (error: unknown) {
+            // keep modal open
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || "Something went wrong");
+            } else {
+                toast.error("Unexpected error occurred");
+            }
+        }
+    });
+
+
+    // fallback to feature if RHF not ready
+    const safeFeature = form.watch();
     if (!feature) return null;
     const isNew = feature.id.startsWith("feat_new") || !feature.name;
 
@@ -1123,19 +1146,19 @@ function FeatureEditorModal({ open, feature, onClose, onSave, onChange }: Featur
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto bg-muted/10">
-                    <Tabs defaultValue="general" className="w-full h-full flex flex-col">
+                    <Tabs value={step} className="w-full h-full flex flex-col">
                         <div className="w-full overflow-x-auto border-b bg-background px-2 sm:px-6 shrink-0">
                             <TabsList className="flex w-max min-w-full h-auto py-2 bg-transparent justify-start gap-2">
-                                <TabsTrigger value="general" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                <TabsTrigger value="general" onClick={() => setStep("general")} className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                                     <Settings className="w-4 h-4 mr-2 hidden sm:block" /> General
                                 </TabsTrigger>
-                                <TabsTrigger value="access" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                <TabsTrigger value="access" onClick={() => setStep("access")} className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                                     <ShieldAlert className="w-4 h-4 mr-2 hidden sm:block" /> Access
                                 </TabsTrigger>
-                                <TabsTrigger value="schema" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                <TabsTrigger value="schema" onClick={() => setStep("schema")} className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                                     <Box className="w-4 h-4 mr-2 hidden sm:block" /> UI Schema
                                 </TabsTrigger>
-                                <TabsTrigger value="configs" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                                <TabsTrigger value="configs" onClick={() => setStep("configs")} className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                                     <Activity className="w-4 h-4 mr-2 hidden sm:block" /> Plan Limits
                                 </TabsTrigger>
                             </TabsList>
@@ -1143,18 +1166,49 @@ function FeatureEditorModal({ open, feature, onClose, onSave, onChange }: Featur
 
                         <div className="p-4 sm:p-6 flex-1">
                             <TabsContent value="general" className="m-0">
-                                <GeneralTab feature={feature} onChange={onChange} />
+                                <GeneralTab feature={safeFeature as Feature}
+                                    onChange={(updated) => {
+                                        type FeatureForm = z.infer<typeof FeatureSchema>;
+
+                                        (Object.entries(updated) as [keyof FeatureForm, FeatureForm[keyof FeatureForm]][])
+                                            .forEach(([key, value]) => {
+                                                form.setValue(key, value);
+                                            });
+                                    }} />
                             </TabsContent>
                             <TabsContent value="access" className="m-0">
-                                <AccessTab feature={feature} onChange={onChange} />
+                                <AccessTab feature={safeFeature as Feature} onChange={(updated) => {
+                                    type FeatureForm = z.infer<typeof FeatureSchema>;
+
+                                    (Object.entries(updated) as [keyof FeatureForm, FeatureForm[keyof FeatureForm]][])
+                                        .forEach(([key, value]) => {
+                                            form.setValue(key, value);
+                                        });
+                                }} />
                             </TabsContent>
                             <TabsContent value="schema" className="m-0">
-                                <SchemaTab feature={feature} onChange={onChange} />
+                                <SchemaTab
+                                    feature={safeFeature as Feature}
+                                    dbConfigSchema={
+                                        features.find(f => f.id === feature?.id)?.configSchema ?? null
+                                    }
+                                    onChange={(updated) => {
+                                        type FeatureForm = z.infer<typeof FeatureSchema>;
+                                        (Object.entries(updated) as [keyof FeatureForm, FeatureForm[keyof FeatureForm]][])
+                                            .forEach(([key, value]) => {
+                                                form.setValue(key, value);
+                                            });
+                                    }}
+                                />
                             </TabsContent>
                             <TabsContent value="configs" className="m-0 h-full">
-                                <PlanLimitsTab feature={feature} onChange={onChange}
-                                    selectedMembership={selectedMembership} selectedUser={selectedUser}
-                                    onMembershipChange={setSelectedMembership} onUserChange={setSelectedUser} />
+                                <PlanLimitsTab feature={safeFeature as Feature} onChange={(updated) => {
+                                    type FeatureForm = z.infer<typeof FeatureSchema>;
+                                    (Object.entries(updated) as [keyof FeatureForm, FeatureForm[keyof FeatureForm]][])
+                                        .forEach(([key, value]) => {
+                                            form.setValue(key, value);
+                                        });
+                                }} />
                             </TabsContent>
                         </div>
                     </Tabs>
@@ -1162,8 +1216,28 @@ function FeatureEditorModal({ open, feature, onClose, onSave, onChange }: Featur
 
                 <DialogFooter className="p-4 border-t bg-background shrink-0 flex flex-col sm:flex-row gap-2 z-10">
                     <Button variant="outline" className="w-full sm:w-auto order-1 sm:order-none" onClick={onClose}>Cancel</Button>
-                    <Button onClick={onSave} className="w-full sm:w-auto gap-2">
-                        <Save className="w-4 h-4" /> Save Changes
+                    <Button
+                        onClick={() => {
+                            if (step !== "configs") {
+                                handleNextStep();
+                            } else {
+                                handleSubmitFinal();
+                            }
+                        }}
+                        disabled={isLoading}
+                        className="w-full sm:w-auto gap-2"
+                    >
+                        {isLoading ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4" />
+                                {step === "configs" ? "Save Feature" : "Next"}
+                            </>
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -1175,10 +1249,19 @@ function FeatureEditorModal({ open, feature, onClose, onSave, onChange }: Featur
 // ROOT PAGE
 // ─────────────────────────────────────────────
 export default function AdminFeaturesPage() {
-    const [features, setFeatures] = useState<Feature[]>(INITIAL_FEATURES);
+
     const [searchQuery, setSearchQuery] = useState("");
     const [editingFeature, setEditingFeature] = useState<Feature | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const queryClient = useQueryClient();
+
+    const { data: features = [], isLoading } = useQuery({
+        queryKey: ["features"],
+        queryFn: async () => {
+            const res = await axios.get<{ success: boolean; data: Feature[] }>("/api/admin/feature-controls");
+            return res.data.data;
+        },
+    });
 
     const filteredFeatures = features.filter(f =>
         f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1190,38 +1273,78 @@ export default function AdminFeaturesPage() {
         setIsDialogOpen(true);
     };
 
-    const handleAddNew = () => {
-        setEditingFeature({
-            id: `feat_new_${Date.now()}`, key: "", name: "", description: "",
-            isActive: false, allowedUserTypes: [], actions: {}, configSchema: {}, planConfigs: []
-        });
-        setIsDialogOpen(true);
-    };
+    // const handleAddNew = () => {
 
-    const handleSave = () => {
-        if (!editingFeature) return;
-        setFeatures(prev => {
-            const exists = prev.find(f => f.id === editingFeature.id);
-            if (exists) return prev.map(f => f.id === editingFeature.id ? editingFeature : f);
-            return [...prev, editingFeature];
-        });
-        setIsDialogOpen(false);
-        setEditingFeature(null);
-    };
+    //     setEditingFeature({
+    //         id: `feat_new_${Date.now()}`,
+    //         key: "",
+    //         name: "",
+    //         description: null,
+    //         isActive: false,
+    //         allowedUserTypes: [],
+    //         actions: null,          
+    //         configSchema: null,     
+    //         planConfigs: []
+    //     });
+    //     setIsDialogOpen(true);
+    // };
+    const createFeatureMutation = useMutation({
+        mutationFn: async (data: CreateFeatureInput) => {
+            const res = await axios.post("/api/admin/feature-controls", data);
+            return res.data;
+        },
+
+        onSuccess: () => {
+            toast.success("Feature created successfully");
+            queryClient.invalidateQueries({ queryKey: ["features"] });
+        },
+        onError: () => {
+            toast.error("Failed to create feature");
+        },
+    });
+
+    const updateFeatureMutation = useMutation({
+        mutationFn: async (data: Feature) => {
+            const res = await axios.put(`/api/admin/feature-controls/${data.id}`, data);
+            return res.data;
+        },
+        onSuccess: () => {
+            toast.success("Feature updated successfully");
+            queryClient.invalidateQueries({ queryKey: ["features"] });
+        },
+        onError: () => {
+            toast.error("Failed to update feature");
+        },
+    });
+
 
     const handleClose = () => { setIsDialogOpen(false); setEditingFeature(null); };
 
     const toggleFeatureActive = (id: string) => {
-        setFeatures(prev => prev.map(f => f.id === id ? { ...f, isActive: !f.isActive } : f));
-    };
+        const feature = features.find(f => f.id === id);
+        if (!feature) return;
 
+        updateFeatureMutation.mutate({
+            ...feature,
+            isActive: !feature.isActive,
+        });
+    };
+    if (isLoading) {
+        return <div className="p-6 flex items-center justify-center">Loading features...</div>;
+    }
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-            <PageHeader onAddNew={handleAddNew} />
+            <PageHeader />
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             <FeatureTable features={filteredFeatures} onEdit={handleEditClick} onToggle={toggleFeatureActive} />
-            <FeatureEditorModal open={isDialogOpen} feature={editingFeature}
-                onClose={handleClose} onSave={handleSave} onChange={setEditingFeature} />
+            <FeatureEditorModal
+                open={isDialogOpen}
+                feature={editingFeature}
+                onClose={handleClose}
+                createMutation={createFeatureMutation}
+                updateMutation={updateFeatureMutation}
+                features={features}   // ← add this
+            />
         </div>
     );
 }

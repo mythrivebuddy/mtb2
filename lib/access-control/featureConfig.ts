@@ -109,7 +109,8 @@ export const featureConfig = {
         plans: {
             free: {
                 COACH: {
-                    dailyOpens: 1, bonusEligible: false,
+                    dailyOpens: 1,
+                     bonusEligible: false,
                     bonusMultiplier: 1,
                     minJp: 100,
                     maxJp: 500,
