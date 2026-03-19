@@ -67,7 +67,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
     defaultValues: {
       title: "",
       subtitle: "",
-      duration: "7 Days",
+      duration: defaultValues?.duration || "7 Days",
       unlockType: "daily",
       thumbnailUrl: "",
       ...defaultValues,

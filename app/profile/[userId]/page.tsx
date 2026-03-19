@@ -242,6 +242,7 @@ function mapToBusinessProfile(data: UserData): BusinessProfile {
     yearsOfExperience:   data.yearsOfExperience ?? 0,
     completionPercentage: 0,
     preferredCurrency: str(data.preferredCurrency),
+    calendlyUrl: str(data.calendlyUrl),
   };
 }
 
@@ -279,9 +280,7 @@ export default function UserDetailsPage() {
   };
 
 if (isLoading || !session) {
-  if (session?.user.userType === "COACH" || session?.user.userType === "SOLOPRENEUR")
-    return <PageSkeleton type="coach-profile" />;
-  return <PageSkeleton type="approve" />;
+  return <PageSkeleton type="universal" />;
 }
   if (error || !userData) {
     return (

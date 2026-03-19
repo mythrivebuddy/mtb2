@@ -42,7 +42,8 @@ type PageSkeletonProps = {
     | "transaction-history"
     | "buddylens"
     | "spotlight"
-    | "coach-profile";
+    | "coach-profile"
+    | "universal";
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -1413,6 +1414,70 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
     </div>
   );
   }
+
+  // universal — fits both coach-profile & approve layouts
+if (type === "universal") {
+  return (
+    <div className="animate-pulse max-w-5xl mx-auto px-6 py-10 space-y-8">
+
+      {/* Header row — avatar + title block */}
+      <div className="flex items-start gap-5">
+        <div className="w-20 h-20 rounded-full bg-gray-200 shrink-0" />
+        <div className="flex-1 space-y-3 pt-1">
+          <div className="h-7 w-52 bg-gray-200 rounded-xl" />
+          <div className="h-4 w-72 bg-gray-100 rounded-lg" />
+          <div className="flex flex-wrap gap-2 mt-2">
+            {[80, 96, 72, 88].map((w, i) => (
+              <div key={i} className="h-6 rounded-full bg-gray-100" style={{ width: w }} />
+            ))}
+          </div>
+        </div>
+        {/* Right action block */}
+        <div className="hidden md:flex flex-col gap-3 w-36 shrink-0">
+          <div className="h-10 w-full bg-blue-200 rounded-xl" />
+          <div className="h-10 w-full bg-gray-100 rounded-xl" />
+        </div>
+      </div>
+
+      {/* Content cards row */}
+      <div className="grid md:grid-cols-3 gap-5">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white border rounded-2xl p-5 shadow-sm space-y-3">
+            <div className="h-4 w-24 bg-blue-100 rounded-full" />
+            <div className="h-6 w-36 bg-gray-200 rounded-lg" />
+            <div className="h-4 w-full bg-gray-100 rounded" />
+            <div className="h-4 w-4/5 bg-gray-100 rounded" />
+            <div className="h-9 w-full bg-blue-200 rounded-xl mt-2" />
+          </div>
+        ))}
+      </div>
+
+      {/* Bio / detail block */}
+      <div className="bg-white border rounded-2xl p-6 shadow-sm space-y-3">
+        <div className="h-5 w-40 bg-gray-200 rounded-lg" />
+        {[100, 95, 88, 76, 60].map((w, i) => (
+          <div key={i} className="h-4 bg-gray-100 rounded" style={{ width: `${w}%` }} />
+        ))}
+      </div>
+
+      {/* List items — approve-style cards */}
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="border rounded-2xl bg-white p-5 shadow-sm space-y-3">
+            <div className="h-5 w-48 bg-gray-200 rounded-lg" />
+            <div className="h-4 w-32 bg-gray-100 rounded" />
+            <div className="h-4 w-64 bg-gray-100 rounded" />
+            <div className="flex gap-3 pt-1">
+              <div className="h-9 w-24 bg-green-200 rounded-lg" />
+              <div className="h-9 w-24 bg-red-200 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  )
+}
 
   // fallback default
   return (

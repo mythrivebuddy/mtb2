@@ -24,17 +24,17 @@ import { ProgramDBPayload } from "@/types/client/mini-mastery-program";
 // ─── Step Info ────────────────────────────────────────────────────────────────
 
 const STEP_INFO = [
-  { label: "Program Basics",           next: "Content Structure"      },
-  { label: "MMP Creation Flow",         next: "Module Builder"         },
-  { label: "Daily Module Builder",      next: "Pricing Strategy"       },
-  { label: "Pricing Strategy",          next: "Completion & Certificate" },
-  { label: "Completion & Certificate",  next: "Review & Publish"       },
-  { label: "Review & Publish",          next: "Finish"                 },
+  { label: "Program Basics",           next: "Content Structure"        },
+  { label: "MMP Creation Flow",        next: "Module Builder"           },
+  { label: "Daily Module Builder",     next: "Pricing Strategy"         },
+  { label: "Pricing Strategy",         next: "Completion & Certificate" },
+  { label: "Completion & Certificate", next: "Review & Publish"         },
+  { label: "Review & Publish",         next: "Finish"                   },
 ] as const;
 
 const TOTAL_STEPS = 6;
 
-// ─── Raw program shape returned by GET /api/mini-mastery-programs/[id] ────────
+// ─── Raw program shape ────────────────────────────────────────────────────────
 
 interface RawProgram {
   id:                  string;
@@ -52,23 +52,22 @@ interface RawProgram {
   status:              string | null;
 }
 
-// ─── Map raw DB program → FullFormData steps ──────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// duration stored in DB as number (7,14,21,30) → map back to enum string
-function toDurationEnum(days: number | null): "7 Days" | "14 Days" | "21 Days" | "30 Days" {
-  const map: Record<number, "7 Days" | "14 Days" | "21 Days" | "30 Days"> = {
-    7: "7 Days", 14: "14 Days", 21: "21 Days", 30: "30 Days",
-  };
-  return map[days ?? 7] ?? "7 Days";
+// DB number → duration string Step1 expects
+// Handles any value — fallback to closest or as-is string
+function toDurationString(days: number | null): string {
+  if (!days) return "7";
+  return String(days);
 }
 
 function buildPartialPayload(data: Partial<FullFormData>): Record<string, unknown> {
   return {
     ...(data.step1 && {
-      name:        data.step1.title,
-      description: data.step1.subtitle,
+      name:         data.step1.title,
+      description:  data.step1.subtitle,
       durationDays: parseInt(data.step1.duration),
-      unlockType:  data.step1.unlockType,
+      unlockType:   data.step1.unlockType,
       thumbnailUrl: data.step1.thumbnailUrl ?? "",
     }),
     ...(data.step2 && {
@@ -89,13 +88,13 @@ function buildPartialPayload(data: Partial<FullFormData>): Record<string, unknow
 }
 
 function mapProgramToFormData(p: RawProgram): Partial<FullFormData> {
-  // DB stores achievements as string[] — step2 expects { value: string }[]
   const achievements = (Array.isArray(p.achievements) ? p.achievements as string[] : [])
-    .map((a) => ({ value: typeof a === "string" ? a : (a as { value?: string }).value ?? "" }));
+    .map((a) => ({
+      value: typeof a === "string" ? a : (a as { value?: string }).value ?? "",
+    }));
 
   const modules = Array.isArray(p.modules) ? p.modules : [];
 
-  // DB stores price as number — step4 expects price as string + isPaid boolean
   const price  = p.price ?? 0;
   const isPaid = price > 0;
 
@@ -103,17 +102,13 @@ function mapProgramToFormData(p: RawProgram): Partial<FullFormData> {
     step1: {
       title:        p.name,
       subtitle:     p.description ?? "",
-      duration:     toDurationEnum(p.durationDays),
+      duration: toDurationString(p.durationDays) as "7 Days" | "11 Days" | "14 Days" | "21 Days" | "30 Days",
       unlockType:   (p.unlockType ?? "daily") as "daily" | "all",
       thumbnailUrl: p.thumbnailUrl ?? "",
     },
-    step2: {
-      achievements,
-    },
-    step3: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      modules: modules as any,
-    },
+    step2: { achievements },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    step3: { modules: modules as any },
     step4: {
       isPaid,
       price:    String(price),
@@ -126,12 +121,11 @@ function mapProgramToFormData(p: RawProgram): Partial<FullFormData> {
   };
 }
 
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EditProgramPage() {
-  const router = useRouter();
-  const params = useParams();
+  const router    = useRouter();
+  const params    = useParams();
   const programId = typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -140,30 +134,10 @@ export default function EditProgramPage() {
   const [loading,     setLoading]     = useState(true);
   const [fetchError,  setFetchError]  = useState<string | null>(null);
 
-  // ── Auto-save on each step (PATCH existing program) ───────────────────────
-const formDataRef = useRef<Partial<FullFormData>>({});
+  // Ref so autoSavePatch always has latest formData without stale closure
+  const formDataRef = useRef<Partial<FullFormData>>({});
+  useEffect(() => { formDataRef.current = formData; }, [formData]);
 
-// formData update hone pe ref bhi sync karo
-useEffect(() => {
-  formDataRef.current = formData;
-}, [formData]);
-
-const autoSavePatch = async (newStepData: Partial<FullFormData>) => {
-  if (!programId) return;
-  try {
-    // formData state stale ho sakti hai, isliye ref use karo
-    const merged  = { ...formDataRef.current, ...newStepData };
-    const partial = buildPartialPayload(merged);
-
-    await fetch(`/api/mini-mastery-programs/${programId}`, {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ ...partial, status: "DRAFT" }),
-    });
-  } catch (err) {
-    console.error("Auto-save patch failed:", err);
-  }
-};
   // ── Fetch existing program on mount ────────────────────────────────────────
   useEffect(() => {
     if (!programId) return;
@@ -176,7 +150,9 @@ const autoSavePatch = async (newStepData: Partial<FullFormData>) => {
           throw new Error(d.message ?? `Error ${res.status}`);
         }
         const { program } = await res.json() as { program: RawProgram };
-        setFormData(mapProgramToFormData(program));
+        const mapped = mapProgramToFormData(program);
+        setFormData(mapped);
+        formDataRef.current = mapped;
       } catch (err) {
         setFetchError(err instanceof Error ? err.message : "Could not load program.");
       } finally {
@@ -189,36 +165,58 @@ const autoSavePatch = async (newStepData: Partial<FullFormData>) => {
 
   const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
 
+  // ── Auto-save on each step (PATCH existing program) ───────────────────────
+  const autoSavePatch = async (newStepData: Partial<FullFormData>) => {
+    if (!programId) return;
+    try {
+      const merged  = { ...formDataRef.current, ...newStepData };
+      const partial = buildPartialPayload(merged);
+
+      await fetch(`/api/mini-mastery-programs/${programId}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ ...partial, status: "DRAFT" }),
+      });
+    } catch (err) {
+      console.error("Auto-save patch failed:", err);
+    }
+  };
+
   // ── Step handlers ────────────────────────────────────────────────────────
 
-  const handleStep1Next = async (data: Step1Data) => { 
-  setFormData((p) => ({ ...p, step1: data })); 
-  await autoSavePatch({ step1: data });
-  setCurrentStep(2); 
-};
-const handleStep2Next = async (data: Step2Data) => { 
-  setFormData((p) => ({ ...p, step2: data })); 
-  await autoSavePatch({ step2: data });
-  setCurrentStep(3); 
-};
-const handleStep3Next = async (data: Step3Data) => { 
-  setFormData((p) => ({ ...p, step3: data })); 
-  await autoSavePatch({ step3: data });
-  setCurrentStep(4); 
-};
-const handleStep4Next = async (data: Step4Data) => { 
-  setFormData((p) => ({ ...p, step4: data })); 
-  await autoSavePatch({ step4: data });
-  setCurrentStep(5); 
-};
-const handleStep5Next = async (data: Step5Data) => { 
-  setFormData((p) => ({ ...p, step5: data })); 
-  await autoSavePatch({ step5: data });
-  setCurrentStep(6); 
-};
+  const handleStep1Next = async (data: Step1Data) => {
+    setFormData((p) => ({ ...p, step1: data }));
+    await autoSavePatch({ step1: data });
+    setCurrentStep(2);
+  };
+
+  const handleStep2Next = async (data: Step2Data) => {
+    setFormData((p) => ({ ...p, step2: data }));
+    await autoSavePatch({ step2: data });
+    setCurrentStep(3);
+  };
+
+  const handleStep3Next = async (data: Step3Data) => {
+    setFormData((p) => ({ ...p, step3: data }));
+    await autoSavePatch({ step3: data });
+    setCurrentStep(4);
+  };
+
+  const handleStep4Next = async (data: Step4Data) => {
+    setFormData((p) => ({ ...p, step4: data }));
+    await autoSavePatch({ step4: data });
+    setCurrentStep(5);
+  };
+
+  const handleStep5Next = async (data: Step5Data) => {
+    setFormData((p) => ({ ...p, step5: data }));
+    await autoSavePatch({ step5: data });
+    setCurrentStep(6);
+  };
+
   const handleBack = () => setCurrentStep((p) => Math.max(p - 1, 1));
 
-  // ── Submit: PUT → update program, auto-sets UNDER_REVIEW on backend ──────
+  // ── Final submit ──────────────────────────────────────────────────────────
 
   const handleSubmit = async (payload: ProgramDBPayload) => {
     setSubmitError(null);
@@ -234,7 +232,7 @@ const handleStep5Next = async (data: Step5Data) => {
         throw new Error(d.message ?? `Server error: ${res.status}`);
       }
 
-      router.push("/dashboard/mini-mastery-programs/create");
+      router.push("/dashboard/mini-mastery-programs");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       setSubmitError(message);
@@ -242,16 +240,15 @@ const handleStep5Next = async (data: Step5Data) => {
     }
   };
 
-  // Save draft still just calls PUT (keeps as UNDER_REVIEW — no separate draft on edit)
   const handleSaveDraft = async (payload: ProgramDBPayload) => {
     await handleSubmit(payload);
   };
 
   const isFormComplete =
-    !!formData.step1 && !!formData.step2 && !!formData.step3 &&
-    !!formData.step4 && !!formData.step5;
+    !!formData.step1 && !!formData.step2 &&
+    !!formData.step3 && !!formData.step4 && !!formData.step5;
 
-  // ── Loading state ────────────────────────────────────────────────────────
+  // ── Loading / Error states ────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -283,7 +280,7 @@ const handleStep5Next = async (data: Step5Data) => {
     );
   }
 
-  // ── Render form ──────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center py-10 px-4">
@@ -328,10 +325,17 @@ const handleStep5Next = async (data: Step5Data) => {
       {/* Form Card */}
       <div className="w-full max-w-4xl bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
         {currentStep === 1 && (
-          <Step1ProgramBasics onNext={handleStep1Next} defaultValues={formData.step1} />
+          <Step1ProgramBasics
+            onNext={handleStep1Next}
+            defaultValues={formData.step1}
+          />
         )}
         {currentStep === 2 && (
-          <Step2ProgramAchievements onNext={handleStep2Next} onBack={handleBack} defaultValues={formData.step2} />
+          <Step2ProgramAchievements
+            onNext={handleStep2Next}
+            onBack={handleBack}
+            defaultValues={formData.step2}
+          />
         )}
         {currentStep === 3 && (
           <Step3ModuleBuilder
@@ -342,10 +346,19 @@ const handleStep5Next = async (data: Step5Data) => {
           />
         )}
         {currentStep === 4 && (
-          <Step4PricingStrategy onNext={handleStep4Next} onBack={handleBack} defaultValues={formData.step4} />
+          <Step4PricingStrategy
+            onNext={handleStep4Next}
+            onBack={handleBack}
+            defaultValues={formData.step4}
+          />
         )}
         {currentStep === 5 && (
-          <Step5CompletionCertificate onNext={handleStep5Next} onBack={handleBack} defaultValues={formData.step5} programTitle={formData.step1?.title} />
+          <Step5CompletionCertificate
+            onNext={handleStep5Next}
+            onBack={handleBack}
+            defaultValues={formData.step5}
+            programTitle={formData.step1?.title}
+          />
         )}
         {currentStep === 6 && isFormComplete && (
           <Step6ReviewAndPublish
