@@ -91,7 +91,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
           });
 
 
-        }
+        } else {
          await tx.featurePlanConfig.create({
           data: {
             featureId: id,
@@ -104,7 +104,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
                 : (incomingPc.config as Prisma.InputJsonValue),
           },
         });
-
+      }
       }
 
       for (const existingPc of existingFeature.planConfigs) {
