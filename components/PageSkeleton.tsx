@@ -717,75 +717,70 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   }
   //  for subscription
   if (type === "subscription") {
-    return (
-      <div className="w-full min-h-screen bg-dashboard max-w-full overflow-x-hidden py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto animate-pulse">
-          {/* Header Skeleton */}
-          <div className="text-center mb-8 sm:mb-12 lg:mb-16">
-            <div className="h-8 sm:h-10 bg-gray-300 rounded w-2/3 mx-auto mb-4" />
-            <div className="h-5 sm:h-6 bg-gray-300 rounded w-3/4 mx-auto" />
-          </div>
+  return (
+    <div className="w-full min-h-screen py-10 px-4 sm:px-6 lg:px-8 animate-pulse">
+      <div className="max-w-6xl mx-auto">
 
-          {/* Current Plan Skeleton */}
-          <div className="mb-8">
-            <div className="h-6 bg-gray-300 rounded w-1/4 mb-2" />
-            <div className="h-4 bg-gray-300 rounded w-1/3" />
-          </div>
+        {/* Header */}
+        <div className="text-center mb-12 space-y-3">
+          <Skeleton className="h-10 w-2/3 mx-auto rounded-xl" />
+          <Skeleton className="h-5 w-1/2 mx-auto rounded-lg" />
+        </div>
 
-          {/* Pricing Cards Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
-            {[1, 2, 3].map((_, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg p-6 shadow-md space-y-4"
-              >
-                <div className="h-6 bg-gray-300 rounded w-1/2" />
-                <div className="h-8 bg-gray-300 rounded w-1/3" />
-                <div className="h-4 bg-gray-300 rounded w-2/3" />
-                <div className="h-10 bg-gray-300 rounded w-full" />
-              </div>
-            ))}
-          </div>
-
-          {/* Banner and Table Skeleton */}
-          <div className="bg-[#111c40] text-white rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 relative">
-            <div className="mb-6 sm:mb-8">
-              <div className="h-10 bg-slate-400 rounded w-full sm:w-1/2 mx-auto" />
+        {/* User Status Banner */}
+        <div className="bg-indigo-50 border-l-4 border-indigo-300 p-5 sm:p-6 rounded-lg shadow-md mb-10">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+            {/* Left side */}
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-6 w-48 rounded-lg" />
+              <Skeleton className="h-4 w-56 rounded" />
+              <Skeleton className="h-4 w-44 rounded" />
+              <Skeleton className="h-4 w-36 rounded" />
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 mt-8 sm:mt-12">
-              {/* Table Skeleton */}
-              <div className="col-span-1 lg:col-span-3">
-                <div className="overflow-x-auto">
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between space-x-4 text-sm sm:text-base"
-                      >
-                        <div className="h-4 bg-gray-400 rounded w-1/3" />
-                        <div className="h-4 bg-gray-400 rounded w-1/4" />
-                        <div className="h-4 bg-gray-400 rounded w-1/3" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Limited Offer Skeleton */}
-              <div className="col-span-1 bg-white text-[#111c40] rounded-lg p-4 sm:p-6">
-                <div className="text-center space-y-2">
-                  <div className="h-6 bg-gray-300 rounded w-2/3 mx-auto" />
-                  <div className="h-4 bg-red-300 rounded w-1/2 mx-auto" />
-                  <div className="h-10 bg-gray-300 rounded w-1/3 mx-auto" />
-                  <div className="h-10 bg-red-300 rounded w-full" />
-                </div>
-              </div>
+            {/* Right side buttons */}
+            <div className="flex flex-row md:flex-col gap-3">
+              <Skeleton className="h-9 w-32 rounded-lg" />
             </div>
           </div>
         </div>
+
+        {/* Plan Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-start mb-12">
+          {[1, 2, 3, 4].map((_, i) => (
+            <div
+              key={i}
+              className="relative rounded-2xl p-6 border border-slate-200 bg-white flex flex-col h-full space-y-4"
+            >
+              {/* Plan name */}
+              <Skeleton className="h-4 w-24 mx-auto rounded" />
+
+              {/* Price block */}
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-36 mx-auto rounded-lg" />
+                <Skeleton className="h-4 w-24 mx-auto rounded" />
+                <Skeleton className="h-3 w-28 mx-auto rounded" />
+              </div>
+
+              {/* Divider + features */}
+              <div className="border-t border-slate-100 pt-4 space-y-3 flex-grow">
+                {[1, 2, 3, 4].map((_, j) => (
+                  <div key={j} className="flex items-start gap-3">
+                    <Skeleton className="h-4 w-4 rounded-full shrink-0 mt-0.5" />
+                    <Skeleton className="h-4 w-full rounded" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Button */}
+              <Skeleton className="h-11 w-full rounded-xl mt-2" />
+            </div>
+          ))}
+        </div>
+
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // for user-profile
   if (type === " user-profile") {
