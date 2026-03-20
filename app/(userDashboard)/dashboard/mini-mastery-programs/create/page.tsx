@@ -359,29 +359,37 @@ export default function Dashboard() {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* Submit for Review — only for DRAFT */}
-                          {program.status === "DRAFT" && program.isComplete && (
-                            <button
-                              onClick={() => handleSubmitForReview(program.id)}
-                              disabled={submittingId === program.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {submittingId === program.id
-                                ? <Loader2 size={13} className="animate-spin" />
-                                : <Send size={13} />
-                              }
-                              Request Review
-                            </button>
-                          )}
+                          {program.status === "DRAFT" ? (
+  program.isComplete ? (
+    <button
+      onClick={() => handleSubmitForReview(program.id)}
+      disabled={submittingId === program.id}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {submittingId === program.id ? (
+        <Loader2 size={13} className="animate-spin" />
+      ) : (
+        <Send size={13} />
+      )}
+      Request Review
+    </button>
+  ) : (
+    <p className="text-xs text-amber-600 font-medium">
+      Complete the form to enable Request Review.
+    </p>
+  )
+) : null}
   
                             {/* Edit — available for DRAFT and PUBLISHED programs */}
                             {(program.status === "DRAFT" || program.status === "PUBLISHED") && (
-                              <Link
-                                href={`/dashboard/mini-mastery-programs/create/edit/${program.id}`}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
-                              >
-                                <Pencil size={13} />
-                              </Link>
-                            )}
+  <Link
+    href={`/dashboard/mini-mastery-programs/create/edit/${program.id}`}
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+  >
+    <Pencil size={13} />
+    {program.isComplete ? null : "Complete Me"}
+  </Link>
+)}
 
                           {/* view for all status */}
                           {/* /dashboard/mini-mastery-programs/program-preview/cmmors5s50007u5qouigfd4dx */}

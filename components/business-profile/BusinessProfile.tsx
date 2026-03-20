@@ -20,8 +20,8 @@ import Step5Services from "./steps/Step5Services"
 import Step6Pricing from "./steps/Step6Pricing"
 import Step7Review from "./steps/Step7Review"
 import ProgressBar from "./PrgressBar"
-import PageLoader from "@/components/PageLoader"
 import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 
 const STORAGE_KEY = process.env.LOCALSTORAGE_PROFILE_KEY || "business_profile_draft"
 
@@ -176,7 +176,9 @@ export default function BusinessProfileLayout() {
 
   /* ---------------- SESSION GUARD ---------------- */
 
-  if (status === "loading") return <PageLoader />
+  if (status === "loading") return <div className="h-[700px] py-16 flex justify-center items-center">
+        <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
+      </div>
 
   if (!session) {
     return (
@@ -188,7 +190,9 @@ export default function BusinessProfileLayout() {
 
   /* ---------------- RENDER ---------------- */
 
-  if (!profileLoaded) return <PageLoader />
+  if (!profileLoaded) return <div className="h-[700px] py-16 flex justify-center items-center">
+          <Loader2 className="animate-spin w-12 h-12 text-indigo-600" />
+        </div>
 
   return (
     <FormProvider {...methods}>

@@ -19,7 +19,7 @@ import {
   type Step4Data,
   type Step5Data,
 } from "@/schema/zodSchema";
-import { ProgramDBPayload } from "@/types/client/mini-mastery-program";
+import { MMP_STORAGE_KEY, ProgramDBPayload } from "@/types/client/mini-mastery-program";
 
 // ─── Step Info ────────────────────────────────────────────────────────────────
 
@@ -127,6 +127,7 @@ export default function EditProgramPage() {
   const router    = useRouter();
   const params    = useParams();
   const programId = typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
+  const DRAFT_ID_KEY = `${MMP_STORAGE_KEY}_draftId`;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData,    setFormData]    = useState<Partial<FullFormData>>({});
@@ -137,6 +138,12 @@ export default function EditProgramPage() {
   // Ref so autoSavePatch always has latest formData without stale closure
   const formDataRef = useRef<Partial<FullFormData>>({});
   useEffect(() => { formDataRef.current = formData; }, [formData]);
+
+useEffect(()=>{
+  if(programId){
+    localStorage.setItem(DRAFT_ID_KEY, programId)
+  }
+}, [programId])
 
   // ── Fetch existing program on mount ────────────────────────────────────────
   useEffect(() => {
