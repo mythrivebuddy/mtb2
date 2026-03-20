@@ -11,6 +11,8 @@ export interface FormValues {
   languages: string[]
   timezone: string
   sessionFormat: string
+  calendlyUrl: string 
+  preferredCurrency: "INR" | "USD"
   sessionDuration: string
   priceMin: number
   priceMax: number
@@ -72,7 +74,9 @@ export default function Step6SessionAvailability({
       "languages",
       "timezone",
       "sessionFormat",
+      "calendlyUrl", 
       "sessionDuration",
+      "preferredCurrency", 
       "priceMin",
       "priceMax",
     ])
@@ -155,6 +159,21 @@ export default function Step6SessionAvailability({
         {showError("sessionFormat") && <p className="text-red-500 text-sm mt-1">{errors.sessionFormat?.message}</p>}
       </div>
 
+      {/* Discovery Call Booking Link */}
+<div className="mb-6">
+  <label className="block font-medium mb-2">
+    Discovery Call Booking Link <span className="text-red-500">*</span>
+  </label>
+  <input
+    {...register("calendlyUrl")}
+    placeholder="https://calendly.com/....."
+    className={`w-full border p-3 rounded-lg ${showError("calendlyUrl") ? "border-red-500" : "border-gray-300"}`}
+  />
+  {showError("calendlyUrl") && (
+    <p className="text-red-500 text-sm mt-1">{errors.calendlyUrl?.message}</p>
+  )}
+</div>
+
       {/* Duration */}
       <div className="mb-6">
         <label className="block font-medium mb-2">Typical Session Duration</label>
@@ -171,30 +190,76 @@ export default function Step6SessionAvailability({
         {showError("sessionDuration") && <p className="text-red-500 text-sm mt-1">{errors.sessionDuration?.message}</p>}
       </div>
 
-      {/* Pricing */}
-      <div className="mb-6">
-        <label className="block font-medium mb-2">Pricing Range</label>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Min Price</label>
-            <input
-              type="number"
-              {...register("priceMin", { valueAsNumber: true })}
-              className={`border p-3 rounded-lg w-full ${showError("priceMin") ? "border-red-500" : "border-gray-300"}`}
-            />
-            {showError("priceMin") && <p className="text-red-500 text-sm mt-1">{errors.priceMin?.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Max Price</label>
-            <input
-              type="number"
-              {...register("priceMax", { valueAsNumber: true })}
-              className={`border p-3 rounded-lg w-full ${showError("priceMax") ? "border-red-500" : "border-gray-300"}`}
-            />
-            {showError("priceMax") && <p className="text-red-500 text-sm mt-1">{errors.priceMax?.message}</p>}
-          </div>
-        </div>
+      {/* Preferred Currency */}
+<div className="mb-6">
+  <label className="block font-medium mb-2">
+    Preferred Currency <span className="text-red-500">*</span>
+  </label>
+  <div className="grid grid-cols-2 gap-3">
+    {(["INR", "USD"] as const).map((currency) => {
+      const active = watch("preferredCurrency") === currency
+      return (
+        <button
+          key={currency}
+          type="button"
+          onClick={() => setValue("preferredCurrency", currency, {
+            shouldValidate: true,
+            shouldTouch: true,
+            shouldDirty: true,
+          })}
+          className={`p-4 rounded-xl border transition flex items-center justify-center gap-2 ${
+            active ? "border-blue-500 bg-blue-50 text-blue-700 font-semibold" : "border-gray-200 text-gray-700"
+          }`}
+        >
+          <span className="text-lg">{currency === "INR" ? "₹" : "$"}</span>
+          <span>{currency === "INR" ? "INR — Indian Rupee" : "USD — US Dollar"}</span>
+        </button>
+      )
+    })}
+  </div>
+  {showError("preferredCurrency") && (
+    <p className="text-red-500 text-sm mt-1">{errors.preferredCurrency?.message}</p>
+  )}
+</div>
+
+{/* Pricing */}
+<div className="mb-6">
+  <label className="block font-medium mb-2">Pricing Range</label>
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-medium mb-1">
+        Min Price {watch("preferredCurrency") === "INR" ? "(₹)" : "($)"}
+      </label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+          {watch("preferredCurrency") === "INR" ? "₹" : "$"}
+        </span>
+        <input
+          type="number"
+          {...register("priceMin", { valueAsNumber: true })}
+          className={`border p-3 pl-8 rounded-lg w-full ${showError("priceMin") ? "border-red-500" : "border-gray-300"}`}
+        />
       </div>
+      {showError("priceMin") && <p className="text-red-500 text-sm mt-1">{errors.priceMin?.message}</p>}
+    </div>
+    <div>
+      <label className="block text-sm font-medium mb-1">
+        Max Price {watch("preferredCurrency") === "INR" ? "(₹)" : "($)"}
+      </label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+          {watch("preferredCurrency") === "INR" ? "₹" : "$"}
+        </span>
+        <input
+          type="number"
+          {...register("priceMax", { valueAsNumber: true })}
+          className={`border p-3 pl-8 rounded-lg w-full ${showError("priceMax") ? "border-red-500" : "border-gray-300"}`}
+        />
+      </div>
+      {showError("priceMax") && <p className="text-red-500 text-sm mt-1">{errors.priceMax?.message}</p>}
+    </div>
+  </div>
+</div>
 
       <div className="flex justify-between mt-8">
         <button type="button" onClick={back} className="px-5 py-2 rounded-lg border hover:bg-gray-100">

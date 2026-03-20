@@ -66,14 +66,6 @@ export async function GET(req: NextRequest) {
                 }
             }
         });
-        console.log(
-  "🔍 [verify-success] checking subscription for pid:",
-  pid
-);
-
-
-
-console.log("📦 [verify-success] subscription found:");
 
         if (!purchase) {
             return NextResponse.json({ ok: false }, { status: 403 });

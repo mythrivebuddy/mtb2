@@ -133,7 +133,7 @@ const ProsperityPage = () => {
           <CardContent>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                No JoyPearls will be credited back once the applied for
+                No Growth Points will be credited back once the applied for
                 Prosperity Drops
               </li>
               <li>
@@ -181,7 +181,7 @@ const ProsperityPage = () => {
               <Button type="submit" className="w-full">
                 {mutation.isPending
                   ? "Submitting..."
-                  : "Submit Application (5,000 JP)"}
+                  : "Submit Application (5,000 GP)"}
               </Button>
             </form>
           </CardContent>

@@ -23,9 +23,14 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const billingInfo = await prisma.userBillingInformation.findUnique({
+    let billingInfo = await prisma.userBillingInformation.findUnique({
       where: { userId: user.id },
     });
+    if (!billingInfo) {
+      billingInfo =  await prisma.billingInformation.findUnique({
+        where:{userId:user.id}
+      })
+    }
 
     return NextResponse.json({ billingInfo });
   } catch (error) {

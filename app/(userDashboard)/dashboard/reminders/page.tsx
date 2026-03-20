@@ -584,7 +584,7 @@ export default function RemindersPage() {
                 redirectToPricingUrl={`/pricing?ref=reminders`}
             />
 
-            <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+            <div className="min-h-screen  p-4 sm:p-6 lg:p-8">
                 <div className="max-w-2xl mx-auto">
                     <header className="relative flex flex-col sm:justify-center items-center gap-4 mb-8 py-2">
                         <div className="w-full sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 sm:w-auto">

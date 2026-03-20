@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
       case "SUBSCRIPTION":
         return NextResponse.redirect(
           new URL(
-            `/dashboard/membership/success?orderId=${orderId}`,
+            `/dashboard/subscription/?orderId=${orderId}`,
             req.url
           )
         );

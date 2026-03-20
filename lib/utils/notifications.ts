@@ -25,8 +25,8 @@ export function getJPEarnedNotificationData(
   return {
     userId,
     type: NotificationType.JP_EARNED,
-    title: "JP Earned",
-    message: `You earned ${amount} JP for ${activityDisplayMap[activity]}.`,
+    title: "GP Earned",
+    message: `You earned ${amount} GP for ${activityDisplayMap[activity]}.`,
     metadata: { amount, activity },
   };
 }
@@ -87,7 +87,7 @@ export function getMagicBoxSharedNotificationData(
     userId: receiverUserId,
     type: NotificationType.MAGIC_BOX_SHARED,
     title: "Magic Box Received",
-    message: `${sharedByUserName} shared ${amount} JP with you through a Magic Box!`,
+    message: `${sharedByUserName} shared ${amount} GP with you through a Magic Box!`,
     metadata: { sharedByUserId, sharedByUserName, amount },
   };
 }
@@ -101,7 +101,7 @@ export function getMagicBoxRewardNotificationData(
     userId,
     type: NotificationType.JP_EARNED,
     title: "Magic Box Reward",
-    message: `You earned ${amount} JP from opening a Magic Box!`,
+    message: `You earned ${amount} GP from opening a Magic Box!`,
   };
 }
 
@@ -114,7 +114,7 @@ export function getSpotlightTransactionNotificationData(
     userId,
     type: NotificationType.SPOTLIGHT_ACTIVE,
     title: "Spotlight Activated",
-    message: `You spent ${jpAmount} JP to activate your Spotlight.`,
+    message: `You spent ${jpAmount} GP to activate your Spotlight.`,
     metadata: { jpAmount },
   };
 }
@@ -128,7 +128,7 @@ export function getSpotlightAppliedTransactionNotificationData(
     userId,
     type: NotificationType.SPOTLIGHT_APPROVED,
     title: "Spotlight Application Submitted",
-    message: `You spent ${jpAmount} JP to apply for Spotlight.`,
+    message: `You spent ${jpAmount} GP to apply for Spotlight.`,
     metadata: { jpAmount },
   };
 }
@@ -142,8 +142,8 @@ export async function createJPEarnedNotification(
   return createNotification(
     userId,
     NotificationType.JP_EARNED,
-    "JP Earned",
-    `You earned ${amount} JP for ${activityDisplayMap[activity]}.`,
+    "GP Earned",
+    `You earned ${amount} GP for ${activityDisplayMap[activity]}.`,
     { amount, activity }
   );
 }
@@ -157,8 +157,8 @@ export async function createJpSpentNotification(
   return createNotification(
     userId,
     NotificationType.JP_SPEND,
-    "JP Spent",
-    `You spent ${amount} JP for ${activityDisplayMap[activity]}.`,
+    "GP Spent",
+    `You spent ${amount} GP for ${activityDisplayMap[activity]}.`,
     { amount, activity }
   );
 }
@@ -228,7 +228,7 @@ export async function createMagicBoxSharedNotification(
     receiverUserId,
     NotificationType.MAGIC_BOX_SHARED,
     "Magic Box Received",
-    `${sharedByUserName} shared ${amount} JP with you through a Magic Box!`,
+    `${sharedByUserName} shared ${amount} GP with you through a Magic Box!`,
     { sharedByUserId, sharedByUserName, amount }
   );
 }
@@ -288,7 +288,7 @@ export function getBuddyLensReviewedNotificationData(
     userId,
     type: NotificationType.BUDDY_LENS_REVIEWED,
     title: "BuddyLens Review Completed",
-    message: `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Joy Pearls have been deducted.`,
+    message: `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Growth Points have been deducted.`,
     metadata: { url: `/dashboard/buddy-lens/reviewer/${requestId}`, jpAmount },
   };
 }
@@ -304,7 +304,7 @@ export function getBuddyLensReviewerCompletedNotificationData(
     userId,
     type: NotificationType.BUDDY_LENS_COMPLETED,
     title: "BuddyLens Review Reward",
-    message: `You earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`,
+    message: `You earned ${jpAmount} Growth Points for reviewing a BuddyLens request in ${domain}.`,
     metadata: { url: `/dashboard/buddy-lens/reviewer/${requestId}`, jpAmount },
   };
 }
@@ -377,7 +377,7 @@ export async function createBuddyLensReviewedNotification(
     userId,
     NotificationType.BUDDY_LENS_REVIEWED,
     "BuddyLens Review Completed",
-    `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Joy Pearls have been deducted.`,
+    `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Growth Points have been deducted.`,
     { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount }
   );
 }
@@ -391,7 +391,7 @@ export async function createBuddyLensReviewerCompletedNotification(
     userId,
     NotificationType.BUDDY_LENS_COMPLETED,
     "BuddyLens Review Reward",
-    `You earned ${jpAmount} Joy Pearls for reviewing a BuddyLens request in ${domain}.`
+    `You earned ${jpAmount} Growth Points for reviewing a BuddyLens request in ${domain}.`
   );
 }
 

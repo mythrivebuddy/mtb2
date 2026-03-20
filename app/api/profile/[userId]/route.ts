@@ -65,7 +65,6 @@ export async function GET(
     }
 
    const profile = user.userBusinessProfile; 
-
     const response = {
       ...profile,
       name: user.name,
@@ -97,7 +96,6 @@ export async function GET(
       joinedChallenges: joinedChallenges.map(enrollment => enrollment.challenge),
       // --- END OF NEW LOGIC ---
     };
-
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching user profile:', error);

@@ -181,7 +181,7 @@ export default function SpotlightPage() {
                 4. Spotlight placement is subject to availability and approval.
               </p>
               <p className="text-gray-600">
-                5. No JoyPearls will be credited back once the applied for
+                5. No Growth Points will be credited back once the applied for
                 Spotlight
               </p>
             </div>

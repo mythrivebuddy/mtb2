@@ -21,6 +21,7 @@ import {
   BellRing,
   Crown,
   GraduationCap,
+  Award,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -429,7 +430,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     <ComingSoonWrapper>
                       <NavItem
                         href="#"
-                        icon={<Droplet size={20} />}
+                        icon={<Award size={20} />}
                         label="Manage Certificates"
                         onLinkClick={toggleSidebar} // Pass toggleSidebar
                       />

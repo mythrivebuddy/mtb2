@@ -37,14 +37,14 @@ export default function LetOthersRollClient() {
       return;
     }
 
-    const newShareableLink = `${baseUrl}/dashboard/challenge/${slug}-${uuid}`;
+    const newShareableLink = `${baseUrl}/dashboard/challenge/upcoming-challenges/${uuid}`;
     setShareableLink(newShareableLink);
 
     const fetchChallengeDetails = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await axios.get(`/api/challenge/${slug}-${uuid}`);
+        const response = await axios.get(`/api/challenge/${uuid}`);
         
         if (response.data && response.data.success) {
           setChallengeDetails(response.data.challenge);
