@@ -255,12 +255,11 @@ function ProgramCTA({
         >
           <LogIn size={13} /> Enroll
         </button>
-        <button
-          onClick={() => signIn()}
-          className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60"
-        >
+         <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+        <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
           Info
         </button>
+      </Link>
       </div>
     );
   }

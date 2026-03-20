@@ -29,6 +29,7 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
   };
 
   const isOpen = (key: string) => openSections.includes(key);
+
   const renderEmpty = (text: string) => (
     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center">
       <p className="text-sm text-blue-400 font-medium">{text}</p>
@@ -43,12 +44,14 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
         : null;
 
   const embedUrl = profile.introVideo ? toEmbedUrl(profile.introVideo) : null;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white text-gray-900">
-      <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 space-y-28">
+      {/* space-y-28 → space-y-14 for reduced spacing */}
+      <main className="max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-14">
 
         {/* HERO */}
-        <section className="flex flex-col md:flex-row gap-14">
+        <section className="flex flex-col md:flex-row gap-10">
           <div className="flex-1 space-y-6">
             <div className="flex items-start gap-6">
               <div className="relative">
@@ -97,9 +100,7 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
             {(profile.priceMin > 0 || profile.priceMax > 0) && (
               <p className="text-center text-sm text-gray-500">
                 <span className="font-semibold text-blue-700">
-                  {profile.preferredCurrency === "INR" ? "₹" : "$"}
-                  {profile.priceMin} – {profile.preferredCurrency === "INR" ? "₹" : "$"}
-                  {profile.priceMax}
+                  {profile.preferredCurrency === "INR" ? "₹" : "$"}{profile.priceMin} – {profile.preferredCurrency === "INR" ? "₹" : "$"}{profile.priceMax}
                 </span> / session
               </p>
             )}
@@ -109,18 +110,20 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
             >
               Book Discovery Call
             </button>
-            <button onClick={() => window.open(profile.linkedin, "_blank")} className="w-full bg-gray-100 hover:bg-gray-200 py-3 rounded-xl font-medium transition">Connect With Me</button>
+            <button onClick={() => window.open(profile.linkedin, "_blank")} className="w-full bg-gray-100 hover:bg-gray-200 py-3 rounded-xl font-medium transition">
+              Connect With Me
+            </button>
             <p className="text-xs text-gray-400 text-center">Typical response time: Under 2 hours</p>
           </div>
         </section>
 
         {/* OUTCOME */}
-        <section className="bg-white border-t-4 border-blue-600 rounded-3xl p-12 shadow-sm space-y-10">
+        <section className="bg-white border-t-4 border-blue-600 rounded-3xl p-10 shadow-sm space-y-8">
           <p className="text-xs uppercase tracking-widest text-blue-600 font-bold">The Outcome</p>
           {profile.transformation ? (
             <h2 className="text-3xl font-bold text-gray-900 leading-snug max-w-4xl">{profile.transformation}</h2>
           ) : renderEmpty("Transformation details not provided")}
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6">
             {profile.typicalResults?.length ? profile.typicalResults.map((r, i) => (
               <div key={i} className="flex gap-3">
                 <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs flex-shrink-0">✓</div>
@@ -131,13 +134,14 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
         </section>
 
         {/* PROGRAMS */}
-        <section className="space-y-10">
+        <section className="space-y-8">
           <h2 className="text-3xl font-bold text-blue-900">Programs & Offerings</h2>
           {profile.servicesOffered?.length ? (
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-6">
               {profile.servicesOffered.slice(0, 3).map((service, i) => (
                 <div key={i} className={`p-8 rounded-3xl border shadow-sm ${i === 1 ? "border-blue-500 shadow-lg" : "bg-white"}`}>
                   {i === 1 && <span className="text-xs bg-blue-600 text-white px-3 py-1 rounded-full">Most Popular</span>}
+                  {i !== 1 && <span className="text-xs px-3 py-1 rounded-full"></span>}
                   <h3 className="text-xl font-semibold mt-4">{service}</h3>
                   <p className="text-sm text-gray-500 mt-2">Tailored {service.toLowerCase()} experience.</p>
                   <p className="text-sm font-semibold mt-4 text-blue-700">${profile.priceMin ?? 0} – ${profile.priceMax ?? 0}</p>
@@ -149,8 +153,8 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
         </section>
 
         {/* ABOUT + EXPERIENCE */}
-        <section className="grid md:grid-cols-2 gap-14">
-          <div className="space-y-6">
+        <section className="grid md:grid-cols-2 gap-10">
+          <div className="space-y-5">
             <h2 className="text-3xl font-bold text-blue-900">About {profile.name}</h2>
             {profile.shortBio ? <p className="text-gray-600 leading-relaxed">{profile.shortBio}</p> : renderEmpty("Bio not provided")}
             {profile.methodology && (
@@ -170,7 +174,7 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
               </div>
             ) : null}
           </div>
-          <div className="space-y-8">
+          <div className="space-y-6">
             <h2 className="text-3xl font-bold text-blue-900">Experience & Credibility</h2>
             <div className="grid grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-2xl border text-center shadow-sm">
@@ -178,9 +182,7 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
                 <p className="text-xs text-gray-400 uppercase">Years Experience</p>
               </div>
               <div className="bg-white p-6 rounded-2xl border text-center shadow-sm">
-                <p className="text-3xl font-bold text-blue-600">
-                  {profile.jpBalance ?? 0}
-                </p>
+                <p className="text-3xl font-bold text-blue-600">{profile.jpBalance ?? 0}</p>
                 <p className="text-xs text-gray-400 uppercase">GP Balance</p>
               </div>
             </div>
@@ -194,10 +196,10 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
         </section>
 
         {/* TESTIMONIALS */}
-        <section className="space-y-10">
+        <section className="space-y-8">
           <h2 className="text-3xl font-bold text-blue-900">Client Feedback</h2>
           {profile.testimonials?.length ? (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
               {profile.testimonials.map((t, i) => (
                 <div key={i} className="bg-white p-8 rounded-3xl border shadow-sm">
                   <p className="text-gray-600 text-sm leading-relaxed">
@@ -212,7 +214,7 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
         </section>
 
         {/* INTRO VIDEO */}
-        <section className="text-center space-y-8">
+        <section className="text-center space-y-6">
           <h2 className="text-3xl font-bold text-blue-900">Meet {profile.name}</h2>
           {embedUrl ? (
             <div className="rounded-3xl overflow-hidden shadow-xl max-w-4xl mx-auto">
@@ -223,61 +225,67 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
           ) : renderEmpty("Intro video not available")}
         </section>
 
-        {/* PRACTICAL DETAILS */}
-        <section className="space-y-6 max-w-3xl mx-auto">
+        {/* PRACTICAL DETAILS — 2 columns side by side */}
+        <section className="space-y-6">
           <h2 className="text-3xl font-bold text-center text-blue-900">Practical Details</h2>
 
-          <div className="border rounded-2xl bg-white">
-            <button onClick={() => toggle("session")} className="w-full p-6 text-left font-semibold flex justify-between items-center">
-              Session Duration & Format
-              <span className="text-gray-400 text-sm">{isOpen("session") ? "▲" : "▼"}</span>
-            </button>
-            {isOpen("session") && (
-              <div className="px-6 pb-6 text-sm text-gray-600">
-                {profile.sessionDuration || "—"} minutes via {profile.sessionFormat || "Not specified"}.
-              </div>
-            )}
-          </div>
-
-          <div className="border rounded-2xl bg-white">
-            <button onClick={() => toggle("languages")} className="w-full p-6 text-left font-semibold flex justify-between items-center">
-              Languages Supported
-              <span className="text-gray-400 text-sm">{isOpen("languages") ? "▲" : "▼"}</span>
-            </button>
-            {isOpen("languages") && (
-              <div className="px-6 pb-6 text-sm text-gray-600">
-                {profile.languages?.length ? profile.languages.join(", ") : "No languages specified"}
-              </div>
-            )}
-          </div>
-
-          <div className="border rounded-2xl bg-white">
-            <button onClick={() => toggle("pricing")} className="w-full p-6 text-left font-semibold flex justify-between items-center">
-              Pricing Range
-              <span className="text-gray-400 text-sm">{isOpen("pricing") ? "▲" : "▼"}</span>
-            </button>
-            {isOpen("pricing") && (
-              <div className="px-6 pb-6 text-sm text-gray-600">
-                ${profile.priceMin ?? 0} – ${profile.priceMax ?? 0}
-              </div>
-            )}
-          </div>
-
-          {profile.sessionStyles?.length ? (
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Session Duration & Format */}
             <div className="border rounded-2xl bg-white">
-              <button onClick={() => toggle("styles")} className="w-full p-6 text-left font-semibold flex justify-between items-center">
-                Session Styles
-                <span className="text-gray-400 text-sm">{isOpen("styles") ? "▲" : "▼"}</span>
+              <button onClick={() => toggle("session")} className="w-full p-5 text-left font-semibold flex justify-between items-center">
+                Session Duration & Format
+                <span className="text-gray-400 text-sm">{isOpen("session") ? "▲" : "▼"}</span>
               </button>
-              {isOpen("styles") && (
-                <div className="px-6 pb-6 flex flex-wrap gap-2">
-                  {profile.sessionStyles.map((s) => (
-                    <span key={s} className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">{s}</span>
-                  ))}
+              {isOpen("session") && (
+                <div className="px-5 pb-5 text-sm text-gray-600">
+                  {profile.sessionDuration || "—"} minutes via {profile.sessionFormat || "Not specified"}.
                 </div>
               )}
             </div>
-          ) : null}
+
+            {/* Languages */}
+            <div className="border rounded-2xl bg-white">
+              <button onClick={() => toggle("languages")} className="w-full p-5 text-left font-semibold flex justify-between items-center">
+                Languages Supported
+                <span className="text-gray-400 text-sm">{isOpen("languages") ? "▲" : "▼"}</span>
+              </button>
+              {isOpen("languages") && (
+                <div className="px-5 pb-5 text-sm text-gray-600">
+                  {profile.languages?.length ? profile.languages.join(", ") : "No languages specified"}
+                </div>
+              )}
+            </div>
+
+            {/* Pricing */}
+            <div className="border rounded-2xl bg-white">
+              <button onClick={() => toggle("pricing")} className="w-full p-5 text-left font-semibold flex justify-between items-center">
+                Pricing Range
+                <span className="text-gray-400 text-sm">{isOpen("pricing") ? "▲" : "▼"}</span>
+              </button>
+              {isOpen("pricing") && (
+                <div className="px-5 pb-5 text-sm text-gray-600">
+                  {profile.preferredCurrency === "INR" ? "₹" : "$"}{profile.priceMin ?? 0} – {profile.preferredCurrency === "INR" ? "₹" : "$"}{profile.priceMax ?? 0}
+                </div>
+              )}
+            </div>
+
+            {/* Session Styles */}
+            {profile.sessionStyles?.length ? (
+              <div className="border rounded-2xl bg-white">
+                <button onClick={() => toggle("styles")} className="w-full p-5 text-left font-semibold flex justify-between items-center">
+                  Session Styles
+                  <span className="text-gray-400 text-sm">{isOpen("styles") ? "▲" : "▼"}</span>
+                </button>
+                {isOpen("styles") && (
+                  <div className="px-5 pb-5 flex flex-wrap gap-2">
+                    {profile.sessionStyles.map((s) => (
+                      <span key={s} className="px-3 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">{s}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
         </section>
 
       </main>

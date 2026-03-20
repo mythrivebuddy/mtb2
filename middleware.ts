@@ -72,12 +72,15 @@ export default withAuth(
         }
 
         // Allow public access to Mini Mastery Programs
-        if (path.startsWith("/dashboard/mini-mastery-programs")) {
+        if (
+          path === "/dashboard/mini-mastery-programs" ||
+          /^\/dashboard\/mini-mastery-programs\/[^/]+$/.test(path)
+        ) {
           return true;
         }
 
         // Allow public access to Growth Store
-        if (path.startsWith("/dashboard/store")) {
+        if (path === "/dashboard/store") {
           return true;
         }
 

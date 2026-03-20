@@ -20,7 +20,6 @@ import Step5Services from "./steps/Step5Services"
 import Step6Pricing from "./steps/Step6Pricing"
 import Step7Review from "./steps/Step7Review"
 import ProgressBar from "./PrgressBar"
-import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
 const STORAGE_KEY = process.env.LOCALSTORAGE_PROFILE_KEY || "business_profile_draft"
@@ -32,7 +31,6 @@ export default function BusinessProfileLayout() {
   const [step, setStep] = useState(1)
   const [profileLoaded, setProfileLoaded] = useState(false)
   const queryClient = useQueryClient()
-  const router = useRouter()
 
   const methods = useForm<BusinessProfileFormValues>({
     resolver: zodResolver(businessProfileSchema),
@@ -156,7 +154,7 @@ export default function BusinessProfileLayout() {
       localStorage.removeItem(STORAGE_KEY)
       queryClient.invalidateQueries({ queryKey: ["profile", userId] })
       toast.success("Profile saved successfully 🎉")
-      router.push(`/profile/${userId}`)
+      window.open(`/profile/${userId}`, "_blank")
     },
 
     onError: () => {
@@ -197,7 +195,7 @@ export default function BusinessProfileLayout() {
   return (
     <FormProvider {...methods}>
       <div className="max-w-4xl mx-auto p-6">
-        <ProgressBar step={step} />
+        <ProgressBar step={step} onStepClick={(s) => setStep(s)} />
 
         {step === 1 && <Step1Identity next={() => setStep(2)} />}
         {step === 2 && (
