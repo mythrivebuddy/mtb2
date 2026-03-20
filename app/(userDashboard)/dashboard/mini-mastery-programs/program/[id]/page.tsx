@@ -595,11 +595,12 @@ export default function ProgramPlayer() {
 
   useEffect(() => {
     if (searchParams.get("payment") === "success") {
-      toast.custom(() => (
-        <div className="flex items-center gap-3 bg-green-100 border border-green-200 text-green-800 font-bold text-sm px-5 py-3.5 rounded-2xl shadow-lg">
-          <span className="text-lg">🎉</span> You have purchased the program!
-        </div>
-      ), { duration: 5000 });
+      const name = data?.program?.name;
+      toast.success(
+        `🎉 Purchase Successful!\n\n` +
+        `${name ? `${name}\n` : ""}` +
+        `You are now enrolled.`
+      );
       // URL clean karo without reload
       const url = new URL(window.location.href);
       url.searchParams.delete("payment");

@@ -7,7 +7,6 @@ import axios, { AxiosError } from "axios";
 import { format } from "date-fns";
 import {
   Loader2,
-  Check,
   Star,
   AlertTriangle,
   TrendingUp,

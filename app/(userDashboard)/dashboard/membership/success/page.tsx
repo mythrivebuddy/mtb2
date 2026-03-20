@@ -34,7 +34,6 @@ export default function SuccessPage() {
   const [verified, setVerified] = useState(false);
   const [redirectTo, setRedirectTo] = useState("/dashboard");
   const [yearlyPlanName, setYearlyPlanName] = useState<string | null>(null);
-  const [membershipInfo, setMembershipInfo] = useState<MembershipInfo | null>(null);
 
   /* --------------------------------------------------------------- */
   /* Verify payment */
