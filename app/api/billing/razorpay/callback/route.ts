@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
   /* -------------------------------------------------- */
   /* REDIRECT TO SUCCESS PAGE */
   /* -------------------------------------------------- */
-  const successUrl = new URL("/dashboard/membership/success", baseUrl);
+  const successUrl = new URL(`/dashboard/subscription`, baseUrl);
 
   successUrl.searchParams.set("type", "membership");
 

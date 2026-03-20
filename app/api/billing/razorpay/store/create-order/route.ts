@@ -104,16 +104,21 @@ export async function POST(req: NextRequest) {
         }
 
 
-        const billing = await prisma.userBillingInformation.findFirst({
+        let  billing = await prisma.userBillingInformation.findFirst({
             where: { userId: session.user.id },
             select: { id: true, country: true }
         });
 
         if (!billing) {
-            return NextResponse.json(
-                { success: false, error: "Billing address not found" },
-                { status: 400 }
-            );
+            billing = await prisma.billingInformation.findFirst({
+                where:{userId:session.user.id}
+            })
+            if (!billing) {
+                return NextResponse.json(
+                    { success: false, error: "Billing address not found" },
+                    { status: 400 }
+                );
+            }
         }
 
 

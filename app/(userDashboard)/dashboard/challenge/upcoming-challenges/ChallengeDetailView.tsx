@@ -81,6 +81,12 @@ export default function ChallengeDetailView({ challenge, initialEnrollment }: Ch
         if (res.data?.paid && !autoEnrollTriggered.current) {
           autoEnrollTriggered.current = true;
           setHasPaidOrder(true);
+          toast.success(
+            `🎉 Payment Successful!\n\n` +
+            `${challenge.title}\n` +
+            `Please do not close this page while we complete your enrollment.`
+          );
+
           setAutoEnrollAttempted(true);
           try {
             setIsEnrolling(true);

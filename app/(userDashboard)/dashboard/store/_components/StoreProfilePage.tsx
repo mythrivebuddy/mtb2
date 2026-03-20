@@ -1,13 +1,13 @@
 
 
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios, { AxiosResponse } from "axios";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OrderSection from "@/components/storeProfile/OrderSection";
 import CartSection from "@/components/storeProfile/CartSection";
 import WishlistSection from "@/components/storeProfile/WishlistSection";
@@ -67,7 +67,7 @@ function StoreProfilePageComponent() {
 
     const orders = (data?.orders.orders ?? []) as Order[];
     const wishlist = (data?.wishlist.wishlist ?? []) as WishlistItem[];
-   const cart = cartRes as CartItem[];
+    const cart = cartRes as CartItem[];
 
     // Always use base price
     const getPrice = (item: Item): number => {
@@ -96,7 +96,7 @@ function StoreProfilePageComponent() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["cart"] });   
+            queryClient.invalidateQueries({ queryKey: ["cart"] });
             toast.success("Item added to cart");
         },
         onError: (err) => {
@@ -110,7 +110,7 @@ function StoreProfilePageComponent() {
                 data: { cartItemId },
             }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["cart"] });   
+            queryClient.invalidateQueries({ queryKey: ["cart"] });
             toast.success("Item removed");
         },
     });
@@ -137,6 +137,32 @@ function StoreProfilePageComponent() {
         router.push(`/dashboard/store/checkout?${query}`);
     };
 
+    const searchParams = useSearchParams();
+    const hasShownPaymentToast = useRef(false);
+    useEffect(() => {
+        if (searchParams.get("payment") !== "success") return;
+        if (hasShownPaymentToast.current) return;
+        if (!data) return; // wait for orders to load
+
+        hasShownPaymentToast.current = true;
+
+        // Get the most recent order's item name
+        // Get the most recent order's item name from items array
+        const latestOrder = orders[0];
+        const itemName = latestOrder?.items?.[0]?.item?.name ?? null;
+
+        toast.success(
+            `🎉 Payment Successful!\n\n` +
+            `${itemName ? `${itemName}\n` : ""}` +
+            `Your order has been placed successfully.`
+        );
+
+        // Clean URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete("payment");
+        url.searchParams.delete("orderId");
+        window.history.replaceState({}, "", url.toString());
+    }, [searchParams, data]);
     if (isLoading || authStatus === "loading") {
         return (
             <div className="flex h-screen items-center justify-center">
