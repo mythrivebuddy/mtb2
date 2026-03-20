@@ -74,7 +74,7 @@ export async function assignJp(
     await createJPEarnedNotification(user.id, jpToAdd, activityData.activity);
   } catch (error) {
     // Log the error and re-throw it to be handled by the calling function.
-    console.error(`Error in assignJp for activity ${activity}:`, error);
+    console.error(`Error in assignGp for activity ${activity}:`, error);
     throw error;
   }
 }
@@ -132,10 +132,23 @@ export async function deductJp(
     });
 
     // 6. Create a notification for the user about the spent JP.
-    await createJpSpentNotification(user.id, jpToDeduct, activityData.activity);
+    
+      await createJpSpentNotification(
+        user.id,
+        jpToDeduct,
+        activityData.activity
+      );
+    
+
+    // ✅ RETURN BOTH VALUES
+    return {
+      deductedAmount: jpToDeduct,
+      baseAmount,
+      multiplier: spendMultiplier,
+    };
   } catch (error) {
     // Log the error and re-throw it to be handled by the calling function (e.g., the API route)
-    console.error(`Error in deductJp for activity ${activity}:`, error);
+    console.error(`Error in deductGp for activity ${activity}:`, error);
     throw error;
   }
 }

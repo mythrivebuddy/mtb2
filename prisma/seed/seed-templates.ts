@@ -191,6 +191,315 @@ async function main() {
       <p>We're excited to have you on board!</p>
   `,
     },
+    {
+      templateId: "challenge-joined-free",
+      subject: "You're in! Start your {{challengeName}} challenge 🚀",
+      description: "Sent when a user joins a free challenge.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+ 
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#f0fdf4;">
+    <h1 style="margin:0;color:#166534;font-size:24px;">You're in! 🎉</h1>
+    <p style="margin:6px 0 0;color:#4b5563;font-size:15px;">Your challenge journey starts now</p>
+  </div>
+ 
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{username}}</strong>,</p>
+    <p style="color:#4b5563;">You've successfully joined the challenge:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;font-size:20px;">{{challengeName}}</h2>
+ 
+    <!-- CHALLENGE DETAILS -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Start Date</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{startDate}}</td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Challenge Type</td>
+          <td style="padding:6px 0;text-align:right;">
+            <span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;">Free</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+ 
+    <p style="color:#374151;font-size:14px;">Show up daily, stay consistent, and you'll see real progress. We're excited to have you on this journey.</p>
+ 
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{challengeUrl}}" style="background:#16a34a;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        Start Challenge →
+      </a>
+    </div>
+ 
+    <p style="color:#9ca3af;font-size:13px;">Need help? Just reply to this email — we've got you.</p>
+  </div>
+ 
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+ 
+</div>
+    `.trim(),
+    },
+
+    // ─────────────────────────────────────────────
+    // 2. USER joins PAID challenge
+    // ─────────────────────────────────────────────
+    {
+      templateId: "challenge-joined-paid",
+      subject: "Payment confirmed ✅ You're in {{challengeName}}",
+      description: "Sent when a user joins a paid challenge.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+ 
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#eff6ff;">
+    <h1 style="margin:0;color:#1d4ed8;font-size:24px;">Payment Confirmed! 🎉</h1>
+    <p style="margin:6px 0 0;color:#4b5563;font-size:15px;">You're officially enrolled</p>
+  </div>
+ 
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hello <strong>{{username}}</strong>,</p>
+    <p style="color:#4b5563;">Your spot in the challenge is confirmed:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;font-size:20px;">{{challengeName}}</h2>
+ 
+    <!-- CHALLENGE DETAILS -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Start Date</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{startDate}}</td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Challenge Type</td>
+          <td style="padding:6px 0;text-align:right;">
+            <span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;">Paid</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+ 
+    <!-- PAYMENT DETAILS -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#166534;font-size:15px;">💳 Payment Details</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Amount Paid</td>
+          <td style="padding:6px 0;color:#16a34a;font-weight:700;font-size:15px;text-align:right;">₹{{amount}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Transaction ID</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{transactionId}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Payment Method</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{paymentMethod}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Date</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{paymentDate}}</td>
+        </tr>
+      </table>
+    </div>
+ 
+    <p style="color:#374151;font-size:14px;">You're all set. Now the real work begins 💪</p>
+ 
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{challengeUrl}}" style="background:#4f46e5;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        Go to Challenge →
+      </a>
+    </div>
+ 
+    <p style="color:#9ca3af;font-size:13px;">Keep this email for your payment reference.</p>
+  </div>
+ 
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+ 
+</div>
+    `.trim(),
+    },
+
+    // ─────────────────────────────────────────────
+    // 3. COACH notified — FREE challenge participant joined
+    // FIX: removed {{amount}} row (free = no payment info)
+    // FIX: dashboardUrl → challengeUrl
+    // ─────────────────────────────────────────────
+    {
+      templateId: "coach-user-joined-challenge",
+      subject: "{{username}} joined your challenge 🎯",
+      description: "Sent to coach when a participant joins a free challenge.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+ 
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#fff7ed;">
+    <h1 style="margin:0;color:#c2410c;font-size:24px;">New Participant Joined 🎯</h1>
+    <p style="margin:6px 0 0;color:#4b5563;font-size:15px;">Your challenge community is growing</p>
+  </div>
+ 
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{coachName}}</strong>,</p>
+    <p style="color:#4b5563;"><strong>{{username}}</strong> has joined your challenge:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;font-size:20px;">{{challengeName}}</h2>
+ 
+    <!-- PARTICIPANT INFO -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">Participant Details</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Name</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{username}}</td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Email</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{userEmail}}</td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Challenge Type</td>
+          <td style="padding:6px 0;text-align:right;">
+            <span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;">Free</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+ 
+    <p style="color:#374151;font-size:14px;">Keep building momentum with your community 🚀</p>
+ 
+    <!-- CTA — FIX: was {{dashboardUrl}}, now {{challengeUrl}} -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{challengeUrl}}" style="background:#f59e0b;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        View Participants →
+      </a>
+    </div>
+ 
+    <p style="color:#9ca3af;font-size:13px;">Need help? Just reply to this email.</p>
+  </div>
+ 
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+ 
+</div>
+    `.trim(),
+    },
+
+    // ─────────────────────────────────────────────
+    // 4. COACH notified — PAID challenge participant joined
+    // FIX: dashboardUrl → transactionPageUrl (already correct in route.ts)
+    // ─────────────────────────────────────────────
+    {
+      templateId: "coach-user-joined-paid-challenge",
+      subject: "💰 New Paid Enrollment in {{challengeName}}",
+      description: "Sent to coach when a user joins a paid challenge.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+ 
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#ecfdf5;">
+    <h1 style="margin:0;color:#065f46;font-size:24px;">New Paid Enrollment 💰</h1>
+    <p style="margin:6px 0 0;color:#4b5563;font-size:15px;">Someone invested in your challenge</p>
+  </div>
+ 
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{coachName}}</strong>,</p>
+    <p style="color:#4b5563;"><strong>{{username}}</strong> joined your challenge:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;font-size:20px;">{{challengeName}}</h2>
+ 
+    <!-- PARTICIPANT INFO -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">Participant Details</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Name</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{username}}</td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Email</td>
+          <td style="padding:6px 0;color:#111827;font-weight:600;font-size:14px;text-align:right;">{{userEmail}}</td>
+        </tr>
+        <tr style="border-top:1px solid #e5e7eb;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Challenge Type</td>
+          <td style="padding:6px 0;text-align:right;">
+            <span style="background:#dbeafe;color:#1d4ed8;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;">Paid</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+ 
+    <!-- PAYMENT BREAKDOWN -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#166534;font-size:15px;">💳 Payment Breakdown</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Base Price</td>
+          <td style="padding:6px 0;color:#111827;font-size:14px;text-align:right;">₹{{baseAmount}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Discount</td>
+          <td style="padding:6px 0;color:#dc2626;font-size:14px;text-align:right;">− ₹{{discount}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Net Amount</td>
+          <td style="padding:6px 0;color:#111827;font-size:14px;text-align:right;">₹{{netBase}}</td>
+        </tr>
+        <tr style="border-top:1px solid #dcfce7;">
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">GST</td>
+          <td style="padding:6px 0;color:#111827;font-size:14px;text-align:right;">₹{{gst}}</td>
+        </tr>
+        <tr style="border-top:2px solid #16a34a;">
+          <td style="padding:8px 0;color:#111827;font-weight:700;font-size:15px;">Total Paid</td>
+          <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:15px;text-align:right;">₹{{totalPaid}}</td>
+        </tr>
+      </table>
+    </div>
+ 
+    <!-- PLATFORM FEE + EARNING -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+      <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">🏢 Your Earnings</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Platform Commission ({{commissionPercent}}%)</td>
+          <td style="padding:6px 0;color:#dc2626;font-size:14px;text-align:right;">− ₹{{platformFee}}</td>
+        </tr>
+        <tr style="border-top:2px solid #e5e7eb;">
+          <td style="padding:8px 0;color:#065f46;font-weight:700;font-size:15px;">Your Earnings</td>
+          <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:16px;text-align:right;">₹{{coachEarning}}</td>
+        </tr>
+      </table>
+      <p style="margin:10px 0 0;color:#9ca3af;font-size:13px;">Payment Date: {{paymentDate}}</p>
+    </div>
+ 
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{transactionPageUrl}}" style="background:#16a34a;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        View Transactions →
+      </a>
+    </div>
+ 
+    <p style="color:#9ca3af;font-size:13px;">Keep building momentum with your community 🚀</p>
+  </div>
+ 
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+ 
+</div>
+    `.trim(),
+    },
   ];
 
   for (const tmpl of templates) {
