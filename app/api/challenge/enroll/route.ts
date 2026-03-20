@@ -294,19 +294,11 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const durationInDays =
-      challengeToJoin.startDate && challengeToJoin.endDate
-        ? Math.ceil(
-            (new Date(challengeToJoin.endDate).getTime() -
-              new Date(challengeToJoin.startDate).getTime()) /
-              (1000 * 60 * 60 * 24),
-          )
-        : null;
+ 
 
-    // ✅ Correct base URL
     const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
-    // ✅ Email Data (FULLY FIXED)
+    //  Email Data (FULLY FIXED)
     const emailData = {
       username: joiner.name || "User",
       userEmail: joiner.email,
