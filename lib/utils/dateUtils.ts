@@ -59,3 +59,12 @@ export function getISTEndOfDay(): Date {
   return d;
 }
 
+export function formatDate(date: Date | string | null | undefined) {
+  if (!date) return "N/A";
+
+  return new Date(date).toLocaleDateString("en-IN", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}

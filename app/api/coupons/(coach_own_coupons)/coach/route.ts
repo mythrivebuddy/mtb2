@@ -1,7 +1,7 @@
 // /api/coupons/coach/route.ts
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { CouponType, CouponScope } from "@prisma/client"
+import { CouponType, CouponScope, ChallengeJoiningType } from "@prisma/client"
 import { checkRole } from "@/lib/utils/auth"
 
 export async function GET() {
@@ -25,6 +25,7 @@ export async function GET() {
       prisma.challenge.findMany({
         where: {
           creatorId: userId,
+          challengeJoiningType:ChallengeJoiningType.PAID
         },
         select: {
           id: true,
@@ -54,7 +55,11 @@ export async function GET() {
         },
       }),
     ]);
-
+    console.log({
+      userId,
+      challenges
+    });
+    
     return NextResponse.json({
       challenges,
       coupons,
