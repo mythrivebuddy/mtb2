@@ -510,7 +510,11 @@ const CheckoutContent = () => {
   }
   // ── ALL hooks above this line — early returns are safe below ──────────────
   const isLoading = isItemsLoading || isBillingLoading || isGPLoading;
-  if (isLoading) return <PageLoader />;
+  if (isLoading) return (
+    <div className="flex min-h-screen justify-center items-center">
+      <PageLoader />;
+    </div>
+  )
 
   if (!items || items.length === 0) {
     return (

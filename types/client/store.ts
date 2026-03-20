@@ -1,6 +1,7 @@
 // Store Types for Client-side usage
 
 export interface BillingInfo {
+  id?:string;
   fullName: string;
   email: string;
   phone: string;

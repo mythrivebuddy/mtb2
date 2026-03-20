@@ -161,39 +161,6 @@ async function fetchProgramDetail(id: string): Promise<Program> {
   return data.program;
 }
 
-// ─── Guest Banner ─────────────────────────────────────────────────────────────
-// Shown at top of page when user is not signed in
-
-function GuestBanner() {
-  return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-[28px] p-6 mb-10 shadow-xl shadow-blue-200/50">
-      {/* Decorative blobs */}
-      <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="absolute -left-6 -bottom-6 w-32 h-32 bg-violet-400/20 rounded-full blur-xl pointer-events-none" />
-
-      <div className="relative flex flex-col sm:flex-row items-center gap-5 justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 border border-white/30">
-            <LogIn size={22} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-black text-base leading-none">Sign in to enroll</p>
-            <p className="text-blue-100 text-xs font-medium mt-1">
-              Create a free account to start any program and track your progress.
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={() => signIn()}
-          className="shrink-0 bg-white hover:bg-blue-50 text-blue-700 font-black px-6 py-3 rounded-xl text-sm transition-all active:scale-95 shadow-lg shadow-blue-900/20 flex items-center gap-2 whitespace-nowrap"
-        >
-          <LogIn size={15} /> Sign In / Sign Up
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
 function SkeletonCard() {
@@ -288,12 +255,11 @@ function ProgramCTA({
         >
           <LogIn size={13} /> Enroll
         </button>
-        <button
-          onClick={() => signIn()}
-          className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60"
-        >
+         <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+        <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
           Info
         </button>
+      </Link>
       </div>
     );
   }
@@ -656,9 +622,6 @@ export default function EnrollPage() {
           </div>
         </div>
       </header>
-
-      {/* ── Guest Banner (only when not logged in) ── */}
-      {!isLoggedIn && authStatus !== "loading" && <GuestBanner />}
 
       {/* ── Filters ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-200/60">

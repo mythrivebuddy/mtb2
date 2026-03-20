@@ -7,17 +7,28 @@ export async function handleChallengePayment(
 
     if (!order.challengeId) return;
 
-    await tx.challengePayment.create({
-        data: {
-            userId: order.userId,
-            challengeId: order.challengeId,
-            paymentOrderId: order.id,
-            amountPaid: order.totalAmount,
-            currency: order.currency,
-            status: PaymentStatus.PAID,
-            paidAt: new Date(),
-        },
-    });
+  await tx.challengePayment.upsert({
+  where: {
+    userId_challengeId: {
+      userId: order.userId,
+      challengeId: order.challengeId,
+    },
+  },
+  update: {
+    status: PaymentStatus.PAID,
+    amountPaid: order.totalAmount,
+    paidAt: new Date(),
+  },
+  create: {
+    userId: order.userId,
+    challengeId: order.challengeId,
+    paymentOrderId: order.id,
+    amountPaid: order.totalAmount,
+    currency: order.currency,
+    status: PaymentStatus.PAID,
+    paidAt: new Date(),
+  },
+});
     if (order.couponId) {
 
         const existing = await tx.couponRedemption.findFirst({

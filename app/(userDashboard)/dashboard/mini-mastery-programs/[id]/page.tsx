@@ -3,13 +3,14 @@
 import React from "react";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import {
   CheckCircle2, Lock, Clock, GraduationCap,
   ArrowRight, Target, LayoutPanelLeft, Info,
   AlertCircle, ChevronLeft, BookOpen,
   PlayCircle, Trophy, LogIn,
+  ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -256,19 +257,20 @@ const ProgramDetails = () => {
   const id = typeof params.id === "string" ? params.id : (params.id?.[0] ?? "");
   const { status: authStatus } = useSession();
   const isLoggedIn = authStatus === "authenticated";
+  const router = useRouter()
 
   const { data: program, isLoading, isError, error } = useQuery({
     queryKey: ["mmp-detail", id],
-    queryFn:  () => fetchProgram(id),
-    enabled:  !!id,
+    queryFn: () => fetchProgram(id),
+    enabled: !!id,
     staleTime: 60_000,
   });
 
   const { data: statusData } = useQuery({
     queryKey: ["mmp-my-status"],
-    queryFn:  fetchMyStatuses,
+    queryFn: fetchMyStatuses,
     staleTime: 60_000,
-    enabled:  isLoggedIn,
+    enabled: isLoggedIn,
   });
 
   const progStatus = program && statusData ? statusData.statuses[program.id] : undefined;
@@ -285,14 +287,26 @@ const ProgramDetails = () => {
   if (!program) return <ErrorState message="Program not found." />;
 
   const achievements = parseAchievements(program.achievements);
-  const modules      = parseModules(program.modules);
-  const hasCert      = !!program.certificateTitle;
+  const modules = parseModules(program.modules);
+  const hasCert = !!program.certificateTitle;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 selection:bg-blue-100">
 
       {/* ── Hero ── */}
       <div className="max-w-6xl mx-auto px-4 pt-10">
+
+        {/* Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-700 transition-colors mb-6 group"
+        >
+          <div className="w-8 h-8 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center group-hover:shadow-md transition-all">
+            <ArrowLeft size={15} className="text-slate-500" />
+          </div>
+          <span className="text-xs font-bold uppercase tracking-widest">Back</span>
+        </button>
+
         <div className="flex flex-col lg:flex-row gap-10 items-center">
 
           {/* Thumbnail */}
