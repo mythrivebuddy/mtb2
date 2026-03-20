@@ -381,7 +381,7 @@ async function seedFeatures() {
         });
 
         if (!existing) {
-          const created = await prisma.featurePlanConfig.create({
+           await prisma.featurePlanConfig.create({
             data: {
               featureId: feature.id,
               membership,
@@ -389,12 +389,6 @@ async function seedFeatures() {
               isActive: true,
               config: config as Prisma.InputJsonValue,
             },
-          });
-
-        } else {
-          await prisma.featurePlanConfig.update({
-            where: { id: existing.id },
-            data: { config: config as Prisma.InputJsonValue },
           });
         }
       }
