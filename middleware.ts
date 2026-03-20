@@ -70,16 +70,19 @@ export default withAuth(
         if (isPublicChallengePage(path)) {
           return true;
         }
-        
-        // Allow public access to Mini Mastery Programs
-if (path.startsWith("/dashboard/mini-mastery-programs")) {
-  return true;
-}
 
-// Allow public access to Growth Store
-if (path.startsWith("/dashboard/store")) {
-  return true;
-}
+        // Allow public access to Mini Mastery Programs
+        if (
+          path === "/dashboard/mini-mastery-programs" ||
+          /^\/dashboard\/mini-mastery-programs\/[^/]+$/.test(path)
+        ) {
+          return true;
+        }
+
+        // Allow public access to Growth Store
+        if (path === "/dashboard/store") {
+          return true;
+        }
 
         // Require authentication for all other pages
         return !!token;

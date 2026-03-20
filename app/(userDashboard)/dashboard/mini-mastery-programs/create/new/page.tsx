@@ -101,6 +101,12 @@ export default function CreateProgramPage() {
   const [draftId,     setDraftId]     = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+useEffect(()=>{
+  if(localStorage.getItem(DRAFT_ID_KEY)){
+    localStorage.removeItem(DRAFT_ID_KEY)
+  }
+}, [])
+
   // ── Hydrate from localStorage on mount ──────────────────────────────────────
   // new/page.tsx already clear kar chuka hoga agar naya program hai
   // toh yahan sirf jo bhi localStorage mein hai woh load karo
@@ -229,6 +235,7 @@ export default function CreateProgramPage() {
             id: currentDraftId,
             ...buildPartialPayload(formData),
             status: "UNDER_REVIEW",
+            isComplete: true,
           }),
         });
 
@@ -252,7 +259,7 @@ export default function CreateProgramPage() {
       clearStorage();
       setDraftId(null);
       toast.success("Program submitted for review successfully!");
-      router.push("/dashboard/mini-mastery-programs");
+      router.push("/dashboard/mini-mastery-programs/create");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setSubmitError(message);
@@ -273,6 +280,7 @@ export default function CreateProgramPage() {
             id: currentDraftId,
             ...buildPartialPayload(formData),
             status: "DRAFT",
+            isComplete: true,
           }),
         });
 
@@ -296,7 +304,7 @@ export default function CreateProgramPage() {
       clearStorage();
       setDraftId(null);
       toast.success("Draft saved successfully!");
-      router.push("/dashboard/mini-mastery-programs");
+      router.push("/dashboard/mini-mastery-programs/create");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not save draft. Please try again.";
       setSubmitError(message);
