@@ -52,6 +52,8 @@ model User {
   currentPlanId                 String?
   currentPlanInterval           PlanInterval?
   userType                      PlanUserType?
+  mfaSecret    String?
+  mfaEnabled   Boolean @default(false)
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
   billingInformation            BillingInformation[]
