@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import {
   Shield, MapPin, User as UserIcon, Mail, Phone, Globe,
   Pencil, Check, X, AlertCircle, Info, TrendingUp, Coins, AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import PageLoader from "@/components/PageLoader";
@@ -24,6 +25,20 @@ import { convertCurrency } from "@/lib/payment/payment.utils";
 // ─── Currency helpers ──────────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GP: "GP" };
 const getCurrencySymbol = (currency?: string): string => CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
+
+// types/coupon.ts
+type CouponType = "PERCENTAGE" | "FIXED" | "FREE_DURATION";
+
+interface AppliedCoupon {
+  id: string;
+  code: string;
+  type: CouponType;
+  discountPercentage?: number | null;
+  discountAmountUSD?: number | null;
+  discountAmountINR?: number | null;
+  freeDays?: number | null;
+  description?: string | null;
+}
 
 // const CONVERSION_RATES: Record<string, Record<string, number>> = {
 //   USD: { INR: 83.5, USD: 1 },
@@ -43,14 +58,16 @@ const convertPrice = (
   rate?: number
 ): number => {
 
-  if (from === to) return amount
-  if (from === "GP" || to === "GP") return amount
-  if (!rate) return amount
+  if (from === to) return amount;
+  if (!rate) return amount;
 
-  if (from === "USD" && to === "INR") return amount * rate
-  if (from === "INR" && to === "USD") return amount / rate
+  if (from === "USD" && to === "INR")
+    return Math.round(amount * rate * 100) / 100;
 
-  return amount
+  if (from === "INR" && to === "USD")
+    return Math.round((amount / rate) * 100) / 100;
+
+  return amount;
 }
 
 // ─── SVG Icons ─────────────────────────────────────────────────────────────────
@@ -126,7 +143,7 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
             <label className="block text-xs font-medium text-gray-700 mb-1">Phone Number (Optional)</label>
             <div className="relative">
               <Phone className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <input type="tel" name="phone" value={form.phone} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border" placeholder="9876543210" />
+              <input type="tel" name="phone" value={form?.phone} onChange={handleChange} className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border" placeholder="9876543210" />
             </div>
           </div>
           {/* GST NUMBER (OPTIONAL - INDIA ONLY) */}
@@ -276,9 +293,17 @@ const CheckoutContent = () => {
   // ── useState — always first, always unconditional ─────────────────────────
   const [isEditingBilling, setIsEditingBilling] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<"INR" | "USD" | "GP" | null>(null);
+  const [manualCouponCode, setManualCouponCode] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [autoCoupon, setAutoCoupon] = useState<AppliedCoupon | null>(null);
+
+  const [isAutoCouponLoading, setIsAutoCouponLoading] = useState(false);
+  const [autoCouponChecked, setAutoCouponChecked] = useState(false);
 
   // ── useMemo — stable references, no hooks inside ──────────────────────────
+
   const cartItems = useMemo(() => searchParams.getAll("cartItem"), [searchParams]);
+  console.log({ cartItems });
 
   const parsedCartItems = useMemo(
     () => cartItems.map((item) => {
@@ -345,6 +370,32 @@ const CheckoutContent = () => {
     onError: (error) => toast.error(getAxiosErrorMessage(error, "Failed to save address")),
   });
 
+  const applyCouponMutation = useMutation({
+    mutationFn: async (code: string) => {
+      if (!selectedCurrency) throw new Error("Currency not selected");
+      if (hasMultipleDifferentProducts) return;
+
+      const res = await axios.post("/api/coupons/verify", {
+        code,
+        currency: selectedCurrency,
+        storeItemId: parsedCartItems[0]?.itemId,
+      });
+
+      return res.data;
+    },
+    onSuccess: (data) => {
+      if (data.valid) {
+        setAppliedCoupon(data.coupon);
+        toast.success("Coupon applied");
+      } else {
+        toast.error(data.message);
+      }
+    },
+    onError: () => {
+      toast.error("Failed to apply coupon");
+    },
+  });
+
   // const placeOrderMutation = useMutation({
   //   mutationFn: async () => {
   //     if (!selectedCurrency) throw new Error("Currency not selected");
@@ -372,6 +423,8 @@ const CheckoutContent = () => {
             quantity,
           })),
           currency: selectedCurrency,
+          couponCode: appliedCoupon?.code || null,
+          exchangeRate: usdToInrRate ?? null,
         }
       )
 
@@ -467,6 +520,56 @@ const CheckoutContent = () => {
     ? { ...savedBilling, fullName: session?.user?.name ?? savedBilling.fullName, email: session?.user?.email ?? savedBilling.email }
     : null;
 
+  useEffect(() => {
+    const applyAutoCoupon = async () => {
+      if (!selectedCurrency || !displayBilling) return;
+
+      if (hasMultipleDifferentProducts) {
+        setAppliedCoupon(null);
+        setAutoCoupon(null);
+        setAutoCouponChecked(true);
+        return;
+      }
+      try {
+        setIsAutoCouponLoading(true);
+        setAutoCouponChecked(false);
+        console.log("cartItems raw:", cartItems);
+        console.log("parsedCartItems:", parsedCartItems);
+        console.log("First itemId:", parsedCartItems[0]?.itemId);
+        console.log({
+          currency: selectedCurrency,
+          billingCountry: displayBilling.country,
+          userType: session?.user?.userType,
+          userId: session?.user?.id,
+          storeItemId: parsedCartItems[0]?.itemId,
+        });
+
+
+        const res = await axios.post("/api/coupons/auto-apply", {
+          currency: selectedCurrency,
+          billingCountry: displayBilling.country,
+          userType: session?.user?.userType,
+          userId: session?.user?.id,
+          storeItemId: parsedCartItems[0]?.itemId,
+        });
+
+        if (res.data?.coupon) {
+          setAutoCoupon(res.data.coupon);
+          setAppliedCoupon(res.data.coupon);
+          setManualCouponCode(res.data.coupon.code);
+        } else {
+          setAutoCoupon(null);
+        }
+      } catch (err) {
+        console.error("Auto coupon failed", err);
+      } finally {
+        setIsAutoCouponLoading(false);
+        setAutoCouponChecked(true);
+      }
+    };
+
+    applyAutoCoupon();
+  }, [selectedCurrency, displayBilling?.country]);
   // ── useEffect — stable deps now that uniqueCurrencies is memoized ─────────
   useEffect(() => {
 
@@ -505,14 +608,103 @@ const CheckoutContent = () => {
     isMixedCurrency
   ]);
 
+
+
+  const hasMultipleDifferentProducts = useMemo(() => {
+    if (!items) return false;
+    const uniqueProductIds = new Set(items.map(i => i.id));
+    return uniqueProductIds.size > 1;
+  }, [items]);
+
+  const GST_RATE = 0.18;
+
+  const isIndianGSTApplicable =
+    displayBilling?.country === "IN" &&
+    !isGPCart;
+
+  const singleTotal = useMemo(() => {
+    if (!selectedCurrency || !items) return null;
+
+    return {
+      currency: selectedCurrency,
+      total: items.reduce((sum, item, i) => {
+        const itemCurrency = item.currency || "INR";
+        const qty = parsedCartItems[i].quantity;
+
+        const unitPrice = convertPrice(
+          item.basePrice,
+          itemCurrency,
+          selectedCurrency,
+          usdToInrRate
+        );
+
+        return sum + unitPrice * qty;
+      }, 0),
+    };
+  }, [selectedCurrency, items, parsedCartItems, usdToInrRate]);
+
+  // 1. Discount
+  const discountAmount = useMemo(() => {
+    if (!appliedCoupon || !singleTotal) return 0;
+
+    let discount = 0;
+    const total = singleTotal.total;
+
+    if (appliedCoupon.type === "PERCENTAGE") {
+      discount = (total * (appliedCoupon.discountPercentage || 0)) / 100;
+    }
+
+    if (appliedCoupon.type === "FIXED") {
+      discount =
+        singleTotal.currency === "USD"
+          ? appliedCoupon.discountAmountUSD || 0
+          : appliedCoupon.discountAmountINR || 0;
+    }
+
+    if (discount > total) discount = total;
+
+    return Number(discount.toFixed(2)); // round ONLY here
+  }, [appliedCoupon, singleTotal]);
+
+  // 2. Discounted total
+  const discountedTotal = useMemo(() => {
+    if (!singleTotal) return 0;
+    return Math.max(singleTotal.total - discountAmount, 0);
+  }, [singleTotal, discountAmount]);
+
+  const gstAmount = useMemo(() => {
+    if (!isIndianGSTApplicable) return 0;
+    return Number((discountedTotal * GST_RATE).toFixed(2));
+  }, [discountedTotal, isIndianGSTApplicable]);
+  // 4. Final payable
+  const finalPayable = useMemo(() => {
+    if (!singleTotal) return 0;
+
+    const total = discountedTotal + gstAmount;
+
+    if (total <= 0) {
+      if (singleTotal.currency === "INR") return 1;
+      if (singleTotal.currency === "USD") return 1;
+      return 0;
+    }
+
+    return Number(total.toFixed(2));;
+  }, [discountedTotal, gstAmount, singleTotal]);
+
+
+
   if (status === "loading") {
     return <PageLoader />
   }
   // ── ALL hooks above this line — early returns are safe below ──────────────
-  const isLoading = isItemsLoading || isBillingLoading || isGPLoading;
+  const isLoading =
+    isItemsLoading ||
+    isBillingLoading ||
+    isGPLoading ||
+    (selectedCurrency !== null && !autoCouponChecked);
   if (isLoading) return (
     <div className="flex min-h-screen justify-center items-center">
-      <PageLoader />;
+      <PageLoader />
     </div>
   )
 
@@ -554,42 +746,12 @@ const CheckoutContent = () => {
     totalsByCurrency[c] = (totalsByCurrency[c] || 0) + rawPrice;
   });
 
-  const singleTotal = (() => {
-    if (!selectedCurrency) return null;
-    if (selectedCurrency === "GP" || itemCurrencies.includes("GP")) {
-      return { currency: selectedCurrency, total: items.reduce((sum, item, i) => sum + item.basePrice * parsedCartItems[i].quantity, 0) };
-    }
-    return {
-      currency: selectedCurrency,
-      total: items.reduce((sum, item, i) => {
-        const c = item.currency || "INR";
-        return sum + convertPrice(
-          item.basePrice * parsedCartItems[i].quantity,
-          c,
-          selectedCurrency,
-          usdToInrRate
-        );
-      }, 0),
-    };
-  })();
-
-  const GST_RATE = 0.18;
-
-  const isIndianGSTApplicable =
-    displayBilling?.country === "IN" &&
-    !isGPCart;
-
-  const gstAmount = singleTotal && isIndianGSTApplicable
-    ? singleTotal.total * GST_RATE
-    : 0;
-
-  const finalTotal = singleTotal
-    ? singleTotal.total + gstAmount
-    : 0;
 
   const canProceed = hasBilling && !isEditingBilling && selectedCurrency !== null && !isGPInsufficient;
 
-  // ── JSX ───────────────────────────────────────────────────────────────────
+  console.log(autoCoupon, isAutoCouponLoading)
+
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="mb-3 mt-3 px-4">
@@ -827,7 +989,10 @@ const CheckoutContent = () => {
                               Subtotal ({parsedCartItems[index].quantity} {parsedCartItems[index].quantity > 1 ? "items" : "item"}):
                             </span>
                             <span className={`text-lg font-bold ${isGP ? "text-purple-700" : "text-gray-900"}`}>
-                              {isGP ? `${Math.ceil(displayData.price)} GP` : `${displayData.symbol}${Number(displayData.price).toFixed(2)}`}
+                              {isGP
+                                ? `${Math.ceil(displayData.price)} GP`
+                                : `${displayData.symbol}${Number(displayData.price).toFixed(2)}`
+                              }
                             </span>
                           </div>
                         </div>
@@ -841,6 +1006,45 @@ const CheckoutContent = () => {
 
           {/* ── Right Column ──────────────────────────────────── */}
           <div className="lg:col-span-1">
+            {!hasMultipleDifferentProducts && (
+              <div className="bg-white p-4 rounded-lg shadow mb-4">
+                <h3 className="font-semibold mb-2">Apply Coupon</h3>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualCouponCode}
+                    onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
+                    placeholder="Enter coupon code"
+                    className="border px-3 py-2 rounded-md w-full"
+                  />
+                  <button
+                    onClick={() => applyCouponMutation.mutate(manualCouponCode)}
+                    disabled={applyCouponMutation.isPending || !manualCouponCode}
+                    className={`px-4 py-2 rounded-md flex items-center justify-center gap-2 min-w-[110px] font-medium transition-all
+    ${applyCouponMutation.isPending
+                        ? "bg-gray-400 text-white cursor-not-allowed"
+                        : "bg-black text-white hover:bg-gray-800"
+                      }`}
+                  >
+                    {applyCouponMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Applying...
+                      </>
+                    ) : (
+                      "Apply"
+                    )}
+                  </button>
+                </div>
+
+                {appliedCoupon && (
+                  <p className="text-green-600 text-sm mt-2">
+                    Coupon <strong>{appliedCoupon.code}</strong> applied
+                  </p>
+                )}
+              </div>
+            )}
             <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4">
               <h2 className="text-gray-700 font-bold text-lg mb-5 border-b pb-3">PRICE DETAILS</h2>
 
@@ -918,6 +1122,17 @@ const CheckoutContent = () => {
                   <span className="text-gray-700 font-medium">Delivery Charges</span>
                   <span className="text-green-600 font-bold">FREE</span>
                 </div>
+                {appliedCoupon && selectedCurrency !== "GP" && (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span className="font-medium">
+                      Coupon ({appliedCoupon.code})
+                    </span>
+                    <span className="font-bold">
+                      -{getCurrencySymbol(selectedCurrency || "INR")}
+                      {discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 {isIndianGSTApplicable && selectedCurrency && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-700 font-medium">GST (18%)</span>
@@ -935,8 +1150,8 @@ const CheckoutContent = () => {
                     <span className="text-lg font-bold text-gray-900">Total Payable</span>
                     <span className={`text-2xl font-bold ${singleTotal.currency === "GP" ? "text-purple-600" : "text-green-600"}`}>
                       {singleTotal.currency === "GP"
-                        ? `${Math.ceil(finalTotal)} GP`
-                        : `${getCurrencySymbol(singleTotal.currency)}${Number(finalTotal).toFixed(2)}`}
+                        ? `${Math.ceil(finalPayable)} GP`
+                        : `${getCurrencySymbol(singleTotal.currency)}${(finalPayable).toFixed(2)}`}
                     </span>
                   </div>
                 ) : isMixedCurrency ? (

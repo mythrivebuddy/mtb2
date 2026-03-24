@@ -1,8 +1,8 @@
 // /api/coupons/coach/route.ts
-import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { CouponType, CouponScope, ChallengeJoiningType } from "@prisma/client"
-import { checkRole } from "@/lib/utils/auth"
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { CouponType, CouponScope, ChallengeJoiningType } from "@prisma/client";
+import { checkRole } from "@/lib/utils/auth";
 
 export async function GET() {
   try {
@@ -11,7 +11,7 @@ export async function GET() {
     if (session.user.userType !== "COACH") {
       return NextResponse.json(
         { message: "You are not allowed to make this action" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -25,7 +25,7 @@ export async function GET() {
       prisma.challenge.findMany({
         where: {
           creatorId: userId,
-          challengeJoiningType:ChallengeJoiningType.PAID
+          challengeJoiningType: ChallengeJoiningType.PAID,
         },
         select: {
           id: true,
@@ -42,24 +42,61 @@ export async function GET() {
         where: {
           creatorUserId: userId,
         },
+
         select: {
           id: true,
           couponCode: true,
+          description: true,
           type: true,
           status: true,
           scope: true,
           autoApply: true,
+          discountPercentage: true,
+          discountAmountINR: true,
+          discountAmountUSD: true,
+          freeDays: true,
+          startDate: true,
+          endDate: true,
+          maxGlobalUses: true,
+          maxUsesPerUser: true,
+          firstCycleOnly: true,
+          multiCycle: true,
+          applicableUserTypes: true,
+          applicableCurrencies: true,
+          applicableChallenges: {
+            select: {
+              id: true,
+              title: true,
+              challengeJoiningFee: true,
+              challengeJoiningFeeCurrency: true,
+            },
+          },
+          applicableMmpPrograms: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              currency: true,
+            },
+          },
+          applicableStoreProducts: {
+            select: {
+              id: true,
+              name: true,
+              basePrice: true,
+              currency: true,
+            },
+          },
+          _count: {
+            select: { redemptions: true },
+          },
         },
         orderBy: {
           createdAt: "desc",
         },
       }),
     ]);
-    console.log({
-      userId,
-      challenges
-    });
-    
+
     return NextResponse.json({
       challenges,
       coupons,
@@ -69,24 +106,27 @@ export async function GET() {
 
     return NextResponse.json(
       { error: "Failed to fetch data" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const session = await checkRole("USER")
+    const session = await checkRole("USER");
     if (session.user.userType != "COACH") {
-      return NextResponse.json({ message: "You are not allowed to make this action" }, { status: 403 })
+      return NextResponse.json(
+        { message: "You are not allowed to make this action" },
+        { status: 403 },
+      );
     }
 
     const userId = session.user.id;
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json()
+    const body = await req.json();
 
     const {
       couponCode,
@@ -98,40 +138,58 @@ export async function POST(req: Request) {
       freeDays,
       applicableChallengeIds,
       applicableMmpProgramIds, // Ensure the frontend sends this exact key
+      applicableStoreProductIds,
+      applicableUserTypes,
+      applicableCurrencies,
       startDate,
       endDate,
       maxGlobalUses,
       maxUsesPerUser,
       description,
-      autoApply
-    } = body
+      autoApply,
+    } = body;
 
     if (!couponCode || !type || !scope || !startDate || !endDate) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
     // Check coupon uniqueness
     const existingCoupon = await prisma.coupon.findUnique({
       where: { couponCode: couponCode.toUpperCase() },
-    })
+    });
 
     if (existingCoupon) {
       return NextResponse.json(
         { error: "Coupon code already exists" },
-        { status: 409 }
-      )
+        { status: 409 },
+      );
+    }
+    // Normalize scope for DB enum
+    let normalizedScope: CouponScope;
+
+    if (scope === "STORE_PRODUCT") {
+      normalizedScope = "STORE_PRODUCT";
+    } else if (scope === "CHALLENGE") {
+      normalizedScope = "CHALLENGE";
+    } else if (scope === "MMP_PROGRAM") {
+      normalizedScope = "MMP_PROGRAM";
+    } else {
+      return NextResponse.json(
+        { error: "Invalid scope provided" },
+        { status: 400 },
+      );
     }
 
-    // Verify ownership and valid selection based on scope
-    if (scope === "CHALLENGE") {
+    // Validate based on scope
+    if (normalizedScope === "CHALLENGE") {
       if (!applicableChallengeIds?.length) {
         return NextResponse.json(
           { error: "At least one challenge must be selected" },
-          { status: 400 }
-        )
+          { status: 400 },
+        );
       }
 
       const ownedChallenges = await prisma.challenge.findMany({
@@ -140,43 +198,64 @@ export async function POST(req: Request) {
           creatorId: userId,
         },
         select: { id: true },
-      })
+      });
 
       if (ownedChallenges.length !== applicableChallengeIds.length) {
         return NextResponse.json(
           { error: "Invalid challenge selection or unauthorized" },
-          { status: 403 }
-        )
+          { status: 403 },
+        );
       }
-    } else if (scope === "MMP_PROGRAM") {
+    }
+
+    if (normalizedScope === "MMP_PROGRAM") {
       if (!applicableMmpProgramIds?.length) {
         return NextResponse.json(
           { error: "At least one MMP Program must be selected" },
-          { status: 400 }
-        )
+          { status: 400 },
+        );
       }
 
-      // Verify coach owns the MMP programs
-      // If your Program model doesn't have a creatorId, you'll need to adjust or remove this check.
       const ownedPrograms = await prisma.program.findMany({
         where: {
           id: { in: applicableMmpProgramIds },
           createdBy: userId,
         },
         select: { id: true },
-      })
+      });
 
       if (ownedPrograms.length !== applicableMmpProgramIds.length) {
         return NextResponse.json(
           { error: "Invalid MMP program selection or unauthorized" },
-          { status: 403 }
-        )
+          { status: 403 },
+        );
       }
-    } else {
-      return NextResponse.json(
-        { error: "Invalid scope provided" },
-        { status: 400 }
-      )
+    }
+
+    if (normalizedScope === "STORE_PRODUCT") {
+      const { applicableStoreProductIds } = body;
+
+      if (!applicableStoreProductIds?.length) {
+        return NextResponse.json(
+          { error: "At least one product must be selected" },
+          { status: 400 },
+        );
+      }
+
+      const ownedProducts = await prisma.item.findMany({
+        where: {
+          id: { in: applicableStoreProductIds },
+          createdByUserId: userId,
+        },
+        select: { id: true },
+      });
+
+      if (ownedProducts.length !== applicableStoreProductIds.length) {
+        return NextResponse.json(
+          { error: "Invalid product selection or unauthorized" },
+          { status: 403 },
+        );
+      }
     }
 
     const newCoupon = await prisma.coupon.create({
@@ -190,15 +269,8 @@ export async function POST(req: Request) {
         discountPercentage: discountPercentage
           ? Number(discountPercentage)
           : null,
-
-        discountAmountUSD: discountAmountUSD
-          ? Number(discountAmountUSD)
-          : null,
-
-        discountAmountINR: discountAmountINR
-          ? Number(discountAmountINR)
-          : null,
-
+        discountAmountUSD: discountAmountUSD ? Number(discountAmountUSD) : null,
+        discountAmountINR: discountAmountINR ? Number(discountAmountINR) : null,
         freeDays: freeDays ? Number(freeDays) : null,
 
         startDate: new Date(startDate),
@@ -209,30 +281,42 @@ export async function POST(req: Request) {
 
         firstCycleOnly: true,
         multiCycle: false,
-
         autoApply: !!autoApply,
 
         creatorUserId: userId,
         challengeCreatorType: "COACH",
 
-        // Dynamically connect challenges or programs based on scope
-        applicableChallenges: scope === "CHALLENGE" && applicableChallengeIds?.length > 0 ? {
-          connect: applicableChallengeIds.map((id: string) => ({ id })),
-        } : undefined,
+        // ADD THESE TWO LINES
+        applicableUserTypes: applicableUserTypes ?? [],
+        applicableCurrencies: applicableCurrencies ?? [],
 
-        applicableMmpPrograms: scope === "MMP_PROGRAM" && applicableMmpProgramIds?.length > 0 ? {
-          connect: applicableMmpProgramIds.map((id: string) => ({ id })),
-        } : undefined,
+        applicableChallenges:
+          scope === "CHALLENGE" && applicableChallengeIds?.length > 0
+            ? { connect: applicableChallengeIds.map((id: string) => ({ id })) }
+            : undefined,
+
+        applicableMmpPrograms:
+          scope === "MMP_PROGRAM" && applicableMmpProgramIds?.length > 0
+            ? { connect: applicableMmpProgramIds.map((id: string) => ({ id })) }
+            : undefined,
+
+        applicableStoreProducts:
+          scope === "STORE_PRODUCT" && applicableStoreProductIds?.length > 0
+            ? {
+                connect: applicableStoreProductIds.map((id: string) => ({
+                  id,
+                })),
+              }
+            : undefined,
       },
-    })
+    });
 
-    return NextResponse.json(newCoupon)
-
+    return NextResponse.json(newCoupon);
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return NextResponse.json(
       { error: "Failed to create coupon" },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
 }

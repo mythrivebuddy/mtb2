@@ -24,7 +24,6 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log(user.jpBalance)
     return NextResponse.json(
       {
         balance: user.jpBalance || 0,
