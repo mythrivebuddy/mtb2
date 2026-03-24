@@ -7,18 +7,27 @@ type CouponUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" | "ALL";
 
 export async function POST(req: Request) {
   try {
-    const session = await checkRole("USER")
+    const session = await checkRole("USER");
     if (!session || !session.user.userType) {
-      return NextResponse.json({ valid: false, message: "Not eligible " }, { status: 400 })
+      return NextResponse.json(
+        { valid: false, message: "Not eligible " },
+        { status: 400 },
+      );
     }
+    const userId = session.user.id
+    const {
+      code,
+      planId,
+      currency,
+      challengeId,
+      mmp_programId,
+      storeItemId,
+    } = await req.json();
 
-
-    const { code, planId, currency, challengeId, userId, mmp_programId } = await req.json();
-
-    if (!code || (!planId && !challengeId && !mmp_programId)) {
+    if (!code || (!planId && !challengeId && !mmp_programId && !storeItemId)) {
       return NextResponse.json(
         { valid: false, message: "Missing code or details." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -31,15 +40,18 @@ export async function POST(req: Request) {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
         applicableMmpPrograms: { select: { id: true } },
+        applicableStoreProducts: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
     const userType = session.user.userType as CouponUserType;
     // 2. Basic checks
     if (!coupon) {
-      return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
+      return NextResponse.json(
+        { valid: false, message: "Invalid coupon code." },
+        { status: 404 },
+      );
     }
-
 
     if (coupon.scope === "CHALLENGE" && !challengeId) {
       return NextResponse.json({
@@ -60,6 +72,12 @@ export async function POST(req: Request) {
         message: "This coupon is only valid for MMP programs",
       });
     }
+    if (coupon.scope === "STORE_PRODUCT" && !storeItemId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for store products",
+      });
+    }
     // 6. User Type applicability
     if (coupon.applicableUserTypes?.length > 0) {
       const isUserTypeValid = coupon.applicableUserTypes.includes(userType);
@@ -71,7 +89,7 @@ export async function POST(req: Request) {
             valid: false,
             message: "This coupon is not valid for your account type.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -83,32 +101,37 @@ export async function POST(req: Request) {
     });
 
     if (coupon.maxUsesPerUser && userUses >= coupon.maxUsesPerUser) {
-      return NextResponse.json({
-        valid: false,
-        message: "You have already used this coupon."
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          valid: false,
+          message: "You have already used this coupon.",
+        },
+        { status: 400 },
+      );
     }
-
 
     if (coupon.status !== "ACTIVE") {
       return NextResponse.json(
         { valid: false, message: "This coupon is inactive or expired." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (now < coupon.startDate || now > coupon.endDate) {
       return NextResponse.json(
         { valid: false, message: "Coupon is not valid at this time." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // 3. Usage limits
-    if (coupon.maxGlobalUses && (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses) {
+    if (
+      coupon.maxGlobalUses &&
+      (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses
+    ) {
       return NextResponse.json(
         { valid: false, message: "Coupon usage limit reached." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -119,7 +142,7 @@ export async function POST(req: Request) {
       if (!isPlanValid) {
         return NextResponse.json(
           { valid: false, message: "Coupon not applicable for this plan." },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -127,26 +150,43 @@ export async function POST(req: Request) {
     // Challenge applicability
     if (challengeId && coupon.applicableChallenges.length > 0) {
       const isChallengeValid = coupon.applicableChallenges.some(
-        (c) => c.id === challengeId
+        (c) => c.id === challengeId,
       );
 
       if (!isChallengeValid) {
         return NextResponse.json(
-          { valid: false, message: "Coupon not applicable for this challenge." },
-          { status: 400 }
+          {
+            valid: false,
+            message: "Coupon not applicable for this challenge.",
+          },
+          { status: 400 },
         );
       }
     }
     // MMP Program applicability
     if (mmp_programId && coupon.applicableMmpPrograms.length > 0) {
       const isProgramValid = coupon.applicableMmpPrograms.some(
-        (p) => p.id === mmp_programId
+        (p) => p.id === mmp_programId,
       );
 
       if (!isProgramValid) {
         return NextResponse.json(
           { valid: false, message: "Coupon not applicable for this program." },
-          { status: 400 }
+          { status: 400 },
+        );
+      }
+    }
+
+    // Store Product applicability
+    if (storeItemId && coupon.applicableStoreProducts?.length > 0) {
+      const isStoreValid = coupon.applicableStoreProducts.some(
+        (p) => p.id === storeItemId,
+      );
+
+      if (!isStoreValid) {
+        return NextResponse.json(
+          { valid: false, message: "Coupon not applicable for this product." },
+          { status: 400 },
         );
       }
     }
@@ -160,7 +200,7 @@ export async function POST(req: Request) {
             valid: false,
             message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -186,7 +226,7 @@ export async function POST(req: Request) {
     console.error("Coupon Verification Error:", error);
     return NextResponse.json(
       { valid: false, message: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

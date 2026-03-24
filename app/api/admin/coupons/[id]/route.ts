@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { CouponStatus, CouponUserType, Prisma, SubscriptionPlanCurrency } from "@prisma/client";
+import {
+  CouponStatus,
+  CouponUserType,
+  Prisma,
+  SubscriptionPlanCurrency,
+} from "@prisma/client";
 import { CouponType } from "@prisma/client";
 
 type UpdateCouponDTO = {
@@ -16,21 +21,22 @@ type UpdateCouponDTO = {
   startDate?: string;
   endDate?: string;
 
-  applicableMmpProgramIds?: string[];
   applicablePlanIds?: string[];
   applicableChallengeIds?: string[];
+  applicableMmpProgramIds?: string[];
+  applicableStoreProductIds?: string[];
 
   applicableUserTypes?: CouponUserType[];
   applicableCurrencies?: SubscriptionPlanCurrency[];
 
   autoApply?: boolean;
   autoApplyConditions?: Prisma.JsonValue;
-  status?: CouponStatus
+  status?: CouponStatus;
 };
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { id } = await params;
@@ -59,36 +65,38 @@ export async function PUT(
       applicableMmpProgramIds,
       applicablePlanIds,
       applicableChallengeIds,
+      applicableStoreProductIds,
       applicableCurrencies,
       applicableUserTypes,
       autoApply,
       autoApplyConditions,
-      status
+      status,
     } = body;
 
     const data: Prisma.CouponUpdateInput = {
       ...(couponCode && { couponCode }),
       ...(description !== undefined && { description }),
-      ...(type && Object.values(CouponType).includes(type as CouponType) && {
-        type: type as CouponType
-      }),
+      ...(type &&
+        Object.values(CouponType).includes(type as CouponType) && {
+          type: type as CouponType,
+        }),
 
       ...(discountPercentage !== undefined && {
-        discountPercentage: parseFloat(discountPercentage)
+        discountPercentage: parseFloat(discountPercentage),
       }),
 
       ...(discountAmountINR && {
-        discountAmountINR: parseFloat(discountAmountINR)
+        discountAmountINR: parseFloat(discountAmountINR),
       }),
 
       ...(discountAmountUSD && {
-        discountAmountUSD: parseFloat(discountAmountUSD)
+        discountAmountUSD: parseFloat(discountAmountUSD),
       }),
 
       ...(freeDays && { freeDays: parseInt(freeDays) }),
 
       ...(maxGlobalUses && {
-        maxGlobalUses: parseInt(maxGlobalUses)
+        maxGlobalUses: parseInt(maxGlobalUses),
       }),
 
       ...(maxUsesPerUser && { maxUsesPerUser }),
@@ -99,7 +107,7 @@ export async function PUT(
       ...(autoApply !== undefined && {
         autoApply,
         autoApplyConditions: autoApply
-          ? autoApplyConditions ?? {}
+          ? (autoApplyConditions ?? {})
           : Prisma.DbNull,
       }),
       ...(status && { status }),
@@ -109,39 +117,45 @@ export async function PUT(
 
     if (applicableMmpProgramIds) {
       data.applicableMmpPrograms = {
-        set: applicableMmpProgramIds.map(id => ({ id }))
+        set: applicableMmpProgramIds.map((id) => ({ id })),
       };
     }
 
     if (applicablePlanIds) {
       data.applicablePlans = {
-        set: applicablePlanIds.map(id => ({ id }))
+        set: applicablePlanIds.map((id) => ({ id })),
       };
     }
 
     if (applicableChallengeIds) {
       data.applicableChallenges = {
-        set: applicableChallengeIds.map(id => ({ id }))
+        set: applicableChallengeIds.map((id) => ({ id })),
       };
     }
-
-
+    if (applicableStoreProductIds) {
+      data.applicableStoreProducts = {
+        set: applicableStoreProductIds.map((id) => ({ id })),
+      };
+    }
     const updatedCoupon = await prisma.coupon.update({
       where: { id },
-      data
+      data,
     });
 
     return NextResponse.json(updatedCoupon);
   } catch (error) {
     console.log(error);
 
-    return NextResponse.json({ error: "Failed to update coupon" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update coupon" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { id } = await params;
@@ -155,18 +169,23 @@ export async function DELETE(
       // Soft Delete / Deactivate
       await prisma.coupon.update({
         where: { id },
-        data: { status: CouponStatus.INACTIVE }
+        data: { status: CouponStatus.INACTIVE },
       });
-      return NextResponse.json({ message: "Coupon used previously. Marked as INACTIVE." });
+      return NextResponse.json({
+        message: "Coupon used previously. Marked as INACTIVE.",
+      });
     } else {
       // Hard Delete
       await prisma.coupon.delete({
-        where: { id }
+        where: { id },
       });
       return NextResponse.json({ message: "Coupon deleted permanently." });
     }
   } catch (error) {
     console.log(error);
-    return NextResponse.json({ error: "Failed to delete coupon" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete coupon" },
+      { status: 500 },
+    );
   }
 }

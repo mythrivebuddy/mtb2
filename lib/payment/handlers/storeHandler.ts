@@ -4,9 +4,8 @@ import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 export async function handleStorePayment(
   tx: Prisma.TransactionClient,
-  order: PaymentOrder
+  order: PaymentOrder,
 ) {
-
   if (order.storeOrderId) return;
 
   const storeOrder = await tx.order.create({
@@ -14,16 +13,15 @@ export async function handleStorePayment(
       userId: order.userId,
       totalAmount: order.totalAmount,
       currency: order.currency,
-      status: "COMPLETED"
-    }
+      status: "COMPLETED",
+    },
   });
 
   const cart = order.cartSnapshot as { itemId: string; quantity: number }[];
 
   for (const cartItem of cart) {
-
     const item = await tx.item.findUnique({
-      where: { id: cartItem.itemId }
+      where: { id: cartItem.itemId },
     });
 
     if (!item) continue;
@@ -34,7 +32,7 @@ export async function handleStorePayment(
       price = await convertCurrency(
         price,
         item.currency as "INR" | "USD",
-        order.currency as "INR" | "USD"
+        order.currency as "INR" | "USD",
       );
     }
 
@@ -44,30 +42,42 @@ export async function handleStorePayment(
         itemId: item.id,
         quantity: cartItem.quantity,
 
-        priceAtPurchase: price,
+        priceAtPurchase: order.totalAmount,
         originalPrice: item.basePrice,
-        originalCurrency: item.currency
-      }
+        originalCurrency: item.currency,
+      },
     });
   }
 
   await tx.paymentOrder.update({
     where: { id: order.id },
     data: {
-      storeOrderId: storeOrder.id
-    }
+      storeOrderId: storeOrder.id,
+    },
   });
+  if (order.couponId) {
+    await tx.couponRedemption.create({
+      data: {
+        couponId: order.couponId,
+        userId: order.userId,
+        redeemed: true,
+        usedAt: new Date(),
+        appliedPlan: "STORE_PRODUCT",
+        discountApplied: order.discountApplied ?? 0,
+      },
+    });
+  }
   const user = await tx.user.findUnique({
     where: { id: order.userId },
-    select: { email: true, name: true }
+    select: { email: true, name: true },
   });
   const orderItems = await tx.orderItem.findMany({
     where: { orderId: storeOrder.id },
     include: {
       item: {
-        select: { name: true }
-      }
-    }
+        select: { name: true },
+      },
+    },
   });
   const orderDate = new Date(storeOrder.createdAt).toLocaleDateString("en-IN", {
     day: "numeric",
@@ -76,7 +86,10 @@ export async function handleStorePayment(
   });
 
   const itemNames = orderItems
-    .map(i => `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`)
+    .map(
+      (i) =>
+        `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
+    )
     .join(", ");
 
   const appUrl = process.env.NEXT_URL || "";
@@ -96,7 +109,7 @@ export async function handleStorePayment(
         itemNames,
         orderUrl: `${appUrl}/dashboard/store/profile`,
         currency: order.currency,
-        paymentDetails: `Paid with Razorpay (${order.currency})`
+        paymentDetails: `Paid with Razorpay (${order.currency})`,
       },
     });
   }

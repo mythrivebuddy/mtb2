@@ -379,6 +379,7 @@ model Item {
   cart       Cart[]
   orderItems OrderItem[]
   wishlists  Wishlist[]
+  coupons Coupon[] @relation("CouponStoreProducts")
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -1423,6 +1424,7 @@ model Coupon {
   applicablePlans      SubscriptionPlan[]           @relation("PlanCoupons")
   applicableMmpPrograms Program[] @relation("ProgramCoupons")
   applicableCurrencies  SubscriptionPlanCurrency[] // INR | USD 
+  applicableStoreProducts Item[] @relation("CouponStoreProducts")
   firstCycleOnly        Boolean @default(false)
   multiCycle            Boolean @default(false)
 
