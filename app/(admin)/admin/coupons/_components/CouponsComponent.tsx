@@ -3,20 +3,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import {
   Plus,
-  Tag,
-  Users,
-  Percent,
-  DollarSign,
-  Clock,
-  CheckCircle2,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Ban,
-  IndianRupee,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,44 +17,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
+
+import CouponDialog from "@/components/common/coupons/CouponDialog";
+import CouponTabs from "@/components/common/coupons/CouponTabs";
+import CouponTable from "@/components/common/coupons/CouponTable";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  Coupon,
+  CouponFormPayload,
+  Challenge,
+  CouponScope
+} from "@/types/client/coupons.types";
 
 // --- Types ---
 type Plan = {
@@ -74,83 +34,6 @@ type Plan = {
   name: string;
   interval: string;
   userType: string;
-};
-type Challenge = {
-  id: string
-  title: string
-  challengeJoiningFee: number
-  challengeJoiningFeeCurrency: "INR" | "USD"
-}
-type MmpProgram = {
-  id: string
-  name: string
-  price: number
-  currency: "INR" | "USD"
-}
-type CouponFormPayload = {
-  couponCode: string;
-  description: string;
-  type: Coupon["type"];
-  discountPercentage: string | number;
-  discountAmountUSD: string | number | null;
-  discountAmountINR: string | number | null;
-  freeDays: string | number;
-  applicableUserTypes: string[];
-  applicablePlanIds: string[];
-  scope: "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT";
-  applicableChallengeIds: string[];
-  applicableMmpProgramIds: string[];
-
-  applicableStoreProductIds: string[];
-
-  applicableCurrencies: string[];
-  firstCycleOnly: boolean;
-  multiCycle: boolean;
-  startDate: string;
-  endDate: string;
-  maxGlobalUses: string | number;
-  maxUsesPerUser: number;
-  autoApply: boolean;
-  autoApplyConditions?: Record<string, unknown>;
-};
-
-type Coupon = {
-  id: string;
-  couponCode: string;
-  type:
-  | "PERCENTAGE"
-  | "FIXED"
-  | "FREE_DURATION"
-  | "FULL_DISCOUNT"
-  | "AUTO_APPLY";
-  status: "ACTIVE" | "INACTIVE" | "EXPIRED";
-  discountPercentage?: number;
-  discountAmountUSD?: number;
-  discountAmountINR?: number;
-  freeDays?: number;
-  startDate: string;
-  endDate: string;
-  maxGlobalUses?: number;
-  maxUsesPerUser?: number;
-  firstCycleOnly?: boolean;
-  multiCycle?: boolean;
-  applicableUserTypes: string[];
-  applicableCurrencies: string[];
-  _count?: { redemptions: number };
-  autoApply: boolean;
-  applicablePlans: Plan[];
-  applicableChallenges: Challenge[];
-  applicableMmpPrograms?: MmpProgram[];
-  applicableStoreProducts?: StoreProduct[];
-
-  description?: string;
-  scope: "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT";
-};
-type StoreProduct = {
-  id: string;
-  name: string;
-  basePrice: number;
-  currency: string;
 };
 
 const fetchStoreProducts = async () => {
@@ -203,7 +86,7 @@ export default function CouponsManagementPage() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"ALL" | "SUBSCRIPTION" | "CHALLENGE" | "STORE_PRODUCT" | "MMP_PROGRAM">("ALL")
+  const [activeTab, setActiveTab] = useState<"ALL" | CouponScope>("ALL")
 
   // --- Form State ---
   const initialFormState: CouponFormPayload = {
@@ -213,6 +96,7 @@ export default function CouponsManagementPage() {
     discountPercentage: "",
     discountAmountUSD: "",
     discountAmountINR: "",
+    discountAmountGP: "",
     freeDays: "",
     applicableUserTypes: ["ENTHUSIAST"],
     applicablePlanIds: [],
@@ -228,11 +112,10 @@ export default function CouponsManagementPage() {
     maxGlobalUses: "",
     maxUsesPerUser: 1,
     autoApply: false,
-    autoApplyConditions: {}, // FIXED: must be an object, not a string
   };
 
   const [formData, setFormData] = useState<CouponFormPayload>(initialFormState);
-  const [isEditDataLoaded, setIsEditDataLoaded] = useState(false);
+
 
   // --- React Query Hooks ---
   const { data: coupons = [], isLoading: isLoadingCoupons } = useQuery({
@@ -311,7 +194,6 @@ export default function CouponsManagementPage() {
   const resetForm = () => {
     setFormData(initialFormState);
     setEditingId(null);
-    setIsEditDataLoaded(false);
   };
 
   const handleOpenCreate = () => {
@@ -349,7 +231,8 @@ export default function CouponsManagementPage() {
     if (formData.type === "FIXED") {
       if (
         !formData.discountAmountUSD &&
-        !formData.discountAmountINR
+        !formData.discountAmountINR &&
+        !formData.discountAmountGP
       ) {
         return "Enter at least one fixed amount (USD or INR)";
       }
@@ -373,7 +256,7 @@ export default function CouponsManagementPage() {
 
     // 5. Scope-based validation
     if (formData.scope === "SUBSCRIPTION") {
-      if (formData.applicablePlanIds.length === 0) {
+      if (formData.applicablePlanIds?.length === 0) {
         return "Select at least one plan or choose ALL";
       }
     }
@@ -425,6 +308,10 @@ export default function CouponsManagementPage() {
         formData.discountAmountINR && formData.type === "FIXED"
           ? Number(formData.discountAmountINR)
           : null,
+      discountAmountGP:
+        formData.discountAmountGP && formData.type === "FIXED"
+          ? Number(formData.discountAmountGP)
+          : null,
     };
 
 
@@ -436,12 +323,12 @@ export default function CouponsManagementPage() {
     }
   };
 
-  const handleInputChange = <K extends keyof CouponFormPayload>(
-    field: K,
-    value: CouponFormPayload[K]
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // const handleInputChange = <K extends keyof CouponFormPayload>(
+  //   field: K,
+  //   value: CouponFormPayload[K]
+  // ) => {
+  //   setFormData((prev) => ({ ...prev, [field]: value }));
+  // };
 
   // const toggleSelection = (
   //   field: "applicablePlanIds" | "applicableCurrencies" | "applicableUserTypes",
@@ -454,77 +341,77 @@ export default function CouponsManagementPage() {
   //       : { ...prev, [field]: [...current, value] };
   //   });
   // };
-  const toggleSelection = (
-    field:
-      | "applicablePlanIds"
-      | "applicableCurrencies"
-      | "applicableUserTypes"
-      | "applicableChallengeIds"
-      | "applicableMmpProgramIds"
-      | "applicableStoreProductIds",
-    value: string
-  ) => {
-    setFormData((prev) => {
-      const current = prev[field] as string[];
-      const updated = current.includes(value)
-        ? current.filter((i) => i !== value)
-        : [...current, value];
-      return { ...prev, [field]: updated };
-    });
-  };
-  const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
+  // const toggleSelection = (
+  //   field:
+  //     | "applicablePlanIds"
+  //     | "applicableCurrencies"
+  //     | "applicableUserTypes"
+  //     | "applicableChallengeIds"
+  //     | "applicableMmpProgramIds"
+  //     | "applicableStoreProductIds",
+  //   value: string
+  // ) => {
+  //   setFormData((prev) => {
+  //     const current = prev[field] as string[];
+  //     const updated = current.includes(value)
+  //       ? current.filter((i) => i !== value)
+  //       : [...current, value];
+  //     return { ...prev, [field]: updated };
+  //   });
+  // };
+  // const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
 
-  const handleUserTypeChange = (value: string) => {
-    setFormData((prev) => {
-      let updated = [...prev.applicableUserTypes];
+  // const handleUserTypeChange = (value: string) => {
+  //   setFormData((prev) => {
+  //     let updated = [...prev.applicableUserTypes];
 
-      // ✅ If ALL clicked
-      if (value === "ALL") {
-        if (updated.includes("ALL")) {
-          // uncheck ALL → clear all
-          return { ...prev, applicableUserTypes: [] };
-        } else {
-          // check ALL → select everything
-          return {
-            ...prev,
-            applicableUserTypes: [...USER_TYPES, "ALL"],
-          };
-        }
-      }
+  //     // ✅ If ALL clicked
+  //     if (value === "ALL") {
+  //       if (updated.includes("ALL")) {
+  //         // uncheck ALL → clear all
+  //         return { ...prev, applicableUserTypes: [] };
+  //       } else {
+  //         // check ALL → select everything
+  //         return {
+  //           ...prev,
+  //           applicableUserTypes: [...USER_TYPES, "ALL"],
+  //         };
+  //       }
+  //     }
 
-      // ✅ Toggle individual
-      if (updated.includes(value)) {
-        updated = updated.filter((v) => v !== value);
-      } else {
-        updated.push(value);
-      }
+  //     // ✅ Toggle individual
+  //     if (updated.includes(value)) {
+  //       updated = updated.filter((v) => v !== value);
+  //     } else {
+  //       updated.push(value);
+  //     }
 
-      // ❌ Remove ALL if any individual is removed
-      updated = updated.filter((v) => v !== "ALL");
+  //     // ❌ Remove ALL if any individual is removed
+  //     updated = updated.filter((v) => v !== "ALL");
 
-      // ✅ If all individuals selected → add ALL
-      const allSelected = USER_TYPES.every((type) =>
-        updated.includes(type)
-      );
+  //     // ✅ If all individuals selected → add ALL
+  //     const allSelected = USER_TYPES.every((type) =>
+  //       updated.includes(type)
+  //     );
 
-      if (allSelected) {
-        updated.push("ALL");
-      }
+  //     if (allSelected) {
+  //       updated.push("ALL");
+  //     }
 
-      return { ...prev, applicableUserTypes: updated };
-    });
-  };
+  //     return { ...prev, applicableUserTypes: updated };
+  //   });
+  // };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  
+
 
   useEffect(() => {
     if (!editingId) return;
 
     const coupon = coupons.find((c) => c.id === editingId);
     if (!coupon) return;
-     console.log("Coupon challenge IDs:", coupon.applicableChallenges?.map(c => c.id));
-  console.log("Available challenges:", challenges.map(c => c.id));
+    console.log("Coupon challenge IDs:", coupon.applicableChallenges?.map(c => c.id));
+    console.log("Available challenges:", challenges.map(c => c.id));
 
     setFormData({
       couponCode: coupon.couponCode,
@@ -533,9 +420,10 @@ export default function CouponsManagementPage() {
       discountPercentage: coupon.discountPercentage?.toString() || "",
       discountAmountUSD: coupon.discountAmountUSD?.toString() || "",
       discountAmountINR: coupon.discountAmountINR?.toString() || "",
+      discountAmountGP: coupon.discountAmountGP?.toString() || "",
       freeDays: coupon.freeDays?.toString() || "",
       applicableUserTypes: coupon.applicableUserTypes,
-      applicablePlanIds: coupon.applicablePlans.map((p) => p.id),
+      applicablePlanIds: coupon.applicablePlans?.map((p) => p.id) || [],
       applicableChallengeIds: coupon.applicableChallenges?.map((c) => String(c.id)) || [],
       applicableMmpProgramIds: coupon.applicableMmpPrograms?.map((m) => m.id) || [],
       applicableStoreProductIds: coupon.applicableStoreProducts?.map((p) => p.id) || [],
@@ -547,13 +435,11 @@ export default function CouponsManagementPage() {
       maxGlobalUses: coupon.maxGlobalUses?.toString() || "",
       maxUsesPerUser: coupon.maxUsesPerUser || 1,
       autoApply: coupon.autoApply,
-      autoApplyConditions: {},
       scope: coupon.scope,
     });
 
-    setIsEditDataLoaded(true);
 
-  }, [editingId, coupons,challenges]);
+  }, [editingId, coupons, challenges]);
   return (
     <div className="p-8 space-y-8 bg-muted/30 min-h-screen">
       {/* Header */}
@@ -566,732 +452,47 @@ export default function CouponsManagementPage() {
             Manage trials, promotional codes, and auto-apply logic.
           </p>
         </div>
-
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={(open) => {
-            if (!open) resetForm();
-            setIsDialogOpen(open);
-          }}
+        <Button
+          className="gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+          onClick={handleOpenCreate}
         >
-          <DialogTrigger asChild>
-            <Button className="gap-2" onClick={handleOpenCreate}>
-              <Plus className="h-4 w-4" /> Create Coupon
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingId ? "Edit Coupon" : "Create New Coupon"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingId
-                  ? "Modify existing discount rules."
-                  : "Configure discount rules, validity, and applicability."}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-              {/* Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Coupon Code</Label>
-                  <Input
-                    placeholder="SUMMER2025"
-                    className="uppercase font-mono"
-                    value={formData.couponCode}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "couponCode",
-                        e.target.value.toUpperCase()
-                      )
-                    }
-                    required
-                    disabled={!!editingId} // Usually can't change code after creation
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Type</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(val: Coupon["type"]) =>
-                      handleInputChange("type", val)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PERCENTAGE">
-                        Percentage Discount
-                      </SelectItem>
-                      <SelectItem value="FIXED">Fixed Amount</SelectItem>
-                      <SelectItem value="FREE_DURATION">
-                        Free Trial Duration
-                      </SelectItem>
-                      <SelectItem value="FULL_DISCOUNT">100% Off</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Internal Description</Label>
-                <Input
-                  placeholder="e.g. Special offer for Influencers"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                />
-              </div>
-
-              {/* Value Configuration */}
-              <Card className="bg-muted/50 border-dashed">
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-2 gap-6">
-                    {formData.type === "PERCENTAGE" && (
-                      <div className="space-y-2">
-                        <Label>Discount Percentage (%)</Label>
-                        <div className="relative">
-                          <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            className="pl-9"
-                            value={formData.discountPercentage}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "discountPercentage",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {formData.type === "FIXED" && (
-                      <div className="space-y-3">
-                        <Label>Amount ($USD)</Label>
-                        <div className="relative">
-                          <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            className="pl-9"
-                            value={formData.discountAmountUSD ?? ""}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "discountAmountUSD",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                        <Label className="flex">
-                          Amount (<IndianRupee size={14} />
-                          INR)
-                        </Label>
-                        <div className="relative">
-                          <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            type="number"
-                            className="pl-9"
-                            value={formData.discountAmountINR ?? ""}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "discountAmountINR",
-                                e.target.value
-                              )
-                            }
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {(formData.type === "FREE_DURATION" ||
-                      formData.type === "AUTO_APPLY") && (
-                        <div className="space-y-2">
-                          <Label>Free Days</Label>
-                          <div className="relative">
-                            <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="number"
-                              className="pl-9"
-                              value={formData.freeDays}
-                              onChange={(e) =>
-                                handleInputChange("freeDays", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
-                      )}
-                  </div>
-
-                  {formData.scope === "SUBSCRIPTION" && (
-                    <div className="flex gap-6 mt-6">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="firstCycle"
-                          checked={formData.firstCycleOnly}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                firstCycleOnly: true,
-                                multiCycle: false, // 🔥 force disable other
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                firstCycleOnly: false,
-                              }));
-                            }
-                          }}
-                        />
-                        <Label htmlFor="firstCycle">First Cycle Only</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="multiCycle"
-                          checked={formData.multiCycle}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setFormData((prev) => ({
-                                ...prev,
-                                multiCycle: true,
-                                firstCycleOnly: false, // 🔥 force disable other
-                              }));
-                            } else {
-                              setFormData((prev) => ({
-                                ...prev,
-                                multiCycle: false,
-                              }));
-                            }
-                          }}
-                        />
-                        <Label htmlFor="multiCycle">Multi-Cycle Renewal</Label>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Applicability */}
-              <div className="space-y-2">
-                <Label>Coupon Scope</Label>
-                <Select
-                  value={formData.scope}
-                  onValueChange={(val) => {
-                    handleInputChange("scope", val as "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT")
-
-                    if (val === "SUBSCRIPTION") {
-                      handleInputChange("applicableChallengeIds", [])
-                    }
-
-                    if (val === "CHALLENGE") {
-                      handleInputChange("firstCycleOnly", true)
-                      handleInputChange("multiCycle", false)
-                      handleInputChange("applicableMmpProgramIds", [])
-                    }
-                    if (val === "MMP_PROGRAM") {
-                      handleInputChange("applicableChallengeIds", [])
-                    }
-                    if (val === "STORE_PRODUCT") {
-                      handleInputChange("applicablePlanIds", []);
-                      handleInputChange("applicableChallengeIds", []);
-                      handleInputChange("applicableMmpProgramIds", []);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
-                    <SelectItem value="CHALLENGE">Challenge</SelectItem>
-                    <SelectItem value="MMP_PROGRAM">MMP Program</SelectItem>
-                    <SelectItem value="STORE_PRODUCT">Store Products</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {(!editingId || isEditDataLoaded) && formData.scope === "SUBSCRIPTION" && (
-                <div className="space-y-3">
-                  <Label>Applicable Plans</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {plans.map((plan) => (
-                      <div
-                        key={plan.id}
-                        onClick={() =>
-                          toggleSelection("applicablePlanIds", plan.id)
-                        }
-                        className={`
-                                        cursor-pointer rounded-md border p-3 text-sm transition-all
-                                        ${formData.applicablePlanIds.includes(
-                          plan.id
-                        )
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "hover:bg-accent hover:text-accent-foreground"
-                          }
-                                    `}
-                      >
-                        <div className="font-medium">{plan.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {plan.interval} • {plan.userType}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {(!editingId || isEditDataLoaded) && formData.scope === "CHALLENGE" && (
-                <div className="space-y-3">
-                  <Label>Applicable Challenges</Label>
-
-                  {/* All Active Challenges Toggle */}
-                  <div
-                    onClick={() => handleInputChange("applicableChallengeIds", [])}
-                    className={`cursor-pointer rounded-md border p-3 text-sm transition-all
-        ${formData.applicableChallengeIds.length === 0
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "hover:bg-accent"
-                      }`}
-                  >
-                    <div className="font-medium">All Active Challenges</div>
-                    <div className="text-xs text-muted-foreground">
-                      Applies to every active paid challenge
-                    </div>
-                  </div>
-
-                  {/* Individual Challenge List */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {challenges.map((challenge) => {
-                      // CRITICAL FIX: Check if this specific challenge ID exists in the prefilled form data
-                      const isSelected = formData.applicableChallengeIds.includes(challenge.id);
-
-                      return (
-                        <div
-                          key={challenge.id}
-                          onClick={() => toggleSelection("applicableChallengeIds", challenge.id)}
-                          className={`cursor-pointer rounded-md border p-3 text-sm transition-all
-              ${isSelected
-                              ? "border-primary bg-primary/5 ring-1 ring-primary"
-                              : "hover:bg-accent"
-                            }`}
-                        >
-                          <div className="font-medium">{challenge.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {challenge.challengeJoiningFeeCurrency} {challenge.challengeJoiningFee}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {(!editingId || isEditDataLoaded) && formData.scope === "MMP_PROGRAM" && (
-                <div className="space-y-3">
-                  <Label>Applicable MMP Programs</Label>
-                  <div
-                    onClick={() => handleInputChange("applicableMmpProgramIds", [])}
-                    className={`cursor-pointer rounded-md border p-3 text-sm transition-all
-  ${formData.applicableMmpProgramIds.length === 0
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "hover:bg-accent"
-                      }`}
-                  >
-                    <div className="font-medium">All MMP Programs</div>
-                    <div className="text-xs text-muted-foreground">
-                      Applies to every MMP program
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {mmpPrograms.map((mmpProgram: MmpProgram) => (
-                      <div
-                        key={mmpProgram.id}
-                        onClick={() =>
-                          toggleSelection("applicableMmpProgramIds", mmpProgram.id)
-                        }
-                        className={`
-            cursor-pointer rounded-md border p-3 text-sm transition-all
-            ${formData.applicableMmpProgramIds.includes(mmpProgram.id)
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "hover:bg-accent"
-                          }
-          `}
-                      >
-                        <div className="font-medium">{mmpProgram.name}</div>
-
-                        <div className="text-xs text-muted-foreground">
-                          {mmpProgram.currency} {mmpProgram.price}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {(!editingId || isEditDataLoaded) && formData.scope === "STORE_PRODUCT" && (
-                <div className="space-y-3">
-                  <Label>Applicable Store Products</Label>
-                  <div
-                    onClick={() => handleInputChange("applicableStoreProductIds", [])}
-                    className={`cursor-pointer rounded-md border p-3 text-sm transition-all
-  ${formData.applicableStoreProductIds.length === 0
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "hover:bg-accent"
-                      }`}
-                  >
-                    <div className="font-medium">All Store Products</div>
-                    <div className="text-xs text-muted-foreground">
-                      Applies to every store product
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {storeProducts.map((product: StoreProduct) => (
-                      <div
-                        key={product.id}
-                        onClick={() =>
-                          toggleSelection("applicableStoreProductIds", product.id)
-                        }
-                        className={`
-            cursor-pointer rounded-md border p-3 text-sm transition-all
-            ${formData.applicableStoreProductIds.includes(product.id)
-                            ? "border-primary bg-primary/5 ring-1 ring-primary"
-                            : "hover:bg-accent"
-                          }
-          `}
-                      >
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {product.currency} {product.basePrice}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <Label>User Types</Label>
-                  <div className="flex flex-col gap-2">
-                    {["COACH", "ENTHUSIAST", "SOLOPRENEUR", "ALL"].map(
-                      (type) => (
-                        <div key={type} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`user-${type}`}
-                            checked={formData.applicableUserTypes.includes(
-                              type
-                            )}
-                            onCheckedChange={() => handleUserTypeChange(type)}
-                          />
-                          <Label
-                            htmlFor={`user-${type}`}
-                            className="cursor-pointer font-normal"
-                          >
-                            {type}
-                          </Label>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <Label>Currency</Label>
-                  <div className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="curr-inr"
-                        checked={formData.applicableCurrencies.includes("INR")}
-                        onCheckedChange={() =>
-                          toggleSelection("applicableCurrencies", "INR")
-                        }
-                      />
-                      <Label htmlFor="curr-inr">INR</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="curr-usd"
-                        checked={formData.applicableCurrencies.includes("USD")}
-                        onCheckedChange={() =>
-                          toggleSelection("applicableCurrencies", "USD")
-                        }
-                      />
-                      <Label htmlFor="curr-usd">USD</Label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Validity */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) =>
-                      handleInputChange("startDate", e.target.value)
-                    }
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) =>
-                      handleInputChange("endDate", e.target.value)
-                    }
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Max Global Uses</Label>
-                  <Input
-                    type="number"
-                    placeholder="50"
-                    max={50}
-                    value={formData.maxGlobalUses}
-                    onChange={(e) =>
-                      handleInputChange("maxGlobalUses", e.target.value)
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Max Per User</Label>
-                  <Input
-                    type="number"
-                    value={formData.maxUsesPerUser}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "maxUsesPerUser",
-                        Number(e.target.value)
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Auto Apply Logic */}
-              <div className="rounded-lg border p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-base">Auto Apply Logic</Label>
-                    <p className="text-sm text-muted-foreground">
-                      If turned on then this coupon will be auto applied during checkout
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.autoApply}
-                    onCheckedChange={(checked) =>
-                      handleInputChange("autoApply", checked)
-                    }
-                  />
-                </div>
-                {/* {formData.autoApply && (
-                            <div className="space-y-2">
-                                <Label>Condition JSON</Label>
-                                <Textarea 
-                                    className="font-mono text-xs" 
-                                    placeholder='{"country": "IN", "trigger": "SIGNUP"}'
-                                    value={formData.autoApplyConditions}
-                                    onChange={(e) => handleInputChange("autoApplyConditions", e.target.value)}
-                                />
-                            </div>
-                        )} */}
-              </div>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  {isSaving
-                    ? "Saving..."
-                    : editingId
-                      ? "Update Coupon"
-                      : "Create Coupon"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+          <Plus className="h-4 w-4" />
+          Create Coupon
+        </Button>
+        <CouponDialog
+          open={isDialogOpen}
+          setOpen={setIsDialogOpen}
+          formData={formData}
+          setFormData={setFormData}
+          onSubmit={handleSubmit}
+          isSaving={isSaving}
+          challenges={challenges}
+          mmpPrograms={mmpPrograms}
+          storeProducts={storeProducts}
+          plans={plans}
+          editingId={editingId}
+          onClose={resetForm}
+          isAdmin={true}
+        />
       </div>
 
       {/* Data Table */}
       <Card>
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) =>
-            setActiveTab(v as "ALL" | "SUBSCRIPTION" | "CHALLENGE" | "MMP_PROGRAM" | "STORE_PRODUCT")
-          }
-          className="px-6 pt-6 flex justify-self-center"
-        >
-          <TabsList>
-            <TabsTrigger value="ALL">All</TabsTrigger>
-            <TabsTrigger value="SUBSCRIPTION">Membership </TabsTrigger>
-            <TabsTrigger value="CHALLENGE">Challenges</TabsTrigger>
-            <TabsTrigger value="STORE_PRODUCT">Store</TabsTrigger>
-            <TabsTrigger value="MMP_PROGRAM">MMP</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <CouponTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
         <CardHeader>
           <CardTitle>Active Coupons</CardTitle>
           <CardDescription>Viewing {coupons.length} coupons.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[150px]">Code</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Scope</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Validity</TableHead>
-                <TableHead>Redemptions</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoadingCoupons ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center h-24 text-muted-foreground"
-                  >
-                    <div className="flex justify-center items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading
-                      data...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredCoupons.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center h-24 text-muted-foreground"
-                  >
-                    No coupons found. Create one to get started.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredCoupons.map((coupon) => (
-                  <TableRow key={coupon.id}>
-                    <TableCell className="font-medium font-mono">
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-primary" />
-                        {coupon.couponCode}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium capitalize">
-                          {coupon.type.replace("_", " ").toLowerCase()}
-                        </span>
-                        {coupon.autoApply && (
-                          <span className="text-xs text-purple-600 font-bold flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" /> Auto
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{coupon.scope}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          coupon.status === "ACTIVE"
-                            ? "default"
-                            : coupon.status === "EXPIRED"
-                              ? "secondary"
-                              : "destructive"
-                        }
-                      >
-                        {coupon.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {/*  FULL DISCOUNT */}
-                      {coupon.type === "FULL_DISCOUNT" && (
-                        <span className="">
-                          100%
-                        </span>
-                      )}
-
-                      {/*  PERCENTAGE */}
-                      {coupon.type === "PERCENTAGE" &&
-                        coupon.discountPercentage && `${coupon.discountPercentage}%`}
-
-                      {/*  FIXED */}
-                      {coupon.type === "FIXED" &&
-                        (coupon.discountAmountUSD || coupon.discountAmountINR) && (
-                          <div className="flex flex-col">
-                            {coupon.discountAmountUSD &&
-                              `USD $${coupon.discountAmountUSD}`}
-                            {coupon.discountAmountINR &&
-                              `INR ₹${coupon.discountAmountINR}`}
-                          </div>
-                        )}
-
-                      {/* ✅ FREE DAYS */}
-                      {coupon.type === "FREE_DURATION" &&
-                        coupon.freeDays && `${coupon.freeDays} Days`}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {format(new Date(coupon.startDate), "MMM d, yyyy")} -{" "}
-                      <br />
-                      {format(new Date(coupon.endDate), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{coupon._count?.redemptions || 0}</span>
-                        <span className="text-muted-foreground text-xs">
-                          / {coupon.maxGlobalUses || "∞"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEdit(coupon)}>
-                            <Pencil className="mr-2 h-4 w-4" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(coupon.id)}
-                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                          >
-                            <Ban className="mr-2 h-4 w-4" /> Deactivate/Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <CouponTable
+            coupons={filteredCoupons}
+            isLoading={isLoadingCoupons}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </CardContent>
       </Card>
     </div>

@@ -38,6 +38,7 @@ export async function PUT(
       type,
       discountPercentage,
       discountAmountINR,
+      discountAmountGP,
       discountAmountUSD,
       freeDays,
       maxGlobalUses,
@@ -68,6 +69,9 @@ export async function PUT(
 
       ...(discountAmountUSD !== undefined && {
         discountAmountUSD: discountAmountUSD ? Number(discountAmountUSD) : null,
+      }),
+      ...(discountAmountGP !== undefined && {
+        discountAmountGP: discountAmountGP ? Number(discountAmountGP) : null,
       }),
 
       ...(freeDays !== undefined && {
@@ -181,7 +185,7 @@ export async function DELETE(
         { status: 200 },
       );
     }
-  } catch (error:unknown) {
+  } catch (error: unknown) {
     console.error(error);
     return NextResponse.json({ error }, { status: 500 });
   }

@@ -135,6 +135,7 @@ export async function POST(req: Request) {
       discountPercentage,
       discountAmountINR,
       discountAmountUSD,
+      discountAmountGP,
       freeDays,
       applicableChallengeIds,
       applicableMmpProgramIds, // Ensure the frontend sends this exact key
@@ -154,6 +155,15 @@ export async function POST(req: Request) {
         { error: "Missing required fields" },
         { status: 400 },
       );
+    }
+
+    if (type === "FIXED") {
+      if (!discountAmountUSD && !discountAmountINR && !discountAmountGP) {
+        return NextResponse.json(
+          { error: "At least one discount amount is required" },
+          { status: 400 },
+        );
+      }
     }
 
     // Check coupon uniqueness
@@ -271,6 +281,7 @@ export async function POST(req: Request) {
           : null,
         discountAmountUSD: discountAmountUSD ? Number(discountAmountUSD) : null,
         discountAmountINR: discountAmountINR ? Number(discountAmountINR) : null,
+        discountAmountGP: discountAmountGP ? Number(discountAmountGP) : null,
         freeDays: freeDays ? Number(freeDays) : null,
 
         startDate: new Date(startDate),

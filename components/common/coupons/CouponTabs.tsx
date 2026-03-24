@@ -1,7 +1,8 @@
 "use client";
 
-import { CouponScope } from "@/app/(userDashboard)/dashboard/(coach)/coupons/page";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CouponScope } from "@/types/client/coupons.types";
 
 
 
