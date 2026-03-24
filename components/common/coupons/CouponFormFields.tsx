@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Challenge, CouponFormPayload, CouponScope, CouponType, MmpProgram, StoreProduct } from "@/app/(userDashboard)/dashboard/(coach)/coupons/page";
+import { Challenge, CouponFormPayload, CouponScope, CouponType, MmpProgram, Plan, StoreProduct } from "@/types/client/coupons.types"
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -27,7 +27,9 @@ type Props = {
     challenges: Challenge[];
     mmpPrograms: MmpProgram[];
     storeProducts: StoreProduct[];
+    plans?: Plan[];
     editingId?: string | null;
+    isAdmin?: boolean
 };
 
 const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"] as const;
@@ -40,7 +42,9 @@ export default function CouponFormFields({
     challenges,
     mmpPrograms,
     storeProducts,
+    plans,
     editingId,
+    isAdmin
 }: Props) {
 
 
@@ -48,18 +52,40 @@ export default function CouponFormFields({
         setFormData((prev) => ({ ...prev, [field]: value }));
 
     const toggleSelection = (
-        field: "applicableChallengeIds" | "applicableMmpProgramIds" | "applicableStoreProductIds" | "applicableCurrencies",
+        field:
+            | "applicablePlanIds"
+            | "applicableChallengeIds"
+            | "applicableMmpProgramIds"
+            | "applicableStoreProductIds"
+            | "applicableCurrencies",
         id: string
     ) => {
         setFormData((prev) => {
-            const list = prev[field] as string[];
+            const list = (prev[field] || []) as string[];
             return {
                 ...prev,
-                [field]: list.includes(id) ? list.filter((x) => x !== id) : [...list, id],
+                [field]: list.includes(id)
+                    ? list.filter((x) => x !== id)
+                    : [...list, id],
             };
         });
     };
 
+    const toggleSelectAll = (
+        field: "applicablePlanIds" | "applicableChallengeIds" | "applicableMmpProgramIds" | "applicableStoreProductIds",
+        allIds: string[]
+    ) => {
+        setFormData((prev) => {
+            const selected = prev[field] as string[];
+
+            const isAllSelected = selected.length === allIds.length;
+
+            return {
+                ...prev,
+                [field]: isAllSelected ? [] : allIds,
+            };
+        });
+    };
     const handleUserTypeChange = (value: string) => {
         setFormData((prev) => {
             let updated = [...prev.applicableUserTypes];
@@ -218,13 +244,65 @@ export default function CouponFormFields({
                 <Select value={formData.scope} onValueChange={handleScopeChange}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                        {isAdmin && (
+                            <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
+                        )}
                         <SelectItem value="CHALLENGE">Challenge</SelectItem>
                         <SelectItem value="MMP_PROGRAM">Mini Mastery Program</SelectItem>
                         <SelectItem value="STORE_PRODUCT">Store Products</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+            {showScopedItems && formData.scope === "SUBSCRIPTION" && (
+                <div className="space-y-3">
+                    <Label>Applicable Plans</Label>
 
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {/* Select All */}
+                        <div
+                            onClick={() =>
+                                toggleSelectAll(
+                                    "applicablePlanIds",
+                                    (plans || []).map((p) => p.id)
+                                )
+                            }
+                            className={`cursor-pointer rounded-md border p-3 text-sm transition-all font-medium
+        flex flex-col items-center justify-center text-center min-h-[72px]
+        ${(plans || []).length > 0 &&
+                                    (plans || []).every((p) =>
+                                        formData.applicablePlanIds?.includes(p.id)
+                                    )
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                    : "hover:bg-accent"
+                                }`}
+                        >
+                            <div>Select All</div>
+                            <div className="text-xs text-muted-foreground">
+                                Apply to all plans
+                            </div>
+                        </div>
+
+                        {(plans || []).map((p) => (
+                            <div
+                                key={p.id}
+                                onClick={() =>
+                                    toggleSelection("applicablePlanIds", p.id)
+                                }
+                                className={`cursor-pointer rounded-md border p-3 text-sm transition-all
+          ${formData.applicablePlanIds?.includes(p.id)
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div className="font-medium">{p.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {p.interval} • {p.userType}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             {/* ── Challenge Selector ── */}
             {showScopedItems && formData.scope === "CHALLENGE" && (
                 <div className="space-y-3">
@@ -240,6 +318,20 @@ export default function CouponFormFields({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+
+                            {/* Select All Card */}
+                            <div
+                                onClick={() => toggleSelectAll("applicableChallengeIds", challenges.map(c => c.id))}
+                                className={`cursor-pointer rounded-md border  p-3 text-sm transition-all font-medium
+    flex flex-col items-center justify-center text-center min-h-[72px]
+    ${challenges.every(c => formData.applicableChallengeIds.includes(c.id))
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div>Select All</div>
+                                <div className="text-xs text-muted-foreground">Apply to all challenges</div>
+                            </div>
                             {challenges.map((c) => (
                                 <div
                                     key={c.id}
@@ -275,6 +367,28 @@ export default function CouponFormFields({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <div
+                                onClick={() =>
+                                    toggleSelectAll(
+                                        "applicableMmpProgramIds",
+                                        mmpPrograms.map((m) => m.id)
+                                    )
+                                }
+                                className={`cursor-pointer rounded-md border  p-3 text-sm transition-all font-medium
+    flex flex-col items-center justify-center text-center min-h-[72px]
+    ${mmpPrograms.length > 0 &&
+                                        mmpPrograms.every((m) =>
+                                            formData.applicableMmpProgramIds.includes(m.id)
+                                        )
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div>Select All</div>
+                                <div className="text-xs text-muted-foreground">
+                                    Apply to all programs
+                                </div>
+                            </div>
                             {mmpPrograms.map((m) => (
                                 <div
                                     key={m.id}
@@ -308,6 +422,29 @@ export default function CouponFormFields({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+
+                            <div
+                                onClick={() =>
+                                    toggleSelectAll(
+                                        "applicableStoreProductIds",
+                                        storeProducts.map((p) => p.id)
+                                    )
+                                }
+                                className={`cursor-pointer rounded-md border p-3 text-sm transition-all font-medium
+    flex flex-col items-center justify-center text-center min-h-[72px]
+    ${storeProducts.length > 0 &&
+                                        storeProducts.every((p) =>
+                                            formData.applicableStoreProductIds.includes(p.id)
+                                        )
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div>Select All</div>
+                                <div className="text-xs text-muted-foreground">
+                                    Apply to all products
+                                </div>
+                            </div>
                             {storeProducts.map((p) => (
                                 <div
                                     key={p.id}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 type AutoApplyConditions = {
   country?: string;
@@ -40,18 +41,52 @@ export async function POST(req: Request) {
       );
     }
     const now = new Date();
+    let creatorId: string | null = null;
+    let creatorRole: string | null = null;
 
-    // 1. Fetch auto-apply coupons
-    const coupons = await prisma.coupon.findMany({
-      where: {
-        autoApply: true,
-        status: "ACTIVE",
-        startDate: { lte: now },
-        endDate: { gte: now },
-        redemptions: {
-          none: { userId }, // 👈 key line
+    if (challengeId) {
+      const challenge = await prisma.challenge.findUnique({
+        where: { id: challengeId },
+        select: {
+          creatorId: true,
+          creator: {
+            select: {
+              role: true,
+            },
+          },
         },
+      });
+
+      creatorId = challenge?.creatorId || null;
+      creatorRole = challenge?.creator?.role || null;
+    }
+    // 1. Fetch auto-apply coupons
+
+    let couponWhere: Prisma.CouponWhereInput = {
+      autoApply: true,
+      status: "ACTIVE",
+      startDate: { lte: now },
+      endDate: { gte: now },
+      redemptions: {
+        none: { userId },
       },
+    };
+
+    // Admin challenge → platform coupons
+    const role = creatorRole?.toUpperCase();
+
+    if (role === "ADMIN") {
+      couponWhere.creatorUserId = null;
+    } else if (creatorId) {
+      couponWhere.creatorUserId = creatorId;
+    }
+    // Coach challenge → only that coach coupons
+    else if (creatorId) {
+      couponWhere.creatorUserId = creatorId;
+    }
+
+    const coupons = await prisma.coupon.findMany({
+      where: couponWhere,
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },

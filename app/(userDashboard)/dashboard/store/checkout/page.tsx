@@ -27,7 +27,7 @@ const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GP: "GP
 const getCurrencySymbol = (currency?: string): string => CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
 // types/coupon.ts
-type CouponType = "PERCENTAGE" | "FIXED" | "FREE_DURATION";
+type CouponType = "PERCENTAGE" | "FIXED" | "FULL_DISCOUNT";
 
 interface AppliedCoupon {
   id: string;
@@ -660,6 +660,9 @@ const CheckoutContent = () => {
           ? appliedCoupon.discountAmountUSD || 0
           : appliedCoupon.discountAmountINR || 0;
     }
+    if (appliedCoupon.type === "FULL_DISCOUNT") {
+      discount = total;
+    }
 
     if (discount > total) discount = total;
 
@@ -676,12 +679,18 @@ const CheckoutContent = () => {
     if (!isIndianGSTApplicable) return 0;
     return Number((discountedTotal * GST_RATE).toFixed(2));
   }, [discountedTotal, isIndianGSTApplicable]);
+
+  const isFullDiscountApplied =
+    appliedCoupon?.type === "FULL_DISCOUNT" &&
+    discountedTotal === 0;
+
   // 4. Final payable
   const finalPayable = useMemo(() => {
     if (!singleTotal) return 0;
 
     const total = discountedTotal + gstAmount;
 
+    // Payment gateways cannot process 0 amount that's why we charge 1 unit 
     if (total <= 0) {
       if (singleTotal.currency === "INR") return 1;
       if (singleTotal.currency === "USD") return 1;
@@ -1140,6 +1149,14 @@ const CheckoutContent = () => {
                     </span>
                   </div>
                 )}
+                {isFullDiscountApplied && selectedCurrency !== "GP" && (
+                  <div className="flex justify-between items-center text-orange-600">
+                    <span className="font-medium">Minimal Processing Fee</span>
+                    <span className="font-bold">
+                      {selectedCurrency ? getCurrencySymbol(selectedCurrency) : " "}1.00
+                    </span>
+                  </div>
+                )} 
               </div>
 
               {/* Total Payable */}

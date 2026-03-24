@@ -68,7 +68,7 @@ export default function FailurePage() {
   // -----------------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="max-w-md w-full border-none shadow-xl overflow-hidden">
         <div className="bg-red-500 h-2 w-full" />
 

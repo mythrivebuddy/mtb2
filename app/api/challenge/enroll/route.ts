@@ -339,8 +339,7 @@ export async function POST(request: Request) {
 
       // ✅ Coach paid CTA
       transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
-    };
-
+     };   
     // ✅ USER EMAIL
     void sendEmailUsingTemplate({
       toEmail: joiner.email!,

@@ -12,7 +12,8 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Coupon } from "@/app/(userDashboard)/dashboard/(coach)/coupons/page";
+import { Coupon } from "@/types/client/coupons.types";
+
 
 
 
@@ -57,7 +58,7 @@ export default function CouponTable({ coupons, isLoading, onEdit, onDelete }: Pr
                 ) : (
                     coupons.map((coupon) => (
                         <TableRow key={coupon.id}>
-                            <TableCell className="font-medium font-mono">
+                            <TableCell className="">
                                 <div className="flex items-center gap-2">
                                     <Tag className="h-4 w-4 text-primary" />
                                     {coupon.couponCode}

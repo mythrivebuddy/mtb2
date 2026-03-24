@@ -12,7 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 import CouponFormFields from "./CouponFormFields";
-import { Challenge, CouponFormPayload, MmpProgram, StoreProduct } from "@/app/(userDashboard)/dashboard/(coach)/coupons/page";
+import { Challenge, CouponFormPayload, MmpProgram, Plan, StoreProduct } from "@/types/client/coupons.types";
+
+
 
 
 type Props = {
@@ -27,6 +29,8 @@ type Props = {
   storeProducts?: StoreProduct[];
   editingId?: string | null;
   onClose: () => void
+  plans?: Plan[];
+  isAdmin?: boolean;
 };
 
 export default function CouponDialog({
@@ -40,7 +44,9 @@ export default function CouponDialog({
   challenges = [],
   mmpPrograms = [],
   storeProducts = [],
+  plans,
   editingId,
+  isAdmin
 }: Props) {
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
@@ -74,6 +80,8 @@ export default function CouponDialog({
           mmpPrograms={mmpPrograms}
           storeProducts={storeProducts}
           editingId={editingId}
+          isAdmin={isAdmin}
+          plans={plans}
         />
 
         <DialogFooter>
