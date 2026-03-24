@@ -15,13 +15,29 @@ const SignInPageContent = () => {
   useEffect(() => {
     if (!session) return;
 
-    
+    const checkAndRedirect = async () => {
+      if (session?.user?.role === "ADMIN") {
+        console.log(session.user)
+        if (session?.user?.authMethod === "GOOGLE") {
+          router.push("/admin/dashboard");
+          return;
+        }
 
-    if (session?.user?.role === "ADMIN") {
-      router.push("/admin/dashboard");
-    } else {
-      router.push(redirect); // Use redirect parameter
-    }
+        const mfaRes = await fetch("/api/admin/mfa/status");
+        const mfaData = await mfaRes.json();
+
+        if (mfaData.mfaEnabled) {
+          router.push("/mfa-verify");
+        } else {
+          router.push("/mfa-setup");
+        }
+        return;
+      }
+
+      router.push(redirect);
+    };
+
+    checkAndRedirect();
   }, [session, router, redirect]);
 
   return (

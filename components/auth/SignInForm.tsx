@@ -66,7 +66,22 @@ function SignInFormContent() {
         callbackUrl: redirect,
       });
 
-      if (response?.ok) {
+     if (response?.ok) {
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+ 
+        if (session?.user?.role === "ADMIN") {
+          const mfaRes = await fetch("/api/admin/mfa/status");
+          const mfaData = await mfaRes.json();
+ 
+          if (mfaData.mfaEnabled) {
+            router.push("/mfa-verify");
+          } else {
+            router.push("/mfa-setup");
+          }
+          return;
+        }
+ 
         await router.push(redirect);
         toast.success("Signin successful");
         return;
