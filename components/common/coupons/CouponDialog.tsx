@@ -26,7 +26,7 @@ type Props = {
   mmpPrograms?: MmpProgram[];
   storeProducts?: StoreProduct[];
   editingId?: string | null;
-  onClose:()=>void
+  onClose: () => void
 };
 
 export default function CouponDialog({
@@ -45,12 +45,12 @@ export default function CouponDialog({
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
     if (!value) {
-        // Delay reset until after close animation (~200ms)
-        setTimeout(() => {
-            onClose();
-        }, 200);
+      // Delay reset until after close animation (~200ms)
+      setTimeout(() => {
+        onClose();
+      }, 200);
     }
-};
+  };
 
 
   return (
@@ -80,7 +80,7 @@ export default function CouponDialog({
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="coupon-form" disabled={isSaving}>
+          <Button type="submit" className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700 " form="coupon-form" disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSaving ? "Saving..." : editingId ? "Update Coupon" : "Create Coupon"}
           </Button>
