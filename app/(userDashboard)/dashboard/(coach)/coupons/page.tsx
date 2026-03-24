@@ -1,6 +1,6 @@
 "use client";
 
-import React, {  useState } from "react";
+import React, { useState } from "react";
 import axios, { AxiosError } from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
@@ -207,7 +207,7 @@ export default function CoachCouponsPage() {
         queryKey: ["store-products"],
         queryFn: fetchStoreProducts,
     });
-  
+
 
     const challenges = coachData?.challenges ?? [];
     const mmpPrograms = mmpProgramsData ?? [];
@@ -269,7 +269,7 @@ export default function CoachCouponsPage() {
     };
 
     const handleEdit = (coupon: Coupon) => {
-       
+
         const userTypes = coupon.applicableUserTypes || [];
 
         const normalizedUserTypes =
@@ -303,7 +303,7 @@ export default function CoachCouponsPage() {
             maxUsesPerUser: coupon.maxUsesPerUser ?? 1,
             autoApply: coupon.autoApply,
         });
-    
+
 
         setDialogOpen(true);
     };
@@ -419,7 +419,7 @@ export default function CoachCouponsPage() {
                     <p className="text-muted-foreground mt-1">Manage promotional codes for your challenges, programs, and products.</p>
                 </div>
 
-                <Button className="gap-2" onClick={handleOpenCreate}>
+                <Button className="gap-2 w-full sm:w-fit bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700 " onClick={handleOpenCreate}>
                     <Plus className="h-4 w-4" /> Create Coupon
                 </Button>
             </div>

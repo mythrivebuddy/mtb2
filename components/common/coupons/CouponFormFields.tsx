@@ -42,7 +42,7 @@ export default function CouponFormFields({
     storeProducts,
     editingId,
 }: Props) {
-    
+
 
     const update = <K extends keyof CouponFormPayload>(field: K, value: CouponFormPayload[K]) =>
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -89,11 +89,11 @@ export default function CouponFormFields({
         }));
     };
     useEffect(() => {
-    if (!editingId) return;
+        if (!editingId) return;
 
-    // Force re-render so selected cards highlight after data loads
-    setFormData((prev) => ({ ...prev }));
-}, [editingId, challenges, mmpPrograms, storeProducts]);
+        // Force re-render so selected cards highlight after data loads
+        setFormData((prev) => ({ ...prev }));
+    }, [editingId, challenges, mmpPrograms, storeProducts]);
     const showScopedItems = true
 
     return (
@@ -139,68 +139,78 @@ export default function CouponFormFields({
             </div>
 
             {/* ── Value Configuration ── */}
-            <Card className="bg-muted/50 border-dashed">
-                <CardContent className="pt-6">
-                    <div className="grid grid-cols-2 gap-6">
-                        {formData.type === "PERCENTAGE" && (
-                            <div className="space-y-2">
-                                <Label>Discount Percentage (%)</Label>
-                                <div className="relative">
-                                    <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        className="pl-9"
-                                        value={formData.discountPercentage}
-                                        onChange={(e) => update("discountPercentage", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        )}
+            {
+                formData.type !== "FULL_DISCOUNT" && (
+                    <Card className="bg-muted/50 border-dashed">
+                        <CardContent className="pt-6">
+                            <div className="grid grid-cols-2 gap-6">
+                                {formData.type === "PERCENTAGE" && (
+                                    <div className="space-y-2">
+                                        <Label>Discount Percentage (%)</Label>
+                                        <div className="relative">
+                                            <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                type="number"
+                                                className="pl-9"
+                                                value={formData.discountPercentage}
+                                                onChange={(e) => update("discountPercentage", e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-                        {formData.type === "FIXED" && (
-                            <div className="space-y-3">
-                                <Label>Amount ($USD)</Label>
-                                <div className="relative">
-                                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        className="pl-9"
-                                        value={formData.discountAmountUSD ?? ""}
-                                        onChange={(e) => update("discountAmountUSD", e.target.value)}
-                                    />
-                                </div>
-                                <Label className="flex items-center gap-1">
-                                    Amount (<IndianRupee size={14} />INR)
-                                </Label>
-                                <div className="relative">
-                                    <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        className="pl-9"
-                                        value={formData.discountAmountINR ?? ""}
-                                        onChange={(e) => update("discountAmountINR", e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        )}
+                                {formData.type === "FIXED" && (
+                                    <div className="space-y-3 col-span-2">
+                                        <Label>Fixed Discount Amount</Label>
 
-                        {formData.type === "FREE_DURATION" && (
-                            <div className="space-y-2">
-                                <Label>Free Days</Label>
-                                <div className="relative">
-                                    <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        className="pl-9"
-                                        value={formData.freeDays}
-                                        onChange={(e) => update("freeDays", e.target.value)}
-                                    />
-                                </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* USD */}
+                                            <div className="relative w-full">
+                                                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="USD"
+                                                    className="pl-9 w-full"
+                                                    value={formData.discountAmountUSD ?? ""}
+                                                    onChange={(e) => update("discountAmountUSD", e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* INR */}
+                                            <div className="relative w-full">
+                                                <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="INR"
+                                                    className="pl-9 w-full"
+                                                    value={formData.discountAmountINR ?? ""}
+                                                    onChange={(e) => update("discountAmountINR", e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {formData.type === "FREE_DURATION" && (
+                                    <div className="space-y-2">
+                                        <Label>Free Days</Label>
+                                        <div className="relative">
+                                            <Clock className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                type="number"
+                                                className="pl-9"
+                                                value={formData.freeDays}
+                                                onChange={(e) => update("freeDays", e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
+                        </CardContent>
+                    </Card>
+                )
+            }
+
 
             {/* ── Scope ── */}
             <div className="space-y-2">
