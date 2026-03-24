@@ -8,13 +8,12 @@ type AutoApplyConditions = {
   [key: string]: unknown; // allows future keys without using any
 };
 
-
 function getFixedAmount(
   coupon: {
     discountAmountUSD?: number | null;
     discountAmountINR?: number | null;
   },
-  currency: string
+  currency: string,
 ): number {
   return currency === "USD"
     ? coupon.discountAmountUSD || 0
@@ -23,12 +22,21 @@ function getFixedAmount(
 
 export async function POST(req: Request) {
   try {
-    const { planId, challengeId, mmp_programId, currency, billingCountry, userType, userId } = await req.json();
+    const {
+      planId,
+      challengeId,
+      mmp_programId,
+      currency,
+      billingCountry,
+      userType,
+      userId,
+      storeItemId,
+    } = await req.json();
 
-    if (!planId && !challengeId && !mmp_programId) {
+    if (!planId && !challengeId && !mmp_programId && !storeItemId) {
       return NextResponse.json(
         { coupon: null, message: "Plan, Challenge or MMP Program required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const now = new Date();
@@ -41,13 +49,14 @@ export async function POST(req: Request) {
         startDate: { lte: now },
         endDate: { gte: now },
         redemptions: {
-          none: { userId } // 👈 key line
-        }
+          none: { userId }, // 👈 key line
+        },
       },
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
         applicableMmpPrograms: { select: { id: true } },
+        applicableStoreProducts: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
@@ -55,8 +64,6 @@ export async function POST(req: Request) {
     if (!coupons || coupons.length === 0) {
       return NextResponse.json({ coupon: null });
     }
-
-
 
     // 2. Filter coupons
     const validCoupons = coupons.filter((coupon) => {
@@ -71,7 +78,13 @@ export async function POST(req: Request) {
       if (coupon.scope === "MMP_PROGRAM" && !mmp_programId) {
         return false;
       }
-      if (coupon.maxGlobalUses && (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses) {
+      if (coupon.scope === "STORE_PRODUCT" && !storeItemId) {
+        return false;
+      }
+      if (
+        coupon.maxGlobalUses &&
+        (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses
+      ) {
         return false;
       }
 
@@ -85,19 +98,28 @@ export async function POST(req: Request) {
       // Challenge filter
       if (challengeId && coupon.applicableChallenges.length > 0) {
         const isChallengeValid = coupon.applicableChallenges.some(
-          (c) => c.id === challengeId
+          (c) => c.id === challengeId,
         );
         if (!isChallengeValid) return false;
       }
       if (mmp_programId && coupon.applicableMmpPrograms?.length > 0) {
         const isProgramValid = coupon.applicableMmpPrograms.some(
-          (p) => p.id === mmp_programId
+          (p) => p.id === mmp_programId,
         );
 
         if (!isProgramValid) return false;
       }
+      if (storeItemId && coupon.applicableStoreProducts?.length > 0) {
+        const isStoreProductValid = coupon.applicableStoreProducts.some(
+          (p) => p.id === storeItemId,
+        );
+        if (!isStoreProductValid) return false;
+      }
       // C. Currency applicability
-      if (coupon.applicableCurrencies && coupon.applicableCurrencies.length > 0) {
+      if (
+        coupon.applicableCurrencies &&
+        coupon.applicableCurrencies.length > 0
+      ) {
         const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
         if (!isCurrencyValid) return false;
       }
@@ -117,7 +139,11 @@ export async function POST(req: Request) {
         }
 
         // User type
-        if (conditions.userType && userType && conditions.userType !== userType) {
+        if (
+          conditions.userType &&
+          userType &&
+          conditions.userType !== userType
+        ) {
           return false;
         }
       }
@@ -169,6 +195,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Auto-Apply Error:", error);
-    return NextResponse.json({ coupon: null, message: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { coupon: null, message: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

@@ -22,6 +22,7 @@ import {
   Crown,
   GraduationCap,
   Award,
+  BadgePercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -427,6 +428,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       label="Apply for a Grant"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
+                    <NavItem
+                        href="/dashboard/coupons"
+                        icon={<BadgePercent size={20} />}
+                        label="Manage Coupons"
+                        onLinkClick={toggleSidebar} // Pass toggleSidebar
+                      />
                     <ComingSoonWrapper>
                       <NavItem
                         href="#"
