@@ -53,6 +53,7 @@ export type Coupon = {
   discountPercentage?: number;
   discountAmountUSD?: number;
   discountAmountINR?: number;
+  discountAmountGP?: number;
   freeDays?: number;
 
   startDate: string;
@@ -88,6 +89,7 @@ export type CouponFormPayload = {
   discountPercentage: string | number;
   discountAmountUSD: string | number | null;
   discountAmountINR: string | number | null;
+  discountAmountGP?: string | number | null; 
   freeDays: string | number;
 
   applicableUserTypes: string[];

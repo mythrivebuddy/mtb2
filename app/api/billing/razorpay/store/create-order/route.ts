@@ -21,8 +21,15 @@ interface CreateStoreOrderRequest {
   items: StoreItem[];
   currency: Currency;
   couponCode?: string;
-   exchangeRate?: number;
+  exchangeRate?: number;
 }
+type OrderItemData = {
+  itemId: string;
+  quantity: number;
+  priceAtPurchase: number;
+  originalPrice: number;
+  originalCurrency: string;
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +46,7 @@ export async function POST(req: NextRequest) {
       items,
       couponCode,
       currency: selectedCurrency,
-      exchangeRate
+      exchangeRate,
     }: CreateStoreOrderRequest = await req.json();
 
     if (!items || items.length === 0) {
@@ -85,6 +92,7 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         items,
         products,
+        couponCode,
       });
     }
 
@@ -93,24 +101,36 @@ export async function POST(req: NextRequest) {
     let amount = 0;
 
     for (const item of items) {
-    const product = productMap.get(item.itemId);
-    if (!product) continue;
+      const product = productMap.get(item.itemId);
+      if (!product) continue;
 
-    let price = product.basePrice ?? 0;
+      let price = product.basePrice ?? 0;
 
-    if (product.currency !== selectedCurrency) {
-      // Use the client-provided rate if available, otherwise fall back to API
-      if (exchangeRate && product.currency === "USD" && selectedCurrency === "INR") {
-        price = Math.round(price * exchangeRate * 100) / 100;
-      } else if (exchangeRate && product.currency === "INR" && selectedCurrency === "USD") {
-        price = Math.round((price / exchangeRate) * 100) / 100;
-      } else {
-        price = await convertCurrency(price, product.currency as Currency, selectedCurrency);
+      if (product.currency !== selectedCurrency) {
+        // Use the client-provided rate if available, otherwise fall back to API
+        if (
+          exchangeRate &&
+          product.currency === "USD" &&
+          selectedCurrency === "INR"
+        ) {
+          price = Math.round(price * exchangeRate * 100) / 100;
+        } else if (
+          exchangeRate &&
+          product.currency === "INR" &&
+          selectedCurrency === "USD"
+        ) {
+          price = Math.round((price / exchangeRate) * 100) / 100;
+        } else {
+          price = await convertCurrency(
+            price,
+            product.currency as Currency,
+            selectedCurrency,
+          );
+        }
       }
-    }
 
-    amount += price * item.quantity;
-  }
+      amount += price * item.quantity;
+    }
 
     let billing = await prisma.userBillingInformation.findFirst({
       where: { userId: session.user.id },
@@ -235,12 +255,14 @@ interface HandleWalletTransactionParams {
     currency: string;
     createdByUserId: string | null;
   }[];
+  couponCode?: string | null;
 }
 
 async function handleWalletTransaction({
   userId,
   items,
   products,
+  couponCode,
 }: HandleWalletTransactionParams) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -251,17 +273,74 @@ async function handleWalletTransaction({
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
+  let coupon = null;
+
+  if (couponCode) {
+    coupon = await prisma.coupon.findUnique({
+      where: { couponCode: couponCode.toUpperCase() },
+      include: {
+        applicableStoreProducts: { select: { id: true } },
+      },
+    });
+  }
+
   const productMap = new Map(products.map((p) => [p.id, p]));
 
   let walletTotal = 0;
+
+  const orderItemsData: OrderItemData[] = [];
+
+  if (couponCode) {
+    coupon = await prisma.coupon.findUnique({
+      where: { couponCode: couponCode.toUpperCase() },
+      include: {
+        applicableStoreProducts: { select: { id: true } },
+      },
+    });
+  }
 
   for (const item of items) {
     const product = productMap.get(item.itemId);
     if (!product) continue;
 
-    walletTotal += product.basePrice * item.quantity;
-  }
+    let finalPrice = product.basePrice;
 
+    // Apply coupon
+    if (coupon) {
+      const allowedProductIds = coupon.applicableStoreProducts.map((p) => p.id);
+      const isApplicable =
+        allowedProductIds.length === 0 ||
+        allowedProductIds.includes(product.id);
+
+      if (isApplicable) {
+        let discount = 0;
+
+        if (coupon.type === "PERCENTAGE" && coupon.discountPercentage) {
+          discount = (finalPrice * coupon.discountPercentage) / 100;
+        }
+
+        if (coupon.type === "FIXED" && coupon.discountAmountGP) {
+          discount = coupon.discountAmountGP;
+        }
+
+        if (coupon.type === "FULL_DISCOUNT") {
+          discount = finalPrice;
+        }
+
+        finalPrice = Math.max(finalPrice - discount, 0);
+      }
+    }
+
+    walletTotal += finalPrice * item.quantity;
+
+    orderItemsData.push({
+      itemId: product.id,
+      quantity: item.quantity,
+      priceAtPurchase: finalPrice,
+      originalPrice: product.basePrice,
+      originalCurrency: product.currency,
+    });
+  }
   if (user.jpBalance < walletTotal) {
     return NextResponse.json(
       {
@@ -287,7 +366,8 @@ async function handleWalletTransaction({
     if (!product || !product.createdByUserId) continue;
 
     const creatorId = product.createdByUserId;
-    const amount = product.basePrice * item.quantity;
+    const orderItem = orderItemsData.find((o) => o.itemId === item.itemId);
+    const amount = (orderItem?.priceAtPurchase || 0) * item.quantity;
 
     if (!creatorRewards[creatorId]) {
       creatorRewards[creatorId] = {
@@ -312,16 +392,28 @@ async function handleWalletTransaction({
         currency: products[0].currency,
         status: "COMPLETED",
         items: {
-          create: items.map((i) => ({
-            itemId: i.itemId,
-            quantity: i.quantity,
-            priceAtPurchase: productMap.get(i.itemId)!.basePrice,
-            originalPrice: productMap.get(i.itemId)!.basePrice,
-            originalCurrency: productMap.get(i.itemId)!.currency,
-          })),
+          create: orderItemsData,
         },
       },
     });
+    // Create coupon redemption record
+    if (coupon) {
+      const totalDiscount = orderItemsData.reduce(
+        (sum, item) =>
+          sum + (item.originalPrice - item.priceAtPurchase) * item.quantity,
+        0,
+      );
+
+      await tx.couponRedemption.create({
+        data: {
+          couponId: coupon.id,
+          userId: user.id,
+          redeemed: true,
+          appliedPlan: "STORE_PRODUCT",
+          discountApplied: totalDiscount,
+        },
+      });
+    }
 
     await deductJp(user, "STORE_PURCHASE", tx, {
       amount: walletTotal,

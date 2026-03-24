@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
-    // 🔒 Ownership Validation via User Role
+    //  Ownership Validation via User Role
     let resourceCreatorId: string | null = null;
     let resourceCreatorRole: string | null = null;
 
@@ -98,12 +98,15 @@ export async function POST(req: Request) {
       resourceCreatorRole = product?.creator?.role || null;
     }
 
-    // 🚨 MAIN OWNERSHIP RULE
+    //  MAIN OWNERSHIP RULE
     if (coupon.creatorUserId) {
       // Creator coupon → must match owner
       if (coupon.creatorUserId !== resourceCreatorId) {
         return NextResponse.json(
-          { valid: false, message: "This coupon is not valid for this checkout." },
+          {
+            valid: false,
+            message: "This coupon is not valid for this checkout.",
+          },
           { status: 403 },
         );
       }
@@ -255,16 +258,22 @@ export async function POST(req: Request) {
     }
 
     // 5. Currency applicability
-    if (coupon.applicableCurrencies && coupon.applicableCurrencies.length > 0) {
-      const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
-      if (!isCurrencyValid) {
-        return NextResponse.json(
-          {
-            valid: false,
-            message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
-          },
-          { status: 400 },
-        );
+    // Currency applicability
+    if (!(coupon.scope === "STORE_PRODUCT" && currency === "GP")) {
+      if (
+        coupon.applicableCurrencies &&
+        coupon.applicableCurrencies.length > 0
+      ) {
+        const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
+        if (!isCurrencyValid) {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
+            },
+            { status: 400 },
+          );
+        }
       }
     }
 
@@ -281,6 +290,7 @@ export async function POST(req: Request) {
         discountPercentage: coupon.discountPercentage,
         discountAmountUSD: coupon.discountAmountUSD,
         discountAmountINR: coupon.discountAmountINR,
+        discountAmountGP: coupon.discountAmountGP,
         freeDays: coupon.freeDays,
         description: coupon.description,
       },

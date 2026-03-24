@@ -122,6 +122,20 @@ export default function CouponFormFields({
     }, [editingId, challenges, mmpPrograms, storeProducts]);
     const showScopedItems = true
 
+
+    const selectedProducts = storeProducts.filter((p) =>
+        formData.applicableStoreProductIds.includes(p.id)
+    );
+
+    const selectedCurrencies = [
+        ...new Set(selectedProducts.map((p) => p.currency)),
+    ];
+
+    const onlyGPSelected =
+        selectedCurrencies.length === 1 && selectedCurrencies[0] === "GP";
+
+    const hasGPProduct = selectedCurrencies.includes("GP");
+
     return (
         <form id="coupon-form" onSubmit={onSubmit} className="space-y-6 mt-4">
 
@@ -189,30 +203,93 @@ export default function CouponFormFields({
                                     <div className="space-y-3 col-span-2">
                                         <Label>Fixed Discount Amount</Label>
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {/* USD */}
-                                            <div className="relative w-full">
-                                                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="USD"
-                                                    className="pl-9 w-full"
-                                                    value={formData.discountAmountUSD ?? ""}
-                                                    onChange={(e) => update("discountAmountUSD", e.target.value)}
-                                                />
-                                            </div>
+                                        {formData.scope === "STORE_PRODUCT" &&
+                                            selectedCurrencies.length === 0 && (
+                                                <p className="text-sm text-muted-foreground">
+                                                    Select store products first to enable fixed discount fields.
+                                                </p>
+                                            )}
 
-                                            {/* INR */}
-                                            <div className="relative w-full">
-                                                <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="INR"
-                                                    className="pl-9 w-full"
-                                                    value={formData.discountAmountINR ?? ""}
-                                                    onChange={(e) => update("discountAmountINR", e.target.value)}
-                                                />
-                                            </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* ONLY GP */}
+                                            {/* ONLY GP */}
+                                            {(onlyGPSelected || (editingId && formData.discountAmountGP)) && (
+                                                <div className="relative w-full">
+                                                    <span className="absolute left-2.5 top-2.5 text-xs font-bold">GP</span>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="GP"
+                                                        className="pl-9 w-full"
+                                                        value={formData.discountAmountGP ?? ""}
+                                                        onChange={(e) => update("discountAmountGP", e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* MIXED (GP + others) */}
+                                            {!onlyGPSelected && hasGPProduct && (
+                                                <>
+                                                    <div className="relative w-full">
+                                                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="USD"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountUSD ?? ""}
+                                                            onChange={(e) => update("discountAmountUSD", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="relative w-full">
+                                                        <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="INR"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountINR ?? ""}
+                                                            onChange={(e) => update("discountAmountINR", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="relative w-full">
+                                                        <span className="absolute left-2.5 top-2.5 text-xs font-bold">GP</span>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="GP"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountGP ?? ""}
+                                                            onChange={(e) => update("discountAmountGP", e.target.value)}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {/* NO GP */}
+                                            {!hasGPProduct && (
+                                                <>
+                                                    <div className="relative w-full">
+                                                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="USD"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountUSD ?? ""}
+                                                            onChange={(e) => update("discountAmountUSD", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="relative w-full">
+                                                        <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="INR"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountINR ?? ""}
+                                                            onChange={(e) => update("discountAmountINR", e.target.value)}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}

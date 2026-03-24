@@ -36,6 +36,7 @@ interface AppliedCoupon {
   discountPercentage?: number | null;
   discountAmountUSD?: number | null;
   discountAmountINR?: number | null;
+  discountAmountGP?: number | null;
   freeDays?: number | null;
   description?: string | null;
 }
@@ -494,12 +495,32 @@ const CheckoutContent = () => {
 
   const gpBalance = gpData?.balance ?? 0;
 
-  const gpTotal = useMemo(
-    () => isGPCart
-      ? items?.reduce((sum, item, i) => sum + item.basePrice * parsedCartItems[i].quantity, 0) ?? 0
-      : 0,
-    [isGPCart, items, parsedCartItems]
-  );
+  const gpTotal = useMemo(() => {
+    if (!isGPCart || !items) return 0;
+
+    return items.reduce((sum, item, i) => {
+      const raw = item.basePrice * parsedCartItems[i].quantity;
+      let final = raw;
+
+      if (appliedCoupon) {
+        if (appliedCoupon.type === "PERCENTAGE") {
+          final = raw - (raw * (appliedCoupon.discountPercentage || 0)) / 100;
+        }
+
+        if (appliedCoupon.type === "FIXED") {
+          final = raw - (appliedCoupon.discountAmountGP || 0);
+        }
+
+        if (appliedCoupon.type === "FULL_DISCOUNT") {
+          final = 0;
+        }
+
+        if (final < 0) final = 0;
+      }
+
+      return sum + final;
+    }, 0);
+  }, [isGPCart, items, parsedCartItems, appliedCoupon]);
 
   const isGPInsufficient = isGPCart && gpBalance < gpTotal;
 
@@ -655,10 +676,15 @@ const CheckoutContent = () => {
     }
 
     if (appliedCoupon.type === "FIXED") {
-      discount =
-        singleTotal.currency === "USD"
-          ? appliedCoupon.discountAmountUSD || 0
-          : appliedCoupon.discountAmountINR || 0;
+      if (singleTotal.currency === "USD") {
+        discount = appliedCoupon.discountAmountUSD || 0;
+      }
+      if (singleTotal.currency === "INR") {
+        discount = appliedCoupon.discountAmountINR || 0;
+      }
+      if (singleTotal.currency === "GP") {
+        discount = appliedCoupon.discountAmountGP || 0;
+      }
     }
     if (appliedCoupon.type === "FULL_DISCOUNT") {
       discount = total;
@@ -733,7 +759,34 @@ const CheckoutContent = () => {
     const itemCurrency = item.currency || "INR";
     const rawPrice = item.basePrice * parsedCartItems[index].quantity;
     if (itemCurrency === "GP") {
-      return { price: rawPrice, symbol: "GP ", currency: "GP", isConverted: false, originalPrice: rawPrice, originalCurrency: "GP" };
+      let finalPrice = rawPrice;
+
+      if (appliedCoupon) {
+        if (appliedCoupon.type === "PERCENTAGE") {
+          finalPrice =
+            rawPrice -
+            (rawPrice * (appliedCoupon.discountPercentage || 0)) / 100;
+        }
+
+        if (appliedCoupon.type === "FIXED") {
+          finalPrice = rawPrice - (appliedCoupon.discountAmountGP || 0);
+        }
+
+        if (appliedCoupon.type === "FULL_DISCOUNT") {
+          finalPrice = 0;
+        }
+
+        if (finalPrice < 0) finalPrice = 0;
+      }
+
+      return {
+        price: finalPrice,
+        symbol: "GP ",
+        currency: "GP",
+        isConverted: false,
+        originalPrice: rawPrice,
+        originalCurrency: "GP",
+      };
     }
     if (selectedCurrency && selectedCurrency !== "GP" && selectedCurrency !== itemCurrency) {
       return {
@@ -1130,14 +1183,16 @@ const CheckoutContent = () => {
                   <span className="text-gray-700 font-medium">Delivery Charges</span>
                   <span className="text-green-600 font-bold">FREE</span>
                 </div>
-                {appliedCoupon && selectedCurrency !== "GP" && (
+                {appliedCoupon && selectedCurrency && (
                   <div className="flex justify-between items-center text-green-600">
                     <span className="font-medium">
                       Coupon ({appliedCoupon.code})
                     </span>
                     <span className="font-bold">
-                      -{getCurrencySymbol(selectedCurrency || "INR")}
-                      {discountAmount.toFixed(2)}
+                      {selectedCurrency === "GP"
+                        ? `-${Math.ceil(discountAmount)} GP`
+                        : `-${getCurrencySymbol(selectedCurrency)}${discountAmount.toFixed(2)}`
+                      }
                     </span>
                   </div>
                 )}
@@ -1156,7 +1211,7 @@ const CheckoutContent = () => {
                       {selectedCurrency ? getCurrencySymbol(selectedCurrency) : " "}1.00
                     </span>
                   </div>
-                )} 
+                )}
               </div>
 
               {/* Total Payable */}

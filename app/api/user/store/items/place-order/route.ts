@@ -40,7 +40,12 @@ const convertPrice = (amount: number, from: string, to: string): number => {
 };
 
 const getCurrencySymbol = (currency: string): string => {
-  const symbols: Record<string, string> = { INR: "₹", USD: "$", GP: "GP", JP: "JP" };
+  const symbols: Record<string, string> = {
+    INR: "₹",
+    USD: "$",
+    GP: "GP",
+    JP: "JP",
+  };
   return symbols[currency] ?? currency;
 };
 
@@ -52,9 +57,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { items, currency } = body as {
+    const { items, currency, couponCode } = body as {
       items: OrderItemInput[];
       currency: string;
+      couponCode?: string;
     };
 
     if (!items || items.length === 0) {
@@ -93,9 +99,37 @@ export async function POST(req: Request) {
         lifetimePrice: true,
       },
     });
+    let coupon = null;
 
+    if (couponCode) {
+      coupon = await prisma.coupon.findUnique({
+        where: { couponCode: couponCode.toUpperCase() },
+        include: {
+          applicableStoreProducts: { select: { id: true } },
+        },
+      });
+
+      if (!coupon) {
+        return new NextResponse("Invalid coupon code", { status: 400 });
+      }
+
+      // Check date validity
+      const now = new Date();
+      if (now < coupon.startDate || now > coupon.endDate) {
+        return new NextResponse("Coupon expired", { status: 400 });
+      }
+
+      // Check scope
+      if (coupon.scope !== "STORE_PRODUCT") {
+        return new NextResponse("Coupon not valid for store products", {
+          status: 400,
+        });
+      }
+    }
     // ✅ FIXED: Separate items by currency type - removed unused variables
-    const regularItems = dbItems.filter((item) => item.currency !== "GP" && item.currency !== "JP");
+    const regularItems = dbItems.filter(
+      (item) => item.currency !== "GP" && item.currency !== "JP",
+    );
 
     const hasGPItems = dbItems.some((item) => item.currency === "GP");
     const hasJPItems = dbItems.some((item) => item.currency === "JP");
@@ -105,7 +139,7 @@ export async function POST(req: Request) {
     if (hasGPItems && hasJPItems) {
       return new NextResponse(
         "Cannot purchase GP and JP items together. Please checkout separately.",
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -118,7 +152,7 @@ export async function POST(req: Request) {
       if (!pointsType || !hasRegularItems) {
         return new NextResponse(
           "Mixed payment requires both points items and regular items",
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else if (currency === "GP" || currency === "JP") {
@@ -126,7 +160,7 @@ export async function POST(req: Request) {
       if (hasRegularItems) {
         return new NextResponse(
           `${currency} can only be used for ${currency} items`,
-          { status: 400 }
+          { status: 400 },
         );
       }
     } else if (!["INR", "USD"].includes(currency)) {
@@ -136,6 +170,8 @@ export async function POST(req: Request) {
     // ✅ Calculate totals
     let pointsTotal = 0;
     let regularTotal = 0;
+    let totalDiscount = 0;
+
     const orderItemsData: {
       itemId: string;
       quantity: number;
@@ -161,18 +197,45 @@ export async function POST(req: Request) {
 
       // Calculate price based on membership
       let finalPrice = item.basePrice;
-      switch (user.membership) {
-        case "MONTHLY":
-          finalPrice = item.monthlyPrice ?? item.basePrice;
-          break;
-        case "YEARLY":
-          finalPrice = item.yearlyPrice ?? item.basePrice;
-          break;
-        case "LIFETIME":
-          finalPrice = item.lifetimePrice ?? item.basePrice;
-          break;
-      }
 
+      // Apply coupon if exists
+      if (coupon) {
+        const allowedProductIds = coupon.applicableStoreProducts.map(
+          (p) => p.id,
+        );
+
+        const isApplicable =
+          allowedProductIds.length === 0 || allowedProductIds.includes(item.id);
+
+        if (isApplicable) {
+          let discount = 0;
+
+          if (coupon.type === "PERCENTAGE" && coupon.discountPercentage) {
+            discount = (finalPrice * coupon.discountPercentage) / 100;
+          }
+
+          if (coupon.type === "FIXED") {
+            if (item.currency === "USD" && coupon.discountAmountUSD) {
+              discount = coupon.discountAmountUSD;
+            }
+
+            if (item.currency === "INR" && coupon.discountAmountINR) {
+              discount = coupon.discountAmountINR;
+            }
+
+            if (item.currency === "GP" && coupon.discountAmountGP) {
+              discount = coupon.discountAmountGP;
+            }
+          }
+
+          if (coupon.type === "FULL_DISCOUNT") {
+            discount = finalPrice;
+          }
+
+          finalPrice = Math.max(finalPrice - discount, 0);
+          totalDiscount += discount * quantity;
+        }
+      }
       const itemCurrency = item.currency || "INR";
       const originalPrice = finalPrice;
 
@@ -196,9 +259,13 @@ export async function POST(req: Request) {
       } else {
         // Handle regular currency items
         const targetCurrency = currency === "MIXED" ? "INR" : currency;
-        const convertedPrice = convertPrice(finalPrice, itemCurrency, targetCurrency);
+        const convertedPrice = convertPrice(
+          finalPrice,
+          itemCurrency,
+          targetCurrency,
+        );
         regularTotal += convertedPrice * quantity;
-        
+
         orderItemsData.push({
           itemId: item.id,
           quantity,
@@ -220,7 +287,7 @@ export async function POST(req: Request) {
     if (pointsTotal > 0 && user.jpBalance < pointsTotal) {
       return new NextResponse(
         `Insufficient ${pointsType} balance. You have ${user.jpBalance} ${pointsType} but need ${Math.ceil(pointsTotal)} ${pointsType}.`,
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -266,7 +333,17 @@ export async function POST(req: Request) {
       await tx.cart.deleteMany({
         where: { userId: user.id, itemId: { in: itemIds } },
       });
-
+      if (coupon) {
+        await tx.couponRedemption.create({
+          data: {
+            couponId: coupon.id,
+            userId: user.id,
+            redeemed: true,
+            appliedPlan: "STORE_PRODUCT",
+            discountApplied: Math.ceil(totalDiscount),
+          },
+        });
+      }
       return order;
     });
 
@@ -300,22 +377,22 @@ export async function POST(req: Request) {
         .map((d: ItemDetail, i: number) => {
           const qty = orderItemsData[i].quantity;
           const itemCurrency = d.originalCurrency;
-          
+
           if (itemCurrency === "GP" || itemCurrency === "JP") {
             return `${d.name} (×${qty}) - ${Math.ceil(d.price)} ${itemCurrency}`;
           }
-          
+
           if (d.originalCurrency !== orderCurrency && currency !== "MIXED") {
             return `${d.name} (×${qty}) - ${getCurrencySymbol(d.originalCurrency)}${d.originalPrice.toFixed(2)} → ${getCurrencySymbol(orderCurrency)}${d.price.toFixed(2)}`;
           }
-          
+
           return `${d.name} (×${qty}) - ${getCurrencySymbol(orderCurrency)}${d.price.toFixed(2)}`;
         })
         .join(", ");
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 
-      await sendEmailUsingTemplate({
+      void sendEmailUsingTemplate({
         toEmail: user.email!,
         toName: user.name ?? "Customer",
         templateId: "order-placed",
@@ -335,12 +412,16 @@ export async function POST(req: Request) {
 
       console.log("\n[ORDER_EMAIL_SENT] ✅ Email sent successfully!");
       console.log(`  → Order ID: ${result.id}`);
-      console.log(`  → Payment Type: ${currency === "MIXED" ? "Hybrid" : currency}`);
+      console.log(
+        `  → Payment Type: ${currency === "MIXED" ? "Hybrid" : currency}`,
+      );
       if (pointsTotal > 0) {
         console.log(`  → ${pointsType} Deducted: ${Math.ceil(pointsTotal)}`);
       }
       if (regularTotal > 0) {
-        console.log(`  → ${orderCurrency} Amount: ${getCurrencySymbol(orderCurrency)}${regularTotal.toFixed(2)}`);
+        console.log(
+          `  → ${orderCurrency} Amount: ${getCurrencySymbol(orderCurrency)}${regularTotal.toFixed(2)}`,
+        );
       }
     } catch (emailError) {
       console.error("[ORDER_EMAIL_FAILED] ❌", emailError);
@@ -374,7 +455,8 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("[ORDER_CREATE]", error);
 
-    const errorMessage = error instanceof Error ? error.message : "Internal Error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal Error";
 
     if (
       errorMessage.includes("GP items cannot be converted") ||

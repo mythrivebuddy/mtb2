@@ -96,6 +96,7 @@ export default function CouponsManagementPage() {
     discountPercentage: "",
     discountAmountUSD: "",
     discountAmountINR: "",
+    discountAmountGP: "",
     freeDays: "",
     applicableUserTypes: ["ENTHUSIAST"],
     applicablePlanIds: [],
@@ -114,7 +115,7 @@ export default function CouponsManagementPage() {
   };
 
   const [formData, setFormData] = useState<CouponFormPayload>(initialFormState);
-  const [isEditDataLoaded, setIsEditDataLoaded] = useState(false);
+
 
   // --- React Query Hooks ---
   const { data: coupons = [], isLoading: isLoadingCoupons } = useQuery({
@@ -193,7 +194,6 @@ export default function CouponsManagementPage() {
   const resetForm = () => {
     setFormData(initialFormState);
     setEditingId(null);
-    setIsEditDataLoaded(false);
   };
 
   const handleOpenCreate = () => {
@@ -231,7 +231,8 @@ export default function CouponsManagementPage() {
     if (formData.type === "FIXED") {
       if (
         !formData.discountAmountUSD &&
-        !formData.discountAmountINR
+        !formData.discountAmountINR &&
+        !formData.discountAmountGP
       ) {
         return "Enter at least one fixed amount (USD or INR)";
       }
@@ -307,6 +308,10 @@ export default function CouponsManagementPage() {
         formData.discountAmountINR && formData.type === "FIXED"
           ? Number(formData.discountAmountINR)
           : null,
+      discountAmountGP:
+        formData.discountAmountGP && formData.type === "FIXED"
+          ? Number(formData.discountAmountGP)
+          : null,
     };
 
 
@@ -318,12 +323,12 @@ export default function CouponsManagementPage() {
     }
   };
 
-  const handleInputChange = <K extends keyof CouponFormPayload>(
-    field: K,
-    value: CouponFormPayload[K]
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // const handleInputChange = <K extends keyof CouponFormPayload>(
+  //   field: K,
+  //   value: CouponFormPayload[K]
+  // ) => {
+  //   setFormData((prev) => ({ ...prev, [field]: value }));
+  // };
 
   // const toggleSelection = (
   //   field: "applicablePlanIds" | "applicableCurrencies" | "applicableUserTypes",
@@ -336,66 +341,66 @@ export default function CouponsManagementPage() {
   //       : { ...prev, [field]: [...current, value] };
   //   });
   // };
-  const toggleSelection = (
-    field:
-      | "applicablePlanIds"
-      | "applicableCurrencies"
-      | "applicableUserTypes"
-      | "applicableChallengeIds"
-      | "applicableMmpProgramIds"
-      | "applicableStoreProductIds",
-    value: string
-  ) => {
-    setFormData((prev) => {
-      const current = prev[field] as string[];
-      const updated = current.includes(value)
-        ? current.filter((i) => i !== value)
-        : [...current, value];
-      return { ...prev, [field]: updated };
-    });
-  };
-  const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
+  // const toggleSelection = (
+  //   field:
+  //     | "applicablePlanIds"
+  //     | "applicableCurrencies"
+  //     | "applicableUserTypes"
+  //     | "applicableChallengeIds"
+  //     | "applicableMmpProgramIds"
+  //     | "applicableStoreProductIds",
+  //   value: string
+  // ) => {
+  //   setFormData((prev) => {
+  //     const current = prev[field] as string[];
+  //     const updated = current.includes(value)
+  //       ? current.filter((i) => i !== value)
+  //       : [...current, value];
+  //     return { ...prev, [field]: updated };
+  //   });
+  // };
+  // const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"];
 
-  const handleUserTypeChange = (value: string) => {
-    setFormData((prev) => {
-      let updated = [...prev.applicableUserTypes];
+  // const handleUserTypeChange = (value: string) => {
+  //   setFormData((prev) => {
+  //     let updated = [...prev.applicableUserTypes];
 
-      // ✅ If ALL clicked
-      if (value === "ALL") {
-        if (updated.includes("ALL")) {
-          // uncheck ALL → clear all
-          return { ...prev, applicableUserTypes: [] };
-        } else {
-          // check ALL → select everything
-          return {
-            ...prev,
-            applicableUserTypes: [...USER_TYPES, "ALL"],
-          };
-        }
-      }
+  //     // ✅ If ALL clicked
+  //     if (value === "ALL") {
+  //       if (updated.includes("ALL")) {
+  //         // uncheck ALL → clear all
+  //         return { ...prev, applicableUserTypes: [] };
+  //       } else {
+  //         // check ALL → select everything
+  //         return {
+  //           ...prev,
+  //           applicableUserTypes: [...USER_TYPES, "ALL"],
+  //         };
+  //       }
+  //     }
 
-      // ✅ Toggle individual
-      if (updated.includes(value)) {
-        updated = updated.filter((v) => v !== value);
-      } else {
-        updated.push(value);
-      }
+  //     // ✅ Toggle individual
+  //     if (updated.includes(value)) {
+  //       updated = updated.filter((v) => v !== value);
+  //     } else {
+  //       updated.push(value);
+  //     }
 
-      // ❌ Remove ALL if any individual is removed
-      updated = updated.filter((v) => v !== "ALL");
+  //     // ❌ Remove ALL if any individual is removed
+  //     updated = updated.filter((v) => v !== "ALL");
 
-      // ✅ If all individuals selected → add ALL
-      const allSelected = USER_TYPES.every((type) =>
-        updated.includes(type)
-      );
+  //     // ✅ If all individuals selected → add ALL
+  //     const allSelected = USER_TYPES.every((type) =>
+  //       updated.includes(type)
+  //     );
 
-      if (allSelected) {
-        updated.push("ALL");
-      }
+  //     if (allSelected) {
+  //       updated.push("ALL");
+  //     }
 
-      return { ...prev, applicableUserTypes: updated };
-    });
-  };
+  //     return { ...prev, applicableUserTypes: updated };
+  //   });
+  // };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -415,6 +420,7 @@ export default function CouponsManagementPage() {
       discountPercentage: coupon.discountPercentage?.toString() || "",
       discountAmountUSD: coupon.discountAmountUSD?.toString() || "",
       discountAmountINR: coupon.discountAmountINR?.toString() || "",
+      discountAmountGP: coupon.discountAmountGP?.toString() || "",
       freeDays: coupon.freeDays?.toString() || "",
       applicableUserTypes: coupon.applicableUserTypes,
       applicablePlanIds: coupon.applicablePlans?.map((p) => p.id) || [],
@@ -432,7 +438,6 @@ export default function CouponsManagementPage() {
       scope: coupon.scope,
     });
 
-    setIsEditDataLoaded(true);
 
   }, [editingId, coupons, challenges]);
   return (

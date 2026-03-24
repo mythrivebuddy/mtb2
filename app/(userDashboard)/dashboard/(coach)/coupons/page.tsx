@@ -182,6 +182,7 @@ export default function CoachCouponsPage() {
             discountPercentage: coupon.discountPercentage?.toString() ?? "",
             discountAmountUSD: coupon.discountAmountUSD?.toString() ?? "",
             discountAmountINR: coupon.discountAmountINR?.toString() ?? "",
+            discountAmountGP: coupon.discountAmountGP?.toString() || "",
             freeDays: coupon.freeDays?.toString() ?? "",
             applicableUserTypes: normalizedUserTypes,
             applicableCurrencies: coupon.applicableCurrencies ?? [],

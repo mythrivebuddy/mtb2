@@ -104,6 +104,7 @@ export default function CouponTable({ coupons, isLoading, onEdit, onDelete }: Pr
                                     <div className="flex flex-col">
                                         {coupon.discountAmountUSD && `USD $${coupon.discountAmountUSD}`}{" "}
                                         {coupon.discountAmountINR && `INR ₹${coupon.discountAmountINR}`}
+                                        {coupon?.discountAmountGP && `GP ${coupon?.discountAmountGP}`}
                                     </div>
                                 )}
                                 {coupon.type === "FREE_DURATION" && coupon.freeDays &&

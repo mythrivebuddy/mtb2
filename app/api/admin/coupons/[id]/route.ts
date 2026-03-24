@@ -15,6 +15,7 @@ type UpdateCouponDTO = {
   discountPercentage?: string;
   discountAmountINR?: string;
   discountAmountUSD?: string;
+  discountAmountGP?: string;
   freeDays?: string;
   maxGlobalUses?: string;
   maxUsesPerUser?: number;
@@ -57,6 +58,7 @@ export async function PUT(
       discountPercentage,
       discountAmountINR,
       discountAmountUSD,
+      discountAmountGP,
       freeDays,
       maxGlobalUses,
       maxUsesPerUser,
@@ -87,6 +89,9 @@ export async function PUT(
 
       ...(discountAmountINR && {
         discountAmountINR: parseFloat(discountAmountINR),
+      }),
+      ...(discountAmountGP && {
+        discountAmountGP: parseFloat(discountAmountGP),
       }),
 
       ...(discountAmountUSD && {
