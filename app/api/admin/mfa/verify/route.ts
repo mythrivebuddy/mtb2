@@ -22,13 +22,13 @@ export async function POST(req: Request) {
   if (!user?.mfaSecret) {
     return NextResponse.json({ error: "MFA not configured" }, { status: 400 })
   }
-
+console.log("otp", otp)
   // OTP verify
   const isValid = authenticator.verify({
     token: otp,
     secret: user.mfaSecret,
   })
-
+console.log(isValid)
   if (!isValid) {
     return NextResponse.json(
       { error: "Invalid OTP. Please try again." },
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 30,
+    maxAge: 60 * 60 * 8,// 8 hours
     path: "/",
   })
 

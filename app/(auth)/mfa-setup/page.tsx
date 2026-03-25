@@ -13,11 +13,27 @@ export default function MfaSetupPage() {
   const [isGenerating, setIsGenerating] = useState(true)
   const router = useRouter()
 
+useEffect(() => {
+  const check = async () => {
+    const res = await fetch("/api/admin/mfa/check-verified");
+    const data = await res.json();
+    if (data.verified) {
+      router.replace("/admin/dashboard");
+    }
+  };
+  check();
+}, []);
+
   // QR code generate karo on mount
   useEffect(() => {
     const setup = async () => {
       try {
         const res = await fetch("/api/admin/mfa/setup", { method: "POST" })
+
+        if (res.status === 400) {
+        router.push("/mfa-verify")
+        return
+      }
         const data = await res.json()
         setQrCodeUrl(data.qrCodeUrl)
         setSecret(data.secret)

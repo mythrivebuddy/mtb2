@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Shield, Loader2, ShieldCheck } from "lucide-react"
 
@@ -9,6 +9,17 @@ export default function MfaVerifyPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+useEffect(() => {
+  const check = async () => {
+    const res = await fetch("/api/admin/mfa/check-verified");
+    const data = await res.json();
+    if (data.verified) {
+      router.replace("/admin/dashboard");
+    }
+  };
+  check();
+}, []);
 
   const handleVerify = async () => {
     if (otp.length !== 6) {

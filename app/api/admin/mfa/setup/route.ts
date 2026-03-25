@@ -12,14 +12,26 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  // ✅ Pehle check karo — MFA already enabled hai?
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { mfaSecret: true, mfaEnabled: true },
+  })
+
+  // ✅ Already enabled hai toh setup mat karo
+  if (user?.mfaEnabled && user?.mfaSecret) {
+    return NextResponse.json(
+      { error: "MFA already enabled" },
+      { status: 400 }
+    )
+  }
+
+  // Naya secret generate karo
   const secret = authenticator.generateSecret()
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: {
-      mfaSecret: secret,
-      mfaEnabled: false
-    }
+    data: { mfaSecret: secret, mfaEnabled: false },
   })
 
   const otpauth = authenticator.keyuri(
@@ -27,8 +39,7 @@ export async function POST() {
     "MyThriveBuddy Admin",
     secret
   )
-
   const qrCodeUrl = await QRCode.toDataURL(otpauth)
 
-  return NextResponse.json({ qrCodeUrl })
+  return NextResponse.json({ qrCodeUrl, secret })
 }

@@ -17,11 +17,20 @@ const SignInPageContent = () => {
 
     const checkAndRedirect = async () => {
       if (session?.user?.role === "ADMIN") {
-        console.log(session.user)
         if (session?.user?.authMethod === "GOOGLE") {
           router.push("/admin/dashboard");
           return;
         }
+
+         // ✅ Pehle check karo — MFA already verified hai?
+      const mfaStatusRes = await fetch("/api/admin/mfa/check-verified");
+      const mfaStatus = await mfaStatusRes.json();
+
+      if (mfaStatus.verified) {
+        // Cookie valid hai — seedha dashboard
+        router.push("/admin/dashboard");
+        return;
+      }
 
         const mfaRes = await fetch("/api/admin/mfa/status");
         const mfaData = await mfaRes.json();
