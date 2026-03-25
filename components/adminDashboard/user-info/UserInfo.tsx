@@ -416,11 +416,22 @@ export default function UserInfoContent() {
       </div>
 
       {/* Pagination */}
-      <Pagination
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-      />
+      <div className="flex items-center justify-between mt-4">
+        <p className="text-sm text-gray-500">
+          Showing{" "}
+          <span className="font-semibold text-gray-700">
+            {Math.min((page - 1) * pageSize + filteredUsers.length, total)}
+          </span>{" "}
+          of{" "}
+          <span className="font-semibold text-gray-700">{total}</span>{" "}
+          users
+        </p>
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </div>
 
       {/* Block User Modal */}
       {showModal && selectedUser && (

@@ -14,51 +14,7 @@ import {
   Facebook, Twitter, Send,
 } from "lucide-react";
 import Link from "next/link";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Creator {
-  id: string;
-  name: string;
-  image: string | null;
-}
-
-interface ModuleItem {
-  id: number;
-  title: string;
-  type: "video" | "text";
-  videoUrl?: string;
-  instructions: string;
-  actionTask: string;
-}
-
-interface Program {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  durationDays: number | null;
-  unlockType: string | null;
-  price: number | null;
-  currency: string | null;
-  completionThreshold: number | null;
-  certificateTitle: string | null;
-  achievements: unknown;
-  modules: unknown;
-  thumbnailUrl: string | null;
-  status: string | null;
-  createdAt: string;
-  creator: Creator | null;
-}
-
-interface ProgramStatus {
-  enrolled: boolean;
-  completed: boolean;
-}
-
-interface MyStatusResponse {
-  statuses: Record<string, ProgramStatus>;
-}
+import { ModuleItem, MyStatusResponse, Program, ProgramCompStatus } from "@/types/client/mini-mastery-program";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -183,7 +139,7 @@ function EnrollButton({
   isLoggedIn,
 }: {
   program: Program;
-  status?: ProgramStatus;
+  status?: ProgramCompStatus;
   isLoggedIn: boolean;
 }) {
   const isPaid = (program.price ?? 0) > 0;
@@ -230,7 +186,7 @@ function EnrollButton({
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-function HeroStatusBadge({ status }: { status?: ProgramStatus }) {
+function HeroStatusBadge({ status }: { status?: ProgramCompStatus }) {
   if (status?.completed) {
     return (
       <div className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest">
