@@ -392,8 +392,9 @@ const CheckoutContent = () => {
         toast.error(data.message);
       }
     },
-    onError: () => {
-      toast.error("Failed to apply coupon");
+
+    onError: (error:unknown) => {
+      toast.error(getAxiosErrorMessage(error, "Failed to apply coupon"));
     },
   });
 
@@ -511,7 +512,7 @@ const CheckoutContent = () => {
           final = raw - (appliedCoupon.discountAmountGP || 0);
         }
 
-        if (appliedCoupon.type === "FULL_DISCOUNT") {
+      if (appliedCoupon.type === "FULL_DISCOUNT" && selectedCurrency === "GP") {
           final = 0;
         }
 

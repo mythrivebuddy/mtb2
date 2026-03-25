@@ -388,7 +388,7 @@ export default function CouponFormFields({
                     {challenges.length === 0 ? (
                         <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
                             You have no active challenges yet.{" "}
-                            <Link href="/dashboard/challenges/create" className="text-primary underline underline-offset-2">
+                            <Link href="/dashboard/challenge" target="_blank" className="text-primary underline underline-offset-2">
                                 Create a challenge
                             </Link>{" "}
                             to use this coupon scope.
@@ -437,7 +437,7 @@ export default function CouponFormFields({
                     {mmpPrograms.length === 0 ? (
                         <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
                             You have no MMP programs yet.{" "}
-                            <Link href="/dashboard/mini-mastery-programs" className="text-primary underline underline-offset-2">
+                            <Link href="/dashboard/mini-mastery-programs/create/new" target="_blank" className="text-primary underline underline-offset-2">
                                 Create an MMP program
                             </Link>{" "}
                             to use this coupon scope.
@@ -492,7 +492,7 @@ export default function CouponFormFields({
                     {storeProducts.length === 0 ? (
                         <div className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
                             You have no store products yet.{" "}
-                            <Link href="/dashboard/store" className="text-primary underline underline-offset-2">
+                            <Link href="/dashboard/manage-store" target="_blank" className="text-primary underline underline-offset-2">
                                 Add a product
                             </Link>{" "}
                             to use this coupon scope.

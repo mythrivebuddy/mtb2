@@ -324,7 +324,10 @@ async function handleWalletTransaction({
         }
 
         if (coupon.type === "FULL_DISCOUNT") {
-          discount = finalPrice;
+          // FULL DISCOUNT ONLY FOR GP
+          if (product.currency === "GP") {
+            discount = finalPrice;
+          }
         }
 
         finalPrice = Math.max(finalPrice - discount, 0);
