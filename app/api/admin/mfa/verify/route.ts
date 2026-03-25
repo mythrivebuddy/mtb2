@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma"
 import { authenticator } from "otplib"
 import { cookies } from "next/headers"
 
+// ─── POST /api/admin/mfa/verify ──────────────────────────────────────────────
+// Verifies a TOTP OTP against the admin's stored secret.
+// If `isSetup` is true, enables MFA in the database (first-time setup flow).
+// On success, sets an httpOnly `mfa_verified` cookie valid for 8 hours.
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
@@ -14,21 +19,22 @@ export async function POST(req: Request) {
 
   const { otp, isSetup } = await req.json()
 
+  // Fetch the admin's stored TOTP secret
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where:  { id: session.user.id },
     select: { mfaSecret: true, mfaEnabled: true },
   })
 
   if (!user?.mfaSecret) {
     return NextResponse.json({ error: "MFA not configured" }, { status: 400 })
   }
-console.log("otp", otp)
-  // OTP verify
+
+  // Validate the OTP against the stored secret
   const isValid = authenticator.verify({
-    token: otp,
+    token:  otp,
     secret: user.mfaSecret,
   })
-console.log(isValid)
+
   if (!isValid) {
     return NextResponse.json(
       { error: "Invalid OTP. Please try again." },
@@ -36,23 +42,23 @@ console.log(isValid)
     )
   }
 
-  // Agar setup flow hai toh MFA enable karo
+  // Enable MFA in the database on first-time setup verification
   if (isSetup) {
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { mfaEnabled: true },
+      data:  { mfaEnabled: true },
     })
   }
 
-  // MFA verified cookie set karo (30 minutes)
+  // Set an httpOnly cookie to mark this session as MFA-verified (8 hours)
   const cookieStore = await cookies()
 
   cookieStore.set("mfa_verified", session.user.id, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure:   process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 8,// 8 hours
-    path: "/",
+    maxAge:   60 * 60 * 8,
+    path:     "/",
   })
 
   return NextResponse.json({ success: true })

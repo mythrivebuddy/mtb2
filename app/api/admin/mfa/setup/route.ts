@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma"
 import { authenticator } from "otplib"
 import QRCode from "qrcode"
 
+// ─── POST /api/admin/mfa/setup ────────────────────────────────────────────────
+// Generates a new TOTP secret and QR code for the admin to scan.
+// Returns 400 if MFA is already enabled to prevent re-setup.
+
 export async function POST() {
   const session = await getServerSession(authOptions)
 
@@ -12,13 +16,13 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // ✅ Pehle check karo — MFA already enabled hai?
+  // Check if MFA is already configured for this admin
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where:  { id: session.user.id },
     select: { mfaSecret: true, mfaEnabled: true },
   })
 
-  // ✅ Already enabled hai toh setup mat karo
+  // Prevent re-setup if MFA is already active
   if (user?.mfaEnabled && user?.mfaSecret) {
     return NextResponse.json(
       { error: "MFA already enabled" },
@@ -26,14 +30,15 @@ export async function POST() {
     )
   }
 
-  // Naya secret generate karo
+  // Generate a new TOTP secret and persist it (mfaEnabled stays false until verified)
   const secret = authenticator.generateSecret()
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { mfaSecret: secret, mfaEnabled: false },
+    data:  { mfaSecret: secret, mfaEnabled: false },
   })
 
+  // Build the otpauth URI and convert it to a scannable QR code
   const otpauth = authenticator.keyuri(
     session.user.email ?? "admin",
     "MyThriveBuddy Admin",
