@@ -1,7 +1,7 @@
 // Store Types for Client-side usage
 
 export interface BillingInfo {
-  id?:string;
+  id?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -11,7 +11,7 @@ export interface BillingInfo {
   state: string;
   postalCode: string;
   country: string;
-  gstNumber?: string 
+  gstNumber?: string;
 }
 
 export interface Category {
@@ -38,6 +38,10 @@ export interface Item {
   createdByUserId: string;
   approvedByUserId?: string | null;
   approvedAt?: string | null;
+  creator: {
+    id: string;
+    name: string;
+  };
   approver?: {
     id: string;
     name?: string | null;

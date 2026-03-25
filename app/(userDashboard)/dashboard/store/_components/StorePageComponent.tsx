@@ -424,15 +424,28 @@ const StorePageComponent: React.FC = () => {
                                                 </span>
                                             </div>
                                         )}
+                                        {/* <Link
+                                            href={`/profile/${item.createdByUserId}`}
+                                            className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-gray-700 hover:text-blue-600 shadow-sm"
+                                        >
+                                            By {item.createdByRole === "ADMIN" ? "MTB" : item.creator?.name || "Coach"}
+                                        </Link> */}
                                     </div>
 
                                     <div className="p-5 flex flex-col flex-1">
                                         <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
-                                        <div className="flex items-baseline gap-2 mb-4">
+                                        <div className="flex items-center justify-between gap-2 mb-4">
                                             {/* ✅ FIXED: Added space after GP symbol */}
                                             <span className="text-2xl font-bold text-green-600">
                                                 {isGP ? `${sym} ${Number(price).toFixed(0)}` : `${sym}${Number(price).toFixed(2)}`}
                                             </span>
+                                            <Link
+                                                href={`/profile/${item.createdByUserId}`}
+                                                target="_blank"
+                                                className=" px-2 py-1 rounded-md text-xs font-medium text-gray-700 hover:text-blue-600 shadow-sm"
+                                            >
+                                                By {item.createdByRole === "ADMIN" ? "MTB" : item.creator?.name || "Coach"}
+                                            </Link>
                                         </div>
 
                                         <div className="flex flex-col sm:flex-row gap-2 mt-auto">
@@ -486,7 +499,7 @@ const StorePageComponent: React.FC = () => {
     )
 
     return authStatus === "authenticated" ? (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen">
             {pageContent}
         </div>
     ) : (
