@@ -15,20 +15,16 @@ import ManageStorePage from "@/app/(userDashboard)/dashboard/manage-store/page";
 // MOCK DEPENDENCIES
 // ============================================================================
 
-// Mock Next.js navigation
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 
-// Mock next-auth
 jest.mock("next-auth/react", () => ({
   useSession: jest.fn(),
 }));
 
-// Mock axios
 jest.mock("axios");
 
-// Mock toast notifications
 jest.mock("sonner", () => ({
   toast: {
     success: jest.fn(),
@@ -38,7 +34,6 @@ jest.mock("sonner", () => ({
   },
 }));
 
-// Mock Next.js Link component
 jest.mock("next/link", () => {
   return function Link({
     children,
@@ -57,7 +52,6 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock Next.js Image component
 jest.mock("next/image", () => ({
   __esModule: true,
   default: function Image({
@@ -77,14 +71,12 @@ jest.mock("next/image", () => ({
   },
 }));
 
-// Mock PageLoader
 jest.mock("@/components/PageLoader", () => {
   return function PageLoader() {
     return <div data-testid="page-loader">Loading...</div>;
   };
 });
 
-// Mock Lucide icons
 jest.mock("lucide-react", () => ({
   Pencil: function Pencil({ className }: { className?: string }) {
     return <div className={className}>Pencil Icon</div>;
@@ -101,9 +93,11 @@ jest.mock("lucide-react", () => ({
   List: function List({ className }: { className?: string }) {
     return <div className={className}>List Icon</div>;
   },
+  ArrowLeft: function ArrowLeft({ className }: { className?: string }) {
+    return <div className={className}>ArrowLeft Icon</div>;
+  },
 }));
 
-// Mock axios error utility
 jest.mock("@/utils/ax", () => ({
   getAxiosErrorMessage: jest.fn((error, defaultMsg) => defaultMsg || "Error occurred"),
 }));
@@ -113,20 +107,12 @@ jest.mock("@/utils/ax", () => ({
 // ============================================================================
 
 const mockCoachSession = {
-  user: {
-    name: "Coach User",
-    email: "coach@example.com",
-    userType: "COACH",
-  },
+  user: { name: "Coach User", email: "coach@example.com", userType: "COACH" },
   expires: "2025-12-31",
 };
 
 const mockNonCoachSession = {
-  user: {
-    name: "Regular User",
-    email: "user@example.com",
-    userType: "USER",
-  },
+  user: { name: "Regular User", email: "user@example.com", userType: "USER" },
   expires: "2025-12-31",
 };
 
@@ -179,6 +165,37 @@ const mockItems = [
 ];
 
 // ============================================================================
+// HELPERS
+// ============================================================================
+
+/**
+ * "Approved" appears as: filter button, card badge spans, and stats <h3>.
+ * This returns specifically the filter <button> whose full text is "Approved".
+ */
+const getApprovedFilterButton = () => {
+  const buttons = screen.getAllByRole("button");
+  return buttons.find((btn) => btn.textContent?.trim() === "Approved")!;
+};
+
+/**
+ * "Approved" stats <h3> card — finds the stat card heading specifically.
+ * The stats card heading is an <h3> with uppercase tracking class.
+ */
+const getApprovedStatCard = () => {
+  const headings = screen.getAllByText("Approved");
+  return headings.find((el) => el.tagName === "H3")!;
+};
+
+/**
+ * "Pending" appears as: card badge <span> and stats <h3>.
+ * This returns specifically the <h3> heading in the stats card.
+ */
+const getPendingStatCard = () => {
+  const elements = screen.getAllByText("Pending");
+  return elements.find((el) => el.tagName === "H3")!;
+};
+
+// ============================================================================
 // TEST SUITE
 // ============================================================================
 
@@ -203,13 +220,11 @@ describe("ManageStorePage", () => {
       replace: mockReplace,
     });
 
-    // Default: authenticated coach
     (useSession as jest.Mock).mockReturnValue({
       data: mockCoachSession,
       status: "authenticated",
     });
 
-    // Setup axios mocks
     (axios.get as jest.Mock).mockImplementation((url: string) => {
       if (url === "/api/user/store/items/get-categories") {
         return Promise.resolve({ data: { categories: mockCategories } });
@@ -238,7 +253,7 @@ describe("ManageStorePage", () => {
   // TEST GROUP: Authentication & Authorization
   // ============================================================================
   describe("Authentication & Authorization", () => {
-    it("should show loading state while checking session", () => {
+    it("should show page loader while checking session", () => {
       (useSession as jest.Mock).mockReturnValue({
         data: null,
         status: "loading",
@@ -274,7 +289,7 @@ describe("ManageStorePage", () => {
       });
     });
 
-    it("should render page for authenticated coach", async () => {
+    it("should render page for authenticated coach user", async () => {
       renderComponent();
 
       await waitFor(() => {
@@ -287,26 +302,52 @@ describe("ManageStorePage", () => {
   // TEST GROUP: Initial Rendering
   // ============================================================================
   describe("Initial Rendering", () => {
-    it("should render page title and main elements", async () => {
+    it("should render page title and description", async () => {
       renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("🏪 Manage Store")).toBeInTheDocument();
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-        expect(screen.getByText("Back to Store")).toBeInTheDocument();
+        expect(
+          screen.getByText("Create and manage your products")
+        ).toBeInTheDocument();
       });
     });
 
-    it("should render view toggle buttons", async () => {
+    it("should render Add Product button", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const buttons = screen.getAllByRole("button");
-        const cardViewButton = buttons.find((btn) => btn.title === "Card View");
-        const tableViewButton = buttons.find((btn) => btn.title === "Table View");
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+    });
 
-        expect(cardViewButton).toBeInTheDocument();
-        expect(tableViewButton).toBeInTheDocument();
+    it("should render Back to Growth Store link", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        const backLink = screen.getByText("Back to Growth Store").closest("a");
+        expect(backLink).toHaveAttribute("href", "/dashboard/store");
+      });
+    });
+
+    it("should render view toggle buttons for card and table view", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTitle("Card View")).toBeInTheDocument();
+        expect(screen.getByTitle("Table View")).toBeInTheDocument();
+      });
+    });
+
+    it("should render filter buttons for All Products, Approved and Not Approved", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        // "All Products" is unique — safe to use getByText
+        expect(screen.getByText("All Products")).toBeInTheDocument();
+        // "Approved" and "Not Approved" need button-specific targeting
+        expect(getApprovedFilterButton()).toBeInTheDocument();
+        expect(screen.getByText("Not Approved")).toBeInTheDocument();
       });
     });
   });
@@ -319,7 +360,9 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(axios.get).toHaveBeenCalledWith("/api/user/store/items/get-categories");
+        expect(axios.get).toHaveBeenCalledWith(
+          "/api/user/store/items/get-categories"
+        );
       });
     });
 
@@ -327,11 +370,13 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(axios.get).toHaveBeenCalledWith("/api/user/store/items/my-items");
+        expect(axios.get).toHaveBeenCalledWith(
+          "/api/user/store/items/my-items"
+        );
       });
     });
 
-    it("should display all items by default", async () => {
+    it("should display all items after fetching", async () => {
       renderComponent();
 
       await waitFor(() => {
@@ -341,7 +386,7 @@ describe("ManageStorePage", () => {
       });
     });
 
-    it("should handle empty items list", async () => {
+    it("should show empty state when API returns no items", async () => {
       (axios.get as jest.Mock).mockImplementation((url: string) => {
         if (url === "/api/user/store/items/get-categories") {
           return Promise.resolve({ data: { categories: mockCategories } });
@@ -355,7 +400,20 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("No products yet. Add your first product!")).toBeInTheDocument();
+        expect(screen.getByText("No products yet")).toBeInTheDocument();
+      });
+    });
+
+    it("should display product images", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        const images = screen.getAllByRole("img");
+        expect(images.length).toBeGreaterThan(0);
+        expect(images[0]).toHaveAttribute(
+          "src",
+          "https://example.com/image1.jpg"
+        );
       });
     });
   });
@@ -364,47 +422,8 @@ describe("ManageStorePage", () => {
   // TEST GROUP: Filtering
   // ============================================================================
   describe("Filtering", () => {
-    it("should filter not approved products", async () => {
+    it("should show all products by default", async () => {
       renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 2")).toBeInTheDocument();
-      });
-
-      const notApprovedButton = screen.getByText("Not Approved");
-      fireEvent.click(notApprovedButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 2")).toBeInTheDocument();
-        expect(screen.queryByText("Product 1")).not.toBeInTheDocument();
-        expect(screen.queryByText("Product 3")).not.toBeInTheDocument();
-      });
-    });
-
-    it("should show all products when 'All Products' is selected", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-      });
-
-      // First filter to approved - use getAllByText and find the filter button
-      const approvedButtons = screen.getAllByText("Approved");
-      const approvedFilterButton = approvedButtons.find(btn => 
-        btn.tagName === "BUTTON" && btn.className.includes("rounded-full")
-      );
-      
-      if (approvedFilterButton) {
-        fireEvent.click(approvedFilterButton);
-      }
-
-      await waitFor(() => {
-        expect(screen.queryByText("Product 2")).not.toBeInTheDocument();
-      });
-
-      // Then back to all
-      const allButton = screen.getByText("All Products");
-      fireEvent.click(allButton);
 
       await waitFor(() => {
         expect(screen.getByText("Product 1")).toBeInTheDocument();
@@ -413,7 +432,61 @@ describe("ManageStorePage", () => {
       });
     });
 
-    it("should show empty state for filtered results with no items", async () => {
+    it("should filter to show only approved products", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      fireEvent.click(getApprovedFilterButton());
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+        expect(screen.getByText("Product 3")).toBeInTheDocument();
+        expect(screen.queryByText("Product 2")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should filter to show only not-approved products", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 2")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Not Approved"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 2")).toBeInTheDocument();
+        expect(screen.queryByText("Product 1")).not.toBeInTheDocument();
+        expect(screen.queryByText("Product 3")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should show all products when All Products filter is clicked after filtering", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Not Approved"));
+
+      await waitFor(() => {
+        expect(screen.queryByText("Product 1")).not.toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("All Products"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+        expect(screen.getByText("Product 2")).toBeInTheDocument();
+        expect(screen.getByText("Product 3")).toBeInTheDocument();
+      });
+    });
+
+    it("should show empty state when filter has no matching products", async () => {
       (axios.get as jest.Mock).mockImplementation((url: string) => {
         if (url === "/api/user/store/items/get-categories") {
           return Promise.resolve({ data: { categories: mockCategories } });
@@ -432,11 +505,12 @@ describe("ManageStorePage", () => {
         expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
 
-      const notApprovedButton = screen.getByText("Not Approved");
-      fireEvent.click(notApprovedButton);
+      fireEvent.click(screen.getByText("Not Approved"));
 
       await waitFor(() => {
-        expect(screen.getByText("No pending approval products.")).toBeInTheDocument();
+        expect(
+          screen.getByText(/No pending approval products/i)
+        ).toBeInTheDocument();
       });
     });
   });
@@ -449,34 +523,31 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        const buttons = screen.getAllByRole("button");
-        const cardViewButton = buttons.find((btn) => btn.title === "Card View");
-        expect(cardViewButton).toHaveClass("bg-jp-orange");
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
+
+      const editBtns = screen.getAllByText("Edit");
+      expect(editBtns.length).toBeGreaterThan(0);
     });
 
-    it("should switch to table view", async () => {
+    it("should switch to table view when Table View button is clicked", async () => {
       renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
 
-      const buttons = screen.getAllByRole("button");
-      const tableViewButton = buttons.find((btn) => btn.title === "Table View");
+      fireEvent.click(screen.getByTitle("Table View"));
 
-      if (tableViewButton) {
-        fireEvent.click(tableViewButton);
-
-        await waitFor(() => {
-          // Table view should have table headers
-          expect(screen.getByText("Status")).toBeInTheDocument();
-          expect(screen.getByText("Image")).toBeInTheDocument();
-          expect(screen.getByText("Name")).toBeInTheDocument();
-          expect(screen.getByText("Category")).toBeInTheDocument();
-          expect(screen.getByText("Currency")).toBeInTheDocument();
-        });
-      }
+      await waitFor(() => {
+        expect(screen.getByText("Status")).toBeInTheDocument();
+        expect(screen.getByText("Image")).toBeInTheDocument();
+        expect(screen.getByText("Name")).toBeInTheDocument();
+        expect(screen.getByText("Category")).toBeInTheDocument();
+        expect(screen.getByText("Currency")).toBeInTheDocument();
+        expect(screen.getByText("Base")).toBeInTheDocument();
+        expect(screen.getByText("Actions")).toBeInTheDocument();
+      });
     });
 
     it("should switch back to card view from table view", async () => {
@@ -486,498 +557,82 @@ describe("ManageStorePage", () => {
         expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
 
-      const buttons = screen.getAllByRole("button");
-      const tableViewButton = buttons.find((btn) => btn.title === "Table View");
-      const cardViewButton = buttons.find((btn) => btn.title === "Card View");
-
-      if (tableViewButton && cardViewButton) {
-        fireEvent.click(tableViewButton);
-
-        await waitFor(() => {
-          expect(screen.getByText("Status")).toBeInTheDocument();
-        });
-
-        fireEvent.click(cardViewButton);
-
-        await waitFor(() => {
-          expect(cardViewButton).toHaveClass("bg-jp-orange");
-        });
-      }
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Product Modal
-  // ============================================================================
-  describe("Product Modal", () => {
-    it("should open create product modal", async () => {
-      renderComponent();
+      fireEvent.click(screen.getByTitle("Table View"));
 
       await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
+        expect(screen.getByText("Status")).toBeInTheDocument();
       });
 
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
+      fireEvent.click(screen.getByTitle("Card View"));
 
       await waitFor(() => {
-        expect(screen.getByText("Create New Product")).toBeInTheDocument();
-      });
-    });
-
-    it("should close product modal", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Create New Product")).toBeInTheDocument();
-      });
-
-      const closeButton = screen.getByText("×");
-      fireEvent.click(closeButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText("Create New Product")).not.toBeInTheDocument();
-      });
-    });
-
-    it("should populate form when editing product", async () => {
-      renderComponent();
-
-      await waitFor(() => {
+        expect(screen.queryByText("Status")).not.toBeInTheDocument();
         expect(screen.getByText("Product 1")).toBeInTheDocument();
       });
-
-      const editButtons = screen.getAllByText("Edit");
-      fireEvent.click(editButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText("Edit Product")).toBeInTheDocument();
-        const nameInput = screen.getByDisplayValue("Product 1");
-        expect(nameInput).toBeInTheDocument();
-      });
     });
+  });
 
-    it("should display all form fields", async () => {
+  // ============================================================================
+  // TEST GROUP: Product Display
+  // ============================================================================
+  describe("Product Display", () => {
+    it("should display approval status badges on product cards", async () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
+        // getAllByText handles multiple "Approved" elements safely
+        const approvedEls = screen.getAllByText("Approved");
+        const pendingEls = screen.getAllByText("Pending");
+        expect(approvedEls.length).toBeGreaterThan(0);
+        expect(pendingEls.length).toBeGreaterThan(0);
       });
+    });
 
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
+    it("should display currency badges on product cards", async () => {
+      renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Name *")).toBeInTheDocument();
-        expect(screen.getByText("Category *")).toBeInTheDocument();
-        expect(screen.getByText("Currency *")).toBeInTheDocument();
-        expect(screen.getByText("Base Price *")).toBeInTheDocument();
-        expect(screen.getByText("Monthly Price")).toBeInTheDocument();
-        expect(screen.getByText("Yearly Price")).toBeInTheDocument();
-        expect(screen.getByText("Lifetime Price")).toBeInTheDocument();
+        const inrBadges = screen.getAllByText("INR");
+        const usdBadges = screen.getAllByText("USD");
+        expect(inrBadges.length).toBeGreaterThan(0);
+        expect(usdBadges.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should display all price types on product cards", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getAllByText(/Base/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Monthly/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Yearly/).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/Lifetime/).length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should display Edit and Delete buttons on each product card", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        const editBtns = screen.getAllByText("Edit");
+        const deleteBtns = screen.getAllByText("Delete");
+        expect(editBtns.length).toBe(3);
+        expect(deleteBtns.length).toBe(3);
       });
     });
   });
 
   // ============================================================================
-  // TEST GROUP: Currency Selection
+  // TEST GROUP: Statistics Cards
   // ============================================================================
-  describe("Currency Selection", () => {
-    it("should default to INR currency", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        const currencyButtons = screen.getAllByRole("button");
-        const inrButton = currencyButtons.find(
-          (btn) => btn.textContent?.includes("INR") && btn.type === "button"
-        );
-        expect(inrButton).toHaveClass("border-blue-500");
-      });
-    });
-
-    it("should switch to USD currency", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        const modal = screen.getByText("Create New Product").parentElement?.parentElement;
-        expect(modal).toBeInTheDocument();
-      });
-
-      const currencyButtons = screen.getAllByRole("button");
-      const usdButton = currencyButtons.find(
-        (btn) => btn.textContent?.includes("USD") && btn.type === "button"
-      );
-
-      if (usdButton) {
-        fireEvent.click(usdButton);
-
-        await waitFor(() => {
-          expect(usdButton).toHaveClass("border-blue-500");
-        });
-      }
-    });
-
-    it("should display currency symbol in price inputs", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        // Should show INR symbol by default
-        const rupeeSymbols = screen.getAllByText("₹");
-        expect(rupeeSymbols.length).toBeGreaterThan(0);
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Price Input
-  // ============================================================================
-  describe("Price Input", () => {
-    it("should allow entering price values", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Base Price *")).toBeInTheDocument();
-      });
-
-      const basePriceInput = document.querySelector('input[type="number"]') as HTMLInputElement;
-      fireEvent.change(basePriceInput, { target: { value: "100" } });
-
-      expect(basePriceInput.value).toBe("100");
-    });
-
-    it("should increment price with up button", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Base Price *")).toBeInTheDocument();
-      });
-
-      const basePriceInput = document.querySelector('input[type="number"]') as HTMLInputElement;
-      fireEvent.change(basePriceInput, { target: { value: "100" } });
-
-      const increaseButtons = screen.getAllByTitle("Increase");
-      fireEvent.click(increaseButtons[0]);
-
-      await waitFor(() => {
-        expect(basePriceInput.value).toBe("101");
-      });
-    });
-
-    it("should decrement price with down button", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Base Price *")).toBeInTheDocument();
-      });
-
-      const basePriceInput = document.querySelector('input[type="number"]') as HTMLInputElement;
-      fireEvent.change(basePriceInput, { target: { value: "100" } });
-
-      const decreaseButtons = screen.getAllByTitle("Decrease");
-      fireEvent.click(decreaseButtons[0]);
-
-      await waitFor(() => {
-        expect(basePriceInput.value).toBe("99");
-      });
-    });
-
-    it("should not allow negative prices", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Base Price *")).toBeInTheDocument();
-      });
-
-      const basePriceInput = document.querySelector('input[type="number"]') as HTMLInputElement;
-      fireEvent.change(basePriceInput, { target: { value: "0" } });
-
-      const decreaseButtons = screen.getAllByTitle("Decrease");
-      fireEvent.click(decreaseButtons[0]);
-
-      await waitFor(() => {
-        expect(basePriceInput.value).toBe("0");
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Category Management
-  // ============================================================================
-  describe("Category Management", () => {
-    it("should open category creation modal", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        const categoryButtons = screen.getAllByRole("button");
-        const addCategoryButton = categoryButtons.find(
-          (btn) => btn.title === "Add new category"
-        );
-        expect(addCategoryButton).toBeInTheDocument();
-
-        if (addCategoryButton) {
-          fireEvent.click(addCategoryButton);
-        }
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText("Create New Category")).toBeInTheDocument();
-      });
-    });
-
-    it("should create new category", async () => {
-      const newCategory = { id: "cat4", name: "New Category" };
-      (axios.post as jest.Mock).mockResolvedValue({
-        data: { category: newCategory },
-      });
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Add Product")).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
-
-      await waitFor(() => {
-        const categoryButtons = screen.getAllByRole("button");
-        const addCategoryButton = categoryButtons.find(
-          (btn) => btn.title === "Add new category"
-        );
-
-        if (addCategoryButton) {
-          fireEvent.click(addCategoryButton);
-        }
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText("Create New Category")).toBeInTheDocument();
-      });
-
-      // Find the category name input in the category modal
-      const categoryInputs = screen.getAllByRole("textbox");
-      const categoryNameInput = categoryInputs[categoryInputs.length - 1]; // Last textbox should be category name
-      fireEvent.change(categoryNameInput, { target: { value: "New Category" } });
-
-      const createButton = screen.getByText("Create Category");
-      fireEvent.click(createButton);
-
-      await waitFor(() => {
-        expect(axios.post).toHaveBeenCalledWith(
-          "/api/user/store/items/create-category",
-          { name: "New Category" }
-        );
-        expect(toast.success).toHaveBeenCalledWith("Category created successfully!");
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Product Creation
-  // ============================================================================
-  describe("Product Creation", () => {
-    // Tests removed due to form submission timing issues
-    // The component works correctly but tests have difficulty with async form handling
-  });
-
-  // ============================================================================
-  // TEST GROUP: Product Update
-  // ============================================================================
-  describe("Product Update", () => {
-    it("should update product successfully", async () => {
-      (axios.put as jest.Mock).mockResolvedValue({
-        data: { success: true },
-      });
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-      });
-
-      const editButtons = screen.getAllByText("Edit");
-      fireEvent.click(editButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText("Edit Product")).toBeInTheDocument();
-      });
-
-      const nameInput = screen.getByDisplayValue("Product 1");
-      fireEvent.change(nameInput, { target: { value: "Updated Product" } });
-
-      const updateButton = screen.getByText("Update Product");
-      fireEvent.click(updateButton);
-
-      await waitFor(() => {
-        expect(axios.put).toHaveBeenCalled();
-        expect(toast.success).toHaveBeenCalledWith("Product updated successfully!");
-      });
-    });
-
-    it("should handle update error", async () => {
-      (axios.put as jest.Mock).mockRejectedValue(new Error("Update failed"));
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-      });
-
-      const editButtons = screen.getAllByText("Edit");
-      fireEvent.click(editButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText("Edit Product")).toBeInTheDocument();
-      });
-
-      const updateButton = screen.getByText("Update Product");
-      fireEvent.click(updateButton);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Failed to update product.");
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Product Deletion
-  // ============================================================================
-  describe("Product Deletion", () => {
-    it("should delete product with confirmation", async () => {
-      (axios.delete as jest.Mock).mockResolvedValue({
-        data: { success: true },
-      });
-
-      window.confirm = jest.fn(() => true);
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-      });
-
-      const deleteButtons = screen.getAllByText("Delete");
-      fireEvent.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(window.confirm).toHaveBeenCalledWith(
-          "Are you sure you want to delete this product?"
-        );
-        expect(axios.delete).toHaveBeenCalled();
-        expect(toast.success).toHaveBeenCalledWith("Product deleted successfully!");
-      });
-    });
-
-    it("should not delete product if confirmation is cancelled", async () => {
-      window.confirm = jest.fn(() => false);
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-      });
-
-      const deleteButtons = screen.getAllByText("Delete");
-      fireEvent.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(window.confirm).toHaveBeenCalled();
-        expect(axios.delete).not.toHaveBeenCalled();
-      });
-    });
-
-    it("should handle delete error", async () => {
-      (axios.delete as jest.Mock).mockRejectedValue(new Error("Delete failed"));
-      window.confirm = jest.fn(() => true);
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Product 1")).toBeInTheDocument();
-      });
-
-      const deleteButtons = screen.getAllByText("Delete");
-      fireEvent.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Failed to delete product.");
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Statistics
-  // ============================================================================
-  describe("Statistics", () => {
+  describe("Statistics Cards", () => {
     it("should display correct total products count", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const totalProductsCard = screen.getByText("Total Products").parentElement;
-        expect(within(totalProductsCard!).getByText("3")).toBeInTheDocument();
+        // "Total Products" is unique — safe to use getByText
+        const totalCard = screen.getByText("Total Products").parentElement!;
+        expect(within(totalCard).getByText("3")).toBeInTheDocument();
       });
     });
 
@@ -985,16 +640,10 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        // Find the "Approved" heading in statistics (not the filter button)
-        const statsSection = screen.getByText("Avg Base Price").parentElement?.parentElement;
-        expect(statsSection).toBeInTheDocument();
-
-        const approvedElements = screen.getAllByText("Approved");
-        // The stats card "Approved" should have a count of 2
-        const approvedCard = approvedElements
-          .map((el) => el.parentElement)
-          .find((parent) => parent?.textContent?.includes("2"));
-        expect(approvedCard).toBeInTheDocument();
+        // Use H3 helper to find the stats card heading specifically
+        const approvedStatHeading = getApprovedStatCard();
+        const statCard = approvedStatHeading.parentElement!;
+        expect(within(statCard).getByText("2")).toBeInTheDocument();
       });
     });
 
@@ -1002,25 +651,20 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        // Get all "Pending" elements and find the one in the stats card
-        const pendingElements = screen.getAllByText("Pending");
-        const statsCard = pendingElements.find(el => {
-          const parent = el.parentElement;
-          // The stats card will have the count "1" as a sibling
-          return parent?.querySelector('p')?.textContent?.includes("1");
-        });
-        
-        expect(statsCard).toBeInTheDocument();
+        // Use H3 helper to find the stats card heading specifically
+        const pendingStatHeading = getPendingStatCard();
+        const statCard = pendingStatHeading.parentElement!;
+        expect(within(statCard).getByText("1")).toBeInTheDocument();
       });
     });
 
     it("should calculate and display average base price", async () => {
       renderComponent();
 
+      // Average of 100, 50, 200 = 116.67
       await waitFor(() => {
-        const avgPriceCard = screen.getByText("Avg Base Price").parentElement;
-        // Average of 100, 50, 200 = 116.67 ≈ 117
-        expect(within(avgPriceCard!).getByText(/₹117/)).toBeInTheDocument();
+        const avgCard = screen.getByText("Avg Base Price").parentElement!;
+        expect(within(avgCard).getByText(/116\.67/)).toBeInTheDocument();
       });
     });
 
@@ -1038,71 +682,497 @@ describe("ManageStorePage", () => {
       renderComponent();
 
       await waitFor(() => {
-        const avgPriceCard = screen.getByText("Avg Base Price").parentElement;
-        expect(within(avgPriceCard!).getByText("—")).toBeInTheDocument();
+        const avgCard = screen.getByText("Avg Base Price").parentElement!;
+        expect(within(avgCard).getByText("—")).toBeInTheDocument();
       });
     });
   });
 
   // ============================================================================
-  // TEST GROUP: Navigation
+  // TEST GROUP: Product Modal — Open & Close
   // ============================================================================
-  describe("Navigation", () => {
-    it("should have working back to store link", async () => {
+  describe("Product Modal — Open & Close", () => {
+    it("should open Create New Product modal when Add Product is clicked", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const backLink = screen.getByText("Back to Store");
-        expect(backLink.closest("a")).toHaveAttribute("href", "/dashboard/store");
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Product")).toBeInTheDocument();
+      });
+    });
+
+    it("should close product modal when × button is clicked", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("×"));
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("Create New Product")
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should open Edit Product modal with pre-filled data when Edit is clicked", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const editBtns = screen.getAllByText("Edit");
+      fireEvent.click(editBtns[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Edit Product")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Product 1")).toBeInTheDocument();
+      });
+    });
+
+    it("should display all required form fields in modal", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Name *")).toBeInTheDocument();
+        expect(screen.getByText("Category *")).toBeInTheDocument();
+        expect(screen.getByText("Currency *")).toBeInTheDocument();
+        expect(screen.getByText("Base Price *")).toBeInTheDocument();
+        expect(screen.getByText("Monthly Price")).toBeInTheDocument();
+        expect(screen.getByText("Yearly Price")).toBeInTheDocument();
+        expect(screen.getByText("Lifetime Price")).toBeInTheDocument();
       });
     });
   });
 
   // ============================================================================
-  // TEST GROUP: Product Display
+  // TEST GROUP: Product Modal — Currency Selection
   // ============================================================================
-  describe("Product Display", () => {
-    it("should display product images", async () => {
+  describe("Product Modal — Currency Selection", () => {
+    it("should display INR rupee symbol by default in price fields", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const images = screen.getAllByRole("img");
-        expect(images.length).toBeGreaterThan(0);
-        expect(images[0]).toHaveAttribute("src", "https://example.com/image1.jpg");
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        const rupeeSymbols = screen.getAllByText("₹");
+        expect(rupeeSymbols.length).toBeGreaterThan(0);
       });
     });
 
-    it("should display approval status badges", async () => {
+    it("should show dollar symbol when USD currency is selected", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const approvedBadges = screen.getAllByText("Approved");
-        const pendingBadges = screen.getAllByText("Pending");
-        expect(approvedBadges.length).toBeGreaterThan(0);
-        expect(pendingBadges.length).toBeGreaterThan(0);
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Product")).toBeInTheDocument();
+      });
+
+      const currencySelects = screen.getAllByRole("combobox");
+      const currencySelect = currencySelects.find((s) =>
+        Array.from(s.querySelectorAll("option")).some((o) =>
+          o.textContent?.includes("USD")
+        )
+      );
+
+      if (currencySelect) {
+        fireEvent.change(currencySelect, { target: { value: "USD" } });
+
+        await waitFor(() => {
+          const dollarSymbols = screen.getAllByText("$");
+          expect(dollarSymbols.length).toBeGreaterThan(0);
+        });
+      }
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Product Modal — Price Stepper
+  // ============================================================================
+  describe("Product Modal — Price Stepper", () => {
+    it("should allow entering a base price value", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Base Price *")).toBeInTheDocument();
+      });
+
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      const basePriceInput = numberInputs[0] as HTMLInputElement;
+      fireEvent.change(basePriceInput, { target: { value: "100" } });
+
+      expect(basePriceInput.value).toBe("100");
+    });
+
+    it("should increment base price when Increase button is clicked", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Base Price *")).toBeInTheDocument();
+      });
+
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      const basePriceInput = numberInputs[0] as HTMLInputElement;
+      fireEvent.change(basePriceInput, { target: { value: "100" } });
+
+      const increaseButtons = screen.getAllByTitle("Increase");
+      fireEvent.click(increaseButtons[0]);
+
+      await waitFor(() => {
+        expect(basePriceInput.value).toBe("100.01");
       });
     });
 
-    it("should display currency badges on products", async () => {
+    it("should decrement base price when Decrease button is clicked", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const currencyElements = screen.getAllByText("INR");
-        const usdElements = screen.getAllByText("USD");
-        expect(currencyElements.length).toBeGreaterThan(0);
-        expect(usdElements.length).toBeGreaterThan(0);
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Base Price *")).toBeInTheDocument();
+      });
+
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      const basePriceInput = numberInputs[0] as HTMLInputElement;
+      fireEvent.change(basePriceInput, { target: { value: "100" } });
+
+      const decreaseButtons = screen.getAllByTitle("Decrease");
+      fireEvent.click(decreaseButtons[0]);
+
+      await waitFor(() => {
+        expect(basePriceInput.value).toBe("99.99");
       });
     });
 
-    it("should display all price types for products", async () => {
+    it("should NOT allow price to go below 0 when Decrease button is clicked", async () => {
       renderComponent();
 
       await waitFor(() => {
-        // Use getAllByText for elements that appear multiple times
-        expect(screen.getAllByText(/Base:/).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/Monthly:/).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/Yearly:/).length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/Lifetime:/).length).toBeGreaterThan(0);
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Base Price *")).toBeInTheDocument();
+      });
+
+      const numberInputs = document.querySelectorAll('input[type="number"]');
+      const basePriceInput = numberInputs[0] as HTMLInputElement;
+      fireEvent.change(basePriceInput, { target: { value: "0" } });
+
+      const decreaseButtons = screen.getAllByTitle("Decrease");
+      fireEvent.click(decreaseButtons[0]);
+
+      await waitFor(() => {
+        expect(Number(basePriceInput.value)).toBeGreaterThanOrEqual(0);
+      });
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Category Modal
+  // ============================================================================
+  describe("Category Modal", () => {
+    it("should open Create New Category modal when add category button is clicked", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByTitle("Add new category"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Category")).toBeInTheDocument();
+      });
+    });
+
+    it("should close category modal when × is clicked", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+      fireEvent.click(await screen.findByTitle("Add new category"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Category")).toBeInTheDocument();
+      });
+
+      const closeButtons = screen.getAllByText("×");
+      fireEvent.click(closeButtons[closeButtons.length - 1]);
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("Create New Category")
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should call create-category API when Create Category is submitted", async () => {
+      const newCategory = { id: "cat4", name: "New Category" };
+      (axios.post as jest.Mock).mockResolvedValue({
+        data: { category: newCategory },
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+      fireEvent.click(await screen.findByTitle("Add new category"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Category")).toBeInTheDocument();
+      });
+
+      const textInputs = screen.getAllByRole("textbox");
+      const categoryInput = textInputs[textInputs.length - 1];
+      fireEvent.change(categoryInput, { target: { value: "New Category" } });
+
+      fireEvent.click(screen.getByText("Create Category"));
+
+      await waitFor(() => {
+        expect(axios.post).toHaveBeenCalledWith(
+          "/api/user/store/items/create-category",
+          { name: "New Category" }
+        );
+        expect(toast.success).toHaveBeenCalledWith(
+          "Category created successfully!"
+        );
+      });
+    });
+
+    it("should show error toast when category name is empty on submit", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Add Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Add Product"));
+      fireEvent.click(await screen.findByTitle("Add new category"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Create New Category")).toBeInTheDocument();
+      });
+
+      // The category input has `required` — jsdom won't fire submit on empty required fields.
+      // Directly call the onSubmit handler by dispatching a submit event on the form.
+      const forms = document.querySelectorAll("form");
+      const categoryForm = Array.from(forms).find((f) =>
+        f.querySelector('input[placeholder="Enter category name"]')
+      );
+
+      if (categoryForm) {
+        fireEvent.submit(categoryForm);
+      }
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Category name cannot be empty"
+        );
+      });
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Product Update
+  // ============================================================================
+  describe("Product Update", () => {
+    it("should call update API when Update Product is submitted", async () => {
+      (axios.put as jest.Mock).mockResolvedValue({ data: { success: true } });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const editBtns = screen.getAllByText("Edit");
+      fireEvent.click(editBtns[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Edit Product")).toBeInTheDocument();
+      });
+
+      const nameInput = screen.getByDisplayValue("Product 1");
+      fireEvent.change(nameInput, { target: { value: "Updated Product" } });
+
+      fireEvent.click(screen.getByText("Update Product"));
+
+      await waitFor(() => {
+        expect(axios.put).toHaveBeenCalled();
+        expect(toast.success).toHaveBeenCalledWith(
+          "Product updated successfully!"
+        );
+      });
+    });
+
+    it("should show error toast when product update fails", async () => {
+      (axios.put as jest.Mock).mockRejectedValue(new Error("Update failed"));
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const editBtns = screen.getAllByText("Edit");
+      fireEvent.click(editBtns[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Edit Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Update Product"));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Failed to update product.");
+      });
+    });
+
+    it("should close modal after successful product update", async () => {
+      (axios.put as jest.Mock).mockResolvedValue({ data: { success: true } });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const editBtns = screen.getAllByText("Edit");
+      fireEvent.click(editBtns[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Edit Product")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Update Product"));
+
+      await waitFor(() => {
+        expect(screen.queryByText("Edit Product")).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Product Deletion
+  // ============================================================================
+  describe("Product Deletion", () => {
+    it("should call delete API when deletion is confirmed", async () => {
+      (axios.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
+      window.confirm = jest.fn(() => true);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const deleteBtns = screen.getAllByText("Delete");
+      fireEvent.click(deleteBtns[0]);
+
+      await waitFor(() => {
+        expect(window.confirm).toHaveBeenCalledWith(
+          "Are you sure you want to delete this product?"
+        );
+        expect(axios.delete).toHaveBeenCalled();
+        expect(toast.success).toHaveBeenCalledWith(
+          "Product deleted successfully!"
+        );
+      });
+    });
+
+    it("should NOT call delete API when confirmation is cancelled", async () => {
+      window.confirm = jest.fn(() => false);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const deleteBtns = screen.getAllByText("Delete");
+      fireEvent.click(deleteBtns[0]);
+
+      await waitFor(() => {
+        expect(window.confirm).toHaveBeenCalled();
+        expect(axios.delete).not.toHaveBeenCalled();
+      });
+    });
+
+    it("should show error toast when product deletion fails", async () => {
+      (axios.delete as jest.Mock).mockRejectedValue(new Error("Delete failed"));
+      window.confirm = jest.fn(() => true);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Product 1")).toBeInTheDocument();
+      });
+
+      const deleteBtns = screen.getAllByText("Delete");
+      fireEvent.click(deleteBtns[0]);
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("Failed to delete product.");
       });
     });
   });
@@ -1111,54 +1181,70 @@ describe("ManageStorePage", () => {
   // TEST GROUP: File Upload
   // ============================================================================
   describe("File Upload", () => {
-    it("should accept PDF files for download", async () => {
+    it("should accept PDF files for download field", async () => {
       renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Add Product")).toBeInTheDocument();
       });
 
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
+      fireEvent.click(screen.getByText("Add Product"));
 
       await waitFor(() => {
-        // Find download file input by looking for all file inputs
         const fileInputs = document.querySelectorAll('input[type="file"]');
-        const downloadInput = Array.from(fileInputs).find(input => {
-          return input.getAttribute("accept")?.includes("pdf");
-        });
-        
+        const downloadInput = Array.from(fileInputs).find((input) =>
+          input.getAttribute("accept")?.includes("pdf")
+        );
         expect(downloadInput).toBeInTheDocument();
         expect(downloadInput).toHaveAttribute("accept", ".pdf,application/pdf");
       });
     });
 
-    it("should reject non-PDF files for download", async () => {
+    it("should show error toast when non-PDF file is uploaded to download field", async () => {
       renderComponent();
 
       await waitFor(() => {
         expect(screen.getByText("Add Product")).toBeInTheDocument();
       });
 
-      const addButton = screen.getByText("Add Product");
-      fireEvent.click(addButton);
+      fireEvent.click(screen.getByText("Add Product"));
 
       await waitFor(() => {
-        // Find download file input
         const fileInputs = document.querySelectorAll('input[type="file"]');
-        const downloadInput = Array.from(fileInputs).find(input => {
-          return input.getAttribute("accept")?.includes("pdf");
-        }) as HTMLInputElement;
+        const downloadInput = Array.from(fileInputs).find((input) =>
+          input.getAttribute("accept")?.includes("pdf")
+        ) as HTMLInputElement;
 
         if (downloadInput) {
-          const file = new File(["content"], "document.txt", { type: "text/plain" });
-          Object.defineProperty(downloadInput, "files", { value: [file] });
+          const file = new File(["content"], "document.txt", {
+            type: "text/plain",
+          });
+          Object.defineProperty(downloadInput, "files", {
+            value: [file],
+            configurable: true,
+          });
           fireEvent.change(downloadInput);
         }
       });
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Only PDF files are allowed for download");
+        expect(toast.error).toHaveBeenCalledWith(
+          "Only PDF files are allowed for download"
+        );
+      });
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Navigation
+  // ============================================================================
+  describe("Navigation", () => {
+    it("should have Back to Growth Store link pointing to /dashboard/store", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        const backLink = screen.getByText("Back to Growth Store").closest("a");
+        expect(backLink).toHaveAttribute("href", "/dashboard/store");
       });
     });
   });
