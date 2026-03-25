@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Challenge, CouponFormPayload, CouponScope, CouponType, MmpProgram, StoreProduct } from "@/app/(userDashboard)/dashboard/(coach)/coupons/page";
+import { Challenge, CouponFormPayload, CouponScope, CouponType, MmpProgram, Plan, StoreProduct } from "@/types/client/coupons.types"
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -27,7 +27,9 @@ type Props = {
     challenges: Challenge[];
     mmpPrograms: MmpProgram[];
     storeProducts: StoreProduct[];
+    plans?: Plan[];
     editingId?: string | null;
+    isAdmin?: boolean
 };
 
 const USER_TYPES = ["COACH", "ENTHUSIAST", "SOLOPRENEUR"] as const;
@@ -40,7 +42,9 @@ export default function CouponFormFields({
     challenges,
     mmpPrograms,
     storeProducts,
+    plans,
     editingId,
+    isAdmin
 }: Props) {
 
 
@@ -48,18 +52,40 @@ export default function CouponFormFields({
         setFormData((prev) => ({ ...prev, [field]: value }));
 
     const toggleSelection = (
-        field: "applicableChallengeIds" | "applicableMmpProgramIds" | "applicableStoreProductIds" | "applicableCurrencies",
+        field:
+            | "applicablePlanIds"
+            | "applicableChallengeIds"
+            | "applicableMmpProgramIds"
+            | "applicableStoreProductIds"
+            | "applicableCurrencies",
         id: string
     ) => {
         setFormData((prev) => {
-            const list = prev[field] as string[];
+            const list = (prev[field] || []) as string[];
             return {
                 ...prev,
-                [field]: list.includes(id) ? list.filter((x) => x !== id) : [...list, id],
+                [field]: list.includes(id)
+                    ? list.filter((x) => x !== id)
+                    : [...list, id],
             };
         });
     };
 
+    const toggleSelectAll = (
+        field: "applicablePlanIds" | "applicableChallengeIds" | "applicableMmpProgramIds" | "applicableStoreProductIds",
+        allIds: string[]
+    ) => {
+        setFormData((prev) => {
+            const selected = prev[field] as string[];
+
+            const isAllSelected = selected.length === allIds.length;
+
+            return {
+                ...prev,
+                [field]: isAllSelected ? [] : allIds,
+            };
+        });
+    };
     const handleUserTypeChange = (value: string) => {
         setFormData((prev) => {
             let updated = [...prev.applicableUserTypes];
@@ -95,6 +121,20 @@ export default function CouponFormFields({
         setFormData((prev) => ({ ...prev }));
     }, [editingId, challenges, mmpPrograms, storeProducts]);
     const showScopedItems = true
+
+
+    const selectedProducts = storeProducts.filter((p) =>
+        formData.applicableStoreProductIds.includes(p.id)
+    );
+
+    const selectedCurrencies = [
+        ...new Set(selectedProducts.map((p) => p.currency)),
+    ];
+
+    const onlyGPSelected =
+        selectedCurrencies.length === 1 && selectedCurrencies[0] === "GP";
+
+    const hasGPProduct = selectedCurrencies.includes("GP");
 
     return (
         <form id="coupon-form" onSubmit={onSubmit} className="space-y-6 mt-4">
@@ -163,30 +203,93 @@ export default function CouponFormFields({
                                     <div className="space-y-3 col-span-2">
                                         <Label>Fixed Discount Amount</Label>
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            {/* USD */}
-                                            <div className="relative w-full">
-                                                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="USD"
-                                                    className="pl-9 w-full"
-                                                    value={formData.discountAmountUSD ?? ""}
-                                                    onChange={(e) => update("discountAmountUSD", e.target.value)}
-                                                />
-                                            </div>
+                                        {formData.scope === "STORE_PRODUCT" &&
+                                            selectedCurrencies.length === 0 && (
+                                                <p className="text-sm text-muted-foreground">
+                                                    Select store products first to enable fixed discount fields.
+                                                </p>
+                                            )}
 
-                                            {/* INR */}
-                                            <div className="relative w-full">
-                                                <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="INR"
-                                                    className="pl-9 w-full"
-                                                    value={formData.discountAmountINR ?? ""}
-                                                    onChange={(e) => update("discountAmountINR", e.target.value)}
-                                                />
-                                            </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* ONLY GP */}
+                                            {/* ONLY GP */}
+                                            {(onlyGPSelected || (editingId && formData.discountAmountGP)) && (
+                                                <div className="relative w-full">
+                                                    <span className="absolute left-2.5 top-2.5 text-xs font-bold">GP</span>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="GP"
+                                                        className="pl-9 w-full"
+                                                        value={formData.discountAmountGP ?? ""}
+                                                        onChange={(e) => update("discountAmountGP", e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* MIXED (GP + others) */}
+                                            {!onlyGPSelected && hasGPProduct && (
+                                                <>
+                                                    <div className="relative w-full">
+                                                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="USD"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountUSD ?? ""}
+                                                            onChange={(e) => update("discountAmountUSD", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="relative w-full">
+                                                        <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="INR"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountINR ?? ""}
+                                                            onChange={(e) => update("discountAmountINR", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="relative w-full">
+                                                        <span className="absolute left-2.5 top-2.5 text-xs font-bold">GP</span>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="GP"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountGP ?? ""}
+                                                            onChange={(e) => update("discountAmountGP", e.target.value)}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {/* NO GP */}
+                                            {!hasGPProduct && (
+                                                <>
+                                                    <div className="relative w-full">
+                                                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="USD"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountUSD ?? ""}
+                                                            onChange={(e) => update("discountAmountUSD", e.target.value)}
+                                                        />
+                                                    </div>
+
+                                                    <div className="relative w-full">
+                                                        <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="INR"
+                                                            className="pl-9 w-full"
+                                                            value={formData.discountAmountINR ?? ""}
+                                                            onChange={(e) => update("discountAmountINR", e.target.value)}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -218,13 +321,65 @@ export default function CouponFormFields({
                 <Select value={formData.scope} onValueChange={handleScopeChange}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                        {isAdmin && (
+                            <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
+                        )}
                         <SelectItem value="CHALLENGE">Challenge</SelectItem>
                         <SelectItem value="MMP_PROGRAM">Mini Mastery Program</SelectItem>
                         <SelectItem value="STORE_PRODUCT">Store Products</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+            {showScopedItems && formData.scope === "SUBSCRIPTION" && (
+                <div className="space-y-3">
+                    <Label>Applicable Plans</Label>
 
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {/* Select All */}
+                        <div
+                            onClick={() =>
+                                toggleSelectAll(
+                                    "applicablePlanIds",
+                                    (plans || []).map((p) => p.id)
+                                )
+                            }
+                            className={`cursor-pointer rounded-md border p-3 text-sm transition-all font-medium
+        flex flex-col items-center justify-center text-center min-h-[72px]
+        ${(plans || []).length > 0 &&
+                                    (plans || []).every((p) =>
+                                        formData.applicablePlanIds?.includes(p.id)
+                                    )
+                                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                    : "hover:bg-accent"
+                                }`}
+                        >
+                            <div>Select All</div>
+                            <div className="text-xs text-muted-foreground">
+                                Apply to all plans
+                            </div>
+                        </div>
+
+                        {(plans || []).map((p) => (
+                            <div
+                                key={p.id}
+                                onClick={() =>
+                                    toggleSelection("applicablePlanIds", p.id)
+                                }
+                                className={`cursor-pointer rounded-md border p-3 text-sm transition-all
+          ${formData.applicablePlanIds?.includes(p.id)
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div className="font-medium">{p.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {p.interval} • {p.userType}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             {/* ── Challenge Selector ── */}
             {showScopedItems && formData.scope === "CHALLENGE" && (
                 <div className="space-y-3">
@@ -240,6 +395,20 @@ export default function CouponFormFields({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+
+                            {/* Select All Card */}
+                            <div
+                                onClick={() => toggleSelectAll("applicableChallengeIds", challenges.map(c => c.id))}
+                                className={`cursor-pointer rounded-md border  p-3 text-sm transition-all font-medium
+    flex flex-col items-center justify-center text-center min-h-[72px]
+    ${challenges.every(c => formData.applicableChallengeIds.includes(c.id))
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div>Select All</div>
+                                <div className="text-xs text-muted-foreground">Apply to all challenges</div>
+                            </div>
                             {challenges.map((c) => (
                                 <div
                                     key={c.id}
@@ -275,6 +444,28 @@ export default function CouponFormFields({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <div
+                                onClick={() =>
+                                    toggleSelectAll(
+                                        "applicableMmpProgramIds",
+                                        mmpPrograms.map((m) => m.id)
+                                    )
+                                }
+                                className={`cursor-pointer rounded-md border  p-3 text-sm transition-all font-medium
+    flex flex-col items-center justify-center text-center min-h-[72px]
+    ${mmpPrograms.length > 0 &&
+                                        mmpPrograms.every((m) =>
+                                            formData.applicableMmpProgramIds.includes(m.id)
+                                        )
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div>Select All</div>
+                                <div className="text-xs text-muted-foreground">
+                                    Apply to all programs
+                                </div>
+                            </div>
                             {mmpPrograms.map((m) => (
                                 <div
                                     key={m.id}
@@ -308,6 +499,29 @@ export default function CouponFormFields({
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+
+                            <div
+                                onClick={() =>
+                                    toggleSelectAll(
+                                        "applicableStoreProductIds",
+                                        storeProducts.map((p) => p.id)
+                                    )
+                                }
+                                className={`cursor-pointer rounded-md border p-3 text-sm transition-all font-medium
+    flex flex-col items-center justify-center text-center min-h-[72px]
+    ${storeProducts.length > 0 &&
+                                        storeProducts.every((p) =>
+                                            formData.applicableStoreProductIds.includes(p.id)
+                                        )
+                                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                                        : "hover:bg-accent"
+                                    }`}
+                            >
+                                <div>Select All</div>
+                                <div className="text-xs text-muted-foreground">
+                                    Apply to all products
+                                </div>
+                            </div>
                             {storeProducts.map((p) => (
                                 <div
                                     key={p.id}

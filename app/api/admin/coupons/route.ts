@@ -61,6 +61,7 @@ export async function POST(req: Request) {
       discountPercentage,
       discountAmountINR,
       discountAmountUSD,
+      discountAmountGP,
       freeDays,
       applicableUserTypes, // Array of ENUMs
       applicablePlanIds, // Array of Strings (IDs)
@@ -100,6 +101,14 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    if (type === "FIXED") {
+      if (!discountAmountUSD && !discountAmountINR && !discountAmountGP) {
+        return NextResponse.json(
+          { error: "At least one discount amount is required" },
+          { status: 400 },
+        );
+      }
+    }
 
     const safeFirstCycleOnly = isChallengeCoupon ? true : !!firstCycleOnly;
     const safeMultiCycle = isChallengeCoupon ? false : !!multiCycle;
@@ -131,6 +140,9 @@ export async function POST(req: Request) {
           : null,
         discountAmountINR: discountAmountINR
           ? parseFloat(discountAmountINR)
+          : null,
+        discountAmountGP: discountAmountGP
+          ? parseFloat(discountAmountGP)
           : null,
         freeDays: freeDays ? parseInt(freeDays) : null,
         scope: scope,

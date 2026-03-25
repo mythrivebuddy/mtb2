@@ -14,15 +14,9 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const userId = session.user.id
-    const {
-      code,
-      planId,
-      currency,
-      challengeId,
-      mmp_programId,
-      storeItemId,
-    } = await req.json();
+    const userId = session.user.id;
+    const { code, planId, currency, challengeId, mmp_programId, storeItemId } =
+      await req.json();
 
     if (!code || (!planId && !challengeId && !mmp_programId && !storeItemId)) {
       return NextResponse.json(
@@ -52,7 +46,79 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
+    //  Ownership Validation via User Role
+    let resourceCreatorId: string | null = null;
+    let resourceCreatorRole: string | null = null;
 
+    // Challenge
+    if (challengeId) {
+      const challenge = await prisma.challenge.findUnique({
+        where: { id: challengeId },
+        select: {
+          creatorId: true,
+          creator: {
+            select: { role: true },
+          },
+        },
+      });
+
+      resourceCreatorId = challenge?.creatorId || null;
+      resourceCreatorRole = challenge?.creator?.role || null;
+    }
+
+    // MMP Program
+    if (mmp_programId) {
+      const program = await prisma.program.findUnique({
+        where: { id: mmp_programId },
+        select: {
+          createdBy: true,
+          creator: {
+            select: { role: true },
+          },
+        },
+      });
+
+      resourceCreatorId = program?.createdBy || null;
+      resourceCreatorRole = program?.creator?.role || null;
+    }
+
+    // Store Product
+    if (storeItemId) {
+      const product = await prisma.item.findUnique({
+        where: { id: storeItemId },
+        select: {
+          createdByUserId: true,
+          creator: {
+            select: { role: true },
+          },
+        },
+      });
+
+      resourceCreatorId = product?.createdByUserId || null;
+      resourceCreatorRole = product?.creator?.role || null;
+    }
+
+    //  MAIN OWNERSHIP RULE
+    if (coupon.creatorUserId) {
+      // Creator coupon → must match owner
+      if (coupon.creatorUserId !== resourceCreatorId) {
+        return NextResponse.json(
+          {
+            valid: false,
+            message: "This coupon is not valid for this checkout.",
+          },
+          { status: 403 },
+        );
+      }
+    } else {
+      // Platform coupon → only for admin-created resources
+      if (resourceCreatorRole !== "ADMIN") {
+        return NextResponse.json(
+          { valid: false, message: "Platform coupon not valid for this item." },
+          { status: 403 },
+        );
+      }
+    }
     if (coupon.scope === "CHALLENGE" && !challengeId) {
       return NextResponse.json({
         valid: false,
@@ -192,16 +258,22 @@ export async function POST(req: Request) {
     }
 
     // 5. Currency applicability
-    if (coupon.applicableCurrencies && coupon.applicableCurrencies.length > 0) {
-      const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
-      if (!isCurrencyValid) {
-        return NextResponse.json(
-          {
-            valid: false,
-            message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
-          },
-          { status: 400 },
-        );
+    // Currency applicability
+    if (!(coupon.scope === "STORE_PRODUCT" && currency === "GP")) {
+      if (
+        coupon.applicableCurrencies &&
+        coupon.applicableCurrencies.length > 0
+      ) {
+        const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
+        if (!isCurrencyValid) {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
+            },
+            { status: 400 },
+          );
+        }
       }
     }
 
@@ -218,6 +290,7 @@ export async function POST(req: Request) {
         discountPercentage: coupon.discountPercentage,
         discountAmountUSD: coupon.discountAmountUSD,
         discountAmountINR: coupon.discountAmountINR,
+        discountAmountGP: coupon.discountAmountGP,
         freeDays: coupon.freeDays,
         description: coupon.description,
       },

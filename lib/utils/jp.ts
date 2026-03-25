@@ -26,10 +26,8 @@ export function isPlanActive(user: UserWithPlan) {
 export async function assignJp(
   user: UserWithPlan,
   activity: ActivityType,
-  prismaClient:
-    | Prisma.TransactionClient
-    | PrismaClient = prisma,
-  options?: { amount?: number, metadata?: Prisma.InputJsonValue } // Optional parameter for dynamic amounts
+  prismaClient: Prisma.TransactionClient | PrismaClient = prisma,
+  options?: { amount?: number; metadata?: Prisma.InputJsonValue }, // Optional parameter for dynamic amounts
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
@@ -64,7 +62,7 @@ export async function assignJp(
           create: {
             activityId: activityData.id,
             jpAmount: jpToAdd,
-            metadata: options?.metadata ?? undefined
+            metadata: options?.metadata ?? undefined,
           },
         },
       },
@@ -83,10 +81,8 @@ export async function assignJp(
 export async function deductJp(
   user: UserWithPlan,
   activity: ActivityType,
-  prismaClient:
-    | Prisma.TransactionClient
-    | PrismaClient = prisma,
-  options?: { amount?: number, metadata?: Prisma.InputJsonValue } // Optional parameter for dynamic amounts
+  prismaClient: Prisma.TransactionClient | PrismaClient = prisma,
+  options?: { amount?: number; metadata?: Prisma.InputJsonValue }, // Optional parameter for dynamic amounts
 ) {
   try {
     // 1. Fetch the activity data to get its ID for logging the transaction.
@@ -104,10 +100,16 @@ export async function deductJp(
     const baseAmount = options?.amount ?? activityData.jpAmount;
 
     // 3. Calculate the final amount to deduct after applying any discounts.
-    const joyPearlsConfig = await getJoyPearlsConfig(user);
-    const spendMultiplier = joyPearlsConfig?.spendRateMultiplier ?? 1;
-    const jpToDeduct = Math.ceil(baseAmount * spendMultiplier);
+    // const joyPearlsConfig = await getJoyPearlsConfig(user);
+    let jpToDeduct = baseAmount;
+    let spendMultiplier = 1;
 
+    // Do NOT apply multiplier for store purchases
+    if (activity !== "STORE_PURCHASE") {
+      const joyPearlsConfig = await getJoyPearlsConfig(user);
+      spendMultiplier = joyPearlsConfig?.spendRateMultiplier ?? 1;
+      jpToDeduct = Math.ceil(baseAmount * spendMultiplier);
+    }
 
     // 4. Check if the user has a sufficient balance.
     if (user.jpBalance < jpToDeduct) {
@@ -125,20 +127,15 @@ export async function deductJp(
           create: {
             activityId: activityData.id,
             jpAmount: jpToDeduct,
-            metadata: options?.metadata ?? undefined
+            metadata: options?.metadata ?? undefined,
           },
         },
       },
     });
 
     // 6. Create a notification for the user about the spent JP.
-    
-      await createJpSpentNotification(
-        user.id,
-        jpToDeduct,
-        activityData.activity
-      );
-    
+
+    await createJpSpentNotification(user.id, jpToDeduct, activityData.activity);
 
     // ✅ RETURN BOTH VALUES
     return {
@@ -166,7 +163,6 @@ async function getJoyPearlsConfig(user: UserWithPlan) {
     feature: "joyPearls",
     user: session?.user ?? user, // Pass session user if available, otherwise fallback to provided user
   });
-
 
   if (!result.allowed) {
     return null;

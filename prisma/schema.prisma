@@ -1415,6 +1415,7 @@ model Coupon {
   discountPercentage  Float?
   discountAmountUSD   Float?
   discountAmountINR   Float?
+  discountAmountGP    Float?  
   freeDays            Int?
   creatorUserId           String?
   challengeCreatorType        CouponCreatorType?  // "COACH","ADMIN","SYSTEM"

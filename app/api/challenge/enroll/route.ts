@@ -255,6 +255,7 @@ export async function POST(request: Request) {
     let discount = 0;
     let gst = 0;
     let totalPaid = 0;
+    let finalPayable = 0;
 
     let commissionPercent = 0;
     let platformFee = 0;
@@ -266,6 +267,13 @@ export async function POST(request: Request) {
       discount = Number(paidOrder.discountApplied ?? 0);
       gst = Number(paidOrder.gstAmount ?? 0);
       totalPaid = Number(paidOrder.totalAmount ?? 0);
+
+      finalPayable = Number((baseAmount - discount + gst).toFixed(2));
+
+      // If gateway forced ₹1 minimum
+      if (finalPayable <= 0 && totalPaid > 0) {
+        finalPayable = totalPaid;
+      }
 
       const feature = checkFeature({
         feature: "challenges",
@@ -283,6 +291,14 @@ export async function POST(request: Request) {
       // ✅ SINGLE SOURCE OF TRUTH
       netBase = Number((baseAmount - discount).toFixed(2));
 
+      if (netBase <= 0) {
+        platformFee = totalPaid;
+        coachEarning = 0;
+      } else {
+        platformFee = Number(((netBase * commissionPercent) / 100).toFixed(2));
+        coachEarning = Number((netBase - platformFee).toFixed(2));
+      }
+
       platformFee = Number(((netBase * commissionPercent) / 100).toFixed(2));
 
       coachEarning = Number((netBase - platformFee).toFixed(2));
@@ -294,7 +310,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
- 
 
     const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
 
@@ -319,7 +334,7 @@ export async function POST(request: Request) {
       participantsUrl: `${baseUrl}/dashboard/challenge/${challengeToJoin.id}/participants`,
 
       // ✅ FIX: No amount for free challenge
-      amount: isPaid ? totalPaid : null,
+      amount: isPaid ? finalPayable : null,
 
       transactionId: paidOrder?.paymentId || paidOrder?.orderId || "N/A",
       paymentMethod: paidOrder?.paymentMethod || "Online",
@@ -340,7 +355,6 @@ export async function POST(request: Request) {
       // ✅ Coach paid CTA
       transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
     };
-
     // ✅ USER EMAIL
     void sendEmailUsingTemplate({
       toEmail: joiner.email!,

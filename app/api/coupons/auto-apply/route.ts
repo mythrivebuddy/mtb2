@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 type AutoApplyConditions = {
   country?: string;
@@ -12,12 +13,14 @@ function getFixedAmount(
   coupon: {
     discountAmountUSD?: number | null;
     discountAmountINR?: number | null;
+    discountAmountGP?: number | null;
   },
   currency: string,
 ): number {
-  return currency === "USD"
-    ? coupon.discountAmountUSD || 0
-    : coupon.discountAmountINR || 0;
+  if (currency === "USD") return coupon.discountAmountUSD || 0;
+  if (currency === "INR") return coupon.discountAmountINR || 0;
+  if (currency === "GP") return coupon.discountAmountGP || 0;
+  return 0;
 }
 
 export async function POST(req: Request) {
@@ -40,18 +43,52 @@ export async function POST(req: Request) {
       );
     }
     const now = new Date();
+    let creatorId: string | null = null;
+    let creatorRole: string | null = null;
 
-    // 1. Fetch auto-apply coupons
-    const coupons = await prisma.coupon.findMany({
-      where: {
-        autoApply: true,
-        status: "ACTIVE",
-        startDate: { lte: now },
-        endDate: { gte: now },
-        redemptions: {
-          none: { userId }, // 👈 key line
+    if (challengeId) {
+      const challenge = await prisma.challenge.findUnique({
+        where: { id: challengeId },
+        select: {
+          creatorId: true,
+          creator: {
+            select: {
+              role: true,
+            },
+          },
         },
+      });
+
+      creatorId = challenge?.creatorId || null;
+      creatorRole = challenge?.creator?.role || null;
+    }
+    // 1. Fetch auto-apply coupons
+
+    const couponWhere: Prisma.CouponWhereInput = {
+      autoApply: true,
+      status: "ACTIVE",
+      startDate: { lte: now },
+      endDate: { gte: now },
+      redemptions: {
+        none: { userId },
       },
+    };
+
+    // Admin challenge → platform coupons
+    const role = creatorRole?.toUpperCase();
+
+    if (role === "ADMIN") {
+      couponWhere.creatorUserId = null;
+    } else if (creatorId) {
+      couponWhere.creatorUserId = creatorId;
+    }
+    // Coach challenge → only that coach coupons
+    else if (creatorId) {
+      couponWhere.creatorUserId = creatorId;
+    }
+
+    const coupons = await prisma.coupon.findMany({
+      where: couponWhere,
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
@@ -116,12 +153,16 @@ export async function POST(req: Request) {
         if (!isStoreProductValid) return false;
       }
       // C. Currency applicability
-      if (
-        coupon.applicableCurrencies &&
-        coupon.applicableCurrencies.length > 0
-      ) {
-        const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
-        if (!isCurrencyValid) return false;
+      // Skip currency validation for GP store products
+      if (!(coupon.scope === "STORE_PRODUCT" && currency === "GP")) {
+        if (
+          coupon.applicableCurrencies &&
+          coupon.applicableCurrencies.length > 0
+        ) {
+          const isCurrencyValid =
+            coupon.applicableCurrencies.includes(currency);
+          if (!isCurrencyValid) return false;
+        }
       }
 
       // D. Additional JSON conditions
@@ -189,6 +230,7 @@ export async function POST(req: Request) {
         discountPercentage: bestCoupon.discountPercentage,
         discountAmountUSD: bestCoupon.discountAmountUSD,
         discountAmountINR: bestCoupon.discountAmountINR,
+        discountAmountGP: bestCoupon.discountAmountGP,
         freeDays: bestCoupon.freeDays,
         description: bestCoupon.description,
       },
