@@ -1,44 +1,82 @@
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import SignInForm from "@/components/auth/SignInForm";
 import AppLayout from "@/components/layout/AppLayout";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-const SignInPageContent = () => {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface MfaCheckVerifiedResponse { verified: boolean; }
+interface MfaStatusResponse       { mfaEnabled: boolean; }
+
+// ─── Inner content (needs Suspense for useSearchParams) ───────────────────────
+
+const SignInPageInner = () => {
   const { data: session } = useSession();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/dashboard"; // Respect redirect parameter
+  const router            = useRouter();
+  const searchParams      = useSearchParams();
+  const redirect          = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/dashboard";
 
+  const isAdmin        = session?.user?.role === "ADMIN";
+  const isGoogleAdmin  = isAdmin && session?.user?.authMethod === "GOOGLE";
+
+  // ── Only fetch when admin + not Google ──────────────────────────────────
+  const { data: mfaVerified } = useQuery<MfaCheckVerifiedResponse>({
+    queryKey: ["mfa-check-verified"],
+    queryFn:  () =>
+      axios
+        .get<MfaCheckVerifiedResponse>("/api/admin/mfa/check-verified")
+        .then((r) => r.data),
+    enabled: isAdmin && !isGoogleAdmin,
+    staleTime: 0,
+  });
+
+  const { data: mfaStatus } = useQuery<MfaStatusResponse>({
+    queryKey: ["mfa-status"],
+    queryFn:  () =>
+      axios
+        .get<MfaStatusResponse>("/api/admin/mfa/status")
+        .then((r) => r.data),
+    // Only fetch after we know cookie is NOT verified
+    enabled: isAdmin && !isGoogleAdmin && mfaVerified?.verified === false,
+    staleTime: 0,
+  });
+
+  // ── Redirect logic ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!session) return;
 
-    const checkAndRedirect = async () => {
-      if (session?.user?.role === "ADMIN") {
-        console.log(session.user)
-        if (session?.user?.authMethod === "GOOGLE") {
-          router.push("/admin/dashboard");
-          return;
-        }
+    // Google admin → skip MFA
+    if (isGoogleAdmin) {
+      router.push("/admin/dashboard");
+      return;
+    }
 
-        const mfaRes = await fetch("/api/admin/mfa/status");
-        const mfaData = await mfaRes.json();
-
-        if (mfaData.mfaEnabled) {
-          router.push("/mfa-verify");
-        } else {
-          router.push("/mfa-setup");
-        }
+    // Non-Google admin
+    if (isAdmin) {
+      // Cookie already valid
+      if (mfaVerified?.verified) {
+        router.push("/admin/dashboard");
         return;
       }
 
-      router.push(redirect);
-    };
+      // Cookie NOT valid + we know MFA status
+      if (mfaVerified?.verified === false && mfaStatus !== undefined) {
+        router.push(mfaStatus.mfaEnabled ? "/mfa-verify" : "/mfa-setup");
+        return;
+      }
 
-    checkAndRedirect();
-  }, [session, router, redirect]);
+      // Still loading — wait
+      return;
+    }
+
+    // Regular user
+    router.push(redirect);
+  }, [session, isAdmin, isGoogleAdmin, mfaVerified, mfaStatus, router, redirect]);
 
   return (
     <AppLayout>
@@ -54,5 +92,13 @@ const SignInPageContent = () => {
     </AppLayout>
   );
 };
+
+// ─── Page export with Suspense ────────────────────────────────────────────────
+
+const SignInPageContent = () => (
+  <Suspense fallback={null}>
+    <SignInPageInner />
+  </Suspense>
+);
 
 export default SignInPageContent;

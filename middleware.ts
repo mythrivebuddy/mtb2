@@ -18,7 +18,6 @@ export default withAuth(
     if (token && path === "/signin" && redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, req.url));
     }
-
     if (token?.role === "ADMIN") {
       const mfaPages = ["/mfa-verify", "/mfa-setup"];
       if (mfaPages.some((p) => path.startsWith(p))) {

@@ -15,130 +15,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Creator {
-  id: string;
-  name: string;
-  image: string | null;
-}
-
-interface ModuleItem {
-  id: number;
-  title: string;
-  type: "video" | "text";
-  videoUrl?: string;
-  instructions: string;
-  actionTask: string;
-}
-
-interface Program {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  durationDays: number | null;
-  unlockType: string | null;
-  price: number | null;
-  currency: string | null;
-  completionThreshold: number | null;
-  certificateTitle: string | null;
-  achievements: unknown;
-  modules: unknown;
-  status: string | null;
-  isActive: boolean;
-  createdAt: string;
-  thumbnailUrl: string | null;
-  creator: Creator | null;
-  createdBy: string;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
-
-interface ApiResponse {
-  programs: Program[];
-  pagination: Pagination;
-}
-
-interface ProgramStatus {
-  enrolled: boolean;
-  completed: boolean;
-}
-
-interface MyStatusResponse {
-  statuses: Record<string, ProgramStatus>;
-}
-
-type PricingFilter = "all" | "free" | "paid";
-type DurationFilter = "all" | "7" | "11" | "14" | "21" | "30";
-type SortOption = "newest" | "price_asc" | "price_desc";
-
-interface Filters {
-  pricing: PricingFilter;
-  duration: DurationFilter;
-  sort: SortOption;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const LIMIT = 9;
-
-function formatPrice(price: number | null, currency: string | null): string {
-  if (!price || price === 0) return "FREE";
-  const symbol = currency === "USD" ? "$" : "₹";
-  return `${symbol}${price.toLocaleString("en-IN")}`;
-}
-
-function moduleCount(modules: unknown): number {
-  return Array.isArray(modules) ? modules.length : 0;
-}
-
-function parseAchievements(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw.filter((v): v is string => typeof v === "string");
-  return [];
-}
-
-function parseModules(raw: unknown): ModuleItem[] {
-  if (Array.isArray(raw)) return raw as ModuleItem[];
-  return [];
-}
-
-const SORT_LABELS: Record<SortOption, string> = {
-  newest: "Newest",
-  price_asc: "Price: Low → High",
-  price_desc: "Price: High → Low",
-};
-
-const DURATION_OPTIONS: { label: string; value: DurationFilter }[] = [
-  { label: "Any Duration", value: "all" },
-  { label: "7 Days", value: "7" },
-  { label: "11 Days", value: "11" },
-  { label: "14 Days", value: "14" },
-  { label: "21 Days", value: "21" },
-  { label: "30 Days", value: "30" },
-];
-
-const CARD_GRADIENTS = [
-  "from-blue-500 via-blue-600 to-indigo-700",
-  "from-violet-500 via-purple-600 to-purple-800",
-  "from-emerald-400 via-teal-500 to-cyan-700",
-  "from-orange-400 via-rose-500 to-pink-600",
-  "from-amber-400 via-orange-500 to-red-600",
-  "from-sky-400 via-blue-500 to-blue-700",
-  "from-fuchsia-500 via-pink-500 to-rose-600",
-  "from-lime-400 via-green-500 to-emerald-700",
-  "from-indigo-400 via-violet-500 to-purple-700",
-] as const;
-
-function getBgLetter(name: string): string {
-  return name.trim()[0]?.toUpperCase() ?? "M";
-}
+import { ApiResponse, DurationFilter, Filters, MyStatusResponse, PricingFilter, Program, ProgramCompStatus, SortOption } from "@/types/client/mini-mastery-program";
+import { CARD_GRADIENTS, DURATION_OPTIONS, formatPrice, getBgLetter, LIMIT, moduleCount, parseAchievements, parseModules, SORT_LABELS } from "@/lib/utils/mini-mastery-program/mmp-main-page";
 
 // ─── API fetchers ─────────────────────────────────────────────────────────────
 
@@ -241,7 +119,7 @@ function ProgramCTA({
   isLoggedIn,
 }: {
   prog: Program;
-  status?: ProgramStatus;
+  status?: ProgramCompStatus;
   isLoggedIn: boolean;
   onInfoClick: (prog: Program) => void;
 }) {
@@ -316,7 +194,7 @@ function ProgramCTA({
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
-function CardStatusBadge({ status }: { status?: ProgramStatus }) {
+function CardStatusBadge({ status }: { status?: ProgramCompStatus }) {
   if (status?.completed) {
     return (
       <div className="absolute top-3 left-3 flex items-center gap-1 bg-green-500 text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-md">
@@ -813,7 +691,7 @@ export default function EnrollPage() {
                           </span> */}
                           <Link
                             href={`/profile/${prog.createdBy}`}
-                            className="text-[10px] font-bold italic text-slate-400 hover:text-blue-600 hover:underline cursor-pointer transition-colors"
+                            className="text-[12px] font-bold hover:underline cursor-pointer transition-colors"
                           >
                             {prog.creator?.name ?? "Expert Coach"}
                           </Link>

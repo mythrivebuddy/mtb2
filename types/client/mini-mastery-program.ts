@@ -53,3 +53,104 @@ export interface ProgramDBPayload {
   thumbnailUrl: string;
   status: "DRAFT" | "UNDER_REVIEW" | "PUBLISHED";
 }
+
+
+export interface Creator {
+  id: string;
+  name: string;
+  image: string | null;
+}
+
+export interface ModuleItem {
+  id: number;
+  title: string;
+  type: "video" | "text";
+  videoUrl?: string;
+  instructions: string;
+  actionTask: string;
+}
+
+export interface Program {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  durationDays: number | null;
+  unlockType: string | null;
+  price: number | null;
+  currency: string | null;
+  completionThreshold: number | null;
+  certificateTitle: string | null;
+  achievements: unknown;
+  modules: unknown;
+  status: string | null;
+  isActive: boolean;
+  createdAt: string;
+  thumbnailUrl: string | null;
+  creator: Creator | null;
+  createdBy: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface ProgramCompStatus {
+  enrolled: boolean;
+  completed: boolean;
+}
+
+export interface MyStatusResponse {
+  statuses: Record<string, ProgramCompStatus>;
+}
+
+export type PricingFilter = "all" | "free" | "paid";
+export type DurationFilter = "all" | "7" | "11" | "14" | "21" | "30";
+export type SortOption = "newest" | "price_asc" | "price_desc";
+
+export interface Filters {
+  pricing: PricingFilter;
+  duration: DurationFilter;
+  sort: SortOption;
+}
+
+export interface Creator {
+  id: string;
+  name: string;
+  image: string | null;
+}
+
+export interface ModuleItem {
+  id: number;
+  title: string;
+  type: "video" | "text";
+  videoUrl?: string;
+  instructions: string;
+  actionTask: string;
+}
+
+export interface Program {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  durationDays: number | null;
+  unlockType: string | null;
+  price: number | null;
+  currency: string | null;
+  completionThreshold: number | null;
+  certificateTitle: string | null;
+  achievements: unknown;
+  modules: unknown;
+  thumbnailUrl: string | null;
+  status: string | null;
+  createdAt: string;
+  creator: Creator | null;
+}
+
+export interface MyStatusResponse {
+  statuses: Record<string, ProgramCompStatus>;
+}

@@ -1,45 +1,64 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Shield, Loader2, ShieldCheck } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Shield, Loader2, ShieldCheck } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import axios, { AxiosError } from "axios";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface MfaCheckVerifiedResponse { verified: boolean; }
+interface MfaVerifyResponse        { success: boolean; }
+interface MfaVerifyError           { error: string; }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MfaVerifyPage() {
-  const [otp, setOtp] = useState("")
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [otp,   setOtp]   = useState("");
+  const [error, setError] = useState("");
+  const router            = useRouter();
 
-  const handleVerify = async () => {
+  // ── Check if already verified ──────────────────────────────────────────
+  const { data: verifiedData } = useQuery<MfaCheckVerifiedResponse>({
+    queryKey: ["mfa-check-verified"],
+    queryFn:  () =>
+      axios
+        .get<MfaCheckVerifiedResponse>("/api/admin/mfa/check-verified")
+        .then((r) => r.data),
+    staleTime: 0,
+  });
+
+  useEffect(() => {
+    if (verifiedData?.verified) {
+      router.replace("/admin/dashboard");
+    }
+  }, [verifiedData, router]);
+
+  // ── Verify OTP mutation ────────────────────────────────────────────────
+  const verifyMutation = useMutation<MfaVerifyResponse, AxiosError<MfaVerifyError>, string>({
+    mutationFn: (otpCode) =>
+      axios
+        .post<MfaVerifyResponse>("/api/admin/mfa/verify", { otp: otpCode })
+        .then((r) => r.data),
+    onSuccess: () => {
+      router.push("/admin/dashboard");
+    },
+    onError: (err) => {
+      setError(err.response?.data?.error ?? "Invalid OTP");
+    },
+  });
+
+  const handleVerify = () => {
     if (otp.length !== 6) {
-      setError("Please enter a 6-digit OTP")
-      return
+      setError("Please enter a 6-digit OTP");
+      return;
     }
+    setError("");
+    verifyMutation.mutate(otp);
+  };
 
-    setIsLoading(true)
-    setError("")
-
-    try {
-      const res = await fetch("/api/admin/mfa/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error ?? "Invalid OTP")
-        return
-      }
-
-      router.push("/admin/dashboard")
-    } catch {
-      setError("Something went wrong. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const isLoading = verifyMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -66,8 +85,8 @@ export default function MfaVerifyPage() {
             maxLength={6}
             value={otp}
             onChange={(e) => {
-              setOtp(e.target.value.replace(/\D/g, ""))
-              setError("")
+              setOtp(e.target.value.replace(/\D/g, ""));
+              setError("");
             }}
             onKeyDown={(e) => e.key === "Enter" && handleVerify()}
             placeholder="000000"
@@ -98,5 +117,5 @@ export default function MfaVerifyPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }
