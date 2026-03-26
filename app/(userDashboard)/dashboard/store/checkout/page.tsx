@@ -298,9 +298,7 @@ const CheckoutContent = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<"INR" | "USD" | "GP" | null>(null);
   const [manualCouponCode, setManualCouponCode] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
-  const [autoCoupon, setAutoCoupon] = useState<AppliedCoupon | null>(null);
-
-  const [isAutoCouponLoading, setIsAutoCouponLoading] = useState(false);
+ 
   const [autoCouponChecked, setAutoCouponChecked] = useState(false);
 
   // ── useMemo — stable references, no hooks inside ──────────────────────────
@@ -555,7 +553,7 @@ const CheckoutContent = () => {
       if (!selectedCurrency || !displayBilling) return;
 
       try {
-        setIsAutoCouponLoading(true);
+
         setAutoCouponChecked(false);
 
         const res = await axios.post("/api/coupons/auto-apply", {
@@ -567,23 +565,18 @@ const CheckoutContent = () => {
         });
 
         if (res.data?.coupon) {
-          setAutoCoupon({
-            ...res.data.coupon,
-            applicableItemIds: res.data.applicableItemIds || [],
-          });
+
 
           setAppliedCoupon({
             ...res.data.coupon,
             applicableItemIds: res.data.applicableItemIds || [],
           });
           setManualCouponCode(res.data.coupon.code);
-        } else {
-          setAutoCoupon(null);
-        }
+        } 
       } catch (err) {
         console.error("Auto coupon failed", err);
       } finally {
-        setIsAutoCouponLoading(false);
+      
         setAutoCouponChecked(true);
       }
     };

@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     }
 
     // Store Product
-    let validItems: string[] = [];
+    const validItems: string[] = [];
 
     if (storeItemIds && storeItemIds.length > 0) {
       const products = await prisma.item.findMany({

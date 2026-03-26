@@ -38,13 +38,14 @@ export async function POST(req: NextRequest) {
         { status: 401 },
       );
     }
-
-    let {
-      items,
+const body = await req.json();
+    const {
       couponCode,
       currency: selectedCurrency,
       exchangeRate,
-    }: CreateStoreOrderRequest = await req.json();
+    }: CreateStoreOrderRequest = body;
+
+    let {items}:CreateStoreOrderRequest = body
 
     if (!items || items.length === 0) {
       return NextResponse.json(
