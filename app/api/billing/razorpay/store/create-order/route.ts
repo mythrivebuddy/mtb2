@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const {
+    let {
       items,
       couponCode,
       currency: selectedCurrency,
@@ -84,12 +84,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Pure wallet cart
     if ((hasGPItems || hasJPItems) && !hasRegularItems) {
       return handleWalletTransaction({
         userId: session.user.id,
         items,
         products,
         couponCode,
+      });
+    }
+
+    // Mixed cart — split and process GP via wallet first, then money via Razorpay
+    if (hasGPItems && hasRegularItems) {
+      const gpItems = items.filter((i) => {
+        const p = products.find((p) => p.id === i.itemId);
+        return p?.currency === "GP";
+      });
+      const gpProducts = products.filter((p) => p.currency === "GP");
+
+      const walletResult = await handleWalletTransaction({
+        userId: session.user.id,
+        items: gpItems,
+        products: gpProducts,
+        couponCode,
+      });
+
+      // If GP transaction failed, stop
+      const walletData = await (walletResult as Response).json();
+      if (!walletData.success) {
+        return NextResponse.json(
+          { success: false, error: walletData.error || "GP payment failed" },
+          { status: 400 },
+        );
+      }
+
+      // Continue with only money items below
+      items = items.filter((i) => {
+        const p = products.find((p) => p.id === i.itemId);
+        return p?.currency !== "GP";
       });
     }
 
@@ -103,10 +135,11 @@ export async function POST(req: NextRequest) {
     let coupon = null;
 
     if (couponCode) {
+      const moneyItemIds = items.map((i) => i.itemId); // items is already filtered to money-only at this point
       const verifyData = await verifyStoreCoupon({
         code: couponCode,
         currency: selectedCurrency,
-        storeItemIds: productIds,
+        storeItemIds: moneyItemIds,
         userId: session.user.id,
       });
 
@@ -208,7 +241,6 @@ export async function POST(req: NextRequest) {
 
     const totalAmount = discountedTotal + gst;
     const roundedTotal = Math.max(Number(totalAmount.toFixed(2)), 1);
-
 
     const { order, key } = await createRazorpayOrder(
       roundedTotal,
@@ -373,15 +405,6 @@ async function handleWalletTransaction({
   let walletTotal = 0;
 
   const orderItemsData: OrderItemData[] = [];
-
-  if (couponCode) {
-    coupon = await prisma.coupon.findUnique({
-      where: { couponCode: couponCode.toUpperCase() },
-      include: {
-        applicableStoreProducts: { select: { id: true } },
-      },
-    });
-  }
 
   for (const item of items) {
     const product = productMap.get(item.itemId);

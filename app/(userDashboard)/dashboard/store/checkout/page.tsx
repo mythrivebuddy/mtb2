@@ -26,6 +26,7 @@ import { convertCurrency } from "@/lib/payment/payment.utils";
 const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GP: "GP" };
 const getCurrencySymbol = (currency?: string): string => CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
+
 // types/coupon.ts
 type CouponType = "PERCENTAGE" | "FIXED" | "FULL_DISCOUNT";
 
@@ -305,7 +306,6 @@ const CheckoutContent = () => {
   // ── useMemo — stable references, no hooks inside ──────────────────────────
 
   const cartItems = useMemo(() => searchParams.getAll("cartItem"), [searchParams]);
-  console.log({ cartItems });
 
   const parsedCartItems = useMemo(
     () => cartItems.map((item) => {
@@ -419,6 +419,7 @@ const CheckoutContent = () => {
     mutationFn: async () => {
       if (!selectedCurrency) throw new Error("Currency not selected")
 
+
       const res = await axios.post(
         "/api/billing/razorpay/store/create-order",
         {
@@ -496,13 +497,16 @@ const CheckoutContent = () => {
 
   const isMixedCurrency = uniqueCurrencies.length > 1;
   const isGPCart = uniqueCurrencies.length === 1 && uniqueCurrencies[0] === "GP";
+  const hasMixedGPAndMoney = uniqueCurrencies.includes("GP") &&
+    (uniqueCurrencies.includes("INR") || uniqueCurrencies.includes("USD"));
 
   const gpBalance = gpData?.balance ?? 0;
-
   const gpTotal = useMemo(() => {
-    if (!isGPCart || !items) return 0;
+    if (!items) return 0;
 
     return items.reduce((sum, item, i) => {
+      if (item.currency !== "GP") return sum; // ✅ Only GP items
+
       const raw = item.basePrice * parsedCartItems[i].quantity;
       let final = raw;
 
@@ -515,7 +519,7 @@ const CheckoutContent = () => {
           final = raw - (appliedCoupon.discountAmountGP || 0);
         }
 
-        if (appliedCoupon.type === "FULL_DISCOUNT" && selectedCurrency === "GP") {
+        if (appliedCoupon.type === "FULL_DISCOUNT") {
           final = 0;
         }
 
@@ -524,9 +528,10 @@ const CheckoutContent = () => {
 
       return sum + final;
     }, 0);
-  }, [isGPCart, items, parsedCartItems, appliedCoupon]);
+  }, [items, parsedCartItems, appliedCoupon]);
 
-  const isGPInsufficient = isGPCart && gpBalance < gpTotal;
+  const isGPInsufficient = (items?.some(i => i.currency === "GP") ?? false)
+    && gpBalance < gpTotal;
 
   const savedBilling: BillingInfo | null = billingData ?? null;
   const hasBilling = !!savedBilling?.addressLine1;
@@ -552,17 +557,6 @@ const CheckoutContent = () => {
       try {
         setIsAutoCouponLoading(true);
         setAutoCouponChecked(false);
-        console.log("cartItems raw:", cartItems);
-        console.log("parsedCartItems:", parsedCartItems);
-        console.log("First itemId:", parsedCartItems[0]?.itemId);
-        console.log({
-          currency: selectedCurrency,
-          billingCountry: displayBilling.country,
-          userType: session?.user?.userType,
-          userId: session?.user?.id,
-          storeItemIds: parsedCartItems.map(i => i.itemId),
-        });
-
 
         const res = await axios.post("/api/coupons/auto-apply", {
           currency: selectedCurrency,
@@ -657,6 +651,11 @@ const CheckoutContent = () => {
         const itemCurrency = item.currency || "INR";
         const qty = parsedCartItems[i].quantity;
 
+        // ❌ DO NOT INCLUDE GP IN MONEY TOTAL
+        if (itemCurrency === "GP" && selectedCurrency !== "GP") {
+          return sum; // skip GP items
+        }
+
         const unitPrice = convertPrice(
           item.basePrice,
           itemCurrency,
@@ -676,9 +675,13 @@ const CheckoutContent = () => {
     let applicableTotal = 0;
 
     items.forEach((item, i) => {
+      const itemCurrency = item.currency || "INR";
+
+      // ❌ Skip GP items when paying in INR/USD
+      if (itemCurrency === "GP" && selectedCurrency !== "GP") return;
+
       if (!appliedCoupon.applicableItemIds?.includes(item.id)) return;
 
-      const itemCurrency = item.currency || "INR";
       const qty = parsedCartItems[i].quantity;
 
       const convertedPrice = convertPrice(
@@ -741,7 +744,33 @@ const CheckoutContent = () => {
     return Number(total.toFixed(2));;
   }, [discountedTotal, gstAmount, singleTotal]);
 
+  const gpDiscount = useMemo(() => {
+    if (!appliedCoupon || !items) return 0;
 
+    let discount = 0;
+
+    items.forEach((item, i) => {
+      if (item.currency !== "GP") return;
+      if (!appliedCoupon.applicableItemIds?.includes(item.id)) return;
+
+      const qty = parsedCartItems[i].quantity;
+      const raw = item.basePrice * qty;
+
+      if (appliedCoupon.type === "PERCENTAGE") {
+        discount += (raw * (appliedCoupon.discountPercentage || 0)) / 100;
+      }
+
+      if (appliedCoupon.type === "FIXED") {
+        discount += appliedCoupon.discountAmountGP || 0;
+      }
+
+      if (appliedCoupon.type === "FULL_DISCOUNT") {
+        discount += raw;
+      }
+    });
+
+    return discount;
+  }, [appliedCoupon, items, parsedCartItems]);
 
   if (status === "loading") {
     return <PageLoader />
@@ -769,45 +798,77 @@ const CheckoutContent = () => {
 
   // ── Pure derived values (no hooks) ────────────────────────────────────────
 
-
-  const getDisplayPrice = (item: Item, index: number) => {
+  const getItemPriceAfterCoupon = (
+    item: Item,
+    qty: number
+  ) => {
     const itemCurrency = item.currency || "INR";
-    const rawPrice = item.basePrice * parsedCartItems[index].quantity;
 
-    // Convert if needed
-    let convertedPrice = rawPrice;
-    if (selectedCurrency && selectedCurrency !== "GP" && selectedCurrency !== itemCurrency) {
-      convertedPrice = convertPrice(rawPrice, itemCurrency, selectedCurrency, usdToInrRate);
-    }
+    let unitPrice = item.basePrice;
 
-    let finalPrice = convertedPrice;
-
-    // APPLY COUPON ONLY IF ITEM IS APPLICABLE
+    // Apply coupon only if applicable to this item
     if (appliedCoupon && appliedCoupon.applicableItemIds?.includes(item.id)) {
       if (appliedCoupon.type === "PERCENTAGE") {
-        finalPrice = convertedPrice - (convertedPrice * (appliedCoupon.discountPercentage || 0)) / 100;
+        unitPrice = unitPrice - (unitPrice * (appliedCoupon.discountPercentage || 0)) / 100;
       }
 
       if (appliedCoupon.type === "FIXED") {
-        if (selectedCurrency === "USD") finalPrice = convertedPrice - (appliedCoupon.discountAmountUSD || 0);
-        if (selectedCurrency === "INR") finalPrice = convertedPrice - (appliedCoupon.discountAmountINR || 0);
-        if (selectedCurrency === "GP") finalPrice = convertedPrice - (appliedCoupon.discountAmountGP || 0);
+        if (itemCurrency === "USD") unitPrice -= (appliedCoupon.discountAmountUSD || 0);
+        if (itemCurrency === "INR") unitPrice -= (appliedCoupon.discountAmountINR || 0);
+        if (itemCurrency === "GP") unitPrice -= (appliedCoupon.discountAmountGP || 0);
       }
 
       if (appliedCoupon.type === "FULL_DISCOUNT") {
-        finalPrice = 0;
+        unitPrice = 0;
       }
+    }
 
-      if (finalPrice < 0) finalPrice = 0;
+    if (unitPrice < 0) unitPrice = 0;
+
+    return unitPrice * qty;
+  };
+
+  const getDisplayPrice = (item: Item, index: number) => {
+    const itemCurrency = item.currency || "INR";
+    const qty = parsedCartItems[index].quantity;
+
+    const originalRawPrice = item.basePrice * qty;
+    const discountedRawPrice = getItemPriceAfterCoupon(item, qty);
+
+    let originalConverted = originalRawPrice;
+    let discountedConverted = discountedRawPrice;
+    let displayCurrency = itemCurrency;
+
+    // Convert only for money currencies
+    if (
+      itemCurrency !== "GP" &&
+      selectedCurrency &&
+      selectedCurrency !== itemCurrency
+    ) {
+      originalConverted = convertPrice(
+        originalRawPrice,
+        itemCurrency,
+        selectedCurrency,
+        usdToInrRate
+      );
+
+      discountedConverted = convertPrice(
+        discountedRawPrice,
+        itemCurrency,
+        selectedCurrency,
+        usdToInrRate
+      );
+
+      displayCurrency = selectedCurrency;
     }
 
     return {
-      price: finalPrice,
-      symbol: getCurrencySymbol(selectedCurrency || itemCurrency),
-      currency: selectedCurrency || itemCurrency,
-      isConverted: selectedCurrency !== itemCurrency,
-      originalPrice: rawPrice,
-      originalCurrency: itemCurrency,
+      originalPrice: originalConverted,
+      discountedPrice: discountedConverted,
+      symbol: getCurrencySymbol(displayCurrency),
+      currency: displayCurrency,
+      isConverted: displayCurrency !== itemCurrency,
+      hasDiscount: discountedConverted < originalConverted
     };
   };
 
@@ -819,13 +880,13 @@ const CheckoutContent = () => {
   });
 
 
-  const canProceed = hasBilling && !isEditingBilling && selectedCurrency !== null && !isGPInsufficient;
+  const canProceed = hasBilling && !isEditingBilling && !isGPInsufficient &&
+    (selectedCurrency !== null) &&
+    (!hasMixedGPAndMoney || (selectedCurrency !== "GP"));
 
-  console.log(autoCoupon, isAutoCouponLoading)
-
-
+  // completed everything
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen ">
       <div className="mb-3 mt-3 px-4">
         <Link href="/dashboard/store" className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600">
           Back to Growth Store
@@ -866,7 +927,7 @@ const CheckoutContent = () => {
             )}
 
             {/* 3. GP Balance — only for GP carts */}
-            {isGPCart && (
+            {(isGPCart || hasMixedGPAndMoney) && (
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-gray-500 px-1">3. GP BALANCE</p>
                 <GPBalanceBanner gpBalance={gpBalance} requiredGP={gpTotal} isInsufficient={isGPInsufficient} />
@@ -880,7 +941,7 @@ const CheckoutContent = () => {
             )}
 
             {/* 3/4. Currency Selection — only for mixed non-GP carts */}
-            {isMixedCurrency && items.length > 1 && !itemCurrencies.includes("GP") && (
+            {isMixedCurrency && items.length > 1 && (
               <div className="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl shadow-md border-2 border-orange-300">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-orange-600 rounded-lg animate-pulse">
@@ -926,10 +987,10 @@ const CheckoutContent = () => {
                 <p className="text-sm text-gray-900 mb-4 font-bold">⚠️ Select the currency you want to pay in:</p>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {uniqueCurrencies.map((currency) => (
+                  {uniqueCurrencies.filter(c => c !== "GP").map((currency) => (
                     <button
                       key={currency}
-                      onClick={() => setSelectedCurrency(currency as "INR" | "USD" | "GP")}
+                      onClick={() => setSelectedCurrency(currency as "INR" | "USD")}
                       className={`p-5 rounded-xl border-2 transition-all duration-200 ${selectedCurrency === currency
                         ? "border-green-600 bg-green-600 text-white shadow-xl scale-105 ring-4 ring-green-200"
                         : "border-orange-300 bg-white hover:border-orange-500 hover:shadow-md"
@@ -1004,7 +1065,12 @@ const CheckoutContent = () => {
                 {items.map((item, index) => {
                   const originalCurrency = item.currency || "INR";
                   const displayData = getDisplayPrice(item, index);
-                  const unitPrice = displayData.price / parsedCartItems[index].quantity;
+                  const qty = parsedCartItems[index].quantity;
+
+                  const unitPrice = displayData.hasDiscount
+                    ? displayData.discountedPrice / qty
+                    : displayData.originalPrice / qty;
+
                   const originalUnitPrice = item.basePrice;
                   const isGP = originalCurrency === "GP";
 
@@ -1060,11 +1126,21 @@ const CheckoutContent = () => {
                             <span className="text-sm text-gray-600 font-medium">
                               Subtotal ({parsedCartItems[index].quantity} {parsedCartItems[index].quantity > 1 ? "items" : "item"}):
                             </span>
-                            <span className={`text-lg font-bold ${isGP ? "text-purple-700" : "text-gray-900"}`}>
-                              {isGP
-                                ? `${Math.ceil(displayData.price)} GP`
-                                : `${displayData.symbol}${Number(displayData.price).toFixed(2)}`
-                              }
+                            <span className="text-lg font-bold text-gray-900">
+                              {displayData.hasDiscount ? (
+                                <>
+                                  <span className="line-through text-gray-400 mr-2">
+                                    {displayData.symbol}{displayData.originalPrice.toFixed(2)}
+                                  </span>
+                                  <span className="text-green-600">
+                                    {displayData.symbol}{displayData.discountedPrice.toFixed(2)}
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  {displayData.symbol}{displayData.originalPrice.toFixed(2)}
+                                </>
+                              )}
                             </span>
                           </div>
                         </div>
@@ -1250,7 +1326,31 @@ const CheckoutContent = () => {
                   </div>
                 )}
               </div>
+              {/* GP Section */}
+              {(isGPCart || hasMixedGPAndMoney) && (
+                <div className="pt-4 border-t-2 border-purple-200 mt-4">
+                  <h3 className="font-bold text-purple-700 mb-2">GP PAYMENT</h3>
 
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>GP Items Total</span>
+                      <span className="font-bold">{Math.ceil(gpTotal + gpDiscount)} GP</span>
+                    </div>
+
+                    {gpDiscount > 0 && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Coupon ({appliedCoupon?.code})</span>
+                        <span className="font-bold">- {Math.ceil(gpDiscount)} GP</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between font-bold text-purple-700 border-t pt-2">
+                      <span>GP Payable</span>
+                      <span>{Math.ceil(gpTotal)} GP</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="space-y-4">
                 {isGPInsufficient && (
                   <div className="bg-red-50 border-2 border-red-400 rounded-lg p-3">
