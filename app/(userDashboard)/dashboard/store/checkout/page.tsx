@@ -39,6 +39,7 @@ interface AppliedCoupon {
   discountAmountGP?: number | null;
   freeDays?: number | null;
   description?: string | null;
+  applicableItemIds: string[];
 }
 
 // const CONVERSION_RATES: Record<string, Record<string, number>> = {
@@ -374,26 +375,28 @@ const CheckoutContent = () => {
   const applyCouponMutation = useMutation({
     mutationFn: async (code: string) => {
       if (!selectedCurrency) throw new Error("Currency not selected");
-      if (hasMultipleDifferentProducts) return;
 
       const res = await axios.post("/api/coupons/verify", {
         code,
         currency: selectedCurrency,
-        storeItemId: parsedCartItems[0]?.itemId,
+        storeItemIds: parsedCartItems.map(i => i.itemId)
       });
 
       return res.data;
     },
     onSuccess: (data) => {
       if (data.valid) {
-        setAppliedCoupon(data.coupon);
+        setAppliedCoupon({
+          ...data.coupon,
+          applicableItemIds: data.applicableItemIds || [],
+        });
         toast.success("Coupon applied");
       } else {
         toast.error(data.message);
       }
     },
 
-    onError: (error:unknown) => {
+    onError: (error: unknown) => {
       toast.error(getAxiosErrorMessage(error, "Failed to apply coupon"));
     },
   });
@@ -512,7 +515,7 @@ const CheckoutContent = () => {
           final = raw - (appliedCoupon.discountAmountGP || 0);
         }
 
-      if (appliedCoupon.type === "FULL_DISCOUNT" && selectedCurrency === "GP") {
+        if (appliedCoupon.type === "FULL_DISCOUNT" && selectedCurrency === "GP") {
           final = 0;
         }
 
@@ -546,12 +549,6 @@ const CheckoutContent = () => {
     const applyAutoCoupon = async () => {
       if (!selectedCurrency || !displayBilling) return;
 
-      if (hasMultipleDifferentProducts) {
-        setAppliedCoupon(null);
-        setAutoCoupon(null);
-        setAutoCouponChecked(true);
-        return;
-      }
       try {
         setIsAutoCouponLoading(true);
         setAutoCouponChecked(false);
@@ -563,7 +560,7 @@ const CheckoutContent = () => {
           billingCountry: displayBilling.country,
           userType: session?.user?.userType,
           userId: session?.user?.id,
-          storeItemId: parsedCartItems[0]?.itemId,
+          storeItemIds: parsedCartItems.map(i => i.itemId),
         });
 
 
@@ -572,12 +569,19 @@ const CheckoutContent = () => {
           billingCountry: displayBilling.country,
           userType: session?.user?.userType,
           userId: session?.user?.id,
-          storeItemId: parsedCartItems[0]?.itemId,
+          storeItemIds: parsedCartItems.map(i => i.itemId),
         });
 
         if (res.data?.coupon) {
-          setAutoCoupon(res.data.coupon);
-          setAppliedCoupon(res.data.coupon);
+          setAutoCoupon({
+            ...res.data.coupon,
+            applicableItemIds: res.data.applicableItemIds || [],
+          });
+
+          setAppliedCoupon({
+            ...res.data.coupon,
+            applicableItemIds: res.data.applicableItemIds || [],
+          });
           setManualCouponCode(res.data.coupon.code);
         } else {
           setAutoCoupon(null);
@@ -632,11 +636,11 @@ const CheckoutContent = () => {
 
 
 
-  const hasMultipleDifferentProducts = useMemo(() => {
-    if (!items) return false;
-    const uniqueProductIds = new Set(items.map(i => i.id));
-    return uniqueProductIds.size > 1;
-  }, [items]);
+  // const hasMultipleDifferentProducts = useMemo(() => {
+  //   if (!items) return false;
+  //   const uniqueProductIds = new Set(items.map(i => i.id));
+  //   return uniqueProductIds.size > 1;
+  // }, [items]);
 
   const GST_RATE = 0.18;
 
@@ -667,34 +671,44 @@ const CheckoutContent = () => {
 
   // 1. Discount
   const discountAmount = useMemo(() => {
-    if (!appliedCoupon || !singleTotal) return 0;
+    if (!appliedCoupon || !items || !selectedCurrency) return 0;
+
+    let applicableTotal = 0;
+
+    items.forEach((item, i) => {
+      if (!appliedCoupon.applicableItemIds?.includes(item.id)) return;
+
+      const itemCurrency = item.currency || "INR";
+      const qty = parsedCartItems[i].quantity;
+
+      const convertedPrice = convertPrice(
+        item.basePrice,
+        itemCurrency,
+        selectedCurrency,
+        usdToInrRate
+      );
+
+      applicableTotal += convertedPrice * qty;
+    });
 
     let discount = 0;
-    const total = singleTotal.total;
 
     if (appliedCoupon.type === "PERCENTAGE") {
-      discount = (total * (appliedCoupon.discountPercentage || 0)) / 100;
+      discount = (applicableTotal * (appliedCoupon.discountPercentage || 0)) / 100;
     }
 
     if (appliedCoupon.type === "FIXED") {
-      if (singleTotal.currency === "USD") {
-        discount = appliedCoupon.discountAmountUSD || 0;
-      }
-      if (singleTotal.currency === "INR") {
-        discount = appliedCoupon.discountAmountINR || 0;
-      }
-      if (singleTotal.currency === "GP") {
-        discount = appliedCoupon.discountAmountGP || 0;
-      }
+      if (selectedCurrency === "USD") discount = appliedCoupon.discountAmountUSD || 0;
+      if (selectedCurrency === "INR") discount = appliedCoupon.discountAmountINR || 0;
+      if (selectedCurrency === "GP") discount = appliedCoupon.discountAmountGP || 0;
     }
+
     if (appliedCoupon.type === "FULL_DISCOUNT") {
-      discount = total;
+      discount = applicableTotal;
     }
 
-    if (discount > total) discount = total;
-
-    return Number(discount.toFixed(2)); // round ONLY here
-  }, [appliedCoupon, singleTotal]);
+    return Number(discount.toFixed(2));
+  }, [appliedCoupon, items, parsedCartItems, selectedCurrency, usdToInrRate]);
 
   // 2. Discounted total
   const discountedTotal = useMemo(() => {
@@ -759,47 +773,42 @@ const CheckoutContent = () => {
   const getDisplayPrice = (item: Item, index: number) => {
     const itemCurrency = item.currency || "INR";
     const rawPrice = item.basePrice * parsedCartItems[index].quantity;
-    if (itemCurrency === "GP") {
-      let finalPrice = rawPrice;
 
-      if (appliedCoupon) {
-        if (appliedCoupon.type === "PERCENTAGE") {
-          finalPrice =
-            rawPrice -
-            (rawPrice * (appliedCoupon.discountPercentage || 0)) / 100;
-        }
+    // Convert if needed
+    let convertedPrice = rawPrice;
+    if (selectedCurrency && selectedCurrency !== "GP" && selectedCurrency !== itemCurrency) {
+      convertedPrice = convertPrice(rawPrice, itemCurrency, selectedCurrency, usdToInrRate);
+    }
 
-        if (appliedCoupon.type === "FIXED") {
-          finalPrice = rawPrice - (appliedCoupon.discountAmountGP || 0);
-        }
+    let finalPrice = convertedPrice;
 
-        if (appliedCoupon.type === "FULL_DISCOUNT") {
-          finalPrice = 0;
-        }
-
-        if (finalPrice < 0) finalPrice = 0;
+    // APPLY COUPON ONLY IF ITEM IS APPLICABLE
+    if (appliedCoupon && appliedCoupon.applicableItemIds?.includes(item.id)) {
+      if (appliedCoupon.type === "PERCENTAGE") {
+        finalPrice = convertedPrice - (convertedPrice * (appliedCoupon.discountPercentage || 0)) / 100;
       }
 
-      return {
-        price: finalPrice,
-        symbol: "GP ",
-        currency: "GP",
-        isConverted: false,
-        originalPrice: rawPrice,
-        originalCurrency: "GP",
-      };
+      if (appliedCoupon.type === "FIXED") {
+        if (selectedCurrency === "USD") finalPrice = convertedPrice - (appliedCoupon.discountAmountUSD || 0);
+        if (selectedCurrency === "INR") finalPrice = convertedPrice - (appliedCoupon.discountAmountINR || 0);
+        if (selectedCurrency === "GP") finalPrice = convertedPrice - (appliedCoupon.discountAmountGP || 0);
+      }
+
+      if (appliedCoupon.type === "FULL_DISCOUNT") {
+        finalPrice = 0;
+      }
+
+      if (finalPrice < 0) finalPrice = 0;
     }
-    if (selectedCurrency && selectedCurrency !== "GP" && selectedCurrency !== itemCurrency) {
-      return {
-        price: convertPrice(rawPrice, itemCurrency, selectedCurrency, usdToInrRate),
-        symbol: getCurrencySymbol(selectedCurrency),
-        currency: selectedCurrency,
-        isConverted: true,
-        originalPrice: rawPrice,
-        originalCurrency: itemCurrency,
-      };
-    }
-    return { price: rawPrice, symbol: getCurrencySymbol(itemCurrency), currency: itemCurrency, isConverted: false, originalPrice: rawPrice, originalCurrency: itemCurrency };
+
+    return {
+      price: finalPrice,
+      symbol: getCurrencySymbol(selectedCurrency || itemCurrency),
+      currency: selectedCurrency || itemCurrency,
+      isConverted: selectedCurrency !== itemCurrency,
+      originalPrice: rawPrice,
+      originalCurrency: itemCurrency,
+    };
   };
 
   const totalsByCurrency: Record<string, number> = {};
@@ -1069,44 +1078,44 @@ const CheckoutContent = () => {
 
           {/* ── Right Column ──────────────────────────────────── */}
           <div className="lg:col-span-1">
-            {!hasMultipleDifferentProducts && (
-              <div className="bg-white p-4 rounded-lg shadow mb-4">
-                <h3 className="font-semibold mb-2">Apply Coupon</h3>
 
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={manualCouponCode}
-                    onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
-                    placeholder="Enter coupon code"
-                    className="border px-3 py-2 rounded-md w-full"
-                  />
-                  <button
-                    onClick={() => applyCouponMutation.mutate(manualCouponCode)}
-                    disabled={applyCouponMutation.isPending || !manualCouponCode}
-                    className={`px-4 py-2 rounded-md flex items-center justify-center gap-2 min-w-[110px] font-medium transition-all
+            <div className="bg-white p-4 rounded-lg shadow mb-4">
+              <h3 className="font-semibold mb-2">Apply Coupon</h3>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualCouponCode}
+                  onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Enter coupon code"
+                  className="border px-3 py-2 rounded-md w-full"
+                />
+                <button
+                  onClick={() => applyCouponMutation.mutate(manualCouponCode)}
+                  disabled={applyCouponMutation.isPending || !manualCouponCode}
+                  className={`px-4 py-2 rounded-md flex items-center justify-center gap-2 min-w-[110px] font-medium transition-all
     ${applyCouponMutation.isPending
-                        ? "bg-gray-400 text-white cursor-not-allowed"
-                        : "bg-black text-white hover:bg-gray-800"
-                      }`}
-                  >
-                    {applyCouponMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      </>
-                    ) : (
-                      "Apply"
-                    )}
-                  </button>
-                </div>
-
-                {appliedCoupon && (
-                  <p className="text-green-600 text-sm mt-2">
-                    Coupon <strong>{appliedCoupon.code}</strong> applied
-                  </p>
-                )}
+                      ? "bg-gray-400 text-white cursor-not-allowed"
+                      : "bg-black text-white hover:bg-gray-800"
+                    }`}
+                >
+                  {applyCouponMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </>
+                  ) : (
+                    "Apply"
+                  )}
+                </button>
               </div>
-            )}
+
+              {appliedCoupon && (
+                <p className="text-green-600 text-sm mt-2">
+                  Coupon <strong>{appliedCoupon.code}</strong> applied
+                </p>
+              )}
+            </div>
+
             <div className="bg-white p-6 rounded-xl shadow-lg sticky top-4">
               <h2 className="text-gray-700 font-bold text-lg mb-5 border-b pb-3">PRICE DETAILS</h2>
 

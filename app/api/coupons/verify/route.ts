@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 import { checkRole } from "@/lib/utils/auth";
+import { SubscriptionPlanCurrency } from "@prisma/client";
 
 type CouponUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" | "ALL";
 
@@ -15,10 +16,19 @@ export async function POST(req: Request) {
       );
     }
     const userId = session.user.id;
-    const { code, planId, currency, challengeId, mmp_programId, storeItemId } =
-      await req.json();
+    const body = (await req.json()) as {
+      code: string;
+      planId?: string;
+      currency: SubscriptionPlanCurrency | "GP";
+      challengeId?: string;
+      mmp_programId?: string;
+      storeItemIds?: string[];
+    };
 
-    if (!code || (!planId && !challengeId && !mmp_programId && !storeItemId)) {
+    const { code, planId, currency, challengeId, mmp_programId, storeItemIds } =
+      body;
+
+    if (!code || (!planId && !challengeId && !mmp_programId && !storeItemIds)) {
       return NextResponse.json(
         { valid: false, message: "Missing code or details." },
         { status: 400 },
@@ -83,19 +93,40 @@ export async function POST(req: Request) {
     }
 
     // Store Product
-    if (storeItemId) {
-      const product = await prisma.item.findUnique({
-        where: { id: storeItemId },
-        select: {
-          createdByUserId: true,
-          creator: {
-            select: { role: true },
-          },
-        },
-      });
+    const products = await prisma.item.findMany({
+      where: {
+        id: { in: storeItemIds },
+      },
+      select: {
+        id: true,
+        createdByUserId: true,
+        creator: { select: { role: true } },
+      },
+    });
+    const validItems: string[] = [];
 
-      resourceCreatorId = product?.createdByUserId || null;
-      resourceCreatorRole = product?.creator?.role || null;
+    for (const product of products) {
+      const creatorId = product.createdByUserId;
+      const creatorRole = product.creator?.role;
+
+      if (coupon.creatorUserId) {
+        // Creator coupon → only creator's products
+        if (coupon.creatorUserId === creatorId) {
+          validItems.push(product.id);
+        }
+      } else {
+        // Platform coupon → only admin products
+        if (creatorRole === "ADMIN") {
+          validItems.push(product.id);
+        }
+      }
+    }
+
+    if (validItems.length === 0) {
+      return NextResponse.json(
+        { valid: false, message: "Coupon not applicable to any cart items." },
+        { status: 400 },
+      );
     }
 
     //  MAIN OWNERSHIP RULE
@@ -138,7 +169,7 @@ export async function POST(req: Request) {
         message: "This coupon is only valid for MMP programs",
       });
     }
-    if (coupon.scope === "STORE_PRODUCT" && !storeItemId) {
+    if (coupon.scope === "STORE_PRODUCT" && !storeItemIds) {
       return NextResponse.json({
         valid: false,
         message: "This coupon is only valid for store products",
@@ -244,14 +275,19 @@ export async function POST(req: Request) {
     }
 
     // Store Product applicability
-    if (storeItemId && coupon.applicableStoreProducts?.length > 0) {
-      const isStoreValid = coupon.applicableStoreProducts.some(
-        (p) => p.id === storeItemId,
+    if (coupon.applicableStoreProducts?.length > 0) {
+      const applicableIds = coupon.applicableStoreProducts.map((p) => p.id);
+
+      const hasApplicableItem = storeItemIds?.some((id) =>
+        applicableIds.includes(id),
       );
 
-      if (!isStoreValid) {
+      if (!hasApplicableItem) {
         return NextResponse.json(
-          { valid: false, message: "Coupon not applicable for this product." },
+          {
+            valid: false,
+            message: "Coupon not applicable for selected items.",
+          },
           { status: 400 },
         );
       }
@@ -259,12 +295,16 @@ export async function POST(req: Request) {
 
     // 5. Currency applicability
     // Currency applicability
-    if (!(coupon.scope === "STORE_PRODUCT" && currency === "GP")) {
+    // 5. Currency applicability
+    if (currency !== "GP") {
       if (
         coupon.applicableCurrencies &&
         coupon.applicableCurrencies.length > 0
       ) {
-        const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
+        const isCurrencyValid = coupon.applicableCurrencies.includes(
+          currency as SubscriptionPlanCurrency,
+        );
+
         if (!isCurrencyValid) {
           return NextResponse.json(
             {
@@ -283,6 +323,7 @@ export async function POST(req: Request) {
     // 6. Success
     return NextResponse.json({
       valid: true,
+      applicableItemIds: validItems,
       coupon: {
         id: coupon.id,
         code: coupon.couponCode,
