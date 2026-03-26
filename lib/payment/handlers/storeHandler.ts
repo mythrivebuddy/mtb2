@@ -1,5 +1,4 @@
 import { PaymentOrder, Prisma } from "@prisma/client";
-import { convertCurrency } from "../payment.utils";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 export async function handleStorePayment(
@@ -17,56 +16,57 @@ export async function handleStorePayment(
     },
   });
 
-  const cart = order.cartSnapshot as { itemId: string; quantity: number }[];
+  const cart = order.cartSnapshot as {
+    itemId: string;
+    quantity: number;
+    price: number;
+    discount: number;
+    finalPrice: number;
+    currency: string;
+  }[];
 
   for (const cartItem of cart) {
-    const item = await tx.item.findUnique({
-      where: { id: cartItem.itemId },
-    });
-
-    if (!item) continue;
-
-    let price = item.basePrice ?? 0;
-
-    if (item.currency !== order.currency) {
-      price = await convertCurrency(
-        price,
-        item.currency as "INR" | "USD",
-        order.currency as "INR" | "USD",
-      );
-    }
-
     await tx.orderItem.create({
       data: {
         orderId: storeOrder.id,
-        itemId: item.id,
+        itemId: cartItem.itemId,
         quantity: cartItem.quantity,
-
-        priceAtPurchase: order.totalAmount,
-        originalPrice: item.basePrice,
-        originalCurrency: item.currency,
+        priceAtPurchase: cartItem.finalPrice,
+        originalPrice: cartItem.price,
+        originalCurrency: cartItem.currency,
       },
     });
-  }
 
+    // Create coupon redemption per item
+    if (order.couponId && cartItem.discount > 0) {
+      await tx.couponRedemption.create({
+        data: {
+          couponId: order.couponId,
+          userId: order.userId,
+          redeemed: true,
+          usedAt: new Date(),
+          appliedPlan: "STORE_PRODUCT",
+          discountApplied: cartItem.discount,
+          currency: cartItem.currency,
+        },
+      });
+    }
+  }
+  await tx.cart.deleteMany({
+    where: {
+      userId: order.userId,
+      itemId: {
+        in: cart.map((c) => c.itemId),
+      },
+    },
+  });
   await tx.paymentOrder.update({
     where: { id: order.id },
     data: {
       storeOrderId: storeOrder.id,
     },
   });
-  if (order.couponId) {
-    await tx.couponRedemption.create({
-      data: {
-        couponId: order.couponId,
-        userId: order.userId,
-        redeemed: true,
-        usedAt: new Date(),
-        appliedPlan: "STORE_PRODUCT",
-        discountApplied: order.discountApplied ?? 0,
-      },
-    });
-  }
+
   const user = await tx.user.findUnique({
     where: { id: order.userId },
     select: { email: true, name: true },

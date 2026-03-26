@@ -94,11 +94,30 @@ const CartSection: React.FC<CartSectionProps> = ({
       const response = await axios.put("/api/user/store/items/cart/update-item-quantity", { cartItemId, quantity });
       return response.data;
     },
+      // Optimistic update (update cache immediately)
+  onMutate: async ({ cartItemId, quantity }) => {
+    await queryClient.cancelQueries({ queryKey: ["cart"] });
+
+    const previousCart = queryClient.getQueryData<CartItem[]>(["cart"]);
+
+    queryClient.setQueryData<CartItem[]>(["cart"], (old = []) =>
+      old.map((item) =>
+        item.id === cartItemId ? { ...item, quantity } : item
+      )
+    );
+
+    return { previousCart };
+  },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profileData"] });
+      
       toast.success("Quantity updated successfully!");
     },
-    onError: () => toast.error("Failed to update quantity."),
+     onError: (err, variables, context) => {
+    if (context?.previousCart) {
+      queryClient.setQueryData(["cart"], context.previousCart);
+    }
+    toast.error("Failed to update quantity.");
+  },
   });
 
   const handleQuantityChange = (cartItemId: string, newQuantity: number) => {

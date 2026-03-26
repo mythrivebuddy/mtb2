@@ -4,9 +4,6 @@ import { checkRole } from "@/lib/utils/auth";
 
 import { convertCurrency } from "@/lib/payment/payment.utils";
 import { createRazorpayOrder } from "@/lib/payment/createRazorpayOrder";
-import { validateCoupon } from "@/lib/payment/coupons/coupons.service";
-import { calculatePayment } from "@/lib/payment/pricingService";
-import { Prisma } from "@prisma/client";
 import { assignJp, deductJp } from "@/lib/utils/jp";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
@@ -98,7 +95,31 @@ export async function POST(req: NextRequest) {
 
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    let amount = 0;
+    let cartTotal = 0;
+    let applicableTotal = 0;
+
+    let applicableItemIds: string[] = [];
+
+    let coupon = null;
+
+    if (couponCode) {
+      const verifyData = await verifyStoreCoupon({
+        code: couponCode,
+        currency: selectedCurrency,
+        storeItemIds: productIds,
+        userId: session.user.id,
+      });
+
+      if (!verifyData.valid) {
+        return NextResponse.json(
+          { success: false, error: verifyData.message },
+          { status: 400 },
+        );
+      }
+
+      coupon = verifyData.coupon;
+      applicableItemIds = verifyData.applicableItemIds || [];
+    }
 
     for (const item of items) {
       const product = productMap.get(item.itemId);
@@ -107,7 +128,6 @@ export async function POST(req: NextRequest) {
       let price = product.basePrice ?? 0;
 
       if (product.currency !== selectedCurrency) {
-        // Use the client-provided rate if available, otherwise fall back to API
         if (
           exchangeRate &&
           product.currency === "USD" &&
@@ -124,12 +144,18 @@ export async function POST(req: NextRequest) {
           price = await convertCurrency(
             price,
             product.currency as Currency,
-            selectedCurrency,
+            selectedCurrency as Currency,
           );
         }
       }
 
-      amount += price * item.quantity;
+      const total = price * item.quantity;
+
+      cartTotal += total;
+
+      if (applicableItemIds.includes(product.id)) {
+        applicableTotal += total;
+      }
     }
 
     let billing = await prisma.userBillingInformation.findFirst({
@@ -151,51 +177,109 @@ export async function POST(req: NextRequest) {
     }
 
     const finalCurrency: Currency = selectedCurrency;
-    const finalAmount = amount;
-
-    let coupon = null;
-
-    if (couponCode) {
-      for (const product of products) {
-        const validCoupon = await validateCoupon({
-          couponCode,
-          scope: "STORE_PRODUCT",
-          entityId: product.id,
-        });
-
-        if (validCoupon) {
-          coupon = validCoupon;
-          break; // coupon valid for at least one product
-        }
-      }
-
-      if (!coupon) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Coupon not applicable to selected products",
-          },
-          { status: 400 },
-        );
-      }
-    }
+    // const finalAmount = cartTotal;
 
     const isIndia = billing.country === "IN";
 
     /* -------------------------------- */
 
-    const { discount, totalAmount, gst } = calculatePayment({
-      baseAmount: finalAmount,
-      coupon,
-      currency: finalCurrency,
-      isIndia,
-    });
+    let discount = 0;
+
+    if (coupon) {
+      if (coupon.type === "PERCENTAGE") {
+        discount = (applicableTotal * (coupon.discountPercentage || 0)) / 100;
+      }
+
+      if (coupon.type === "FIXED") {
+        if (selectedCurrency === "USD")
+          discount = coupon.discountAmountUSD || 0;
+        if (selectedCurrency === "INR")
+          discount = coupon.discountAmountINR || 0;
+      }
+
+      if (coupon.type === "FULL_DISCOUNT") {
+        discount = applicableTotal;
+      }
+    }
+
+    const discountedTotal = Math.max(cartTotal - discount, 0);
+
+    const gst = isIndia ? discountedTotal * 0.18 : 0;
+
+    const totalAmount = discountedTotal + gst;
     const roundedTotal = Number(totalAmount.toFixed(2));
 
     const { order, key } = await createRazorpayOrder(
       roundedTotal,
       finalCurrency,
     );
+
+    const snapshotItems = [];
+
+    let remainingDiscount = discount;
+
+    for (const item of items) {
+      const product = productMap.get(item.itemId);
+      if (!product) continue;
+
+      let price = product.basePrice ?? 0;
+
+      // currency conversion (same as your logic)
+      if (product.currency !== selectedCurrency) {
+        if (
+          exchangeRate &&
+          product.currency === "USD" &&
+          selectedCurrency === "INR"
+        ) {
+          price = Math.round(price * exchangeRate * 100) / 100;
+        } else if (
+          exchangeRate &&
+          product.currency === "INR" &&
+          selectedCurrency === "USD"
+        ) {
+          price = Math.round((price / exchangeRate) * 100) / 100;
+        } else {
+          price = await convertCurrency(
+            price,
+            product.currency as Currency,
+            selectedCurrency as Currency,
+          );
+        }
+      }
+
+      const itemTotal = price * item.quantity;
+
+      let discountForItem = 0;
+
+      if (coupon && applicableItemIds.includes(product.id)) {
+        if (coupon.type === "FULL_DISCOUNT") {
+          discountForItem = itemTotal;
+        } else if (coupon.type === "PERCENTAGE") {
+          discountForItem =
+            (itemTotal * (coupon.discountPercentage ?? 0)) / 100;
+        } else if (coupon.type === "FIXED") {
+          discountForItem = Math.min(itemTotal, remainingDiscount);
+          remainingDiscount -= discountForItem;
+        }
+      }
+
+      const itemDiscountedTotal = itemTotal - discountForItem;
+
+      // distribute GST proportionally
+      const itemGst =
+        discountedTotal > 0 ? (itemDiscountedTotal / discountedTotal) * gst : 0;
+
+      const finalPriceWithGst = itemDiscountedTotal + itemGst;
+
+      snapshotItems.push({
+        itemId: product.id,
+        quantity: item.quantity,
+        price: price,
+        discount: discountForItem,
+        finalPrice: Number(finalPriceWithGst.toFixed(2)),
+        currency: selectedCurrency,
+      });
+    }
 
     /* -------------------------------- */
     /* 8️⃣ CREATE PAYMENT ORDER          */
@@ -208,8 +292,7 @@ export async function POST(req: NextRequest) {
 
         razorpayOrderId: order.id,
         orderId: order.id,
-
-        baseAmount: finalAmount,
+        baseAmount: cartTotal,
         gstAmount: gst,
         discountApplied: discount,
         totalAmount: roundedTotal,
@@ -219,7 +302,7 @@ export async function POST(req: NextRequest) {
 
         couponId: coupon?.id ?? null,
         billingInfoId: billing.id,
-        cartSnapshot: items as unknown as Prisma.InputJsonValue,
+        cartSnapshot: snapshotItems,
 
         // for store purchase → no challenge/program
         challengeId: null,
@@ -497,4 +580,76 @@ async function handleWalletTransaction({
     type: "WALLET",
     order,
   });
+}
+
+async function verifyStoreCoupon({
+  code,
+  storeItemIds,
+}: {
+  code: string;
+  currency: "INR" | "USD" | "GP";
+  storeItemIds: string[];
+  userId: string;
+}) {
+  const now = new Date();
+
+  const coupon = await prisma.coupon.findUnique({
+    where: { couponCode: code.toUpperCase() },
+    include: {
+      applicableStoreProducts: { select: { id: true } },
+      _count: { select: { redemptions: true } },
+    },
+  });
+
+  if (!coupon) {
+    return { valid: false, message: "Invalid coupon code." };
+  }
+
+  if (coupon.status !== "ACTIVE") {
+    return { valid: false, message: "Coupon inactive." };
+  }
+
+  if (now < coupon.startDate || now > coupon.endDate) {
+    return { valid: false, message: "Coupon expired." };
+  }
+
+  // Get products
+  const products = await prisma.item.findMany({
+    where: { id: { in: storeItemIds } },
+    select: {
+      id: true,
+      createdByUserId: true,
+      creator: { select: { role: true } },
+    },
+  });
+
+  const validItems: string[] = [];
+
+  for (const product of products) {
+    const creatorId = product.createdByUserId;
+    const creatorRole = product.creator?.role;
+
+    if (coupon.creatorUserId) {
+      if (coupon.creatorUserId === creatorId) {
+        validItems.push(product.id);
+      }
+    } else {
+      if (creatorRole === "ADMIN") {
+        validItems.push(product.id);
+      }
+    }
+  }
+
+  if (validItems.length === 0) {
+    return {
+      valid: false,
+      message: "Coupon not applicable to selected items.",
+    };
+  }
+
+  return {
+    valid: true,
+    applicableItemIds: validItems,
+    coupon,
+  };
 }

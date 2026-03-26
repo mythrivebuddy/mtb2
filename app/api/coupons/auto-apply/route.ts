@@ -8,6 +8,19 @@ type AutoApplyConditions = {
   userType?: string;
   [key: string]: unknown; // allows future keys without using any
 };
+type AutoApplyRequest = {
+  planId?: string;
+  challengeId?: string;
+  mmp_programId?: string;
+  currency: StoreCurrency;
+  billingCountry?: string;
+  userType?: CouponUserType;
+  userId: string;
+  storeItemIds?: string[];
+};
+type CouponCurrency = "INR" | "USD";
+type StoreCurrency = "INR" | "USD" | "GP";
+type CouponUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" | "ALL";
 
 function getFixedAmount(
   coupon: {
@@ -33,10 +46,10 @@ export async function POST(req: Request) {
       billingCountry,
       userType,
       userId,
-      storeItemId,
-    } = await req.json();
+      storeItemIds,
+    } = (await req.json()) as AutoApplyRequest;
 
-    if (!planId && !challengeId && !mmp_programId && !storeItemId) {
+    if (!planId && !challengeId && !mmp_programId && !storeItemIds) {
       return NextResponse.json(
         { coupon: null, message: "Plan, Challenge or MMP Program required" },
         { status: 400 },
@@ -115,7 +128,10 @@ export async function POST(req: Request) {
       if (coupon.scope === "MMP_PROGRAM" && !mmp_programId) {
         return false;
       }
-      if (coupon.scope === "STORE_PRODUCT" && !storeItemId) {
+      if (
+        coupon.scope === "STORE_PRODUCT" &&
+        (!storeItemIds || storeItemIds.length === 0)
+      ) {
         return false;
       }
       if (
@@ -146,11 +162,14 @@ export async function POST(req: Request) {
 
         if (!isProgramValid) return false;
       }
-      if (storeItemId && coupon.applicableStoreProducts?.length > 0) {
-        const isStoreProductValid = coupon.applicableStoreProducts.some(
-          (p) => p.id === storeItemId,
+      if (storeItemIds && coupon.applicableStoreProducts?.length > 0) {
+        const applicableIds = coupon.applicableStoreProducts.map((p) => p.id);
+
+        const hasApplicableItem = storeItemIds.some((id) =>
+          applicableIds.includes(id),
         );
-        if (!isStoreProductValid) return false;
+
+        if (!hasApplicableItem) return false;
       }
       // C. Currency applicability
       // Skip currency validation for GP store products
@@ -159,8 +178,9 @@ export async function POST(req: Request) {
           coupon.applicableCurrencies &&
           coupon.applicableCurrencies.length > 0
         ) {
-          const isCurrencyValid =
-            coupon.applicableCurrencies.includes(currency);
+          const isCurrencyValid = coupon.applicableCurrencies.includes(
+            currency as CouponCurrency,
+          );
           if (!isCurrencyValid) return false;
         }
       }
@@ -189,9 +209,9 @@ export async function POST(req: Request) {
         }
       }
       if (coupon.applicableUserTypes && coupon.applicableUserTypes.length > 0) {
-        const isUserTypeValid = coupon.applicableUserTypes.includes(userType);
+        if (!userType) return false;
 
-        // Optional: support "ALL"
+        const isUserTypeValid = coupon.applicableUserTypes.includes(userType);
         const isAll = coupon.applicableUserTypes.includes("ALL");
 
         if (!isUserTypeValid && !isAll) return false;
@@ -221,12 +241,50 @@ export async function POST(req: Request) {
 
       return 0;
     })[0];
+    const applicableItemIds: string[] = [];
+
+    if (storeItemIds && storeItemIds.length > 0) {
+      const products = await prisma.item.findMany({
+        where: { id: { in: storeItemIds } },
+        select: {
+          id: true,
+          createdByUserId: true,
+          creator: { select: { role: true } },
+        },
+      });
+
+      const applicableIds =
+        bestCoupon.applicableStoreProducts?.map((p) => p.id) || [];
+
+      for (const product of products) {
+        const creatorId = product.createdByUserId;
+        const creatorRole = product.creator?.role;
+
+        // Creator coupon → only creator's products
+        if (bestCoupon.creatorUserId) {
+          if (
+            bestCoupon.creatorUserId === creatorId &&
+            (applicableIds.length === 0 || applicableIds.includes(product.id))
+          ) {
+            applicableItemIds.push(product.id);
+          }
+        } else {
+          // Platform coupon → only admin products
+          if (
+            creatorRole === "ADMIN" &&
+            (applicableIds.length === 0 || applicableIds.includes(product.id))
+          ) {
+            applicableItemIds.push(product.id);
+          }
+        }
+      }
+    }
 
     return NextResponse.json({
       coupon: {
         id: bestCoupon.id,
         code: bestCoupon.couponCode,
-        type: bestCoupon.type, // "PERCENTAGE" | "FIXED" | "FREE_DURATION"
+        type: bestCoupon.type,
         discountPercentage: bestCoupon.discountPercentage,
         discountAmountUSD: bestCoupon.discountAmountUSD,
         discountAmountINR: bestCoupon.discountAmountINR,
@@ -234,6 +292,7 @@ export async function POST(req: Request) {
         freeDays: bestCoupon.freeDays,
         description: bestCoupon.description,
       },
+      applicableItemIds,
     });
   } catch (error) {
     console.error("Auto-Apply Error:", error);

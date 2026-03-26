@@ -1493,7 +1493,7 @@ model CouponRedemption {
   usedAt      DateTime @default(now())
   appliedPlan String
   discountApplied Float
-
+  currency        String?  // INR USD and GP
   coupon      Coupon @relation(fields: [couponId], references: [id])
   user        User   @relation(fields: [userId], references: [id])
 }
