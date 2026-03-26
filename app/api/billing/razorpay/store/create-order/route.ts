@@ -207,7 +207,8 @@ export async function POST(req: NextRequest) {
     const gst = isIndia ? discountedTotal * 0.18 : 0;
 
     const totalAmount = discountedTotal + gst;
-    const roundedTotal = Number(totalAmount.toFixed(2));
+    const roundedTotal = Math.max(Number(totalAmount.toFixed(2)), 1);
+
 
     const { order, key } = await createRazorpayOrder(
       roundedTotal,
@@ -497,6 +498,7 @@ async function handleWalletTransaction({
           redeemed: true,
           appliedPlan: "STORE_PRODUCT",
           discountApplied: totalDiscount,
+          currency: products[0].currency,
         },
       });
     }

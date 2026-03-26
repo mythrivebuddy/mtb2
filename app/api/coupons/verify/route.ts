@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     // 1. Fetch coupon
     const coupon = await prisma.coupon.findUnique({
-      where: { couponCode: code.toUpperCase() },
+      where: { couponCode: code.trim().toUpperCase() },
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
@@ -56,6 +56,33 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
+
+    if (coupon.scope === "CHALLENGE" && !challengeId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for challenges",
+      });
+    }
+
+    if (coupon.scope === "SUBSCRIPTION" && !planId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for subscriptions",
+      });
+    }
+    if (coupon.scope === "MMP_PROGRAM" && !mmp_programId) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for MMP programs",
+      });
+    }
+    if (coupon.scope === "STORE_PRODUCT" && !storeItemIds) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for store products",
+      });
+    }
+
     //  Ownership Validation via User Role
     let resourceCreatorId: string | null = null;
     let resourceCreatorRole: string | null = null;
@@ -93,88 +120,74 @@ export async function POST(req: Request) {
     }
 
     // Store Product
-    const products = await prisma.item.findMany({
-      where: {
-        id: { in: storeItemIds },
-      },
-      select: {
-        id: true,
-        createdByUserId: true,
-        creator: { select: { role: true } },
-      },
-    });
-    const validItems: string[] = [];
+    let validItems: string[] = [];
 
-    for (const product of products) {
-      const creatorId = product.createdByUserId;
-      const creatorRole = product.creator?.role;
+    if (storeItemIds && storeItemIds.length > 0) {
+      const products = await prisma.item.findMany({
+        where: {
+          id: { in: storeItemIds },
+        },
+        select: {
+          id: true,
+          createdByUserId: true,
+          creator: { select: { role: true } },
+        },
+      });
 
-      if (coupon.creatorUserId) {
-        // Creator coupon → only creator's products
-        if (coupon.creatorUserId === creatorId) {
-          validItems.push(product.id);
-        }
-      } else {
-        // Platform coupon → only admin products
-        if (creatorRole === "ADMIN") {
-          validItems.push(product.id);
+      for (const product of products) {
+        const creatorId = product.createdByUserId;
+        const creatorRole = product.creator?.role;
+
+        if (coupon.creatorUserId) {
+          // Creator coupon → only creator's products
+          if (coupon.creatorUserId === creatorId) {
+            validItems.push(product.id);
+          }
+        } else {
+          // Platform coupon → only admin products
+          if (creatorRole === "ADMIN") {
+            validItems.push(product.id);
+          }
         }
       }
-    }
 
-    if (validItems.length === 0) {
-      return NextResponse.json(
-        { valid: false, message: "Coupon not applicable to any cart items." },
-        { status: 400 },
-      );
-    }
-
-    //  MAIN OWNERSHIP RULE
-    if (coupon.creatorUserId) {
-      // Creator coupon → must match owner
-      if (coupon.creatorUserId !== resourceCreatorId) {
+      if (validItems.length === 0) {
         return NextResponse.json(
           {
             valid: false,
-            message: "This coupon is not valid for this checkout.",
+            message: `This coupon is not valid for the selected ${storeItemIds?.length === 1 ? "item" : "items"}.`,
           },
-          { status: 403 },
+          { status: 400 },
         );
       }
-    } else {
-      // Platform coupon → only for admin-created resources
-      if (resourceCreatorRole !== "ADMIN") {
-        return NextResponse.json(
-          { valid: false, message: "Platform coupon not valid for this item." },
-          { status: 403 },
-        );
-      }
-    }
-    if (coupon.scope === "CHALLENGE" && !challengeId) {
-      return NextResponse.json({
-        valid: false,
-        message: "This coupon is only valid for challenges",
-      });
     }
 
-    if (coupon.scope === "SUBSCRIPTION" && !planId) {
-      return NextResponse.json({
-        valid: false,
-        message: "This coupon is only valid for subscriptions",
-      });
+    //  MAIN OWNERSHIP RULE
+    // MAIN OWNERSHIP RULE (skip for store products)
+    if (!storeItemIds && (challengeId || mmp_programId)) {
+      if (coupon.creatorUserId) {
+        if (coupon.creatorUserId !== resourceCreatorId) {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: "This coupon is not valid for this checkout.",
+            },
+            { status: 403 },
+          );
+        }
+      } else {
+        if (resourceCreatorRole !== "ADMIN") {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: "Platform coupon not valid for this item.",
+            },
+            { status: 403 },
+          );
+        }
+      }
     }
-    if (coupon.scope === "MMP_PROGRAM" && !mmp_programId) {
-      return NextResponse.json({
-        valid: false,
-        message: "This coupon is only valid for MMP programs",
-      });
-    }
-    if (coupon.scope === "STORE_PRODUCT" && !storeItemIds) {
-      return NextResponse.json({
-        valid: false,
-        message: "This coupon is only valid for store products",
-      });
-    }
+
     // 6. User Type applicability
     if (coupon.applicableUserTypes?.length > 0) {
       const isUserTypeValid = coupon.applicableUserTypes.includes(userType);

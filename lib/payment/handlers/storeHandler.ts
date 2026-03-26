@@ -25,32 +25,32 @@ export async function handleStorePayment(
     currency: string;
   }[];
 
-  for (const cartItem of cart) {
-    await tx.orderItem.create({
-      data: {
-        orderId: storeOrder.id,
-        itemId: cartItem.itemId,
-        quantity: cartItem.quantity,
-        priceAtPurchase: cartItem.finalPrice,
-        originalPrice: cartItem.price,
-        originalCurrency: cartItem.currency,
-      },
-    });
+  await tx.orderItem.createMany({
+    data: cart.map((cartItem) => ({
+      orderId: storeOrder.id,
+      itemId: cartItem.itemId,
+      quantity: cartItem.quantity,
+      priceAtPurchase: cartItem.finalPrice,
+      originalPrice: cartItem.price,
+      originalCurrency: cartItem.currency,
+    })),
+  });
 
-    // Create coupon redemption per item
-    if (order.couponId && cartItem.discount > 0) {
-      await tx.couponRedemption.create({
-        data: {
-          couponId: order.couponId,
-          userId: order.userId,
-          redeemed: true,
-          usedAt: new Date(),
-          appliedPlan: "STORE_PRODUCT",
-          discountApplied: cartItem.discount,
-          currency: cartItem.currency,
-        },
-      });
-    }
+  // 2. Coupon redemption
+  const couponData = cart
+    .filter((c) => order.couponId && c.discount > 0)
+    .map((c) => ({
+      couponId: order.couponId!,
+      userId: order.userId,
+      redeemed: true,
+      usedAt: new Date(),
+      appliedPlan: "STORE_PRODUCT",
+      discountApplied: c.discount,
+      currency: c.currency,
+    }));
+
+  if (couponData.length) {
+    await tx.couponRedemption.createMany({ data: couponData });
   }
   await tx.cart.deleteMany({
     where: {
@@ -107,7 +107,7 @@ export async function handleStorePayment(
         status: "COMPLETED",
         itemCount: orderItems.length,
         itemNames,
-        orderUrl: `${appUrl}/dashboard/store/profile`,
+        orderUrl: `${appUrl}/dashboard/store/order-history`,
         currency: order.currency,
         paymentDetails: `Paid with Razorpay (${order.currency})`,
       },
