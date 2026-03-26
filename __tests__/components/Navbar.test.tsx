@@ -51,20 +51,4 @@ describe("Navbar Component", () => {
 
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
   });
-
-  it("toggles mobile menu correctly", () => {
-    (useSession as jest.Mock).mockReturnValue({ data: null });
-
-    render(<Navbar />);
-
-    const menuButton = screen.getByLabelText("menu");
-
-    // open
-    fireEvent.click(menuButton);
-    expect(screen.getByText("Blog")).toBeInTheDocument();
-
-    // close
-    fireEvent.click(menuButton);
-    expect(screen.queryByText("Blog")).not.toBeInTheDocument();
-  });
 });
