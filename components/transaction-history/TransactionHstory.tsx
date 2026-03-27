@@ -39,6 +39,7 @@ import {
 } from "date-fns";
 
 import { CalendarIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -49,25 +50,72 @@ type Balances = {
   INR: number;
   USD: number;
 };
+type Totals = {
+  earned: { GP: number; INR: number; USD: number };
+  spent: { GP: number; INR: number; USD: number };
+};
+
 /* ------------------------------------------------ */
 /* BALANCE CARDS */
 /* ------------------------------------------------ */
+const BalanceCardsSkeleton = ({ count }: { count: number }) => {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      {Array.from({ length: count }).map((_, i) => (
+        <Card key={i}>
+          <CardContent className="p-4 sm:p-6">
+            <div className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse" />
+            <div className="h-6 w-20 bg-gray-300 rounded animate-pulse" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
 
-const BalanceCards = ({ balances }: { balances?: Balances }) => {
+const BalanceCards = ({
+  balances,
+  totals,
+  userType,
+}: {
+  balances?: Balances;
+  totals?: Totals;
+  userType?: "COACH" | "ENTHUSIAST";
+}) => {
+  let items = [];
 
-  const items = [
-    { label: "Total GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
-    { label: "Total INR Balance", value: balances?.INR ?? 0, color: "text-green-600" },
-    { label: "Total USD Balance", value: balances?.USD ?? 0, color: "text-blue-600" },
-  ];
+  if (userType === "COACH") {
+    // 6 cards for coach
+    items = [
+      { label: "GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
+      { label: "INR Earned", value: totals?.earned?.INR ?? 0, color: "text-emerald-600" },
+      { label: "USD Earned", value: totals?.earned?.USD ?? 0, color: "text-blue-600" },
+
+      { label: "GP Spent", value: totals?.spent?.GP ?? 0, color: "text-red-600" },
+      { label: "INR Spent", value: totals?.spent?.INR ?? 0, color: "text-red-600" },
+      { label: "USD Spent", value: totals?.spent?.USD ?? 0, color: "text-red-600" },
+    ];
+  } else {
+    // 4 cards for enthusiast
+    items = [
+      { label: "GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
+
+      { label: "GP Spent", value: totals?.spent?.GP ?? 0, color: "text-red-600" },
+      { label: "INR Spent", value: totals?.spent?.INR ?? 0, color: "text-red-600" },
+      { label: "USD Spent", value: totals?.spent?.USD ?? 0, color: "text-red-600" },
+    ];
+  }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div className={`grid gap-4 mb-6 ${userType === "COACH"
+      ? "grid-cols-2 sm:grid-cols-3"
+      : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
+      }`}>
       {items.map((item) => (
         <Card key={item.label}>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <p className="text-sm text-gray-500">{item.label}</p>
-            <p className={`text-2xl font-bold ${item.color}`}>
+            <p className={`text-md sm:text-2xl font-bold ${item.color}`}>
               {item.value.toLocaleString()}
             </p>
           </CardContent>
@@ -140,7 +188,14 @@ const DateRangeFilter = ({
             key={key}
             size="sm"
             variant={active ? "default" : "outline"}
-            onClick={() => setDate(preset.from, preset.to)}
+            onClick={() => {
+              if (active) {
+                // clicking again removes filter
+                setDate(undefined, undefined);
+              } else {
+                setDate(preset.from, preset.to);
+              }
+            }}
           >
             {preset.label}
           </Button>
@@ -153,6 +208,11 @@ const DateRangeFilter = ({
           <Button
             size="sm"
             variant={isCustom ? "default" : "outline"}
+            onClick={() => {
+              if (isCustom) {
+                setDate(undefined, undefined);
+              }
+            }}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
 
@@ -201,7 +261,7 @@ const LimitSelect = ({
 }) => (
 
   <Select value={value.toString()} onValueChange={onValueChange}>
-    <SelectTrigger className="w-[160px]">
+    <SelectTrigger className="w-full sm:w-[160px]">
       <SelectValue />
     </SelectTrigger>
     <SelectContent>
@@ -223,7 +283,7 @@ const CurrencySelect = ({
 }) => (
 
   <Select value={value} onValueChange={onValueChange}>
-    <SelectTrigger className="w-[140px]">
+    <SelectTrigger className="w-full sm:w-[140px]">
       <SelectValue placeholder="Currency" />
     </SelectTrigger>
     <SelectContent>
@@ -236,6 +296,7 @@ const CurrencySelect = ({
 );
 
 
+
 const FilterSelect = ({
   value,
   onValueChange,
@@ -245,7 +306,7 @@ const FilterSelect = ({
 }) => (
 
   <Select value={value} onValueChange={onValueChange}>
-    <SelectTrigger className="w-[180px]">
+    <SelectTrigger className="w-full sm:w-[180px]">
       <SelectValue placeholder="Filter" />
     </SelectTrigger>
     <SelectContent>
@@ -278,6 +339,7 @@ const TransactionHistoryContent = () => {
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const { data: session } = useSession();
 
   const updateParams = (updates: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -319,13 +381,19 @@ const TransactionHistoryContent = () => {
     });
   };
 
-  const { transactions = [], totalPages, balances } = data || {};
+  const { transactions = [], totalPages, balances, totals } = data || {};
+  const userType =
+    session?.user?.userType === "COACH" ||
+      session?.user?.userType === "ENTHUSIAST"
+      ? session.user.userType
+      : undefined;
 
   if (isLoading) {
-
+    const skeletonCount =
+      session?.user?.userType === "COACH" ? 6 : 4;
     return (
       <>
-        <BalanceCards balances={balances} />
+        <BalanceCardsSkeleton count={skeletonCount} />
 
         <Card>
           <CardContent className="p-6">
@@ -338,7 +406,13 @@ const TransactionHistoryContent = () => {
 
   return (
     <>
-      <BalanceCards balances={balances} />
+
+
+      <BalanceCards
+        balances={balances}
+        totals={totals}
+        userType={userType}
+      />
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
 
