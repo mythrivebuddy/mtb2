@@ -251,6 +251,24 @@ const DateRangeFilter = ({
 /* ------------------------------------------------ */
 /* FILTER SELECTS */
 /* ------------------------------------------------ */
+const TxTypeSelect = ({
+  value,
+  onValueChange,
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+}) => (
+  <Select value={value} onValueChange={onValueChange}>
+    <SelectTrigger className="w-full sm:w-[160px]">
+      <SelectValue placeholder="Type" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="ALL">All Types</SelectItem>
+      <SelectItem value="CREDIT">Credit</SelectItem>
+      <SelectItem value="DEBIT">Debit</SelectItem>
+    </SelectContent>
+  </Select>
+);
 
 const LimitSelect = ({
   value,
@@ -336,6 +354,7 @@ const TransactionHistoryContent = () => {
   const limit = Number(searchParams.get("limit")) || DEFAULT_LIMIT;
   const filter = searchParams.get("filter") || DEFAULT_FILTER;
   const currency = searchParams.get("currency") || "ALL";
+  const txType = searchParams.get("txType") || "ALL";
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
@@ -359,12 +378,12 @@ const TransactionHistoryContent = () => {
 
   const { data, isLoading } = useQuery({
 
-    queryKey: ["transactions-history", page, limit, filter, currency, from, to],
+    queryKey: ["transactions-history", page, limit, filter, currency, from, to, txType],
 
     queryFn: async () => {
 
       const { data } = await axios.get(
-        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&version=v3`
+        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3`
       );
 
       return data;
@@ -424,6 +443,10 @@ const TransactionHistoryContent = () => {
         <CurrencySelect
           value={currency}
           onValueChange={(v) => updateParams({ currency: v })}
+        />
+        <TxTypeSelect
+          value={txType}
+          onValueChange={(v) => updateParams({ txType: v })}
         />
 
         <DateRangeFilter

@@ -47,6 +47,7 @@ export async function GET(request: Request) {
   const filter = searchParams.get("filter") || "ALL";
   const currency = searchParams.get("currency") || "ALL";
   // const skip = (page - 1) * limit;
+  const txType = searchParams.get("txType") || "ALL";
 
   // ✅ Determine version flag
   const versionFlag =
@@ -442,7 +443,12 @@ export async function GET(request: Request) {
       ...coachEarningsHistory,
       ...coachMmpEarnings,
     ];
-
+// ✅ Filter by CREDIT / DEBIT
+if (txType !== "ALL") {
+  combined = combined.filter(
+    (tx) => tx.activity.transactionType === txType
+  );
+}
     // ✅ Apply date range filter
     if (from || to) {
       const fromDate = from ? new Date(from) : null;
@@ -501,17 +507,7 @@ export async function GET(request: Request) {
         const commission = (cp.amountPaid * commissionPercent) / 100;
         return sum + (cp.amountPaid - commission);
       }, 0);
-
-    const inrPaymentDebits = paymentOrders
-      .filter((po) => po.currency === "INR")
-      .reduce((sum, po) => sum + po.totalAmount, 0);
-
-    const inrCmpDebits = cmpPurchases
-      .filter((cp) => cp.currency === "INR")
-      .reduce((sum, cp) => sum + cp.totalAmount, 0);
-
    
-
     const inrBalance = inrCredits;
 
     const usdCredits = allCoachEarnings
