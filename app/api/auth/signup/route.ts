@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       firstName: firstName,
       lastName: lastName,
+      userType:user.userType
     });
 
     return NextResponse.json({
