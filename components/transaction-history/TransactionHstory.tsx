@@ -89,7 +89,7 @@ const BalanceCards = ({
     items = [
       { label: "GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
       { label: "INR Earned", value: totals?.earned?.INR ?? 0, color: "text-emerald-600" },
-      { label: "USD Earned", value: totals?.earned?.USD ?? 0, color: "text-blue-600" },
+      { label: "USD Earned", value: totals?.earned?.USD ?? 0, color: "text-green-600" },
 
       { label: "GP Spent", value: totals?.spent?.GP ?? 0, color: "text-red-600" },
       { label: "INR Spent", value: totals?.spent?.INR ?? 0, color: "text-red-600" },
