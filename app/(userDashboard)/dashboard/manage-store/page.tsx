@@ -27,19 +27,16 @@ const getCurrencySymbol = (currency?: string) =>
 // ─── Price field config ────────────────────────────────────────────────────────
 const PRICE_FIELDS: { key: keyof ItemFormData; label: string; required: boolean }[] = [
   { key: "basePrice", label: "Base Price", required: true },
-  { key: "monthlyPrice", label: "Monthly Price", required: false },
-  { key: "yearlyPrice", label: "Yearly Price", required: false },
-  { key: "lifetimePrice", label: "Lifetime Price", required: false },
+  // { key: "monthlyPrice", label: "Monthly Price", required: false },
+  // { key: "yearlyPrice", label: "Yearly Price", required: false },
+  // { key: "lifetimePrice", label: "Lifetime Price", required: false },
 ];
 
 // ─── Blank form ────────────────────────────────────────────────────────────────
 const BLANK_FORM: ItemFormData = {
   name: "",
   category: "",
-  basePrice: "" as unknown as number,
-  monthlyPrice: "" as unknown as number,
-  yearlyPrice: "" as unknown as number,
-  lifetimePrice: "" as unknown as number,
+  basePrice: "",
   currency: "INR",
 };
 
@@ -72,19 +69,11 @@ const ManageStorePage: React.FC = () => {
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: fetchCategories,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: false,
   });
 
   const { data: items = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["my-items"],
     queryFn: fetchMyItems,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchInterval: 5000,
-    refetchIntervalInBackground: false,
   });
 
   // ─── Helper: build FormData payload ──────────────────────────────────────────
@@ -93,9 +82,10 @@ const ManageStorePage: React.FC = () => {
     fd.append("name", data.name);
     fd.append("category", data.category);
     fd.append("basePrice", (Number(data.basePrice) || 0).toString());
-    fd.append("monthlyPrice", (Number(data.monthlyPrice) || 0).toString());
-    fd.append("yearlyPrice", (Number(data.yearlyPrice) || 0).toString());
-    fd.append("lifetimePrice", (Number(data.lifetimePrice) || 0).toString());
+
+    fd.append("monthlyPrice", (Number(data.basePrice) || 0).toString());
+    fd.append("yearlyPrice", (Number(data.basePrice) || 0).toString());
+    fd.append("lifetimePrice", (Number(data.basePrice) || 0).toString());
     fd.append("currency", data.currency ?? "INR");
     if (data.imageFile) fd.append("image", data.imageFile);
     if (data.downloadFile) fd.append("download", data.downloadFile);
@@ -167,10 +157,11 @@ const ManageStorePage: React.FC = () => {
     }
   }, [session, status, router]);
 
-  if (status === "loading" || !session || session.user.userType !== "COACH") {
-    return <PageLoader />;
-  }
-  if (categoriesLoading || itemsLoading) return <PageLoader />;
+  if (status === "loading" || !session || categoriesLoading || itemsLoading) return (
+    <section className="min-h-screen flex justify-center items-center">
+      <PageLoader />
+    </section>
+  );
 
   // ─── Derived ──────────────────────────────────────────────────────────────────
   const filteredItems = items.filter((item) => {
@@ -190,10 +181,7 @@ const ManageStorePage: React.FC = () => {
       setFormData({
         name: item.name,
         category: item.categoryId,
-        basePrice: item.basePrice,
-        monthlyPrice: item.monthlyPrice,
-        yearlyPrice: item.yearlyPrice,
-        lifetimePrice: item.lifetimePrice,
+        basePrice: String(item.basePrice),
         currency: (item as Item & { currency?: string }).currency ?? "INR",
       });
     } else {
@@ -217,28 +205,16 @@ const ManageStorePage: React.FC = () => {
       deleteProductMutation.mutate(itemId);
   };
 
-  // ─── Price stepper ────────────────────────────────────────────────────────────
-  const stepPrice = (key: keyof ItemFormData, delta: number) => {
-    setFormData((prev) => {
-      const currentValue = Number(prev[key]) || 0;
-      const newValue = Math.max(0, currentValue + delta);
-      return {
-        ...prev,
-        [key]: Math.round(newValue * 100) / 100,
-      };
-    });
-  };
+
 
   const handlePriceChange = (key: keyof ItemFormData, raw: string) => {
-    if (raw === "") {
-      setFormData((prev) => ({ ...prev, [key]: "" as unknown as number }));
-      return;
-    }
+    // Allow only numbers and decimal
+    if (!/^\d*\.?\d*$/.test(raw)) return;
 
-    const value = parseFloat(raw);
-    if (!isNaN(value) && value >= 0) {
-      setFormData((prev) => ({ ...prev, [key]: value }));
-    }
+    // GP should not allow decimal
+    if (formData.currency === "GP" && raw.includes(".")) return;
+
+    setFormData((prev) => ({ ...prev, [key]: raw }));
   };
 
   const currencySymbol = getCurrencySymbol(formData.currency);
@@ -397,55 +373,31 @@ const ManageStorePage: React.FC = () => {
                   </div>
 
                   {/* Price Fields */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     {PRICE_FIELDS.map(({ key, label, required }) => (
                       <div key={key}>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           {label}{required && " *"}
                         </label>
-                        <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 transition-all duration-200">
-                          <span className="px-3 py-3 bg-gray-50 text-gray-600 font-semibold text-sm border-r-2 border-gray-200 select-none">
+
+                        <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                          <span className="px-4 py-3 bg-gray-50 text-gray-600 font-semibold text-sm border-r-2 border-gray-200 select-none">
                             {currencySymbol}
                           </span>
+
                           <input
-                            type="number"
-                            min="0"
-                            step={isGP ? "1" : "0.01"}
+                            type="text"
+                            inputMode={isGP ? "numeric" : "decimal"}
                             placeholder={isGP ? "0" : "0.00"}
                             value={
-                              formData[key] === "" || formData[key] === undefined
-                                ? ""
-                                : (formData[key] as number)
+                              typeof formData[key] === "string" || typeof formData[key] === "number"
+                                ? formData[key]
+                                : ""
                             }
                             onChange={(e) => handlePriceChange(key, e.target.value)}
-                            className="flex-1 px-3 py-3 text-left outline-none border-none
-                              [appearance:textfield]
-                              [&::-webkit-outer-spin-button]:appearance-none
-                              [&::-webkit-inner-spin-button]:appearance-none"
+                            className="flex-1 px-4 py-3 w-full outline-none border-none bg-white"
                             required={required}
                           />
-                          <div className="flex flex-col border-l-2 border-gray-200">
-                            <button
-                              type="button"
-                              onClick={() => stepPrice(key, isGP ? 1 : 0.01)}
-                              className="px-2 py-[4px] bg-gray-50 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors select-none border-b border-gray-200 leading-none"
-                              title="Increase"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="18 15 12 9 6 15" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => stepPrice(key, isGP ? -1 : -0.01)}
-                              className="px-2 py-[4px] bg-gray-50 hover:bg-blue-50 text-gray-500 hover:text-blue-600 transition-colors select-none leading-none"
-                              title="Decrease"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="6 9 12 15 18 9" />
-                              </svg>
-                            </button>
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -634,9 +586,6 @@ const ManageStorePage: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                         {[
                           { label: "Base", val: item.basePrice },
-                          { label: "Monthly", val: item.monthlyPrice },
-                          { label: "Yearly", val: item.yearlyPrice },
-                          { label: "Lifetime", val: item.lifetimePrice },
                         ].map(({ label, val }) => (
                           <div key={label} className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-2 border border-gray-100">
                             <span className="text-gray-500 text-xs block mb-0.5">{label}</span>
@@ -677,7 +626,7 @@ const ManageStorePage: React.FC = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                    {["Status", "Image", "Name", "Category", "Currency", "Base", "Monthly", "Yearly", "Lifetime", "Actions"].map((h) => (
+                    {["Status", "Image", "Name", "Category", "Currency", "Base", "Actions"].map((h) => (
                       <th
                         key={h}
                         className={`py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap ${h === "Actions" ? "text-right" : "text-left"}`}
@@ -727,7 +676,7 @@ const ManageStorePage: React.FC = () => {
                         <td className="py-4 px-4 text-green-600 font-bold">
                           {isItemGP ? `${sym} ${Number(item.basePrice).toFixed(0)}` : `${sym}${Number(item.basePrice).toFixed(2)}`}
                         </td>
-                        <td className="py-4 px-4 text-gray-700">
+                        {/* <td className="py-4 px-4 text-gray-700">
                           {isItemGP ? `${sym} ${Number(item.monthlyPrice).toFixed(0)}` : `${sym}${Number(item.monthlyPrice).toFixed(2)}`}
                         </td>
                         <td className="py-4 px-4 text-gray-700">
@@ -735,7 +684,7 @@ const ManageStorePage: React.FC = () => {
                         </td>
                         <td className="py-4 px-4 text-gray-700">
                           {isItemGP ? `${sym} ${Number(item.lifetimePrice).toFixed(0)}` : `${sym}${Number(item.lifetimePrice).toFixed(2)}`}
-                        </td>
+                        </td> */}
                         <td className="py-4 px-4">
                           <div className="flex gap-2 justify-end">
                             <button

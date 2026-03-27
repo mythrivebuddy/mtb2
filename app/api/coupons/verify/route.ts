@@ -2,23 +2,36 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 import { checkRole } from "@/lib/utils/auth";
+import { SubscriptionPlanCurrency } from "@prisma/client";
 
 type CouponUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" | "ALL";
 
 export async function POST(req: Request) {
   try {
-    const session = await checkRole("USER")
+    const session = await checkRole("USER");
     if (!session || !session.user.userType) {
-      return NextResponse.json({ valid: false, message: "Not eligible " }, { status: 400 })
+      return NextResponse.json(
+        { valid: false, message: "Not eligible " },
+        { status: 400 },
+      );
     }
+    const userId = session.user.id;
+    const body = (await req.json()) as {
+      code: string;
+      planId?: string;
+      currency: SubscriptionPlanCurrency | "GP";
+      challengeId?: string;
+      mmp_programId?: string;
+      storeItemIds?: string[];
+    };
 
+    const { code, planId, currency, challengeId, mmp_programId, storeItemIds } =
+      body;
 
-    const { code, planId, currency, challengeId, userId, mmp_programId } = await req.json();
-
-    if (!code || (!planId && !challengeId && !mmp_programId)) {
+    if (!code || (!planId && !challengeId && !mmp_programId && !storeItemIds)) {
       return NextResponse.json(
         { valid: false, message: "Missing code or details." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,20 +39,23 @@ export async function POST(req: Request) {
 
     // 1. Fetch coupon
     const coupon = await prisma.coupon.findUnique({
-      where: { couponCode: code.toUpperCase() },
+      where: { couponCode: code.trim().toUpperCase() },
       include: {
         applicablePlans: { select: { id: true } },
         applicableChallenges: { select: { id: true } },
         applicableMmpPrograms: { select: { id: true } },
+        applicableStoreProducts: { select: { id: true } },
         _count: { select: { redemptions: true } },
       },
     });
     const userType = session.user.userType as CouponUserType;
     // 2. Basic checks
     if (!coupon) {
-      return NextResponse.json({ valid: false, message: "Invalid coupon code." }, { status: 404 });
+      return NextResponse.json(
+        { valid: false, message: "Invalid coupon code." },
+        { status: 404 },
+      );
     }
-
 
     if (coupon.scope === "CHALLENGE" && !challengeId) {
       return NextResponse.json({
@@ -60,6 +76,118 @@ export async function POST(req: Request) {
         message: "This coupon is only valid for MMP programs",
       });
     }
+    if (coupon.scope === "STORE_PRODUCT" && !storeItemIds) {
+      return NextResponse.json({
+        valid: false,
+        message: "This coupon is only valid for store products",
+      });
+    }
+
+    //  Ownership Validation via User Role
+    let resourceCreatorId: string | null = null;
+    let resourceCreatorRole: string | null = null;
+
+    // Challenge
+    if (challengeId) {
+      const challenge = await prisma.challenge.findUnique({
+        where: { id: challengeId },
+        select: {
+          creatorId: true,
+          creator: {
+            select: { role: true },
+          },
+        },
+      });
+
+      resourceCreatorId = challenge?.creatorId || null;
+      resourceCreatorRole = challenge?.creator?.role || null;
+    }
+
+    // MMP Program
+    if (mmp_programId) {
+      const program = await prisma.program.findUnique({
+        where: { id: mmp_programId },
+        select: {
+          createdBy: true,
+          creator: {
+            select: { role: true },
+          },
+        },
+      });
+
+      resourceCreatorId = program?.createdBy || null;
+      resourceCreatorRole = program?.creator?.role || null;
+    }
+
+    // Store Product
+    const validItems: string[] = [];
+
+    if (storeItemIds && storeItemIds.length > 0) {
+      const products = await prisma.item.findMany({
+        where: {
+          id: { in: storeItemIds },
+        },
+        select: {
+          id: true,
+          createdByUserId: true,
+          creator: { select: { role: true } },
+        },
+      });
+
+      for (const product of products) {
+        const creatorId = product.createdByUserId;
+        const creatorRole = product.creator?.role;
+
+        if (coupon.creatorUserId) {
+          // Creator coupon → only creator's products
+          if (coupon.creatorUserId === creatorId) {
+            validItems.push(product.id);
+          }
+        } else {
+          // Platform coupon → only admin products
+          if (creatorRole === "ADMIN") {
+            validItems.push(product.id);
+          }
+        }
+      }
+
+      if (validItems.length === 0) {
+        return NextResponse.json(
+          {
+            valid: false,
+            message: `This coupon is not valid for the selected ${storeItemIds?.length === 1 ? "item" : "items"}.`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    //  MAIN OWNERSHIP RULE
+    // MAIN OWNERSHIP RULE (skip for store products)
+    if (!storeItemIds && (challengeId || mmp_programId)) {
+      if (coupon.creatorUserId) {
+        if (coupon.creatorUserId !== resourceCreatorId) {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: "This coupon is not valid for this checkout.",
+            },
+            { status: 403 },
+          );
+        }
+      } else {
+        if (resourceCreatorRole !== "ADMIN") {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: "Platform coupon not valid for this item.",
+            },
+            { status: 403 },
+          );
+        }
+      }
+    }
+
     // 6. User Type applicability
     if (coupon.applicableUserTypes?.length > 0) {
       const isUserTypeValid = coupon.applicableUserTypes.includes(userType);
@@ -71,7 +199,7 @@ export async function POST(req: Request) {
             valid: false,
             message: "This coupon is not valid for your account type.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -83,32 +211,37 @@ export async function POST(req: Request) {
     });
 
     if (coupon.maxUsesPerUser && userUses >= coupon.maxUsesPerUser) {
-      return NextResponse.json({
-        valid: false,
-        message: "You have already used this coupon."
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          valid: false,
+          message: "You have already used this coupon.",
+        },
+        { status: 400 },
+      );
     }
-
 
     if (coupon.status !== "ACTIVE") {
       return NextResponse.json(
         { valid: false, message: "This coupon is inactive or expired." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (now < coupon.startDate || now > coupon.endDate) {
       return NextResponse.json(
         { valid: false, message: "Coupon is not valid at this time." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // 3. Usage limits
-    if (coupon.maxGlobalUses && (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses) {
+    if (
+      coupon.maxGlobalUses &&
+      (coupon._count?.redemptions || 0) >= coupon.maxGlobalUses
+    ) {
       return NextResponse.json(
         { valid: false, message: "Coupon usage limit reached." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -119,7 +252,7 @@ export async function POST(req: Request) {
       if (!isPlanValid) {
         return NextResponse.json(
           { valid: false, message: "Coupon not applicable for this plan." },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -127,41 +260,73 @@ export async function POST(req: Request) {
     // Challenge applicability
     if (challengeId && coupon.applicableChallenges.length > 0) {
       const isChallengeValid = coupon.applicableChallenges.some(
-        (c) => c.id === challengeId
+        (c) => c.id === challengeId,
       );
 
       if (!isChallengeValid) {
         return NextResponse.json(
-          { valid: false, message: "Coupon not applicable for this challenge." },
-          { status: 400 }
+          {
+            valid: false,
+            message: "Coupon not applicable for this challenge.",
+          },
+          { status: 400 },
         );
       }
     }
     // MMP Program applicability
     if (mmp_programId && coupon.applicableMmpPrograms.length > 0) {
       const isProgramValid = coupon.applicableMmpPrograms.some(
-        (p) => p.id === mmp_programId
+        (p) => p.id === mmp_programId,
       );
 
       if (!isProgramValid) {
         return NextResponse.json(
           { valid: false, message: "Coupon not applicable for this program." },
-          { status: 400 }
+          { status: 400 },
+        );
+      }
+    }
+
+    // Store Product applicability
+    if (coupon.applicableStoreProducts?.length > 0) {
+      const applicableIds = coupon.applicableStoreProducts.map((p) => p.id);
+
+      const hasApplicableItem = storeItemIds?.some((id) =>
+        applicableIds.includes(id),
+      );
+
+      if (!hasApplicableItem) {
+        return NextResponse.json(
+          {
+            valid: false,
+            message: "Coupon not applicable for selected items.",
+          },
+          { status: 400 },
         );
       }
     }
 
     // 5. Currency applicability
-    if (coupon.applicableCurrencies && coupon.applicableCurrencies.length > 0) {
-      const isCurrencyValid = coupon.applicableCurrencies.includes(currency);
-      if (!isCurrencyValid) {
-        return NextResponse.json(
-          {
-            valid: false,
-            message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
-          },
-          { status: 400 }
+    // Currency applicability
+    // 5. Currency applicability
+    if (currency !== "GP") {
+      if (
+        coupon.applicableCurrencies &&
+        coupon.applicableCurrencies.length > 0
+      ) {
+        const isCurrencyValid = coupon.applicableCurrencies.includes(
+          currency as SubscriptionPlanCurrency,
         );
+
+        if (!isCurrencyValid) {
+          return NextResponse.json(
+            {
+              valid: false,
+              message: `Coupon only valid for ${coupon.applicableCurrencies.join(", ")} payments.`,
+            },
+            { status: 400 },
+          );
+        }
       }
     }
 
@@ -171,6 +336,7 @@ export async function POST(req: Request) {
     // 6. Success
     return NextResponse.json({
       valid: true,
+      applicableItemIds: validItems,
       coupon: {
         id: coupon.id,
         code: coupon.couponCode,
@@ -178,6 +344,7 @@ export async function POST(req: Request) {
         discountPercentage: coupon.discountPercentage,
         discountAmountUSD: coupon.discountAmountUSD,
         discountAmountINR: coupon.discountAmountINR,
+        discountAmountGP: coupon.discountAmountGP,
         freeDays: coupon.freeDays,
         description: coupon.description,
       },
@@ -186,7 +353,7 @@ export async function POST(req: Request) {
     console.error("Coupon Verification Error:", error);
     return NextResponse.json(
       { valid: false, message: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

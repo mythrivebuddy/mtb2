@@ -80,7 +80,7 @@ const CustomDropdown = ({
     }, []);
 
     return (
-        <div ref={ref} className="relative min-w-[200px]">
+        <div ref={ref} className="relative w-full sm:w-auto sm:min-w-[200px]">
             <button
                 type="button"
                 onClick={() => setOpen((o) => !o)}
@@ -149,6 +149,7 @@ const StorePageComponent: React.FC = () => {
     const [productFilter, setProductFilter] = useState<ProductFilter>("ALL");
     const [searchQuery, setSearchQuery] = useState("");
     const [addingItemId, setAddingItemId] = useState<string | null>(null);
+    const [currencyFilter, setCurrencyFilter] = useState<string>("ALL");
     const { data: session, status: authStatus } = useSession();
 
     const router = useRouter();
@@ -276,9 +277,21 @@ const StorePageComponent: React.FC = () => {
         { value: "ADMIN", label: "Products by MTB" },
         { value: "COACH", label: "Products by Coaches" },
     ];
+    const currencyFilterOptions: DropdownOption[] = [
+        { value: "ALL", label: "All Currency" },
+        { value: "INR", label: "INR (₹)" },
+        { value: "USD", label: "USD ($)" },
+        { value: "GP", label: "GP" },
+    ];
 
     const filteredItems = items.filter((item) => {
         if (!item.isApproved) return false;
+
+        const itemCurrency = (item as Item & { currency?: string }).currency ?? "INR";
+        if (currencyFilter !== "ALL" && itemCurrency !== currencyFilter) {
+            return false;
+        }
+
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
             if (!item.name.toLowerCase().includes(query) && !item.category.name.toLowerCase().includes(query)) return false;
@@ -304,7 +317,7 @@ const StorePageComponent: React.FC = () => {
                         </div>
                         {
                             session?.user && (
-                                <div className="flex gap-3 flex-col sm:flex-row">
+                                <div className="flex w-full sm:w-auto gap-3 flex-col sm:flex-row">
                                     <button
                                         onClick={() => {
                                             if (!session) {
@@ -314,14 +327,14 @@ const StorePageComponent: React.FC = () => {
 
                                             router.push("/dashboard/store/order-history");
                                         }}
-                                        className="bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                        className="w-full sm:w-auto bg-green-600 text-white hover:bg-green-700 font-semibold text-sm rounded-lg px-4 sm:px-6 py-3 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                                     >
                                         <History className="w-4 h-4" />
                                         Order History
                                     </button>
                                     <Link
                                         href="/dashboard/store/profile"
-                                        className="bg-gradient-to-r from-blue-500 to-indigo-600  hover:from-blue-600 hover:to-indigo-700  text-white font-semibold text-sm rounded-lg px-4 sm:px-6 py-3  transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
+                                        className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold text-sm rounded-lg px-4 sm:px-6 py-3 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                                     >
                                         <ShoppingCart className="w-4 h-4" />
                                         My Cart & Orders
@@ -335,7 +348,7 @@ const StorePageComponent: React.FC = () => {
 
                 {/* Filters */}
                 <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-                    <div className="flex gap-4 flex-wrap items-center">
+                    <div className="flex flex-col sm:flex-row gap-4 flex-wrap items-center">
                         <div className="flex-1 min-w-[200px]">
                             <div className="relative">
                                 <input
@@ -358,6 +371,13 @@ const StorePageComponent: React.FC = () => {
                             </div>
                         </div>
                         <CustomDropdown options={categoryOptions} value={selectedCategory} onChange={setSelectedCategory} placeholder="All Categories" accentColor="blue" />
+                        <CustomDropdown
+                            options={currencyFilterOptions}
+                            value={currencyFilter}
+                            onChange={setCurrencyFilter}
+                            placeholder="All Currency"
+                            accentColor="blue"
+                        />
                         <CustomDropdown options={productFilterOptions} value={productFilter} onChange={(val) => setProductFilter(val as ProductFilter)} placeholder="All Products" accentColor="violet" />
                     </div>
                 </div>
@@ -424,15 +444,28 @@ const StorePageComponent: React.FC = () => {
                                                 </span>
                                             </div>
                                         )}
+                                        {/* <Link
+                                            href={`/profile/${item.createdByUserId}`}
+                                            className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-gray-700 hover:text-blue-600 shadow-sm"
+                                        >
+                                            By {item.createdByRole === "ADMIN" ? "MTB" : item.creator?.name || "Coach"}
+                                        </Link> */}
                                     </div>
 
                                     <div className="p-5 flex flex-col flex-1">
                                         <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
-                                        <div className="flex items-baseline gap-2 mb-4">
+                                        <div className="flex items-center justify-between gap-2 mb-4">
                                             {/* ✅ FIXED: Added space after GP symbol */}
                                             <span className="text-2xl font-bold text-green-600">
                                                 {isGP ? `${sym} ${Number(price).toFixed(0)}` : `${sym}${Number(price).toFixed(2)}`}
                                             </span>
+                                            <Link
+                                                href={`/profile/${item.createdByUserId}`}
+                                                target="_blank"
+                                                className=" px-2 py-1 rounded-md text-xs font-medium text-gray-700 hover:text-blue-600 shadow-sm"
+                                            >
+                                                By {item.createdByRole === "ADMIN" ? "MTB" : item.creator?.name || "Coach"}
+                                            </Link>
                                         </div>
 
                                         <div className="flex flex-col sm:flex-row gap-2 mt-auto">
@@ -486,7 +519,7 @@ const StorePageComponent: React.FC = () => {
     )
 
     return authStatus === "authenticated" ? (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen">
             {pageContent}
         </div>
     ) : (

@@ -98,14 +98,20 @@ function getDayStatus(
   if (!prevLog?.isCompleted) return "locked";
 
   const enrollDate = new Date(enrolledAt);
-  enrollDate.setHours(0, 0, 0, 0);
-  const unlockDate = new Date(enrollDate);
-  unlockDate.setDate(unlockDate.getDate() + (dayNumber - 1));
+  const unlockDate = new Date(
+    Date.UTC(
+      enrollDate.getUTCFullYear(),
+      enrollDate.getUTCMonth(),
+      enrollDate.getUTCDate() + (dayNumber - 1),
+    )
+  );
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const todayUTC = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
 
-  if (today < unlockDate) return "locked";
+  if (todayUTC < unlockDate) return "locked";
 
   return "active";
 }
@@ -565,7 +571,7 @@ export default function ProgramPlayer() {
 
   const [activeDay, setActiveDay] = useState<number>(1);
   const [actionResponse, setActionResponse] = useState<string>("");
-  const [showResponse, setShowResponse] = useState(false);
+  const [showResponse, setShowResponse] = useState(true);
 
   // Modal states
   const CELEBRATION_KEY = `mmp-celebration-shown-${programId}`;
@@ -839,7 +845,7 @@ export default function ProgramPlayer() {
               <div className="text-center">
                 <p className="font-black text-slate-400 text-lg">Day {activeDay} is Locked</p>
                 <p className="text-sm text-slate-400 font-medium mt-1">
-                  Complete Day {activeDay - 1} to unlock this module.
+                  Day {activeDay} will unlock tomorrow.
                 </p>
               </div>
             </div>
@@ -942,10 +948,9 @@ export default function ProgramPlayer() {
 
                   {!isDayComplete && (
                     <div className="space-y-2">
-                      <button type="button" onClick={() => setShowResponse((v) => !v)}
-                        className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors">
-                        {showResponse ? "▲ Hide response" : "▼ Write your response (optional)"}
-                      </button>
+                      <p className="text-xs font-bold text-blue-600">
+  ✍️ Your response <span className="text-red-500">*</span>
+</p>
                       {showResponse && (
                         <textarea
                           value={actionResponse}
@@ -970,8 +975,15 @@ export default function ProgramPlayer() {
 
                   {!isDayComplete ? (
                     <button
-                      onClick={() => completeMutation.mutate({ dayNumber: activeDay, actionResponse: actionResponse || undefined })}
-                      disabled={completeMutation.isPending}
+  onClick={() => {
+    if (!actionResponse.trim()) {
+      toast.error("Please write your response before marking as complete.");
+      setShowResponse(true);
+      return;
+    }
+    completeMutation.mutate({ dayNumber: activeDay, actionResponse });
+  }}
+  disabled={completeMutation.isPending}
                       className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-100 active:scale-95"
                     >
                       {completeMutation.isPending

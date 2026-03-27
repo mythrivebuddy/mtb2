@@ -27,6 +27,7 @@ type HistoryItem = {
     displayName: string;
   };
   createdAt: string;
+  currency?: string;
 };
 
 const fetchUserTransactionHistory = async () => {
@@ -59,6 +60,7 @@ const RightPanel = ({ className }: { className?: string }) => {
         description,
         date: format(new Date(tx.createdAt), "MMM d, yyyy hh:mm a"),
         amount: tx.jpAmount,
+        currency: tx.currency
       };
     });
   }
@@ -126,7 +128,7 @@ const RightPanel = ({ className }: { className?: string }) => {
           </Link>
         </div>
         {isLoading ? (
-              <PageSkeleton type="transaction-history" />
+          <PageSkeleton type="transaction-history" />
 
 
         ) : (
@@ -143,7 +145,7 @@ const RightPanel = ({ className }: { className?: string }) => {
                   </p>
                 </div>
                 <p className="text-red-500 font-medium ml-2 break-words">
-                  {item.amount} GP
+                  {item.amount} {item?.currency}
                 </p>
               </div>
             ))}

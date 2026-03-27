@@ -18,6 +18,22 @@ export default withAuth(
     if (token && path === "/signin" && redirectUrl) {
       return NextResponse.redirect(new URL(redirectUrl, req.url));
     }
+    if (token?.role === "ADMIN") {
+      const mfaPages = ["/mfa-verify", "/mfa-setup"];
+      if (mfaPages.some((p) => path.startsWith(p))) {
+        return NextResponse.next();
+      }
+
+      if (token.authMethod === "GOOGLE") {
+        return NextResponse.next();
+      }
+
+      const mfaVerified = req.cookies.get("mfa_verified")?.value;
+      if (!mfaVerified || mfaVerified !== token.sub) {
+        return NextResponse.redirect(new URL("/mfa-verify", req.url));
+      }
+    }
+
     // Block non-COACH users from manage-store
     if (path.startsWith("/dashboard/manage-store")) {
       if (!token || token.userType !== "COACH") {
@@ -83,6 +99,11 @@ export default withAuth(
         if (path === "/dashboard/store") {
           return true;
         }
+
+        // ✅ MFA pages publicly accessible (session hone ke baad bhi)
+        if (path.startsWith("/mfa-verify")) return true;
+        if (path.startsWith("/mfa-setup")) return true;
+
 
         // Require authentication for all other pages
         return !!token;

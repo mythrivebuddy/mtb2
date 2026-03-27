@@ -9,7 +9,7 @@ const STREAK_MILESTONES = [7, 21, 45, 90];
 
 export async function POST(req: Request) {
   try {
-    console.log("➡️ /api/streak POST called");
+   
 
     // The session type is already augmented globally, so no custom types or casting are needed.
     const session = await getServerSession(authConfig);
@@ -45,21 +45,18 @@ export async function POST(req: Request) {
             isFirstTimeSurvey: true,
           },
         });
-        console.log("✅ Created user in DB from session:", { id: user.id, email: user.email });
+       
       } catch (createErr) {
         console.error("❌ Failed to create user from session:", createErr);
         return NextResponse.json({ error: "Failed to create missing user in DB" }, { status: 500 });
       }
-    } else {
-      console.log("✅ Found user in DB:", { id: user.id, email: user.email });
-    }
-
+    } 
     const now = new Date();
 
     // Get or initialize user streak
     let streak = await prisma.userStreak.findUnique({ where: { userId } });
     if (!streak) {
-      console.log("✨ No streak found for user. Creating new streak entry...");
+     
       streak = await prisma.userStreak.create({
         data: {
           userId,
@@ -68,10 +65,8 @@ export async function POST(req: Request) {
           loginCount: 0,
         },
       });
-      console.log("🆕 Created initial userStreak:", streak);
-    } else {
-      console.log("📊 Current streak record:", streak);
-    }
+     
+    } 
 
     const lastActive = new Date(streak.lastActiveDay);
     const daysDiff = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
@@ -79,23 +74,16 @@ export async function POST(req: Request) {
     // If already active today
     if (daysDiff === 0) {
       if (isLogin) {
-        console.log("🔄 Already logged in today, incrementing loginCount...");
         streak = await prisma.userStreak.update({
           where: { userId },
           data: { loginCount: { increment: 1 } },
         });
       }
-      console.log("✅ Returning streak (already active today):", streak);
       return NextResponse.json({ streak });
     }
 
     // Determine new streak
     const newStreak = daysDiff === 1 ? streak.currentStreak + 1 : 1;
-    if (daysDiff === 1) {
-      console.log(`🔥 Continuing streak to ${newStreak} day(s).`);
-    } else {
-      console.log("⚠️ Missed day(s). Reset streak to 1.");
-    }
 
 
     // Update streak record
@@ -107,18 +95,15 @@ export async function POST(req: Request) {
         loginCount: isLogin ? streak.loginCount + 1 : streak.loginCount,
       },
     });
-    console.log("📈 Updated streak:", streak);
 
     // Don't award beyond 90 days
     if (streak.currentStreak > 90) {
-      console.log("🚫 Streak > 90 — skipping awards.");
       return NextResponse.json({ streak });
     }
 
     // Check milestone rewards
     if (STREAK_MILESTONES.includes(newStreak)) {
       const activityKey = `STREAK_${newStreak}_DAYS`;
-      console.log(`🎯 Milestone hit: ${activityKey}. Looking up activity...`);
 
       const activity = await prisma.activity.findUnique({
         where: { activity: activityKey as ActivityType },
@@ -127,7 +112,6 @@ export async function POST(req: Request) {
       if (!activity) {
         console.warn(`⚠️ No activity config found for key: ${activityKey}`);
       } else {
-        console.log("🏷 Found activity:", activity);
         const existingReward = await prisma.transaction.findFirst({
           where: { userId, activityId: activity.id },
         });
@@ -135,7 +119,6 @@ export async function POST(req: Request) {
         if (existingReward) {
           console.log("ℹ️ Milestone reward already exists. Skipping award.");
         } else {
-          console.log(`💎 Awarding ${activity.jpAmount} JP for ${newStreak}-day streak...`);
 
           await prisma.$transaction([
             prisma.transaction.create({
@@ -162,7 +145,6 @@ export async function POST(req: Request) {
             }),
           ]);
 
-          console.log(`✅ Successfully awarded ${activity.jpAmount} JP for ${newStreak}-day streak.`);
         }
       }
     }
@@ -193,7 +175,6 @@ export async function GET() {
         const daysDiff = Math.floor((now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
 
         if (daysDiff > 1) {
-            console.log("GET: Streak broken. Returning 0.");
             return NextResponse.json({ streak: { ...streak, currentStreak: 0 } });
         }
     }

@@ -14,6 +14,12 @@ export async function GET(): Promise<NextResponse> {
             name: true,
           },
         },
+        creator:{
+          select:{
+            id:true,
+            name:true,
+          }
+        }
       },
     });
 
