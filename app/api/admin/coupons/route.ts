@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Adjust path to your prisma instance
-import { CouponType, CouponUserType, SubscriptionPlanCurrency } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import {
+  CouponType,
+  CouponUserType,
+  SubscriptionPlanCurrency,
+} from "@prisma/client";
+import { checkRole } from "@/lib/utils/auth";
 
 export async function GET() {
   try {
+    await checkRole("ADMIN");
+
     const coupons = await prisma.coupon.findMany({
+      where: {
+        creatorUserId: null,
+      },
       include: {
         _count: {
           select: { redemptions: true },
@@ -16,15 +26,27 @@ export async function GET() {
           select: { id: true, title: true },
         },
         applicableMmpPrograms: {
-          select: { id: true, name: true }
-        }
+          select: { id: true, name: true },
+        },
+        applicableStoreProducts: {
+          select: {
+            id: true,
+            name: true,
+            basePrice: true,
+            currency: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
+
     return NextResponse.json(coupons);
   } catch (error) {
     console.error("Error fetching coupons:", error);
-    return NextResponse.json({ error: "Failed to fetch coupons" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch coupons" },
+      { status: 500 },
+    );
   }
 }
 
@@ -39,10 +61,13 @@ export async function POST(req: Request) {
       discountPercentage,
       discountAmountINR,
       discountAmountUSD,
+      discountAmountGP,
       freeDays,
       applicableUserTypes, // Array of ENUMs
-      applicablePlanIds,   // Array of Strings (IDs)
+      applicablePlanIds, // Array of Strings (IDs)
       applicableChallengeIds,
+      applicableMmpProgramIds,
+      applicableStoreProductIds,
       applicableCurrencies, // Array of ENUMs
       firstCycleOnly,
       multiCycle,
@@ -53,29 +78,37 @@ export async function POST(req: Request) {
       autoApply,
       autoApplyConditions,
       description,
-      scope
+      scope,
     } = body;
 
     // Basic Validation
     if (!couponCode || !type || !startDate || !endDate) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
-
 
     const isChallengeCoupon = scope === "CHALLENGE";
-    if (scope === "CHALLENGE" && !applicableChallengeIds?.length) {
-      return NextResponse.json(
-        { error: "Challenge coupons must target at least one challenge" },
-        { status: 400 }
-      );
-    }
-    if (!["SUBSCRIPTION", "CHALLENGE", "MMP_PROGRAM"].includes(scope)) {
+
+    if (
+      !["SUBSCRIPTION", "CHALLENGE", "MMP_PROGRAM", "STORE_PRODUCT"].includes(
+        scope,
+      )
+    ) {
       return NextResponse.json(
         { error: "Invalid coupon scope" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
+    if (type === "FIXED") {
+      if (!discountAmountUSD && !discountAmountINR && !discountAmountGP) {
+        return NextResponse.json(
+          { error: "At least one discount amount is required" },
+          { status: 400 },
+        );
+      }
+    }
 
     const safeFirstCycleOnly = isChallengeCoupon ? true : !!firstCycleOnly;
     const safeMultiCycle = isChallengeCoupon ? false : !!multiCycle;
@@ -87,7 +120,7 @@ export async function POST(req: Request) {
     if (existingCoupon) {
       return NextResponse.json(
         { error: "Coupon code already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -99,30 +132,53 @@ export async function POST(req: Request) {
         status: "ACTIVE", // Default to active on creation
 
         // Discount Logic
-        discountPercentage: discountPercentage ? parseFloat(discountPercentage) : null,
-        discountAmountUSD: discountAmountUSD ? parseFloat(discountAmountUSD) : null,
-        discountAmountINR: discountAmountINR ? parseFloat(discountAmountINR) : null,
+        discountPercentage: discountPercentage
+          ? parseFloat(discountPercentage)
+          : null,
+        discountAmountUSD: discountAmountUSD
+          ? parseFloat(discountAmountUSD)
+          : null,
+        discountAmountINR: discountAmountINR
+          ? parseFloat(discountAmountINR)
+          : null,
+        discountAmountGP: discountAmountGP
+          ? parseFloat(discountAmountGP)
+          : null,
         freeDays: freeDays ? parseInt(freeDays) : null,
         scope: scope,
         // Applicability
         applicableUserTypes: applicableUserTypes as CouponUserType[], // Postgres scalar list
-        applicableCurrencies: applicableCurrencies as SubscriptionPlanCurrency[],
+        applicableCurrencies:
+          applicableCurrencies as SubscriptionPlanCurrency[],
         firstCycleOnly: safeFirstCycleOnly,
         multiCycle: safeMultiCycle,
 
-        // Connect Plans (Many-to-Many)
+        // Plans
         applicablePlans:
-          scope === "SUBSCRIPTION"
-            ? {
-              connect: applicablePlanIds?.map((id: string) => ({ id })) || [],
-            }
+          scope === "SUBSCRIPTION" && applicablePlanIds?.length
+            ? { connect: applicablePlanIds.map((id: string) => ({ id })) }
             : undefined,
+
+        // Challenges
         applicableChallenges:
-          scope === "CHALLENGE"
+          scope === "CHALLENGE" && applicableChallengeIds?.length
+            ? { connect: applicableChallengeIds.map((id: string) => ({ id })) }
+            : undefined,
+
+        // MMP
+        applicableMmpPrograms:
+          scope === "MMP_PROGRAM" && applicableMmpProgramIds?.length
+            ? { connect: applicableMmpProgramIds.map((id: string) => ({ id })) }
+            : undefined,
+
+        // Store
+        applicableStoreProducts:
+          scope === "STORE_PRODUCT" && applicableStoreProductIds?.length
             ? {
-              connect:
-                applicableChallengeIds?.map((id: string) => ({ id })) || [],
-            }
+                connect: applicableStoreProductIds.map((id: string) => ({
+                  id,
+                })),
+              }
             : undefined,
 
         // Validity
@@ -140,6 +196,9 @@ export async function POST(req: Request) {
     return NextResponse.json(newCoupon);
   } catch (error) {
     console.error("Error creating coupon:", error);
-    return NextResponse.json({ error: "Failed to create coupon" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create coupon" },
+      { status: 500 },
+    );
   }
 }

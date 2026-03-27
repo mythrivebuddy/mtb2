@@ -5,21 +5,28 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import axios from "axios";
 import { toast } from "sonner";
-import ProfilePage from "@/app/(userDashboard)/dashboard/store/profile/page";
+import StoreProfilePageComponent from "@/app/(userDashboard)/dashboard/store/profile/page";
 
 // ============================================================================
 // MOCK DEPENDENCIES
 // ============================================================================
 
-// Mock Next.js navigation hook
+// Mock Next.js navigation
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
+  useSearchParams: jest.fn(),
 }));
 
-// Mock axios for API calls
+// Mock next-auth
+jest.mock("next-auth/react", () => ({
+  useSession: jest.fn(),
+}));
+
+// Mock axios
 jest.mock("axios");
 
 // Mock toast notifications
@@ -34,7 +41,11 @@ jest.mock("sonner", () => ({
 
 // Mock Next.js Link component
 jest.mock("next/link", () => {
-  return function Link({ children, href, className }: {
+  return function Link({
+    children,
+    href,
+    className,
+  }: {
     children: React.ReactNode;
     href: string;
     className?: string;
@@ -47,31 +58,46 @@ jest.mock("next/link", () => {
   };
 });
 
-// Mock Lucide icons
-jest.mock("lucide-react", () => ({
-  Loader2: function Loader2({ className }: { className?: string }) {
-    return <div className={className}>Loading Icon</div>;
-  },
-  ShoppingCart: function ShoppingCart() {
-    return <div>Cart Icon</div>;
-  },
-  Heart: function Heart() {
-    return <div>Heart Icon</div>;
-  },
-  Star: function Star() {
-    return <div>Star Icon</div>;
-  },
-  Trash2: function Trash2() {
-    return <div>Trash Icon</div>;
+// Mock Next.js Image component
+jest.mock("next/image", () => ({
+  __esModule: true,
+  default: function Image({
+    src,
+    alt,
+    width,
+    height,
+    className,
+  }: {
+    src: string;
+    alt: string;
+    width?: number;
+    height?: number;
+    className?: string;
+  }) {
+    return <img src={src} alt={alt} width={width} height={height} className={className} />;
   },
 }));
 
-// Mock section components
+// Mock PageLoader
+jest.mock("@/components/PageLoader", () => {
+  return function PageLoader() {
+    return <div data-testid="page-loader">Loading...</div>;
+  };
+});
+
+// Mock AppLayout
+jest.mock("@/components/layout/AppLayout", () => {
+  return function AppLayout({ children }: { children: React.ReactNode }) {
+    return <div data-testid="app-layout">{children}</div>;
+  };
+});
+
+// Mock child section components so we isolate the parent page
 jest.mock("@/components/storeProfile/OrderSection", () => {
   return function OrderSection({ orders }: { orders: unknown[] }) {
     return (
       <div data-testid="order-section">
-        Order Section - {orders.length} orders
+        <span data-testid="order-count">{orders.length}</span>
       </div>
     );
   };
@@ -80,18 +106,23 @@ jest.mock("@/components/storeProfile/OrderSection", () => {
 jest.mock("@/components/storeProfile/CartSection", () => {
   return function CartSection({
     cart,
-    calculateTotal,
+    handleRemoveFromCart,
     handleBuyAll,
   }: {
-    cart: unknown[];
-    calculateTotal: () => number;
+    cart: { id: string; item?: { id: string; name: string; basePrice: number }; quantity?: number }[];
+    handleRemoveFromCart: (id: string) => void;
     handleBuyAll: () => void;
   }) {
     return (
       <div data-testid="cart-section">
-        <div>Cart Section - {cart.length} items</div>
-        <div>Total: {calculateTotal()}</div>
+        {cart.map((c) => (
+          <div key={c.id} data-testid={`cart-item-${c.id}`}>
+            <span>{c.item?.name}</span>
+            <button onClick={() => handleRemoveFromCart(c.id)}>Remove</button>
+          </div>
+        ))}
         <button onClick={handleBuyAll}>Buy All</button>
+        <span data-testid="cart-count">{cart.length}</span>
       </div>
     );
   };
@@ -102,87 +133,68 @@ jest.mock("@/components/storeProfile/WishlistSection", () => {
     wishlist,
     handleAddToCart,
   }: {
-    wishlist: unknown[];
-    handleAddToCart: (itemId: string) => void;
+    wishlist: { id: string; item?: { id: string; name: string } }[];
+    handleAddToCart: (id: string) => void;
   }) {
     return (
       <div data-testid="wishlist-section">
-        <div>Wishlist Section - {wishlist.length} items</div>
-        <button onClick={() => handleAddToCart("test-item-id")}>
-          Add to Cart
-        </button>
+        {wishlist.map((w) => (
+          <div key={w.id} data-testid={`wishlist-item-${w.id}`}>
+            <span>{w.item?.name}</span>
+            <button onClick={() => handleAddToCart(w.id)}>Add to Cart</button>
+          </div>
+        ))}
+        <span data-testid="wishlist-count">{wishlist.length}</span>
       </div>
     );
   };
 });
 
-// Mock axios error message utility
+// Mock Lucide icons
+jest.mock("lucide-react", () => ({
+  ArrowLeft: function ArrowLeft({ className }: { className?: string }) {
+    return <div className={className}>ArrowLeft Icon</div>;
+  },
+}));
+
+// Mock axios error utility
 jest.mock("@/utils/ax", () => ({
-  getAxiosErrorMessage: jest.fn((error) => error.message || "Error occurred"),
+  getAxiosErrorMessage: jest.fn((error, defaultMsg) => defaultMsg || "Error occurred"),
 }));
 
 // ============================================================================
 // MOCK DATA
 // ============================================================================
 
-const mockUser = {
-  id: "user1",
-  name: "Test User",
-  email: "test@example.com",
-  membership: "MONTHLY",
+const mockAuthenticatedSession = {
+  user: { name: "Test User", email: "test@example.com" },
+  expires: "2025-12-31",
 };
-
-const mockItems = [
-  {
-    id: "item1",
-    name: "Test Product 1",
-    imageUrl: "https://example.com/image1.jpg",
-    basePrice: 100,
-    monthlyPrice: 90,
-    yearlyPrice: 80,
-    lifetimePrice: 70,
-    category: { id: "cat1", name: "Electronics" },
-    currency: "INR",
-  },
-  {
-    id: "item2",
-    name: "Test Product 2",
-    imageUrl: "https://example.com/image2.jpg",
-    basePrice: 200,
-    monthlyPrice: 180,
-    yearlyPrice: 160,
-    lifetimePrice: 140,
-    category: { id: "cat2", name: "Books" },
-    currency: "USD",
-  },
-];
 
 const mockOrders = [
   {
     id: "order1",
-    status: "delivered",
-    totalAmount: 270,
-    createdAt: "2024-01-15T10:00:00Z",
+    status: "COMPLETED",
+    total: 499,
+    createdAt: "2025-01-01T00:00:00Z",
     items: [
       {
-        id: "orderItem1",
-        quantity: 3,
-        priceAtPurchase: 90,
-        item: mockItems[0],
+        id: "oi1",
+        item: { id: "item1", name: "Mindset Mastery Book", basePrice: 499 },
+        quantity: 1,
       },
     ],
   },
   {
     id: "order2",
-    status: "pending",
-    totalAmount: 180,
-    createdAt: "2024-01-20T10:00:00Z",
+    status: "PENDING",
+    total: 999,
+    createdAt: "2025-01-02T00:00:00Z",
     items: [
       {
-        id: "orderItem2",
+        id: "oi2",
+        item: { id: "item2", name: "Coach Leadership Course", basePrice: 999 },
         quantity: 1,
-        priceAtPurchase: 180,
-        item: mockItems[1],
       },
     ],
   },
@@ -190,36 +202,45 @@ const mockOrders = [
 
 const mockWishlist = [
   {
-    id: "wish1",
-    itemId: "item1",
-    userId: "user1",
-    item: mockItems[0],
+    id: "w1",
+    itemId: "item3",
+    item: { id: "item3", name: "GP Reward Item", basePrice: 50 },
   },
 ];
 
 const mockCart = [
   {
-    id: "cart1",
+    id: "c1",
+    itemId: "item1",
+    quantity: 1,
+    item: { id: "item1", name: "Mindset Mastery Book", basePrice: 499 },
+  },
+  {
+    id: "c2",
     itemId: "item2",
-    userId: "user1",
     quantity: 2,
-    item: mockItems[1],
+    item: { id: "item2", name: "Coach Leadership Course", basePrice: 999 },
   },
 ];
+
+// Shared mock search params (no payment by default)
+const mockSearchParams = {
+  get: jest.fn(() => null),
+};
 
 // ============================================================================
 // TEST SUITE
 // ============================================================================
 
-describe("ProfilePage", () => {
+describe("StoreProfilePageComponent", () => {
   let queryClient: QueryClient;
   const mockPush = jest.fn();
+  const mockReplace = jest.fn();
 
   // ============================================================================
-  // SETUP - Runs before each test
+  // SETUP
   // ============================================================================
   beforeEach(() => {
-    // Create fresh QueryClient for each test
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -227,15 +248,24 @@ describe("ProfilePage", () => {
       },
     });
 
-    // Mock router.push
     (useRouter as jest.Mock).mockReturnValue({
       push: mockPush,
+      replace: mockReplace,
     });
 
-    // Setup default axios mock responses
+    (useSearchParams as jest.Mock).mockReturnValue(mockSearchParams);
+    mockSearchParams.get.mockReturnValue(null);
+
+    // Default: authenticated user
+    (useSession as jest.Mock).mockReturnValue({
+      data: mockAuthenticatedSession,
+      status: "authenticated",
+    });
+
+    // Default axios mocks
     (axios.get as jest.Mock).mockImplementation((url: string) => {
       if (url === "/api/user/store/profile") {
-        return Promise.resolve({ data: { user: mockUser } });
+        return Promise.resolve({ data: { user: mockAuthenticatedSession.user } });
       }
       if (url === "/api/user/store/items/orders") {
         return Promise.resolve({ data: { orders: mockOrders } });
@@ -249,7 +279,6 @@ describe("ProfilePage", () => {
       return Promise.reject(new Error("Unknown endpoint"));
     });
 
-    // Clear all mocks
     jest.clearAllMocks();
   });
 
@@ -259,48 +288,93 @@ describe("ProfilePage", () => {
   const renderComponent = () => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <ProfilePage />
+        <StoreProfilePageComponent />
       </QueryClientProvider>
     );
   };
 
   // ============================================================================
+  // TEST GROUP: Loading State
+  // ============================================================================
+  describe("Loading State", () => {
+    it("should show page loader while profile data is being fetched", () => {
+      (axios.get as jest.Mock).mockReturnValue(new Promise(() => {}));
+
+      renderComponent();
+      expect(screen.getByTestId("page-loader")).toBeInTheDocument();
+    });
+
+    it("should show page loader when auth status is loading", () => {
+      (useSession as jest.Mock).mockReturnValue({
+        data: null,
+        status: "loading",
+      });
+
+      renderComponent();
+      expect(screen.getByTestId("page-loader")).toBeInTheDocument();
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Layout & Authentication
+  // ============================================================================
+  describe("Layout & Authentication", () => {
+    it("should NOT render inside AppLayout for authenticated users", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText(/My Cart & Orders/i)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByTestId("app-layout")).not.toBeInTheDocument();
+    });
+
+    it("should render inside AppLayout for unauthenticated users", async () => {
+      (useSession as jest.Mock).mockReturnValue({
+        data: null,
+        status: "unauthenticated",
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("app-layout")).toBeInTheDocument();
+      });
+    });
+  });
+
+  // ============================================================================
   // TEST GROUP: Initial Rendering
   // ============================================================================
   describe("Initial Rendering", () => {
-    it("should show loading state initially", () => {
-      renderComponent();
-      expect(screen.getByText("Loading Icon")).toBeInTheDocument();
-    });
-
-    it("should render back to store link", async () => {
+    it("should render page title and description", async () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Back to Store")).toBeInTheDocument();
+        // h1 includes emoji — use regex
+        expect(screen.getByText(/My Cart & Orders/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Manage your wishlist, cart, and orders/i)
+        ).toBeInTheDocument();
       });
-
-      const link = screen.getByText("Back to Store").closest("a");
-      expect(link).toHaveAttribute("href", "/dashboard/store");
     });
 
-    it("should render all three sections after loading", async () => {
+    it("should render Back to Growth Store link", async () => {
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByTestId("wishlist-section")).toBeInTheDocument();
-        expect(screen.getByTestId("cart-section")).toBeInTheDocument();
+        const backLink = screen.getByText("Back to Growth Store").closest("a");
+        expect(backLink).toHaveAttribute("href", "/dashboard/store");
+      });
+    });
+
+    it("should render all three section components", async () => {
+      renderComponent();
+
+      await waitFor(() => {
         expect(screen.getByTestId("order-section")).toBeInTheDocument();
-      });
-    });
-
-    it("should display correct counts for each section", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByText("Wishlist Section - 1 items")).toBeInTheDocument();
-        expect(screen.getByText("Cart Section - 1 items")).toBeInTheDocument();
-        expect(screen.getByText("Order Section - 2 orders")).toBeInTheDocument();
+        expect(screen.getByTestId("cart-section")).toBeInTheDocument();
+        expect(screen.getByTestId("wishlist-section")).toBeInTheDocument();
       });
     });
   });
@@ -309,23 +383,176 @@ describe("ProfilePage", () => {
   // TEST GROUP: Data Fetching
   // ============================================================================
   describe("Data Fetching", () => {
-    it("should fetch all profile data on mount", async () => {
+    it("should fetch profile data on mount", async () => {
       renderComponent();
 
       await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith("/api/user/store/profile");
+      });
+    });
+
+    it("should fetch orders on mount", async () => {
+      renderComponent();
+
+      await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith("/api/user/store/items/orders");
+      });
+    });
+
+    it("should fetch wishlist on mount", async () => {
+      renderComponent();
+
+      await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith("/api/user/store/items/wishlist");
+      });
+    });
+
+    it("should fetch cart items on mount", async () => {
+      renderComponent();
+
+      await waitFor(() => {
         expect(axios.get).toHaveBeenCalledWith(
           "/api/user/store/items/cart/get-cart-items"
         );
       });
     });
 
-    it("should handle API errors gracefully", async () => {
+    it("should NOT fetch profile data when user is unauthenticated", async () => {
+      (useSession as jest.Mock).mockReturnValue({
+        data: null,
+        status: "unauthenticated",
+      });
+
+      renderComponent();
+
+      // Wait a tick — no fetch should happen since query is disabled
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(axios.get).not.toHaveBeenCalledWith("/api/user/store/profile");
+      expect(axios.get).not.toHaveBeenCalledWith("/api/user/store/items/orders");
+      expect(axios.get).not.toHaveBeenCalledWith("/api/user/store/items/wishlist");
+    });
+
+    it("should pass correct order count to OrderSection", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("order-count").textContent).toBe("2");
+      });
+    });
+
+    it("should pass correct cart count to CartSection", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("cart-count").textContent).toBe("2");
+      });
+    });
+
+    it("should pass correct wishlist count to WishlistSection", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("wishlist-count").textContent).toBe("1");
+      });
+    });
+
+    it("should handle partial API failures gracefully using Promise.allSettled", async () => {
+      // Orders fails, but profile and wishlist succeed
       (axios.get as jest.Mock).mockImplementation((url: string) => {
         if (url === "/api/user/store/profile") {
-          return Promise.reject(new Error("Failed to fetch profile"));
+          return Promise.resolve({ data: { user: mockAuthenticatedSession.user } });
+        }
+        if (url === "/api/user/store/items/orders") {
+          return Promise.reject(new Error("Orders API failed"));
+        }
+        if (url === "/api/user/store/items/wishlist") {
+          return Promise.resolve({ data: { wishlist: mockWishlist } });
+        }
+        if (url === "/api/user/store/items/cart/get-cart-items") {
+          return Promise.resolve({ data: { cart: [] } });
+        }
+        return Promise.reject(new Error("Unknown"));
+      });
+
+      renderComponent();
+
+      // Should still render with 0 orders (fallback) without crashing
+      await waitFor(() => {
+        expect(screen.getByTestId("order-count").textContent).toBe("0");
+      });
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Cart Interactions
+  // ============================================================================
+  describe("Cart Interactions", () => {
+    it("should call remove-cart-items API when Remove is clicked", async () => {
+      (axios.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("cart-item-c1")).toBeInTheDocument();
+      });
+
+      fireEvent.click(
+        screen.getByTestId("cart-item-c1").querySelector("button")!
+      );
+
+      await waitFor(() => {
+        expect(axios.delete).toHaveBeenCalledWith(
+          "/api/user/store/items/cart/delete-cart-items",
+          { data: { cartItemId: "c1" } }
+        );
+      });
+    });
+
+    it("should show success toast when item is removed from cart", async () => {
+      (axios.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("cart-item-c1")).toBeInTheDocument();
+      });
+
+      fireEvent.click(
+        screen.getByTestId("cart-item-c1").querySelector("button")!
+      );
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith("Item removed");
+      });
+    });
+
+    it("should navigate to checkout with all cart items when Buy All is clicked", async () => {
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Buy All")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Buy All"));
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith(
+          expect.stringContaining("/dashboard/store/checkout?")
+        );
+        expect(mockPush).toHaveBeenCalledWith(
+          expect.stringContaining("cartItem=item1:1")
+        );
+        expect(mockPush).toHaveBeenCalledWith(
+          expect.stringContaining("cartItem=item2:2")
+        );
+      });
+    });
+
+    it("should show warning toast when Buy All is clicked with empty cart", async () => {
+      (axios.get as jest.Mock).mockImplementation((url: string) => {
+        if (url === "/api/user/store/profile") {
+          return Promise.resolve({ data: { user: {} } });
         }
         if (url === "/api/user/store/items/orders") {
           return Promise.resolve({ data: { orders: [] } });
@@ -336,21 +563,26 @@ describe("ProfilePage", () => {
         if (url === "/api/user/store/items/cart/get-cart-items") {
           return Promise.resolve({ data: { cart: [] } });
         }
-        return Promise.reject(new Error("Unknown endpoint"));
+        return Promise.resolve({ data: {} });
       });
 
       renderComponent();
 
       await waitFor(() => {
-        // Component should still render with empty data
-        expect(screen.getByTestId("order-section")).toBeInTheDocument();
+        expect(screen.getByText("Buy All")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("Buy All"));
+
+      await waitFor(() => {
+        expect(toast.warning).toHaveBeenCalledWith("Cart is empty");
       });
     });
 
-    it("should handle empty data states", async () => {
+    it("should NOT navigate to checkout when cart is empty", async () => {
       (axios.get as jest.Mock).mockImplementation((url: string) => {
         if (url === "/api/user/store/profile") {
-          return Promise.resolve({ data: { user: mockUser } });
+          return Promise.resolve({ data: { user: {} } });
         }
         if (url === "/api/user/store/items/orders") {
           return Promise.resolve({ data: { orders: [] } });
@@ -361,303 +593,231 @@ describe("ProfilePage", () => {
         if (url === "/api/user/store/items/cart/get-cart-items") {
           return Promise.resolve({ data: { cart: [] } });
         }
-        return Promise.reject(new Error("Unknown endpoint"));
+        return Promise.resolve({ data: {} });
       });
 
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByText("Wishlist Section - 0 items")).toBeInTheDocument();
-        expect(screen.getByText("Cart Section - 0 items")).toBeInTheDocument();
-        expect(screen.getByText("Order Section - 0 orders")).toBeInTheDocument();
+        expect(screen.getByText("Buy All")).toBeInTheDocument();
       });
+
+      fireEvent.click(screen.getByText("Buy All"));
+
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 
   // ============================================================================
-  // TEST GROUP: Price Calculation Based on Membership
+  // TEST GROUP: Wishlist Interactions
   // ============================================================================
-  describe("Price Calculation", () => {
-    it("should calculate total with monthly prices for MONTHLY membership", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        // Cart has 2 units of item2 at monthly price $180 = $360
-        expect(screen.getByText("Total: 360")).toBeInTheDocument();
-      });
-    });
-
-    it("should calculate total with base prices for FREE membership", async () => {
-      (axios.get as jest.Mock).mockImplementation((url: string) => {
-        if (url === "/api/user/store/profile") {
-          return Promise.resolve({
-            data: { user: { ...mockUser, membership: "FREE" } },
-          });
-        }
-        if (url === "/api/user/store/items/orders") {
-          return Promise.resolve({ data: { orders: mockOrders } });
-        }
-        if (url === "/api/user/store/items/wishlist") {
-          return Promise.resolve({ data: { wishlist: mockWishlist } });
-        }
-        if (url === "/api/user/store/items/cart/get-cart-items") {
-          return Promise.resolve({ data: { cart: mockCart } });
-        }
-        return Promise.reject(new Error("Unknown endpoint"));
-      });
+  describe("Wishlist Interactions", () => {
+    it("should call add-cart-items and delete wishlist API when Add to Cart is clicked", async () => {
+      (axios.post as jest.Mock).mockResolvedValue({ data: { success: true } });
+      (axios.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
 
       renderComponent();
 
       await waitFor(() => {
-        // Cart has 2 units of item2 at base price $200 = $400
-        expect(screen.getByText("Total: 400")).toBeInTheDocument();
-      });
-    });
-
-    it("should calculate total with yearly prices for YEARLY membership", async () => {
-      (axios.get as jest.Mock).mockImplementation((url: string) => {
-        if (url === "/api/user/store/profile") {
-          return Promise.resolve({
-            data: { user: { ...mockUser, membership: "YEARLY" } },
-          });
-        }
-        if (url === "/api/user/store/items/orders") {
-          return Promise.resolve({ data: { orders: mockOrders } });
-        }
-        if (url === "/api/user/store/items/wishlist") {
-          return Promise.resolve({ data: { wishlist: mockWishlist } });
-        }
-        if (url === "/api/user/store/items/cart/get-cart-items") {
-          return Promise.resolve({ data: { cart: mockCart } });
-        }
-        return Promise.reject(new Error("Unknown endpoint"));
+        expect(screen.getByTestId("wishlist-item-w1")).toBeInTheDocument();
       });
 
-      renderComponent();
-
-      await waitFor(() => {
-        // Cart has 2 units of item2 at yearly price $160 = $320
-        expect(screen.getByText("Total: 320")).toBeInTheDocument();
-      });
-    });
-
-    it("should calculate total with lifetime prices for LIFETIME membership", async () => {
-      (axios.get as jest.Mock).mockImplementation((url: string) => {
-        if (url === "/api/user/store/profile") {
-          return Promise.resolve({
-            data: { user: { ...mockUser, membership: "LIFETIME" } },
-          });
-        }
-        if (url === "/api/user/store/items/orders") {
-          return Promise.resolve({ data: { orders: mockOrders } });
-        }
-        if (url === "/api/user/store/items/wishlist") {
-          return Promise.resolve({ data: { wishlist: mockWishlist } });
-        }
-        if (url === "/api/user/store/items/cart/get-cart-items") {
-          return Promise.resolve({ data: { cart: mockCart } });
-        }
-        return Promise.reject(new Error("Unknown endpoint"));
-      });
-
-      renderComponent();
-
-      await waitFor(() => {
-        // Cart has 2 units of item2 at lifetime price $140 = $280
-        expect(screen.getByText("Total: 280")).toBeInTheDocument();
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Wishlist Functionality
-  // ============================================================================
-  describe("Wishlist Functionality", () => {
-    it("should add item to cart from wishlist", async () => {
-      (axios.post as jest.Mock).mockResolvedValue({ data: {} });
-      (axios.delete as jest.Mock).mockResolvedValue({ data: {} });
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByTestId("wishlist-section")).toBeInTheDocument();
-      });
-
-      const addToCartButton = screen.getByText("Add to Cart");
-      fireEvent.click(addToCartButton);
+      fireEvent.click(
+        screen.getByTestId("wishlist-item-w1").querySelector("button")!
+      );
 
       await waitFor(() => {
         expect(axios.post).toHaveBeenCalledWith(
           "/api/user/store/items/cart/add-cart-items",
-          { itemId: "test-item-id" }
+          { itemId: "w1" }
         );
         expect(axios.delete).toHaveBeenCalledWith(
           "/api/user/store/items/wishlist",
-          { data: { itemId: "test-item-id" } }
+          { data: { itemId: "w1" } }
         );
+      });
+    });
+
+    it("should show success toast when wishlist item is added to cart", async () => {
+      (axios.post as jest.Mock).mockResolvedValue({ data: { success: true } });
+      (axios.delete as jest.Mock).mockResolvedValue({ data: { success: true } });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("wishlist-item-w1")).toBeInTheDocument();
+      });
+
+      fireEvent.click(
+        screen.getByTestId("wishlist-item-w1").querySelector("button")!
+      );
+
+      await waitFor(() => {
         expect(toast.success).toHaveBeenCalledWith("Item added to cart");
       });
     });
 
-    it("should show error toast when add to cart fails", async () => {
-      (axios.post as jest.Mock).mockRejectedValue(
-        new Error("Failed to add to cart")
+    it("should show error toast when adding wishlist item to cart fails", async () => {
+      (axios.post as jest.Mock).mockRejectedValue(new Error("Network error"));
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("wishlist-item-w1")).toBeInTheDocument();
+      });
+
+      fireEvent.click(
+        screen.getByTestId("wishlist-item-w1").querySelector("button")!
       );
 
-      renderComponent();
-
       await waitFor(() => {
-        expect(screen.getByTestId("wishlist-section")).toBeInTheDocument();
-      });
-
-      const addToCartButton = screen.getByText("Add to Cart");
-      fireEvent.click(addToCartButton);
-
-      await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Failed to add to cart");
-      });
-    });
-
-    it("should invalidate queries after successful add to cart", async () => {
-      (axios.post as jest.Mock).mockResolvedValue({ data: {} });
-      (axios.delete as jest.Mock).mockResolvedValue({ data: {} });
-
-      const invalidateQueriesSpy = jest.spyOn(queryClient, "invalidateQueries");
-
-      renderComponent();
-
-      await waitFor(() => {
-        expect(screen.getByTestId("wishlist-section")).toBeInTheDocument();
-      });
-
-      const addToCartButton = screen.getByText("Add to Cart");
-      fireEvent.click(addToCartButton);
-
-      await waitFor(() => {
-        expect(invalidateQueriesSpy).toHaveBeenCalledWith({
-          queryKey: ["profileData"],
-        });
+        expect(toast.error).toHaveBeenCalled();
       });
     });
   });
 
   // ============================================================================
-  // TEST GROUP: Cart Functionality
+  // TEST GROUP: Payment Success Toast
   // ============================================================================
-  describe("Cart Functionality", () => {
-    it("should handle Buy All button click", async () => {
+  describe("Payment Success Toast", () => {
+    it("should show payment success toast when payment=success is in URL", async () => {
+      mockSearchParams.get.mockImplementation((key: string) =>
+        key === "payment" ? "success" : null
+      );
+
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByTestId("cart-section")).toBeInTheDocument();
+        expect(toast.success).toHaveBeenCalledWith(
+          expect.stringContaining("Payment Successful")
+        );
       });
-
-      const buyAllButton = screen.getByText("Buy All");
-      fireEvent.click(buyAllButton);
-
-      expect(mockPush).toHaveBeenCalledWith(
-        "/dashboard/store/checkout?cartItem=item2:2"
-      );
     });
 
-    it("should show warning when trying to buy with empty cart", async () => {
+    it("should include item name in payment success toast when order exists", async () => {
+      mockSearchParams.get.mockImplementation((key: string) =>
+        key === "payment" ? "success" : null
+      );
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith(
+          expect.stringContaining("Mindset Mastery Book")
+        );
+      });
+    });
+
+    it("should NOT show payment success toast when payment param is absent", async () => {
+      mockSearchParams.get.mockReturnValue(null);
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("order-section")).toBeInTheDocument();
+      });
+
+      expect(toast.success).not.toHaveBeenCalled();
+    });
+
+    it("should NOT show payment success toast twice on re-render", async () => {
+      mockSearchParams.get.mockImplementation((key: string) =>
+        key === "payment" ? "success" : null
+      );
+
+      const { rerender } = renderComponent();
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledTimes(1);
+      });
+
+      rerender(
+        <QueryClientProvider client={queryClient}>
+          <StoreProfilePageComponent />
+        </QueryClientProvider>
+      );
+
+      await waitFor(() => {
+        // Still only called once — hasShownPaymentToast ref prevents duplicate
+        expect(toast.success).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  // ============================================================================
+  // TEST GROUP: Empty States
+  // ============================================================================
+  describe("Empty States", () => {
+    it("should pass empty orders array to OrderSection when API returns none", async () => {
       (axios.get as jest.Mock).mockImplementation((url: string) => {
         if (url === "/api/user/store/profile") {
-          return Promise.resolve({ data: { user: mockUser } });
+          return Promise.resolve({ data: { user: {} } });
         }
         if (url === "/api/user/store/items/orders") {
-          return Promise.resolve({ data: { orders: mockOrders } });
+          return Promise.resolve({ data: { orders: [] } });
         }
         if (url === "/api/user/store/items/wishlist") {
-          return Promise.resolve({ data: { wishlist: mockWishlist } });
+          return Promise.resolve({ data: { wishlist: [] } });
         }
         if (url === "/api/user/store/items/cart/get-cart-items") {
           return Promise.resolve({ data: { cart: [] } });
         }
-        return Promise.reject(new Error("Unknown endpoint"));
+        return Promise.resolve({ data: {} });
       });
 
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByTestId("cart-section")).toBeInTheDocument();
+        expect(screen.getByTestId("order-count").textContent).toBe("0");
       });
-
-      const buyAllButton = screen.getByText("Buy All");
-      fireEvent.click(buyAllButton);
-
-      expect(toast.warning).toHaveBeenCalledWith("Cart is empty");
-      expect(mockPush).not.toHaveBeenCalled();
     });
 
-    it("should format checkout URL with multiple cart items", async () => {
-      const multipleItemsCart = [
-        {
-          id: "cart1",
-          itemId: "item1",
-          userId: "user1",
-          quantity: 2,
-          item: mockItems[0],
-        },
-        {
-          id: "cart2",
-          itemId: "item2",
-          userId: "user1",
-          quantity: 3,
-          item: mockItems[1],
-        },
-      ];
-
+    it("should pass empty wishlist array to WishlistSection when API returns none", async () => {
       (axios.get as jest.Mock).mockImplementation((url: string) => {
         if (url === "/api/user/store/profile") {
-          return Promise.resolve({ data: { user: mockUser } });
+          return Promise.resolve({ data: { user: {} } });
         }
         if (url === "/api/user/store/items/orders") {
-          return Promise.resolve({ data: { orders: mockOrders } });
+          return Promise.resolve({ data: { orders: [] } });
         }
         if (url === "/api/user/store/items/wishlist") {
-          return Promise.resolve({ data: { wishlist: mockWishlist } });
+          return Promise.resolve({ data: { wishlist: [] } });
         }
         if (url === "/api/user/store/items/cart/get-cart-items") {
-          return Promise.resolve({ data: { cart: multipleItemsCart } });
+          return Promise.resolve({ data: { cart: [] } });
         }
-        return Promise.reject(new Error("Unknown endpoint"));
+        return Promise.resolve({ data: {} });
       });
 
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByTestId("cart-section")).toBeInTheDocument();
+        expect(screen.getByTestId("wishlist-count").textContent).toBe("0");
       });
-
-      const buyAllButton = screen.getByText("Buy All");
-      fireEvent.click(buyAllButton);
-
-      expect(mockPush).toHaveBeenCalledWith(
-        "/dashboard/store/checkout?cartItem=item1:2&cartItem=item2:3"
-      );
     });
-  });
 
-  // ============================================================================
-  // TEST GROUP: Cart Item Removal
-  // ============================================================================
-  describe("Cart Item Removal", () => {
-    it("should handle remove from cart mutation", async () => {
-      (axios.delete as jest.Mock).mockResolvedValue({ data: {} });
-
-      const invalidateQueriesSpy = jest.spyOn(queryClient, "invalidateQueries");
+    it("should pass empty cart array to CartSection when API returns none", async () => {
+      (axios.get as jest.Mock).mockImplementation((url: string) => {
+        if (url === "/api/user/store/profile") {
+          return Promise.resolve({ data: { user: {} } });
+        }
+        if (url === "/api/user/store/items/orders") {
+          return Promise.resolve({ data: { orders: [] } });
+        }
+        if (url === "/api/user/store/items/wishlist") {
+          return Promise.resolve({ data: { wishlist: [] } });
+        }
+        if (url === "/api/user/store/items/cart/get-cart-items") {
+          return Promise.resolve({ data: { cart: [] } });
+        }
+        return Promise.resolve({ data: {} });
+      });
 
       renderComponent();
 
       await waitFor(() => {
-        expect(screen.getByTestId("cart-section")).toBeInTheDocument();
+        expect(screen.getByTestId("cart-count").textContent).toBe("0");
       });
-
-      // Note: The removeFromCartMutation is passed to CartSection component
-      // and would be triggered by user interaction within that component.
-      // This verifies that the mutation setup is correct.
-      expect(invalidateQueriesSpy).toBeDefined();
     });
   });
 
@@ -665,63 +825,12 @@ describe("ProfilePage", () => {
   // TEST GROUP: Navigation
   // ============================================================================
   describe("Navigation", () => {
-    it("should have correct back to store link href", async () => {
+    it("should have Back to Growth Store link pointing to /dashboard/store", async () => {
       renderComponent();
 
       await waitFor(() => {
-        const link = screen.getByText("Back to Store").closest("a");
+        const link = screen.getByText("Back to Growth Store").closest("a");
         expect(link).toHaveAttribute("href", "/dashboard/store");
-      });
-    });
-
-    it("should have correct link classes", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        const link = screen.getByText("Back to Store").closest("a");
-        expect(link).toHaveClass("bg-jp-orange");
-        expect(link).toHaveClass("text-white");
-        expect(link).toHaveClass("rounded-full");
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Responsive Layout
-  // ============================================================================
-  describe("Responsive Layout", () => {
-    it("should render grid layout container", async () => {
-      renderComponent();
-
-      await waitFor(() => {
-        const gridContainer = screen
-          .getByTestId("wishlist-section")
-          .closest("div")
-          ?.parentElement;
-        expect(gridContainer).toBeInTheDocument();
-      });
-    });
-  });
-
-  // ============================================================================
-  // TEST GROUP: Query Refetch
-  // ============================================================================
-  describe("Query Refetch", () => {
-    it("should refetch data on mount", async () => {
-      const { unmount } = renderComponent();
-
-      await waitFor(() => {
-        expect(axios.get).toHaveBeenCalledTimes(4);
-      });
-
-      unmount();
-
-      // Mount again
-      renderComponent();
-
-      await waitFor(() => {
-        // Should be called again (4 more times)
-        expect(axios.get).toHaveBeenCalledTimes(8);
       });
     });
   });

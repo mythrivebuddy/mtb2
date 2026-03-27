@@ -104,10 +104,6 @@ const OrderHistoryPage: React.FC = () => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["orderHistory"],
     queryFn: fetchOrderHistory,
-    // refetchOnMount: "always",
-    // refetchOnWindowFocus: true,
-    // staleTime: 0,
-    // gcTime: 0,
   });
 
   const toggleOrderExpansion = (orderId: string) => {
@@ -143,7 +139,7 @@ const OrderHistoryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen ">
       <div className="container mx-auto px-3 py-4 sm:px-4 md:p-6 lg:p-8 max-w-6xl">
 
         {/* Header */}

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 export default function UserTypeSelection({
   authMethod,
 }: {
-  authMethod: string;
+  authMethod?: string;
 }) {
   const { data: session, update } = useSession();
   const user = session?.user;
@@ -39,7 +39,7 @@ export default function UserTypeSelection({
 
       if (res.status === 200) {
         await update({
-            userType: role,        
+          userType: role,
         });
 
         toast.success(res.data.message);
@@ -80,9 +80,9 @@ export default function UserTypeSelection({
           <button
             onClick={() => handleSelect("ENTHUSIAST")}
             disabled={loading !== null}
-            className="w-full rounded-xl bg-indigo-600 text-white px-5 py-4 font-semibold 
-            hover:bg-indigo-700 transition flex items-center justify-center gap-3 
-            shadow-md disabled:opacity-60"
+            className="w-full rounded-xl bg-green-600 text-white px-5 py-4 font-semibold 
+            hover:bg-green-700 transition linear flex items-center justify-center gap-3 
+            shadow-md disabled:opacity-60 "
           >
             {loading === "ENTHUSIAST" ? (
               <Loader2 className="animate-spin h-5 w-5" />
@@ -98,9 +98,9 @@ export default function UserTypeSelection({
           <button
             onClick={() => handleSelect("COACH")}
             disabled={loading !== null}
-            className="w-full rounded-xl bg-slate-100 text-slate-800 px-5 py-4 font-semibold 
-            hover:bg-slate-200 transition flex items-center justify-center gap-3 
-            shadow-sm border border-slate-300 disabled:opacity-60"
+            className="w-full rounded-xl bg-blue-600 text-white border-blue-600  px-5 py-4 font-semibold 
+            hover:bg-blue-700 transition linear flex items-center justify-center gap-3 
+            shadow-sm border disabled:opacity-60"
           >
             {loading === "COACH" ? (
               <Loader2 className="animate-spin h-5 w-5" />

@@ -30,7 +30,7 @@ interface AnnouncementFormValues {
   linkUrl?: string;
   openInNewTab: "same" | "new";
   isActive: "on" | "off";
-  audience: "EVERYONE" | "PAID" | "FREE";
+  audience: "EVERYONE" | "PAID" | "FREE" | "COACH" | "SGE";
   expireAt?: string;
 }
 
@@ -64,9 +64,9 @@ export default function AnnouncementDialog({
         openInNewTab: announcement.openInNewTab ? "new" : "same",
         isActive: announcement.isActive ? "on" : "off",
         audience: announcement.audience,
-         expireAt: announcement.expireAt
-        ? new Date(announcement.expireAt).toISOString().split("T")[0] // ✅ YYYY-MM-DD
-        : "",
+        expireAt: announcement.expireAt
+          ? new Date(announcement.expireAt).toISOString().split("T")[0] // ✅ YYYY-MM-DD
+          : "",
       });
     } else {
       reset({
@@ -232,7 +232,7 @@ export default function AnnouncementDialog({
             </div>
 
             {/* Audience */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label>Audience</Label>
               <Controller
                 control={control}
@@ -254,6 +254,43 @@ export default function AnnouncementDialog({
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="FREE" id="free" />
                       <Label htmlFor="free">Free</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
+            </div> */}
+            {/* Audience */}
+            <div className="space-y-2">
+              <Label>Audience</Label>
+              <Controller
+                control={control}
+                name="audience"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex flex-wrap gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="EVERYONE" id="everyone" />
+                      <Label htmlFor="everyone">Everyone</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="PAID" id="paid" />
+                      <Label htmlFor="paid">Paid</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="FREE" id="free" />
+                      <Label htmlFor="free">Free</Label>
+                    </div>
+                    {/* ✅ New options */}
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="COACH" id="coach" />
+                      <Label htmlFor="coach">Coach</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="SGE" id="sge" />
+                      <Label htmlFor="sge">SGE</Label>
                     </div>
                   </RadioGroup>
                 )}

@@ -31,10 +31,10 @@ export interface Item {
 export interface ItemFormData {
   name: string;
   category: string;
-  basePrice: number;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  lifetimePrice: number;
+  basePrice: number | string;
+  monthlyPrice?: number;
+  yearlyPrice?: number;
+  lifetimePrice?: number;
   currency: string;              // ✅ ADDED
   imageFile?: File;
   downloadFile?: File;
