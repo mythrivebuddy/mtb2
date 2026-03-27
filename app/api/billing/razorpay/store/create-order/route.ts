@@ -38,14 +38,14 @@ export async function POST(req: NextRequest) {
         { status: 401 },
       );
     }
-const body = await req.json();
+    const body = await req.json();
     const {
       couponCode,
       currency: selectedCurrency,
       exchangeRate,
     }: CreateStoreOrderRequest = body;
 
-    let {items}:CreateStoreOrderRequest = body
+    let { items }: CreateStoreOrderRequest = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -352,11 +352,11 @@ const body = await req.json();
       key,
       orderId: order.id,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Store Payment Error:", error);
 
     return NextResponse.json(
-      { success: false, error: "Unable to create order" },
+      { success: false, error: `Unable to create order`, errrorDetails: error },
       { status: 500 },
     );
   }
@@ -495,80 +495,92 @@ async function handleWalletTransaction({
       quantity: item.quantity,
     });
   }
-  const order = await prisma.$transaction(async (tx) => {
-    const createdOrder = await tx.order.create({
-      data: {
-        userId: user.id,
-        totalAmount: walletTotal,
-        currency: products[0].currency,
-        status: "COMPLETED",
-        items: {
-          create: orderItemsData,
-        },
-      },
-    });
-    // Create coupon redemption record
-    if (coupon) {
-      const totalDiscount = orderItemsData.reduce(
-        (sum, item) =>
-          sum + (item.originalPrice - item.priceAtPurchase) * item.quantity,
-        0,
-      );
 
-      await tx.couponRedemption.create({
-        data: {
-          couponId: coupon.id,
-          userId: user.id,
-          redeemed: true,
-          appliedPlan: "STORE_PRODUCT",
-          discountApplied: totalDiscount,
-          currency: products[0].currency,
-        },
-      });
-    }
-
-    await deductJp(user, "STORE_PURCHASE", tx, {
-      amount: walletTotal,
-
-      metadata: {
-        orderId: createdOrder.id,
-        items: items.map((i) => {
-          const product = productMap.get(i.itemId);
-
-          return {
-            name: product?.name ?? "Unknown Product",
-            itemId: i.itemId,
-          };
-        }),
-      },
-    });
-    await tx.cart.deleteMany({
-      where: {
-        userId: user.id,
-        itemId: { in: items.map((i) => i.itemId) },
-      },
-    });
-
-    for (const [creatorId, reward] of Object.entries(creatorRewards)) {
-      const creator = await tx.user.findUnique({
-        where: { id: creatorId },
-        include: { plan: true },
-      });
-
-      if (!creator) continue;
-
-      await assignJp(creator, "STORE_SALE", tx, {
-        amount: reward.amount,
-        metadata: {
-          buyerId: user.id,
-          orderId: createdOrder.id,
-          items: reward.items,
-        },
-      });
-    }
-
-    return createdOrder;
+  const creatorIds = [
+    ...new Set(
+      items
+        .map((i) => productMap.get(i.itemId)?.createdByUserId)
+        .filter(Boolean) as string[],
+    ),
+  ];
+  const creators = await prisma.user.findMany({
+    where: { id: { in: creatorIds } },
+    include: { plan: true },
   });
+  const creatorMap = new Map(creators.map((c) => [c.id, c]));
+
+  const order = await prisma.$transaction(
+    async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          userId: user.id,
+          totalAmount: walletTotal,
+          currency: products[0].currency,
+          status: "COMPLETED",
+          items: {
+            create: orderItemsData,
+          },
+        },
+      });
+      // Create coupon redemption record
+      if (coupon) {
+        const totalDiscount = orderItemsData.reduce(
+          (sum, item) =>
+            sum + (item.originalPrice - item.priceAtPurchase) * item.quantity,
+          0,
+        );
+
+        await tx.couponRedemption.create({
+          data: {
+            couponId: coupon.id,
+            userId: user.id,
+            redeemed: true,
+            appliedPlan: "STORE_PRODUCT",
+            discountApplied: totalDiscount,
+            currency: products[0].currency,
+          },
+        });
+      }
+
+      await deductJp(user, "STORE_PURCHASE", tx, {
+        amount: walletTotal,
+
+        metadata: {
+          orderId: createdOrder.id,
+          items: items.map((i) => {
+            const product = productMap.get(i.itemId);
+
+            return {
+              name: product?.name ?? "Unknown Product",
+              itemId: i.itemId,
+            };
+          }),
+        },
+      });
+      await tx.cart.deleteMany({
+        where: {
+          userId: user.id,
+          itemId: { in: items.map((i) => i.itemId) },
+        },
+      });
+
+      for (const [creatorId, reward] of Object.entries(creatorRewards)) {
+        const creator = creatorMap.get(creatorId);
+        if (!creator) continue;
+        await assignJp(creator, "STORE_SALE", tx, {
+          amount: reward.amount,
+          metadata: {
+            buyerId: user.id,
+            orderId: createdOrder.id,
+            items: reward.items,
+          },
+        });
+      }
+
+      return createdOrder;
+    },
+    { timeout: 15000 },
+  );
   const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
