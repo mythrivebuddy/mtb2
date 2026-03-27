@@ -307,6 +307,7 @@ export async function POST(req: NextRequest) {
 
       snapshotItems.push({
         itemId: product.id,
+          name: product.name,
         quantity: item.quantity,
         price: price,
         discount: discountForItem,
@@ -541,6 +542,12 @@ async function handleWalletTransaction({
           },
         });
       }
+      const itemNames = items
+        .map((i) => {
+          const product = productMap.get(i.itemId);
+          return product?.name ?? "Unknown Product";
+        })
+        .join(", ");
 
       await deductJp(user, "STORE_PURCHASE", tx, {
         amount: walletTotal,
@@ -555,6 +562,7 @@ async function handleWalletTransaction({
               itemId: i.itemId,
             };
           }),
+          displayName: itemNames,
         },
       });
       await tx.cart.deleteMany({
@@ -567,12 +575,15 @@ async function handleWalletTransaction({
       for (const [creatorId, reward] of Object.entries(creatorRewards)) {
         const creator = creatorMap.get(creatorId);
         if (!creator) continue;
+        const creatorItemNames = reward.items.map((i) => i.name).join(", ");
+
         await assignJp(creator, "STORE_SALE", tx, {
           amount: reward.amount,
           metadata: {
             buyerId: user.id,
             orderId: createdOrder.id,
             items: reward.items,
+            displayName: creatorItemNames,
           },
         });
       }

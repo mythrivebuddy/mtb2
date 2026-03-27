@@ -196,21 +196,19 @@ export default function AlignedActionWizard({
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    s === step
-                      ? "bg-jp-orange text-white"
-                      : s < step
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-500"
-                  }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${s === step
+                    ? "bg-jp-orange text-white"
+                    : s < step
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 text-gray-500"
+                    }`}
                 >
                   {s < step ? "✓" : s}
                 </div>
                 {s < 4 && (
                   <div
-                    className={`w-12 h-1 ${
-                      s < step ? "bg-green-500" : "bg-gray-200"
-                    }`}
+                    className={`w-12 h-1 ${s < step ? "bg-green-500" : "bg-gray-200"
+                      }`}
                   />
                 )}
               </div>
@@ -247,11 +245,10 @@ export default function AlignedActionWizard({
                         <div
                           key={option.value}
                           onClick={() => field.onChange(option.value)}
-                          className={`cursor-pointer text-center p-4 rounded-lg transition-all ${
-                            field.value === option.value
-                              ? "bg-jp-orange/10 border-2 border-jp-orange"
-                              : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
-                          }`}
+                          className={`cursor-pointer text-center p-4 rounded-lg transition-all ${field.value === option.value
+                            ? "bg-jp-orange/10 border-2 border-jp-orange"
+                            : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
+                            }`}
                         >
                           <div className="text-4xl mb-2">{option.emoji}</div>
                           <div className="text-sm font-medium">
@@ -304,6 +301,8 @@ export default function AlignedActionWizard({
                     !step1Form.formState.isValid ||
                     step1Form.formState.isSubmitting
                   }
+                  className={`bg-green-600 hover:bg-green-700 ${!step1Form.formState.isValid ||
+                    step1Form.formState.isSubmitting ? "bg-green-600/80" : ""}`}
                 >
                   Next
                 </Button>
@@ -559,6 +558,8 @@ export default function AlignedActionWizard({
                     !step2Form.formState.isValid ||
                     step2Form.formState.isSubmitting
                   }
+                  className={`bg-green-600 hover:bg-green-700 ${!step1Form.formState.isValid ||
+                    step1Form.formState.isSubmitting ? "bg-green-600/80" : ""}`}
                 >
                   Next
                 </Button>
@@ -681,7 +682,7 @@ export default function AlignedActionWizard({
                                 const date = timeToDate(e.target.value);
                                 if (date) field.onChange(date);
                               }}
-                              // className="pl-10"
+                            // className="pl-10"
                             />
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
@@ -718,7 +719,7 @@ export default function AlignedActionWizard({
                                 const date = timeToDate(e.target.value);
                                 if (date) field.onChange(date);
                               }}
-                              // className="pl-10"
+                            // className="pl-10"
                             />
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
@@ -743,11 +744,11 @@ export default function AlignedActionWizard({
 
                 {step3Form.formState.errors.timeTo?.message ===
                   "Time window cannot exceed 3 hours." && (
-                  <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-sm text-red-700">
-                    Time window cannot exceed 3 hours. Please select an end time
-                    within 3 hours of the start time.
-                  </div>
-                )}
+                    <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-sm text-red-700">
+                      Time window cannot exceed 3 hours. Please select an end time
+                      within 3 hours of the start time.
+                    </div>
+                  )}
               </div>
 
               <div className="flex justify-between pt-4">
@@ -761,6 +762,8 @@ export default function AlignedActionWizard({
                 <Button
                   type="submit"
                   disabled={step3Form.formState.isSubmitting}
+                  className={`bg-green-600 hover:bg-green-700 ${!step1Form.formState.isValid ||
+                    step1Form.formState.isSubmitting ? "bg-green-600/80" : ""}`}
                 >
                   Next
                 </Button>
@@ -769,121 +772,7 @@ export default function AlignedActionWizard({
           </Form>
         )}
 
-        {/* Step 4: Summary and Confirmation */}
-        {/* {step === 4 && (
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold mb-4">
-            Review Your Aligned Action
-          </h2>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="font-medium">Mood:</div>
-                  <div className="text-2xl">
-                    {formData.mood === "sleep" && "😴"}
-                    {formData.mood === "goodToGo" && "😐"}
-                    {formData.mood === "motivated" && "😊"}
-                    {formData.mood === "highlyMotivated" && "😃"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="font-medium mb-2">Tasks:</div>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {formData.tasks.map((task, i) => (
-                      <li
-                        key={i}
-                        className={
-                          task === formData.selectedTask ? "font-bold" : ""
-                        }
-                      >
-                        {task}
-                        {task === formData.selectedTask && " (selected)"}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <div className="font-medium mb-1">Category:</div>
-                  <div>
-                    {formData.category === "creative" && "Creative"}
-                    {formData.category === "nurturing" && "Nurturing"}
-                    {formData.category === "revenueGenerating" &&
-                      "Revenue Generating"}
-                    {formData.category === "admin" && "Administrative"}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="font-medium mb-1">Time Window:</div>
-                  <div>
-                    {formData.timeFrom && formData.timeTo && (
-                      <>
-                        {format(new Date(formData.timeFrom), "h:mm a")} -{" "}
-                        {format(new Date(formData.timeTo), "h:mm a")}
-                      </>
-                    )}
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <div className="flex items-start">
-                      <svg
-                        className="h-5 w-5 text-blue-500 mr-2 mt-0.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <div className="text-sm text-blue-700">
-                        <p className="font-medium mb-1">What happens next?</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>
-                            You'll receive an email reminder 5 minutes before
-                            your scheduled time
-                          </li>
-                          <li>
-                            At the scheduled time, you'll be prompted to confirm
-                            if you completed the task
-                          </li>
-                          <li>
-                            If completed, you'll earn +50 Joy Pearls and the
-                            task will be saved to your Progress Vault
-                          </li>
-                          <li>
-                            <span className="font-semibold">Remember:</span> You
-                            can only create one aligned action per day
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={() => setStep(3)}>
-              Back
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={createAlignedAction.isPending}
-              className="bg-jp-orange hover:bg-jp-orange/90"
-            >
-              {createAlignedAction.isPending ? "Submitting..." : "Submit"}
-            </Button>
-          </div>
-        </div>
-      )} */}
         {step === 4 && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-center text-gray-900">
@@ -927,18 +816,16 @@ export default function AlignedActionWizard({
                       {formData.tasks.map((task, i) => (
                         <li
                           key={i}
-                          className={`flex items-center gap-2 text-gray-800 p-2 rounded-md text-sm ${
-                            task === formData.selectedTask
-                              ? "bg-green-500/10 font-bold text-green-500"
-                              : "bg-gray-50"
-                          }`}
+                          className={`flex items-center gap-2 text-gray-800 p-2 rounded-md text-sm ${task === formData.selectedTask
+                            ? "bg-green-500/10 font-bold text-green-500"
+                            : "bg-gray-50"
+                            }`}
                         >
                           <span
-                            className={`w-4 h-4 flex items-center justify-center rounded-full ${
-                              task === formData.selectedTask
-                                ? "bg-green-500 text-white text-xs"
-                                : "bg-gray-400 text-white text-xs"
-                            }`}
+                            className={`w-4 h-4 flex items-center justify-center rounded-full ${task === formData.selectedTask
+                              ? "bg-green-500 text-white text-xs"
+                              : "bg-gray-400 text-white text-xs"
+                              }`}
                           >
                             {task === formData.selectedTask ? "✓" : "+"}
                           </span>
@@ -1023,7 +910,7 @@ export default function AlignedActionWizard({
                               ★
                             </span>
                             <span>
-                              <strong>Joy Pearls:</strong> Earn +50 Joy Pearls
+                              <strong>Growth Points:</strong> Earn +50 Growth Points
                               for completing your task, saved to your Progress
                               Vault.
                             </span>

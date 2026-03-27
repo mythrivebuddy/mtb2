@@ -300,7 +300,7 @@ const ReminderForm = ({
                     <button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+                        className="flex items-center justify-center gap-2 px-8 py-3 text-base font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-green-400"
                     >
                         {isSaving && <Loader2 className="animate-spin" size={20} />}
                         Save Reminder
@@ -590,10 +590,10 @@ export default function RemindersPage() {
                         <div className="w-full sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 sm:w-auto">
                             <button
                                 onClick={() => setIsAddModalOpen(true)}
-                                className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-blue-600 rounded-full shadow-lg hover:bg-blue-700 transition-transform hover:scale-105"
+                                className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-2 text-white bg-green-600 rounded-lg shadow-lg hover:bg-green-700 transition-transform"
                             >
                                 <PlusCircle size={20} />
-                                <span className="sm:hidden">Add New Reminder</span>
+                                <span className="">Create</span>
                             </button>
                         </div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center order-first sm:order-none">

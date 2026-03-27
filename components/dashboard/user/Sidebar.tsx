@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import React, { useState } from "react";
 import Link from "next/link";
 import {
@@ -44,7 +44,16 @@ type NavItemProps = {
 
 const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const searchParams = useSearchParams();
+
+  const tab = searchParams.get("tab");
+
+  const isActive =
+    href === "/dashboard/challenge?tab=join"
+      ? pathname === "/dashboard/challenge" && tab === "join"
+      : href === "/dashboard/challenge?tab=create"
+        ? pathname === "/dashboard/challenge" && tab === "create"
+        : pathname === href;
 
   const content = (
     <>
@@ -280,7 +289,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                   onLinkClick={toggleSidebar}
                 />
                 <NavItem
-                  href="/dashboard/challenge"
+                  href="/dashboard/challenge?tab=join"
                   icon={<Swords size={20} />}
                   label="Join Challenges"
                   onLinkClick={toggleSidebar}
@@ -375,7 +384,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
                     <NavItem
-                      href="/dashboard/challenge"
+                      href="/dashboard/challenge?tab=create"
                       icon={<Swords size={20} />}
                       label="Create a Challenge"
                       onLinkClick={toggleSidebar}
@@ -429,11 +438,11 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
                     <NavItem
-                        href="/dashboard/coupons"
-                        icon={<BadgePercent size={20} />}
-                        label="Manage Coupons"
-                        onLinkClick={toggleSidebar} // Pass toggleSidebar
-                      />
+                      href="/dashboard/coupons"
+                      icon={<BadgePercent size={20} />}
+                      label="Manage Coupons"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
                     <ComingSoonWrapper>
                       <NavItem
                         href="#"

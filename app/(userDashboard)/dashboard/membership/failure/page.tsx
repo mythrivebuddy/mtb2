@@ -5,8 +5,11 @@ import Link from "next/link";
 import { AlertCircle, RefreshCcw, ArrowLeft, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useSearchParams } from "next/navigation";
+import {  useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
+import { useEffect } from "react";
+import { toast } from "sonner";
+
 
 export default function FailurePage() {
   const searchParams = useSearchParams();
@@ -59,9 +62,11 @@ export default function FailurePage() {
             ? `/dashboard/store/product/${storeOrderId}`
             : "/dashboard/store"
           : "/pricing";
-
   const referenceLabel =
     typeParam === "subscription" ? "Subscription ID" : "Order ID";
+  useEffect(() => {
+    toast.error("Payment failed. Please try again.");
+  }, [])
 
   // -----------------------------------------------------------------------
   // 3. Render UI

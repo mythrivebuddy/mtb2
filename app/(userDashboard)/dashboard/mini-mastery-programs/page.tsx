@@ -133,11 +133,11 @@ function ProgramCTA({
         >
           <LogIn size={13} /> Enroll
         </button>
-         <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
-        <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
-          Info
-        </button>
-      </Link>
+        <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+          <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
+            Info
+          </button>
+        </Link>
       </div>
     );
   }
@@ -464,7 +464,7 @@ export default function EnrollPage() {
 
 
   const pageContent = (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-10 max-w-7xl mx-auto">
+    <div className="min-h-screen  p-4 md:p-10 max-w-7xl mx-auto">
 
       {/* ── Info Modal ── */}
       {selectedInfoProg && (

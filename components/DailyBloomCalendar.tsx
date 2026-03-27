@@ -470,7 +470,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       title: textToSubmit,
       start: todayDateString, // Use the correct local date string
       allDay: true,
-      color: "#4dabf7", 
+      color: "#4dabf7",
       extendedProps: {
         description: 'Quick add',
         isBloom: true,
@@ -667,88 +667,88 @@ const DailyBloomCalendar: React.FC<Props> = ({
     }
   }, [lastDeletedEvent]);
 
-  const handleEventDrop = useCallback(
-    async (info: EventDropArg) => {
-      const { event } = info;
-      if (isTempId(event.id)) {
-        setErrorMessage("Please save the event before moving/resizing it.");
-        info.revert();
-        return;
-      }
-      if (dragDebounceRef.current) window.clearTimeout(dragDebounceRef.current);
-      dragDebounceRef.current = window.setTimeout(async () => {
-        try {
-          // If it's a bloom, use the dedicated parent handler
-          if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
-            onUpdateBloomFromEvent({
-              id: info.event.id.replace(/^bloom-/, ""),
-              updatedData: { dueDate: info.event.startStr },
-            });
-          } else {
-            // Otherwise, use the generic event API
-            const response = await fetch("/api/events", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                // ----- FIX: Strip both 'event-' and 'bloom-' prefixes -----
-                id: event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
-                // ----- END FIX -----
-                start: event.startStr,
-                end: event.endStr || null,
-              }),
-            });
-            if (!response.ok) throw new Error("Failed to update event drop");
-          }
-        } catch (err) {
-          console.error("Error updating event drop:", err);
-          info.revert();
-          setErrorMessage("Failed to move event.");
-        } finally {
-          dragDebounceRef.current = null;
-        }
-      }, 300);
-    },
-    [onUpdateBloomFromEvent]
-  );
+  const handleEventDrop = useCallback(
+    async (info: EventDropArg) => {
+      const { event } = info;
+      if (isTempId(event.id)) {
+        setErrorMessage("Please save the event before moving/resizing it.");
+        info.revert();
+        return;
+      }
+      if (dragDebounceRef.current) window.clearTimeout(dragDebounceRef.current);
+      dragDebounceRef.current = window.setTimeout(async () => {
+        try {
+          // If it's a bloom, use the dedicated parent handler
+          if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
+            onUpdateBloomFromEvent({
+              id: info.event.id.replace(/^bloom-/, ""),
+              updatedData: { dueDate: info.event.startStr },
+            });
+          } else {
+            // Otherwise, use the generic event API
+            const response = await fetch("/api/events", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                // ----- FIX: Strip both 'event-' and 'bloom-' prefixes -----
+                id: event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
+                // ----- END FIX -----
+                start: event.startStr,
+                end: event.endStr || null,
+              }),
+            });
+            if (!response.ok) throw new Error("Failed to update event drop");
+          }
+        } catch (err) {
+          console.error("Error updating event drop:", err);
+          info.revert();
+          setErrorMessage("Failed to move event.");
+        } finally {
+          dragDebounceRef.current = null;
+        }
+      }, 300);
+    },
+    [onUpdateBloomFromEvent]
+  );
 
-  const handleEventResize = useCallback(
-    async (info: EventResizeDoneArg) => {
-      const { event } = info;
-      if (resizeDebounceRef.current) window.clearTimeout(resizeDebounceRef.current);
-      resizeDebounceRef.current = window.setTimeout(async () => {
-        try {
-          // If it's a bloom, use the dedicated parent handler
-          if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
-            onUpdateBloomFromEvent({
-              id: info.event.id.replace(/^bloom-/, ""),
-            	updatedData: { dueDate: info.event.startStr }, // Resizing a bloom likely just changes its date
-            });
-          } else {
-          	// Otherwise, use the generic event API
-            const response = await fetch("/api/events", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                // ----- FIX: Strip both 'event-' and 'bloom-' prefixes -----
-                id: event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
-                // ----- END FIX -----
-                start: event.startStr,
-                end: event.endStr,
-              }),
-            });
-            if (!response.ok) throw new Error("Failed to update event resize");
-          }
-        } catch (err) {
-          console.error("Error updating event resize:", err);
-          info.revert();
-          setErrorMessage("Failed to resize event.");
-        } finally {
-          resizeDebounceRef.current = null;
-        }
-      }, 300);
-    },
-    [onUpdateBloomFromEvent]
-  );
+  const handleEventResize = useCallback(
+    async (info: EventResizeDoneArg) => {
+      const { event } = info;
+      if (resizeDebounceRef.current) window.clearTimeout(resizeDebounceRef.current);
+      resizeDebounceRef.current = window.setTimeout(async () => {
+        try {
+          // If it's a bloom, use the dedicated parent handler
+          if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
+            onUpdateBloomFromEvent({
+              id: info.event.id.replace(/^bloom-/, ""),
+              updatedData: { dueDate: info.event.startStr }, // Resizing a bloom likely just changes its date
+            });
+          } else {
+            // Otherwise, use the generic event API
+            const response = await fetch("/api/events", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                // ----- FIX: Strip both 'event-' and 'bloom-' prefixes -----
+                id: event.id.replace(/^event-/, "").replace(/^bloom-/, ""),
+                // ----- END FIX -----
+                start: event.startStr,
+                end: event.endStr,
+              }),
+            });
+            if (!response.ok) throw new Error("Failed to update event resize");
+          }
+        } catch (err) {
+          console.error("Error updating event resize:", err);
+          info.revert();
+          setErrorMessage("Failed to resize event.");
+        } finally {
+          resizeDebounceRef.current = null;
+        }
+      }, 300);
+    },
+    [onUpdateBloomFromEvent]
+  );
 
   const eventContent = useCallback((arg: EventContentArg) => {
     const ext = arg.event.extendedProps as EventExtendedProps;
@@ -804,7 +804,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const FormButtons = useCallback(() => (
     <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
       {mode === "create" && (
-        <Button onClick={handleSave} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
+        <Button onClick={handleSave} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base bg-green-600 hover:bg-green-700 transition ">
           {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Save Event
         </Button>
@@ -844,8 +844,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       ))}
     </div>
   );
-  // ----- END CHANGE -----
-  console.log('Final events being passed to FullCalendar:', events);
+
   return (
     <div className="border rounded-2xl shadow-lg bg-white p-4 sm:p-6 relative">
       {errorMessage && (
@@ -884,7 +883,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
               onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
               className="flex-grow text-sm h-10"
             />
-            <Button onClick={handleQuickAdd} variant="default" size="icon" className="flex-shrink-0 h-10 w-10">
+            <Button onClick={handleQuickAdd} variant="default" size="icon" className="bg-green-600 hover:bg-green-700 flex-shrink-0 h-10 w-10">
               <Plus size={18} />
             </Button>
           </div>
@@ -898,8 +897,24 @@ const DailyBloomCalendar: React.FC<Props> = ({
             .fc-theme .fc-button { background-color: #ffffff; border: 1px solid #e2e8f0; color: #475569; text-transform: capitalize; font-weight: 500; border-radius: 0.5rem; transition: all 0.2s ease-in-out; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
             .fc-theme .fc-button .fc-icon { vertical-align: middle; }
             .fc-theme .fc-button:focus, .fc-theme .fc-button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4); }
-            .fc-theme .fc-button:not(:disabled):hover { background-color: #f8fafc; border-color: #cbd5e1; color: #1e293b; }
-            .fc-theme .fc-button-primary.fc-button-active, .fc-theme .fc-button-primary.fc-button-active:hover { background-color: #334155; border-color: #334155; color: #ffffff; box-shadow: none; }
+            .fc-theme .fc-button:not(:disabled):not(.fc-button-active):hover {
+                background-color: #f8fafc;
+               border-color: #cbd5e1;
+          color: #1e293b;
+                }   
+           .fc-theme .fc-button.fc-button-primary.fc-button-active {
+  background-color: #15803d !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+/* Active Hover */
+.fc-theme .fc-button.fc-button-primary.fc-button-active:hover {
+  background-color: #166534 !important;
+  border-color: #166534 !important;
+  color: #ffffff !important;
+}
             .fc-theme .fc-today-button { background-color: #eff6ff; color: #2563eb; border-color: #bfdbfe; font-weight: 600; }
             .fc-theme .fc-today-button:hover:not(:disabled) { background-color: #dbeafe; color: #1d4ed8; }
             .fc-theme .fc-button.fc-today-button:disabled { background-color: #f1f5f9; border-color: #e2e8f0; color: #64748b; opacity: 1; }
@@ -962,7 +977,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
               setMode("create");
               setIsEditing(false);
             }}
-            className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
+            className="w-14 h-14 rounded-full bg-green-600 text-white shadow-lg flex items-center justify-center"
           >
             <Plus size={20} />
           </button>
@@ -979,9 +994,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
               </DrawerDescription>
             </DrawerHeader>
             <div className="px-4 overflow-y-auto">
-            {currentEvent && (
-              <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
-            )}
+              {currentEvent && (
+                <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
+              )}
             </div>
             <DrawerFooter className="pt-4">
               <FormButtons />
@@ -998,9 +1013,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
               </DialogDescription>
             </DialogHeader>
             <div className="px-4 overflow-y-auto max-h-[60vh]">
-            {currentEvent && (
-              <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
-            )}
+              {currentEvent && (
+                <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
+              )}
             </div>
             <DialogFooter>
               <FormButtons />
