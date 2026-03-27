@@ -736,37 +736,17 @@ export default function DailyBloomClient() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button onClick={() => setAddData(true)}>
+              <Button onClick={() => setAddData(true)} className="bg-green-600 hover:bg-green-700 transition-all ease-linear">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Daily Bloom
               </Button>
-              <Button onClick={() => setCalendarOpen(true)}>
+              <Button onClick={() => setCalendarOpen(true)} className="bg-green-600 hover:bg-green-700 transition-all ease-linear">
                 <CalendarIcon className="mr-2 h-4 w-2" />
                 View My Calendar
               </Button>
             </div>
           </CardContent>
         </Card>
-
-        {/* <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Calendar View</CardTitle>
-            <CardDescription>
-              View your blooms and events in a calendar.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CardContent>
-              <DailyBloomCalendar
-                blooms={normalizedBlooms}
-                events={combinedCalendarItems}
-                onCreateBloomFromEvent={handleCreateBloomFromEvent}
-                onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
-                onDeleteBloomFromEvent={handleDeleteBloom}
-              />
-            </CardContent>
-          </CardContent>
-        </Card> */}
 
         <Overdue
           onView={setViewData}
@@ -1116,7 +1096,10 @@ export default function DailyBloomClient() {
                         setValue("dueDate", new Date());
                       }}
                       variant={addInputType === "date" ? "default" : "ghost"}
-                      className="flex-1"
+                      className={`flex-1 transition-all ease-linear ${addInputType === "date"
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-transparent text-muted-foreground hover:bg-muted"
+                        }`}
                     >
                       Due Date
                     </Button>
@@ -1130,7 +1113,10 @@ export default function DailyBloomClient() {
                       variant={
                         addInputType === "frequency" ? "default" : "ghost"
                       }
-                      className="flex-1"
+                      className={`flex-1 transition-all ease-linear ${addInputType === "frequency"
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-transparent text-muted-foreground hover:bg-muted"
+                        }`}
                     >
                       Frequency
                     </Button>
@@ -1268,7 +1254,9 @@ export default function DailyBloomClient() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
+                >
                   {createMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
@@ -1462,7 +1450,10 @@ export default function DailyBloomClient() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
+                <Button type="submit" disabled={updateMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
+
+                >
                   {updateMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
