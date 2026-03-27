@@ -28,6 +28,7 @@ type HistoryItem = {
   };
   createdAt: string;
   currency?: string;
+  txType?: string;
 };
 
 const fetchUserTransactionHistory = async () => {
@@ -49,20 +50,33 @@ const RightPanel = ({ className }: { className?: string }) => {
 
   let historyItems: HistoryItem[] = [];
   if (transactionHistory?.transactions) {
-    historyItems = transactionHistory.transactions.map((tx: HistoryItem) => {
-      const isDebit = tx.activity.transactionType === "DEBIT";
-      const description = isDebit
-        ? `Spent on ${tx.activity.displayName}`
-        : `Earned for ${tx.activity.displayName}`;
+    historyItems = transactionHistory.transactions
+      .filter((tx: HistoryItem) => {
+        // ❌ Hide CREDIT transactions with 0 amount
+        if (
+          tx.activity.transactionType === "CREDIT" &&
+          (tx.jpAmount === 0 || tx.jpAmount === null)
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .map((tx: HistoryItem) => {
+        const isDebit = tx.activity.transactionType === "DEBIT";
 
-      return {
-        id: tx.id,
-        description,
-        date: format(new Date(tx.createdAt), "MMM d, yyyy hh:mm a"),
-        amount: tx.jpAmount,
-        currency: tx.currency
-      };
-    });
+        const description = isDebit
+          ? `Spent on ${tx.activity.displayName}`
+          : `Earned for ${tx.activity.displayName}`;
+
+        return {
+          id: tx.id,
+          description,
+          date: format(new Date(tx.createdAt), "MMM d, yyyy hh:mm a"),
+          amount: tx.jpAmount,
+          currency: tx.currency,
+          txType: tx?.activity?.transactionType
+        };
+      });
   }
 
   return (
@@ -73,12 +87,12 @@ const RightPanel = ({ className }: { className?: string }) => {
       <section className="mb-6">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-lg font-bold text-gray-800">Buddies</h2>
-          <a
+          <Link
             href="#"
             className="text-sm text-blue-500 hover:text-gray-700 hover:underline"
           >
             <ComingSoonWrapper>View all</ComingSoonWrapper>
-          </a>
+          </Link>
         </div>
         <div className="space-y-3 bg-white rounded-3xl p-5">
           {buddies.map((buddy) => (
@@ -108,7 +122,7 @@ const RightPanel = ({ className }: { className?: string }) => {
           ))}
           <div className="pt-3 pb-5">
             <ComingSoonWrapper>
-              <button className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600 w-full">
+              <button className="bg-green-600 text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-green-700 w-full transition-all linear">
                 Add Member
               </button>
             </ComingSoonWrapper>
@@ -144,7 +158,7 @@ const RightPanel = ({ className }: { className?: string }) => {
                     {item.date}
                   </p>
                 </div>
-                <p className="text-red-500 font-medium ml-2 break-words">
+                <p className={`${item.txType === "CREDIT" ? "text-green-500" : "text-red-500"} font-medium ml-2 break-words`}>
                   {item.amount} {item?.currency}
                 </p>
               </div>

@@ -260,7 +260,7 @@ export default function AlignedActionsPage() {
               </p>
               <Button
                 onClick={() => setShowWizard(true)}
-                className="bg-jp-orange hover:bg-jp-orange/90"
+                className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
               >
                 Create Now
               </Button>

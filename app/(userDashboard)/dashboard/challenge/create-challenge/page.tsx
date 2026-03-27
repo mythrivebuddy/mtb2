@@ -164,10 +164,10 @@ export default function CreateChallenge({
       if (axios.isAxiosError(error)) {
         const data = error.response?.data;
         const status = Number(error.response?.status ?? 0);
-          if (status == 400) {
-    toast.error(message);
-    return;
-  }
+        if (status == 400) {
+          toast.error(message);
+          return;
+        }
         if (typeof data === "string") {
           message = data;
         } else if (typeof data?.message === "string") {
@@ -178,7 +178,7 @@ export default function CreateChallenge({
       } else if (error instanceof Error) {
         message = error.message;
       }
-     
+
 
 
       setModalContent({
@@ -722,11 +722,10 @@ export default function CreateChallenge({
               <input
                 type="text"
                 id="social_link_task"
-                className={`flex-1 w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 ${
-                  errors.social_link_task
+                className={`flex-1 w-full rounded-lg border px-4 py-3 focus:outline-none focus:ring-2 ${errors.social_link_task
                     ? "border-red-500 focus:ring-red-500"
                     : "border-slate-200 bg-slate-50 focus:ring-purple-500"
-                }`}
+                  }`}
                 {...register("social_link_task", {
                   required: "Social media link is required",
                   pattern: {
@@ -782,7 +781,7 @@ export default function CreateChallenge({
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className="w-full rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 px-8 py-3 font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 px-8 py-3 font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 {mutation.isPending ? "Creating..." : "Create Challenge"}
               </button>

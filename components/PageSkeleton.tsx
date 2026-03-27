@@ -112,7 +112,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
                   </div>
                 </div>
               ))}
-              <Skeleton className="h-10 w-full rounded-full bg-[#ff6b6b]" />
+              <Skeleton className="h-10 w-full rounded-full bg-green-600" />
             </div>
 
             <div className="bg-white rounded-xl shadow-md p-4 space-y-4">

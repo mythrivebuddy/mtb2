@@ -58,9 +58,14 @@ type Totals = {
 /* ------------------------------------------------ */
 /* BALANCE CARDS */
 /* ------------------------------------------------ */
-const BalanceCardsSkeleton = ({ count }: { count: number }) => {
+const BalanceCardsSkeleton = ({ count, userType }: { count: number, userType?: "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" }) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+    <div
+      className={`grid gap-4 mb-6 ${userType === "COACH"
+        ? "grid-cols-2 sm:grid-cols-3"
+        : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
+        }`}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i}>
           <CardContent className="p-4 sm:p-6">
@@ -412,7 +417,7 @@ const TransactionHistoryContent = () => {
       session?.user?.userType === "COACH" ? 6 : 4;
     return (
       <>
-        <BalanceCardsSkeleton count={skeletonCount} />
+        <BalanceCardsSkeleton count={skeletonCount} userType={userType} />
 
         <Card>
           <CardContent className="p-6">
