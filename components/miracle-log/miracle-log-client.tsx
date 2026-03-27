@@ -213,7 +213,7 @@ export default function MiracleLogClient({
   };
 
   return (
-    <div className="min-h-screen xl:mx-4 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12 ">
+    <div className="min-h-screen xl:mx-4  py-12 ">
       <CustomAccordion />
       <div className="max-w-4xl mx-auto max-lg:px-4 space-y-8">
         <Card className="relative bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
@@ -318,6 +318,7 @@ export default function MiracleLogClient({
                     updateMutation.isPending ||
                     todayEntriesCount >= DAILY_LIMIT
                   }
+                  className="bg-green-600 hover:bg-green-700 "
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -628,7 +629,7 @@ export default function MiracleLogClient({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
+                <Button type="submit" disabled={updateMutation.isPending} className="bg-green-600 hover:bg-green-700 ">
                   {updateMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}

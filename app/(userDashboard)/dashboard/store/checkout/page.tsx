@@ -21,6 +21,7 @@ import { useSession } from "next-auth/react";
 import { GST_REGEX } from "@/lib/constant";
 import { openRazorpayCheckout } from "@/lib/razorpay/client/razorpay-client";
 import { convertCurrency } from "@/lib/payment/payment.utils";
+import { Button } from "@/components/ui/button";
 
 // ─── Currency helpers ──────────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GP: "GP" };
@@ -208,7 +209,7 @@ const BillingForm = ({ billing, onSave, isSaving, onCancel, showCancel }: Billin
           </div>
         </div>
         <div className="flex gap-3 pt-2">
-          <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+          <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
             {isSaving ? "Saving..." : <><Check className="w-4 h-4" /> Save Address</>}
           </button>
           {showCancel && onCancel && (
@@ -298,8 +299,9 @@ const CheckoutContent = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<"INR" | "USD" | "GP" | null>(null);
   const [manualCouponCode, setManualCouponCode] = useState<string>("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
- 
+
   const [autoCouponChecked, setAutoCouponChecked] = useState(false);
+  const [autoCouponAppliedOnce, setAutoCouponAppliedOnce] = useState(false);
 
   // ── useMemo — stable references, no hooks inside ──────────────────────────
 
@@ -372,7 +374,7 @@ const CheckoutContent = () => {
 
   const applyCouponMutation = useMutation({
     mutationFn: async (code: string) => {
-      if (!selectedCurrency) throw new Error("Currency not selected");
+      if (!selectedCurrency) throw new Error("Currency not determined from billing country");
 
       const res = await axios.post("/api/coupons/verify", {
         code,
@@ -551,9 +553,9 @@ const CheckoutContent = () => {
   useEffect(() => {
     const applyAutoCoupon = async () => {
       if (!selectedCurrency || !displayBilling) return;
+      if (autoCouponAppliedOnce) return; // IMPORTANT
 
       try {
-
         setAutoCouponChecked(false);
 
         const res = await axios.post("/api/coupons/auto-apply", {
@@ -565,24 +567,23 @@ const CheckoutContent = () => {
         });
 
         if (res.data?.coupon) {
-
-
           setAppliedCoupon({
             ...res.data.coupon,
             applicableItemIds: res.data.applicableItemIds || [],
           });
           setManualCouponCode(res.data.coupon.code);
-        } 
+        }
+
+        setAutoCouponAppliedOnce(true); // RUN ONLY ONCE
       } catch (err) {
         console.error("Auto coupon failed", err);
       } finally {
-      
         setAutoCouponChecked(true);
       }
     };
 
     applyAutoCoupon();
-  }, [selectedCurrency, displayBilling?.country]);
+  }, [selectedCurrency, displayBilling]);
   // ── useEffect — stable deps now that uniqueCurrencies is memoized ─────────
   useEffect(() => {
 
@@ -594,31 +595,13 @@ const CheckoutContent = () => {
       return;
     }
 
-    // SINGLE ITEM → auto by country
-    if (items.length === 1) {
-      const newCurrency = displayBilling.country === "IN" ? "INR" : "USD";
-
-      if (selectedCurrency !== newCurrency) {
-        setSelectedCurrency(newCurrency);
-      }
-
-      return;
-    }
-
-    // MULTIPLE ITEMS SAME CURRENCY
-    if (!isMixedCurrency && uniqueCurrencies.length === 1) {
-      const newCurrency = uniqueCurrencies[0] as "INR" | "USD";
-
-      if (selectedCurrency !== newCurrency) {
-        setSelectedCurrency(newCurrency);
-      }
-    }
+    // Country based currency
+    const currency = displayBilling.country === "IN" ? "INR" : "USD";
+    setSelectedCurrency(currency);
 
   }, [
     items,
     displayBilling?.country,
-    uniqueCurrencies,
-    isMixedCurrency
   ]);
 
 
@@ -881,7 +864,7 @@ const CheckoutContent = () => {
   return (
     <div className="min-h-screen ">
       <div className="mb-3 mt-3 px-4">
-        <Link href="/dashboard/store" className="bg-jp-orange text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-red-600">
+        <Link href="/dashboard/store" className="bg-green-600 text-white font-bold text-sm rounded-full px-4 py-3 hover:bg-green-700">
           Back to Growth Store
         </Link>
       </div>
@@ -933,107 +916,7 @@ const CheckoutContent = () => {
               </div>
             )}
 
-            {/* 3/4. Currency Selection — only for mixed non-GP carts */}
-            {isMixedCurrency && items.length > 1 && (
-              <div className="bg-gradient-to-br from-orange-50 to-red-50 p-6 rounded-xl shadow-md border-2 border-orange-300">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-orange-600 rounded-lg animate-pulse">
-                    <AlertCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                      3. SELECT PAYMENT CURRENCY
-                      {!selectedCurrency && <span className="text-red-600 text-sm">*REQUIRED</span>}
-                      {selectedCurrency && <span className="text-green-600 text-sm">✓</span>}
-                    </h2>
-                    <p className="text-sm text-gray-700 font-medium">
-                      Your cart has items in multiple currencies. Choose one to proceed.
-                    </p>
-                  </div>
-                </div>
 
-                <div className="bg-white rounded-lg p-4 mb-4 border-2 border-orange-200">
-                  <div className="flex items-start gap-2">
-                    <Info className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-gray-700 w-full">
-                      <p className="font-bold mb-2 text-orange-900">Current Cart Breakdown:</p>
-                      <div className="space-y-1">
-                        {Object.entries(totalsByCurrency).map(([currency, total]) => {
-                          const count = itemCurrencies.filter((ic) => ic === currency).length;
-                          return (
-                            <div key={currency} className="flex items-center justify-between bg-gray-50 rounded px-3 py-2">
-                              <span className="flex items-center gap-2">
-                                <CurrencyIcon currency={currency} className="w-4 h-4" />
-                                <span className="font-medium">{count} item{count > 1 ? "s" : ""} in {currency}</span>
-                              </span>
-                              <span className="font-bold text-gray-900">
-                                {currency === "GP" ? `${Math.ceil(total)} GP` : `${getCurrencySymbol(currency)}${Number(total).toFixed(2)}`}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-900 mb-4 font-bold">⚠️ Select the currency you want to pay in:</p>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {uniqueCurrencies.filter(c => c !== "GP").map((currency) => (
-                    <button
-                      key={currency}
-                      onClick={() => setSelectedCurrency(currency as "INR" | "USD")}
-                      className={`p-5 rounded-xl border-2 transition-all duration-200 ${selectedCurrency === currency
-                        ? "border-green-600 bg-green-600 text-white shadow-xl scale-105 ring-4 ring-green-200"
-                        : "border-orange-300 bg-white hover:border-orange-500 hover:shadow-md"
-                        }`}
-                    >
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-2 text-3xl font-bold mb-2">
-                          <CurrencyIcon
-                            currency={currency}
-                            className={`w-7 h-7 ${selectedCurrency === currency ? "text-white" : currency === "GP" ? "text-purple-600" : currency === "INR" ? "text-orange-600" : "text-green-600"}`}
-                          />
-                          {currency}
-                        </div>
-                        {selectedCurrency === currency
-                          ? <div className="flex items-center justify-center gap-2 text-sm font-bold"><Check className="w-5 h-5" /> SELECTED</div>
-                          : <div className="text-sm font-semibold text-gray-600">Click to Select</div>
-                        }
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                {selectedCurrency && (
-                  <div className="mt-4 bg-green-100 border-2 border-green-400 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-green-900 mb-1">Payment Currency Selected: {selectedCurrency}</p>
-                        <p className="text-xs text-green-800">All items will be converted to {selectedCurrency} at checkout. Exchange rate: 1 USD = ₹{usdToInrRate?.toFixed(2)}</p>
-                        <button onClick={() => setSelectedCurrency(null)} className="mt-2 text-xs font-semibold text-green-700 hover:text-green-900 underline">
-                          Change Currency
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {!selectedCurrency && (
-                  <div className="mt-4 bg-red-100 border-2 border-red-400 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-700 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-red-900 mb-1">Currency Selection Required</p>
-                        <p className="text-xs text-red-800">You must select a payment currency before placing your order.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Order Summary */}
             <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md">
@@ -1159,13 +1042,13 @@ const CheckoutContent = () => {
                   placeholder="Enter coupon code"
                   className="border px-3 py-2 rounded-md w-full"
                 />
-                <button
+                <Button
                   onClick={() => applyCouponMutation.mutate(manualCouponCode)}
                   disabled={applyCouponMutation.isPending || !manualCouponCode}
-                  className={`px-4 py-2 rounded-md flex items-center justify-center gap-2 min-w-[110px] font-medium transition-all
+                  className={`px-4 bg-green-600 text-white hover:bg-green-700 py-2 rounded-md flex items-center justify-center gap-2 min-w-[110px] font-medium transition-all
     ${applyCouponMutation.isPending
-                      ? "bg-gray-400 text-white cursor-not-allowed"
-                      : "bg-black text-white hover:bg-gray-800"
+                      ? " text-white cursor-not-allowed"
+                      : ""
                     }`}
                 >
                   {applyCouponMutation.isPending ? (
@@ -1175,7 +1058,7 @@ const CheckoutContent = () => {
                   ) : (
                     "Apply"
                   )}
-                </button>
+                </Button>
               </div>
 
               {appliedCoupon && (
@@ -1404,7 +1287,7 @@ const CheckoutContent = () => {
                   disabled={!canProceed || placeOrderMutation.isPending}
                   className={`w-full py-4 text-white font-bold text-lg rounded-xl transition-all duration-200 ${!canProceed || placeOrderMutation.isPending
                     ? "bg-gray-300 cursor-not-allowed"
-                    : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    : "bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                     }`}
                 >
                   {placeOrderMutation.isPending ? (

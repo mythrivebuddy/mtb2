@@ -293,6 +293,7 @@ export default function ProgressVaultClient({
                     createMutation.isPending ||
                     todayEntriesCount >= dailyLimit
                   }
+                  className="bg-green-600 hover:bg-green-700 "
                 >
                   {createMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -574,7 +575,7 @@ export default function ProgressVaultClient({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}>
+                <Button type="submit" disabled={updateMutation.isPending} className="bg-green-600 hover:bg-green-700 ">
                   {updateMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}

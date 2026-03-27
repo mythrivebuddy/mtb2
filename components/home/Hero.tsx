@@ -19,8 +19,8 @@ export default function Hero() {
       className="space-y-4 max-w-2xl mx-auto md:px-4 sm:px-6"
     >
       <div className="space-y-2">
-        <h1 className="md:text-[56px] text-[36px] lg:text-[75px] font-bold text-[#1E2875] leading-tight">
-          One Complete Growth Ecosystem
+        <h1 className="md:text-[56px] text-[36px] lg:text-[70px] font-bold text-[#1E2875] leading-tight">
+          Your Personal & Professional Growth Environment
         </h1>
         {/* <h1 className="md:text-[56px] text-[36px] font-bold text-[#7B90FF] leading-tight">
           Made Amazing
@@ -35,10 +35,10 @@ export default function Hero() {
         to make your journey joyful, connected and wildly fulfilling.
       </p> */}
       <p className="text-[14px] md:text-[18px] lg:text-xl text-slate-600 dark:text-slate-400">
-        For Coaches, Solopreneurs & Self-Growth Enthusiasts. The ecosystem that
+        For Coaches, Solopreneurs & Self-Growth Enthusiasts. The environment that
         grows you and your business. <br />
         <br />
-        One ecosystem. Endless momentum.
+        One environment. Endless momentum.
       </p>
       <div className="flex flex-col pt-5 sm:flex-row gap-4 lg:justify-start">
         {/* Self Growth Enthusiast button */}

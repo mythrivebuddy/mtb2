@@ -88,7 +88,7 @@ const getStartDateInfo = (startDate: string): string | null => {
 };
 
 // --- Main Page Component ---
-export default function ChallengePage({canIssueCertificate}:{canIssueCertificate:boolean}) {
+export default function ChallengePage({ canIssueCertificate }: { canIssueCertificate: boolean }) {
   const router = useRouter();
   const { status: authStatus, data: session } = useSession();
   const queryClient = useQueryClient();
@@ -280,20 +280,20 @@ export default function ChallengePage({canIssueCertificate}:{canIssueCertificate
           <div>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
               <DialogTrigger asChild>
-                <button
+                <Button
                   onClick={() =>
                     authStatus === "unauthenticated"
                       ? signIn()
                       : setIsModalOpen(true)
                   }
-                  className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition ease-linear"
                 >
                   <PlusCircle size={28} />
                   <span className="font-semibold hidden sm:inline">Create</span>
-                </button>
+                </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <CreateChallenge onSuccess={() => setIsModalOpen(false)} canIssueCertificate={canIssueCertificate}/>
+                <CreateChallenge onSuccess={() => setIsModalOpen(false)} canIssueCertificate={canIssueCertificate} />
               </DialogContent>
             </Dialog>
           </div>
@@ -365,8 +365,8 @@ export default function ChallengePage({canIssueCertificate}:{canIssueCertificate
                 "px-5 py-2 text-sm font-semibold rounded-full transition",
                 selectedFilters.includes(filter)
                   ? category1.includes(filter)
-                    ? "bg-blue-800 text-white shadow-md"
-                    : "bg-pink-700 text-white shadow-md"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-green-600 text-white shadow-md"
                   : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100"
               )}
             >
