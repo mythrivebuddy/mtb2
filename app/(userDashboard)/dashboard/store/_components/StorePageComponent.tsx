@@ -468,7 +468,7 @@ const StorePageComponent: React.FC = () => {
                                             </Link>
                                         </div>
 
-                                        <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                                        <div className="flex flex-col xxl:flex-row gap-2 mt-auto">
                                             {inCart ? (
                                                 <Link href="/dashboard/store/profile" className="flex-1 flex items-center justify-center  bg-green-600  hover:bg-green-700 gap-1.5  active:scale-95 text-white font-semibold text-xs rounded-xl px-3 py-2.5 transition-all duration-200 shadow-sm hover:shadow-md">
                                                     <ShoppingCart className="w-4 h-4 shrink-0" />
