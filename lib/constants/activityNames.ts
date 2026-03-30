@@ -26,7 +26,9 @@ export const activityDisplayMap: Record<string, string> = {
   CHALLENGE_PENALTY: "not completing a challenge task (penalty applied)",
   CHALLENGE_REWARD: "successfully completing a challenge",
   COACH_REWARD_SPEND: "sending a group member reward",
-  COACH_REWARD_RECEIVE: "receiving a reward from your coach"
+  COACH_REWARD_RECEIVE: "receiving a reward from your coach",
+  STORE_PURCHASE: "purchasing store items",
+  STORE_SALE: "selling your store item",
 };
 
 // For Transaction Page → "Created a challenge", "Earned a Magic Box reward"

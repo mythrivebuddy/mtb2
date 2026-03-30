@@ -307,7 +307,7 @@ export async function POST(req: NextRequest) {
 
       snapshotItems.push({
         itemId: product.id,
-          name: product.name,
+        name: product.name,
         quantity: item.quantity,
         price: price,
         discount: discountForItem,
@@ -542,12 +542,13 @@ async function handleWalletTransaction({
           },
         });
       }
-      const itemNames = items
-        .map((i) => {
-          const product = productMap.get(i.itemId);
-          return product?.name ?? "Unknown Product";
-        })
-        .join(", ");
+      const names = items.map(
+        (i) => productMap.get(i.itemId)?.name ?? "Unknown Product",
+      );
+      const itemNames =
+        names.length > 1
+          ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
+          : (names[0] ?? "Unknown Product");
 
       await deductJp(user, "STORE_PURCHASE", tx, {
         amount: walletTotal,
@@ -575,7 +576,13 @@ async function handleWalletTransaction({
       for (const [creatorId, reward] of Object.entries(creatorRewards)) {
         const creator = creatorMap.get(creatorId);
         if (!creator) continue;
-        const creatorItemNames = reward.items.map((i) => i.name).join(", ");
+        const creatorNames = reward.items.map((i) => i.name);
+        const creatorItemNames =
+          creatorNames.length > 1
+            ? creatorNames.slice(0, -1).join(", ") +
+              " and " +
+              creatorNames[creatorNames.length - 1]
+            : (creatorNames[0] ?? "Unknown Product");
 
         await assignJp(creator, "STORE_SALE", tx, {
           amount: reward.amount,
