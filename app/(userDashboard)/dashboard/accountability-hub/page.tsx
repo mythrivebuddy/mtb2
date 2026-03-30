@@ -193,10 +193,10 @@ export default function AccountabilityHubPage() {
         {isAdmin && (
           <div className="flex items-center gap-4">
             <Link href="/dashboard/accountability-hub/create">
-              <button className="flex items-center gap-2 text-indigo-600 hover:text-indigo-800 transition">
-                <PlusCircle size={24} />
+              <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition ease-linear">
+                <PlusCircle size={28} />
                 <span className="font-semibold hidden sm:inline">Create</span>
-              </button>
+              </Button>
             </Link>
             <Button
               className="bg-blue-600 hover:bg-blue-700"
@@ -347,7 +347,7 @@ export default function AccountabilityHubPage() {
                                 type="submit"
                                 size="sm"
                                 disabled={isGroupBlocked || isLoading || !editingGoalValue.trim()}
-
+                                className="bg-green-600 hover:bg-green-700"
                               >
                                 {isLoading ? "Saving..." : "Save"}
                               </Button>

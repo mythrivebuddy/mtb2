@@ -257,7 +257,7 @@ export default function MyRequests({ userId }: Props) {
           List of all profile audit requests you have submitted
         </p>
         <Link href="/dashboard/buddy-lens/requester">
-          <Button className="bg-jp-orange hover:bg-jp-orange/90 text-white flex items-center gap-1.5">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5">
             <Plus className="w-4 h-4" />
             Create Request
           </Button>
@@ -272,7 +272,7 @@ export default function MyRequests({ userId }: Props) {
 
           <p className="text-gray-600 mb-4">No requests created yet.</p>
           <Link href="/dashboard/buddy-lens/requester">
-            <Button className="bg-jp-orange hover:bg-jp-orange/90 text-white flex items-center gap-1.5">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Create Your First Request
             </Button>

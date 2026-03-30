@@ -21,6 +21,7 @@ interface ConfirmActionProps {
   confirmText?: string;
   cancelText?: string;
   isDisabled?: boolean;
+  isCoach?: boolean;
 }
 
 const ConfirmAction = ({
@@ -30,7 +31,8 @@ const ConfirmAction = ({
   description = "This action cannot be undone.",
   confirmText = "Confirm",
   cancelText = "Cancel",
-  isDisabled = false
+  isDisabled = false,
+  isCoach = false
 }: ConfirmActionProps) => {
   const [open, setOpen] = useState(false);
 
@@ -48,10 +50,10 @@ const ConfirmAction = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)} disabled={isDisabled}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={isDisabled} >
             {cancelText}
           </Button>
-          <Button variant="destructive" onClick={handleConfirm} disabled={isDisabled}>
+          <Button variant="destructive" onClick={handleConfirm} disabled={isDisabled} className={`${isCoach ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}`}>
             {confirmText}
           </Button>
         </DialogFooter>

@@ -89,6 +89,7 @@ export default function EditableNotesCell({
             size="sm"
             type="submit"
             disabled={isLoading || !notes.trim()}
+            className="bg-green-600 hover:bg-green-700"
           >
             {isLoading ? "Saving..." : "Save"}
           </Button>
