@@ -306,7 +306,7 @@ export default function CoachCouponsPage() {
     /* ---- Render ---- */
 
     return (
-        <div className="p-8 space-y-8 bg-muted/30 min-h-screen">
+        <div className="p-8 space-y-8  min-h-screen">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>

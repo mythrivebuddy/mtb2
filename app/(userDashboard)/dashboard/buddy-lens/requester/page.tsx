@@ -342,7 +342,7 @@ export default function BuddyLensRequestPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition-all"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all"
           >
             {isSubmitting ? "Submitting..." : "Submit Request"}
           </Button>
