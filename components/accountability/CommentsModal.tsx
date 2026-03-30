@@ -142,7 +142,7 @@ export default function CommentsModal({
     if (!newComment.trim() || isGroupBlocked) return;
 
     // --- ❌ NO PROCESSING ---
-    // We send the raw text (e.g., "Hello @Toheed") directly to the API
+    // We send the raw text (e.g., "Hello @") directly to the API
     // as you requested.
 
     setIsPosting(true);
@@ -279,8 +279,8 @@ export default function CommentsModal({
                       comment.author.image
                         ? comment.author.image
                         : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            comment.author.name?.charAt(0) || "User"
-                          )}&background=random&color=fff`
+                          comment.author.name?.charAt(0) || "User"
+                        )}&background=random&color=fff`
                     }
                     alt={comment.author.name || "User"}
                     width={32}
@@ -332,11 +332,10 @@ export default function CommentsModal({
                     handleSuggestionClick(suggestion);
                   }}
                   onMouseEnter={() => setActiveSuggestionIndex(index)}
-                  className={`flex w-full items-center gap-2 relative cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${
-                    index === activeSuggestionIndex
+                  className={`flex w-full items-center gap-2 relative cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${index === activeSuggestionIndex
                       ? "bg-accent text-accent-foreground"
                       : ""
-                  }`}
+                    }`}
                 >
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={suggestion.image || undefined} />
@@ -364,6 +363,7 @@ export default function CommentsModal({
           <Button
             onClick={handleSubmit}
             disabled={isPosting || !newComment.trim() || isGroupBlocked}
+            className="bg-green-600 hover:bg-green-700"
           >
             {isPosting ? "Posting..." : "Post Comment"}
           </Button>

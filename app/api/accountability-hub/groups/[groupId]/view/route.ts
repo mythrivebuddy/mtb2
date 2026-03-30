@@ -46,10 +46,10 @@ export async function GET(
     if (!isMember && session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.log(group);
+  
     
     const activeCycleId = group.cycles[0]?.id;
-    console.log("acitivecyccleid ",activeCycleId);
+   
     
     let membersWithGoals = group.members;
 

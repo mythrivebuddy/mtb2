@@ -234,6 +234,7 @@ export default function SpotlightPage() {
                     ),
                   ))
               }
+              isCoach={true}
             >
               <Button
                 disabled={
@@ -246,7 +247,7 @@ export default function SpotlightPage() {
                       ),
                     ))
                 }
-                className={`mt-4 px-4 py-2 rounded text-white transition-colors duration-200`}
+                className={`mt-4 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200`}
               >
                 Apply for Spotlight
               </Button>

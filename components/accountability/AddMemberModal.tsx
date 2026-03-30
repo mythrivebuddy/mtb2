@@ -155,6 +155,7 @@ export default function AddMemberModal({
                 size="sm"
                 onClick={() => handleAddMember(user.id)}
                 disabled={isAdding === user.id}
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {isAdding === user.id ? "Adding..." : "Add"}
               </Button>

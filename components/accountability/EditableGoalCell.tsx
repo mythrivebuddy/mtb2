@@ -68,7 +68,7 @@ export default function EditableGoalCell({
           placeholder="Set your goal..."
           disabled={isLoading}
         />
-        <Button onClick={handleSave} size="sm" disabled={isLoading}>
+        <Button onClick={handleSave} size="sm" disabled={isLoading} className="bg-green-600 hover:bg-green-700">
           {isLoading ? "..." : "Save"}
         </Button>
         <Button onClick={() => setIsEditing(false)} size="sm" variant="outline" disabled={isLoading}>

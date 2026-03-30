@@ -311,7 +311,7 @@ export default function AccountabilityHubHome() {
           </Card>
 
           {/* Activity Feed */}
-          <Card className="rounded-3xl min-h-[200px] max-h-[400px] flex flex-col">
+          <Card className="rounded-3xl min-h-[200px] max-h-[400px] flex flex-col ">
             <CardHeader className="flex-shrink-0 border-b">
               <CardTitle className="text-lg">Activity Feed</CardTitle>
             </CardHeader>
@@ -485,7 +485,7 @@ export default function AccountabilityHubHome() {
                 <Button
                   onClick={handleSaveNotes}
                   disabled={isSavingNotes || isGroupBlocked}
-                  className="mt-4"
+                  className="mt-4 bg-blue-600 hover:bg-blue-700"
                 >
                   {isSavingNotes ? "Saving..." : "Save Notes"}
                 </Button>
@@ -507,7 +507,7 @@ export default function AccountabilityHubHome() {
             <CardContent className="flex flex-wrap gap-3">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button disabled={isCreatingCycle || isGroupBlocked}>
+                  <Button disabled={isCreatingCycle || isGroupBlocked} className="bg-blue-600 hover:bg-blue-700">
                     {isCreatingCycle
                       ? "Starting New Cycle..."
                       : "Start New Cycle"}
