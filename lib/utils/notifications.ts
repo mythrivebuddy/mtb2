@@ -9,7 +9,7 @@ export async function createNotification(
   title: string,
   message: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: any
+  metadata?: any,
 ) {
   return await prisma.notification.create({
     data: { userId, type, title, message, metadata },
@@ -20,7 +20,7 @@ export async function createNotification(
 export function getJPEarnedNotificationData(
   userId: string,
   amount: number,
-  activity: string
+  activity: string,
 ) {
   return {
     userId,
@@ -81,7 +81,7 @@ export function getMagicBoxSharedNotificationData(
   sharedByUserId: string,
   sharedByUserName: string,
   receiverUserId: string,
-  amount: number
+  amount: number,
 ) {
   return {
     userId: receiverUserId,
@@ -95,7 +95,7 @@ export function getMagicBoxSharedNotificationData(
 // Returns notification data for Magic Box reward (sender)
 export function getMagicBoxRewardNotificationData(
   userId: string,
-  amount: number
+  amount: number,
 ) {
   return {
     userId,
@@ -108,7 +108,7 @@ export function getMagicBoxRewardNotificationData(
 // Returns notification data for Spotlight transaction (spending JP)
 export function getSpotlightTransactionNotificationData(
   userId: string,
-  jpAmount: number
+  jpAmount: number,
 ) {
   return {
     userId,
@@ -122,7 +122,7 @@ export function getSpotlightTransactionNotificationData(
 // Returns notification data for Spotlight application transaction
 export function getSpotlightAppliedTransactionNotificationData(
   userId: string,
-  jpAmount: number
+  jpAmount: number,
 ) {
   return {
     userId,
@@ -137,14 +137,20 @@ export function getSpotlightAppliedTransactionNotificationData(
 export async function createJPEarnedNotification(
   userId: string,
   amount: number,
-  activity: string
+  activity: string,
+  displayName?: string,
 ) {
+  const label = displayName
+    ? activity === "STORE_SALE"
+      ? `selling ${displayName}` // → "selling product3"
+      : displayName
+    : activityDisplayMap[activity];
   return createNotification(
     userId,
     NotificationType.JP_EARNED,
     "GP Earned",
-    `You earned ${amount} GP for ${activityDisplayMap[activity]}.`,
-    { amount, activity }
+    `You earned ${amount} GP for ${label}.`,
+    { amount, activity },
   );
 }
 
@@ -152,14 +158,20 @@ export async function createJPEarnedNotification(
 export async function createJpSpentNotification(
   userId: string,
   amount: number,
-  activity: string
+  activity: string,
+  displayName?: string,
 ) {
+  const label = displayName
+    ? activity === "STORE_PURCHASE"
+      ? `purchasing ${displayName}` // → "purchasing product3"
+      : displayName
+    : activityDisplayMap[activity];
   return createNotification(
     userId,
     NotificationType.JP_SPEND,
     "GP Spent",
-    `You spent ${amount} GP for ${activityDisplayMap[activity]}.`,
-    { amount, activity }
+    `You spent ${amount} GP for ${label}.`,
+    { amount, activity },
   );
 }
 
@@ -169,7 +181,7 @@ export async function createProsperityAppliedNotification(userId: string) {
     NotificationType.PROSPERITY_APPLIED,
     "Prosperity Drop Applied",
     "Your Prosperity Drop application has been submitted and is under review.",
-    {}
+    {},
   );
 }
 
@@ -181,7 +193,7 @@ export async function createProsperityApprovedNotification(userId: string) {
     userId,
     NotificationType.PROSPERITY_APPROVED,
     "Prosperity Drop Approved",
-    "Your Prosperity Drop application has been approved."
+    "Your Prosperity Drop application has been approved.",
   );
 }
 
@@ -194,7 +206,7 @@ export async function createSpotlightApprovedNotification(userId: string) {
     NotificationType.SPOTLIGHT_APPROVED,
     "Spotlight Approved",
     "Your Spotlight application has been approved.",
-    { url: "/dashboard/spotlight" }
+    { url: "/dashboard/spotlight" },
   );
 }
 
@@ -204,7 +216,7 @@ export async function createSpotlightAppliedNotification(userId: string) {
     NotificationType.SPOTLIGHT_APPLIED,
     "Spotlight Applied",
     "You have applied for Spotlight. Your request is under review.",
-    {}
+    {},
   );
 }
 
@@ -214,7 +226,7 @@ export async function createSpotlightActiveNotification(userId: string) {
     NotificationType.SPOTLIGHT_ACTIVE,
     "Spotlight Active",
     "Your Spotlight is now active and visible to other users.",
-    {}
+    {},
   );
 }
 
@@ -222,14 +234,14 @@ export async function createMagicBoxSharedNotification(
   sharedByUserId: string,
   sharedByUserName: string,
   receiverUserId: string,
-  amount: number
+  amount: number,
 ) {
   return createNotification(
     receiverUserId,
     NotificationType.MAGIC_BOX_SHARED,
     "Magic Box Received",
     `${sharedByUserName} shared ${amount} GP with you through a Magic Box!`,
-    { sharedByUserId, sharedByUserName, amount }
+    { sharedByUserId, sharedByUserName, amount },
   );
 }
 
@@ -237,7 +249,7 @@ export async function createMagicBoxSharedNotification(
 export function getBuddyLensClaimedNotificationData(
   userId: string,
   reviewerName: string,
-  domain: string
+  domain: string,
 ) {
   return {
     userId,
@@ -252,7 +264,7 @@ export function getBuddyLensClaimedNotificationData(
 export function getBuddyLensApprovedNotificationData(
   userId: string,
   domain: string,
-  requestId: string
+  requestId: string,
 ) {
   return {
     userId,
@@ -266,7 +278,7 @@ export function getBuddyLensApprovedNotificationData(
 // BuddyLens — Claim Rejected
 export function getBuddyLensRejectedNotificationData(
   userId: string,
-  domain: string
+  domain: string,
 ) {
   return {
     userId,
@@ -282,7 +294,7 @@ export function getBuddyLensReviewedNotificationData(
   userId: string,
   domain: string,
   jpAmount: number,
-  requestId: string
+  requestId: string,
 ) {
   return {
     userId,
@@ -298,7 +310,7 @@ export function getBuddyLensReviewerCompletedNotificationData(
   userId: string,
   domain: string,
   jpAmount: number,
-  requestId: string
+  requestId: string,
 ) {
   return {
     userId,
@@ -312,7 +324,7 @@ export function getBuddyLensReviewerCompletedNotificationData(
 // BuddyLens — Claim Cancelled
 export function getBuddyLensCancelledNotificationData(
   userId: string,
-  domain: string
+  domain: string,
 ) {
   return {
     userId,
@@ -329,41 +341,41 @@ export async function createBuddyLensClaimedNotification(
   userId: string,
   reviewerName: string,
   domain: string,
-  requestId: string
+  requestId: string,
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_CLAIMED,
     "BuddyLens Request Claimed",
     `${reviewerName} claimed your BuddyLens request in ${domain}. You can approve or reject it.`,
-    { url: `/dashboard/buddy-lens/approve?requestId=${requestId}` }
+    { url: `/dashboard/buddy-lens/approve?requestId=${requestId}` },
   );
 }
 
 export async function createBuddyLensApprovedNotification(
   userId: string,
   domain: string,
-  requestId: string
+  requestId: string,
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_APPROVED,
     "BuddyLens Claim Approved",
     `Your claim for the BuddyLens request in ${domain} has been approved! You can start reviewing now.`,
-    { url: `/dashboard/buddy-lens/reviewer?requestId=${requestId}` }
+    { url: `/dashboard/buddy-lens/reviewer?requestId=${requestId}` },
   );
 }
 
 export async function createBuddyLensRejectedNotification(
   userId: string,
-  domain: string
+  domain: string,
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_REJECTED,
     "BuddyLens Claim Rejected",
     `Your claim for the BuddyLens request in ${domain} was rejected.`,
-    { url: `/dashboard/buddy-lens/reviewer` }
+    { url: `/dashboard/buddy-lens/reviewer` },
   );
 }
 
@@ -371,39 +383,39 @@ export async function createBuddyLensReviewedNotification(
   userId: string,
   domain: string,
   jpAmount: number,
-  reviewId: string
+  reviewId: string,
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_REVIEWED,
     "BuddyLens Review Completed",
     `Your BuddyLens request in ${domain} has been reviewed. ${jpAmount} Growth Points have been deducted.`,
-    { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount }
+    { url: `/dashboard/buddy-lens/reviewer/${reviewId}`, jpAmount },
   );
 }
 
 export async function createBuddyLensReviewerCompletedNotification(
   userId: string,
   domain: string,
-  jpAmount: number
+  jpAmount: number,
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_COMPLETED,
     "BuddyLens Review Reward",
-    `You earned ${jpAmount} Growth Points for reviewing a BuddyLens request in ${domain}.`
+    `You earned ${jpAmount} Growth Points for reviewing a BuddyLens request in ${domain}.`,
   );
 }
 
 export async function createBuddyLensCancelledNotification(
   userId: string,
-  domain: string
+  domain: string,
 ) {
   return createNotification(
     userId,
     NotificationType.BUDDY_LENS_REJECTED,
     "BuddyLens Claim Cancelled",
     `The claim for your BuddyLens request in ${domain} has been cancelled by the requester.`,
-    { url: `/dashboard/buddy-lens/reviewer` }
+    { url: `/dashboard/buddy-lens/reviewer` },
   );
 }

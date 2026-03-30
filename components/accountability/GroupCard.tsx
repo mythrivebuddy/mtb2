@@ -30,8 +30,8 @@ export function GroupCard({ group }: GroupCardProps) {
     const remainingMembers = group.members.length - displayMembers.length;
 
     return (
-        <Link href={`/dashboard/accountability?groupId=${group.id}`} passHref legacyBehavior>
-            <a className="block bg-white p-4 rounded-xl shadow-sm hover:shadow-lg hover:border-blue-400 border border-transparent transition-all duration-300 cursor-pointer transform hover:scale-[1.02]">
+        <Link href={`/dashboard/accountability?groupId=${group.id}`}>
+            <div className="block bg-white p-4 rounded-xl shadow-sm hover:shadow-lg hover:border-blue-400 border border-transparent transition-all duration-300 cursor-pointer transform hover:scale-[1.02]">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0">
                         <div className="flex -space-x-3 items-center flex-shrink-0">
@@ -68,7 +68,7 @@ export function GroupCard({ group }: GroupCardProps) {
                          <p className="text-xs text-gray-500 -mt-1">{group.members.length === 1 ? 'Member' : 'Members'}</p>
                     </div>
                 </div>
-            </a>
+            </div>
         </Link>
     );
 }

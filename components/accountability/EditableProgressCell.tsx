@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSWRConfig } from "swr";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {toast} from "sonner"
+import { toast } from "sonner"
 
 interface EditableProgressCellProps {
   initialValue: string | null | undefined;
@@ -27,7 +27,7 @@ export default function EditableProgressCell({
   placeholderText,
   isGroupBlocked,
 }: EditableProgressCellProps) {
-  
+
   const { mutate } = useSWRConfig();
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialValue || "");
@@ -81,7 +81,7 @@ export default function EditableProgressCell({
     return (
       <form
         onSubmit={(e) => {
-          handleSave(e); 
+          handleSave(e);
         }}
         className="flex flex-col sm:flex-row sm:items-center gap-2 w-full"
       >
@@ -105,6 +105,7 @@ export default function EditableProgressCell({
             type="submit"
             size="sm"
             disabled={isLoading || !value.trim()}
+            className="bg-green-600 hover:bg-green-700"
           >
             {isLoading ? "Saving..." : "Save"}
           </Button>

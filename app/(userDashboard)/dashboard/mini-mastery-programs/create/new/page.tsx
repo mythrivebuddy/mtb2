@@ -319,7 +319,7 @@ useEffect(()=>{
     !!formData.step3 && !!formData.step4 && !!formData.step5;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen flex flex-col items-center py-10 px-4">
       {/* Progress Header */}
       <div className="w-full max-w-4xl mb-10">
         <div className="flex justify-between items-end mb-3">

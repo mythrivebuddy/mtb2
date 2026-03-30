@@ -178,7 +178,7 @@ const ProsperityPage = () => {
                 {...register("description")}
               />
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={mutation.isPending}>
                 {mutation.isPending
                   ? "Submitting..."
                   : "Submit Application (5,000 GP)"}

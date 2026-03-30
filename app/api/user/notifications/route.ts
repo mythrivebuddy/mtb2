@@ -21,13 +21,36 @@ export async function GET() {
         data: { isRead: true },
       }),
     ]);
+    const sanitized = notifications.map((n) => {
+      if (!n.message.includes("undefined")) return n;
 
-    return NextResponse.json(notifications);
+      const metadata = n.metadata as Record<string, unknown> | null;
+      const activity = metadata?.activity as string | undefined;
+      const amount = metadata?.amount as number | undefined;
+
+      if (activity === "STORE_PURCHASE") {
+        return {
+          ...n,
+          message: `You spent ${amount ?? 0} GP for purchasing store items.`,
+        };
+      }
+
+      if (activity === "STORE_SALE") {
+        return {
+          ...n,
+          message: `You earned ${amount ?? 0} GP for selling store items.`,
+        };
+      }
+
+      return n;
+    });
+
+    return NextResponse.json(sanitized);
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return NextResponse.json(
       { error: "Failed to fetch notifications" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
