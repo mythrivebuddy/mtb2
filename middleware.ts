@@ -35,7 +35,7 @@ export default withAuth(
     }
 
     // Block non-COACH users from manage-store
-    if (path.startsWith("/dashboard/manage-store")) {
+    if (path.startsWith("/dashboard/manage-store") || path.startsWith("/dashboard/manage-certificates")) {
       if (!token || token.userType !== "COACH") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
       }
