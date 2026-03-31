@@ -17,16 +17,16 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { earnRateMultiplier: 1, spendRateMultiplier: 1.2 },
-                ENTHUSIAST: { earnRateMultiplier: 1, spendRateMultiplier: 1.2 },
+                COACH: { earnRateMultiplier: 1, spendRateMultiplier: 1 },
+                ENTHUSIAST: { earnRateMultiplier: 1, spendRateMultiplier: 1 },
             },
             paid: {
                 COACH: {
-                    earnRateMultiplier: 1.5,
-                    spendRateMultiplier: 0.8,
+                    earnRateMultiplier: 1,
+                    spendRateMultiplier: 1,
                     bonusEligible: true,
                 },
-                ENTHUSIAST: { earnRateMultiplier: 1.5, spendRateMultiplier: 0.8 },
+                ENTHUSIAST: { earnRateMultiplier: 1, spendRateMultiplier: 1 },
             },
         },
     },
