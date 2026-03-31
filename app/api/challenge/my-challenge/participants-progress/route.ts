@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await checkRole("USER");
- 
 
     const userId = session.user.id;
 
@@ -58,14 +57,32 @@ export async function GET(req: NextRequest) {
       _count: { id: true },
       where: {
         challengeId: { in: challengeIds },
+        status: "COMPLETED", // THIS LINE FIXES EVERYTHING
       },
     });
-
     const completionMap = new Map(
       completionRecords.map((rec) => [
         `${rec.userId}_${rec.challengeId}`,
         rec._count.id,
-      ])
+      ]),
+    );
+    // 4. Get certificate URLs
+    const certificates = await prisma.challengeCertificate.findMany({
+      where: {
+        challengeId: { in: challengeIds },
+      },
+      select: {
+        participantId: true,
+        challengeId: true,
+        certificateUrl: true,
+      },
+    });
+
+    const certificateMap = new Map(
+      certificates.map((c) => [
+        `${c.participantId}_${c.challengeId}`,
+        c.certificateUrl,
+      ]),
     );
 
     // 4. Last active date
@@ -75,7 +92,7 @@ export async function GET(req: NextRequest) {
     });
 
     const lastActiveMap = new Map(
-      lastActive.map((l) => [l.enrollmentId, l._max.lastCompletedAt])
+      lastActive.map((l) => [l.enrollmentId, l._max.lastCompletedAt]),
     );
 
     // 5. Build response
@@ -84,18 +101,16 @@ export async function GET(req: NextRequest) {
         Math.floor(
           (new Date(e.challenge.endDate).getTime() -
             new Date(e.challenge.startDate).getTime()) /
-            (1000 * 60 * 60 * 24)
+            (1000 * 60 * 60 * 24),
         ) + 1;
 
       const completedDays =
         completionMap.get(`${e.userId}_${e.challengeId}`) || 0;
 
-      const completionPercentage = Math.round(
-        (completedDays / totalDays) * 100
-      );
+      const completionPercentage =
+        totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
 
-      const lastActiveDate =
-        lastActiveMap.get(e.id) || e.joinedAt;
+      const lastActiveDate = lastActiveMap.get(e.id) || e.joinedAt;
 
       return {
         participantId: e.user.id,
@@ -110,7 +125,9 @@ export async function GET(req: NextRequest) {
         totalDays,
         completionPercentage,
         isCertificateIssued: e.isCertificateIssued,
-          programType: "CHALLENGE",
+        certificateUrl:
+          certificateMap.get(`${e.user.id}_${e.challenge.id}`) || null,
+        programType: "CHALLENGE",
       };
     });
 
@@ -123,7 +140,7 @@ export async function GET(req: NextRequest) {
     console.error("GET ALL PARTICIPANTS ERROR:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

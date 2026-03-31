@@ -53,7 +53,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import axios from "axios";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -82,7 +82,22 @@ interface Signature {
 interface SignatureResponse {
     signature: Signature;
 }
-
+interface ParticipantsProgressResponse {
+    participantId: string;
+    name: string;
+    email: string;
+    avatar: string | null;
+    programId: string;
+    programTitle: string;
+    joinedAt: string;
+    lastActiveDate: string;
+    completedDays: number;
+    totalDays: number;
+    completionPercentage: number;
+    isCertificateIssued: boolean;
+    programType: "CHALLENGE" | "MMP";
+    certificateUrl?: string | null;
+}
 interface Participant {
     id: string;
     name: string;
@@ -93,6 +108,7 @@ interface Participant {
     isCertificateIssued: boolean;
     programTitle: string;
     programId: string;
+    certificateUrl?: string | null;
 }
 
 interface ProgramRow {
@@ -340,7 +356,7 @@ export function SignatureDialog({
                             )}
 
                             {signatureTextPreview && (
-                                <p className={`text-3xl text-slate-700 ${greatVibes.className}`}>
+                                <p className={`text-3xl text-[#1E3A8A] ${greatVibes.className}`}>
                                     {signatureTextPreview}
                                 </p>
                             )}
@@ -443,15 +459,16 @@ export function SignatureDialog({
 type ParticipantsTableProps = {
     programs: ProgramRow[];
     isLoading?: boolean;
-    onIssue: (participantId: string, programId: string, name: string) => void;
+    onIssue: (participantId: string, programId: string) => void;
+    onPreview: (participantId: string, programId: string, name: string) => void;
+    issuingId: string | null;
     activeTab: "challenges" | "mmp";
     setActiveTab: (tab: "challenges" | "mmp") => void;
 };
 
-function ParticipantsTable({ programs, isLoading = false, onIssue, activeTab, setActiveTab }: ParticipantsTableProps) {
+function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, issuingId, activeTab, setActiveTab }: ParticipantsTableProps) {
     const [filter, setFilter] = useState<FilterType>("all");
     const [search, setSearch] = useState("");
-    const [issuingId, setIssuingId] = useState<string | null>(null);
 
     const allParticipants: Participant[] = programs.flatMap((p) => p.participants);
 
@@ -471,12 +488,10 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, activeTab, se
         return matchFilter && matchSearch;
     });
 
+
+
     const handleIssueClick = (p: Participant) => {
-        setIssuingId(p.id);
-        setTimeout(() => {
-            onIssue(p.id, p.programId, p.name);
-            setIssuingId(null);
-        }, 600);
+        onIssue(p.id, p.programId);
     };
 
     return (
@@ -516,12 +531,12 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, activeTab, se
                     onValueChange={(val) => setActiveTab(val as "challenges" | "mmp")}
                     className="mb-6 flex justify-center "
                 >
-                    <TabsList>
-                        <TabsTrigger value="challenges" className="flex items-center gap-2">
+                    <TabsList className="flex flex-row w-full sm:w-auto">
+                        <TabsTrigger value="challenges" className="flex items-center text-xs sm:text-sm gap-2">
                             <Shield className="w-3.5 h-3.5" />
                             Challenges
                         </TabsTrigger>
-                        <TabsTrigger value="mmp" className="flex items-center gap-2">
+                        <TabsTrigger value="mmp" className="flex items-center text-xs sm:text-sm gap-2">
                             <Layers className="w-3.5 h-3.5" />
                             Mini Mastery Programs
                         </TabsTrigger>
@@ -644,9 +659,14 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, activeTab, se
                                                         )}
 
                                                         {status === "issued" && (
-                                                            <DropdownMenuItem disabled>
-                                                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Already Issued
-                                                            </DropdownMenuItem>
+                                                            <>
+                                                                <DropdownMenuItem
+                                                                    onClick={() => onPreview(p.id, p.programId, p.name)}
+                                                                >
+                                                                    <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+                                                                    Preview Certificate
+                                                                </DropdownMenuItem>
+                                                            </>
                                                         )}
 
                                                         {status === "not_eligible" && (
@@ -678,9 +698,14 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, activeTab, se
 //  MAIN PAGE
 // ─────────────────────────────────────────────
 export default function CertificateManagementPage() {
+    const session = useSession();
     const [activeTab, setActiveTab] = useState<"challenges" | "mmp">("challenges");
     const [sigDialogOpen, setSigDialogOpen] = useState(false);
-    const session = useSession();
+    const [issuingId, setIssuingId] = useState<string | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [previewParticipantName, setPreviewParticipantName] = useState("");
+
     const { data, isLoading: isChallengesLoading } = useQuery({
         queryKey: ["participants-progress"],
         queryFn: fetchParticipantsProgress,
@@ -693,6 +718,78 @@ export default function CertificateManagementPage() {
             return res.data;
         }
     })
+
+    const issueCertificateMutation = useMutation({
+        mutationFn: async ({
+            participantId,
+            challengeId,
+            issuedById,
+        }: {
+            participantId: string;
+            challengeId: string;
+            issuedById: string;
+        }) => {
+            setIssuingId(participantId);
+
+            // SHOW LOADING TOAST
+            toast.loading("Generating certificate...", {
+                id: "cert-issue",
+            });
+
+            const res = await axios.post("/api/challenge/certificates/generate", {
+                participantId,
+                challengeId,
+                issuedById,
+            });
+
+            return res.data;
+        },
+
+        onSuccess: (result, variables) => {
+            setIssuingId(null);
+
+            // UPDATE CACHE
+            queryClient.setQueryData<ParticipantsProgressResponse[]>(
+                ["participants-progress"],
+                (oldData) => {
+                    if (!oldData) return oldData;
+
+                    return oldData.map((p) =>
+                        p.participantId === variables.participantId &&
+                            p.programId === variables.challengeId
+                            ? {
+                                ...p,
+                                isCertificateIssued: true,
+                                certificateUrl: result.pngUrl,
+                            }
+                            : p
+                    );
+                }
+            );
+
+            const participantName =
+                allParticipants.find((p) => p.id === variables.participantId)?.name ??
+                "Participant";
+
+            setPreviewUrl(result.pngUrl);
+            setPreviewParticipantName(participantName);
+            setPreviewOpen(true);
+
+            // UPDATE TOAST → SUCCESS
+            toast.success(`Certificate issued to ${participantName}`, {
+                id: "cert-issue",
+            });
+        },
+
+        onError: () => {
+            setIssuingId(null);
+
+            // UPDATE TOAST → ERROR
+            toast.error("Failed to issue certificate", {
+                id: "cert-issue",
+            });
+        },
+    });
     const signaturePreviewData =
         signatureData?.signature?.type === "IMAGE" ||
             signatureData?.signature?.type === "DRAWN"
@@ -732,6 +829,7 @@ export default function CertificateManagementPage() {
                 isCertificateIssued: p.isCertificateIssued,
                 programTitle: p.programTitle,
                 programId: p.programId,
+                certificateUrl: p.certificateUrl,
             });
         });
 
@@ -755,11 +853,32 @@ export default function CertificateManagementPage() {
 
 
 
-    const handleIssue = (participantId: string, programId: string, name: string) => {
-        toast.success(`Certificate issued to ${name}!`);
+    const handleIssue = (participantId: string, programId: string) => {
+        issueCertificateMutation.mutate({
+            participantId,
+            challengeId: programId,
+            issuedById: session.data?.user?.id as string,
+        });
     };
 
+    const handlePreview = (
+        participantId: string,
+        programId: string,
+        name: string
+    ) => {
+        const participant = allParticipants.find(
+            (p) => p.id === participantId && p.programId === programId
+        );
 
+        if (!participant?.certificateUrl) {
+            toast.error("Certificate not found");
+            return;
+        }
+
+        setPreviewUrl(participant.certificateUrl);
+        setPreviewParticipantName(name);
+        setPreviewOpen(true);
+    };
 
     const allParticipants = activeData.flatMap((c) => c.participants);
     const totalEligible = allParticipants.filter(
@@ -816,7 +935,9 @@ export default function CertificateManagementPage() {
                     const form = new FormData();
                     form.append("type", "IMAGE");
                     form.append("file", file);
+
                     const imageUrl = await uploadSignatureAxios(form);
+
                     if (imageUrl) {
                         queryClient.setQueryData<SignatureResponse>(["coach-signature"], (oldData) => {
                             if (!oldData) return oldData;
@@ -834,6 +955,7 @@ export default function CertificateManagementPage() {
                         });
 
                         toast.success("Signature image saved.");
+                        setSigDialogOpen(false); // ← ADD THIS LINE
                     }
                 }}
                 onSaveText={async (text) => {
@@ -893,6 +1015,24 @@ export default function CertificateManagementPage() {
                     }
                 }}
             />
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>Certificate Preview</DialogTitle>
+                        <DialogDescription>
+                            Certificate issued to {previewParticipantName}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {previewUrl && (
+                        <img
+                            src={previewUrl}
+                            alt="Certificate Preview"
+                            className="w-full rounded-lg border"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
 
             <div className="p-4 sm:p-6 max-w-6xl mx-auto">
                 {/* ── Page Header ── */}
@@ -970,7 +1110,9 @@ export default function CertificateManagementPage() {
                         programs={activeData}
                         isLoading={isActiveLoading}
                         onIssue={handleIssue}
+                        issuingId={issuingId}
                         activeTab={activeTab}
+                        onPreview={handlePreview}
                         setActiveTab={setActiveTab}
                     />
                 </div>
