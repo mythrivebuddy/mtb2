@@ -30,7 +30,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -44,8 +43,6 @@ import {
     Search,
     CheckCircle2,
     XCircle,
-    Shield,
-    Layers,
     MoreHorizontal,
     Loader2,
     User,
@@ -53,11 +50,15 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import axios from "axios";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 import { Great_Vibes } from "next/font/google";
+import {
+    Pagination,
+} from "@/components/ui/pagination";
 
 const greatVibes = Great_Vibes({
     subsets: ["latin"],
@@ -69,6 +70,21 @@ const greatVibes = Great_Vibes({
 // ─────────────────────────────────────────────
 type FilterType = "all" | "eligible" | "not_eligible" | "issued";
 type SignatureType = "DRAWN" | "IMAGE" | "TEXT";
+type activeTabType = "all" | "challenges" | "mmp"
+
+function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+
+        return () => clearTimeout(timer);
+    }, [value, delay]);
+
+    return debouncedValue;
+}
 
 interface Signature {
     id: string;
@@ -108,6 +124,7 @@ interface Participant {
     isCertificateIssued: boolean;
     programTitle: string;
     programId: string;
+    programType: "CHALLENGE" | "MMP";
     certificateUrl?: string | null;
 }
 
@@ -121,38 +138,6 @@ interface ProgramRow {
 
 
 // ─────────────────────────────────────────────
-//  STATIC DATA
-// ─────────────────────────────────────────────
-
-const STATIC_MMP: ProgramRow[] = [
-    {
-        id: "mmp-1",
-        title: "Public Speaking Mastery",
-        startDate: "2025-01-15",
-        endDate: "2025-03-15",
-        participants: [
-            { id: "m1", name: "Ishaan Chopra", email: "ishaan@example.com", completionPercentage: 90, joinedDate: "2025-01-15", lastActiveDate: "2025-03-14", isCertificateIssued: true, programTitle: "Public Speaking Mastery", programId: "mmp-1" },
-            { id: "m2", name: "Pooja Bhatt", email: "pooja@example.com", completionPercentage: 55, joinedDate: "2025-01-16", lastActiveDate: "2025-02-20", isCertificateIssued: false, programTitle: "Public Speaking Mastery", programId: "mmp-1" },
-            { id: "m3", name: "Siddharth Tiwari", email: "sid@example.com", completionPercentage: 82, joinedDate: "2025-01-15", lastActiveDate: "2025-03-10", isCertificateIssued: false, programTitle: "Public Speaking Mastery", programId: "mmp-1" },
-            { id: "m4", name: "Meera Desai", email: "meera@example.com", completionPercentage: 38, joinedDate: "2025-01-20", lastActiveDate: "2025-02-05", isCertificateIssued: false, programTitle: "Public Speaking Mastery", programId: "mmp-1" },
-        ],
-    },
-    {
-        id: "mmp-2",
-        title: "Digital Marketing Bootcamp",
-        startDate: "2025-02-10",
-        endDate: "2025-04-10",
-        participants: [
-            { id: "m5", name: "Aditya Kumar", email: "aditya@example.com", completionPercentage: 100, joinedDate: "2025-02-10", lastActiveDate: "2025-04-09", isCertificateIssued: true, programTitle: "Digital Marketing Bootcamp", programId: "mmp-2" },
-            { id: "m6", name: "Riya Shah", email: "riya@example.com", completionPercentage: 77, joinedDate: "2025-02-11", lastActiveDate: "2025-04-05", isCertificateIssued: false, programTitle: "Digital Marketing Bootcamp", programId: "mmp-2" },
-            { id: "m7", name: "Harsh Pandey", email: "harsh@example.com", completionPercentage: 65, joinedDate: "2025-02-10", lastActiveDate: "2025-03-28", isCertificateIssued: false, programTitle: "Digital Marketing Bootcamp", programId: "mmp-2" },
-            { id: "m8", name: "Simran Kaur", email: "simran@example.com", completionPercentage: 41, joinedDate: "2025-02-15", lastActiveDate: "2025-03-01", isCertificateIssued: false, programTitle: "Digital Marketing Bootcamp", programId: "mmp-2" },
-            { id: "m9", name: "Varun Mathur", email: "varun@example.com", completionPercentage: 88, joinedDate: "2025-02-10", lastActiveDate: "2025-04-08", isCertificateIssued: false, programTitle: "Digital Marketing Bootcamp", programId: "mmp-2" },
-        ],
-    },
-];
-
-// ─────────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────────
 const getStatus = (p: Participant): "eligible" | "not_eligible" | "issued" => {
@@ -161,19 +146,40 @@ const getStatus = (p: Participant): "eligible" | "not_eligible" | "issued" => {
     return "not_eligible";
 };
 
-const fetchChallengeParticipantsProgress = async () => {
-    const res = await axios.get(
-        "/api/challenge/my-challenge/participants-progress"
-    );
-    return res.data.participants;
-};
-const fetchMMPParticipantsProgress = async () => {
-    const res = await axios.get(
-        "/api/mini-mastery-programs/participants-progress"
-    );
-    return res.data.participants;
+
+
+type FetchParticipantsParams = {
+    type: "all" | "challenges" | "mmp";
+    page: number;
+    limit: number;
+    search: string;
+    status: "all" | "eligible" | "not_eligible" | "issued";
+    from?: string;
+    to?: string;
 };
 
+const fetchParticipants = async ({
+    type,
+    page,
+    limit,
+    search,
+    status,
+    from,
+    to,
+}: FetchParticipantsParams): Promise<PaginatedResponse> => {
+    const res = await axios.get(`/api/challenge/certificates/participant-progress`, {
+        params: { type, page, limit, search, status, from, to },
+    });
+
+    return res.data;
+};
+
+type PaginatedResponse = {
+    participants: ParticipantsProgressResponse[];
+    total: number;
+    totalPages: number;
+    page: number;
+};
 // ─────────────────────────────────────────────
 //  SIGNATURE PAD COMPONENT
 // ─────────────────────────────────────────────
@@ -467,56 +473,88 @@ type ParticipantsTableProps = {
     onIssue: (participantId: string, programId: string) => void;
     onPreview: (participantId: string, programId: string, name: string) => void;
     issuingId: string | null;
-    activeTab: "challenges" | "mmp";
-    setActiveTab: (tab: "challenges" | "mmp") => void;
+    activeTab: activeTabType;
+    setActiveTab: (tab: activeTabType) => void;
+
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+
+    limit: number;
+    setLimit: (limit: number) => void;
+    search: string;
+    onSearchChange: (v: string) => void;
+    filter: FilterType;
+    onFilterChange: (v: FilterType) => void;
+
+    // ADD THESE
+    dateMode: "days" | "custom";
+    setDateMode: (v: "days" | "custom") => void;
+    dateFilter: string;
+    setDateFilter: (v: string) => void;
+    customFrom: string;
+    setCustomFrom: (v: string) => void;
+    customTo: string;
+    setCustomTo: (v: string) => void;
 };
+function ParticipantsTable({
+    programs,
+    isLoading = false,
+    onIssue,
+    onPreview,
+    issuingId,
+    activeTab,
+    setActiveTab,
+    currentPage,
+    totalPages,
+    onPageChange,
+    limit,
+    setLimit,
+    search,
+    onSearchChange,
+    filter,
+    onFilterChange,
 
-function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, issuingId, activeTab, setActiveTab }: ParticipantsTableProps) {
-    const [filter, setFilter] = useState<FilterType>("all");
-    const [search, setSearch] = useState("");
-
-    const allParticipants: Participant[] = programs.flatMap((p) => p.participants);
-
-    const filtered = allParticipants.filter((p) => {
-        const matchFilter =
-            filter === "all" ||
-            (filter === "eligible" && getStatus(p) === "eligible") ||
-            (filter === "not_eligible" && getStatus(p) === "not_eligible") ||
-            (filter === "issued" && getStatus(p) === "issued");
-
-        const matchSearch =
-            search === "" ||
-            p.name.toLowerCase().includes(search.toLowerCase()) ||
-            p.email.toLowerCase().includes(search.toLowerCase()) ||
-            p.programTitle.toLowerCase().includes(search.toLowerCase());
-
-        return matchFilter && matchSearch;
-    });
+    // ADD THESE
+    dateMode,
+    setDateMode,
+    dateFilter,
+    setDateFilter,
+    customFrom,
+    setCustomFrom,
+    customTo,
+    setCustomTo
+}: ParticipantsTableProps) {
 
 
+    const paginatedData = useMemo(() => {
+        return programs.flatMap((p) => p.participants);
+    }, [programs]);
 
     const handleIssueClick = (p: Participant) => {
         onIssue(p.id, p.programId);
     };
-
+    useEffect(() => {
+        onPageChange(1);
+    }, [filter, activeTab, limit, dateMode, dateFilter, customFrom, customTo]);
     return (
         <div className="space-y-4">
             {/* Filter bar */}
             <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
+                {/* Search */}
+                <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                     <Input
                         placeholder="Search by name, challenge or program…"
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 h-9 text-sm"
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        className="pl-9 h-9 text-sm w-full"
                     />
                 </div>
-                <Select
-                    value={filter}
-                    onValueChange={(v) => setFilter(v as FilterType)}
-                >
-                    <SelectTrigger className="w-44 h-9 text-sm">
+
+                {/* Status Filter */}
+                <Select value={filter} onValueChange={(v) => onFilterChange(v as FilterType)}>
+                    <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
                         <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -526,6 +564,88 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                         <SelectItem value="issued">Issued</SelectItem>
                     </SelectContent>
                 </Select>
+
+                {/* Limit */}
+                <Select
+                    value={String(limit)}
+                    onValueChange={(val) => {
+                        setLimit(Number(val));
+                        onPageChange(1);
+                    }}
+                >
+                    <SelectTrigger className="w-full sm:w-[90px] h-9 text-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="5">5 / page</SelectItem>
+                        <SelectItem value="10">10 / page</SelectItem>
+                        <SelectItem value="20">20 / page</SelectItem>
+                        <SelectItem value="50">50 / page</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                {/* Date Mode */}
+                <Select
+                    value={dateMode}
+                    onValueChange={(val) => {
+                        setDateMode(val as "days" | "custom");
+                        onPageChange(1);
+                    }}
+                >
+                    <SelectTrigger className="w-full sm:w-[130px] h-9 text-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="days">Last Days</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                {/* Days Filter */}
+                {dateMode === "days" && (
+                    <Select
+                        value={dateFilter}
+                        onValueChange={(val) => {
+                            setDateFilter(val);
+                            onPageChange(1);
+                        }}
+                    >
+                        <SelectTrigger className="w-full sm:w-[140px] h-9 text-sm">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="30">Last 30 Days</SelectItem>
+                            <SelectItem value="60">Last 60 Days</SelectItem>
+                            <SelectItem value="90">Last 90 Days</SelectItem>
+                            <SelectItem value="180">Last 6 Months</SelectItem>
+                            <SelectItem value="365">Last 1 Year</SelectItem>
+                        </SelectContent>
+                    </Select>
+                )}
+
+                {/* Custom Date */}
+                {dateMode === "custom" && (
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Input
+                            type="date"
+                            value={customFrom}
+                            onChange={(e) => {
+                                setCustomFrom(e.target.value);
+                                onPageChange(1);
+                            }}
+                            className="h-9 text-sm w-full"
+                        />
+                        <Input
+                            type="date"
+                            value={customTo}
+                            onChange={(e) => {
+                                setCustomTo(e.target.value);
+                                onPageChange(1);
+                            }}
+                            className="h-9 text-sm w-full"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Table */}
@@ -533,22 +653,14 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                 {/* ── Tabs ── */}
                 <Tabs
                     value={activeTab}
-                    onValueChange={(val) => setActiveTab(val as "challenges" | "mmp")}
-                    className="mb-6 flex justify-center "
+                    onValueChange={(val) => setActiveTab(val as "all" | "challenges" | "mmp")}
+                    className="mb-6 flex justify-center"
                 >
                     <TabsList className="flex flex-row w-full sm:w-auto">
-                        <TabsTrigger value="challenges" className="flex items-center text-xs sm:text-sm gap-2">
-                            <Shield className="w-3.5 h-3.5" />
-                            Challenges
-                        </TabsTrigger>
-                        <TabsTrigger value="mmp" className="flex items-center text-xs sm:text-sm gap-2">
-                            <Layers className="w-3.5 h-3.5" />
-                            Mini Mastery Programs
-                        </TabsTrigger>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="challenges">Challenges</TabsTrigger>
+                        <TabsTrigger value="mmp">Mini Mastery Programs</TabsTrigger>
                     </TabsList>
-
-                    <TabsContent value="challenges" />
-                    <TabsContent value="mmp" />
                 </Tabs>
                 <CardContent>
                     <Table className="min-w-[780px]">
@@ -574,19 +686,19 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : filtered.length === 0 ? (
+                            ) : paginatedData.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                         No participants found matching your criteria.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filtered.map((p) => {
+                                paginatedData.map((p) => {
                                     const status = getStatus(p);
                                     const isIssuingThis = issuingId === p.id;
 
                                     return (
-                                        <TableRow key={`${p.id}-${p.programId}`}>
+                                        <TableRow key={`${p.id}-${p.programId}-${p.programType}`}>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0">
@@ -621,7 +733,7 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
 
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                   
+
                                                     <span className="text-xs font-semibold text-slate-600">
                                                         {p.completionPercentage}%
                                                     </span>
@@ -645,7 +757,7 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                                                        {activeTab === "challenges" && status === "eligible" && (
+                                                        {p.programType === "CHALLENGE" && status === "eligible" && (
                                                             <DropdownMenuItem
                                                                 onClick={() => handleIssueClick(p)}
                                                                 disabled={isIssuingThis}
@@ -683,6 +795,17 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                             )}
                         </TableBody>
                     </Table>
+                    <div className="flex flex-col items-center gap-2 pt-4">
+                        <div className="text-sm text-muted-foreground">
+                            Page {currentPage} of {totalPages}
+                        </div>
+
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={onPageChange}
+                        />
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -694,18 +817,67 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
 // ─────────────────────────────────────────────
 export default function CertificateManagementPage() {
     const session = useSession();
-    const [activeTab, setActiveTab] = useState<"challenges" | "mmp">("challenges");
+    const [activeTab, setActiveTab] = useState<activeTabType>("all");
     const [sigDialogOpen, setSigDialogOpen] = useState(false);
     const [issuingId, setIssuingId] = useState<string | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewParticipantName, setPreviewParticipantName] = useState("");
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [filter, setFilter] = useState<FilterType>("all");
+    const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 500);
+    const [dateMode, setDateMode] = useState<"days" | "custom">("days");
+    const [dateFilter, setDateFilter] = useState("30");
+    const [customFrom, setCustomFrom] = useState<string>("");
+    const [customTo, setCustomTo] = useState<string>("");
 
-    const { data, isLoading: isChallengesLoading } = useQuery({
-        queryKey: ["participants-progress"],
-        queryFn: fetchChallengeParticipantsProgress,
-        enabled: !!session?.data?.user && activeTab === "challenges",
+    const sharedOptions: Omit<
+        UseQueryOptions<PaginatedResponse>,
+        "queryKey" | "queryFn"
+    > = {
+        staleTime: 2 * 60 * 1000,
+        placeholderData: (prev) => prev,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        refetchOnMount: false,
+    };
+
+    const { from, to } = useMemo(() => {
+        if (dateMode === "custom" && customFrom && customTo) {
+            return {
+                from: new Date(customFrom).toISOString(),
+                to: new Date(customTo).toISOString(),
+            };
+        }
+
+        const toDate = new Date();
+        const fromDate = new Date();
+        fromDate.setDate(toDate.getDate() - Number(dateFilter));
+
+        return {
+            from: fromDate.toISOString(),
+            to: toDate.toISOString(),
+        };
+    }, [dateMode, dateFilter, customFrom, customTo]);
+
+    const { data, isLoading } = useQuery<PaginatedResponse>({
+        queryKey: ["pp", activeTab, page, limit, debouncedSearch, filter, from, to],
+        queryFn: () =>
+            fetchParticipants({
+                type: activeTab,
+                page,
+                limit,
+                search: debouncedSearch,
+                status: filter,
+                from,
+                to,
+            }),
+        ...sharedOptions,
+
     });
+
     const { data: signatureData } = useQuery<SignatureResponse>({
         queryKey: ["coach-signature"],
         queryFn: async () => {
@@ -713,11 +885,7 @@ export default function CertificateManagementPage() {
             return res.data;
         }
     });
-    const { data: mmpData, isLoading: isMmpLoading } = useQuery({
-        queryKey: ["mmp-participants-progress"],
-        queryFn: fetchMMPParticipantsProgress,
-        enabled: !!session?.data?.user,
-    });
+
 
     const issueCertificateMutation = useMutation({
         mutationFn: async ({
@@ -749,21 +917,20 @@ export default function CertificateManagementPage() {
             setIssuingId(null);
 
             // UPDATE CACHE
-            queryClient.setQueryData<ParticipantsProgressResponse[]>(
-                ["participants-progress"],
-                (oldData) => {
+            queryClient.setQueriesData(
+                { queryKey: ["pp"] },
+                (oldData: PaginatedResponse | undefined) => {
                     if (!oldData) return oldData;
 
-                    return oldData.map((p) =>
-                        p.participantId === variables.participantId &&
-                            p.programId === variables.challengeId
-                            ? {
-                                ...p,
-                                isCertificateIssued: true,
-                                certificateUrl: result.pngUrl,
-                            }
-                            : p
-                    );
+                    return {
+                        ...oldData,
+                        participants: oldData.participants.map((p) =>
+                            p.participantId === variables.participantId &&
+                                p.programId === variables.challengeId
+                                ? { ...p, isCertificateIssued: true, certificateUrl: result.pngUrl }
+                                : p
+                        ),
+                    };
                 }
             );
 
@@ -800,22 +967,14 @@ export default function CertificateManagementPage() {
         signatureData?.signature?.type === "TEXT"
             ? signatureData?.signature?.text
             : null;
-    const { challengePrograms, mmpPrograms } = useMemo(() => {
-        const challengeSource = data || [];
-        const mmpSource = mmpData || [];
-        const combined = [...challengeSource, ...mmpSource];
+    const groupedPrograms = useMemo(() => {
+        if (!data?.participants) return [];
 
-        if (combined.length === 0)
-            return { challengePrograms: [], mmpPrograms: [] };
+        const grouped: Record<string, ProgramRow> = {};
 
-        const challengeGrouped: Record<string, ProgramRow> = {};
-        const mmpGrouped: Record<string, ProgramRow> = {};
-
-        combined.forEach((p: any) => {
-            const target = p.programType === "CHALLENGE" ? challengeGrouped : mmpGrouped;
-
-            if (!target[p.programId]) {
-                target[p.programId] = {
+        data.participants.forEach((p: ParticipantsProgressResponse) => {
+            if (!grouped[p.programId]) {
+                grouped[p.programId] = {
                     id: p.programId,
                     title: p.programTitle,
                     startDate: new Date().toISOString(),
@@ -824,7 +983,7 @@ export default function CertificateManagementPage() {
                 };
             }
 
-            target[p.programId].participants.push({
+            grouped[p.programId].participants.push({
                 id: p.participantId,
                 name: p.name,
                 email: p.email,
@@ -835,27 +994,19 @@ export default function CertificateManagementPage() {
                 programTitle: p.programTitle,
                 programId: p.programId,
                 certificateUrl: p.certificateUrl,
+                programType: p.programType,
             });
         });
 
-        return {
-            challengePrograms: Object.values(challengeGrouped),
-            mmpPrograms: Object.values(mmpGrouped),
-        };
-    }, [data, mmpData]);
+        return Object.values(grouped);
+    }, [data]);
 
-    // FINAL separation
-    const activeData =
-        activeTab === "challenges" ? challengePrograms : mmpPrograms;
-
-    const isActiveLoading =
-        activeTab === "challenges" ? isChallengesLoading : isMmpLoading;
-
+    const activeData = groupedPrograms;
+    const isActiveLoading = isLoading;
     // Signature State Handlers
     const [showSignaturePad, setShowSignaturePad] = useState(false);
     const [isSignatureUploading, setIsSignatureUploading] = useState(false);
     const queryClient = useQueryClient();
-
 
 
     const handleIssue = (participantId: string, programId: string) => {
@@ -925,6 +1076,10 @@ export default function CertificateManagementPage() {
             setIsSignatureUploading(false);
         }
     };
+
+    useEffect(() => {
+        setPage(1);
+    }, [activeTab]);
 
     return (
         <>
@@ -1119,6 +1274,23 @@ export default function CertificateManagementPage() {
                         activeTab={activeTab}
                         onPreview={handlePreview}
                         setActiveTab={setActiveTab}
+                        currentPage={page}
+                        totalPages={data?.totalPages || 1}
+                        onPageChange={setPage}
+                        limit={limit}
+                        setLimit={setLimit}
+                        search={search}
+                        onSearchChange={setSearch}
+                        filter={filter}
+                        onFilterChange={setFilter}
+                        dateMode={dateMode}
+                        setDateMode={setDateMode}
+                        dateFilter={dateFilter}
+                        setDateFilter={setDateFilter}
+                        customFrom={customFrom}
+                        setCustomFrom={setCustomFrom}
+                        customTo={customTo}
+                        setCustomTo={setCustomTo}
                     />
                 </div>
             </div>
