@@ -161,13 +161,18 @@ const getStatus = (p: Participant): "eligible" | "not_eligible" | "issued" => {
     return "not_eligible";
 };
 
-const fetchParticipantsProgress = async () => {
+const fetchChallengeParticipantsProgress = async () => {
     const res = await axios.get(
         "/api/challenge/my-challenge/participants-progress"
     );
     return res.data.participants;
 };
-
+const fetchMMPParticipantsProgress = async () => {
+    const res = await axios.get(
+        "/api/mini-mastery-programs/participants-progress"
+    );
+    return res.data.participants;
+};
 
 // ─────────────────────────────────────────────
 //  SIGNATURE PAD COMPONENT
@@ -616,15 +621,7 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
 
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="w-20 h-1.5 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full ${p.completionPercentage >= 75
-                                                                ? "bg-emerald-500"
-                                                                : "bg-rose-400"
-                                                                }`}
-                                                            style={{ width: `${p.completionPercentage}%` }}
-                                                        />
-                                                    </div>
+                                                   
                                                     <span className="text-xs font-semibold text-slate-600">
                                                         {p.completionPercentage}%
                                                     </span>
@@ -648,7 +645,7 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                                                        {status === "eligible" && (
+                                                        {activeTab === "challenges" && status === "eligible" && (
                                                             <DropdownMenuItem
                                                                 onClick={() => handleIssueClick(p)}
                                                                 disabled={isIssuingThis}
@@ -658,15 +655,13 @@ function ParticipantsTable({ programs, isLoading = false, onIssue, onPreview, is
                                                             </DropdownMenuItem>
                                                         )}
 
-                                                        {status === "issued" && (
-                                                            <>
-                                                                <DropdownMenuItem
-                                                                    onClick={() => onPreview(p.id, p.programId, p.name)}
-                                                                >
-                                                                    <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                                                                    Preview Certificate
-                                                                </DropdownMenuItem>
-                                                            </>
+                                                        {p.isCertificateIssued && (
+                                                            <DropdownMenuItem
+                                                                onClick={() => onPreview(p.id, p.programId, p.name)}
+                                                            >
+                                                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+                                                                Preview Certificate
+                                                            </DropdownMenuItem>
                                                         )}
 
                                                         {status === "not_eligible" && (
@@ -708,7 +703,7 @@ export default function CertificateManagementPage() {
 
     const { data, isLoading: isChallengesLoading } = useQuery({
         queryKey: ["participants-progress"],
-        queryFn: fetchParticipantsProgress,
+        queryFn: fetchChallengeParticipantsProgress,
         enabled: !!session?.data?.user && activeTab === "challenges",
     });
     const { data: signatureData } = useQuery<SignatureResponse>({
@@ -717,7 +712,12 @@ export default function CertificateManagementPage() {
             const res = await axios.get(`/api/signature`);
             return res.data;
         }
-    })
+    });
+    const { data: mmpData, isLoading: isMmpLoading } = useQuery({
+        queryKey: ["mmp-participants-progress"],
+        queryFn: fetchMMPParticipantsProgress,
+        enabled: !!session?.data?.user,
+    });
 
     const issueCertificateMutation = useMutation({
         mutationFn: async ({
@@ -801,12 +801,17 @@ export default function CertificateManagementPage() {
             ? signatureData?.signature?.text
             : null;
     const { challengePrograms, mmpPrograms } = useMemo(() => {
-        if (!data) return { challengePrograms: [], mmpPrograms: [] };
+        const challengeSource = data || [];
+        const mmpSource = mmpData || [];
+        const combined = [...challengeSource, ...mmpSource];
+
+        if (combined.length === 0)
+            return { challengePrograms: [], mmpPrograms: [] };
 
         const challengeGrouped: Record<string, ProgramRow> = {};
         const mmpGrouped: Record<string, ProgramRow> = {};
 
-        data.forEach((p: any) => {
+        combined.forEach((p: any) => {
             const target = p.programType === "CHALLENGE" ? challengeGrouped : mmpGrouped;
 
             if (!target[p.programId]) {
@@ -837,14 +842,14 @@ export default function CertificateManagementPage() {
             challengePrograms: Object.values(challengeGrouped),
             mmpPrograms: Object.values(mmpGrouped),
         };
-    }, [data]);
+    }, [data, mmpData]);
 
     // FINAL separation
     const activeData =
         activeTab === "challenges" ? challengePrograms : mmpPrograms;
 
     const isActiveLoading =
-        activeTab === "challenges" ? isChallengesLoading : false;
+        activeTab === "challenges" ? isChallengesLoading : isMmpLoading;
 
     // Signature State Handlers
     const [showSignaturePad, setShowSignaturePad] = useState(false);
