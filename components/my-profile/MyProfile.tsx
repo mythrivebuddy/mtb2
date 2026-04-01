@@ -186,7 +186,7 @@ export default function MyProfile() {
   // --- Create Profile View (Now also mobile responsive) ---
   if (hasProfile === false) {
     return (
-      <div className="max-w-3xl mx-auto p-4 sm:p-6">
+      <div className="max-w-8xl mx-auto p-4 sm:p-6">
         <Card className="rounded-2xl shadow-md">
           <CardHeader>
             <CardTitle className="text-2xl">Create Your Profile</CardTitle>
@@ -277,7 +277,7 @@ export default function MyProfile() {
 
   // --- View/Edit Profile View (With Mobile Enhancements) ---
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6">
+    <div className="max-w-8xl mx-auto p-4 sm:p-6">
       <Card className="rounded-2xl shadow-md">
         {/* Responsive Card Header */}
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -294,7 +294,7 @@ export default function MyProfile() {
                     </Button>
                   </Link>
                 )}
-                <Button onClick={toggleEditMode} className="flex w-full items-center justify-center gap-2">
+                <Button onClick={toggleEditMode} className="flex w-full bg-green-600 hover:bg-green-700 items-center justify-center gap-2">
                   <Pencil size={16} />
                   Edit Profile
                 </Button>

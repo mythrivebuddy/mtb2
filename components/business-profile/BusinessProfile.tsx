@@ -194,7 +194,7 @@ export default function BusinessProfileLayout() {
 
   return (
     <FormProvider {...methods}>
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-8xl mx-auto p-6">
         <ProgressBar step={step} onStepClick={(s) => setStep(s)} />
 
         {step === 1 && <Step1Identity next={() => setStep(2)} />}

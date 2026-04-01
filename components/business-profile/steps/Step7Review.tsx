@@ -87,7 +87,7 @@ export default function Step7Trust({ back, submit, isLoading }: Step6TrustProps)
   }
 
   return (
-    <div className="bg-white p-8 rounded-2xl shadow-md max-w-3xl mx-auto">
+    <div className="bg-white p-8 rounded-2xl shadow-md  mx-auto">
 
       {/* Header */}
       <div className="mb-6">

@@ -147,12 +147,12 @@ export default function AccountabilityHomePage() {
 
   return (
     <motion.main
-      className="p-8 md:p-12 min-h-full"
+      className="px-4 sm:p-8 md:py-12 min-h-full"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="max-w-7xl mx-auto grid  my-4 grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-12">
+      <div className="max-w-8xl mx-auto grid  my-4 grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-12">
         {/* === Column 2: Groups You're A Member Of === */}
         <section>
           <h2 className="text-2xl font-semibold text-gray-800 mb-5">
