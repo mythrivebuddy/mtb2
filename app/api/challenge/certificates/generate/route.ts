@@ -95,10 +95,6 @@ export async function POST(req: NextRequest) {
       baseUrl: process.env.NEXT_PUBLIC_BASE_URL!,
     });
 
-    console.log("SIGNATURE RECORD:", sig);
-    console.log("signatureUrl:", signatureUrl);
-    console.log("signatureText:", signatureText);
-    console.log("signatureDrawn:", signatureDrawn);
 
     const pngBuffer = Buffer.from(await og.arrayBuffer());
 

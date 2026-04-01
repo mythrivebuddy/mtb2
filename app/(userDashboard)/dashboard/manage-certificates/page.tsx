@@ -25,13 +25,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +36,6 @@ import {
     Search,
     CheckCircle2,
     XCircle,
-    MoreHorizontal,
     Loader2,
     User,
     Pencil,
@@ -59,6 +51,9 @@ import { Great_Vibes } from "next/font/google";
 import {
     Pagination,
 } from "@/components/ui/pagination";
+import { getAvatarColor, getInitials } from "@/utils/getInitials";
+import Image from "next/image";
+import Link from "next/link";
 
 const greatVibes = Great_Vibes({
     subsets: ["latin"],
@@ -118,6 +113,7 @@ interface Participant {
     id: string;
     name: string;
     email: string;
+    avatar?: string | null;
     completionPercentage: number;
     joinedDate: string;
     lastActiveDate: string;
@@ -668,7 +664,11 @@ function ParticipantsTable({
                             <TableRow>
                                 <TableHead className="w-[250px]">Participant</TableHead>
                                 <TableHead>
-                                    {activeTab === "challenges" ? "Challenge" : "Program"}
+                                    {activeTab === "all"
+                                        ? "Challenge / Program"
+                                        : activeTab === "challenges"
+                                            ? "Challenge"
+                                            : "Program"}
                                 </TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Progress</TableHead>
@@ -689,7 +689,7 @@ function ParticipantsTable({
                             ) : paginatedData.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                        No participants found matching your criteria.
+                                        No participants found matching your filters.
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -701,11 +701,26 @@ function ParticipantsTable({
                                         <TableRow key={`${p.id}-${p.programId}-${p.programType}`}>
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0">
-                                                        <User className="h-4 w-4 text-slate-500" />
+                                                    <div
+                                                        className={`relative h-8 w-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-[11px] font-semibold
+                                                    ${p.avatar ? "" : getAvatarColor(p.name)}`}
+                                                    >
+                                                        {p.avatar ? (
+                                                            <Image
+                                                                src={p.avatar}
+                                                                alt={p.name}
+                                                                fill
+                                                                sizes="32px"
+                                                                className="object-cover"
+                                                            />
+                                                        ) : (
+                                                            <span className="leading-none">
+                                                                {getInitials(p.name)}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col">
-                                                        <span className="text-sm font-medium text-slate-900">{p.name}</span>
+                                                        <Link href={`/profile/${p?.id}`} target="_blank" className="text-sm font-medium text-slate-900">{p.name}</Link>
                                                         <span className="text-xs text-muted-foreground">{p.email}</span>
                                                     </div>
                                                 </div>
@@ -747,47 +762,39 @@ function ParticipantsTable({
                                             </TableCell>
 
                                             <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                <div className="flex justify-end items-center gap-3 text-xs font-medium">
 
-                                                        {p.programType === "CHALLENGE" && status === "eligible" && (
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleIssueClick(p)}
-                                                                disabled={isIssuingThis}
-                                                            >
-                                                                <Award className="mr-2 h-4 w-4 text-indigo-600" />
-                                                                {isIssuingThis ? "Issuing..." : "Issue Certificate"}
-                                                            </DropdownMenuItem>
-                                                        )}
+                                                    {p.programType === "CHALLENGE" && status === "eligible" && (
+                                                        <span
+                                                            onClick={() => handleIssueClick(p)}
+                                                            className={`cursor-pointer text-indigo-600 hover:text-indigo-800 ${isIssuingThis ? "opacity-50 pointer-events-none" : ""
+                                                                }`}
+                                                        >
+                                                            {isIssuingThis ? (
+                                                                <span className="flex items-center gap-1">
+                                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                                    Issuing
+                                                                </span>
+                                                            ) : (
+                                                                "Issue Certificate"
+                                                            )}
+                                                        </span>
+                                                    )}
 
-                                                        {p.isCertificateIssued && (
-                                                            <DropdownMenuItem
-                                                                onClick={() => onPreview(p.id, p.programId, p.name)}
-                                                            >
-                                                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                                                                Preview Certificate
-                                                            </DropdownMenuItem>
-                                                        )}
+                                                    {p.isCertificateIssued && (
+                                                        <span
+                                                            onClick={() => onPreview(p.id, p.programId, p.name)}
+                                                            className="cursor-pointer text-green-600 hover:text-green-800"
+                                                        >
+                                                            Preview
+                                                        </span>
+                                                    )}
 
-                                                        {status === "not_eligible" && (
-                                                            <DropdownMenuItem disabled>
-                                                                <XCircle className="mr-2 h-4 w-4 text-rose-500" /> Not Eligible Yet
-                                                            </DropdownMenuItem>
-                                                        )}
+                                                    {status === "not_eligible" && (
+                                                        <span className="text-rose-500">Not Eligible</span>
+                                                    )}
 
-                                                        {/* <DropdownMenuSeparator />
-                                                        <DropdownMenuItem>
-                                                            <User className="mr-2 h-4 w-4" /> 
-                                                        </DropdownMenuItem> */}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -987,6 +994,7 @@ export default function CertificateManagementPage() {
                 id: p.participantId,
                 name: p.name,
                 email: p.email,
+                avatar: p.avatar,
                 completionPercentage: p.completionPercentage,
                 joinedDate: p.joinedAt,
                 lastActiveDate: p.lastActiveDate,
@@ -1200,8 +1208,7 @@ export default function CertificateManagementPage() {
                     <div>
                         <h1 className="text-3xl font-bold">Certificate Management</h1>
                         <p className="text-sm text-slate-500 mt-1">
-                            Issue certificates to eligible participants and manage your
-                            certificate signature.
+                            Issue certificates to eligible participants and manage your signature for certificates.
                         </p>
                     </div>
 
