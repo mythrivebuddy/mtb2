@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import PageSkeleton from '../PageSkeleton';
 import { ReferralStats } from '@/types/client/refer-friend';
+import Link from 'next/link';
 
 
 export async function fetchReferralStats(): Promise<ReferralStats> {
@@ -141,7 +142,7 @@ export default function ReferFriendPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Total Referrals</p>
+                <Link href='/dashboard/referrals' target="_blank" className="text-sm hover:underline hover:text-blue-700 text-gray-500">Total Referrals</Link>
                 <p className="text-2xl font-bold">{stats?.totalReferrals || 0}</p>
               </div>
               <div>

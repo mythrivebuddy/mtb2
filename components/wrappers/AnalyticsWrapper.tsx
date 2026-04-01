@@ -10,7 +10,6 @@ export default function AnalyticsWrapper() {
 
     // Block analytics only when we KNOW the user is an admin
     // Wait until session is resolved
-    console.log("Analytics enabled for environment:", process.env.NODE_ENV);
     if (process.env.NODE_ENV !== "production") return null;
     if (status === "loading") return null;
     // During loading, render analytics so the page view isn't missed

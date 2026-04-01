@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
+import {  AlertCircle } from "lucide-react";
 
 import Step1ProgramBasics from "@/components/mini-mastery-program/create-program/Step1ProgramBasics";
 import Step2ProgramAchievements from "@/components/mini-mastery-program/create-program/Step2ProgramAchivements";
