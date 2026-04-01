@@ -1,14 +1,13 @@
 import { Inter } from "next/font/google";
 import "./globals.scss";
 import Provider from "@/providers/Provider";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import LoginStreakTracker from "@/components/userStreak/LoginStreakTracker";
 import { Toaster } from "sonner";
 import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 
 import PWAInstallButton from "@/components/PWAInstallButton"; // <-- NEW Import
 import { SupabaseClientProvider } from "@/components/providers/SupabaseClientProvider"; // Adjust path if needed
+import AnalyticsWrapper from "@/components/wrappers/AnalyticsWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,21 +30,6 @@ export default function RootLayout({
         <meta name="theme-color" content="#F1F9FF" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
 
-        {/* Google Analytics */}
-        <script
-          async
-          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
-        ></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}');
-            `,
-          }}
-        />
       </head>
       <body
         className={`${inter.className} antialiased`}
@@ -60,8 +44,7 @@ export default function RootLayout({
             {children}
 
             {/* Analytics */}
-            <Analytics />
-             <SpeedInsights/>
+           <AnalyticsWrapper/>
             </SupabaseClientProvider>
           </Provider>
         </div>
