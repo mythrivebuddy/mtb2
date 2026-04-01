@@ -37,7 +37,6 @@ import {
     CheckCircle2,
     XCircle,
     Loader2,
-    User,
     Pencil,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
