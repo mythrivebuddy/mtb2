@@ -511,7 +511,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for my-profile
   if (type === "my-profile") {
     return (
-      <div className="animate-pulse max-w-3xl mx-auto p-4 sm:p-6">
+      <div className="animate-pulse max-w-8xl mx-auto p-4 sm:p-6">
         <div className="bg-white shadow-md rounded-2xl p-4 sm:p-6 space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -644,8 +644,8 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for  Referral-skeleton
   if (type === "refer-friend") {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <div className=" px-4 py-8">
+        <div className="max-w-8xl mx-auto space-y-8">
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
 
           {/* Referral Stats Card */}
@@ -719,7 +719,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   if (type === "subscription") {
   return (
     <div className="w-full min-h-screen py-10 px-4 sm:px-6 lg:px-8 animate-pulse">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-8xl mx-auto">
 
         {/* Header */}
         <div className="text-center mb-12 space-y-3">
@@ -786,7 +786,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   if (type === " user-profile") {
     return (
       <div className="animate-pulse container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-8xl mx-auto space-y-8">
           <Card className="bg-white/50 shadow-sm">
             <CardHeader>
               <div className="flex items-center space-x-4">
@@ -843,7 +843,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for buddylens
   if (type === "buddylens") {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-8xl mx-auto p-6">
         <Card className="rounded-2xl shadow-lg p-6 space-y-6 animate-pulse">
           {/* Tabs */}
           <div className="mb-4 grid w-full grid-cols-3 gap-4">

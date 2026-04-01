@@ -464,7 +464,7 @@ export default function EnrollPage() {
 
 
   const pageContent = (
-    <div className="min-h-screen  p-4 md:p-10 max-w-7xl mx-auto">
+    <div className="min-h-screen px-4 sm:px-7 py-4 md:py-10">
 
       {/* ── Info Modal ── */}
       {selectedInfoProg && (

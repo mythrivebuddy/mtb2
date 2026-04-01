@@ -1201,7 +1201,7 @@ export default function CertificateManagementPage() {
                 </DialogContent>
             </Dialog>
 
-            <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+            <div className="p-4 sm:p-6 max-w-8xl mx-auto">
                 {/* ── Page Header ── */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
                     <div>
@@ -1213,7 +1213,7 @@ export default function CertificateManagementPage() {
 
                     <button
                         onClick={() => setSigDialogOpen(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 text-sm"
+                        className="px-4 py-2 max-sm:w-full bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 text-sm"
                     >
                         Manage Signature
                     </button>
@@ -1221,39 +1221,46 @@ export default function CertificateManagementPage() {
 
                 {/* ── Summary Stats ── */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
-                    <div className="rounded-xl border bg-white p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
+
+                    {/* Eligible */}
+                    <div className="rounded-xl border bg-white p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-2">
                             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                                 Eligible
                             </span>
                         </div>
-                        <p className="text-2xl font-bold text-emerald-600">
+                        <p className="text-3xl font-bold text-emerald-600">
                             {totalEligible}
                         </p>
                     </div>
 
-                    <div className="rounded-xl border bg-white p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
+                    {/* Not Eligible */}
+                    <div className="rounded-xl border bg-white p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-2">
                             <XCircle className="w-4 h-4 text-rose-500" />
                             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                                 Not Eligible
                             </span>
                         </div>
-                        <p className="text-2xl font-bold text-rose-500">
+                        <p className="text-3xl font-bold text-rose-500">
                             {totalNotEligible}
                         </p>
                     </div>
 
-                    <div className="rounded-xl border bg-white p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
+                    {/* Issued */}
+                    <div className="rounded-xl border bg-white p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-2">
                             <Award className="w-4 h-4 text-indigo-600" />
                             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                                 Issued
                             </span>
                         </div>
-                        <p className="text-2xl font-bold text-indigo-600">{totalIssued}</p>
+                        <p className="text-3xl font-bold text-indigo-600">
+                            {totalIssued}
+                        </p>
                     </div>
+
                 </div>
 
 

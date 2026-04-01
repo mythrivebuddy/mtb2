@@ -216,7 +216,7 @@ export default function ProgressVaultClient({
   return (
     <>
       <CustomAccordion />
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="w-full px-4 py-6">
         <Card className="mb-8">
           <CardHeader>
             <div className="flex justify-between items-center">

@@ -192,7 +192,6 @@ export async function PUT(req: Request) {
     }
 
     /* ---------------- UPDATE DATA ---------------- */
-    console.log("Parsed body data:", bodyData)
 
     const updateData = {
       name: bodyData.name ?? undefined,

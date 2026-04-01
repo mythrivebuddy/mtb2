@@ -163,7 +163,7 @@ export default function BuddyLensRequestPage() {
   const questions = watch("questions");
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-6">
+    <div className="max-w-8xl mx-auto py-10 px-4 sm:px-6">
       <UpgradeMessageModal
               isOpen={upgradeModal.open}
               onClose={() => setUpgradeModal({ open: false, title: "", message: "" })}
