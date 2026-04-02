@@ -186,7 +186,7 @@ export default function AccountabilityHubPage() {
             {groupDataLoading ? <Skeleton className="h-8 w-48" /> : groupName}
           </h1>
           <p className="text-muted-foreground">
-            Track and motivate your solopreneur community’s monthly goals.
+            Track and motivate your community’s monthly goals.
           </p>
         </div>
           
