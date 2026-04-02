@@ -18,7 +18,7 @@ import { useRouter } from "next/navigation";
 import { fetchReferralStats } from "@/components/refer-friend/ReferFriend";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+
 
 interface User {
   id: string;
