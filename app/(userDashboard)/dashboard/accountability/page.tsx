@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { useSWRConfig } from "swr";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
@@ -55,10 +54,10 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AccountabilityHubHome() {
   const { data: session } = useSession();
-  const { mutate } = useSWRConfig();
   const router = useRouter();
   const searchParams = useSearchParams();
   const groupId = searchParams?.get("groupId") ?? undefined;
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
 
   const {
     data: groups,
@@ -84,7 +83,7 @@ export default function AccountabilityHubHome() {
     (m: { userId: string; role: string }) =>
       m.userId === session?.user?.id && m.role?.toLowerCase() === "admin"
   );
-  
+
   const isGroupBlocked = group?.isBlocked == true;
 
   const [notes, setNotes] = useState("");
@@ -147,7 +146,8 @@ export default function AccountabilityHubHome() {
         throw new Error(result.message || "Failed to save notes.");
 
       toast.success("Notes saved successfully!");
-      mutate(`/api/accountability-hub/groups?groupId=${groupId}`);
+      await refetch();
+      setIsEditingNotes(false);
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -157,7 +157,7 @@ export default function AccountabilityHubHome() {
   const handleStartNewCycle = async () => {
     if (!groupId) return;
     try {
-      await startNewCycle(); // ✅ uses React Query mutation
+      await startNewCycle(); //  uses React Query mutation
 
       toast.success("New cycle started! The group is ready for new goals.");
 
@@ -281,9 +281,9 @@ export default function AccountabilityHubHome() {
             • Active Cycle:{" "}
             {activeCycle
               ? `${format(new Date(activeCycle.startDate), "MMM d")} – ${format(
-                  new Date(activeCycle.endDate),
-                  "MMM d, yyyy"
-                )}`
+                new Date(activeCycle.endDate),
+                "MMM d, yyyy"
+              )}`
               : "No active cycle"}
           </p>
         </div>
@@ -390,7 +390,7 @@ export default function AccountabilityHubHome() {
                 />
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="destructive" disabled={isGroupBlocked} className={`${isGroupBlocked ? "opacity-75":""}`}>Remove Members</Button>
+                    <Button variant="destructive" disabled={isGroupBlocked} className={`${isGroupBlocked ? "opacity-75" : ""}`}>Remove Members</Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-lg">
                     <DialogHeader>
@@ -418,8 +418,8 @@ export default function AccountabilityHubHome() {
                                   member?.user?.image
                                     ? member.user.image
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                        member?.user?.name?.charAt(0) || "User"
-                                      )}&background=random&color=fff`
+                                      member?.user?.name?.charAt(0) || "User"
+                                    )}&background=random&color=fff`
                                 }
                                 alt={member.user.name || "Member Avatar"}
                                 width={32}
@@ -464,17 +464,31 @@ export default function AccountabilityHubHome() {
             <CardTitle className="text-lg">Group Notes</CardTitle>
           </CardHeader>
           <CardContent>
-            {group?.notes ? (
-              canSeeNotes ? (
-                <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground whitespace-pre-line">
-                  {group.notes}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">
-                  These notes are private and only visible to the admin.
-                </p>
-              )
-            ) : (isAdmin)? (
+            {group?.notes && !isEditingNotes && (
+              <>
+                {canSeeNotes ? (
+                  <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground whitespace-pre-line mb-4">
+                    {group.notes}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    These notes are private and only visible to the admin.
+                  </p>
+                )}
+
+                {isAdmin && (
+                  <Button
+                    onClick={() => setIsEditingNotes(true)}
+                    disabled={isGroupBlocked}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Edit Notes
+                  </Button>
+                )}
+              </>
+            )}
+
+            {isAdmin && (isEditingNotes || !group?.notes) && (
               <>
                 <Textarea
                   className="w-full h-40"
@@ -482,15 +496,32 @@ export default function AccountabilityHubHome() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
-                <Button
-                  onClick={handleSaveNotes}
-                  disabled={isSavingNotes || isGroupBlocked}
-                  className="mt-4 bg-blue-600 hover:bg-blue-700"
-                >
-                  {isSavingNotes ? "Saving..." : "Save Notes"}
-                </Button>
+
+                <div className="flex gap-3 mt-4">
+                  <Button
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNotes || isGroupBlocked}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSavingNotes ? "Saving..." : "Save Notes"}
+                  </Button>
+
+                  {group?.notes && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditingNotes(false);
+                        setNotes(group.notes);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </>
-            ) : (
+            )}
+
+            {!group?.notes && !isAdmin && (
               <p className="text-sm text-muted-foreground italic">
                 No notes have been added to this group yet.
               </p>
