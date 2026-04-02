@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { fetchReferralStats } from "@/components/refer-friend/ReferFriend";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface User {
   id: string;
@@ -222,14 +223,18 @@ export default function AccountabilityHomePage() {
           >
             🌟 Invite via Referral Page
           </button>
+          <Link href="/dashboard/referrals" target="_blank" className="sm:w-auto w-full">
+            <Button className=" bg-green-600 hover:bg-green-700 w-full sm:w-auto" >
+              View Your Referrals
+            </Button>
+          </Link>
           <button
             onClick={handleCopyReferral}
             disabled={isCopyLoading}
-            className={`p-2 shadow-md rounded-md flex gap-2 items-center font-medium transition-colors ease-linear ${
-              isCopied
-                ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
-                : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
-            }`}
+            className={`p-2 text-center shadow-md rounded-md flex justify-center gap-2 items-center font-medium transition-colors ease-linear ${isCopied
+              ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
+              : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
+              }`}
           >
             {isCopied ? (
               <>
@@ -237,10 +242,10 @@ export default function AccountabilityHomePage() {
                 <Check size={16} />
               </>
             ) : (
-              <>
+              <span className="text-center flex justify-center items-center gap-2 font-medium transition-colors ease-linear">
                 <LinkIcon size={16} />
                 {isCopyLoading ? "Copying..." : "Copy My Invite Link"}
-              </>
+              </span>
             )}
           </button>
         </div>
