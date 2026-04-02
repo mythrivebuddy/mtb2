@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -194,45 +194,45 @@ function maskEmail(email: string): string {
 
 function mapToBusinessProfile(data: UserData): BusinessProfile {
   return {
-    name:                str(data.name),
-    tagline:             str(data.tagline),
-    email:               data.email,
-    phone:               undefined,
-    website:             strOrNull(data.website) ?? undefined,
-    missionStatement:    strOrNull(data.missionStatement) ?? undefined,
-    goals:               strOrNull(data.goals) ?? undefined,
-    keyOfferings:        strOrNull(data.keyOfferings) ?? undefined,
-    achievements:        strOrNull(data.achievements) ?? undefined,
-    featuredWorkTitle:   strOrNull(data.featuredWorkTitle) ?? undefined,
-    featuredWorkDesc:    strOrNull(data.featuredWorkDesc) ?? undefined,
-    featuredWorkImage:   undefined,
+    name: str(data.name),
+    tagline: str(data.tagline),
+    email: data.email,
+    phone: undefined,
+    website: strOrNull(data.website) ?? undefined,
+    missionStatement: strOrNull(data.missionStatement) ?? undefined,
+    goals: strOrNull(data.goals) ?? undefined,
+    keyOfferings: strOrNull(data.keyOfferings) ?? undefined,
+    achievements: strOrNull(data.achievements) ?? undefined,
+    featuredWorkTitle: strOrNull(data.featuredWorkTitle) ?? undefined,
+    featuredWorkDesc: strOrNull(data.featuredWorkDesc) ?? undefined,
+    featuredWorkImage: undefined,
     priorityContactLink: strOrNull(data.priorityContactLink) ?? undefined,
-    transformation:      str(data.transformation),
-    methodology:         str(data.methodology),
-    timezone:            str(data.timezone),
-    sessionFormat:       str(data.sessionFormat),
-    sessionDuration:     str(data.sessionDuration),
-    shortBio:            str(data.shortBio),
-    introVideo:          strOrNull(data.introVideo) ?? undefined,
-    linkedin:            strOrNull(data.linkedin) ?? undefined,
-    profilePhoto:        str(data.profilePhoto),
-    socialHandles:       parseSocial(data.socialHandles),
-    coachingDomains:     arr(data.coachingDomains),
-    targetAudience:      arr(data.targetAudience),
-    typicalResults:      arr(data.typicalResults),
-    sessionStyles:       arr(data.sessionStyles),
-    toolsFrameworks:     arr(data.toolsFrameworks),
-    servicesOffered:     arr(data.servicesOffered),
-    languages:           arr(data.languages),
-    certifications:      arr(data.certifications),
-    testimonials:        parseTestimonials(data.testimonials),
-    priceMin:            data.priceMin ?? 0,
-    priceMax:            data.priceMax ?? 0,
-    jpBalance:           data.jpBalance ?? 0,
-    yearsOfExperience:   data.yearsOfExperience ?? 0,
+    transformation: str(data.transformation),
+    methodology: str(data.methodology),
+    timezone: str(data.timezone),
+    sessionFormat: str(data.sessionFormat),
+    sessionDuration: str(data.sessionDuration),
+    shortBio: str(data.shortBio),
+    introVideo: strOrNull(data.introVideo) ?? undefined,
+    linkedin: strOrNull(data.linkedin) ?? undefined,
+    profilePhoto: str(data.profilePhoto),
+    socialHandles: parseSocial(data.socialHandles),
+    coachingDomains: arr(data.coachingDomains),
+    targetAudience: arr(data.targetAudience),
+    typicalResults: arr(data.typicalResults),
+    sessionStyles: arr(data.sessionStyles),
+    toolsFrameworks: arr(data.toolsFrameworks),
+    servicesOffered: arr(data.servicesOffered),
+    languages: arr(data.languages),
+    certifications: arr(data.certifications),
+    testimonials: parseTestimonials(data.testimonials),
+    priceMin: data.priceMin ?? 0,
+    priceMax: data.priceMax ?? 0,
+    jpBalance: data.jpBalance ?? 0,
+    yearsOfExperience: data.yearsOfExperience ?? 0,
     completionPercentage: 0,
-    preferredCurrency:   str(data.preferredCurrency),
-    calendlyUrl:         str(data.calendlyUrl),
+    preferredCurrency: str(data.preferredCurrency),
+    calendlyUrl: str(data.calendlyUrl),
   };
 }
 
@@ -242,6 +242,8 @@ export default function UserPublicProfile({ userId, userData }: Props) {
   const router = useRouter();
   const { data: session, status } = useSession();
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const searchParams = useSearchParams();
+  const profileType = searchParams.get("type"); // "personal" | business
 
   useEffect(() => {
     let t: NodeJS.Timeout;
@@ -271,25 +273,27 @@ export default function UserPublicProfile({ userId, userData }: Props) {
 
   // Unwrap all fields ONCE here — safe to pass to JSX anywhere below
   const safe = {
-    name:             str(userData.name),
-    bio:              strOrNull(userData.bio),
-    website:          strOrNull(userData.website),
-    keyOfferings:     strOrNull(userData.keyOfferings),
-    achievements:     strOrNull(userData.achievements),
+    name: str(userData.name),
+    bio: strOrNull(userData.bio),
+    website: strOrNull(userData.website),
+    keyOfferings: strOrNull(userData.keyOfferings),
+    achievements: strOrNull(userData.achievements),
     missionStatement: strOrNull(userData.missionStatement),
-    goals:            strOrNull(userData.goals),
+    goals: strOrNull(userData.goals),
     featuredWorkTitle: strOrNull(userData.featuredWorkTitle),
-    featuredWorkDesc:  strOrNull(userData.featuredWorkDesc),
-    handles:           parseSocial(userData.socialHandles),
+    featuredWorkDesc: strOrNull(userData.featuredWorkDesc),
+    handles: parseSocial(userData.socialHandles),
   };
 
-  if (
+  const isBusinessUser =
     userData.userType === "COACH" ||
-    userData.userType === "SOLOPRENEUR"
-  ) {
+    userData.userType === "SOLOPRENEUR";
+
+  const showPersonalProfile = profileType === "personal";
+
+  if (isBusinessUser && !showPersonalProfile) {
     return <ProfileMain profile={mapToBusinessProfile(userData)} />;
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
       <div className="max-w-5xl pt-0 mx-auto">

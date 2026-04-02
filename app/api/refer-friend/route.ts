@@ -24,7 +24,7 @@ const senderEmail = process.env.CONTACT_SENDER_EMAIL;
   const referralUrl = `${process.env.NEXT_URL}/signup?ref=${referralCode}`;
 
   const referralEmailPayload = {
-    sender: { email: senderEmail },
+    sender: { email: senderEmail,name: "MyThriveBuddy" },
     to: [{ email: recipientEmail }],
     subject: `${userName} invited you to join!`,
     htmlContent: `
