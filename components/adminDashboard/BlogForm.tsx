@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Editor } from "@tinymce/tinymce-react";
-import { BlogFormProps, BlogResponse } from "@/types/client/blog";
+import { BlogFormProps } from "@/types/client/blog";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
 

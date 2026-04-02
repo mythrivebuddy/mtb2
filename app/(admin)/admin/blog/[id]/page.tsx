@@ -1,14 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import BlogForm from "@/components/adminDashboard/BlogForm";
 
 export default function BlogEditor() {
   const params = useParams();
   const router = useRouter();
-  const queryClient = useQueryClient();
+
   const id = params?.id as string;
   const isNew = id === "new";
 
