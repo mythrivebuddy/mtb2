@@ -149,8 +149,8 @@ export default function Dashboard() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen  p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+    <div className="min-h-screen  p-4 md:p-6">
+      <div className="max-w-8xl mx-auto space-y-6 md:space-y-8">
 
         {/* Header */}
         <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">

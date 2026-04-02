@@ -36,6 +36,9 @@ export async function renderCertificateImage(props: {
   const merriweatherFont = await fs.readFile(
     path.join(fontDir, "Merriweather_2.ttf")
   );
+  const greatVibesFont = await fs.readFile(
+    path.join(fontDir, "GreatVibes-Regular.ttf")
+  );
 
   return new ImageResponse(
     (
@@ -61,7 +64,7 @@ export async function renderCertificateImage(props: {
           <img
             src={`${baseUrl}/certificate-template-placeholder.png`}
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
-             fetchPriority="low"
+            fetchPriority="low"
           />
         </div>
 
@@ -107,7 +110,7 @@ export async function renderCertificateImage(props: {
             style={{
               position: "absolute",
               bottom: "250px",
-              left: "320px",
+              left: "270px",
               width: "180px",
               height: "100px",
               display: "flex",
@@ -124,19 +127,20 @@ export async function renderCertificateImage(props: {
               }}
             />
           </div>
-        ): signatureDrawn ? (
-             <div
+        ) : signatureDrawn ? (
+          <div
             style={{
               position: "absolute",
               bottom: "250px",
               left: "320px",
+              width: "180px",
+              height: "100px",
               display: "flex",
-              fontFamily: "PinyonScript",
-              fontSize: "40px",
-              color: "#8A6D3B",
+              justifyContent: "center",
+              alignItems: "center",
             }}
           >
-           <img
+            <img
               src={signatureDrawn}
               style={{
                 width: "100%",
@@ -150,17 +154,21 @@ export async function renderCertificateImage(props: {
             style={{
               position: "absolute",
               bottom: "250px",
-              left: "320px",
+              left: "270px",
+              width: "220px",
+              height: "100px",
               display: "flex",
-              fontFamily: "PinyonScript",
-              fontSize: "40px",
-              color:"black"
+              alignItems: "center",
+              justifyContent: "center",
+              fontFamily: "GreatVibes",
+              fontSize: "48px",
+              color: "#1E3A8A",
             }}
           >
             {signatureText}
           </div>
-        )  : (
-               <div
+        ) : (
+          <div
             style={{
               position: "absolute",
               bottom: "250px",
@@ -250,14 +258,19 @@ export async function renderCertificateImage(props: {
       height: 905,
       fonts: [
         {
+          name: "GreatVibes",
+          data: greatVibesFont,
+          style: "normal",
+        },
+        {
           name: "PinyonScript",
           data: pinyonFont,
           style: "normal",
         },
         {
-            name:"Merriweather",
-            data:merriweatherFont,
-            style:"normal",
+          name: "Merriweather",
+          data: merriweatherFont,
+          style: "normal",
         }
       ],
     }
