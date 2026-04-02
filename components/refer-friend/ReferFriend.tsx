@@ -137,16 +137,26 @@ export default function ReferFriendPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle>Your Referral Stats</CardTitle>
+
+            <Link href="/dashboard/referrals" target="_blank" className="sm:w-auto w-full">
+              <Button className="bg-green-600 hover:bg-green-700 w-full sm:w-auto" size="sm">
+                View Your Referrals
+              </Button>
+            </Link>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Total Referrals */}
               <div>
-                <Link href='/dashboard/referrals' target="_blank" className="text-sm hover:underline hover:text-blue-700 text-gray-500">Total Referrals</Link>
+                <p className="text-sm text-gray-500">Total Referrals</p>
                 <p className="text-2xl font-bold">{stats?.totalReferrals || 0}</p>
               </div>
-              <div>
+
+              {/* Total Rewards */}
+              <div className="sm:text-right">
                 <p className="text-sm text-gray-500">Total Rewards</p>
                 <p className="text-2xl font-bold">{stats?.totalRewards || 0} GP</p>
               </div>
