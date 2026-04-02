@@ -8,7 +8,7 @@ interface PageProps {
 }
 
 export default async function UserProfilePage({ params }: PageProps) {
-  const { userId } = params;
+  const { userId } = await params;
 
   if (!userId) return notFound();
 

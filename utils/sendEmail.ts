@@ -39,7 +39,7 @@ export async function sendEmailUsingTemplate({
   const emailContent = renderEmailTemplate(template.htmlContent, templateData);
 
   const payload = {
-    sender: { email: senderEmail },
+    sender: { email: senderEmail,name: "MyThriveBuddy" },
     to: [{ email: toEmail, name: toName }],
     subject: renderEmailTemplate(template.subject, templateData),
     htmlContent: emailContent,
@@ -84,7 +84,7 @@ export async function sendEmail({
 
   // 3. Construct the payload with the direct subject and body
   const payload = {
-    sender: { email: senderEmail },
+    sender: { email: senderEmail, name: "MyThriveBuddy" },
     // Use the fetched user's email and name
     to: [{ email: user.email, name: user.name || undefined }],
     subject: subject, // Use the subject from the function argument

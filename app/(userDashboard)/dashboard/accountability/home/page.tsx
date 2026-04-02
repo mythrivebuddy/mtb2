@@ -19,6 +19,7 @@ import { fetchReferralStats } from "@/components/refer-friend/ReferFriend";
 import { useState } from "react";
 import { toast } from "sonner";
 
+
 interface User {
   id: string;
   email: string;
@@ -218,18 +219,22 @@ export default function AccountabilityHomePage() {
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
           <button
             onClick={() => router.push("/dashboard/refer-friend")}
-            className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors ease-linear"
+            className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 "
           >
             🌟 Invite via Referral Page
+          </button>
+          <button className=" px-2 py-2  rounded-md  bg-green-600 hover:bg-green-700 transition-colors ease-linear text-white" >
+            <Link href="/dashboard/referrals" target="_blank">
+              View Your Referrals
+            </Link>
           </button>
           <button
             onClick={handleCopyReferral}
             disabled={isCopyLoading}
-            className={`p-2 shadow-md rounded-md flex gap-2 items-center font-medium transition-colors ease-linear ${
-              isCopied
-                ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
-                : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
-            }`}
+            className={`p-2 text-center shadow-md rounded-md flex justify-center gap-2 items-center font-medium transition-colors ease-linear ${isCopied
+              ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
+              : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
+              }`}
           >
             {isCopied ? (
               <>
@@ -237,10 +242,10 @@ export default function AccountabilityHomePage() {
                 <Check size={16} />
               </>
             ) : (
-              <>
+              <span className="text-center flex justify-center items-center gap-2 font-medium transition-colors ease-linear">
                 <LinkIcon size={16} />
                 {isCopyLoading ? "Copying..." : "Copy My Invite Link"}
-              </>
+              </span>
             )}
           </button>
         </div>

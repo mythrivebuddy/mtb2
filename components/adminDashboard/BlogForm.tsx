@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, ChangeEvent, FormEvent, useEffect, useRef } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
 import { Editor } from "@tinymce/tinymce-react";
 import { BlogFormProps } from "@/types/client/blog";
 import Image from "next/image";
+import { Loader2 } from "lucide-react";
 
 
 export default function BlogForm({
   blogId,
   onSuccess,
   blogString,
+  initialData
 }: BlogFormProps) {
-  const isEdit = !!blogId;
+  const isEdit = blogString !== "new";
   const [title, setTitle] = useState<string>("");
   const [excerpt, setExcerpt] = useState<string>("");
   const [content, setContent] = useState<string>("");
@@ -23,6 +25,7 @@ export default function BlogForm({
   const [category, setCategory] = useState<string>("");
   const [newCategory, setNewCategory] = useState<string>("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   // Fetch categories for the select dropdown
   const {
@@ -37,30 +40,20 @@ export default function BlogForm({
     },
   });
 
-  // Fetch blog data if editing
-  const { data: blogData } = useQuery({
-    queryKey: ["blog", blogString],
-    queryFn: async () => {
-      const response = await axios.get(
-        `/api/blogs/getParticularBlog/${blogString}`
-      );
-      return response.data;
-    },
-    enabled: isEdit,
-  });
 
-  // Populate form with existing blog data when editing
+  const populatedId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (blogData) {
-      setTitle(blogData.title);
-      setExcerpt(blogData.excerpt);
-      setContent(blogData.content);
-      setReadTime(blogData.readTime);
-      setCategory(blogData.category);
-      setPreviewImage(blogData.image);
-    }
-  }, [blogData]);
+    if (!initialData || populatedId.current === initialData.id) return;
+    populatedId.current = initialData.id;
 
+    setTitle(initialData.title ?? "");
+    setExcerpt(initialData.excerpt ?? "");
+    setContent(initialData.content ?? "");
+    setReadTime(initialData.readTime ?? "");
+    setCategory(initialData.category ?? "");
+    setPreviewImage(initialData.image ?? null);
+  }, [initialData]);
   // Mutation for creating or updating a blog post
   const mutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -74,12 +67,16 @@ export default function BlogForm({
       });
       return response.data;
     },
-    onSuccess: () => {
-      // toast.success(
-      //   isEdit
-      //     ? "Blog post updated successfully!"
-      //     : "Blog post created successfully!"
-      // );
+    onSuccess: async (updatedBlog) => {
+      queryClient.setQueryData(["blog", blogString], updatedBlog);
+
+      // Replace invalidateQueries with refetchQueries
+      await queryClient.refetchQueries({ queryKey: ["blogs"], exact: false });
+
+      toast.success(
+        isEdit ? "Blog post updated successfully!" : "Blog post created successfully!"
+      );
+
       onSuccess();
     },
     onError: () => {
@@ -125,6 +122,7 @@ export default function BlogForm({
         type="text"
         placeholder="Title"
         value={title}
+        disabled={mutation.isPending}
         onChange={(e: ChangeEvent<HTMLInputElement>) =>
           setTitle(e.target.value)
         }
@@ -148,7 +146,7 @@ export default function BlogForm({
             onChange={(e: ChangeEvent<HTMLSelectElement>) =>
               setCategory(e.target.value)
             }
-            disabled={!!newCategory.trim()}
+            disabled={!!newCategory.trim() || mutation.isPending}
             required={!newCategory.trim()}
           >
             <option value="">Select Category</option>
@@ -174,6 +172,7 @@ export default function BlogForm({
       <textarea
         placeholder="Excerpt"
         value={excerpt}
+        disabled={mutation.isPending}
         onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
           setExcerpt(e.target.value)
         }
@@ -182,6 +181,7 @@ export default function BlogForm({
       />
       <Editor
         value={content}
+        disabled={mutation.isPending}
         onEditorChange={(content) => setContent(content)}
         apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
         tinymceScriptSrc={`https://cdn.tiny.cloud/1/${process.env.NEXT_PUBLIC_TINYMCE_API_KEY}/tinymce/6/tinymce.min.js`}
@@ -214,11 +214,24 @@ export default function BlogForm({
       />
       {previewImage && isEdit && (
         <div className="mt-4">
-          <Image src={previewImage} alt="Preview" className="w-40 h-auto" />
+          <Image src={previewImage} width={160}
+            height={160} alt="Preview" className="w-40 h-auto" />
         </div>
       )}
-      <button type="submit" className="bg-blue-600 text-white rounded p-2">
-        {isEdit ? "Update Blog Post" : "Create Blog Post"}
+      <button
+        type="submit"
+        disabled={mutation.isPending}
+        className={`bg-blue-600 text-white rounded p-2 flex items-center justify-center gap-2 ${mutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+      >
+        {mutation.isPending ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {isEdit ? "Updating..." : "Creating..."}
+          </>
+        ) : (
+          <>{isEdit ? "Update Blog Post" : "Create Blog Post"}</>
+        )}
       </button>
     </form>
   );

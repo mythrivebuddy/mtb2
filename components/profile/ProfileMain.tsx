@@ -145,7 +145,6 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
                   <h3 className="text-xl font-semibold mt-4">{service}</h3>
                   <p className="text-sm text-gray-500 mt-2">Tailored {service.toLowerCase()} experience.</p>
                   <p className="text-sm font-semibold mt-4 text-blue-700">${profile.priceMin ?? 0} – ${profile.priceMax ?? 0}</p>
-                  <button className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-xl">View Program</button>
                 </div>
               ))}
             </div>
