@@ -286,11 +286,19 @@ export default function MyProfile() {
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
             {!isEditMode ? (
               <>
-                {session?.user?.id && (
-                  <Link href={`/profile/${session.user.id}`} target="_blank" passHref>
-                    <Button variant="outline" className="flex w-full items-center justify-center gap-2">
+              {session?.user?.id &&  (session?.user?.userType === "COACH") && (
+                  <Link href={`/profile/${session.user.id}?type=business`} target="_blank" passHref>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
                       <Eye size={16} />
-                      View Profile
+                      View Business Profile
+                    </Button>
+                  </Link>
+                )}
+                {session?.user?.id && (
+                  <Link href={`/profile/${session.user.id}?type=personal`} target="_blank" passHref>
+                    <Button  className="flex w-full items-center justify-center gap-2 bg-green-600 hover:bg-green-700">
+                      <Eye size={16} />
+                      View Personal Profile
                     </Button>
                   </Link>
                 )}

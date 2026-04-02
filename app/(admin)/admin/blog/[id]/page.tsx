@@ -1,14 +1,14 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import BlogForm from "@/components/adminDashboard/BlogForm";
 
 export default function BlogEditor() {
   const params = useParams();
   const router = useRouter();
-  const queryClient = useQueryClient();
+
   const id = params?.id as string;
   const isNew = id === "new";
 
@@ -20,15 +20,16 @@ export default function BlogEditor() {
       return response.data;
     },
     enabled: !isNew,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   // Fetch categories (used by BlogForm)
 
-  const handleSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ["blogs"] });
-    router.push("/admin/blog"); // Redirect to blog list page
+  const handleSuccess = async () => {
+    // await queryClient.invalidateQueries({ queryKey: ["blogs"], exact: false });
+    router.push("/admin/blog");
   };
-
   if (isBlogLoading && !isNew) {
     return <div>Loading...</div>;
   }
@@ -42,6 +43,7 @@ export default function BlogEditor() {
         blogString={id}
         blogId={isNew ? undefined : blog?.id}
         onSuccess={handleSuccess}
+        initialData={blog}
       />
     </div>
   );
