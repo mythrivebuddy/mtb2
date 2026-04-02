@@ -219,15 +219,15 @@ export default function AccountabilityHomePage() {
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
           <button
             onClick={() => router.push("/dashboard/refer-friend")}
-            className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors ease-linear"
+            className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 "
           >
             🌟 Invite via Referral Page
           </button>
-          <Link href="/dashboard/referrals" target="_blank" className="sm:w-auto w-full">
-            <Button className=" bg-green-600 hover:bg-green-700 w-full sm:w-auto" >
+          <button className=" px-2 py-2  rounded-md  bg-green-600 hover:bg-green-700 transition-colors ease-linear text-white" >
+            <Link href="/dashboard/referrals" target="_blank">
               View Your Referrals
-            </Button>
-          </Link>
+            </Link>
+          </button>
           <button
             onClick={handleCopyReferral}
             disabled={isCopyLoading}
