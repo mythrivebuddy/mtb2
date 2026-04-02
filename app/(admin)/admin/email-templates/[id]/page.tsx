@@ -66,27 +66,25 @@ export default function EditEmailTemplatePage() {
   const mutation = useMutation({
     mutationFn: saveTemplate,
     onSuccess: (savedTemplate) => {
+      queryClient.setQueryData(["email-template", savedTemplate.id], savedTemplate);
+
       queryClient.setQueriesData<EmailTemplatesResponse>(
         { queryKey: ["email-templates"], exact: false },
         (oldData) => {
-          if (!oldData || !Array.isArray(oldData.templates)) {
-            return oldData;
-          }
-
-          const exists = oldData.templates.some(
-            (t) => t.id === savedTemplate.id,
-          );
-
+          if (!oldData?.templates) return oldData;
+          const exists = oldData.templates.some((t) => t.id === savedTemplate.id);
           return {
             ...oldData,
             templates: exists
               ? oldData.templates.map((t) =>
-                  t.id === savedTemplate.id ? savedTemplate : t,
-                )
+                t.id === savedTemplate.id ? savedTemplate : t
+              )
               : [savedTemplate, ...oldData.templates],
           };
-        },
+        }
       );
+
+      queryClient.invalidateQueries({ queryKey: ["email-templates"] });
 
       toast.success("Template saved successfully");
       router.push("/admin/email-templates");

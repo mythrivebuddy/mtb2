@@ -39,5 +39,6 @@ export interface BlogFormProps {
   blogId?: string;
   onSuccess: () => void;
   blogString?: string;
+  initialData?: BlogPost;
 }
 
