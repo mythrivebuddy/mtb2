@@ -116,7 +116,7 @@ export default function CycleReportPage() {
     }
 
     if (!numericRewardAmount || numericRewardAmount <= 0) {
-      toast.error("Please enter a positive number of JoyPearls.");
+      toast.error("Please enter a positive number of Growth Points.");
       return;
     }
 
@@ -250,7 +250,7 @@ export default function CycleReportPage() {
           <DialogHeader>
             <DialogTitle>Reward Members</DialogTitle>
             <DialogDescription>
-              How many JoyPearls 💎 do you want to reward{" "}
+              How many Growth Points 💎 do you want to reward{" "}
               {memberIdsToReward?.length}{" "}
               {memberIdsToReward?.length === 1 ? "member" : "members"}?
             </DialogDescription>
@@ -359,7 +359,7 @@ export default function CycleReportPage() {
                 <h2 className="font-semibold text-gray-800">Reward Members</h2>
               </div>
               <p className="text-sm text-gray-600 mb-3">
-                Select members to reward with JoyPearls 💎
+                Select members to reward with Growth Points 💎
               </p>
 
               <div className={memberListContainerClasses}>

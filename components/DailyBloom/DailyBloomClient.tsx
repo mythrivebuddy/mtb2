@@ -715,7 +715,7 @@ export default function DailyBloomClient() {
   }, [uniqueBlooms, events]);
 
   return (
-    <div>
+    <div className="w-full">
       <CustomAccordion />
       <UpgradeMessageModal
         isOpen={upgradeModal.open}
@@ -724,7 +724,7 @@ export default function DailyBloomClient() {
         message={upgradeModal.message}
         redirectToPricingUrl={`/pricing?ref=daily-blooms`}
       />
-      <div className="container mx-auto p-3 max-w-4xl">
+      <div className="p-3">
         <Card className="mb-8">
           <CardHeader>
             <div className="space-y-3">

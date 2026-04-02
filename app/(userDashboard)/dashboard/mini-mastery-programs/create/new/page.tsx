@@ -319,9 +319,9 @@ useEffect(()=>{
     !!formData.step3 && !!formData.step4 && !!formData.step5;
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen flex flex-col items-center py-10 px-4 sm:px-8">
       {/* Progress Header */}
-      <div className="w-full max-w-4xl mb-10">
+      <div className="w-full max-w-8xl mb-10">
         <div className="flex justify-between items-end mb-3">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
@@ -354,13 +354,13 @@ useEffect(()=>{
 
       {/* Global API Error Banner */}
       {submitError && (
-        <div className="w-full max-w-4xl mb-4 bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-6 py-4 rounded-2xl">
+        <div className="w-full max-w-8xl mb-4 bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-6 py-4 rounded-2xl">
           {submitError}
         </div>
       )}
 
       {/* Form Card */}
-      <div className="w-full max-w-4xl bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
+      <div className="w-full max-w-8xl bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
         {currentStep === 1 && (
           <Step1ProgramBasics
             onNext={handleStep1Next}

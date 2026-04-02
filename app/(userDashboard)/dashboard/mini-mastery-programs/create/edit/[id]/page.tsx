@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
+import {  AlertCircle } from "lucide-react";
 
 import Step1ProgramBasics from "@/components/mini-mastery-program/create-program/Step1ProgramBasics";
 import Step2ProgramAchievements from "@/components/mini-mastery-program/create-program/Step2ProgramAchivements";
@@ -20,6 +20,7 @@ import {
   type Step5Data,
 } from "@/schema/zodSchema";
 import { MMP_STORAGE_KEY, ProgramDBPayload } from "@/types/client/mini-mastery-program";
+import PageLoader from "@/components/PageLoader";
 
 // ─── Step Info ────────────────────────────────────────────────────────────────
 
@@ -259,18 +260,15 @@ useEffect(()=>{
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 text-slate-500">
-          <Loader2 size={36} className="animate-spin text-blue-500" />
-          <p className="text-sm font-medium">Loading program…</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+      <PageLoader/>
       </div>
     );
   }
 
   if (fetchError) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
+      <div className="min-h-screen  flex items-center justify-center px-4">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center">
             <AlertCircle size={28} className="text-red-400" />
@@ -290,10 +288,10 @@ useEffect(()=>{
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center py-10 px-4">
+    <div className="min-h-screen w-full  max-w-8xl flex flex-col items-center py-10 px-4 sm:px-8">
 
       {/* Progress Header */}
-      <div className="w-full max-w-4xl mb-10">
+      <div className="w-full  max-w-8xl  mb-10">
         <div className="flex items-center justify-between mb-2">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
@@ -324,13 +322,13 @@ useEffect(()=>{
 
       {/* API Error Banner */}
       {submitError && (
-        <div className="w-full max-w-4xl mb-4 bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-6 py-4 rounded-2xl">
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-6 py-4 rounded-2xl">
           {submitError}
         </div>
       )}
 
       {/* Form Card */}
-      <div className="w-full max-w-4xl bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
+      <div className=" bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
         {currentStep === 1 && (
           <Step1ProgramBasics
             onNext={handleStep1Next}

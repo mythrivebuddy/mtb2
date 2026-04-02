@@ -5,7 +5,20 @@ import { SignatureType } from "@prisma/client";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkRole } from "@/lib/utils/auth";
 
+export const GET = async() => {
+  try {
+    const session = await checkRole("USER");
+    const userId = session.user.id;
+    const signature = await prisma.challengeCreatorSignature.findUnique({
+      where: { userId },
+    });
+    return NextResponse.json({signature})
+  } catch (error) {
+    return NextResponse.json({error:"Failed to fetch signature",errorDetails:error}, {status:500})
+  }
+}
 
 
 export async function POST(req: Request) {

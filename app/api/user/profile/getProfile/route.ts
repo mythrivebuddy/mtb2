@@ -27,7 +27,6 @@ export async function GET(req: Request) {
       ...profile,
       completionPercentage,
     };
-    console.log("Profile", profileWithCompletion);
     return NextResponse.json(
       {
         message: "Profile fetched successfully",

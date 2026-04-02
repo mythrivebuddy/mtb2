@@ -213,9 +213,10 @@ export default function MiracleLogClient({
   };
 
   return (
-    <div className="min-h-screen xl:mx-4  py-12 ">
+    <>
       <CustomAccordion />
-      <div className="max-w-4xl mx-auto max-lg:px-4 space-y-8">
+    <div className="min-h-screen xl:mx-4">
+      <div className=" max-lg:px-4 space-y-8">
         <Card className="relative bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl border border-gray-100">
           {/* 🔥 Streak Count - Top Right */}
           <div className="absolute top-4 right-4 flex items-center gap-1 text-orange-500 font-bold text-sm animate-pulse">
@@ -641,5 +642,7 @@ export default function MiracleLogClient({
         </Dialog>
       </div>
     </div>
+    </>
+
   );
 }

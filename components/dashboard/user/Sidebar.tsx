@@ -16,7 +16,6 @@ import {
   Droplet,
   Flower,
   Swords,
-  // MessageSquareShare,
   Search,
   BellRing,
   Crown,
@@ -32,7 +31,6 @@ import { SearchUser } from "@/types/client/nav";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "./Topbar";
 import { useSession } from "next-auth/react";
-import { ComingSoonWrapper } from "@/components/wrappers/ComingSoonWrapper";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -231,12 +229,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             <div className="flex flex-col gap-5 mt-6">
               {/* Menu Section */}
               <NavSection title="Menu">
-                {/* <NavItem
-                  href="/"
-                  icon={<Home size={20} />}
-                  label="Home"
-                  onLinkClick={toggleSidebar}
-                /> */}
                 <NavItem
                   href="/dashboard"
                   icon={<LayoutDashboard size={20} />}
@@ -251,13 +243,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 /> */}
               </NavSection>
               <NavSection title="Features">
-                {/* <NavItem
-                  href="/survey"
-                  icon={<MessageSquareShare size={20} />}
-                  label="Survey"
-                  onLinkClick={toggleSidebar}
-                /> */}
-
                 <NavItem
                   href="/dashboard/aligned-actions"
                   icon={<TrendingUp size={20} />}
@@ -308,64 +293,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     </span>
                   </Link>
                 </div>
-
-                {/* BuddyLens dropdown */}
-                {/* <div className="space-y-1">
-                  <button
-                    onClick={() => setIsBuddyLensOpen(!isBuddyLensOpen)}
-                    className="flex items-center justify-between w-full py-2 text-sm rounded-md hover:bg-muted"
-                  >
-                    <span className="flex items-center gap-1 text-[#6C7894]">
-                      <Eye size={20} />
-                      <span className="text-lg">Buddy Lens</span>
-                    </span>
-                    <ChevronDown
-                      size={20}
-                      className={`transition-transform ${isBuddyLensOpen ? "rotate-180" : ""}`}
-                    />
-                  </button>
-
-                  {isBuddyLensOpen && (
-                    <div className="pl-8 mt-1 space-y-1">
-                      <NavItem
-                        href="/dashboard/buddy-lens"
-                        icon={<HomeIcon size={20} />}
-                        label="My BuddyLens"
-                      />
-                      <NavItem
-                        href="/dashboard/buddy-lens/requester"
-                        icon={<UserRound size={20} />}
-                        label="Request"
-                      />
-                      <NavItem
-                        href="/dashboard/buddy-lens/reviewer"
-                        icon={<ScanEye size={20} />}
-                        label="Review"
-                      />
-                      <NavItem
-                        href="/dashboard/buddy-lens/approve"
-                        icon={<FileUser size={20} />}
-                        label="Approve"
-                      />
-                    </div>
-                  )}
-                </div> */}
-
                 <NavItem
                   href="/dashboard/store"
                   icon={<ShoppingCartIcon size={20} />}
                   label="Growth Store"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
-
-
-                {/* <ComingSoonWrapper>
-                  <NavItem
-                    icon={<ShoppingCartIcon size={20} />}
-                    label="Store"
-                    onLinkClick={toggleSidebar} // Pass toggleSidebar
-                  />
-                </ComingSoonWrapper> */}
               </NavSection>
               {/* Settings Section */}
               {(session.data?.user.userType == "COACH" ||
@@ -443,23 +376,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       label="Manage Coupons"
                       onLinkClick={toggleSidebar} // Pass toggleSidebar
                     />
-                    <ComingSoonWrapper>
-                      <NavItem
-                        href="#"
-                        icon={<Award size={20} />}
-                        label="Manage Certificates"
-                        onLinkClick={toggleSidebar} // Pass toggleSidebar
-                      />
-                    </ComingSoonWrapper>
-
-                    {/* <NavItem
-                    href="/dashboard/accountability/home"
-                    icon={<LayoutDashboard size={20} />}
-                    label="Create Accountability Group"
-                    onLinkClick={toggleSidebar}
-                  /> */}
-
-
+                    <NavItem
+                      href="/dashboard/manage-certificates"
+                      icon={<Award size={20} />}
+                      label="Manage Certificates"
+                      onLinkClick={toggleSidebar} // Pass toggleSidebar
+                    />
                     {/* <ComingSoonWrapper>
                       <NavItem
                         icon={<PhoneCall size={20} />}
@@ -483,32 +405,6 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                       onLinkClick={toggleSidebar}
                     />
                   </ComingSoonWrapper> */}
-
-                    {/* <NavItem
-                  href="/dashboard/faq"
-                  icon={<HelpCircle size={20} />}
-                  label="FAQ's"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                /> */}
-                    {/* <NavItem
-                  href="/contact"
-                  icon={<Phone size={20} />}
-                  label="Contact us"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                /> */}
-                    {/* <NavItem
-                  href="/blog"
-                  icon={<BookOpen size={20} />}
-                  label="Blog"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                /> */}
-
-                    {/* <NavItem
-                  href="/about-us"
-                  icon={<GlobeLock size={20} />}
-                  label="About us"
-                  onLinkClick={toggleSidebar} // Pass toggleSidebar
-                /> */}
                   </NavSection>
                 )}
             </div>
