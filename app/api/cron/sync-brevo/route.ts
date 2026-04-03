@@ -50,8 +50,9 @@ return NextResponse.json({
 });
 
 } catch (error) {
+  console.error("Error syncing with Brevo:", error);
 return NextResponse.json(
-{ error: "Internal Server Error" },
+{ error: "Internal Server Error",errorDetails: error instanceof Error ? error.message : String(error) },
 { status: 500 }
 );
 }
