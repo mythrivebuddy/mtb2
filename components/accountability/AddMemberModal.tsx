@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { maskEmail } from "@/utils/mask-email";
 
 type UserSearchResult = {
   id: string;
@@ -108,7 +109,7 @@ export default function AddMemberModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-sm:w-[90%] rounded-md ">
         <DialogHeader>
           <DialogTitle>Add New Member</DialogTitle>
           <DialogDescription>
@@ -148,7 +149,7 @@ export default function AddMemberModal({
                 />
                 <div>
                   <p className="font-semibold">{user.name}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  <p className="text-sm text-muted-foreground">{maskEmail(user?.email || "")}</p>
                 </div>
               </div>
               <Button

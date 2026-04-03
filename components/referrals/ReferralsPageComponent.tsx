@@ -29,6 +29,7 @@ import { Pagination } from "../ui/pagination";
 import { getAvatarColor, getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import Link from "next/link";
+import { maskEmail } from "@/utils/mask-email";
 
 // ─── Types ─────────────────────────────────────
 
@@ -310,7 +311,7 @@ export default function ReferralsPageComponent() {
                                                     <div>
                                                         <p className="text-sm font-semibold">{r.name}</p>
                                                         <p className="text-xs text-muted-foreground">
-                                                            {r.email}
+                                                              {maskEmail(r.email)}
                                                         </p>
                                                     </div>
                                                 </Link>

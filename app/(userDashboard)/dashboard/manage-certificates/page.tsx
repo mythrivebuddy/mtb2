@@ -53,6 +53,7 @@ import {
 import { getAvatarColor, getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import Link from "next/link";
+import { maskEmail } from "@/utils/mask-email";
 
 const greatVibes = Great_Vibes({
     subsets: ["latin"],
@@ -720,7 +721,7 @@ function ParticipantsTable({
                                                     </div>
                                                     <div className="flex flex-col">
                                                         <Link href={`/profile/${p?.id}`} target="_blank" className="text-sm font-medium text-slate-900">{p.name}</Link>
-                                                        <span className="text-xs text-muted-foreground">{p.email}</span>
+                                                        <span className="text-xs text-muted-foreground">{maskEmail(p.email)}</span>
                                                     </div>
                                                 </div>
                                             </TableCell>

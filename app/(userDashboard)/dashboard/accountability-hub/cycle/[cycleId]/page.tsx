@@ -34,6 +34,8 @@ import { Label } from "@/components/ui/label";
 
 // --- Import for session management ---
 import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { User } from "@/types/types";
 
 const fetcher = (url: string) => axios.get(url).then((res) => res.data);
 
@@ -65,9 +67,11 @@ export default function CycleReportPage() {
   );
   const [memberIdsToReward, setMemberIdsToReward] = useState<string[]>([]);
   const [isStartingCycle, setIsStartingCycle] = useState(false);
+  const [isConfirmingReward, setIsConfirmingReward] = useState(false);
+  const queryClient = useQueryClient();
 
   // --- Destructure 'session' and 'update' function ---
-  const { data: session, update: updateSession } = useSession();
+  const { data: session } = useSession();
 
   const {
     data: report,
@@ -86,13 +90,13 @@ export default function CycleReportPage() {
 
   const handleSelectMember = (id: string) => {
     setSelectedMembers((prev) => {
-       const next = new Set(prev);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    return next;
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
     });
   };
 
@@ -120,7 +124,7 @@ export default function CycleReportPage() {
       return;
     }
 
-    setIsRewarding(true);
+    setIsConfirmingReward(true);
     try {
       const { data } = await axios.post(
         `/api/accountability-hub/cycles/${cycleId}/reward`,
@@ -131,10 +135,15 @@ export default function CycleReportPage() {
       );
 
       toast.success(data.message);
+      // Update JP balance in React Query cache
+      queryClient.setQueryData<User>(["userInfo"], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          jpBalance: data.updatedBalance, // we must need to return this from backend
+        };
+      });
 
-      if (updateSession) {
-        await updateSession();
-      }
 
       setSelectedMembers(new Set());
       setMemberIdsToReward([]);
@@ -144,7 +153,7 @@ export default function CycleReportPage() {
     } catch (err) {
       let errorMessage = "Failed to send rewards.";
       if (err instanceof AxiosError) {
-        errorMessage = err.response?.data?.error || err.message;
+        errorMessage = err.response?.data?.error || err.message || err.response?.data.message;
       } else if (err instanceof Error) {
         errorMessage = err.message;
       }
@@ -152,6 +161,7 @@ export default function CycleReportPage() {
       toast.error(errorMessage);
     } finally {
       setIsRewarding(false);
+      setIsConfirmingReward(false);
     }
   };
 
@@ -169,7 +179,7 @@ export default function CycleReportPage() {
       }
     } catch (err) {
       toast((err as Error).message);
-    }finally{
+    } finally {
       setIsStartingCycle(false)
     }
   };
@@ -246,7 +256,7 @@ export default function CycleReportPage() {
       />
 
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[90%] rounded-md sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Reward Members</DialogTitle>
             <DialogDescription>
@@ -275,12 +285,12 @@ export default function CycleReportPage() {
             <Button
               variant="outline"
               onClick={() => setIsDialogOpen(false)}
-              disabled={isRewarding}
+              disabled={isConfirmingReward}
             >
               Cancel
             </Button>
-            <Button onClick={handleReward} disabled={isRewarding}>
-              {isRewarding ? "Sending..." : "Confirm Reward"}
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleReward} disabled={isConfirmingReward}>
+              {isConfirmingReward ? "Sending..." : "Confirm Reward"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -382,6 +392,7 @@ export default function CycleReportPage() {
                 <Button
                   onClick={() => openRewardDialog(Array.from(selectedMembers))}
                   disabled={isRewarding || selectedMembers.size === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   {isRewarding ? "..." : `Reward (${selectedMembers.size})`}
                 </Button>
@@ -406,9 +417,10 @@ export default function CycleReportPage() {
                 Wrap up this cycle and launch the next one for your group.
               </p>
               <Button
-                className="w-full"
+                className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={handleStartNewCycle}
                 disabled={isStartingCycle}
+
               >
                 {
                   isStartingCycle ? "Starting..." : "Start New Cycle"

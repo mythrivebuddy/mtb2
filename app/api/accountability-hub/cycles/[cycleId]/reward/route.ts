@@ -9,7 +9,7 @@ import { assignJp, deductJp } from "@/lib/utils/jp";
 
 export async function POST(
   req: Request,
-  { params }: { params: { cycleId: string } }
+  { params }: { params: { cycleId: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -28,17 +28,17 @@ export async function POST(
     if (!memberIds?.length)
       return NextResponse.json(
         { error: "No members provided" },
-        { status: 400 }
+        { status: 400 },
       );
 
     // --- ADDED: Validate the 'amount' from the client ---
     if (!amount || typeof amount !== "number" || amount <= 0) {
       return NextResponse.json(
         { error: "Invalid reward amount. Must be a positive number." },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    
+
     // Use the validated amount.
     const rewardPerMember = Math.ceil(amount);
 
@@ -51,7 +51,7 @@ export async function POST(
     if (!admin)
       return NextResponse.json(
         { error: "Admin user not found" },
-        { status: 404 }
+        { status: 404 },
       );
 
     const cycle = await prisma.cycle.findUnique({
@@ -70,7 +70,7 @@ export async function POST(
     if (members.length !== memberIds.length) {
       return NextResponse.json(
         { error: "One or more member IDs are invalid" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -85,7 +85,7 @@ export async function POST(
         admin,
         ActivityType.COACH_REWARD_SPEND,
         tx,
-        { amount: totalBaseAmount } // This uses the calculated total
+        { amount: totalBaseAmount }, // This uses the calculated total
       );
 
       // b. Assign the reward to each member
@@ -94,8 +94,8 @@ export async function POST(
           member,
           ActivityType.COACH_REWARD_RECEIVE,
           tx,
-          { amount: rewardPerMember } // --- MODIFIED: Use rewardPerMember ---
-        )
+          { amount: rewardPerMember }, // --- MODIFIED: Use rewardPerMember ---
+        ),
       );
       await Promise.all(memberAssignments);
 
@@ -109,29 +109,34 @@ export async function POST(
             cycleId,
             notes: `Cycle reward from ${cycle.group.name}`,
           },
-        })
+        }),
       );
 
       return await Promise.all(rewardCreations);
     });
-
+    const updatedAdmin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { jpBalance: true },
+    });
     // 4. If transaction is successful, return success
     return NextResponse.json({
       message: `Rewarded ${rewards.length} member(s) successfully!`,
+      updatedBalance: updatedAdmin?.jpBalance || 0,
     });
   } catch (err) {
-    console.error("REWARD ERROR", err);
-
-    if (err instanceof Error && err.message === "Insufficient JP balance") {
+    if (err instanceof Error && err.message === "Insufficient GP balance") {
       return NextResponse.json(
-        { error: "Insufficient JP balance to give this reward." },
-        { status: 400 }
+        { error: "Insufficient GP balance to give this reward." },
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
-      { error: "Failed to send rewards" },
-      { status: 500 }
+      {
+        error:
+          err instanceof Error ? err.message : "An unexpected error occurred.",
+      },
+      { status: 500 },
     );
   }
 }

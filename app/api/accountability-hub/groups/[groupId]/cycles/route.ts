@@ -7,7 +7,7 @@ import { Role } from "@prisma/client";
 
 export async function POST(
   req: Request,
-  { params }: { params: { groupId: string } }
+  { params }: { params: { groupId: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -29,19 +29,19 @@ export async function POST(
     if (!adminMembership) {
       return NextResponse.json(
         { error: "Forbidden: Not an admin" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // 2️⃣ Find the active cycle for the group
     const activeCycle = await prisma.cycle.findFirst({
-      where: { groupId, status: { in: ["active","repeat"] } },
+      where: { groupId, status: { in: ["active", "repeat"] } },
     });
 
     if (!activeCycle) {
       return NextResponse.json(
         { error: "No active cycle found for this group." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -62,9 +62,31 @@ export async function POST(
     await prisma.activityFeedItem.deleteMany({ where: { groupId } });
 
     // 5️⃣ Calculate new start and end dates
+
     const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+
+    // Last day of current month
+    const lastDayOfCurrentMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    );
+
+    const today = now.getDate();
+    const lastDay = lastDayOfCurrentMonth.getDate();
+
+    let startDate;
+    let endDate;
+
+    if (today === lastDay) {
+      // If today is last day → start next month full cycle
+      startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 2, 0);
+    } else {
+      // Otherwise → start today, end last day of THIS month
+      startDate = now;
+      endDate = lastDayOfCurrentMonth;
+    }
 
     // 6️⃣ Update the current cycle to "repeat" and refresh its dates
     const repeatedCycle = await prisma.cycle.update({
@@ -88,7 +110,7 @@ export async function POST(
       groupId,
       session.user.id,
       "cycle_started",
-      `${session.user.name} began a fresh cycle — ready for new goals, notes, and progress ahead`
+      `${session.user.name} began a fresh cycle — ready for new goals, notes, and progress ahead`,
     );
 
     return NextResponse.json(
@@ -97,13 +119,13 @@ export async function POST(
         cycle: repeatedCycle,
         success: true,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("[REPEAT_CYCLE_ERROR]", error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
