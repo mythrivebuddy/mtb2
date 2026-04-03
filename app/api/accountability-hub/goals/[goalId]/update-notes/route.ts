@@ -15,7 +15,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const sessionUserId = session.user.id;
-    const { goalId } = params;
+    const { goalId } = await params;
     const { notes } = await req.json();
 
     if (typeof notes === "undefined") {
