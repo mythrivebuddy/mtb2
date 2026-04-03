@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // adjust path if needed
+import { prisma } from "@/lib/prisma"; 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // adjust path if using NextAuth
+import { authOptions } from "@/lib/auth";
 import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
-import { sendEmail, sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 // PATCH /api/groups/:groupId/notes
 export async function PATCH(
