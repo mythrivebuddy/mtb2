@@ -55,6 +55,12 @@ type MentionSuggestion = {
   image: string | null;
   isAll?: boolean;
 };
+type Cycle = {
+  id: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+};
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -78,7 +84,7 @@ export default function AccountabilityHubHome() {
 
   const group = groups;
   const activeCycle = group?.cycles?.find(
-  (cycle: any) => cycle.status === "active" || cycle.status === "repeat"
+  (cycle: Cycle) => cycle.status === "active" || cycle.status === "repeat"
 );
   const {
     items: activityItems,

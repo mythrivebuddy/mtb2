@@ -71,7 +71,7 @@ export default function CycleReportPage() {
   const queryClient = useQueryClient();
 
   // --- Destructure 'session' and 'update' function ---
-  const { data: session, update: updateSession } = useSession();
+  const { data: session } = useSession();
 
   const {
     data: report,

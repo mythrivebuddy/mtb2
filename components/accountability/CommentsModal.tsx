@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 type Comment = {
   id: string;

@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import {
   sendPushNotificationMultipleUsers,
-  sendPushNotificationToUser,
 } from "@/lib/utils/pushNotifications";
 
 // GET handler to fetch all comments for a goal
