@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       userType: session.user.userType,
     });
 
-    if (!canCreate) { 
+    if (!canCreate) {
       return NextResponse.json(
         { error: "You are not allowed to create groups" },
         { status: 403 },
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     const message = isFreeUser
       ? `Upgrade your plan to create ${createLimit === 0 ? "" : "more"} accountability groups.`
       : `You’ve reached your ${limitType.toLowerCase()} accountability group creation limit.`;
-    
+
     const limitResponse = await enforceLimitResponse({
       limit: createLimit,
       currentCount,
@@ -151,10 +151,7 @@ export async function POST(req: Request) {
     return NextResponse.json(newGroup, { status: 201 });
   } catch (error) {
     console.error("Error creating group:", error);
-    return NextResponse.json(
-      { error },
-      { status: 500 },
-    );
+    return NextResponse.json({ error }, { status: 500 });
   }
 }
 
@@ -178,17 +175,23 @@ export async function GET(req: Request) {
         where: isAdmin
           ? { id: groupId } // ✅ admin can view ANY group
           : {
-            id: groupId,
-            members: {
-              some: { userId },
+              id: groupId,
+              members: {
+                some: { userId },
+              },
             },
-          },
         include: {
           members: {
             select: {
               userId: true,
               role: true,
-              user: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                },
+              },
             },
           },
           cycles: {

@@ -18,7 +18,16 @@ export async function GET() {
       where: { creatorId: userId },
       include: {
         members: {
-          include: { user: true },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                // email: true, // optional
+                image: true,
+              },
+            },
+          },
         },
         cycles: true,
       },
@@ -36,7 +45,16 @@ export async function GET() {
       },
       include: {
         members: {
-          include: { user: true },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                // email: true, // optional
+                image: true,
+              },
+            },
+          },
         },
         cycles: true,
       },
@@ -51,7 +69,7 @@ export async function GET() {
     console.error("Error fetching user groups:", error);
     return NextResponse.json(
       { error: "Failed to fetch groups" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

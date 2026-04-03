@@ -55,6 +55,12 @@ type MentionSuggestion = {
   image: string | null;
   isAll?: boolean;
 };
+type Cycle = {
+  id: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+};
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -77,7 +83,9 @@ export default function AccountabilityHubHome() {
   });
 
   const group = groups;
-  const activeCycle = group?.cycles?.[0];
+  const activeCycle = group?.cycles?.find(
+  (cycle: Cycle) => cycle.status === "active" || cycle.status === "repeat"
+);
   const {
     items: activityItems,
     isLoading: activityLoading,
@@ -120,7 +128,7 @@ export default function AccountabilityHubHome() {
   useEffect(() => {
     if (activeCycle) {
       const isExpired = new Date() > new Date(activeCycle.endDate);
-      const isActive = activeCycle.status === "active";
+      const isActive =   activeCycle.status === "active" || activeCycle.status === "repeat";
 
       if (isExpired && isActive) {
         router.push(
@@ -521,9 +529,9 @@ export default function AccountabilityHubHome() {
           <CardHeader>
             <CardTitle className="text-lg">Actions</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-3">
+          <CardContent className="flex flex-col sm:flex-row gap-3">
             <Link href={`/dashboard/accountability-hub?groupId=${group?.id}`}>
-              <Button variant="outline">View Members Table</Button>
+              <Button variant="outline" className="w-full">View Members Table</Button>
             </Link>
 
             {/* Leave Group */}

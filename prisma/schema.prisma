@@ -1100,12 +1100,16 @@ model Comment {
   updatedAt        DateTime           @updatedAt
   authorId         String
   goalId           String
+  parentId         String?
+  parent           Comment?           @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies          Comment[]          @relation("CommentReplies")
   ActivityFeedItem ActivityFeedItem[]
   author           User               @relation("AccountabilityComments", fields: [authorId], references: [id], onDelete: Cascade)
   goal             Goal               @relation(fields: [goalId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
   @@index([goalId])
+  @@index([parentId]) 
 }
 
 model ActivityFeedItem {
