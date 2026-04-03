@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import Link from "next/link";
 import Image from "next/image";
@@ -49,6 +49,12 @@ type Member = {
     email?: string | null;
   };
 };
+type MentionSuggestion = {
+  id: string;
+  display: string;
+  image: string | null;
+  isAll?: boolean;
+};
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -90,11 +96,23 @@ export default function AccountabilityHubHome() {
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [isCompletingCycle, setIsCompletingCycle] = useState(false);
-  // 🧠 Remove members state
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+
+  const [showAllMentionPopover, setShowAllMentionPopover] = useState(false);
+  const [allMentionAnchor, setAllMentionAnchor] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     setIsCompletingCycle(false);
@@ -115,6 +133,7 @@ export default function AccountabilityHubHome() {
     if (group?.notes) setNotes(group.notes);
   }, [group?.notes]);
 
+
   const isPrivate = group?.visibility === "PRIVATE";
   const canSeeNotes = !isPrivate || isAdmin;
   const { mutateAsync: startNewCycle, isPending: isCreatingCycle } =
@@ -132,22 +151,21 @@ export default function AccountabilityHubHome() {
   const handleSaveNotes = async () => {
     if (!groupId) return;
     setIsSavingNotes(true);
+
     try {
-      const response = await fetch(
-        `/api/accountability-hub/groups/${groupId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ notes }),
-        }
-      );
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.message || "Failed to save notes.");
+      const { userIds, everyone } = extractMentions(notes);
+
+      await axios.patch(`/api/accountability-hub/groups/${groupId}`, {
+        notes,
+        mentionedUserIds: everyone ? [] : userIds,
+        everyone,
+      });
 
       toast.success("Notes saved successfully!");
       await refetch();
       setIsEditingNotes(false);
+
+
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -226,6 +244,105 @@ export default function AccountabilityHubHome() {
       setRemovingMemberId(null);
     }
   };
+  const extractMentions = (text: string): { userIds: string[]; everyone: boolean } => {
+
+    const everyone = /@all\b/i.test(text);
+
+    const userIds: string[] = [];
+
+    allMembersData.forEach((member: MentionSuggestion) => {
+      const escapedName = member.display.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(`@${escapedName}\\b`, "i");
+
+      if (regex.test(text)) {
+        userIds.push(member.id);
+      }
+    });
+
+    return { userIds, everyone };
+  };
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    setNotes(text);
+
+    const textBeforeCursor = text.substring(0, cursorPosition);
+    const atIndex = textBeforeCursor.lastIndexOf("@");
+
+    if (atIndex === -1) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    const query = textBeforeCursor.substring(atIndex + 1);
+    if (/\s/.test(query) || /@/.test(query)) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    setMentionQuery(query);
+    setMentionStartIndex(atIndex);
+
+    const filteredMembers: MentionSuggestion[] = allMembersData.filter((member: MentionSuggestion) =>
+      member.display.toLowerCase().includes(query.toLowerCase())
+    );
+
+    // Add @all option
+    const allOption: MentionSuggestion[] = [
+      { id: "all", display: "all", image: null, isAll: true },
+    ];
+
+    const filtered = [...allOption, ...filteredMembers];
+
+    setSuggestions(filtered);
+    setShowSuggestions(filtered.length > 0);
+    setActiveSuggestionIndex(0);
+  };
+
+  const handleSuggestionClick = (suggestion: MentionSuggestion) => {
+    if (mentionStartIndex === -1) return;
+
+    const mentionText = `@${suggestion.display} `;
+    const part1 = notes.substring(0, mentionStartIndex);
+    const part2 = notes.substring(
+      mentionStartIndex + mentionQuery.length + 1
+    );
+
+    const newText = part1 + mentionText + part2;
+    setNotes(newText);
+
+    setShowSuggestions(false);
+    setMentionQuery("");
+    setMentionStartIndex(-1);
+    setActiveSuggestionIndex(0);
+    setTimeout(() => {
+      const newCursorPos = part1.length + mentionText.length;
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) => (prev + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestionIndex(
+        (prev) => (prev - 1 + suggestions.length) % suggestions.length
+      );
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      handleSuggestionClick(suggestions[activeSuggestionIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
 
   /** Filter members */
   const filteredMembers =
@@ -234,6 +351,73 @@ export default function AccountabilityHubHome() {
         m.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
         m?.role?.toLowerCase() !== "admin"
     ) || [];
+
+  const allMembersData =
+    group?.members?.map((member: Member) => ({
+      id: member.user.id,
+      display: member.user.name || "User",
+      image: member.user.image,
+    })) || [];
+
+  // Change the function signature to accept members
+  const renderNoteContent = (
+    content: string,
+    members: MentionSuggestion[] = allMembersData
+  ) => {
+    if (!content) return null;
+
+    const names = members
+      .map((m: MentionSuggestion) => m.display)
+      .filter(Boolean)
+      .sort((a: string, b: string) => b.length - a.length);
+
+    if (names.length === 0) return content;
+
+    const escapedNames = names.map((name: string) =>
+      name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    );
+
+    const mentionRegex = new RegExp(`@(all|${escapedNames.join('|')})`, 'gi');
+    const parts = content.split(mentionRegex);
+
+    return parts.map((part, index) => {
+      if (index % 2 === 0) return part;
+
+      if (part.toLowerCase() === "all") {
+        return (
+          <span
+            key={`all-${index}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = (e.target as HTMLElement).getBoundingClientRect();
+              setAllMentionAnchor({ x: rect.left, y: rect.bottom + window.scrollY });
+              setShowAllMentionPopover(true);
+            }}
+            className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200 cursor-pointer"
+          >
+            @all
+          </span>
+        );
+      }
+      const member = members.find((m: MentionSuggestion) => m.display === part);
+
+      if (member && groupId) {
+        return (
+          <Link
+            href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
+            target="_blank"
+            key={`${member.id}-${index}`}
+            className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200"
+          >
+            @{part}
+          </Link>
+        );
+      }
+
+      return `@${part}`;
+    });
+  };
+
   if (isCompletingCycle) {
     return (
       <div className="w-full min-h-[calc(100vh-120px)] bg-dashboard p-4 sm:p-6 md:p-8 flex items-center justify-center">
@@ -468,7 +652,7 @@ export default function AccountabilityHubHome() {
               <>
                 {canSeeNotes ? (
                   <div className="bg-muted rounded-lg p-4 text-sm text-muted-foreground whitespace-pre-line mb-4">
-                    {group.notes}
+                    {renderNoteContent(group.notes, allMembersData)}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
@@ -490,12 +674,45 @@ export default function AccountabilityHubHome() {
 
             {isAdmin && (isEditingNotes || !group?.notes) && (
               <>
-                <Textarea
-                  className="w-full h-40"
-                  placeholder="Write quick group notes..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
+                <div className="relative">
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 z-50 max-h-60 overflow-y-auto rounded-md border bg-white shadow-md p-1">
+                      {suggestions.map((suggestion, index) => (
+                        <button
+                          key={suggestion.id}
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSuggestionClick(suggestion);
+                          }}
+                          onMouseEnter={() => setActiveSuggestionIndex(index)}
+                          className={`flex w-full items-center gap-2 px-2 py-1.5 text-sm rounded ${index === activeSuggestionIndex ? "bg-gray-100" : ""
+                            }`}
+                        >
+                          <img
+                            src={
+                              suggestion.image
+                                ? suggestion.image
+                                : `https://ui-avatars.com/api/?name=${suggestion.display}`
+                            }
+                            className="w-6 h-6 rounded-full"
+                          />
+                          <span className="font-medium">{suggestion.display}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <Textarea
+                    ref={textareaRef}
+                    className="w-full h-40"
+                    placeholder="Write notes... Use @ to mention"
+                    value={notes}
+                    onChange={handleNotesChange}
+                    onKeyDown={handleKeyDown}
+                  />
+                </div>
+
 
                 <div className="flex gap-3 mt-4">
                   <Button
@@ -565,6 +782,37 @@ export default function AccountabilityHubHome() {
           </Card>
         )}
       </div>
+      {/* @all mention popover */}
+      {showAllMentionPopover && allMentionAnchor && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowAllMentionPopover(false)}
+          />
+          <div
+            className="fixed z-50 bg-white border rounded-md shadow-md p-1 max-h-60 overflow-y-auto min-w-[180px]"
+            style={{ top: allMentionAnchor.y + 4, left: allMentionAnchor.x }}
+          >
+            <p className="text-xs text-gray-400 px-2 py-1 font-medium">All members</p>
+            {allMembersData.map((member: MentionSuggestion) => (
+              <div
+                key={member.id}
+                className="flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-gray-100"
+              >
+                <img
+                  src={
+                    member.image
+                      ? member.image
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(member.display)}`
+                  }
+                  className="w-6 h-6 rounded-full"
+                />
+                <span>{member.display}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

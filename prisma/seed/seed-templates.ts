@@ -500,6 +500,76 @@ async function main() {
 </div>
     `.trim(),
     },
+
+    {
+      templateId: "accountability-group-notes-updated",
+      subject: "New Update in {{groupName}} Accountability Hub Group",
+      description:
+        "Email sent when group notes are updated in an accountability hub group.",
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+
+        <!-- HEADER -->
+        <div style="padding: 28px; text-align: center; background: linear-gradient(90deg, #3b82f6, #4f46e5);">
+       <h1 style="margin: 0; color: white; font-size: 24px;">Group Notes Updated</h1>
+        <p style="margin: 6px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
+         Stay aligned. Stay accountable.
+        </p>
+      </div>
+
+      <!-- BODY -->
+      <div style="padding: 28px;">
+       <p style="font-size: 15px; color: #374151;">Hello <strong>{{username}}</strong>,</p>
+
+        <p style="color: #4b5563; font-size: 14px;">
+           <strong>{{updatedBy}}</strong> has updated the group notes in your accountability group:
+       </p>
+
+    <h2 style="margin: 10px 0 20px; color: #111827; font-size: 20px;">
+      {{groupName}}
+    </h2>
+
+    <!-- MESSAGE BOX -->
+    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+      <p style="margin: 0; color: #374151; font-size: 14px;">
+        Group notes help everyone stay aligned, accountable, and focused on the goals that matter.
+      </p>
+    </div>
+
+    <!-- CTA BUTTON -->
+    <div style="text-align: center; margin: 28px 0;">
+      <a href="{{groupUrl}}" style="
+        background: linear-gradient(90deg, #3b82f6, #4f46e5);
+        color: white;
+        padding: 14px 28px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 15px;
+        display: inline-block;
+      ">
+        View Group Notes →
+      </a>
+    </div>
+
+    <p style="color: #6b7280; font-size: 13px;">
+      Consistency builds progress. Make sure to review the updated notes and stay on track with your goals.
+    </p>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background: #f9fafb; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this because you're a member of the accountability group <strong>{{groupName}}</strong>.
+    </p>
+    <p style="margin: 6px 0 0; color: #d1d5db; font-size: 12px;">
+      © My Thrive Buddy. All rights reserved.
+    </p>
+  </div>
+
+</div>
+`.trim(),
+    },
   ];
 
   for (const tmpl of templates) {
