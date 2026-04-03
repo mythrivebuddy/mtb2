@@ -61,41 +61,55 @@ interface CommentsModalProps {
 const renderCommentContent = (
   content: string,
   groupId: string | null,
-  allMembers: MentionSuggestion[] // ✅ Requires the full member list
+  allMembers: MentionSuggestion[]
 ) => {
-  // Regex to find all @mentions (e.g., @Toheed, @ex1)
-  const mentionRegex = /@(\w+)\b/g;
+  const elements: React.ReactNode[] = [];
+  const mentionRegex = /@([a-zA-Z0-9 ]+)/g;
 
-  // Split the content by the regex
-  const parts = content.split(mentionRegex);
+  let lastIndex = 0;
+  let match;
 
-  return parts.map((part, index) => {
-    // Even parts are regular text (before, between, or after mentions)
-    if (index % 2 === 0) {
-      return part;
+  while ((match = mentionRegex.exec(content)) !== null) {
+    const fullMatch = match[0]; // @John Doe
+    const displayName = match[1].trim(); // John Doe
+
+    const start = match.index;
+    const end = start + fullMatch.length;
+
+    // push text before mention
+    if (lastIndex < start) {
+      elements.push(content.slice(lastIndex, start));
     }
 
-    // Odd parts are the "DisplayName" (e.g., "Toheed")
-    const displayName = part;
-    // Find the member in the list
-    const member = allMembers.find((m) => m.display === displayName);
+    // find member (case insensitive)
+    const member = allMembers.find(
+      (m) => m.display?.toLowerCase() === displayName.toLowerCase()
+    );
 
-    // If we found a member and have a groupId, make a link
     if (member && groupId) {
-      return (
+      elements.push(
         <Link
+          key={`${member.id}-${start}`}
           href={`/dashboard/accountability-hub/member/${member.id}?groupId=${groupId}`}
-          key={`${member.id}-${index}`}
           className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200 transition-colors"
+          target="_blank"
         >
           @{displayName}
         </Link>
       );
+    } else {
+      elements.push(fullMatch);
     }
 
-    // If no match or no groupId, just render the plain text mention
-    return `@${displayName}`;
-  });
+    lastIndex = end;
+  }
+
+  // push remaining text
+  if (lastIndex < content.length) {
+    elements.push(content.slice(lastIndex));
+  }
+
+  return elements;
 };
 
 export default function CommentsModal({
@@ -256,6 +270,21 @@ export default function CommentsModal({
     }
   };
   // --- End Custom Mention Logic ---
+  const renderHighlightedText = (text: string) => {
+    const parts = text.split(/(@[a-zA-Z0-9 ]+)/g);
+    return parts.map((part, i) => {
+      const isMatch = allMembersData.some(
+        (m) => `@${m.display}`.toLowerCase() === part.toLowerCase()
+      );
+      return isMatch ? (
+        <mark key={i} className="bg-blue-100 text-blue-600 font-semibold rounded-sm">
+          {part}
+        </mark>
+      ) : (
+        <span key={i}>{part}</span>
+      );
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -273,6 +302,7 @@ export default function CommentsModal({
               <div key={comment.id} className="flex items-start gap-3">
                 <Link
                   href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`}
+                  target="_blank"
                 >
                   <Image
                     src={
@@ -294,6 +324,7 @@ export default function CommentsModal({
                     <Link
                       href={`/dashboard/accountability-hub/member/${comment.author.id}?groupId=${groupId}`}
                       className="font-semibold hover:underline"
+                      target="_blank"
                     >
                       {comment.author.name}
                     </Link>
@@ -333,8 +364,8 @@ export default function CommentsModal({
                   }}
                   onMouseEnter={() => setActiveSuggestionIndex(index)}
                   className={`flex w-full items-center gap-2 relative cursor-pointer select-none rounded-sm px-2 py-1.5 text-sm outline-none transition-colors ${index === activeSuggestionIndex
-                      ? "bg-accent text-accent-foreground"
-                      : ""
+                    ? "bg-accent text-accent-foreground"
+                    : ""
                     }`}
                 >
                   <Avatar className="h-6 w-6">
