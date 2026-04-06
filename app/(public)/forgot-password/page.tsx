@@ -27,8 +27,6 @@ const ForgotPasswordPage = () => {
       const res = await axios.post("/api/auth/forgot-password", data);
 
       if (res.status !== 200) {
-        console.log(res); //?dev
-        // toast.error("Failed to request password reset. Please try again.");
         toast.error(
           getAxiosErrorMessage(
             res,
@@ -38,7 +36,6 @@ const ForgotPasswordPage = () => {
         return;
       }
       router.push("/");
-      console.log("Password reset requested for:", data.email);
       toast.success("Password reset link sent to your email.");
     } catch (error) {
       console.error("Error:", error);
@@ -63,7 +60,7 @@ const ForgotPasswordPage = () => {
             error={errors.email}
           />
           <Button type="submit" disabled={isSubmitting}>
-            Submit
+          {isSubmitting ? "Sending reset link..." : "Submit"}
           </Button>
         </form>
       </FormWrapper>
