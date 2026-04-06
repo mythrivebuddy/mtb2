@@ -20,14 +20,14 @@ export async function POST(req: Request) {
           error:
             "This email is registered with Google. Please use Google Sign-in instead.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const resetToken = jwt.sign(
       { email: user.email },
       process.env.JWT_SECRET!,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     const resetUrl = `${process.env.NEXT_URL}/reset-password?token=${resetToken}`;
@@ -37,18 +37,18 @@ export async function POST(req: Request) {
       toEmail: user.email,
       toName: user.name,
       templateId: "forget-password",
-      templateData: { resetUrl },
+      templateData: { username: user.name, resetUrl },
     });
 
     return NextResponse.json(
       { message: "Password reset link sent to your email" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Password reset error:", error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
