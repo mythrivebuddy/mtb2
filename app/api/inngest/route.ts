@@ -3,6 +3,8 @@ import { inngest } from "@/lib/inngest";
 import { onboardingReminder } from "@/app/inngest/onboarding/onboarding-reminders";
 import { alignedActionReminders } from "@/app/inngest/aligned-action/aligned-action-reminders";
 import { alignedActionSnooze } from "@/app/inngest/aligned-action/aligned-action-snooze";
+import { sendInvoiceFunction } from "@/app/inngest/invoice/send-invoice";
+
 // import { dailyReminderCron } from "@/app/inngest/daily/daily-primary-reminder";
 // import { dailyReminderCheck } from "@/app/inngest/daily/daily-reminder-check";
 
@@ -15,5 +17,6 @@ export const { GET, POST, PUT } = serve({
     // dailyReminderCheck, //event-based
     alignedActionReminders,
     alignedActionSnooze,
+    sendInvoiceFunction,
   ],
 });
