@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         // Brevo rate limit safety
         await new Promise((res) => setTimeout(res, 150));
       } catch (error) {
-        console.error("Brevo sync failed for:", user.email);
+        console.error("Brevo sync failed for:", user.email, error);
         failed++;
       }
     }
