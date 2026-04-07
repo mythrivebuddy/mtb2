@@ -30,6 +30,7 @@ model User {
   isBlocked                     Boolean?                          @default(false)
   emailVerificationToken        String?
   emailVerificationTokenExpires DateTime?
+  emailVerificationLastSentAt DateTime?
   isEmailVerified               Boolean                           @default(false)
   achievements                  String?
   goals                         String?
@@ -48,6 +49,8 @@ model User {
   isFirstTimeSurvey             Boolean?                          @default(true)
   lastSurveyTime                DateTime?
   challenge_limit               Int                               @default(1)
+  isInBrevo           Boolean  @default(false)
+  brevoUserTypeSynced Boolean  @default(false)
   currentCurrency               SubscriptionPlanCurrency?
   currentPlanId                 String?
   currentPlanInterval           PlanInterval?
@@ -1557,6 +1560,24 @@ model AdminPaymentGatewayConfig {
   id            Int      @id @default(autoincrement())
   activeGateway String   @default("CASHFREE") // "CASHFREE" | "RAZORPAY"
   updatedAt     DateTime @updatedAt
+}
+
+model MtbBusinessProfile {
+  id              String   @id @default(uuid())
+
+  companyName     String
+  address         String
+  gstNumber       String
+  lutNumber       String?
+  phoneNumber     String
+  email           String
+  logoUrl         String?
+
+  // All invoice series stored here
+  invoiceSeries   Json
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model RazorpayPlanCache {

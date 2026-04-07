@@ -39,7 +39,7 @@ export async function sendEmailUsingTemplate({
   const emailContent = renderEmailTemplate(template.htmlContent, templateData);
 
   const payload = {
-    sender: { email: senderEmail,name: "MyThriveBuddy" },
+    sender: { email: senderEmail, name: "MyThriveBuddy" },
     to: [{ email: toEmail, name: toName }],
     subject: renderEmailTemplate(template.subject, templateData),
     htmlContent: emailContent,
@@ -53,16 +53,14 @@ interface DirectEmailData {
   subject: string;
   body: string; // This is assumed to be pre-rendered HTML content
 }
-export async function sendEmail({
-  userId,
-  subject,
-  body,
-}: DirectEmailData) {
+export async function sendEmail({ userId, subject, body }: DirectEmailData) {
   const senderEmail = process.env.CONTACT_SENDER_EMAIL;
   const brevoApiKey = process.env.BREVO_API_KEY;
 
   if (!senderEmail || !brevoApiKey) {
-    throw new Error("Missing necessary environment variables for sending email");
+    throw new Error(
+      "Missing necessary environment variables for sending email",
+    );
   }
 
   // 1. Get user's email and name from the database using Prisma
@@ -93,4 +91,82 @@ export async function sendEmail({
 
   // 4. Send the email via Brevo
   await axios.post(brevoApiUrl, payload, { headers });
+}
+
+export async function sendInvoiceEmail({
+  to,
+  pdfBuffer,
+  order,
+  invoiceNumber,
+}: {
+  to: string;
+  pdfBuffer: Buffer;
+  order: any;
+  invoiceNumber: string;
+}) {
+  const brevoApiKey = process.env.BREVO_API_KEY;
+
+  await axios.post(
+    "https://api.brevo.com/v3/smtp/email",
+    {
+      sender: {
+        email: process.env.CONTACT_SENDER_EMAIL,
+        name: "MyThriveBuddy",
+      },
+      to: [{ email: to }],
+      subject: "Your Invoice",
+      htmlContent: `
+  <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:20px;">
+    <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:10px; padding:24px;">
+      
+      <h2 style="color:#1E2875; margin-bottom:10px;">
+        Payment Confirmed ✅
+      </h2>
+
+      <p style="font-size:14px; color:#333;">
+        Hi there,
+      </p>
+
+      <p style="font-size:14px; color:#333;">
+        Thank you for your purchase! Your payment has been successfully processed.
+      </p>
+
+      <div style="background:#f1f5f9; padding:12px 16px; border-radius:8px; margin:16px 0;">
+        <p style="margin:0; font-size:13px;"><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+        <p style="margin:4px 0 0; font-size:13px;"><strong>Order ID:</strong> ${order.id}</p>
+        <p style="margin:4px 0 0; font-size:13px;"><strong>Amount Paid:</strong> ₹${order.totalAmount / 100}</p>
+      </div>
+
+      <p style="font-size:14px; color:#333;">
+        📎 Your invoice is attached to this email for your records.
+      </p>
+
+      <p style="font-size:14px; color:#333;">
+        If you have any questions, feel free to reply to this email.
+      </p>
+
+      <hr style="margin:24px 0; border:none; border-top:1px solid #e5e7eb;" />
+
+      <p style="font-size:12px; color:#888;">
+        — Team MyThriveBuddy
+      </p>
+
+    </div>
+  </div>
+`,
+
+      attachment: [
+        {
+          name: `${invoiceNumber}.pdf`,
+          content: pdfBuffer.toString("base64"),
+        },
+      ],
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": brevoApiKey,
+      },
+    },
+  );
 }

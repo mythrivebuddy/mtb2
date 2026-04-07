@@ -111,6 +111,10 @@ const Sidebar = () => {
               />
               <NavItem href="/admin/cms" label="CMS" />
               <NavItem href="/admin/feature-controls" label="Feature Controls" />
+              <NavItem
+                href="/admin/mtb-business-profile"
+                label="MTB Business Profile"
+              />
               <NavItem href="/admin/membership-plans" label="Membership Plans" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
