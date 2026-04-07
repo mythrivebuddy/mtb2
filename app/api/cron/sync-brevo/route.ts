@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { splitFullName } from "@/lib/utils/utils";
 import { addOrUpdateBrevoContact } from "@/lib/brevo";
+import { PlanUserType } from "@prisma/client";
 
 function isAuthorized(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  return authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  return req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
+}
+
+interface UserRecord {
+  email: string;
+  name: string | null;
+  userType: PlanUserType | null;
 }
 
 export async function GET(req: NextRequest) {
@@ -14,7 +20,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const users = await prisma.user.findMany({
+    const users: UserRecord[] = await prisma.user.findMany({
+      where: {
+        userType: {
+          not: null,
+        },
+        OR: [
+          { isInBrevo: false },
+          { isInBrevo: true, brevoUserTypeSynced: false },
+        ],
+      },
       select: {
         email: true,
         name: true,
@@ -22,11 +37,13 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    let successCount = 0;
-    let failedCount = 0;
+    let success = 0;
+    let failed = 0;
 
     for (const user of users) {
       try {
+        if (!user.userType) continue;
+
         const { firstName, lastName } = splitFullName(user.name);
 
         await addOrUpdateBrevoContact({
@@ -36,27 +53,32 @@ export async function GET(req: NextRequest) {
           userType: user.userType,
         });
 
-        successCount++;
+        await prisma.user.update({
+          where: { email: user.email },
+          data: {
+            isInBrevo: true,
+            brevoUserTypeSynced: true,
+          },
+        });
+
+        success++;
+
+        // Brevo rate limit safety
+        await new Promise((res) => setTimeout(res, 150));
       } catch (error) {
-        console.log("Failed error for user:", user.email, error);
-        failedCount++;
+        console.error("Brevo sync failed for:", user.email, error);
+        failed++;
       }
     }
 
     return NextResponse.json({
-      message: "Brevo sync completed",
-      totalUsersProcessed: users.length,
-      success: successCount,
-      failed: failedCount,
+      message: "Brevo sync cron completed",
+      processed: users.length,
+      success,
+      failed,
     });
   } catch (error) {
-    console.error("Error syncing with Brevo:", error);
-    return NextResponse.json(
-      {
-        error: "Internal Server Error",
-        errorDetails: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    console.error("Brevo sync cron error:", error);
+    return NextResponse.json({ error: "Cron failed" }, { status: 500 });
   }
 }

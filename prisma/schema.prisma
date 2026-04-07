@@ -49,6 +49,8 @@ model User {
   isFirstTimeSurvey             Boolean?                          @default(true)
   lastSurveyTime                DateTime?
   challenge_limit               Int                               @default(1)
+  isInBrevo           Boolean  @default(false)
+  brevoUserTypeSynced Boolean  @default(false)
   currentCurrency               SubscriptionPlanCurrency?
   currentPlanId                 String?
   currentPlanInterval           PlanInterval?
