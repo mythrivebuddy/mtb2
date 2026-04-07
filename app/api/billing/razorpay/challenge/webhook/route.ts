@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
 import { PaymentStatus } from "@prisma/client";
 import { processPayment } from "@/lib/payment/processPayment";
-
+import { inngest } from "@/lib/inngest";
 
 export async function POST(req: NextRequest) {
   try {
@@ -65,9 +65,22 @@ export async function POST(req: NextRequest) {
 
       await processPayment(tx, updatedOrder);
     });
-
+    try {
+      if (inngest && typeof inngest.send === "function") {
+        await inngest.send({
+          name: "invoice/send",
+          id: `invoice-${payment.id}`,
+          data: {
+            orderId: existingOrder.id,
+          },
+        });
+      } else {
+        console.warn("Inngest not configured, skipping event");
+      }
+    } catch (err) {
+      console.error("Inngest failed (ignored):", err);
+    }
     return new NextResponse("OK", { status: 200 });
-
   } catch (error) {
     console.error("Razorpay Webhook Error:", error);
     return new NextResponse("Webhook error", { status: 500 });

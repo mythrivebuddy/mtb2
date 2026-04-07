@@ -4,13 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { signupSchema } from "@/schema/zodSchema";
 import { ActivityType } from "@prisma/client";
 import { assignJp } from "@/lib/utils/jp";
-import { sign } from "jsonwebtoken";
-import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import axios from "axios";
 
 // Added these new imports at the top
 import { addOrUpdateBrevoContact } from "@/lib/brevo";
 import { splitFullName } from "@/lib/utils/utils";
+import { generateVerificationToken, sendVerificationEmail } from "@/lib/auth/emailVerification";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,15 +18,14 @@ export async function POST(request: NextRequest) {
     if (honeypot) {
       return NextResponse.json(
         { error: "Invalid form submission" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-   
 
     if (!captchaToken) {
       return NextResponse.json(
         { error: "Captcha token missing" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,10 +44,9 @@ export async function POST(request: NextRequest) {
     if (!captchaData.success) {
       return NextResponse.json(
         { error: "Captcha verification failed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
 
     // Validate input
 
@@ -57,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (!validation.success) {
       return NextResponse.json(
         { error: validation.error.errors[0].message },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const { email, password, name, userType } = userInput;
@@ -78,29 +75,14 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: "User already exists" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const verificationToken = sign({ email }, process.env.JWT_SECRET!, {
-      expiresIn: "24h",
-    });
-
-    // Send verification email
-    const verificationUrl = `${process.env.NEXT_URL}/verify-email?token=${verificationToken}`;
-
-    await sendEmailUsingTemplate({
-      toEmail: email,
-      toName: name,
-      templateId: "verification-mail",
-      templateData: {
-        username: name,
-        verificationUrl,
-      },
-    });
+    const { token, expires } = generateVerificationToken(email);
 
     const user = await prisma.user.create({
       data: {
@@ -109,15 +91,15 @@ export async function POST(request: NextRequest) {
         name,
         role: process.env.ADMIN_EMAIL === email ? "ADMIN" : "USER",
         userType: normalizedUserType,
-        emailVerificationToken: verificationToken,
-        emailVerificationTokenExpires: new Date(
-          Date.now() + 24 * 60 * 60 * 1000
-        ),
+        emailVerificationToken: token,
+        emailVerificationTokenExpires: expires,
+        emailVerificationLastSentAt: new Date(),
       },
       omit: { password: true },
       include: { plan: true },
     });
 
+    await sendVerificationEmail(user.email, user.name, token);
     // * assign JP as signup reward
     assignJp(user, ActivityType.SIGNUP);
 
@@ -130,7 +112,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
       firstName: firstName,
       lastName: lastName,
-      userType:user.userType
+      userType: user.userType,
     });
 
     return NextResponse.json({
@@ -146,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(
       { error: "Failed to create user" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
