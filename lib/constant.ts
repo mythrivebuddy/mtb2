@@ -148,3 +148,148 @@ export const CMP_NOTIFICATIONS = {
     url: "/dashboard/complete-makeover-program/todays-actions",
   },
 } as const;
+
+
+
+export const STATE_NAME_MAP: Record<string, string> = {
+  // Andhra Pradesh
+  "andhra pradesh": "andhra pradesh",
+  "ap": "andhra pradesh",
+
+  // Arunachal Pradesh
+  "arunachal pradesh": "arunachal pradesh",
+
+  // Assam
+  "assam": "assam",
+  "as": "assam",
+
+  // Bihar
+  "bihar": "bihar",
+  "br": "bihar",
+
+  // Chhattisgarh
+  "chhattisgarh": "chhattisgarh",
+  "cg": "chhattisgarh",
+
+  // Goa
+  "goa": "goa",
+  "ga": "goa",
+
+  // Gujarat
+  "gujarat": "gujarat",
+  "gj": "gujarat",
+
+  // Haryana
+  "haryana": "haryana",
+  "hr": "haryana",
+
+  // Himachal Pradesh
+  "himachal pradesh": "himachal pradesh",
+  "hp": "himachal pradesh",
+
+  // Jharkhand
+  "jharkhand": "jharkhand",
+  "jh": "jharkhand",
+
+  // Karnataka
+  "karnataka": "karnataka",
+  "ka": "karnataka",
+
+  // Kerala
+  "kerala": "kerala",
+  "kl": "kerala",
+
+  // Madhya Pradesh
+  "madhya pradesh": "madhya pradesh",
+  "mp": "madhya pradesh",
+
+  // Maharashtra
+  "maharashtra": "maharashtra",
+  "mh": "maharashtra",
+
+  // Manipur
+  "manipur": "manipur",
+  "mn": "manipur",
+
+  // Meghalaya
+  "meghalaya": "meghalaya",
+  "ml": "meghalaya",
+
+  // Mizoram
+  "mizoram": "mizoram",
+  "mz": "mizoram",
+
+  // Nagaland
+  "nagaland": "nagaland",
+  "nl": "nagaland",
+
+  // Odisha
+  "odisha": "odisha",
+  "orissa": "odisha",
+  "od": "odisha",
+
+  // Punjab
+  "punjab": "punjab",
+  "pb": "punjab",
+
+  // Rajasthan
+  "rajasthan": "rajasthan",
+  "rj": "rajasthan",
+
+  // Sikkim
+  "sikkim": "sikkim",
+  "sk": "sikkim",
+
+  // Tamil Nadu
+  "tamil nadu": "tamil nadu",
+  "tn": "tamil nadu",
+
+  // Telangana
+  "telangana": "telangana",
+  "ts": "telangana",
+
+  // Tripura
+  "tripura": "tripura",
+  "tr": "tripura",
+
+  // Uttar Pradesh
+  "uttar pradesh": "uttar pradesh",
+  "up": "uttar pradesh",
+
+  // Uttarakhand
+  "uttarakhand": "uttarakhand",
+  "uk": "uttarakhand",
+  "uttrakhand": "uttarakhand", // common typo
+
+  // West Bengal
+  "west bengal": "west bengal",
+  "wb": "west bengal",
+
+  // --- UNION TERRITORIES (important for GST too) ---
+
+  // Delhi
+  "delhi": "delhi",
+  "new delhi": "delhi",
+  "dl": "delhi",
+
+  // Chandigarh
+  "chandigarh": "chandigarh",
+
+  // Jammu and Kashmir
+  "jammu and kashmir": "jammu and kashmir",
+  "j&k": "jammu and kashmir",
+
+  // Ladakh
+  "ladakh": "ladakh",
+
+  // Puducherry
+  "puducherry": "puducherry",
+  "pondicherry": "puducherry",
+
+  // Andaman & Nicobar
+  "andaman and nicobar islands": "andaman and nicobar islands",
+
+  // Dadra Nagar Haveli + Daman Diu
+  "dadra and nagar haveli and daman and diu":
+    "dadra and nagar haveli and daman and diu",
+};

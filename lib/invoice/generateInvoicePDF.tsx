@@ -17,7 +17,7 @@ type Order = {
   baseAmount: number;
   discountApplied?: number;
   gstAmount?: number;
-  totalAmount: number;
+  totalAmount?: number;
   currency: "INR" | "USD";
   purchaseData?: PurchaseData | null; // ✅ fixed
   createdAt?: Date; // ✅ add this
@@ -82,20 +82,31 @@ function generateInvoiceHTML(data: InvoiceData) {
   const discount = order.discountApplied || 0;
   const taxable = baseAmount - discount;
 
-  const gstAmount = order.gstAmount || 0;
+  const isInternational =
+    billing.country.toLocaleLowerCase() !== "india" &&
+    billing.country.toLocaleLowerCase() !== "in";
+
+  const GST_RATE = isInternational ? 0 : gst.igst || gst.cgst + gst.sgst;
+
+  const gstAmount = isInternational
+    ? 0
+    : order.gstAmount !== undefined
+      ? order.gstAmount
+      : (taxable * GST_RATE) / 100;
 
   const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
   const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
   const igst = gst.igst > 0 ? gstAmount : 0;
 
-  const total = order.totalAmount || 0;
+  const total =
+    order.totalAmount !== undefined ? order.totalAmount : taxable + gstAmount;
 
   const currency = order.currency === "INR" ? "₹" : "$";
 
   // ✅ Invoice type
   const isExport = gst.type === "EXPORT";
   const invoiceTitle = isExport ? "EXPORT INVOICE" : "TAX INVOICE";
-  const isInternational = billing.country !== "India";
+
   const placeOfSupplyWithCode = isInternational
     ? "Outside India"
     : billing.state;
@@ -219,7 +230,11 @@ function generateInvoiceHTML(data: InvoiceData) {
 
     <div>
       Invoice No: ${invoiceNumber}<br/>
-      Invoice Date: ${new Date().toLocaleDateString("en-IN")}
+      Invoice Date: ${new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })}
     </div>
 
     <br/>
@@ -256,49 +271,46 @@ function generateInvoiceHTML(data: InvoiceData) {
 
     <div class="divider"></div>
 
-    <div class="summary">
-      <div class="row">
-        <span>Subtotal</span>
-        <span>${currency}${baseAmount}</span>
-      </div>
+  <div class="summary">
 
-      ${
-        discount > 0
-          ? `<div class="row">
-              <span>Discount</span>
-              <span>-${currency}${discount}</span>
-            </div>`
-          : ""
-      }
+  <div class="row">
+    <span>Subtotal</span>
+    <span>${currency}${baseAmount.toFixed(2)}</span>
+  </div>
 
-      <div class="row">
-        <span>Taxable Amount</span>
-        <span>${currency}${taxable}</span>
-      </div>
+  ${
+    discount > 0
+      ? `<div class="row">
+          <span>Discount</span>
+          <span>-${currency}${discount.toFixed(2)}</span>
+        </div>`
+      : ""
+  }
 
-      ${
-        cgst > 0
-          ? `<div class="row"><span>CGST 9%</span><span>${currency}${cgst}</span></div>`
-          : ""
-      }
+  <div class="row">
+    <span>Taxable Amount</span>
+    <span>${currency}${taxable.toFixed(2)}</span>
+  </div>
 
-      ${
-        sgst > 0
-          ? `<div class="row"><span>SGST 9%</span><span>${currency}${sgst}</span></div>`
-          : ""
-      }
+  ${
+    isExport
+      ? `<div class="row">
+          <span>GST</span>
+          <span>0%</span>
+        </div>`
+      : `
+        ${cgst > 0 ? `<div class="row"><span>CGST 9%</span><span>${currency}${cgst.toFixed(2)}</span></div>` : ""}
+        ${sgst > 0 ? `<div class="row"><span>SGST 9%</span><span>${currency}${sgst.toFixed(2)}</span></div>` : ""}
+        ${igst > 0 ? `<div class="row"><span>IGST 18%</span><span>${currency}${igst.toFixed(2)}</span></div>` : ""}
+      `
+  }
 
-      ${
-        igst > 0
-          ? `<div class="row"><span>IGST 18%</span><span>${currency}${igst}</span></div>`
-          : ""
-      }
+  <div class="row total">
+    <span>Total</span>
+    <span>${currency}${total.toFixed(2)}</span>
+  </div>
 
-      <div class="row total">
-        <span>Total</span>
-        <span>${currency}${total}</span>
-      </div>
-    </div>
+</div>
 
     ${
       isExport

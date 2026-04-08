@@ -85,34 +85,8 @@ export async function handleStorePayment(
     year: "numeric",
   });
 
-  const itemNames = orderItems
-    .map(
-      (i) =>
-        `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
-    )
-    .join(", ");
-
   const appUrl = process.env.NEXT_URL || "";
 
-  if (user?.email) {
-    void sendEmailUsingTemplate({
-      toEmail: user.email,
-      toName: user.name ?? "Customer",
-      templateId: "order-placed",
-      templateData: {
-        username: user.name ?? "Customer",
-        orderId: storeOrder.id,
-        orderDate,
-        totalAmount: `${order.totalAmount} ${order.currency}`,
-        status: "COMPLETED",
-        itemCount: orderItems.length,
-        itemNames,
-        orderUrl: `${appUrl}/dashboard/store/order-history`,
-        currency: order.currency,
-        paymentDetails: `Paid with Razorpay (${order.currency})`,
-      },
-    });
-  }
   const items = await tx.item.findMany({
     where: {
       id: { in: cart.map((c) => c.itemId) },
@@ -121,16 +95,65 @@ export async function handleStorePayment(
       id: true,
       creator: {
         select: {
-          id:true,
+          id: true,
           role: true,
         },
       },
     },
   });
-  console.log("📦 Store Items:", items);
-  const adminItemIds = items
+   const adminItemIds = items
     .filter((item) => item.creator?.role === "ADMIN")
     .map((item) => item.id);
+
+  const nonAdminOrderItems = orderItems.filter(
+    (oi) => !adminItemIds.includes(oi.itemId),
+  );
+  const itemCount = nonAdminOrderItems.length;
+  const itemNames = nonAdminOrderItems
+    .map(
+      (i) =>
+        `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
+    )
+    .join(", ");
+  console.log("📦 Store Items:", items);
+ 
+
+  const hasAdminItems = adminItemIds.length > 0;
+  const hasNonAdminItems = nonAdminOrderItems.length > 0;
+
+  if (hasAdminItems && hasNonAdminItems && user?.email) {
+    const itemCount = nonAdminOrderItems.length;
+
+    const itemNames = nonAdminOrderItems
+      .map(
+        (i) =>
+          `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
+      )
+      .join(", ");
+
+    const nonAdminTotal = nonAdminOrderItems.reduce(
+      (sum, item) => sum + item.priceAtPurchase * item.quantity,
+      0,
+    );
+
+    void sendEmailUsingTemplate({
+      toEmail: user.email,
+      toName: user.name ?? "Customer",
+      templateId: "order-placed",
+      templateData: {
+        username: user.name ?? "Customer",
+        orderId: storeOrder.id,
+        orderDate,
+        totalAmount: `${nonAdminTotal} ${order.currency}`, // ✅ FIXED
+        status: "COMPLETED",
+        itemCount, // ✅ FIXED
+        itemNames, // ✅ FIXED
+        orderUrl: `${appUrl}/dashboard/store/order-history`,
+        currency: order.currency,
+        paymentDetails: `Paid with Razorpay (${order.currency})`,
+      },
+    });
+  }
   console.log("✅ Admin Item IDs:", adminItemIds);
   return { adminItemIds };
 }

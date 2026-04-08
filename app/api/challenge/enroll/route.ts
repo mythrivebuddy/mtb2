@@ -356,12 +356,20 @@ export async function POST(request: Request) {
       transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
     };
     // ✅ USER EMAIL
-    void sendEmailUsingTemplate({
-      toEmail: joiner.email!,
-      toName: joiner.name || "User",
-      templateId: isPaid ? "challenge-joined-paid" : "challenge-joined-free",
-      templateData: emailData,
-    }).catch((err) => console.error("User email failed:", err.message));
+    const shouldSkipUserEmail = isPaid && creator?.role === "ADMIN";
+
+    if (!shouldSkipUserEmail) {
+      console.log("📧 Sending USER email");
+
+      void sendEmailUsingTemplate({
+        toEmail: joiner.email!,
+        toName: joiner.name || "User",
+        templateId: isPaid ? "challenge-joined-paid" : "challenge-joined-free",
+        templateData: emailData,
+      }).catch((err) => console.error("User email failed:", err.message));
+    } else {
+      console.log("🚫 Skipping USER email (admin paid challenge)");
+    }
 
     // ✅ COACH EMAIL
     // ✅ COACH EMAIL (SAFE)
@@ -369,7 +377,6 @@ export async function POST(request: Request) {
       const templateId = isPaid
         ? "coach-user-joined-paid-challenge"
         : "coach-user-joined-challenge";
-
       void sendEmailUsingTemplate({
         toEmail: creator.email,
         toName: creator.name || "Coach",

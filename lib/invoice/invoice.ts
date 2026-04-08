@@ -1,46 +1,67 @@
 import { prisma } from "@/lib/prisma";
+import { STATE_NAME_MAP } from "../constant";
 
-export async function getBillingInfo(userId: string) {
+export async function getBillingInfo(
+  userId: string,
+  options?: { preferLegacy?: boolean }
+) {
+  const preferLegacy = options?.preferLegacy ?? false;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  // ---- Helper formatters ----
+  const formatNew = (billing: any) => ({
+    name: billing.fullName,
+    email: billing.email,
+    phone: billing.phone,
+    addressLine1: billing.addressLine1,
+    addressLine2: billing.addressLine2,
+    city: billing.city,
+    state: billing.state,
+    postalCode: billing.postalCode,
+    country: billing.country,
+    gstNumber: billing.gstNumber,
+  });
+
+  const formatLegacy = (legacy: any) => ({
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: legacy.phone,
+    addressLine1: legacy.addressLine1,
+    addressLine2: legacy.addressLine2,
+    city: legacy.city,
+    state: legacy.state,
+    postalCode: legacy.postalCode,
+    country: legacy.country,
+    gstNumber: legacy.gstNumber,
+  });
+
+  // ---- 1️⃣ If store condition → check legacy FIRST ----
+  if (preferLegacy) {
+    const legacy = await prisma.userBillingInformation.findUnique({
+      where: { userId },
+    });
+
+    if (legacy) return formatLegacy(legacy);
+  }
+
+  // ---- 2️⃣ Always check new table ----
   const billing = await prisma.billingInformation.findUnique({
     where: { userId },
   });
 
-  if (billing) {
-    return {
-      name: billing.fullName,
-      email: billing.email,
-      phone: billing.phone,
-      addressLine1: billing.addressLine1,
-      addressLine2: billing.addressLine2,
-      city: billing.city,
-      state: billing.state,
-      postalCode: billing.postalCode,
-      country: billing.country,
-      gstNumber: billing.gstNumber,
-    };
+  if (billing) return formatNew(billing);
+
+  // ---- 3️⃣ If not already checked → fallback to legacy ----
+  if (!preferLegacy) {
+    const legacy = await prisma.userBillingInformation.findUnique({
+      where: { userId },
+    });
+
+    if (legacy) return formatLegacy(legacy);
   }
 
-  // 2️⃣ Fallback old table
-  const legacy = await prisma.userBillingInformation.findUnique({
-    where: { userId },
-  });
-
-  if (legacy) {
-    return {
-      name: "", // fallback
-      email: "",
-      phone: legacy.phone,
-      addressLine1: legacy.addressLine1,
-      addressLine2: legacy.addressLine2,
-      city: legacy.city,
-      state: legacy.state,
-      postalCode: legacy.postalCode,
-      country: legacy.country,
-      gstNumber: legacy.gstNumber,
-    };
-  }
-
-  // 3️⃣ Hard fallback (minimal)
+  // ---- 4️⃣ Final fallback ----
   return {
     name: "Customer",
     email: "",
@@ -56,8 +77,10 @@ export async function getBillingInfo(userId: string) {
 }
 
 function normalizeState(state: string = "") {
-  return state.toLowerCase().trim();
+    const key = state.toLowerCase().trim();
+  return STATE_NAME_MAP[key] || key;
 }
+
 
 export function getGSTDetails(
   billing: { country: string; state: string },
