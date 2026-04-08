@@ -5,7 +5,6 @@ import { sendInvoiceEmail } from "@/utils/sendEmail";
 import {
   generateInvoiceNumber,
   getBillingInfo,
-  getGSTDetails,
 } from "@/lib/invoice/invoice";
 
 import { PaymentStatus } from "@prisma/client";
@@ -13,6 +12,13 @@ type StoreItem = {
   name: string;
   quantity: number;
   price: number;
+};
+
+type CartSnapshotItem = {
+  itemId: string;
+  discount?: number;
+  price?: number;
+  quantity?: number;
 };
 
 type StorePurchaseData = {
@@ -142,24 +148,18 @@ export const sendInvoiceFunction = inngest.createFunction(
               (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
             0,
           );
-          const totalOrderValue =
-            storeOrder?.items.reduce(
-              (sum, item) =>
-                sum +
-                (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
-              0,
-            ) || 0;
+        
 
-          const cart =
+          const cart: CartSnapshotItem[] =
             typeof order.cartSnapshot === "string"
               ? JSON.parse(order.cartSnapshot)
               : order.cartSnapshot || [];
 
           const adminDiscount = cart
-            .filter((c: any) =>
+            .filter((c) =>
               adminItemsRaw.some((ai) => ai.itemId === c.itemId),
             )
-            .reduce((sum: number, item: any) => sum + (item.discount || 0), 0);
+            .reduce((sum: number, item) => sum + (item.discount || 0), 0);
           const adminTaxable = adminSubtotal - adminDiscount;
           const GST_RATE = 18; // or derive dynamically
 
@@ -243,7 +243,7 @@ export const sendInvoiceFunction = inngest.createFunction(
      * 5️⃣ Generate PDF + Send Email
      */
     await step.run("send-email", async () => {
-      let pricing;
+      
       let baseAmount = order.baseAmount;
       let discount = order.discountApplied;
       let gstAmount: number | undefined = order.gstAmount;

@@ -108,14 +108,6 @@ export async function handleStorePayment(
   const nonAdminOrderItems = orderItems.filter(
     (oi) => !adminItemIds.includes(oi.itemId),
   );
-  const itemCount = nonAdminOrderItems.length;
-  const itemNames = nonAdminOrderItems
-    .map(
-      (i) =>
-        `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
-    )
-    .join(", ");
-  console.log("📦 Store Items:", items);
  
 
   const hasAdminItems = adminItemIds.length > 0;

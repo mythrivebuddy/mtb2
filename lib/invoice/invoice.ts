@@ -1,16 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import { STATE_NAME_MAP } from "../constant";
+import {
+  BillingInformation,
+  UserBillingInformation,
+} from "@prisma/client";
+
+type BillingInfo = {
+  name: string;
+  email: string;
+  phone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string;
+  gstNumber: string | null;
+};
 
 export async function getBillingInfo(
   userId: string,
-  options?: { preferLegacy?: boolean }
+  options?: { preferLegacy?: boolean },
 ) {
   const preferLegacy = options?.preferLegacy ?? false;
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
   // ---- Helper formatters ----
-  const formatNew = (billing: any) => ({
+  const formatNew = (billing: BillingInformation) => ({
     name: billing.fullName,
     email: billing.email,
     phone: billing.phone,
@@ -23,7 +40,7 @@ export async function getBillingInfo(
     gstNumber: billing.gstNumber,
   });
 
-  const formatLegacy = (legacy: any) => ({
+  const formatLegacy = (legacy: UserBillingInformation) => ({
     name: user?.name || "",
     email: user?.email || "",
     phone: legacy.phone,
@@ -77,14 +94,13 @@ export async function getBillingInfo(
 }
 
 function normalizeState(state: string = "") {
-    const key = state.toLowerCase().trim();
+  const key = state.toLowerCase().trim();
   return STATE_NAME_MAP[key] || key;
 }
 
-
 export function getGSTDetails(
   billing: { country: string; state: string },
-  business: { state: string }
+  business: { state: string },
 ) {
   const isIndia =
     billing.country?.toLowerCase() === "in" ||
