@@ -17,7 +17,7 @@ type Order = {
   baseAmount: number;
   discountApplied?: number;
   gstAmount?: number;
-  totalAmount: number;
+  totalAmount?: number;
   currency: "INR" | "USD";
   purchaseData?: PurchaseData | null; // ✅ fixed
   createdAt?: Date; // ✅ add this
@@ -30,7 +30,9 @@ type Business = {
 
   logoUrl?: string | null;
   lutNumber?: string | null;
-  state?: string;
+  state: string;
+  pincode?: string;
+  country: string;
 
   createdAt?: Date; // ✅ optional
 };
@@ -55,34 +57,52 @@ type InvoiceItem = {
 };
 
 type InvoiceData = {
-   order: Order;
+  order: Order;
   business: Business;
   billing: BillingInfo;
   invoiceNumber: string;
 };
+function isFinalPricing(order: Order, items: InvoiceItem[]) {
+  if (!items.length) return false;
+
+  const itemsTotal = items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  // If items total ≈ order.totalAmount → already final pricing
+  if (order.totalAmount && Math.abs(itemsTotal - order.totalAmount) < 1) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * 🧾 HTML TEMPLATE
  */
 function generateInvoiceHTML(data: InvoiceData) {
   const { order, business, billing, invoiceNumber } = data;
+  console.log("Billing State:", billing.state);
+  console.log("Business State:", business.state);
+  if (!business.state) {
+    throw new Error("Business state is required for GST calculation");
+  }
 
   const gst = getGSTDetails(billing, {
-  ...business,
-  state: business.state ?? billing.state,
-});
+    state: business.state,
+  });
 
-  const baseAmount = order.baseAmount || 0;
-  const discount = order.discountApplied || 0;
-  const taxable = baseAmount - discount;
 
-  const gstAmount = order.gstAmount || 0;
 
-  const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
-  const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
-  const igst = gst.igst > 0 ? gstAmount : 0;
+  const isInternational =
+    billing.country.toLocaleLowerCase() !== "india" &&
+    billing.country.toLocaleLowerCase() !== "in";
 
-  const total = order.totalAmount || 0;
+  const GST_RATE = isInternational ? 0 : gst.igst || gst.cgst + gst.sgst;
+
+
+
 
   const currency = order.currency === "INR" ? "₹" : "$";
 
@@ -90,14 +110,54 @@ function generateInvoiceHTML(data: InvoiceData) {
   const isExport = gst.type === "EXPORT";
   const invoiceTitle = isExport ? "EXPORT INVOICE" : "TAX INVOICE";
 
-  
-
-  const placeOfSupplyWithCode = billing.state
-    ? `${billing.state}`
-    : "N/A";
+  const placeOfSupplyWithCode = isInternational
+    ? "Outside India"
+    : billing.state;
 
   // ✅ Items
   const items: InvoiceItem[] = order.purchaseData?.items || [];
+  const finalPricing = isFinalPricing(order, items);
+
+let baseAmount = 0;
+let discount = 0;
+let taxable = 0;
+let gstAmount = 0;
+let total = 0;
+
+if (finalPricing) {
+  // ✅ Already final price → DO NOT apply discount/GST again
+  baseAmount = items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  discount = 0;
+  taxable = baseAmount;
+  gstAmount = 0;
+  total = baseAmount;
+} else {
+  // ✅ Normal flow
+  baseAmount =
+    order.baseAmount ||
+    items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  discount = order.discountApplied || 0;
+  taxable = baseAmount - discount;
+
+  gstAmount =
+    order.gstAmount !== undefined
+      ? order.gstAmount
+      : (taxable * GST_RATE) / 100;
+
+  total =
+    order.totalAmount !== undefined
+      ? order.totalAmount
+      : taxable + gstAmount;
+}
+
+const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
+const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
+const igst = gst.igst > 0 ? gstAmount : 0;
 
   const itemsHtml = items
     .map(
@@ -107,7 +167,7 @@ function generateInvoiceHTML(data: InvoiceData) {
         <td>${item.quantity}</td>
         <td class="right">${currency}${item.price * item.quantity}</td>
       </tr>
-    `
+    `,
     )
     .join("");
 
@@ -208,14 +268,18 @@ function generateInvoiceHTML(data: InvoiceData) {
       <strong>Seller:</strong><br/>
       ${business.companyName}<br/>
       GSTIN: ${business.gstNumber}<br/>
-      ${business.address}
+      Address: ${business.address}, ${business.state}, ${business.country}${business.pincode ? ` - ${business.pincode}` : ""}
     </div>
 
     <br/>
 
     <div>
       Invoice No: ${invoiceNumber}<br/>
-      Invoice Date: ${new Date().toLocaleDateString("en-IN")}
+      Invoice Date: ${new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })}
     </div>
 
     <br/>
@@ -223,9 +287,11 @@ function generateInvoiceHTML(data: InvoiceData) {
     <div>
       <strong>Bill To:</strong><br/>
       ${billing.name}<br/>
+     ${billing.addressLine1 || ""}<br/>
+    ${billing.addressLine2 ? `${billing.addressLine2}<br/>` : ""}
       ${billing.city}, ${billing.state}, ${billing.country}<br/>
       ${billing.gstNumber ? `GSTIN: ${billing.gstNumber}` : ""}
-    </div>
+    </div>  
 
     <br/>
 
@@ -250,49 +316,44 @@ function generateInvoiceHTML(data: InvoiceData) {
 
     <div class="divider"></div>
 
-    <div class="summary">
-      <div class="row">
-        <span>Subtotal</span>
-        <span>${currency}${baseAmount}</span>
-      </div>
+  <div class="summary">
 
-      ${
-        discount > 0
-          ? `<div class="row">
-              <span>Discount</span>
-              <span>-${currency}${discount}</span>
-            </div>`
-          : ""
-      }
+  <div class="row">
+    <span>Subtotal</span>
+    <span>${currency}${baseAmount.toFixed(2)}</span>
+  </div>
 
-      <div class="row">
-        <span>Taxable Amount</span>
-        <span>${currency}${taxable}</span>
-      </div>
+ ${!finalPricing && discount > 0
+  ? `<div class="row">
+      <span>Discount</span>
+      <span>-${currency}${discount.toFixed(2)}</span>
+    </div>`
+  : ""}
 
-      ${
-        cgst > 0
-          ? `<div class="row"><span>CGST 9%</span><span>${currency}${cgst}</span></div>`
-          : ""
-      }
+  <div class="row">
+    <span>Taxable Amount</span>
+    <span>${currency}${taxable.toFixed(2)}</span>
+  </div>
 
-      ${
-        sgst > 0
-          ? `<div class="row"><span>SGST 9%</span><span>${currency}${sgst}</span></div>`
-          : ""
-      }
+  ${
+    isExport
+      ? `<div class="row">
+          <span>GST</span>
+          <span>0%</span>
+        </div>`
+      : `
+        ${cgst > 0 ? `<div class="row"><span>CGST 9%</span><span>${currency}${cgst.toFixed(2)}</span></div>` : ""}
+        ${sgst > 0 ? `<div class="row"><span>SGST 9%</span><span>${currency}${sgst.toFixed(2)}</span></div>` : ""}
+        ${igst > 0 ? `<div class="row"><span>IGST 18%</span><span>${currency}${igst.toFixed(2)}</span></div>` : ""}
+      `
+  }
 
-      ${
-        igst > 0
-          ? `<div class="row"><span>IGST 18%</span><span>${currency}${igst}</span></div>`
-          : ""
-      }
+  <div class="row total">
+    <span>Total</span>
+    <span>${currency}${total.toFixed(2)}</span>
+  </div>
 
-      <div class="row total">
-        <span>Total</span>
-        <span>${currency}${total}</span>
-      </div>
-    </div>
+</div>
 
     ${
       isExport

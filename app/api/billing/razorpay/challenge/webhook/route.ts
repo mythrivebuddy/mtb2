@@ -52,6 +52,10 @@ export async function POST(req: NextRequest) {
     if (existingOrder.status === PaymentStatus.PAID) {
       return new NextResponse("Already processed", { status: 200 });
     }
+    let paymentMeta: {
+      isAdmin?: boolean;
+      adminItemIds?: string[];
+    } = {};
 
     await prisma.$transaction(async (tx) => {
       const updatedOrder = await tx.paymentOrder.update({
@@ -63,17 +67,42 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      await processPayment(tx, updatedOrder);
+      paymentMeta = await processPayment(tx, updatedOrder);
+      console.log("=== PAYMENT META DEBUG ===");
+      console.log("Order ID:", existingOrder.id);
+      console.log("Context Type:", existingOrder.contextType);
+      console.log("isAdmin:", paymentMeta.isAdmin);
+      console.log("adminItemIds:", paymentMeta.adminItemIds);
+      console.log("================================");
     });
     try {
       if (inngest && typeof inngest.send === "function") {
-        await inngest.send({
-          name: "invoice/send",
-          id: `invoice-${payment.id}`,
-          data: {
-            orderId: existingOrder.id,
-          },
-        });
+        // 🟢 STORE → partial invoice
+        if (paymentMeta.adminItemIds && paymentMeta.adminItemIds.length > 0) {
+          console.log("📦 STORE INVOICE (PARTIAL)");
+          console.log("Admin Item IDs:", paymentMeta.adminItemIds);
+
+          await inngest.send({
+            name: "invoice/send",
+            id: `invoice-${payment.id}`,
+            data: {
+              orderId: existingOrder.id,
+              itemIds: paymentMeta.adminItemIds,
+            },
+          });
+        } else if (paymentMeta.isAdmin) {
+          console.log("🎯 FULL INVOICE (PROGRAM/CHALLENGE - ADMIN)");
+
+          await inngest.send({
+            name: "invoice/send",
+            id: `invoice-${payment.id}`,
+            data: {
+              orderId: existingOrder.id,
+            },
+          });
+        } else {
+          console.log("❌ NO INVOICE TRIGGERED");
+        }
       } else {
         console.warn("Inngest not configured, skipping event");
       }

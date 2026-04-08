@@ -3,9 +3,20 @@ import { PaymentOrder, PaymentStatus, Prisma } from "@prisma/client";
 export async function handleChallengePayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-) {
-  if (!order.challengeId) return;
-
+): Promise<{ isAdmin: boolean }> {
+  if (!order.challengeId) return { isAdmin: false };
+  const challenge = await tx.challenge.findUnique({
+    where: { id: order.challengeId },
+    select: {
+      creator: {
+        select: {
+          role: true,
+        },
+      },
+    },
+  });
+  console.log("🎯 Challenge Payment");
+console.log("Creator Role:", challenge?.creator?.role);
   await tx.challengePayment.upsert({
     where: {
       userId_challengeId: {
@@ -48,4 +59,7 @@ export async function handleChallengePayment(
       });
     }
   }
+  return {
+    isAdmin: challenge?.creator?.role === "ADMIN",
+  };
 }

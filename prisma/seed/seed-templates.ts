@@ -570,6 +570,107 @@ async function main() {
 </div>
 `.trim(),
     },
+    {
+      templateId: "invoice-challenge",
+      subject: "Your Invoice for {{challengeName}} 🎯",
+      description: "Short invoice email for challenge purchase.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+
+  <div style="background:#4f46e5;color:white;padding:20px;text-align:center;">
+    <h2 style="margin:0;">Challenge Invoice 🎯</h2>
+  </div>
+
+  <div style="padding:20px;">
+    <p>Hello <strong>{{username}}</strong>,</p>
+
+    <p>You’ve successfully joined:</p>
+    <h3 style="margin:10px 0;color:#111827;">{{challengeName}}</h3>
+
+    <div style="background:#f3f4f6;padding:12px;border-radius:8px;margin:16px 0;font-size:14px;">
+      <p style="margin:0;"><strong>Invoice:</strong> {{invoiceNumber}}</p>
+      <p style="margin:4px 0 0;"><strong>Order:</strong> {{orderId}}</p>
+    </div>
+
+    <p style="font-size:14px;color:#374151;">
+      📎 Your invoice is attached.
+    </p>
+  </div>
+
+  <div style="background:#f9fafb;padding:12px;text-align:center;font-size:12px;color:#9ca3af;">
+    {{companyName}}
+  </div>
+
+</div>
+  `.trim(),
+    },
+    {
+      templateId: "invoice-mmp",
+      subject: "Your Invoice for {{programName}} 📘",
+      description: "Short invoice email for Mini Mastery Program purchase.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+
+  <div style="background:#059669;color:white;padding:20px;text-align:center;">
+    <h2 style="margin:0;">Program Invoice 📘</h2>
+  </div>
+
+  <div style="padding:20px;">
+    <p>Hello <strong>{{username}}</strong>,</p>
+
+    <p>You’ve successfully enrolled in:</p>
+    <h3 style="margin:10px 0;color:#111827;">{{programName}}</h3>
+
+    <div style="background:#f3f4f6;padding:12px;border-radius:8px;margin:16px 0;font-size:14px;">
+      <p style="margin:0;"><strong>Invoice:</strong> {{invoiceNumber}}</p>
+      <p style="margin:4px 0 0;"><strong>Order:</strong> {{orderId}}</p>
+    </div>
+
+    <p style="font-size:14px;color:#374151;">
+      📎 Your invoice is attached to this email.
+    </p>
+  </div>
+
+  <div style="background:#f9fafb;padding:12px;text-align:center;font-size:12px;color:#9ca3af;">
+    {{companyName}}
+  </div>
+
+</div>
+  `.trim(),
+    },
+    {
+      templateId: "invoice-store",
+      subject: "Your Store Invoice 🛍",
+      description: "Short invoice email for store purchase.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+
+  <div style="background:#ea580c;color:white;padding:20px;text-align:center;">
+    <h2 style="margin:0;">Store Invoice 🛍</h2>
+  </div>
+
+  <div style="padding:20px;">
+    <p>Hello <strong>{{username}}</strong>,</p>
+
+    <p>Your order has been successfully placed.</p>
+
+    <div style="background:#f3f4f6;padding:12px;border-radius:8px;margin:16px 0;font-size:14px;">
+      <p style="margin:0;"><strong>Invoice:</strong> {{invoiceNumber}}</p>
+      <p style="margin:4px 0 0;"><strong>Order:</strong> {{orderId}}</p>
+    </div>
+
+    <p style="font-size:14px;color:#374151;">
+      📎 Your invoice is attached for your records.
+    </p>
+  </div>
+
+  <div style="background:#f9fafb;padding:12px;text-align:center;font-size:12px;color:#9ca3af;">
+    {{companyName}}
+  </div>
+
+</div>
+  `.trim(),
+    },
   ];
 
   for (const tmpl of templates) {

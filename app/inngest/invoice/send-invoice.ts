@@ -2,9 +2,43 @@ import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
 import { generateInvoicePdf } from "@/lib/invoice/generateInvoicePDF";
 import { sendInvoiceEmail } from "@/utils/sendEmail";
-import { generateInvoiceNumber, getBillingInfo } from "@/lib/invoice/invoice";
+import {
+  generateInvoiceNumber,
+  getBillingInfo,
+} from "@/lib/invoice/invoice";
 
 import { PaymentStatus } from "@prisma/client";
+type StoreItem = {
+  name: string;
+  quantity: number;
+  price: number;
+};
+
+type CartSnapshotItem = {
+  itemId: string;
+  discount?: number;
+  price?: number;
+  quantity?: number;
+};
+
+type StorePurchaseData = {
+  type: "store";
+  name: string;
+
+  // ✅ ALL items (email)
+  items: StoreItem[];
+
+  // ✅ ADMIN items (invoice)
+  adminItems: StoreItem[];
+
+  pricing: {
+    baseAmount: number;
+    discount: number;
+    taxable: number;
+    gst: number;
+    total: number;
+  };
+};
 
 export const sendInvoiceFunction = inngest.createFunction(
   {
@@ -23,7 +57,13 @@ export const sendInvoiceFunction = inngest.createFunction(
       return prisma.paymentOrder.findUnique({
         where: { id: orderId },
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       });
     });
@@ -35,10 +75,6 @@ export const sendInvoiceFunction = inngest.createFunction(
     if (order.status !== PaymentStatus.PAID) {
       throw new Error("Order not paid yet");
     }
-    if (order.contextType === "STORE_PRODUCT") {
-      console.log("Skipping invoice for store order for now :", order.id);
-      return { skipped: true, reason: "store_order" };
-    }
 
     const purchaseData = await step.run("resolve-purchase", async () => {
       switch (order.contextType) {
@@ -47,7 +83,7 @@ export const sendInvoiceFunction = inngest.createFunction(
 
           const challenge = await prisma.challenge.findUnique({
             where: { id: order.challengeId },
-            select: { title: true },
+            select: { title: true, startDate: true },
           });
 
           return {
@@ -58,6 +94,7 @@ export const sendInvoiceFunction = inngest.createFunction(
                 name: challenge?.title || "MTB Challenge",
                 quantity: 1,
                 price: order.baseAmount,
+                startDate: challenge?.startDate,
               },
             ],
           };
@@ -90,23 +127,75 @@ export const sendInvoiceFunction = inngest.createFunction(
             include: {
               items: {
                 include: {
-                  item: true, // 👈 VERY IMPORTANT
+                  item: {
+                    include: {
+                      creator: {
+                        select: { role: true },
+                      },
+                    },
+                  },
                 },
               },
             },
           });
+          const adminItemsRaw =
+            storeOrder?.items.filter(
+              (oi) => oi.item.creator?.role === "ADMIN",
+            ) || [];
+          const adminSubtotal = adminItemsRaw.reduce(
+            (sum, item) =>
+              sum +
+              (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
+            0,
+          );
+        
 
-          const items =
+          const cart: CartSnapshotItem[] =
+            typeof order.cartSnapshot === "string"
+              ? JSON.parse(order.cartSnapshot)
+              : order.cartSnapshot || [];
+
+          const adminDiscount = cart
+            .filter((c) =>
+              adminItemsRaw.some((ai) => ai.itemId === c.itemId),
+            )
+            .reduce((sum: number, item) => sum + (item.discount || 0), 0);
+          const adminTaxable = adminSubtotal - adminDiscount;
+          const GST_RATE = 18; // or derive dynamically
+
+          const adminGst = Number(((adminTaxable * GST_RATE) / 100).toFixed(2));
+          const adminTotal = adminTaxable + adminGst;
+
+          const allItems =
             storeOrder?.items.map((oi) => ({
               name: oi.item.name,
               quantity: oi.quantity,
               price: oi.priceAtPurchase,
             })) || [];
 
+          const adminItems: StoreItem[] = adminItemsRaw.map((oi) => ({
+            name: oi.item.name,
+            quantity: oi.quantity,
+            price: oi.originalPrice ?? oi.priceAtPurchase,
+          }));
+
           return {
             type: "store",
             name: "Store Purchase",
-            items,
+
+            // ✅ EMAIL WILL USE THIS
+            items: allItems,
+
+            // ✅ INVOICE WILL USE THIS
+            adminItems,
+
+            pricing: {
+              baseAmount: adminSubtotal,
+              discount: adminDiscount,
+              taxable: adminTaxable,
+              gst: adminGst,
+              total: adminTotal,
+            },
           };
 
         default:
@@ -127,7 +216,9 @@ export const sendInvoiceFunction = inngest.createFunction(
      * 2️⃣ Fetch Billing
      */
     const billing = await step.run("fetch-billing", async () => {
-      return getBillingInfo(order.userId);
+      return getBillingInfo(order.userId, {
+        preferLegacy: purchaseData?.type === "store",
+      });
     });
 
     /**
@@ -152,20 +243,42 @@ export const sendInvoiceFunction = inngest.createFunction(
      * 5️⃣ Generate PDF + Send Email
      */
     await step.run("send-email", async () => {
+      
+      let baseAmount = order.baseAmount;
+      let discount = order.discountApplied;
+      let gstAmount: number | undefined = order.gstAmount;
+      let totalAmount: number | undefined = order.totalAmount;
+
+      if (purchaseData?.type === "store") {
+        const storeData = purchaseData as StorePurchaseData;
+
+        baseAmount = storeData.pricing.baseAmount;
+        discount = storeData.pricing.discount;
+
+        // ❌ IMPORTANT: do NOT pass gst/total
+        gstAmount = storeData.pricing.gst;
+        totalAmount = storeData.pricing.total;
+      }
+
       const pdfUint8 = await generateInvoicePdf({
         order: {
           id: order.id,
-          baseAmount: order.baseAmount,
-          discountApplied: order.discountApplied,
-          gstAmount: order.gstAmount,
-          totalAmount: order.totalAmount,
-
+          baseAmount,
+          discountApplied: discount,
+          gstAmount,
+          totalAmount,
           currency:
             order.currency === "INR" || order.currency === "USD"
               ? order.currency
               : "INR",
 
-          purchaseData,
+          purchaseData:
+            purchaseData?.type === "store"
+              ? {
+                  ...(purchaseData as StorePurchaseData),
+                  items: (purchaseData as StorePurchaseData).adminItems,
+                }
+              : purchaseData,
         },
         business: {
           companyName: business.companyName,
@@ -173,6 +286,9 @@ export const sendInvoiceFunction = inngest.createFunction(
           address: business.address,
           logoUrl: business.logoUrl,
           lutNumber: business.lutNumber,
+          state: business.state,
+          country: business.country,
+          pincode: business.pincode || "",
         },
         billing,
         invoiceNumber,
@@ -186,6 +302,8 @@ export const sendInvoiceFunction = inngest.createFunction(
         pdfBuffer,
         order,
         invoiceNumber,
+        purchaseData,
+        business,
       });
     });
 
