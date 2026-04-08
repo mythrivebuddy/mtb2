@@ -139,13 +139,16 @@ export async function POST(request: Request) {
     }
 
     // Fetch creator only if there's a cost
-    const creator =
-      challengeToJoin.cost > 0
-        ? await prisma.user.findUnique({
-            where: { id: challengeToJoin.creatorId },
-            include: { plan: true }, // Required for assignJp
-          })
-        : null;
+    const isPaid =
+  challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
+
+const creator =
+  isPaid
+    ? await prisma.user.findUnique({
+        where: { id: challengeToJoin.creatorId },
+        include: { plan: true },
+      })
+    : null;
 
     if (challengeToJoin.cost > 0 && !creator) {
       return NextResponse.json(
@@ -233,8 +236,7 @@ export async function POST(request: Request) {
       `${userName} joined "${challengeToJoin.title}"!`,
       { url: `/dashboard/challenge/my-challenges/${challengeToJoin.id}` },
     );
-    const isPaid =
-      challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
+
 
     const paidOrder = isPaid
       ? await prisma.paymentOrder.findFirst({
