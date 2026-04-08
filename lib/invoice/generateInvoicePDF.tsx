@@ -62,6 +62,21 @@ type InvoiceData = {
   billing: BillingInfo;
   invoiceNumber: string;
 };
+function isFinalPricing(order: Order, items: InvoiceItem[]) {
+  if (!items.length) return false;
+
+  const itemsTotal = items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  // If items total ≈ order.totalAmount → already final pricing
+  if (order.totalAmount && Math.abs(itemsTotal - order.totalAmount) < 1) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * 🧾 HTML TEMPLATE
@@ -78,9 +93,7 @@ function generateInvoiceHTML(data: InvoiceData) {
     state: business.state,
   });
 
-  const baseAmount = order.baseAmount || 0;
-  const discount = order.discountApplied || 0;
-  const taxable = baseAmount - discount;
+
 
   const isInternational =
     billing.country.toLocaleLowerCase() !== "india" &&
@@ -88,18 +101,8 @@ function generateInvoiceHTML(data: InvoiceData) {
 
   const GST_RATE = isInternational ? 0 : gst.igst || gst.cgst + gst.sgst;
 
-  const gstAmount = isInternational
-    ? 0
-    : order.gstAmount !== undefined
-      ? order.gstAmount
-      : (taxable * GST_RATE) / 100;
 
-  const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
-  const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
-  const igst = gst.igst > 0 ? gstAmount : 0;
 
-  const total =
-    order.totalAmount !== undefined ? order.totalAmount : taxable + gstAmount;
 
   const currency = order.currency === "INR" ? "₹" : "$";
 
@@ -113,6 +116,48 @@ function generateInvoiceHTML(data: InvoiceData) {
 
   // ✅ Items
   const items: InvoiceItem[] = order.purchaseData?.items || [];
+  const finalPricing = isFinalPricing(order, items);
+
+let baseAmount = 0;
+let discount = 0;
+let taxable = 0;
+let gstAmount = 0;
+let total = 0;
+
+if (finalPricing) {
+  // ✅ Already final price → DO NOT apply discount/GST again
+  baseAmount = items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  discount = 0;
+  taxable = baseAmount;
+  gstAmount = 0;
+  total = baseAmount;
+} else {
+  // ✅ Normal flow
+  baseAmount =
+    order.baseAmount ||
+    items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  discount = order.discountApplied || 0;
+  taxable = baseAmount - discount;
+
+  gstAmount =
+    order.gstAmount !== undefined
+      ? order.gstAmount
+      : (taxable * GST_RATE) / 100;
+
+  total =
+    order.totalAmount !== undefined
+      ? order.totalAmount
+      : taxable + gstAmount;
+}
+
+const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
+const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
+const igst = gst.igst > 0 ? gstAmount : 0;
 
   const itemsHtml = items
     .map(
@@ -278,14 +323,12 @@ function generateInvoiceHTML(data: InvoiceData) {
     <span>${currency}${baseAmount.toFixed(2)}</span>
   </div>
 
-  ${
-    discount > 0
-      ? `<div class="row">
-          <span>Discount</span>
-          <span>-${currency}${discount.toFixed(2)}</span>
-        </div>`
-      : ""
-  }
+ ${!finalPricing && discount > 0
+  ? `<div class="row">
+      <span>Discount</span>
+      <span>-${currency}${discount.toFixed(2)}</span>
+    </div>`
+  : ""}
 
   <div class="row">
     <span>Taxable Amount</span>

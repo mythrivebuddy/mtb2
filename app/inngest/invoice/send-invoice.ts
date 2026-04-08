@@ -29,6 +29,8 @@ type StorePurchaseData = {
     baseAmount: number;
     discount: number;
     taxable: number;
+    gst: number;
+    total: number;
   };
 };
 
@@ -49,7 +51,13 @@ export const sendInvoiceFunction = inngest.createFunction(
       return prisma.paymentOrder.findUnique({
         where: { id: orderId },
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       });
     });
@@ -129,20 +137,34 @@ export const sendInvoiceFunction = inngest.createFunction(
               (oi) => oi.item.creator?.role === "ADMIN",
             ) || [];
           const adminSubtotal = adminItemsRaw.reduce(
-            (sum, item) => sum + item.priceAtPurchase * item.quantity,
+            (sum, item) =>
+              sum +
+              (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
             0,
           );
           const totalOrderValue =
             storeOrder?.items.reduce(
-              (sum, item) => sum + item.priceAtPurchase * item.quantity,
+              (sum, item) =>
+                sum +
+                (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
               0,
             ) || 0;
 
-          const adminDiscount =
-            totalOrderValue > 0
-              ? (adminSubtotal / totalOrderValue) * (order.discountApplied || 0)
-              : 0;
+          const cart =
+            typeof order.cartSnapshot === "string"
+              ? JSON.parse(order.cartSnapshot)
+              : order.cartSnapshot || [];
+
+          const adminDiscount = cart
+            .filter((c: any) =>
+              adminItemsRaw.some((ai) => ai.itemId === c.itemId),
+            )
+            .reduce((sum: number, item: any) => sum + (item.discount || 0), 0);
           const adminTaxable = adminSubtotal - adminDiscount;
+          const GST_RATE = 18; // or derive dynamically
+
+          const adminGst = Number(((adminTaxable * GST_RATE) / 100).toFixed(2));
+          const adminTotal = adminTaxable + adminGst;
 
           const allItems =
             storeOrder?.items.map((oi) => ({
@@ -154,7 +176,7 @@ export const sendInvoiceFunction = inngest.createFunction(
           const adminItems: StoreItem[] = adminItemsRaw.map((oi) => ({
             name: oi.item.name,
             quantity: oi.quantity,
-            price: oi.priceAtPurchase,
+            price: oi.originalPrice ?? oi.priceAtPurchase,
           }));
 
           return {
@@ -171,6 +193,8 @@ export const sendInvoiceFunction = inngest.createFunction(
               baseAmount: adminSubtotal,
               discount: adminDiscount,
               taxable: adminTaxable,
+              gst: adminGst,
+              total: adminTotal,
             },
           };
 
@@ -232,8 +256,8 @@ export const sendInvoiceFunction = inngest.createFunction(
         discount = storeData.pricing.discount;
 
         // ❌ IMPORTANT: do NOT pass gst/total
-        gstAmount = undefined;
-        totalAmount = undefined;
+        gstAmount = storeData.pricing.gst;
+        totalAmount = storeData.pricing.total;
       }
 
       const pdfUint8 = await generateInvoicePdf({
@@ -243,7 +267,6 @@ export const sendInvoiceFunction = inngest.createFunction(
           discountApplied: discount,
           gstAmount,
           totalAmount,
-
           currency:
             order.currency === "INR" || order.currency === "USD"
               ? order.currency

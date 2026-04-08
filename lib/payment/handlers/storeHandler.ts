@@ -121,7 +121,7 @@ export async function handleStorePayment(
   const hasAdminItems = adminItemIds.length > 0;
   const hasNonAdminItems = nonAdminOrderItems.length > 0;
 
-  if (hasAdminItems && hasNonAdminItems && user?.email) {
+  if (!hasAdminItems && hasNonAdminItems && user?.email) {
     const itemCount = nonAdminOrderItems.length;
 
     const itemNames = nonAdminOrderItems
