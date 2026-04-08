@@ -121,8 +121,8 @@ export async function handleStorePayment(
       id: true,
       creator: {
         select: {
+          id:true,
           role: true,
-          createdByRole: true,
         },
       },
     },
@@ -132,5 +132,5 @@ export async function handleStorePayment(
     .filter((item) => item.creator?.role === "ADMIN")
     .map((item) => item.id);
   console.log("✅ Admin Item IDs:", adminItemIds);
-  return {se adminItemIds };
+  return { adminItemIds };
 }
