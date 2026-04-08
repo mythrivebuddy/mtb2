@@ -30,7 +30,9 @@ type Business = {
 
   logoUrl?: string | null;
   lutNumber?: string | null;
-  state?: string;
+  state: string;
+  pincode?: string;
+  country: string;
 
   createdAt?: Date; // ✅ optional
 };
@@ -55,7 +57,7 @@ type InvoiceItem = {
 };
 
 type InvoiceData = {
-   order: Order;
+  order: Order;
   business: Business;
   billing: BillingInfo;
   invoiceNumber: string;
@@ -66,11 +68,15 @@ type InvoiceData = {
  */
 function generateInvoiceHTML(data: InvoiceData) {
   const { order, business, billing, invoiceNumber } = data;
+  console.log("Billing State:", billing.state);
+  console.log("Business State:", business.state);
+  if (!business.state) {
+    throw new Error("Business state is required for GST calculation");
+  }
 
   const gst = getGSTDetails(billing, {
-  ...business,
-  state: business.state ?? billing.state,
-});
+    state: business.state,
+  });
 
   const baseAmount = order.baseAmount || 0;
   const discount = order.discountApplied || 0;
@@ -89,12 +95,10 @@ function generateInvoiceHTML(data: InvoiceData) {
   // ✅ Invoice type
   const isExport = gst.type === "EXPORT";
   const invoiceTitle = isExport ? "EXPORT INVOICE" : "TAX INVOICE";
-
-  
-
-  const placeOfSupplyWithCode = billing.state
-    ? `${billing.state}`
-    : "N/A";
+  const isInternational = billing.country !== "India";
+  const placeOfSupplyWithCode = isInternational
+    ? "Outside India"
+    : billing.state;
 
   // ✅ Items
   const items: InvoiceItem[] = order.purchaseData?.items || [];
@@ -107,7 +111,7 @@ function generateInvoiceHTML(data: InvoiceData) {
         <td>${item.quantity}</td>
         <td class="right">${currency}${item.price * item.quantity}</td>
       </tr>
-    `
+    `,
     )
     .join("");
 
@@ -208,7 +212,7 @@ function generateInvoiceHTML(data: InvoiceData) {
       <strong>Seller:</strong><br/>
       ${business.companyName}<br/>
       GSTIN: ${business.gstNumber}<br/>
-      ${business.address}
+      Address: ${business.address}, ${business.state}, ${business.country}${business.pincode ? ` - ${business.pincode}` : ""}
     </div>
 
     <br/>
@@ -223,9 +227,11 @@ function generateInvoiceHTML(data: InvoiceData) {
     <div>
       <strong>Bill To:</strong><br/>
       ${billing.name}<br/>
+     ${billing.addressLine1 || ""}<br/>
+    ${billing.addressLine2 ? `${billing.addressLine2}<br/>` : ""}
       ${billing.city}, ${billing.state}, ${billing.country}<br/>
       ${billing.gstNumber ? `GSTIN: ${billing.gstNumber}` : ""}
-    </div>
+    </div>  
 
     <br/>
 

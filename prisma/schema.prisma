@@ -1355,6 +1355,8 @@ model PaymentOrder {
   createdAt     DateTime @default(now())
   paidAt        DateTime?
   cartSnapshot  Json?
+  invoiceSent    Boolean  @default(false)
+  invoiceSentAt  DateTime?
   user          User             @relation(fields: [userId], references: [id])
   plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
   challenge     Challenge?        @relation(fields: [challengeId], references: [id])
@@ -1567,6 +1569,9 @@ model MtbBusinessProfile {
 
   companyName     String
   address         String
+  state           String   @default("Madhya Pradesh")
+  country         String   @default("IN")
+  pincode         String?
   gstNumber       String
   lutNumber       String?
   phoneNumber     String

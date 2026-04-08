@@ -3,8 +3,12 @@ import { handleChallengePayment } from "./handlers/challengeHandler";
 import { handleProgramPayment } from "./handlers/programHandler";
 import { handleStorePayment } from "./handlers/storeHandler";
 
+type ProcessPaymentResult = {
+  isAdmin?: boolean;
+  adminItemIds?: string[];
+};
 
-export async function processPayment(tx: Prisma.TransactionClient, order: PaymentOrder) {
+export async function processPayment(tx: Prisma.TransactionClient, order: PaymentOrder) :Promise<ProcessPaymentResult>{
 
     if (order.challengeId) {
         return handleChallengePayment(tx, order);
@@ -17,5 +21,5 @@ export async function processPayment(tx: Prisma.TransactionClient, order: Paymen
     if (order.contextType === "STORE_PRODUCT") {
         return handleStorePayment(tx, order);
     }
-
+    return { isAdmin: false, adminItemIds: [] };
 }

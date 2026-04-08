@@ -74,10 +74,8 @@ export function getGSTDetails(
   const billingState = normalizeState(billing.state);
   const businessState = normalizeState(business.state);
 
-  const isSameState =
-    billingState === businessState ||
-    billingState.includes("madhya pradesh") ||
-    billingState.includes("mp");
+  // ✅ STRICT comparison only
+  const isSameState = billingState === businessState;
 
   if (isSameState) {
     return { type: "INTRA", cgst: 9, sgst: 9, igst: 0 };

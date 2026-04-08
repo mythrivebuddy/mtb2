@@ -35,10 +35,6 @@ export const sendInvoiceFunction = inngest.createFunction(
     if (order.status !== PaymentStatus.PAID) {
       throw new Error("Order not paid yet");
     }
-    if (order.contextType === "STORE_PRODUCT") {
-      console.log("Skipping invoice for store order for now :", order.id);
-      return { skipped: true, reason: "store_order" };
-    }
 
     const purchaseData = await step.run("resolve-purchase", async () => {
       switch (order.contextType) {
@@ -173,6 +169,9 @@ export const sendInvoiceFunction = inngest.createFunction(
           address: business.address,
           logoUrl: business.logoUrl,
           lutNumber: business.lutNumber,
+          state: business.state,
+          country: business.country,
+          pincode: business.pincode || "",
         },
         billing,
         invoiceNumber,

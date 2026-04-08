@@ -4,8 +4,8 @@ import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 export async function handleStorePayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-) {
-  if (order.storeOrderId) return;
+): Promise<{ adminItemIds: string[] }> {
+  if (order.storeOrderId) return { adminItemIds: [] };
 
   const storeOrder = await tx.order.create({
     data: {
@@ -113,4 +113,24 @@ export async function handleStorePayment(
       },
     });
   }
+  const items = await tx.item.findMany({
+    where: {
+      id: { in: cart.map((c) => c.itemId) },
+    },
+    select: {
+      id: true,
+      creator: {
+        select: {
+          role: true,
+          createdByRole: true,
+        },
+      },
+    },
+  });
+  console.log("📦 Store Items:", items);
+  const adminItemIds = items
+    .filter((item) => item.creator?.role === "ADMIN")
+    .map((item) => item.id);
+  console.log("✅ Admin Item IDs:", adminItemIds);
+  return {se adminItemIds };
 }
