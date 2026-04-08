@@ -5,19 +5,6 @@ import {
   UserBillingInformation,
 } from "@prisma/client";
 
-type BillingInfo = {
-  name: string;
-  email: string;
-  phone: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
-  country: string;
-  gstNumber: string | null;
-};
-
 export async function getBillingInfo(
   userId: string,
   options?: { preferLegacy?: boolean },
