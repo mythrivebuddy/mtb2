@@ -25,7 +25,7 @@ export const signupSchema = baseSignupSchema.refine(
   {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  }
+  },
 );
 
 // Signin Schema (omit name and confirmPassword from the signup schema)
@@ -51,19 +51,16 @@ export const dailyBloomSchema = z
       .min(1, "Title is required")
       .max(50, "Title cannot exceed 50 characters"),
     description: z.string().nullable(),
-    dueDate: z.preprocess(
-      (arg) => {
-        if (typeof arg === "string" && arg.length > 0) {
-          const date = new Date(arg);
-          return isNaN(date.getTime()) ? undefined : date;
-        }
-        if (arg instanceof Date) {
-          return arg;
-        }
-        return undefined;
-      },
-      z.date().optional().nullable()
-    ),
+    dueDate: z.preprocess((arg) => {
+      if (typeof arg === "string" && arg.length > 0) {
+        const date = new Date(arg);
+        return isNaN(date.getTime()) ? undefined : date;
+      }
+      if (arg instanceof Date) {
+        return arg;
+      }
+      return undefined;
+    }, z.date().optional().nullable()),
     frequency: z.enum(["Daily", "Weekly", "Monthly"]).optional().nullable(),
     isCompleted: z.boolean().default(false),
     taskAddJP: z.boolean().default(false),
@@ -73,7 +70,7 @@ export const dailyBloomSchema = z
     // --- NEW FIELDS FOR CALENDAR INTEGRATION ---
     addToCalendar: z.boolean().optional(),
     startTime: z.string().optional(), // Storing as string e.g., "14:30"
-    endTime: z.string().optional(),   // Storing as string e.g., "16:00"
+    endTime: z.string().optional(), // Storing as string e.g., "16:00"
   })
   .superRefine((data, ctx) => {
     // Rule 1: Ensure EITHER a dueDate OR a frequency is selected, but not both.
@@ -81,7 +78,8 @@ export const dailyBloomSchema = z
     if (!isOnlyOneSelected) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Please select either a Due Date or a Frequency, but not both.",
+        message:
+          "Please select either a Due Date or a Frequency, but not both.",
         path: ["dueDate"],
       });
     }
@@ -124,7 +122,6 @@ export const dailyBloomSchema = z
   });
 // --- END OF UPDATE ---
 
-
 export const challengeSchema = z
   .object({
     title: z.string().min(1, "Title is required"),
@@ -134,7 +131,7 @@ export const challengeSchema = z
 
     challengeJoiningFee: z.preprocess(
       (val) => (typeof val === "number" && isNaN(val) ? undefined : val),
-      z.number().min(1).optional()
+      z.number().min(1).optional(),
     ),
     challengeJoiningFeeCurrency: z.enum(["INR", "USD"]).optional(),
     cost: z.number(),
@@ -149,22 +146,19 @@ export const challengeSchema = z
       },
       {
         message: "Start date must be today or in the future.",
-      }
+      },
     ),
-
 
     endDate: z.coerce.date(),
     isIssuingCertificate: z.boolean().default(false),
     creatorSignatureUrl: z.string().optional().nullable(),
     creatorSignatureText: z.string().optional().nullable(),
 
-
-
     tasks: z
       .array(
         z.object({
           description: z.string().min(1, "Task description is required"),
-        })
+        }),
       )
       .min(1, "At least 1 task is required")
       .max(3, "No more than 3 tasks are allowed"),
@@ -172,7 +166,8 @@ export const challengeSchema = z
   .refine((data) => data.endDate > data.startDate, {
     message: "End date must be after the start date.",
     path: ["endDate"],
-  }).superRefine((data, ctx) => {
+  })
+  .superRefine((data, ctx) => {
     if (data.challengeType === "PAID") {
       if (typeof data.challengeJoiningFee !== "number") {
         ctx.addIssue({
@@ -213,7 +208,7 @@ export const step1Schema = z.object({
       z
         .string()
         .min(1, "Please enter a task")
-        .max(120, "Each task must be less than or equal to 120 characters")
+        .max(120, "Each task must be less than or equal to 120 characters"),
     )
     .length(3, "Exactly three tasks are required"),
 });
@@ -299,32 +294,29 @@ export const contactFormSchems = z.object({
 });
 
 const testimonialSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Client name is required"),
+  name: z.string().min(2, "Client name is required"),
 
-  role: z
-    .string()
-    .min(2, "Client role is required"),
+  role: z.string().min(2, "Client role is required"),
 
   content: z
     .string()
     .min(15, "Testimonial must be at least 15 characters")
     .max(500, "Maximum 500 characters"),
-})
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
+});
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+];
 export const businessProfileSchema = z
   .object({
     /* ---------------- BASIC INFO ---------------- */
 
-    name: z
-      .string()
-      .min(2, "Name must be at least 2 characters"),
+    name: z.string().min(2, "Name must be at least 2 characters"),
 
-    tagline: z
-      .string()
-      .min(10, "Tagline must be at least 10 characters"),
+    tagline: z.string().min(10, "Tagline must be at least 10 characters"),
 
     /* ---------------- NICHE ---------------- */
 
@@ -364,23 +356,15 @@ export const businessProfileSchema = z
 
     /* ---------------- SERVICES ---------------- */
 
-    servicesOffered: z
-      .array(z.string())
-      .min(1, "Select at least one service"),
+    servicesOffered: z.array(z.string()).min(1, "Select at least one service"),
 
     /* ---------------- SESSION & AVAILABILITY ---------------- */
 
-    languages: z
-      .array(z.string())
-      .min(1, "Select at least one language"),
+    languages: z.array(z.string()).min(1, "Select at least one language"),
 
-    timezone: z
-      .string()
-      .min(1, "Please select your timezone"),
+    timezone: z.string().min(1, "Please select your timezone"),
 
-    sessionFormat: z
-      .string()
-      .min(1, "Please select session format"),
+    sessionFormat: z.string().min(1, "Please select session format"),
 
     calendlyUrl: z
       .string()
@@ -388,15 +372,13 @@ export const businessProfileSchema = z
       .url("Please enter a valid URL")
       .refine(
         (val) => val.includes("calendly.com"),
-        "Only Calendly links are accepted (e.g. https://calendly.com/your-name)"
+        "Only Calendly links are accepted (e.g. https://calendly.com/your-name)",
       ),
     preferredCurrency: z.enum(["INR", "USD"], {
       required_error: "Please select a currency",
       invalid_type_error: "Please select a valid currency",
     }),
-    sessionDuration: z
-      .string()
-      .min(1, "Please select session duration"),
+    sessionDuration: z.string().min(1, "Please select session duration"),
 
     priceMin: z
       .number({
@@ -424,11 +406,8 @@ export const businessProfileSchema = z
     certifications: z
       .array(
         z.object({
-          value: z
-            .string()
-            .trim()
-            .min(2, "Certification cannot be empty"),
-        })
+          value: z.string().trim().min(2, "Certification cannot be empty"),
+        }),
       )
       .max(10, "Maximum 10 certifications allowed")
       .optional(),
@@ -441,7 +420,7 @@ export const businessProfileSchema = z
     testimonials: z
       .preprocess(
         (val) => (Array.isArray(val) ? val : []),
-        z.array(testimonialSchema).max(6)
+        z.array(testimonialSchema).max(6),
       )
       .optional(),
 
@@ -458,38 +437,28 @@ export const businessProfileSchema = z
     //     file instanceof File && ACCEPTED_IMAGE_TYPES.includes(file.type),
     //   "Only JPG, PNG or GIF allowed"
     // ),
-    profilePhoto: z
-      .union([
-        z.string().url("Required"), // existing image URL allowed
+    profilePhoto: z.union([
+      z.string().url("Required"), // existing image URL allowed
 
-        z
-          .instanceof(File)
-          .refine((file) => file.size <= MAX_FILE_SIZE, {
-            message: "Max file size is 5MB",
-          })
-          .refine(
-            (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-            {
-              message: "Only JPG, PNG or GIF allowed",
-            }
-          ),
-      ]),
+      z
+        .instanceof(File)
+        .refine((file) => file.size <= MAX_FILE_SIZE, {
+          message: "Max file size is 5MB",
+        })
+        .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file.type), {
+          message: "Only JPG, PNG or GIF allowed",
+        }),
+    ]),
 
     introVideo: z
       .string()
       .optional()
-      .refine(
-        (val) => !val || /^https?:\/\/.+/.test(val),
-        "Enter a valid URL"
-      ),
+      .refine((val) => !val || /^https?:\/\/.+/.test(val), "Enter a valid URL"),
 
     linkedin: z
       .string()
       .min(1, "Primary social link is required")
-      .refine(
-        (val) => /^https?:\/\/.+/.test(val),
-        "Enter a valid URL"
-      ),
+      .refine((val) => /^https?:\/\/.+/.test(val), "Enter a valid URL"),
     /* ---------------- OPTIONAL FUTURE EXTENSIONS ---------------- */
 
     pricingPlans: z.any().optional(),
@@ -501,7 +470,7 @@ export const businessProfileSchema = z
   .refine((data) => data.priceMax >= data.priceMin, {
     message: "Maximum price must be greater than minimum price",
     path: ["priceMax"],
-  })
+  });
 // ***********************************************************
 // ***********************************************************
 
@@ -525,7 +494,6 @@ export const step1MMPSchema = z.object({
   thumbnailUrl: z.string().url("Please upload a thumbnail image to continue"),
 });
 
-
 // ─── Step 2: Achievements ─────────────────────────────────────────────────────
 export const step2MMPSchema = z.object({
   achievements: z
@@ -535,12 +503,11 @@ export const step2MMPSchema = z.object({
           .string()
           .min(5, "Achievement must be at least 5 characters")
           .max(200, "Cannot exceed 200 characters"),
-      })
+      }),
     )
     .min(1, "Add at least one achievement")
     .max(10, "Maximum 10 achievements allowed"),
 });
-
 
 // ─── Step 3: Module Builder ───────────────────────────────────────────────────
 export const moduleSchema = z
@@ -572,7 +539,10 @@ export const moduleSchema = z
           path: ["videoUrl"],
         });
       } else {
-        const urlResult = z.string().url("Please enter a valid URL (YouTube/Vimeo)").safeParse(mod.videoUrl);
+        const urlResult = z
+          .string()
+          .url("Please enter a valid URL (YouTube/Vimeo)")
+          .safeParse(mod.videoUrl);
         if (!urlResult.success) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -599,13 +569,29 @@ export const step4MMPSchema = z
     if (data.isPaid) {
       const num = parseFloat(data.price);
       if (!data.price || isNaN(num)) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please enter a valid price", path: ["price"] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Please enter a valid price",
+          path: ["price"],
+        });
       } else if (num <= 0) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Price must be greater than 0", path: ["price"] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Price must be greater than 0",
+          path: ["price"],
+        });
       } else if (data.currency === "INR" && num < 10) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Minimum price for INR is ₹10", path: ["price"] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Minimum price for INR is ₹10",
+          path: ["price"],
+        });
       } else if (data.currency === "USD" && num < 1) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Minimum price for USD is $1", path: ["price"] });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Minimum price for USD is $1",
+          path: ["price"],
+        });
       }
     }
   });
@@ -622,13 +608,16 @@ export const step5MMPSchema = z.object({
     .max(150, "Cannot exceed 150 characters"),
 });
 
-
-export const FeatureUserTypeEnum = z.enum(["COACH", "SOLOPRENEUR", "ENTHUSIAST"]);
+export const FeatureUserTypeEnum = z.enum([
+  "COACH",
+  "SOLOPRENEUR",
+  "ENTHUSIAST",
+]);
 export const MembershipTypeEnum = z.enum(["FREE", "PAID"]);
 
 // Validate the nested Plan Configs
 export const PlanConfigSchema = z.object({
-  id: z.string().optional(), 
+  id: z.string().optional(),
   membership: MembershipTypeEnum,
   userType: FeatureUserTypeEnum,
   isActive: z.boolean().default(true),
@@ -637,19 +626,26 @@ export const PlanConfigSchema = z.object({
 
 // Validate the main Feature
 export const FeatureSchema = z.object({
-  key: z.string()
+  key: z
+    .string()
     .min(2, "Feature key must be at least 2 characters")
-    .regex(/^[a-zA-Z0-9_]+$/, "Key can only contain letters, numbers, and underscores"),
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Key can only contain letters, numbers, and underscores",
+    ),
   name: z.string().min(2, "Name must be at least 2 characters"),
   description: z.string().nullable().optional(),
-  
+
   // JSON fields
   configSchema: z.record(z.string(), z.any()).nullable().optional(),
-  actions: z.record(z.string(), z.array(FeatureUserTypeEnum)).nullable().optional(),
-  
+  actions: z
+    .record(z.string(), z.array(FeatureUserTypeEnum))
+    .nullable()
+    .optional(),
+
   allowedUserTypes: z.array(FeatureUserTypeEnum).default([]),
   isActive: z.boolean().default(true),
-  
+
   planConfigs: z.array(PlanConfigSchema).default([]),
 });
 
@@ -662,6 +658,72 @@ export const fullFormSchema = z.object({
   step5: step5MMPSchema,
 });
 
+/* ======================
+   INVOICE SERIES
+====================== */
+
+export const invoiceSeriesSchema = z.object({
+  MAIN: z.object({
+    format: z
+      .string()
+      .regex(
+        /\{(YYYY|MM|DD|#+|STATE)\}/,
+        "Must include a placeholder like {YYYY} or {###}",
+      ),
+    lastNumber: z.coerce
+      .number({ invalid_type_error: "Must be a number" })
+      .int("Must be a whole number")
+      .min(0, "Cannot be negative"),
+  }),
+
+  COACH: z.object({
+    format: z
+      .string()
+      .regex(
+        /\{(YYYY|MM|DD|#+|STATE)\}/,
+        "Must include a placeholder like {YYYY} or {###}",
+      ),
+    lastNumber: z.coerce
+      .number({ invalid_type_error: "Must be a number" })
+      .int("Must be a whole number")
+      .min(0, "Cannot be negative"),
+  }),
+});
+
+/* ======================
+   MAIN FORM
+====================== */
+
+export const mtbBusinessProfileSchema = z.object({
+  companyName: z.string().min(2, "Company name is required"),
+
+  address: z.string().min(5, "Address is required"),
+
+  gstNumber: z
+    .string()
+    .regex(
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/,
+      "Invalid GST number (e.g. 29ABCDE1234F1Z5)",
+    ),
+
+  lutNumber: z.string().regex(/^[A-Z0-9\-\/]+$/, "Invalid LUT number"),
+
+  phoneNumber: z
+    .string()
+    .regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number"),
+
+  email: z.string().email("Invalid email"),
+
+  invoiceSeries: invoiceSeriesSchema,
+});
+
+/* ======================
+   TYPES
+====================== */
+
+export type MtbBusinessProfileFormValues = z.infer<
+  typeof mtbBusinessProfileSchema
+>;
 
 export type ContactForm = z.infer<typeof contactFormSchems>;
 export type ActivityFormValues = z.infer<typeof activitySchema>;
@@ -682,7 +744,7 @@ export type buddyLensRequestSchema = z.infer<typeof buddyLensRequestSchema>;
 export type ProfileFormType = z.infer<typeof profileSchema>;
 export type DailyBloomFormType = z.infer<typeof dailyBloomSchema>;
 export type challengeSchemaFormType = z.infer<typeof challengeSchema>;
-export type BusinessProfileFormValues = z.infer<typeof businessProfileSchema>
+export type BusinessProfileFormValues = z.infer<typeof businessProfileSchema>;
 export type Step1Data = z.infer<typeof step1MMPSchema>;
 export type Step2Data = z.infer<typeof step2MMPSchema>;
 export type ModuleData = z.infer<typeof moduleSchema>;
