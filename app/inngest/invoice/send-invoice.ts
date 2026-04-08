@@ -62,6 +62,7 @@ export const sendInvoiceFunction = inngest.createFunction(
               id: true,
               name: true,
               email: true,
+              role:true,
             },
           },
         },
