@@ -102,8 +102,12 @@ export async function handleStorePayment(
     },
   });
    const adminItemIds = items
-    .filter((item) => item.creator?.role === "ADMIN")
-    .map((item) => item.id);
+  .filter(
+    (item) =>
+      item.creator?.role === "ADMIN" &&
+      order.currency !== "GP", //! exclude GP admin items
+  )
+  .map((item) => item.id);
 
   const nonAdminOrderItems = orderItems.filter(
     (oi) => !adminItemIds.includes(oi.itemId),
