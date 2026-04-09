@@ -20,20 +20,27 @@ import axios from "axios";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface SessionResponse  { user?: { role?: string; }; }
-interface MfaStatusResponse { mfaEnabled: boolean; }
+interface SessionResponse {
+  user?: { role?: string };
+}
+interface MfaStatusResponse {
+  mfaEnabled: boolean;
+}
 
 // ─── Inner form (needs Suspense for useSearchParams) ──────────────────────────
 
 function SignInFormContent() {
-  const [loginError,            setLoginError]            = useState("");
-  const [showPassword,          setShowPassword]          = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [showOpenBrowserDialog, setShowOpenBrowserDialog] = useState(false);
-  const [isAdminSignedIn,       setIsAdminSignedIn]       = useState(false);
+  const [isAdminSignedIn, setIsAdminSignedIn] = useState(false);
 
-  const router       = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect     = searchParams.get("redirect") || searchParams.get("callbackUrl") || "/dashboard";
+  const redirect =
+    searchParams.get("redirect") ||
+    searchParams.get("callbackUrl") ||
+    "/dashboard";
   const errorFromUrl = searchParams.get("error");
 
   const {
@@ -41,15 +48,48 @@ function SignInFormContent() {
     handleSubmit,
     formState: { errors },
     setValue,
+    getValues,
   } = useForm<SigninFormType>({
     resolver: zodResolver(signinSchema),
   });
+
+  const resendMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await axios.post("/api/auth/resend-verification-email", {
+        email,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Verification email sent!");
+    },
+    onError: (err) => {
+      toast.error(getAxiosErrorMessage(err, "Failed to resend email"));
+    },
+  });
+  const resendVerification = () => {
+    const email = getValues("email");
+
+    if (!email) {
+      toast.error("Please enter your email first");
+      return;
+    }
+
+    if (loginError !== "EMAIL_NOT_VERIFIED") {
+      toast.error("Please try signing in first");
+      return;
+    }
+
+    resendMutation.mutate(email);
+  };
 
   // ── Show URL errors on mount ───────────────────────────────────────────
   useEffect(() => {
     if (errorFromUrl === "account-exists-with-credentials") {
       setTimeout(() => {
-        toast.error("An account with this email already exists. Please sign in with your password.");
+        toast.error(
+          "An account with this email already exists. Please sign in with your password.",
+        );
         router.push("/signin");
       }, 100);
     } else if (errorFromUrl) {
@@ -60,11 +100,9 @@ function SignInFormContent() {
   // ── Fetch MFA status only after admin credentials sign-in ─────────────
   const { data: mfaStatus } = useQuery<MfaStatusResponse>({
     queryKey: ["mfa-status-signin"],
-    queryFn:  () =>
-      axios
-        .get<MfaStatusResponse>("/api/admin/mfa/status")
-        .then((r) => r.data),
-    enabled:   isAdminSignedIn,
+    queryFn: () =>
+      axios.get<MfaStatusResponse>("/api/admin/mfa/status").then((r) => r.data),
+    enabled: isAdminSignedIn,
     staleTime: 0,
   });
 
@@ -78,10 +116,10 @@ function SignInFormContent() {
   const signinMutation = useMutation({
     mutationFn: async (data: SigninFormType) => {
       const response = await signIn("credentials", {
-        redirect:    false,
-        email:       data.email,
-        password:    data.password,
-        rememberMe:  data.rememberMe,
+        redirect: false,
+        email: data.email,
+        password: data.password,
+        rememberMe: data.rememberMe,
         callbackUrl: redirect,
       });
 
@@ -103,7 +141,13 @@ function SignInFormContent() {
       router.push(redirect);
     },
     onError: (err: Error) => {
-      setLoginError(err.message);
+      const message = err.message;
+
+      if (message.includes("not verified")) {
+        setLoginError("EMAIL_NOT_VERIFIED");
+      } else {
+        setLoginError(message);
+      }
     },
   });
 
@@ -120,7 +164,12 @@ function SignInFormContent() {
       }
       await signIn("google", { callbackUrl: redirect });
     } catch (error) {
-      toast.error(getAxiosErrorMessage(error, "Google Sign in failed. Please try again later."));
+      toast.error(
+        getAxiosErrorMessage(
+          error,
+          "Google Sign in failed. Please try again later.",
+        ),
+      );
     }
   };
 
@@ -130,22 +179,29 @@ function SignInFormContent() {
     <div className="bg-white rounded-2xl p-4 sm:p-6 mt-4 sm:mt-8 shadow-sm">
       <div className="space-y-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
           {/* Email */}
           <div>
             <Input
               type="email"
               placeholder="Email"
               {...register("email")}
-              onChange={(e) => { setValue("email", e.target.value); setLoginError(""); }}
+              onChange={(e) => {
+                setValue("email", e.target.value);
+                setLoginError("");
+              }}
               className={`h-12 ${errors.email || loginError ? "border-red-500" : ""} relative`}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
-            {!errors.email && loginError && (
-              <p className="text-red-500 text-sm mt-1">{loginError}</p>
-            )}
+
+            {!errors.email &&
+              loginError &&
+              loginError !== "EMAIL_NOT_VERIFIED" && (
+                <p className="text-red-500 text-sm mt-1">{loginError}</p>
+              )}
           </div>
 
           {/* Password */}
@@ -155,7 +211,10 @@ function SignInFormContent() {
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 {...register("password")}
-                onChange={(e) => { setValue("password", e.target.value); setLoginError(""); }}
+                onChange={(e) => {
+                  setValue("password", e.target.value);
+                  setLoginError("");
+                }}
                 className={`h-12 ${errors.password || loginError ? "border-red-500" : ""}`}
               />
               <button
@@ -167,26 +226,60 @@ function SignInFormContent() {
               </button>
             </div>
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-500 text-sm mt-1">
+                {errors.password.message}
+              </p>
             )}
-            {!errors.password && loginError && (
-              <p className="text-red-500 text-sm mt-1">{loginError}</p>
+            {!errors.password && loginError === "EMAIL_NOT_VERIFIED" && (
+              <p className="text-red-500 text-sm mt-1 whitespace-nowrap">
+                Your email is not verified.
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  disabled={resendMutation.isPending}
+                  className="text-blue-600 underline ml-1"
+                >
+                 {resendMutation.isPending ? "Sending email..." : "Resend verification email"}
+                </button>
+              </p>
             )}
+
+            {!errors.password &&
+              loginError &&
+              loginError !== "EMAIL_NOT_VERIFIED" && (
+                <p className="text-red-500 text-sm mt-1">{loginError}</p>
+              )}
           </div>
 
           {/* Remember me + Forgot password */}
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center space-x-2">
-              <input type="checkbox" className="rounded border-gray-300" {...register("rememberMe")} />
+              <input
+                type="checkbox"
+                className="rounded border-gray-300"
+                {...register("rememberMe")}
+              />
               <span>Remember me</span>
             </label>
-            <a href="/forgot-password" className="text-[#1E2875] hover:underline" target="_blank">
+            <a
+              href="/forgot-password"
+              className="text-[#1E2875] hover:underline"
+              target="_blank"
+            >
               Forgot password?
             </a>
           </div>
 
-          <Button type="submit" className="w-full h-12 text-[16px]" disabled={isLoading}>
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+          <Button
+            type="submit"
+            className="w-full h-12 text-[16px]"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </form>
 
@@ -212,7 +305,10 @@ function SignInFormContent() {
 
         <p className="text-center text-sm text-gray-600">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-[#1E2875] hover:underline font-medium">
+          <Link
+            href="/signup"
+            className="text-[#1E2875] hover:underline font-medium"
+          >
             Sign up
           </Link>
         </p>

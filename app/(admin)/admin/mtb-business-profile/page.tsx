@@ -40,6 +40,9 @@ export default function AdminMtbBusinessProfilePage() {
     defaultValues: {
       companyName: "",
       address: "",
+      state: "",
+      country: "",
+      pincode: "",
       gstNumber: "",
       lutNumber: "",
       phoneNumber: "",
@@ -81,6 +84,9 @@ export default function AdminMtbBusinessProfilePage() {
 
       formData.append("companyName", values.companyName);
       formData.append("address", values.address);
+      formData.append("state", values.state);
+      formData.append("country", values.country);
+      formData.append("pincode", values.pincode);
       formData.append("gstNumber", values.gstNumber);
       formData.append("lutNumber", values.lutNumber);
       formData.append("phoneNumber", values.phoneNumber);
@@ -232,12 +238,52 @@ export default function AdminMtbBusinessProfilePage() {
               </div>
             )}
 
-            <div>
-              <Label>Address</Label>
-              <Textarea {...register("address")} />
-              {errors.address && (
-                <p className="text-red-500 text-sm">{errors.address.message}</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Address full width */}
+              <div className="md:col-span-2">
+                <Label>Address</Label>
+                <Textarea
+                  {...register("address")}
+                  rows={2}
+                  className="resize-none min-h-[60px]"
+                />
+                {errors.address && (
+                  <p className="text-red-500 text-sm">
+                    {errors.address.message}
+                  </p>
+                )}
+              </div>
+
+              {/* State */}
+              <div>
+                <Label>State</Label>
+                <Input {...register("state")} />
+                {errors.state && (
+                  <p className="text-red-500 text-sm">{errors.state.message}</p>
+                )}
+              </div>
+
+              {/* Country */}
+              <div>
+                <Label>Country</Label>
+                <Input {...register("country")} />
+                {errors.country && (
+                  <p className="text-red-500 text-sm">
+                    {errors.country.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Pincode */}
+              <div>
+                <Label>Pincode</Label>
+                <Input {...register("pincode")} />
+                {errors.pincode && (
+                  <p className="text-red-500 text-sm">
+                    {errors.pincode.message}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-4">

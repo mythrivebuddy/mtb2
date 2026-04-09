@@ -1,6 +1,7 @@
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { renderEmailTemplate } from "@/utils/renderEmailContent";
+import { formatDate } from "@/lib/utils/dateUtils";
 
 interface EmailData {
   toEmail: string;
@@ -98,14 +99,101 @@ export async function sendInvoiceEmail({
   pdfBuffer,
   order,
   invoiceNumber,
+  purchaseData,
+  business,
 }: {
   to: string;
   pdfBuffer: Buffer;
   order: any;
   invoiceNumber: string;
+  purchaseData: any;
+  business: any;
 }) {
   const brevoApiKey = process.env.BREVO_API_KEY;
 
+  // 1️⃣ Select template
+  let templateId = "invoice-challenge";
+
+  if (purchaseData?.type === "mmp") {
+    templateId = "invoice-mmp";
+  } else if (purchaseData?.type === "store") {
+    templateId = "order-placed";
+  }
+
+  // 2️⃣ Get template
+  const template = await prisma.emailTemplate.findUnique({
+    where: { templateId },
+  });
+
+  if (!template) {
+    throw new Error(`Template ${templateId} not found`);
+  }
+
+  // 3️⃣ Prepare data
+  const items =
+    purchaseData?.type === "store"
+      ? purchaseData.items // ✅ ALWAYS FULL ITEMS
+      : purchaseData?.items || [];
+  const templateData =
+    purchaseData?.type === "store"
+      ? {
+          username: order.user?.name ?? "Customer",
+
+          orderId: order.id,
+          orderDate: new Date(order.paidAt || Date.now()).toLocaleDateString(
+            "en-IN",
+          ),
+
+          totalAmount: `${order.totalAmount} ${order.currency}`, // ✅ FULL ORDER
+
+          status: "COMPLETED",
+
+          itemCount: items.length,
+
+          itemNames: items
+            .map(
+              (i: any) =>
+                `${i.name} (×${i.quantity}) - ${i.price} ${order.currency}`,
+            )
+            .join(", "),
+
+          orderUrl: `${process.env.NEXT_URL}/dashboard/store/order-history`, // ✅ ADD THIS
+
+          currency: order.currency,
+
+          paymentDetails: `Paid with Razorpay (${order.currency})`,
+        }
+      : {
+          // ✅ EXISTING INVOICE FLOW (unchanged)
+          username: order.user?.name || "User",
+          email: order.user?.email,
+
+          invoiceNumber,
+          orderId: order.id,
+
+          totalAmount: order.totalAmount,
+          baseAmount: order.baseAmount,
+          discount: order.discountApplied,
+          gst: order.gstAmount,
+
+          companyName: business.companyName,
+
+          challengeName:
+            purchaseData?.type === "challenge" ? purchaseData.name : undefined,
+
+          programName:
+            purchaseData?.type === "mmp" ? purchaseData.name : undefined,
+
+          items:
+            purchaseData?.type === "store" ? purchaseData.items : undefined,
+        };
+
+  // 4️⃣ Render
+  const htmlContent = renderEmailTemplate(template.htmlContent, templateData);
+
+  const subject = renderEmailTemplate(template.subject, templateData);
+
+  // 5️⃣ Send email
   await axios.post(
     "https://api.brevo.com/v3/smtp/email",
     {
@@ -114,47 +202,8 @@ export async function sendInvoiceEmail({
         name: "MyThriveBuddy",
       },
       to: [{ email: to }],
-      subject: "Your Invoice",
-      htmlContent: `
-  <div style="font-family: Arial, sans-serif; background:#f6f9fc; padding:20px;">
-    <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:10px; padding:24px;">
-      
-      <h2 style="color:#1E2875; margin-bottom:10px;">
-        Payment Confirmed ✅
-      </h2>
-
-      <p style="font-size:14px; color:#333;">
-        Hi there,
-      </p>
-
-      <p style="font-size:14px; color:#333;">
-        Thank you for your purchase! Your payment has been successfully processed.
-      </p>
-
-      <div style="background:#f1f5f9; padding:12px 16px; border-radius:8px; margin:16px 0;">
-        <p style="margin:0; font-size:13px;"><strong>Invoice Number:</strong> ${invoiceNumber}</p>
-        <p style="margin:4px 0 0; font-size:13px;"><strong>Order ID:</strong> ${order.id}</p>
-        <p style="margin:4px 0 0; font-size:13px;"><strong>Amount Paid:</strong> ₹${order.totalAmount / 100}</p>
-      </div>
-
-      <p style="font-size:14px; color:#333;">
-        📎 Your invoice is attached to this email for your records.
-      </p>
-
-      <p style="font-size:14px; color:#333;">
-        If you have any questions, feel free to reply to this email.
-      </p>
-
-      <hr style="margin:24px 0; border:none; border-top:1px solid #e5e7eb;" />
-
-      <p style="font-size:12px; color:#888;">
-        — Team MyThriveBuddy
-      </p>
-
-    </div>
-  </div>
-`,
-
+      subject,
+      htmlContent,
       attachment: [
         {
           name: `${invoiceNumber}.pdf`,

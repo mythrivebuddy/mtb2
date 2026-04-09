@@ -139,13 +139,16 @@ export async function POST(request: Request) {
     }
 
     // Fetch creator only if there's a cost
-    const creator =
-      challengeToJoin.cost > 0
-        ? await prisma.user.findUnique({
-            where: { id: challengeToJoin.creatorId },
-            include: { plan: true }, // Required for assignJp
-          })
-        : null;
+    const isPaid =
+  challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
+
+const creator =
+  isPaid
+    ? await prisma.user.findUnique({
+        where: { id: challengeToJoin.creatorId },
+        include: { plan: true },
+      })
+    : null;
 
     if (challengeToJoin.cost > 0 && !creator) {
       return NextResponse.json(
@@ -233,8 +236,7 @@ export async function POST(request: Request) {
       `${userName} joined "${challengeToJoin.title}"!`,
       { url: `/dashboard/challenge/my-challenges/${challengeToJoin.id}` },
     );
-    const isPaid =
-      challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
+
 
     const paidOrder = isPaid
       ? await prisma.paymentOrder.findFirst({
@@ -356,12 +358,20 @@ export async function POST(request: Request) {
       transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
     };
     // ✅ USER EMAIL
-    void sendEmailUsingTemplate({
-      toEmail: joiner.email!,
-      toName: joiner.name || "User",
-      templateId: isPaid ? "challenge-joined-paid" : "challenge-joined-free",
-      templateData: emailData,
-    }).catch((err) => console.error("User email failed:", err.message));
+    const shouldSkipUserEmail = isPaid && creator?.role === "ADMIN";
+
+    if (!shouldSkipUserEmail) {
+      console.log("📧 Sending USER email");
+
+      void sendEmailUsingTemplate({
+        toEmail: joiner.email!,
+        toName: joiner.name || "User",
+        templateId: isPaid ? "challenge-joined-paid" : "challenge-joined-free",
+        templateData: emailData,
+      }).catch((err) => console.error("User email failed:", err.message));
+    } else {
+      console.log("🚫 Skipping USER email (admin paid challenge)");
+    }
 
     // ✅ COACH EMAIL
     // ✅ COACH EMAIL (SAFE)
@@ -369,7 +379,6 @@ export async function POST(request: Request) {
       const templateId = isPaid
         ? "coach-user-joined-paid-challenge"
         : "coach-user-joined-challenge";
-
       void sendEmailUsingTemplate({
         toEmail: creator.email,
         toName: creator.name || "Coach",

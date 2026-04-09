@@ -39,6 +39,9 @@ export async function POST(req: Request) {
     const rawData = {
       companyName: formData.get("companyName") as string,
       address: formData.get("address") as string,
+      state: formData.get("state") as string,
+      country: formData.get("country") as string,
+      pincode: formData.get("pincode") as string,
       gstNumber: formData.get("gstNumber") as string,
       lutNumber: formData.get("lutNumber") as string,
       phoneNumber: formData.get("phoneNumber") as string,
