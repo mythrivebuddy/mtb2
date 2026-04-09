@@ -196,14 +196,14 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         actions: {
             join: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
-            create: [PlanUserType.COACH, PlanUserType.ENTHUSIAST],
+            create: [PlanUserType.COACH],
             issueCertificate: [PlanUserType.COACH],
             groupChat: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         },
         plans: {
             free: {
                 COACH: {
-                    createLimit: 10,
+                    createLimit: 0,
                     //TODO paid challenge , commission is left
                     canCreatePaidChallenge: false,
                     commissionPercent: 25,
