@@ -674,6 +674,8 @@ model Todo {
   taskAddJP      Boolean    @default(false)
   taskCompleteJP Boolean    @default(false)
   isFromEvent    Boolean    @default(false)
+  startTime      String?
+  endTime        String?
   user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
