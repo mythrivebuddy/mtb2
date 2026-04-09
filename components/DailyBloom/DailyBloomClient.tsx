@@ -93,6 +93,8 @@ interface DailyBloom extends DailyBloomFormType {
   createdAt?: string; // Add this line
   updatedAt?: string; // Optional property for updatedAt
   description: string | null; // Ensure description can be null
+  startTime?: string;
+  endTime?: string;
 }
 // Normalize API responses into this strict type
 export interface ClientDailyBloom {
@@ -319,7 +321,7 @@ export default function DailyBloomClient() {
           const optimisticBloom: DailyBloom = {
             ...newBloom,
             id: `temp-${Date.now()}`,
-            dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : new Date(),
+           dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isCompleted: false,
@@ -432,7 +434,14 @@ export default function DailyBloomClient() {
               ...page,
               data: page.data.map((bloom) =>
                 bloom.id === newBloomData.id
-                  ? { ...bloom, ...newBloomData.updatedData }
+                  ? {
+                      ...bloom,
+                      ...newBloomData.updatedData,
+                      startTime:
+                        newBloomData.updatedData.startTime ?? bloom.startTime,
+                      endTime:
+                        newBloomData.updatedData.endTime ?? bloom.endTime,
+                    }
                   : bloom,
               ),
             })),
@@ -575,24 +584,30 @@ export default function DailyBloomClient() {
 
     // 2. Construct the *complete* form data object for the update.
     // We use the original bloom data as the base and overwrite it with changes.
-    const newDueDate = payload.updatedData.dueDate
-      ? new Date(payload.updatedData.dueDate)
-      : new Date(originalBloom.dueDate || new Date());
-    const newEndDate = payload.updatedData.end
-      ? new Date(payload.updatedData.end)
-      : null;
+   const newDueDate = payload.updatedData.dueDate
+  ? new Date(payload.updatedData.dueDate)
+  : originalBloom.dueDate
+    ? new Date(originalBloom.dueDate)
+    : null;
+  //  const newEndDate = payload.updatedData.end
+  // ? new Date(payload.updatedData.end)
+  // : originalBloom.endTime
+  //   ? new Date(originalBloom.dueDate!) // fallback
+  //   : null;
 
     const updatedBloomData: DailyBloomFormType = {
       // Start with all original data
       ...originalBloom,
       title: payload.updatedData.title ?? originalBloom.title,
       description: originalBloom.description ?? "",
-      dueDate: newDueDate,
+      dueDate: newDueDate ?? undefined,
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
-      startTime: format(newDueDate, "HH:mm"),
-      endTime: newEndDate ? format(newEndDate, "HH:mm") : originalBloom.endTime,
+     startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
+      endTime: payload.updatedData.end
+        ? format(new Date(payload.updatedData.end), "HH:mm")
+        : "", // IMPORTANT: reset instead of fallback
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
@@ -662,22 +677,15 @@ export default function DailyBloomClient() {
         const safeDescription = bloom.description || "";
 
         // Use regex to parse time from the safe description string
-        const timeMatch = safeDescription.match(
-          /\[Time: (\d{2}:\d{2})(?:-(\d{2}:\d{2}))?\]/,
-        );
-
-        if (timeMatch) {
-          const extractedStartTime = timeMatch[1];
-          const extractedEndTime = timeMatch[2];
-
-          const [startHours, startMinutes] = extractedStartTime.split(":");
-          startDate.setHours(Number(startHours), Number(startMinutes), 0, 0);
+        if (bloom.startTime) {
+          const [h, m] = bloom.startTime.split(":");
+          startDate.setHours(Number(h), Number(m), 0, 0);
           endDate = new Date(startDate);
+        }
 
-          if (extractedEndTime) {
-            const [endHours, endMinutes] = extractedEndTime.split(":");
-            endDate.setHours(Number(endHours), Number(endMinutes), 0, 0);
-          }
+        if (bloom.endTime) {
+          const [h, m] = bloom.endTime.split(":");
+          endDate.setHours(Number(h), Number(m), 0, 0);
         }
 
         acc.push({
@@ -736,11 +744,17 @@ export default function DailyBloomClient() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button onClick={() => setAddData(true)} className="bg-green-600 hover:bg-green-700 transition-all ease-linear">
+              <Button
+                onClick={() => setAddData(true)}
+                className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
+              >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Daily Bloom
               </Button>
-              <Button onClick={() => setCalendarOpen(true)} className="bg-green-600 hover:bg-green-700 transition-all ease-linear">
+              <Button
+                onClick={() => setCalendarOpen(true)}
+                className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
+              >
                 <CalendarIcon className="mr-2 h-4 w-2" />
                 View My Calendar
               </Button>
@@ -999,8 +1013,8 @@ export default function DailyBloomClient() {
                             <TableCell>
                               {bloom.dueDate
                                 ? new Date(bloom.dueDate).toLocaleDateString(
-                                  "en-IN",
-                                )
+                                    "en-IN",
+                                  )
                                 : "-"}
                             </TableCell>
                             <TableCell>{bloom.frequency || "-"}</TableCell>
@@ -1096,10 +1110,11 @@ export default function DailyBloomClient() {
                         setValue("dueDate", new Date());
                       }}
                       variant={addInputType === "date" ? "default" : "ghost"}
-                      className={`flex-1 transition-all ease-linear ${addInputType === "date"
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-transparent text-muted-foreground hover:bg-muted"
-                        }`}
+                      className={`flex-1 transition-all ease-linear ${
+                        addInputType === "date"
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-transparent text-muted-foreground hover:bg-muted"
+                      }`}
                     >
                       Due Date
                     </Button>
@@ -1113,10 +1128,11 @@ export default function DailyBloomClient() {
                       variant={
                         addInputType === "frequency" ? "default" : "ghost"
                       }
-                      className={`flex-1 transition-all ease-linear ${addInputType === "frequency"
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-transparent text-muted-foreground hover:bg-muted"
-                        }`}
+                      className={`flex-1 transition-all ease-linear ${
+                        addInputType === "frequency"
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-transparent text-muted-foreground hover:bg-muted"
+                      }`}
                     >
                       Frequency
                     </Button>
@@ -1137,7 +1153,7 @@ export default function DailyBloomClient() {
                             min={today}
                             value={
                               field.value &&
-                                !isNaN(new Date(field.value).getTime())
+                              !isNaN(new Date(field.value).getTime())
                                 ? format(new Date(field.value), "yyyy-MM-dd")
                                 : ""
                             }
@@ -1254,7 +1270,9 @@ export default function DailyBloomClient() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createMutation.isPending}
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending}
                   className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
                 >
                   {createMutation.isPending && (
@@ -1390,7 +1408,7 @@ export default function DailyBloomClient() {
                           type="date"
                           value={
                             field.value &&
-                              !isNaN(new Date(field.value).getTime())
+                            !isNaN(new Date(field.value).getTime())
                               ? format(new Date(field.value), "yyyy-MM-dd")
                               : ""
                           }
@@ -1450,9 +1468,10 @@ export default function DailyBloomClient() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending}
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending}
                   className="bg-green-600 hover:bg-green-700 transition-all ease-linear"
-
                 >
                   {updateMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
