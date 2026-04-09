@@ -5,6 +5,7 @@ import Image from "next/image";
 import { BusinessProfile } from "@/types/client/business-profile";
 import { RiDoubleQuotesL } from "react-icons/ri";
 import { RiDoubleQuotesR } from "react-icons/ri";
+import ProfileShare from "../common/ProfileShare";
 
 function toEmbedUrl(url: string): string {
   if (!url) return "";
@@ -19,7 +20,7 @@ function toEmbedUrl(url: string): string {
   return url;
 }
 
-function ProfileMain({ profile }: { profile: BusinessProfile }) {
+function ProfileMain({ profile,userId }: { profile: BusinessProfile; userId: string  }) {
   const [openSections, setOpenSections] = useState<string[]>(["session", "languages", "pricing", "styles"]);
 
   const toggle = (key: string) => {
@@ -65,7 +66,15 @@ function ProfileMain({ profile }: { profile: BusinessProfile }) {
                 <div className="absolute bottom-1 right-2 w-4 h-4 bg-blue-600 border-2 border-white rounded-full" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold text-blue-900">{profile.name}</h1>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+    <h1 className="text-4xl font-bold text-blue-900">
+      {profile.name}
+    </h1>
+
+    <div className="mt-1">
+      <ProfileShare userId={userId} />
+    </div>
+    </div>
                 {profile.tagline ? (
                   <p className="mt-2 text-lg text-gray-600 max-w-lg">{profile.tagline}</p>
                 ) : (

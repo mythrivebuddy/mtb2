@@ -292,7 +292,7 @@ export default function UserPublicProfile({ userId, userData }: Props) {
   const showPersonalProfile = profileType === "personal";
 
   if (isBusinessUser && !showPersonalProfile) {
-    return <ProfileMain profile={mapToBusinessProfile(userData)} />;
+    return <ProfileMain profile={mapToBusinessProfile(userData)} userId={userId}/>;
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 pb-12 px-4">
