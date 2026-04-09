@@ -67,7 +67,7 @@ function isFinalPricing(order: Order, items: InvoiceItem[]) {
 
   const itemsTotal = items.reduce(
     (acc, item) => acc + item.price * item.quantity,
-    0
+    0,
   );
 
   // If items total ≈ order.totalAmount → already final pricing
@@ -93,16 +93,11 @@ function generateInvoiceHTML(data: InvoiceData) {
     state: business.state,
   });
 
-
-
   const isInternational =
     billing.country.toLocaleLowerCase() !== "india" &&
     billing.country.toLocaleLowerCase() !== "in";
 
   const GST_RATE = isInternational ? 0 : gst.igst || gst.cgst + gst.sgst;
-
-
-
 
   const currency = order.currency === "INR" ? "₹" : "$";
 
@@ -112,52 +107,50 @@ function generateInvoiceHTML(data: InvoiceData) {
 
   const placeOfSupplyWithCode = isInternational
     ? "Outside India"
-    : billing.state;
+    : business.state;
 
   // ✅ Items
   const items: InvoiceItem[] = order.purchaseData?.items || [];
   const finalPricing = isFinalPricing(order, items);
 
-let baseAmount = 0;
-let discount = 0;
-let taxable = 0;
-let gstAmount = 0;
-let total = 0;
+  let baseAmount = 0;
+  let discount = 0;
+  let taxable = 0;
+  let gstAmount = 0;
+  let total = 0;
 
-if (finalPricing) {
-  // ✅ Already final price → DO NOT apply discount/GST again
-  baseAmount = items.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
+  if (finalPricing) {
+    // ✅ Already final price → DO NOT apply discount/GST again
+    baseAmount = items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0,
+    );
 
-  discount = 0;
-  taxable = baseAmount;
-  gstAmount = 0;
-  total = baseAmount;
-} else {
-  // ✅ Normal flow
-  baseAmount =
-    order.baseAmount ||
-    items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    discount = 0;
+    taxable = baseAmount;
+    gstAmount = 0;
+    total = baseAmount;
+  } else {
+    // ✅ Normal flow
+    baseAmount =
+      order.baseAmount ||
+      items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  discount = order.discountApplied || 0;
-  taxable = baseAmount - discount;
+    discount = order.discountApplied || 0;
+    taxable = baseAmount - discount;
 
-  gstAmount =
-    order.gstAmount !== undefined
-      ? order.gstAmount
-      : (taxable * GST_RATE) / 100;
+    gstAmount =
+      order.gstAmount !== undefined
+        ? order.gstAmount
+        : (taxable * GST_RATE) / 100;
 
-  total =
-    order.totalAmount !== undefined
-      ? order.totalAmount
-      : taxable + gstAmount;
-}
+    total =
+      order.totalAmount !== undefined ? order.totalAmount : taxable + gstAmount;
+  }
 
-const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
-const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
-const igst = gst.igst > 0 ? gstAmount : 0;
+  const cgst = gst.cgst > 0 ? gstAmount / 2 : 0;
+  const sgst = gst.sgst > 0 ? gstAmount / 2 : 0;
+  const igst = gst.igst > 0 ? gstAmount : 0;
 
   const itemsHtml = items
     .map(
@@ -267,8 +260,10 @@ const igst = gst.igst > 0 ? gstAmount : 0;
     <div>
       <strong>Seller:</strong><br/>
       ${business.companyName}<br/>
+      Address: ${business.address}<br/>
+      ${business.state}, ${business.country}${business.pincode ? ` - ${business.pincode}` : ""}<br/>
       GSTIN: ${business.gstNumber}<br/>
-      Address: ${business.address}, ${business.state}, ${business.country}${business.pincode ? ` - ${business.pincode}` : ""}
+      LUT #: ${business.lutNumber || "-"}<br/><br/>
     </div>
 
     <br/>
@@ -323,12 +318,14 @@ const igst = gst.igst > 0 ? gstAmount : 0;
     <span>${currency}${baseAmount.toFixed(2)}</span>
   </div>
 
- ${!finalPricing && discount > 0
-  ? `<div class="row">
+ ${
+   !finalPricing && discount > 0
+     ? `<div class="row">
       <span>Discount</span>
       <span>-${currency}${discount.toFixed(2)}</span>
     </div>`
-  : ""}
+     : ""
+ }
 
   <div class="row">
     <span>Taxable Amount</span>
@@ -359,7 +356,7 @@ const igst = gst.igst > 0 ? gstAmount : 0;
       isExport
         ? `
         <div style="margin-top:20px;font-size:12px;">
-          LUT #: ${business.lutNumber || "-"}<br/><br/>
+          
           Note:<br/>
           Supply meant for export of services.<br/>
           Without payment of IGST.
