@@ -5,10 +5,22 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import {
-  PlayCircle, CheckCircle2, Lock, Clock, ChevronRight,
-  Lightbulb, ArrowLeft, BookOpen, AlertCircle,
-  AlignLeft, Star, Award, Eye, MoreVertical,
+  PlayCircle,
+  CheckCircle2,
+  Lock,
+  Clock,
+  ChevronRight,
+  Lightbulb,
+  ArrowLeft,
+  BookOpen,
+  AlertCircle,
+  AlignLeft,
+  Star,
+  Award,
+  Eye,
+  MoreVertical,
 } from "lucide-react";
+import Share from "../common/ShareModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,14 +82,18 @@ function PreviewSkeleton() {
           </div>
           <div className="bg-white rounded-[32px] p-8 space-y-4">
             <div className="h-6 w-48 bg-slate-100 rounded" />
-            {[1, 2, 3].map((i) => <div key={i} className="h-4 w-full bg-slate-100 rounded" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-4 w-full bg-slate-100 rounded" />
+            ))}
             <div className="h-14 w-full bg-slate-100 rounded-2xl" />
           </div>
         </div>
         <div className="w-full lg:w-80 space-y-6">
           <div className="bg-white rounded-[32px] p-6 h-32" />
           <div className="space-y-2">
-            {[1, 2, 3, 4].map((i) => <div key={i} className="h-14 bg-white rounded-2xl" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-14 bg-white rounded-2xl" />
+            ))}
           </div>
         </div>
       </div>
@@ -110,7 +126,9 @@ function PreviewBanner({ status }: { status: string }) {
           </p>
         </div>
       </div>
-      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${colorClass}`}>
+      <span
+        className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${colorClass}`}
+      >
         {status}
       </span>
     </div>
@@ -119,7 +137,13 @@ function PreviewBanner({ status }: { status: string }) {
 
 // ─── Certificate Preview Card ─────────────────────────────────────────────────
 
-function CertificatePreviewCard({ certTitle, threshold }: { certTitle: string; threshold: number }) {
+function CertificatePreviewCard({
+  certTitle,
+  threshold,
+}: {
+  certTitle: string;
+  threshold: number;
+}) {
   return (
     <div className="rounded-[32px] p-6 border space-y-4 bg-white border-slate-100">
       <div className="flex items-center gap-3">
@@ -127,8 +151,12 @@ function CertificatePreviewCard({ certTitle, threshold }: { certTitle: string; t
           <Award size={20} className="text-slate-300" />
         </div>
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Certificate</p>
-          <p className="text-sm font-black text-slate-800 leading-tight truncate max-w-[160px]">{certTitle}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Certificate
+          </p>
+          <p className="text-sm font-black text-slate-800 leading-tight truncate max-w-[160px]">
+            {certTitle}
+          </p>
         </div>
       </div>
       <div className="space-y-1.5">
@@ -158,7 +186,7 @@ export default function ProgramPreview({ programId }: { programId: string }) {
     queryKey: ["program-preview", programId],
     queryFn: async () => {
       const res = await axios.get<PreviewData>(
-        `/api/mini-mastery-programs/preview/${programId}`
+        `/api/mini-mastery-programs/preview/${programId}`,
       );
       return res.data;
     },
@@ -166,7 +194,7 @@ export default function ProgramPreview({ programId }: { programId: string }) {
     staleTime: 60_000,
     retry: false,
   });
-  console.log()
+
   // Redirect if forbidden (non-creator, non-admin)
   useEffect(() => {
     if (isError) {
@@ -182,8 +210,10 @@ export default function ProgramPreview({ programId }: { programId: string }) {
         <div className="text-center space-y-4">
           <AlertCircle size={40} className="text-slate-300 mx-auto" />
           <p className="text-slate-500 font-bold">Unable to load preview.</p>
-          <button onClick={() => router.back()}
-            className="inline-block text-blue-600 font-bold text-sm underline">
+          <button
+            onClick={() => router.back()}
+            className="inline-block text-blue-600 font-bold text-sm underline"
+          >
             Back to Programs
           </button>
         </div>
@@ -194,27 +224,41 @@ export default function ProgramPreview({ programId }: { programId: string }) {
   const { program, progress } = data;
   const modules = parseModules(program.modules);
   const currentModule = modules[activeDay - 1];
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/dashboard/mini-mastery-programs/${program.id}`
+      : "";
 
   return (
     <div className="min-h-screen bg-slate-50">
-
       {/* ── Top Nav ── */}
       <nav className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 hover:bg-slate-50 rounded-full transition-colors">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+          >
             <ArrowLeft size={20} className="text-slate-600" />
           </button>
           <div>
-            <h2 className="font-black text-slate-900 leading-none">{program.name}</h2>
+            <h2 className="font-black text-slate-900 leading-none">
+              {program.name}
+            </h2>
             <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mt-1 flex items-center gap-1">
-              <Eye size={10} /> Preview Mode · Day {activeDay} of {progress.totalDays}
+              <Eye size={10} /> Preview Mode · Day {activeDay} of{" "}
+              {progress.totalDays}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {program.status === "PUBLISHED" && (
+            <Share url={shareUrl} title={program.name} />
+          )}
           <div className="hidden sm:flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
             <Eye size={12} className="text-amber-500" />
-            <span className="text-[10px] font-black text-amber-600">Preview</span>
+            <span className="text-[10px] font-black text-amber-600">
+              Preview
+            </span>
           </div>
           <button className="p-2 hover:bg-slate-50 rounded-full">
             <MoreVertical size={20} className="text-slate-400" />
@@ -226,10 +270,8 @@ export default function ProgramPreview({ programId }: { programId: string }) {
       <PreviewBanner status={program.status} />
 
       <div className="max-w-7xl mx-auto p-6 lg:p-10 flex flex-col lg:flex-row gap-10">
-
         {/* ── LEFT ── */}
         <div className="flex-1 space-y-8">
-
           {/* Video or Text module */}
           {currentModule?.type === "video" && currentModule.videoUrl ? (
             <div className="aspect-video bg-slate-900 rounded-[40px] overflow-hidden shadow-2xl relative">
@@ -255,8 +297,12 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                     <AlignLeft size={17} className="text-white" />
                   </div>
                   <div>
-                    <span className="text-blue-400 text-[9px] font-black uppercase tracking-widest block">Text Module</span>
-                    <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">Day {activeDay}</span>
+                    <span className="text-blue-400 text-[9px] font-black uppercase tracking-widest block">
+                      Text Module
+                    </span>
+                    <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">
+                      Day {activeDay}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-black px-3 py-1 rounded-full">
@@ -264,16 +310,23 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                 </div>
               </div>
               <div className="relative space-y-5 my-6">
-                <h3 className="text-3xl font-black text-white leading-tight tracking-tight">{currentModule.title}</h3>
+                <h3 className="text-3xl font-black text-white leading-tight tracking-tight">
+                  {currentModule.title}
+                </h3>
                 <div
                   className="text-blue-100/80 text-base font-medium leading-relaxed line-clamp-5"
-                  dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+                  dangerouslySetInnerHTML={{
+                    __html: currentModule.instructions,
+                  }}
                 />
               </div>
               <div className="relative flex items-center justify-between">
                 <div className="flex -space-x-1.5">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className={`w-6 h-6 rounded-full border-2 border-blue-950 ${i === 0 ? "bg-blue-400" : i === 1 ? "bg-indigo-400" : "bg-slate-500"}`} />
+                    <div
+                      key={i}
+                      className={`w-6 h-6 rounded-full border-2 border-blue-950 ${i === 0 ? "bg-blue-400" : i === 1 ? "bg-indigo-400" : "bg-slate-500"}`}
+                    />
                   ))}
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-400 uppercase tracking-widest">
@@ -311,7 +364,9 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white bg-slate-400">
                   <CheckCircle2 size={20} />
                 </div>
-                <h3 className="text-xl font-black text-slate-900">Today&apos;s Action Task</h3>
+                <h3 className="text-xl font-black text-slate-900">
+                  Today&apos;s Action Task
+                </h3>
               </div>
               <div
                 className="text-slate-600 font-medium leading-relaxed"
@@ -333,11 +388,12 @@ export default function ProgramPreview({ programId }: { programId: string }) {
 
         {/* ── RIGHT: Sidebar ── */}
         <div className="w-full lg:w-80 space-y-6">
-
           {/* Progress card */}
           <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Program Progress</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                Program Progress
+              </span>
               <span className="text-sm font-black text-amber-500 flex items-center gap-1">
                 <Eye size={12} /> Preview
               </span>
@@ -346,7 +402,9 @@ export default function ProgramPreview({ programId }: { programId: string }) {
               <div className="h-full bg-slate-200 rounded-full w-0" />
             </div>
             <div className="flex justify-between mt-3">
-              <p className="text-[11px] font-bold text-slate-400">0 of {progress.totalDays} Days</p>
+              <p className="text-[11px] font-bold text-slate-400">
+                0 of {progress.totalDays} Days
+              </p>
               <div className="flex items-center gap-1 text-[11px] font-black uppercase italic text-slate-400">
                 <Clock size={12} /> Preview
               </div>
@@ -357,11 +415,16 @@ export default function ProgramPreview({ programId }: { programId: string }) {
               {modules.map((_, i) => {
                 const dn = i + 1;
                 return (
-                  <button key={dn} onClick={() => setActiveDay(dn)} title={`Day ${dn}`}
-                    className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${dn === activeDay
-                      ? "bg-amber-500 text-white scale-110 shadow-md shadow-amber-200"
-                      : "bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600"
-                      }`}>
+                  <button
+                    key={dn}
+                    onClick={() => setActiveDay(dn)}
+                    title={`Day ${dn}`}
+                    className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${
+                      dn === activeDay
+                        ? "bg-amber-500 text-white scale-110 shadow-md shadow-amber-200"
+                        : "bg-slate-100 text-slate-500 hover:bg-amber-50 hover:text-amber-600"
+                    }`}
+                  >
                     {dn}
                   </button>
                 );
@@ -377,18 +440,23 @@ export default function ProgramPreview({ programId }: { programId: string }) {
 
           {/* Curriculum */}
           <div className="space-y-4">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Curriculum</h4>
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+              Curriculum
+            </h4>
             <div className="space-y-2">
               {modules.map((mod, i) => {
                 const dn = i + 1;
                 const isActive = dn === activeDay;
                 return (
-                  <button key={mod.id ?? dn}
+                  <button
+                    key={mod.id ?? dn}
                     onClick={() => setActiveDay(dn)}
-                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${isActive
-                      ? "bg-amber-50 border-amber-200 shadow-sm"
-                      : "bg-white border-slate-100 hover:border-amber-100 hover:bg-amber-50/30"
-                      }`}>
+                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${
+                      isActive
+                        ? "bg-amber-50 border-amber-200 shadow-sm"
+                        : "bg-white border-slate-100 hover:border-amber-100 hover:bg-amber-50/30"
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="shrink-0">
                         {isActive ? (
@@ -400,20 +468,37 @@ export default function ProgramPreview({ programId }: { programId: string }) {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <span className={`text-xs font-black block ${isActive ? "text-amber-700" : "text-slate-500"}`}>
+                        <span
+                          className={`text-xs font-black block ${isActive ? "text-amber-700" : "text-slate-500"}`}
+                        >
                           Day {dn}
                         </span>
-                        <span className={`text-sm font-bold truncate block ${isActive ? "text-amber-800" : "text-slate-700"}`}>
+                        <span
+                          className={`text-sm font-bold truncate block ${isActive ? "text-amber-800" : "text-slate-700"}`}
+                        >
                           {mod.title}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {mod.type === "video"
-                        ? <PlayCircle size={14} className={isActive ? "text-amber-400" : "text-slate-300"} />
-                        : <AlignLeft size={14} className={isActive ? "text-amber-400" : "text-slate-300"} />
-                      }
-                      {isActive && <ChevronRight size={15} className="text-amber-500" />}
+                      {mod.type === "video" ? (
+                        <PlayCircle
+                          size={14}
+                          className={
+                            isActive ? "text-amber-400" : "text-slate-300"
+                          }
+                        />
+                      ) : (
+                        <AlignLeft
+                          size={14}
+                          className={
+                            isActive ? "text-amber-400" : "text-slate-300"
+                          }
+                        />
+                      )}
+                      {isActive && (
+                        <ChevronRight size={15} className="text-amber-500" />
+                      )}
                     </div>
                   </button>
                 );
@@ -428,10 +513,14 @@ export default function ProgramPreview({ programId }: { programId: string }) {
             </div>
             <div className="flex items-center gap-2">
               <Eye size={18} className="text-amber-200" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Preview Mode</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                Preview Mode
+              </span>
             </div>
             <p className="text-sm font-medium leading-relaxed text-amber-100">
-              You are viewing this program as a learner would see it. All {progress.totalDays} days are unlocked for review. Actions are disabled.
+              You are viewing this program as a learner would see it. All{" "}
+              {progress.totalDays} days are unlocked for review. Actions are
+              disabled.
             </p>
             <div className="flex items-center gap-2 pt-1">
               <Star size={12} className="text-yellow-300 fill-yellow-300" />
@@ -440,7 +529,6 @@ export default function ProgramPreview({ programId }: { programId: string }) {
               </span>
             </div>
           </div>
-
         </div>
       </div>
     </div>
