@@ -203,7 +203,7 @@ export const featureConfig = {
         plans: {
             free: {
                 COACH: {
-                    createLimit: 0,
+                    createLimit: 3,
                     //TODO paid challenge , commission is left
                     canCreatePaidChallenge: false,
                     commissionPercent: 25,
