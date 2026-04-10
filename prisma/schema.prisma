@@ -133,6 +133,7 @@ model User {
   mmCertificatesReceived     MiniMasteryCertificate[]         @relation("MMCertificatesReceived")
   mmCertificatesIssued       MiniMasteryCertificate[]         @relation("MMCertificatesIssued")
   mmCreatorSignature         MiniMasteryCreatorSignature?
+  invoiceRecords             Invoice[]                        @relation("UserToInvoice")
 
   createdPrograms  Program[]  @relation("ProgramCreator")
   @@index([name])
@@ -1316,7 +1317,46 @@ enum SubscriptionStatus {
   AUTHORIZED        // Amount authorized but not captured (eNACH, cards)
   DROPPED           // User abandoned checkout
 }
+model Invoice {
+  id            String   @id @default(cuid())
 
+  //  Core relations
+  userId        String
+  paymentOrderId String?  @unique
+
+  user           User     @relation("UserToInvoice", fields: [userId], references: [id])
+  paymentOrder   PaymentOrder? @relation("PaymentOrderToInvoice", fields: [paymentOrderId], references: [id])
+
+  //  Context (VERY IMPORTANT)
+  contextType   PaymentContextType
+  referenceId   String?   // challengeId / programId / orderId / subscriptionId
+
+  //  Financials
+  baseAmount    Float
+  discount      Float     @default(0)
+  gstAmount     Float     @default(0)
+  totalAmount   Float
+  currency      String
+
+  //  Invoice metadata
+  invoiceNumber String   @unique
+  status        InvoiceStatus @default(PAID)
+
+  //  Snapshot (IMPORTANT for audit)
+  items         Json     // store items snapshot
+  billing       Json     // billing info snapshot
+  business      Json     // business snapshot
+
+  //  Storage
+  pdfUrl        String?
+  emailSent Boolean @default(false)
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([paymentOrderId])
+  @@index([contextType])
+}
 model PaymentOrder {
   id            String   @id @default(cuid())
   userId        String
@@ -1358,6 +1398,7 @@ model PaymentOrder {
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
   challengePayment ChallengePayment?
   miniMasteryProgramPayment MiniMasteryProgramPayment?
+  invoice Invoice? @relation("PaymentOrderToInvoice")
 
   @@index([planId])
   @@index([challengeId])

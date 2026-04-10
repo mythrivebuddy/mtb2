@@ -54,6 +54,7 @@ import { getAvatarColor, getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import Link from "next/link";
 import { maskEmail } from "@/utils/mask-email";
+import { useDebounce } from "@/hooks/use-debounce";
 
 const greatVibes = Great_Vibes({
     subsets: ["latin"],
@@ -67,19 +68,7 @@ type FilterType = "all" | "eligible" | "not_eligible" | "issued";
 type SignatureType = "DRAWN" | "IMAGE" | "TEXT";
 type activeTabType = "all" | "challenges" | "mmp"
 
-function useDebounce<T>(value: T, delay: number): T {
-    const [debouncedValue, setDebouncedValue] = useState(value);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-
-        return () => clearTimeout(timer);
-    }, [value, delay]);
-
-    return debouncedValue;
-}
 
 interface Signature {
     id: string;
