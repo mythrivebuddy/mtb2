@@ -88,7 +88,7 @@ export async function PUT(
 
         // ✅ ADD THIS
         startTime: validatedData.startTime || null,
-  endTime: validatedData.endTime || null,
+        endTime: validatedData.endTime || null,
       },
     });
 
@@ -108,43 +108,41 @@ export async function PUT(
     });
 
     if (addToCalendar && updatedBloom.dueDate) {
-      const baseDate = updatedBloom.dueDate.toISOString().split("T")[0];
-
       let eventData;
 
-if (!body.startTime) {
-  // ✅ ALL DAY EVENT
-  eventData = {
-    title: updatedBloom.title,
-    start: updatedBloom.dueDate, // pure date
-    end: null,
-    all_day: true,
-    userId: session.user.id,
-  };
-} else {
-  // ✅ TIMED EVENT
-  const baseDate = updatedBloom.dueDate.toISOString().split("T")[0];
+      if (!body.startTime) {
+        // ✅ ALL DAY EVENT
+        eventData = {
+          title: updatedBloom.title,
+          start: updatedBloom.dueDate, // pure date
+          end: null,
+          all_day: true,
+          userId: session.user.id,
+        };
+      } else {
+        // ✅ TIMED EVENT
+        const baseDate = updatedBloom.dueDate.toISOString().split("T")[0];
 
-  const startDateTime = new Date(`${baseDate}T${body.startTime}`);
+        const startDateTime = new Date(`${baseDate}T${body.startTime}`);
 
-  let endDateTime: Date | null = null;
+        let endDateTime: Date | null = null;
 
-  if (body.endTime) {
-    endDateTime = new Date(`${baseDate}T${body.endTime}`);
-  }
+        if (body.endTime) {
+          endDateTime = new Date(`${baseDate}T${body.endTime}`);
+        }
 
-  if (!endDateTime || isNaN(endDateTime.getTime())) {
-    endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
-  }
+        if (!endDateTime || isNaN(endDateTime.getTime())) {
+          endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+        }
 
-  eventData = {
-    title: updatedBloom.title,
-    start: startDateTime,
-    end: endDateTime,
-    all_day: false,
-    userId: session.user.id,
-  };
-}
+        eventData = {
+          title: updatedBloom.title,
+          start: startDateTime,
+          end: endDateTime,
+          all_day: false,
+          userId: session.user.id,
+        };
+      }
 
       if (linkedEvent) {
         await prisma.event.update({

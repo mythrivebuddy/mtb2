@@ -595,8 +595,7 @@ export default function DailyBloomClient() {
     // : originalBloom.endTime
     //   ? new Date(originalBloom.dueDate!) // fallback
     //   : null;
-    const isAllDay =
-      !payload.updatedData.end && !payload.updatedData.dueDate?.includes("T");
+
     const updatedBloomData: DailyBloomFormType = {
       // Start with all original data
       ...originalBloom,
