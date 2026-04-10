@@ -56,8 +56,7 @@ export async function GET(
 
   const totalDays = program.durationDays ?? 0;
 
-  // Return mock progress — all days unlocked, none completed
-  console.log(program)
+ 
   return NextResponse.json({
     isPreview: true,
     program: {

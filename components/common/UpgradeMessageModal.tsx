@@ -14,13 +14,12 @@ export default function UpgradeMessageModal({
   onClose,
   title,
   message,
-  redirectToPricingUrl,
 }: {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   message: string;
-  redirectToPricingUrl: string;
+  redirectToPricingUrl?: string;
 }) {
   const router = useRouter();
   if (!isOpen) return null;
@@ -45,7 +44,7 @@ export default function UpgradeMessageModal({
             Continue with Free Plan
           </Button>
           <Button
-            onClick={() => router.push(redirectToPricingUrl || "/pricing")}
+            onClick={() => router.push("/dashboard/subscription")}
             className="bg-green-700 hover:bg-green-800"
           >
             Upgrade Now
