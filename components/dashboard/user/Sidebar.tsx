@@ -354,8 +354,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                     label="Manage Your Store"
                     onLinkClick={toggleSidebar} // Pass toggleSidebar
                   />
-                  
-                  
+
                   <NavItem
                     href="/dashboard/accountability/home"
                     icon={<LayoutDashboard size={20} />}
