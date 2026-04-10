@@ -2,12 +2,11 @@ import { inngest } from "@/lib/inngest";
 import { prisma } from "@/lib/prisma";
 import { generateInvoicePdf } from "@/lib/invoice/generateInvoicePDF";
 import { sendInvoiceEmail } from "@/utils/sendEmail";
-import {
-  generateInvoiceNumber,
-  getBillingInfo,
-} from "@/lib/invoice/invoice";
+import { generateInvoiceNumber, getBillingInfo } from "@/lib/invoice/invoice";
 
 import { PaymentStatus } from "@prisma/client";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { supabaseClient } from "@/lib/supabaseClient";
 type StoreItem = {
   name: string;
   quantity: number;
@@ -62,7 +61,7 @@ export const sendInvoiceFunction = inngest.createFunction(
               id: true,
               name: true,
               email: true,
-              role:true,
+              role: true,
             },
           },
         },
@@ -149,7 +148,6 @@ export const sendInvoiceFunction = inngest.createFunction(
               (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
             0,
           );
-        
 
           const cart: CartSnapshotItem[] =
             typeof order.cartSnapshot === "string"
@@ -157,9 +155,7 @@ export const sendInvoiceFunction = inngest.createFunction(
               : order.cartSnapshot || [];
 
           const adminDiscount = cart
-            .filter((c) =>
-              adminItemsRaw.some((ai) => ai.itemId === c.itemId),
-            )
+            .filter((c) => adminItemsRaw.some((ai) => ai.itemId === c.itemId))
             .reduce((sum: number, item) => sum + (item.discount || 0), 0);
           const adminTaxable = adminSubtotal - adminDiscount;
           const GST_RATE = 18; // or derive dynamically
@@ -213,6 +209,21 @@ export const sendInvoiceFunction = inngest.createFunction(
           };
       }
     });
+
+    let baseAmount = order.baseAmount;
+    let discount = order.discountApplied;
+    let gstAmount: number | undefined = order.gstAmount;
+    let totalAmount: number | undefined = order.totalAmount;
+
+    if (purchaseData?.type === "store") {
+      const storeData = purchaseData as StorePurchaseData;
+
+      baseAmount = storeData.pricing.baseAmount;
+      discount = storeData.pricing.discount;
+
+      gstAmount = storeData.pricing.gst;
+      totalAmount = storeData.pricing.total;
+    }
     /**
      * 2️⃣ Fetch Billing
      */
@@ -237,30 +248,15 @@ export const sendInvoiceFunction = inngest.createFunction(
      * 4️⃣ Generate Invoice Number
      */
     const invoiceNumber = await step.run("invoice-number", async () => {
-      return generateInvoiceNumber();
+      const existing = await prisma.invoice.findUnique({
+        where: { paymentOrderId: order.id },
+      });
+
+      if (existing) return existing.invoiceNumber; // ✅ reuse
+
+      return generateInvoiceNumber(); // ✅ only first time
     });
-
-    /**
-     * 5️⃣ Generate PDF + Send Email
-     */
-    await step.run("send-email", async () => {
-      
-      let baseAmount = order.baseAmount;
-      let discount = order.discountApplied;
-      let gstAmount: number | undefined = order.gstAmount;
-      let totalAmount: number | undefined = order.totalAmount;
-
-      if (purchaseData?.type === "store") {
-        const storeData = purchaseData as StorePurchaseData;
-
-        baseAmount = storeData.pricing.baseAmount;
-        discount = storeData.pricing.discount;
-
-        // ❌ IMPORTANT: do NOT pass gst/total
-        gstAmount = storeData.pricing.gst;
-        totalAmount = storeData.pricing.total;
-      }
-
+    const pdfBuffer = await step.run("generate-pdf", async () => {
       const pdfUint8 = await generateInvoicePdf({
         order: {
           id: order.id,
@@ -295,17 +291,102 @@ export const sendInvoiceFunction = inngest.createFunction(
         invoiceNumber,
       });
 
-      // Convert Uint8Array -> Buffer (required for email attachment)
-      const pdfBuffer = Buffer.from(pdfUint8);
+      return Buffer.from(pdfUint8);
+    });
+    const pdfUrl = await step.run("upload-pdf", async () => {
+      const folder = order.contextType?.toLowerCase() || "general";
+      const filePath = `invoices/${folder}/invoice-${invoiceNumber}.pdf`;
 
-      return sendInvoiceEmail({
+      const buffer = Buffer.from(pdfBuffer.data); // ✅ reconstruct buffer
+
+      const { data: existingFile } = await supabaseAdmin.storage
+        .from("invoices")
+        .list(`invoices/${folder}`, {
+          search: `invoice-${invoiceNumber}.pdf`,
+        });
+
+      if (!existingFile || existingFile.length === 0) {
+        const { error } = await supabaseAdmin.storage
+          .from("invoices")
+          .upload(filePath, buffer, {
+            contentType: "application/pdf",
+          });
+
+        if (error) throw new Error(error.message);
+      }
+
+      const { data } = supabaseClient.storage
+        .from("invoices")
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    });
+    
+
+    await step.run("store-invoice", async () => {
+      return prisma.invoice.upsert({
+        where: {
+          paymentOrderId: order.id,
+        },
+        update: {}, // do nothing if already exists
+        create: {
+          userId: order.userId,
+          paymentOrderId: order.id,
+
+          contextType: order.contextType!,
+          referenceId:
+            order.challengeId || order.programId || order.storeOrderId,
+
+          baseAmount,
+          discount,
+          gstAmount: gstAmount || 0,
+          totalAmount: totalAmount || baseAmount,
+          currency: order.currency === "USD" ? "USD" : "INR",
+
+          invoiceNumber,
+
+          items: purchaseData ?? {},
+          billing,
+          business,
+
+          pdfUrl,
+        },
+      });
+    });
+
+    // await step.sleep("delay-email", "5h");
+    /**
+     * 5️⃣ Generate PDF + Send Email
+     */
+    await step.run("send-email", async () => {
+      const invoice = await prisma.invoice.findUnique({
+        where: { paymentOrderId: order.id },
+      });
+
+      // ✅ Already sent → skip
+      if (invoice?.emailSent) {
+        return { skipped: true };
+      }
+
+      // ✅ Send email
+      await sendInvoiceEmail({
         to: billing.email || order.user.email,
-        pdfBuffer,
+        pdfBuffer: Buffer.from(pdfBuffer.data),
         order,
         invoiceNumber,
         purchaseData,
         business,
       });
+
+      // ✅ Mark as sent
+      await prisma.invoice.update({
+        where: { paymentOrderId: order.id },
+        data: {
+          emailSent: true,
+        },
+      });
+
+      return { success: true };
     });
 
     return { success: true };
