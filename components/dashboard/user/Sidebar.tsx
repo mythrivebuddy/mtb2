@@ -269,7 +269,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 <NavItem
                   href="/dashboard/progress-vault"
                   icon={<LucideSignalHigh size={20} />}
-                  label="Log Wins"
+                  label="Log 1% Progress"
                   onLinkClick={toggleSidebar} // Pass toggleSidebar
                 />
                 <NavItem

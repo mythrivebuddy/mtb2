@@ -16,6 +16,7 @@ import PageSkeleton from "@/components/PageSkeleton";
 
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import AnnouncementBar from "@/components/announcement/AnnouncementBar";
+import DashboardCards from "@/components/dashboard/DashboardCards";
 
 
 export default function DashboardPage() {
@@ -94,7 +95,7 @@ export default function DashboardPage() {
             <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
           </div>
           {session?.user.userType === "ENTHUSIAST" ? (
-            <div className=""></div>
+            <div className=""><DashboardCards jpBalance={userData.jpBalance}/></div>
           ) : (
             <>
               <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
