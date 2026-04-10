@@ -145,6 +145,12 @@ function SignInFormContent() {
 
       if (message.includes("not verified")) {
         setLoginError("EMAIL_NOT_VERIFIED");
+      } else if (
+        message.includes("external provider") ||
+        message.includes("oauth") ||
+        message.includes("google")
+      ) {
+        setLoginError("USE_GOOGLE");
       } else {
         setLoginError(message);
       }
@@ -199,7 +205,8 @@ function SignInFormContent() {
 
             {!errors.email &&
               loginError &&
-              loginError !== "EMAIL_NOT_VERIFIED" && (
+              loginError !== "EMAIL_NOT_VERIFIED" &&
+              loginError !== "USE_GOOGLE" && (
                 <p className="text-red-500 text-sm mt-1">{loginError}</p>
               )}
           </div>
@@ -239,14 +246,22 @@ function SignInFormContent() {
                   disabled={resendMutation.isPending}
                   className="text-blue-600 underline ml-1"
                 >
-                 {resendMutation.isPending ? "Sending email..." : "Resend verification email"}
+                  {resendMutation.isPending
+                    ? "Sending email..."
+                    : "Resend verification email"}
                 </button>
               </p>
             )}
-
+            {!errors.password && loginError === "USE_GOOGLE" && (
+              <p className="text-red-500 text-sm mt-1 break-words">
+                This email is registered with Google. Please sign in using
+                Google.
+              </p>
+            )}
             {!errors.password &&
               loginError &&
-              loginError !== "EMAIL_NOT_VERIFIED" && (
+              loginError !== "EMAIL_NOT_VERIFIED" &&
+              loginError !== "USE_GOOGLE" && (
                 <p className="text-red-500 text-sm mt-1">{loginError}</p>
               )}
           </div>
