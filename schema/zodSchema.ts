@@ -69,8 +69,8 @@ export const dailyBloomSchema = z
 
     // --- NEW FIELDS FOR CALENDAR INTEGRATION ---
     addToCalendar: z.boolean().optional(),
-    startTime: z.string().optional(), // Storing as string e.g., "14:30"
-    endTime: z.string().optional(), // Storing as string e.g., "16:00"
+    startTime: z.string().nullable().optional(), // Storing as string e.g., "14:30"
+    endTime: z.string().nullable().optional(), // Storing as string e.g., "16:00"
   })
   .superRefine((data, ctx) => {
     // Rule 1: Ensure EITHER a dueDate OR a frequency is selected, but not both.

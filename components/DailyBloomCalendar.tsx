@@ -5,7 +5,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin, { DateClickArg, EventResizeDoneArg } from "@fullcalendar/interaction";
+import interactionPlugin, {
+  DateClickArg,
+  EventResizeDoneArg,
+} from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import { EventContentArg, EventDropArg } from "@fullcalendar/core";
 import type { RealtimeChannel } from "@supabase/supabase-js";
@@ -42,9 +45,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Plus, Calendar as CalendarIcon, Loader2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import confetti from "canvas-confetti";
 import { useSupabase } from "./providers/SupabaseClientProvider";
+import { toast } from "sonner";
 
 // ---------------- Types ----------------
 
@@ -63,7 +72,7 @@ interface EventExtendedProps {
   description?: string;
   isBloom?: boolean;
   isCompleted?: boolean;
-  category?: 'holiday' | string;
+  category?: "holiday" | string;
 }
 
 interface CalendarEvent {
@@ -83,6 +92,7 @@ interface Props {
     title: string;
     description?: string;
     dueDate?: string;
+    end?: string;
     isCompleted?: boolean;
   }) => void | Promise<void>;
   onUpdateBloomFromEvent: (payload: {
@@ -91,6 +101,8 @@ interface Props {
       title?: string;
       description?: string;
       dueDate?: string;
+      end?: string;
+      isCompleted?: boolean;
     };
   }) => void;
   onDeleteBloomFromEvent: (bloomId: string) => void;
@@ -109,7 +121,8 @@ const toLocalInput = (dateStr?: string | null) => {
   return `${y}-${m}-${d}T${h}:${min}`;
 };
 
-const isTempId = (id?: string | number | null) => typeof id === "string" && id.startsWith("tmp-");
+const isTempId = (id?: string | number | null) =>
+  typeof id === "string" && id.startsWith("tmp-");
 
 const toCalendarEventFromServer = (row: EventPayload): CalendarEvent => ({
   id: String(row.id),
@@ -142,7 +155,6 @@ const useMediaQuery = (query: string) => {
 };
 // ----- END CHANGE -----
 
-
 // ---------------- Event Form Component ----------------
 const EventForm = ({
   currentEvent,
@@ -156,97 +168,121 @@ const EventForm = ({
   mode: "view" | "create" | null;
   isEditing: boolean;
   isSubmitting: boolean;
-}) => (
-  <div className="grid gap-4 py-4">
-    <div className="grid gap-2">
-      <Label htmlFor="title">Title</Label>
-      <Input
-        id="title"
-        value={currentEvent.title}
-        onChange={(e) => setCurrentEvent({ ...currentEvent, title: e.target.value })}
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-        placeholder="Event Title"
-        className="text-sm"
-      />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="description">Description</Label>
-      <Textarea
-        id="description"
-        value={currentEvent.extendedProps?.description || ""}
-        onChange={(e) =>
-          setCurrentEvent({
-            ...currentEvent,
-            extendedProps: { ...currentEvent.extendedProps, description: e.target.value },
-          })
-        }
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-        placeholder="Optional details..."
-        className="text-sm"
-      />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="due-date">Due Date</Label>
-      <Input
-        id="due-date"
-        type={currentEvent.allDay ? "date" : "datetime-local"}
-        value={
-          currentEvent.allDay
-            ? currentEvent.start.slice(0, 10)
-            : currentEvent.start.slice(0, 16)
-        }
-        onChange={(e) => {
-          const newStart = e.target.value;
-          setCurrentEvent({ ...currentEvent, start: newStart });
-        }}
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-        className="text-sm"
-      />
-    </div>
-    {!currentEvent.allDay && (
+}) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="grid gap-4 py-4">
       <div className="grid gap-2">
-        <Label htmlFor="end-date">End Date (optional)</Label>
+        <Label htmlFor="title">Title</Label>
         <Input
-          id="end-date"
-          type="datetime-local"
-          value={currentEvent.end ? currentEvent.end.slice(0, 16) : ""}
-          onChange={(e) => setCurrentEvent({ ...currentEvent, end: e.target.value || undefined })}
+          id="title"
+          value={currentEvent.title}
+          onChange={(e) =>
+            setCurrentEvent({ ...currentEvent, title: e.target.value })
+          }
+          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          placeholder="Event Title"
+          className="text-sm"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={currentEvent.extendedProps?.description || ""}
+          onChange={(e) =>
+            setCurrentEvent({
+              ...currentEvent,
+              extendedProps: {
+                ...currentEvent.extendedProps,
+                description: e.target.value,
+              },
+            })
+          }
+          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          placeholder="Optional details..."
+          className="text-sm"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="due-date">Due Date</Label>
+        <Input
+          id="due-date"
+          ref={inputRef}
+          type={currentEvent.allDay ? "date" : "datetime-local"}
+          value={
+            currentEvent.allDay
+              ? currentEvent.start.slice(0, 10)
+              : currentEvent.start.slice(0, 16)
+          }
+          onChange={(e) => {
+            const newStart = e.target.value;
+
+            setCurrentEvent({ ...currentEvent, start: newStart });
+
+            // ✅ Auto close picker ONLY when datetime fully selected
+            if (!currentEvent.allDay && newStart.length === 16) {
+              setTimeout(() => {
+                inputRef.current?.blur(); // 🔥 closes native picker
+              }, 100);
+            }
+          }}
           disabled={(mode === "view" && !isEditing) || isSubmitting}
           className="text-sm"
         />
       </div>
-    )}
-    <div className="flex items-center gap-2 pt-2">
-      <Checkbox
-        id="all-day"
-        checked={currentEvent.allDay || false}
-        onCheckedChange={(val) => {
-          const isAllDay = val as boolean;
-          let newStart = currentEvent.start;
-          let newEnd: string | undefined = currentEvent.end;
-          if (isAllDay) {
-            newStart = newStart.slice(0, 10);
-            newEnd = undefined;
-          } else {
-            if (newStart.length === 10) newStart += "T09:00";
-            if (!newEnd) {
-              const startD = new Date(newStart);
-              newEnd = toLocalInput(new Date(startD.getTime() + 3600000).toString());
+      {!currentEvent.allDay && (
+        <div className="grid gap-2">
+          <Label htmlFor="end-date">End Date (optional)</Label>
+          <Input
+            id="end-date"
+            type="datetime-local"
+            value={currentEvent.end ? currentEvent.end.slice(0, 16) : ""}
+            onChange={(e) =>
+              setCurrentEvent({
+                ...currentEvent,
+                end: e.target.value || undefined,
+              })
             }
-          }
-          setCurrentEvent({
-            ...currentEvent,
-            start: newStart,
-            end: newEnd,
-            allDay: isAllDay,
-          });
-        }}
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-      />
-      <Label htmlFor="all-day">All Day Event</Label>
+            disabled={(mode === "view" && !isEditing) || isSubmitting}
+            className="text-sm"
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-2">
+        <Checkbox
+          id="all-day"
+          checked={currentEvent.allDay || false}
+          onCheckedChange={(val) => {
+            const isAllDay = val as boolean;
+            let newStart = currentEvent.start;
+            let newEnd: string | undefined = currentEvent.end;
+            if (isAllDay) {
+              newStart = newStart.slice(0, 10);
+              newEnd = undefined;
+            } else {
+              if (newStart.length === 10) newStart += "T09:00";
+              if (!newEnd) {
+                const startD = new Date(newStart);
+                newEnd = toLocalInput(
+                  new Date(startD.getTime() + 3600000).toString(),
+                );
+              }
+            }
+            setCurrentEvent({
+              ...currentEvent,
+              start: newStart,
+              end: newEnd,
+              allDay: isAllDay,
+            });
+          }}
+          disabled={(mode === "view" && !isEditing) || isSubmitting}
+        />
+        <Label htmlFor="all-day">All Day Event</Label>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ---------------- Main Component ----------------
 
@@ -272,40 +308,45 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // For form button loading states
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [lastDeletedEvent, setLastDeletedEvent] = useState<CalendarEvent | null>(null);
+  const [lastDeletedEvent, setLastDeletedEvent] =
+    useState<CalendarEvent | null>(null);
   const undoTimerRef = useRef<number | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const dragDebounceRef = useRef<number | null>(null);
   const resizeDebounceRef = useRef<number | null>(null);
   const resizeViewDebounceRef = useRef<number | null>(null);
 
-
   useEffect(() => {
-
-    console.log("PROPS_CHANGED: eventsProp has changed. Overwriting local events state.", eventsProp);
+    console.log(
+      "PROPS_CHANGED: eventsProp has changed. Overwriting local events state.",
+      eventsProp,
+    );
     setEvents(eventsProp);
     setIsLoading(false);
   }, [eventsProp]);
 
   // --- REALTIME SUBSCRIPTION ---
   useEffect(() => {
-
     if (!supabaseClient) return;
 
     const channel = supabaseClient
-      .channel('public:Event')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'Event' },
+      .channel("public:Event")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "Event" },
         (payload) => {
           switch (payload.eventType) {
-            case 'INSERT': {
+            case "INSERT": {
               const newRow = payload.new as EventPayload;
-              if (!('id' in newRow)) break;
+              if (!("id" in newRow)) break;
 
               const newEvent = toCalendarEventFromServer(newRow);
 
-              setEvents(prev => {
+              setEvents((prev) => {
                 // Find if an optimistic event (with a 'tmp-' ID) exists
-                const tempEventIndex = prev.findIndex(e => e.id.startsWith('tmp-'));
+                const tempEventIndex = prev.findIndex((e) =>
+                  e.id.startsWith("tmp-"),
+                );
 
                 if (tempEventIndex !== -1) {
                   // If a temporary event is found, replace it with the new server event
@@ -315,7 +356,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 }
 
                 // If no temp event, check if the event already exists to prevent duplicates
-                if (prev.some(e => e.id === newEvent.id)) {
+                if (prev.some((e) => e.id === newEvent.id)) {
                   return prev;
                 }
 
@@ -325,22 +366,27 @@ const DailyBloomCalendar: React.FC<Props> = ({
               break;
             }
 
-            case 'UPDATE': {
+            case "UPDATE": {
               const newRow = payload.new as EventPayload;
-              if (!('id' in newRow)) break;
+              if (!("id" in newRow)) break;
               const updatedEvent = toCalendarEventFromServer(newRow);
-              setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+              setEvents((prev) =>
+                prev.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)),
+              );
               break;
             }
 
-            case 'DELETE': {
+            case "DELETE": {
               const oldRow = payload.old as { id: number };
-              if (!oldRow || !('id' in oldRow)) break;
-              setEvents(prev => prev.filter(e => e.id !== String(oldRow.id)));
+              if (!oldRow || !("id" in oldRow)) break;
+              setEvents((prev) =>
+                prev.filter((e) => e.id !== String(oldRow.id)),
+              );
               break;
             }
           }
-        })
+        },
+      )
       .subscribe();
 
     realtimeRef.current = channel;
@@ -352,7 +398,6 @@ const DailyBloomCalendar: React.FC<Props> = ({
       }
     };
   }, [supabaseClient]);
-
 
   // view updates on resize
   useEffect(() => {
@@ -375,7 +420,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
     const timerId = setTimeout(updateView, 0);
 
     const debouncedUpdateView = () => {
-      if (resizeViewDebounceRef.current) window.clearTimeout(resizeViewDebounceRef.current);
+      if (resizeViewDebounceRef.current)
+        window.clearTimeout(resizeViewDebounceRef.current);
       resizeViewDebounceRef.current = window.setTimeout(updateView, 300);
     };
     window.addEventListener("resize", debouncedUpdateView);
@@ -383,7 +429,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
     return () => {
       window.removeEventListener("resize", debouncedUpdateView);
       clearTimeout(timerId);
-      if (resizeViewDebounceRef.current) window.clearTimeout(resizeViewDebounceRef.current);
+      if (resizeViewDebounceRef.current)
+        window.clearTimeout(resizeViewDebounceRef.current);
     };
   }, []);
 
@@ -394,9 +441,18 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleSave = useCallback(async () => {
     if (!currentEvent || !currentEvent.title.trim()) return;
+    if (currentEvent.end && currentEvent.start) {
+      const start = new Date(currentEvent.start);
+      const end = new Date(currentEvent.end);
+
+      if (end <= start) {
+        toast.error("End time must be greater than start time");
+        return;
+      }
+    }
     setIsSubmitting(true);
 
-    setEvents(prev => [...prev, currentEvent]);
+    setEvents((prev) => [...prev, currentEvent]);
     handleCloseModal();
 
     try {
@@ -404,17 +460,20 @@ const DailyBloomCalendar: React.FC<Props> = ({
       // The parent's react-query `onMutate` will handle the optimistic update.
       await onCreateBloomFromEvent({
         title: currentEvent.title,
-        description: currentEvent.extendedProps?.description || '',
+        description: currentEvent.extendedProps?.description || "",
         dueDate: currentEvent.start,
         isCompleted: false,
+        end: currentEvent.end,
       });
       handleCloseModal();
     } catch (err) {
       console.error("Error creating event:", err);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to save event.");
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to save event.",
+      );
       // --- FIX: Revert on Failure ---
       // 4. If the API call fails, remove the optimistically added event.
-      setEvents(prev => prev.filter(e => e.id !== currentEvent.id));
+      setEvents((prev) => prev.filter((e) => e.id !== currentEvent.id));
     } finally {
       setIsSubmitting(false);
     }
@@ -424,7 +483,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
     if (!mode) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleCloseModal();
-      if (e.key === "Enter" && mode === "create" && currentEvent?.title.trim()) {
+      if (
+        e.key === "Enter" &&
+        mode === "create" &&
+        currentEvent?.title.trim()
+      ) {
         e.preventDefault();
         handleSave();
       }
@@ -434,10 +497,21 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, [mode, currentEvent, isEditing, handleSave, handleCloseModal]);
 
   const handleDateClick = useCallback((info: DateClickArg) => {
-    const startStr = toLocalInput(info.dateStr);
+    let start: string;
+
+    if (info.allDay) {
+      // 👇 FIX: force local date without timezone shift
+      start = info.dateStr; // "2026-04-10"
+    } else {
+      start = toLocalInput(info.dateStr);
+    }
     const isAllDay = info.allDay;
-    const start = isAllDay ? startStr.slice(0, 10) : startStr;
-    const end = isAllDay ? undefined : toLocalInput(new Date(new Date(info.dateStr).getTime() + 3600000).toString());
+    //  start = isAllDay ? startStr.slice(0, 10) : startStr;
+    const end = isAllDay
+      ? undefined
+      : toLocalInput(
+          new Date(new Date(info.dateStr).getTime() + 3600000).toString(),
+        );
     setCurrentEvent({
       id: `tmp-${Date.now()}`,
       title: "",
@@ -460,8 +534,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
     // --- FIX START: Get local date string instead of UTC ---
     const localDate = new Date();
     const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, '0');
-    const day = String(localDate.getDate()).padStart(2, '0');
+    const month = String(localDate.getMonth() + 1).padStart(2, "0");
+    const day = String(localDate.getDate()).padStart(2, "0");
     const todayDateString = `${year}-${month}-${day}`;
     // --- FIX END ---
 
@@ -472,19 +546,19 @@ const DailyBloomCalendar: React.FC<Props> = ({
       allDay: true,
       color: "#4dabf7",
       extendedProps: {
-        description: 'Quick add',
+        description: "Quick add",
         isBloom: true,
         isCompleted: false,
       },
     };
 
-    setQuickText('');
-    setEvents(prev => [...prev, newEvent]);
+    setQuickText("");
+    setEvents((prev) => [...prev, newEvent]);
 
     try {
       await onCreateBloomFromEvent({
         title: textToSubmit,
-        description: 'Quick add',
+        description: "Quick add",
         dueDate: todayDateString, // Use the correct local date string
         isCompleted: false,
       });
@@ -492,54 +566,96 @@ const DailyBloomCalendar: React.FC<Props> = ({
       console.error("Quick add error:", err);
       setErrorMessage(err instanceof Error ? err.message : "Quick add failed.");
       setQuickText(textToSubmit);
-      setEvents(prev => prev.filter(e => e.id !== tempId));
+      setEvents((prev) => prev.filter((e) => e.id !== tempId));
     }
   }, [quickText, onCreateBloomFromEvent]);
 
+  const handleComplete = useCallback(
+    async (id: string) => {
+      setIsSubmitting(true);
 
-  const handleComplete = useCallback(async (id: string) => {
-    setIsSubmitting(true);
-    setEvents((prev: CalendarEvent[]) =>
-      prev.map((e: CalendarEvent) =>
-        e.id === id ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: true } } : e
-      )
-    );
-    try {
-      const response = await fetch("/api/events", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id.replace(/^event-/, ""), isCompleted: true }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to complete event");
-      }
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-      handleCloseModal();
-    } catch (err) {
-      console.error("Error completing event:", err);
-      setEvents((prev: CalendarEvent[]) =>
-        prev.map((e: CalendarEvent) =>
-          e.id === id ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: false } } : e
-        )
+      setEvents((prev) =>
+        prev.map((e) =>
+          e.id === id
+            ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: true } }
+            : e,
+        ),
       );
-      setErrorMessage("Failed to mark completed.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [handleCloseModal]);
+
+      try {
+        const eventObj = events.find((e) => e.id === id);
+
+        if (eventObj?.extendedProps?.isBloom) {
+          // ✅ BLOOM → correct API
+          await onUpdateBloomFromEvent({
+            id: id.replace(/^bloom-/, ""),
+            updatedData: {
+              isCompleted: true,
+            },
+          });
+        } else {
+          // ✅ EVENT → correct API
+          const response = await fetch("/api/events", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: id.replace(/^event-/, ""),
+              isCompleted: true,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message);
+          }
+        }
+
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+        handleCloseModal();
+      } catch (err) {
+        console.error(err);
+
+        // revert UI
+        setEvents((prev) =>
+          prev.map((e) =>
+            e.id === id
+              ? {
+                  ...e,
+                  extendedProps: { ...e.extendedProps, isCompleted: false },
+                }
+              : e,
+          ),
+        );
+
+        setErrorMessage("Failed to mark completed.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [events, onUpdateBloomFromEvent, handleCloseModal],
+  );
 
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
+    if (currentEvent.end && currentEvent.start) {
+      const start = new Date(currentEvent.start);
+      const end = new Date(currentEvent.end);
+
+      if (end <= start) {
+        toast.error("End time must be greater than start time");
+        return;
+      }
+    }
     setIsSubmitting(true);
+    const isAllDay = currentEvent.allDay;
 
     if (currentEvent.extendedProps?.isBloom) {
       // --- FIX START ---
       // Optimistically update the local events state to immediately reflect UI changes.
       setEvents((prevEvents) =>
         prevEvents.map((event) =>
-          event.id === currentEvent.id ? { ...currentEvent } : event
-        )
+          event.id === currentEvent.id ? { ...currentEvent } : event,
+        ),
       );
       // --- FIX END ---
 
@@ -550,6 +666,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
           title: currentEvent.title,
           description: currentEvent.extendedProps?.description,
           dueDate: currentEvent.start,
+          end: isAllDay ? undefined : currentEvent.end,
         },
       });
 
@@ -600,11 +717,16 @@ const DailyBloomCalendar: React.FC<Props> = ({
     if (currentEvent.extendedProps?.isBloom) {
       try {
         onDeleteBloomFromEvent(currentEvent.id.replace(/^bloom-/, ""));
-        undoTimerRef.current = window.setTimeout(() => setLastDeletedEvent(null), 6000);
+        undoTimerRef.current = window.setTimeout(
+          () => setLastDeletedEvent(null),
+          6000,
+        );
       } catch (err) {
         console.error("Error calling onDeleteBloomFromEvent:", err);
         setEvents(originalEvents);
-        setErrorMessage(err instanceof Error ? err.message : "Failed to delete bloom.");
+        setErrorMessage(
+          err instanceof Error ? err.message : "Failed to delete bloom.",
+        );
         setLastDeletedEvent(null);
       } finally {
         finallyBlock();
@@ -622,11 +744,16 @@ const DailyBloomCalendar: React.FC<Props> = ({
         const json = await resp.json();
         throw new Error(json?.message || "Failed to delete event");
       }
-      undoTimerRef.current = window.setTimeout(() => setLastDeletedEvent(null), 6000);
+      undoTimerRef.current = window.setTimeout(
+        () => setLastDeletedEvent(null),
+        6000,
+      );
     } catch (err) {
       console.error("Error deleting event:", err);
       setEvents(originalEvents);
-      setErrorMessage(err instanceof Error ? err.message : "Failed to delete event.");
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to delete event.",
+      );
       setLastDeletedEvent(null);
     } finally {
       finallyBlock();
@@ -656,10 +783,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
         body: JSON.stringify(payload),
       });
       const json = await resp.json();
-      if (!resp.ok) throw new Error(json?.message || "Failed to recreate event");
+      if (!resp.ok)
+        throw new Error(json?.message || "Failed to recreate event");
       const serverEvent = toCalendarEventFromServer(json.data);
       setEvents((prev) =>
-        prev.map((e) => (e.id === lastDeletedEvent.id ? serverEvent : e))
+        prev.map((e) => (e.id === lastDeletedEvent.id ? serverEvent : e)),
       );
     } catch (err) {
       console.error("Undo re-create error:", err);
@@ -670,6 +798,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const handleEventDrop = useCallback(
     async (info: EventDropArg) => {
       const { event } = info;
+      if (event.end && event.start && event.end <= event.start) {
+        info.revert();
+        toast.error("Invalid event duration");
+        return;
+      }
       if (isTempId(event.id)) {
         setErrorMessage("Please save the event before moving/resizing it.");
         info.revert();
@@ -682,7 +815,10 @@ const DailyBloomCalendar: React.FC<Props> = ({
           if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
             onUpdateBloomFromEvent({
               id: info.event.id.replace(/^bloom-/, ""),
-              updatedData: { dueDate: info.event.startStr },
+              updatedData: {
+                dueDate: info.event.startStr,
+                end: info.event.endStr,
+              },
             });
           } else {
             // Otherwise, use the generic event API
@@ -708,20 +844,29 @@ const DailyBloomCalendar: React.FC<Props> = ({
         }
       }, 300);
     },
-    [onUpdateBloomFromEvent]
+    [onUpdateBloomFromEvent],
   );
 
   const handleEventResize = useCallback(
     async (info: EventResizeDoneArg) => {
       const { event } = info;
-      if (resizeDebounceRef.current) window.clearTimeout(resizeDebounceRef.current);
+      if (event.end && event.start && event.end <= event.start) {
+        info.revert();
+        toast.error("End time must be greater than start time");
+        return;
+      }
+      if (resizeDebounceRef.current)
+        window.clearTimeout(resizeDebounceRef.current);
       resizeDebounceRef.current = window.setTimeout(async () => {
         try {
           // If it's a bloom, use the dedicated parent handler
           if (event.extendedProps?.isBloom && onUpdateBloomFromEvent) {
             onUpdateBloomFromEvent({
               id: info.event.id.replace(/^bloom-/, ""),
-              updatedData: { dueDate: info.event.startStr }, // Resizing a bloom likely just changes its date
+              updatedData: {
+                dueDate: info.event.startStr,
+                end: info.event.endStr,
+              }, // Resizing a bloom likely just changes its date
             });
           } else {
             // Otherwise, use the generic event API
@@ -747,7 +892,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
         }
       }, 300);
     },
-    [onUpdateBloomFromEvent]
+    [onUpdateBloomFromEvent],
   );
 
   const eventContent = useCallback((arg: EventContentArg) => {
@@ -784,8 +929,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
               }}
             >
               <span
-                className={`flex-grow font-medium text-xs sm:text-sm ${ext?.isCompleted ? "line-through text-muted-foreground" : ""
-                  } ${isListView ? "whitespace-normal break-words" : "truncate"}`}
+                className={`flex-grow font-medium text-xs sm:text-sm ${
+                  ext?.isCompleted ? "line-through text-muted-foreground" : ""
+                } ${isListView ? "whitespace-normal break-words" : "truncate"}`}
               >
                 {arg.event.title}
               </span>
@@ -793,7 +939,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-bold">{arg.event.title}</p>
-            {ext?.description && <p className="text-sm text-muted-foreground">{ext.description}</p>}
+            {ext?.description && (
+              <p className="text-sm text-muted-foreground">{ext.description}</p>
+            )}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -801,46 +949,85 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, []);
 
   // ----- CHANGE: Added isSubmitting prop and logic for loading states -----
-  const FormButtons = useCallback(() => (
-    <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
-      {mode === "create" && (
-        <Button onClick={handleSave} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base bg-green-600 hover:bg-green-700 transition ">
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Event
-        </Button>
-      )}
-      {mode === "view" && currentEvent && (
-        <>
-          {!isEditing && !currentEvent.extendedProps?.isCompleted && (
-            <Button onClick={() => setIsEditing(true)} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
-              Edit
-            </Button>
-          )}
-          {isEditing && (
-            <Button onClick={handleUpdate} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          )}
-          {!currentEvent.extendedProps?.isCompleted && (
-            <Button onClick={() => handleComplete(currentEvent.id)} disabled={isSubmitting} className="bg-green-600 hover:bg-green-700  w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Mark Completed ✅
-            </Button>
-          )}
-          <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={isSubmitting} className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base">
-            Delete
+  const FormButtons = useCallback(
+    () => (
+      <div className="w-full flex flex-col sm:flex-row sm:justify-end gap-2">
+        {mode === "create" && (
+          <Button
+            onClick={handleSave}
+            disabled={isSubmitting}
+            className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base bg-green-600 hover:bg-green-700 transition "
+          >
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Event
           </Button>
-        </>
-      )}
-    </div>
-  ), [mode, currentEvent, isEditing, isSubmitting, handleSave, handleUpdate, handleComplete]);
+        )}
+        {mode === "view" && currentEvent && (
+          <>
+            {!isEditing && !currentEvent.extendedProps?.isCompleted && (
+              <Button
+                onClick={() => setIsEditing(true)}
+                disabled={isSubmitting}
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
+              >
+                Edit
+              </Button>
+            )}
+            {isEditing && (
+              <Button
+                onClick={handleUpdate}
+                disabled={isSubmitting}
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
+              >
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Save Changes
+              </Button>
+            )}
+            {!currentEvent.extendedProps?.isCompleted && (
+              <Button
+                onClick={() => handleComplete(currentEvent.id)}
+                disabled={isSubmitting}
+                className="bg-green-600 hover:bg-green-700  w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
+              >
+                {isSubmitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Mark Completed ✅
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
+            >
+              Delete
+            </Button>
+          </>
+        )}
+      </div>
+    ),
+    [
+      mode,
+      currentEvent,
+      isEditing,
+      isSubmitting,
+      handleSave,
+      handleUpdate,
+      handleComplete,
+    ],
+  );
 
   // ----- CHANGE: Added key prop to Skeleton Loader elements -----
   const SkeletonLoader = () => (
     <div className="grid gap-2">
       {Array.from({ length: 2 }).map((_, index) => (
-        <div key={index} className={`bg-gray-100 rounded animate-pulse ${index === 0 ? 'h-8' : 'h-48'}`} />
+        <div
+          key={index}
+          className={`bg-gray-100 rounded animate-pulse ${index === 0 ? "h-8" : "h-48"}`}
+        />
       ))}
     </div>
   );
@@ -850,7 +1037,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
       {errorMessage && (
         <div className="mb-3 p-2 bg-red-50 border border-red-100 rounded text-sm text-red-700">
           {errorMessage}
-          <button className="ml-3 underline" onClick={() => setErrorMessage(null)} aria-label="Dismiss error">
+          <button
+            className="ml-3 underline"
+            onClick={() => setErrorMessage(null)}
+            aria-label="Dismiss error"
+          >
             Dismiss
           </button>
         </div>
@@ -872,7 +1063,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <CalendarIcon className="w-6 h-6 text-blue-600 flex-shrink-0" />
-          <h2 className="text-lg md:text-xl font-semibold text-gray-800">Daily Blooms Calendar</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800">
+            Daily Blooms Calendar
+          </h2>
         </div>
         <div className="flex flex-wrap items-center justify-start sm:justify-end gap-3">
           <div className="hidden sm:flex w-full sm:w-auto gap-2">
@@ -883,7 +1076,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
               onKeyDown={(e) => e.key === "Enter" && handleQuickAdd()}
               className="flex-grow text-sm h-10"
             />
-            <Button onClick={handleQuickAdd} variant="default" size="icon" className="bg-green-600 hover:bg-green-700 flex-shrink-0 h-10 w-10">
+            <Button
+              onClick={handleQuickAdd}
+              variant="default"
+              size="icon"
+              className="bg-green-600 hover:bg-green-700 flex-shrink-0 h-10 w-10"
+            >
               <Plus size={18} />
             </Button>
           </div>
@@ -930,7 +1128,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
           <FullCalendar
             key={events.length}
             ref={calendarRef}
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
+            plugins={[
+              dayGridPlugin,
+              timeGridPlugin,
+              interactionPlugin,
+              listPlugin,
+            ]}
             initialView={isMobile ? "listWeek" : "dayGridMonth"}
             headerToolbar={{
               left: "prev,next today",
@@ -950,9 +1153,27 @@ const DailyBloomCalendar: React.FC<Props> = ({
             dayHeaderFormat={{ weekday: isMobile ? "short" : "long" }}
             views={{
               dayGridMonth: { titleFormat: { year: "numeric", month: "long" } },
-              timeGridWeek: { titleFormat: { year: "numeric", month: "short", day: "numeric" } },
-              timeGridDay: { titleFormat: { year: "numeric", month: "short", day: "numeric" } },
-              listWeek: { titleFormat: { year: "numeric", month: "short", day: "numeric" } },
+              timeGridWeek: {
+                titleFormat: {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                },
+              },
+              timeGridDay: {
+                titleFormat: {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                },
+              },
+              listWeek: {
+                titleFormat: {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                },
+              },
             }}
             height="auto"
           />
@@ -972,7 +1193,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 end: undefined,
                 allDay: true,
                 color: "#4dabf7",
-                extendedProps: { description: "", isBloom: true, isCompleted: false },
+                extendedProps: {
+                  description: "",
+                  isBloom: true,
+                  isCompleted: false,
+                },
               });
               setMode("create");
               setIsEditing(false);
@@ -985,17 +1210,30 @@ const DailyBloomCalendar: React.FC<Props> = ({
       )}
 
       {isTabletOrBelow ? (
-        <Drawer open={!!mode} onOpenChange={(isOpen) => !isOpen && handleCloseModal()}>
+        <Drawer
+          open={!!mode}
+          onOpenChange={(isOpen) => !isOpen && handleCloseModal()}
+        >
           <DrawerContent>
             <DrawerHeader className="text-left">
-              <DrawerTitle>{mode === "create" ? "Create Event" : "Event Details"}</DrawerTitle>
+              <DrawerTitle>
+                {mode === "create" ? "Create Event" : "Event Details"}
+              </DrawerTitle>
               <DrawerDescription>
-                {mode === "create" ? "Fill in the details for your new event." : "View or manage your event details."}
+                {mode === "create"
+                  ? "Fill in the details for your new event."
+                  : "View or manage your event details."}
               </DrawerDescription>
             </DrawerHeader>
             <div className="px-4 overflow-y-auto">
               {currentEvent && (
-                <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
+                <EventForm
+                  currentEvent={currentEvent}
+                  setCurrentEvent={setCurrentEvent}
+                  mode={mode}
+                  isEditing={isEditing}
+                  isSubmitting={isSubmitting}
+                />
               )}
             </div>
             <DrawerFooter className="pt-4">
@@ -1004,17 +1242,30 @@ const DailyBloomCalendar: React.FC<Props> = ({
           </DrawerContent>
         </Drawer>
       ) : (
-        <Dialog open={!!mode} onOpenChange={(isOpen) => !isOpen && handleCloseModal()}>
+        <Dialog
+          open={!!mode}
+          onOpenChange={(isOpen) => !isOpen && handleCloseModal()}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{mode === "create" ? "Create Event" : "Event Details"}</DialogTitle>
+              <DialogTitle>
+                {mode === "create" ? "Create Event" : "Event Details"}
+              </DialogTitle>
               <DialogDescription>
-                {mode === "create" ? "Fill in the details for your new event." : "View or manage your event details."}
+                {mode === "create"
+                  ? "Fill in the details for your new event."
+                  : "View or manage your event details."}
               </DialogDescription>
             </DialogHeader>
             <div className="px-4 overflow-y-auto max-h-[60vh]">
               {currentEvent && (
-                <EventForm currentEvent={currentEvent} setCurrentEvent={setCurrentEvent} mode={mode} isEditing={isEditing} isSubmitting={isSubmitting} />
+                <EventForm
+                  currentEvent={currentEvent}
+                  setCurrentEvent={setCurrentEvent}
+                  mode={mode}
+                  isEditing={isEditing}
+                  isSubmitting={isSubmitting}
+                />
               )}
             </div>
             <DialogFooter>
@@ -1030,18 +1281,24 @@ const DailyBloomCalendar: React.FC<Props> = ({
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action will permanently delete the event:{" "}
-              <strong className="text-foreground">{currentEvent?.title || "this event"}</strong>
+              <strong className="text-foreground">
+                {currentEvent?.title || "this event"}
+              </strong>
               . You can briefly undo this after deletion.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               disabled={isSubmitting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1050,6 +1307,5 @@ const DailyBloomCalendar: React.FC<Props> = ({
     </div>
   );
 };
-
 
 export default DailyBloomCalendar;
