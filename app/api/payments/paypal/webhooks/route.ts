@@ -140,18 +140,6 @@ export async function POST(req: NextRequest) {
       break;
     }
 
-
-    case "PAYMENT.SALE.COMPLETED":
-      // resource.billing_agreement_id holds the subscriptionId
-      await prisma.invoice.create({
-        data: {
-          user: { connect: { subscriptionId: resource.billing_agreement_id } },
-          amount: parseFloat(resource.amount.total),
-          saleId: resource.id,
-        },
-      });
-      break;
-
     // add more as needed…
     default:
       // ignore other events

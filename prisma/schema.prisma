@@ -72,7 +72,6 @@ model User {
   groupsOwned                   Group[]                           @relation("CoachGroups")
   Group_Group_creatorIdToUser   Group[]                           @relation("Group_creatorIdToUser")
   accountabilityMemberships     GroupMember[]                     @relation("AccountabilityMemberships")
-  invoice                       Invoice[]
   magicBoxes                    MagicBox[]
   buddyChecker                  MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyTarget")
   buddyDoer                     MakeoverAccountabilityBuddy[]     @relation("MakeoverBuddyOwner")
@@ -549,14 +548,7 @@ model UserNotification {
   user      User     @relation("UserNotifications", fields: [userId], references: [id])
 }
 // legacy plan model do not touch
-model Invoice {
-  id                 String   @id @default(uuid())
-  userSubscriptionId String
-  amount             Float
-  saleId             String   @unique
-  createdAt          DateTime @default(now())
-  user               User     @relation(fields: [userSubscriptionId], references: [subscriptionId])
-}
+
 
 model ProfileView {
   id       String   @id @default(uuid())
