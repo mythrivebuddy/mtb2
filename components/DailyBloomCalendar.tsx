@@ -102,7 +102,7 @@ interface Props {
       description?: string;
       dueDate?: string;
       end?: string;
-      isCompleted?:boolean;
+      isCompleted?: boolean;
     };
   }) => void;
   onDeleteBloomFromEvent: (bloomId: string) => void;
@@ -168,109 +168,121 @@ const EventForm = ({
   mode: "view" | "create" | null;
   isEditing: boolean;
   isSubmitting: boolean;
-}) => (
-  <div className="grid gap-4 py-4">
-    <div className="grid gap-2">
-      <Label htmlFor="title">Title</Label>
-      <Input
-        id="title"
-        value={currentEvent.title}
-        onChange={(e) =>
-          setCurrentEvent({ ...currentEvent, title: e.target.value })
-        }
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-        placeholder="Event Title"
-        className="text-sm"
-      />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="description">Description</Label>
-      <Textarea
-        id="description"
-        value={currentEvent.extendedProps?.description || ""}
-        onChange={(e) =>
-          setCurrentEvent({
-            ...currentEvent,
-            extendedProps: {
-              ...currentEvent.extendedProps,
-              description: e.target.value,
-            },
-          })
-        }
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-        placeholder="Optional details..."
-        className="text-sm"
-      />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="due-date">Due Date</Label>
-      <Input
-        id="due-date"
-        type={currentEvent.allDay ? "date" : "datetime-local"}
-        value={
-          currentEvent.allDay
-            ? currentEvent.start.slice(0, 10)
-            : currentEvent.start.slice(0, 16)
-        }
-        onChange={(e) => {
-          const newStart = e.target.value;
-          setCurrentEvent({ ...currentEvent, start: newStart });
-        }}
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-        className="text-sm"
-      />
-    </div>
-    {!currentEvent.allDay && (
+}) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="grid gap-4 py-4">
       <div className="grid gap-2">
-        <Label htmlFor="end-date">End Date (optional)</Label>
+        <Label htmlFor="title">Title</Label>
         <Input
-          id="end-date"
-          type="datetime-local"
-          value={currentEvent.end ? currentEvent.end.slice(0, 16) : ""}
+          id="title"
+          value={currentEvent.title}
+          onChange={(e) =>
+            setCurrentEvent({ ...currentEvent, title: e.target.value })
+          }
+          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          placeholder="Event Title"
+          className="text-sm"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          value={currentEvent.extendedProps?.description || ""}
           onChange={(e) =>
             setCurrentEvent({
               ...currentEvent,
-              end: e.target.value || undefined,
+              extendedProps: {
+                ...currentEvent.extendedProps,
+                description: e.target.value,
+              },
             })
           }
+          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          placeholder="Optional details..."
+          className="text-sm"
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="due-date">Due Date</Label>
+        <Input
+          id="due-date"
+          ref={inputRef}
+          type={currentEvent.allDay ? "date" : "datetime-local"}
+          value={
+            currentEvent.allDay
+              ? currentEvent.start.slice(0, 10)
+              : currentEvent.start.slice(0, 16)
+          }
+          onChange={(e) => {
+            const newStart = e.target.value;
+
+            setCurrentEvent({ ...currentEvent, start: newStart });
+
+            // ✅ Auto close picker ONLY when datetime fully selected
+            if (!currentEvent.allDay && newStart.length === 16) {
+              setTimeout(() => {
+                inputRef.current?.blur(); // 🔥 closes native picker
+              }, 100);
+            }
+          }}
           disabled={(mode === "view" && !isEditing) || isSubmitting}
           className="text-sm"
         />
       </div>
-    )}
-    <div className="flex items-center gap-2 pt-2">
-      <Checkbox
-        id="all-day"
-        checked={currentEvent.allDay || false}
-        onCheckedChange={(val) => {
-          const isAllDay = val as boolean;
-          let newStart = currentEvent.start;
-          let newEnd: string | undefined = currentEvent.end;
-          if (isAllDay) {
-            newStart = newStart.slice(0, 10);
-            newEnd = undefined;
-          } else {
-            if (newStart.length === 10) newStart += "T09:00";
-            if (!newEnd) {
-              const startD = new Date(newStart);
-              newEnd = toLocalInput(
-                new Date(startD.getTime() + 3600000).toString(),
-              );
+      {!currentEvent.allDay && (
+        <div className="grid gap-2">
+          <Label htmlFor="end-date">End Date (optional)</Label>
+          <Input
+            id="end-date"
+            type="datetime-local"
+            value={currentEvent.end ? currentEvent.end.slice(0, 16) : ""}
+            onChange={(e) =>
+              setCurrentEvent({
+                ...currentEvent,
+                end: e.target.value || undefined,
+              })
             }
-          }
-          setCurrentEvent({
-            ...currentEvent,
-            start: newStart,
-            end: newEnd,
-            allDay: isAllDay,
-          });
-        }}
-        disabled={(mode === "view" && !isEditing) || isSubmitting}
-      />
-      <Label htmlFor="all-day">All Day Event</Label>
+            disabled={(mode === "view" && !isEditing) || isSubmitting}
+            className="text-sm"
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-2 pt-2">
+        <Checkbox
+          id="all-day"
+          checked={currentEvent.allDay || false}
+          onCheckedChange={(val) => {
+            const isAllDay = val as boolean;
+            let newStart = currentEvent.start;
+            let newEnd: string | undefined = currentEvent.end;
+            if (isAllDay) {
+              newStart = newStart.slice(0, 10);
+              newEnd = undefined;
+            } else {
+              if (newStart.length === 10) newStart += "T09:00";
+              if (!newEnd) {
+                const startD = new Date(newStart);
+                newEnd = toLocalInput(
+                  new Date(startD.getTime() + 3600000).toString(),
+                );
+              }
+            }
+            setCurrentEvent({
+              ...currentEvent,
+              start: newStart,
+              end: newEnd,
+              allDay: isAllDay,
+            });
+          }}
+          disabled={(mode === "view" && !isEditing) || isSubmitting}
+        />
+        <Label htmlFor="all-day">All Day Event</Label>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ---------------- Main Component ----------------
 
@@ -487,12 +499,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const handleDateClick = useCallback((info: DateClickArg) => {
     let start: string;
 
-if (info.allDay) {
-  // 👇 FIX: force local date without timezone shift
-  start = info.dateStr; // "2026-04-10"
-} else {
-  start = toLocalInput(info.dateStr);
-}
+    if (info.allDay) {
+      // 👇 FIX: force local date without timezone shift
+      start = info.dateStr; // "2026-04-10"
+    } else {
+      start = toLocalInput(info.dateStr);
+    }
     const isAllDay = info.allDay;
     //  start = isAllDay ? startStr.slice(0, 10) : startStr;
     const end = isAllDay
@@ -558,67 +570,70 @@ if (info.allDay) {
     }
   }, [quickText, onCreateBloomFromEvent]);
 
- const handleComplete = useCallback(
-  async (id: string) => {
-    setIsSubmitting(true);
+  const handleComplete = useCallback(
+    async (id: string) => {
+      setIsSubmitting(true);
 
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === id
-          ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: true } }
-          : e
-      )
-    );
-
-    try {
-      const eventObj = events.find((e) => e.id === id);
-
-      if (eventObj?.extendedProps?.isBloom) {
-        // ✅ BLOOM → correct API
-        await onUpdateBloomFromEvent({
-          id: id.replace(/^bloom-/, ""),
-          updatedData: {
-            isCompleted: true,
-          },
-        });
-      } else {
-        // ✅ EVENT → correct API
-        const response = await fetch("/api/events", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: id.replace(/^event-/, ""),
-            isCompleted: true,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message);
-        }
-      }
-
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-      handleCloseModal();
-    } catch (err) {
-      console.error(err);
-
-      // revert UI
       setEvents((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: false } }
-            : e
-        )
+            ? { ...e, extendedProps: { ...e.extendedProps, isCompleted: true } }
+            : e,
+        ),
       );
 
-      setErrorMessage("Failed to mark completed.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  },
-  [events, onUpdateBloomFromEvent, handleCloseModal]
-);
+      try {
+        const eventObj = events.find((e) => e.id === id);
+
+        if (eventObj?.extendedProps?.isBloom) {
+          // ✅ BLOOM → correct API
+          await onUpdateBloomFromEvent({
+            id: id.replace(/^bloom-/, ""),
+            updatedData: {
+              isCompleted: true,
+            },
+          });
+        } else {
+          // ✅ EVENT → correct API
+          const response = await fetch("/api/events", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: id.replace(/^event-/, ""),
+              isCompleted: true,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message);
+          }
+        }
+
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+        handleCloseModal();
+      } catch (err) {
+        console.error(err);
+
+        // revert UI
+        setEvents((prev) =>
+          prev.map((e) =>
+            e.id === id
+              ? {
+                  ...e,
+                  extendedProps: { ...e.extendedProps, isCompleted: false },
+                }
+              : e,
+          ),
+        );
+
+        setErrorMessage("Failed to mark completed.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [events, onUpdateBloomFromEvent, handleCloseModal],
+  );
 
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
@@ -651,7 +666,7 @@ if (info.allDay) {
           title: currentEvent.title,
           description: currentEvent.extendedProps?.description,
           dueDate: currentEvent.start,
-           end: isAllDay ? undefined : currentEvent.end,
+          end: isAllDay ? undefined : currentEvent.end,
         },
       });
 
@@ -835,11 +850,11 @@ if (info.allDay) {
   const handleEventResize = useCallback(
     async (info: EventResizeDoneArg) => {
       const { event } = info;
-     if (event.end && event.start && event.end <= event.start) {
-  info.revert();
-  toast.error("End time must be greater than start time");
-  return;
-}
+      if (event.end && event.start && event.end <= event.start) {
+        info.revert();
+        toast.error("End time must be greater than start time");
+        return;
+      }
       if (resizeDebounceRef.current)
         window.clearTimeout(resizeDebounceRef.current);
       resizeDebounceRef.current = window.setTimeout(async () => {
