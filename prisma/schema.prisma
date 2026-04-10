@@ -1349,6 +1349,7 @@ model Invoice {
 
   //  Storage
   pdfUrl        String?
+  emailSent Boolean @default(false)
 
   createdAt     DateTime @default(now())
 
