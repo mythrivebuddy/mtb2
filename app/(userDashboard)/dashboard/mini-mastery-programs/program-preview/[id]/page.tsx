@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation'
 import React from 'react'
 
 function Page() {
-  console.log("main page")
 
   const params = useParams();
   const programId = params?.id as string;

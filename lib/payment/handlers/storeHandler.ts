@@ -4,8 +4,8 @@ import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 export async function handleStorePayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-) {
-  if (order.storeOrderId) return;
+): Promise<{ adminItemIds: string[] }> {
+  if (order.storeOrderId) return { adminItemIds: [] };
 
   const storeOrder = await tx.order.create({
     data: {
@@ -85,16 +85,53 @@ export async function handleStorePayment(
     year: "numeric",
   });
 
-  const itemNames = orderItems
-    .map(
-      (i) =>
-        `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
-    )
-    .join(", ");
-
   const appUrl = process.env.NEXT_URL || "";
 
-  if (user?.email) {
+  const items = await tx.item.findMany({
+    where: {
+      id: { in: cart.map((c) => c.itemId) },
+    },
+    select: {
+      id: true,
+      creator: {
+        select: {
+          id: true,
+          role: true,
+        },
+      },
+    },
+  });
+   const adminItemIds = items
+  .filter(
+    (item) =>
+      item.creator?.role === "ADMIN" &&
+      order.currency !== "GP", //! exclude GP admin items
+  )
+  .map((item) => item.id);
+
+  const nonAdminOrderItems = orderItems.filter(
+    (oi) => !adminItemIds.includes(oi.itemId),
+  );
+ 
+
+  const hasAdminItems = adminItemIds.length > 0;
+  const hasNonAdminItems = nonAdminOrderItems.length > 0;
+
+  if (!hasAdminItems && hasNonAdminItems && user?.email) {
+    const itemCount = nonAdminOrderItems.length;
+
+    const itemNames = nonAdminOrderItems
+      .map(
+        (i) =>
+          `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
+      )
+      .join(", ");
+
+    const nonAdminTotal = nonAdminOrderItems.reduce(
+      (sum, item) => sum + item.priceAtPurchase * item.quantity,
+      0,
+    );
+
     void sendEmailUsingTemplate({
       toEmail: user.email,
       toName: user.name ?? "Customer",
@@ -103,14 +140,16 @@ export async function handleStorePayment(
         username: user.name ?? "Customer",
         orderId: storeOrder.id,
         orderDate,
-        totalAmount: `${order.totalAmount} ${order.currency}`,
+        totalAmount: `${nonAdminTotal} ${order.currency}`, // ✅ FIXED
         status: "COMPLETED",
-        itemCount: orderItems.length,
-        itemNames,
+        itemCount, // ✅ FIXED
+        itemNames, // ✅ FIXED
         orderUrl: `${appUrl}/dashboard/store/order-history`,
         currency: order.currency,
         paymentDetails: `Paid with Razorpay (${order.currency})`,
       },
     });
   }
+  console.log("✅ Admin Item IDs:", adminItemIds);
+  return { adminItemIds };
 }

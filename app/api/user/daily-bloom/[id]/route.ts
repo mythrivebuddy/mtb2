@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { dailyBloomSchema } from "@/schema/zodSchema";
 import { prisma } from "@/lib/prisma";
@@ -6,8 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { assignJp } from "@/lib/utils/jp";
 import { ActivityType } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth"; 
-
+import { authOptions } from "@/lib/auth";
 
 /**
  * Handles GET requests for a specific Daily Bloom entry.
@@ -20,11 +18,11 @@ import { authOptions } from "@/lib/auth";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Find a unique 'todo' item by its ID from the database
-    const id = (await params).id
+    const id = (await params).id;
     const bloom = await prisma?.todo.findUnique({
       where: { id: id },
     });
@@ -36,20 +34,17 @@ export async function GET(
 
     // Return the found bloom entry as a JSON response
     return NextResponse.json(bloom);
-  } catch (error: unknown) { // ✅ FIXED: Changed 'any' to 'unknown'
+  } catch (error: unknown) {
+    // ✅ FIXED: Changed 'any' to 'unknown'
     let errorMessage = "Failed to fetch entry";
     if (error instanceof Error) {
-        errorMessage = error.message;
+      errorMessage = error.message;
     }
     console.error("GET Error:", errorMessage);
     // Return a 500 Internal Server Error response if fetching fails
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
 
 /**
  * Handles PUT requests to update a specific Daily Bloom entry.
@@ -63,7 +58,7 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -77,59 +72,75 @@ export async function PUT(
     // --- START: THE FIX ---
     // Destructure the body to separate calendar-related fields
     // from the actual Todo model data.
-    const { 
-      addToCalendar, 
-      startTime, 
-      endTime, 
-      //extendedProps, // Also handle extendedProps if it's being sent
-      ...todoData // `todoData` now contains ONLY fields that belong to the Todo model
-    } = body;
+    const { addToCalendar, ...todoData } = body;
     // --- END: THE FIX ---
 
     // Now, validate only the data that is meant for the 'todo' table.
     // Using .partial() allows for updates without requiring all fields.
-const validatedData = dailyBloomSchema._def.schema.partial().parse(todoData);
+    const validatedData = dailyBloomSchema._def.schema
+      .partial()
+      .parse(todoData);
 
     const updatedBloom = await prisma.todo.update({
       where: { id: id, userId: session.user.id },
-      data: validatedData,
+      data: {
+        ...validatedData,
+
+        // ✅ ADD THIS
+        startTime: body.startTime || null,
+        endTime: body.endTime || null,
+      },
     });
 
     if (!updatedBloom) {
-      return NextResponse.json({ error: "Task not found or update failed" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Task not found or update failed" },
+        { status: 404 },
+      );
     }
-    
+
     // --- Handle Calendar Event Logic Separately ---
     // You'll need to add your logic here to find, create, update, or delete the associated calendar event.
     // For example:
     const linkedEvent = await prisma.event.findFirst({
-        // A more robust relation is better, e.g., where: { todoId: id }
-        where: { title: updatedBloom.title, userId: session.user.id }
+      // A more robust relation is better, e.g., where: { todoId: id }
+      where: { title: updatedBloom.title, userId: session.user.id },
     });
 
-    if (addToCalendar && updatedBloom.dueDate && startTime && endTime) {
-        const startDateTime = new Date(`${updatedBloom.dueDate.toISOString().split('T')[0]}T${startTime}`);
-        const endDateTime = new Date(`${updatedBloom.dueDate.toISOString().split('T')[0]}T${endTime}`);
-        
-        const eventData = {
-            title: updatedBloom.title,
-            start: startDateTime,
-            end: endDateTime,
-            all_day: false,
-            userId: session.user.id,
-            // todoId: id // If you have a direct relation
-        };
+    if (
+  addToCalendar &&
+  updatedBloom.dueDate &&
+  body.startTime &&
+  body.endTime
+) {
+      const startDateTime = new Date(
+        `${updatedBloom.dueDate.toISOString().split("T")[0]}T${body.startTime}`,
+      );
+      const endDateTime = new Date(
+        `${updatedBloom.dueDate.toISOString().split("T")[0]}T${body.endTime}`,
+      );
 
-        if (linkedEvent) {
-            await prisma.event.update({ where: { id: linkedEvent.id }, data: eventData });
-        } else {
-            await prisma.event.create({ data: eventData });
-        }
+      const eventData = {
+        title: updatedBloom.title,
+        start: startDateTime,
+        end: endDateTime,
+        all_day: false,
+        userId: session.user.id,
+        // todoId: id // If you have a direct relation
+      };
+
+      if (linkedEvent) {
+        await prisma.event.update({
+          where: { id: linkedEvent.id },
+          data: eventData,
+        });
+      } else {
+        await prisma.event.create({ data: eventData });
+      }
     } else if (!addToCalendar && linkedEvent) {
-        // If addToCalendar is false and an event exists, delete it.
-        await prisma.event.delete({ where: { id: linkedEvent.id }});
+      // If addToCalendar is false and an event exists, delete it.
+      await prisma.event.delete({ where: { id: linkedEvent.id } });
     }
-
 
     // --- JP Assignment Logic ---
     if (updatedBloom.isCompleted && !updatedBloom.taskCompleteJP) {
@@ -146,8 +157,8 @@ const validatedData = dailyBloomSchema._def.schema.partial().parse(todoData);
             data: { taskCompleteJP: true },
           });
         } catch (error) {
-           console.error("Error assigning GP for task completion:", error);
-           // Decide if you want to fail the whole request or just log the error
+          console.error("Error assigning GP for task completion:", error);
+          // Decide if you want to fail the whole request or just log the error
         }
       }
     }
@@ -173,7 +184,7 @@ const validatedData = dailyBloomSchema._def.schema.partial().parse(todoData);
  */
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // 1. Authenticate the user
@@ -184,7 +195,10 @@ export async function DELETE(
 
     const id = (await params).id;
     if (!id) {
-        return NextResponse.json({ message: "An item ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { message: "An item ID is required" },
+        { status: 400 },
+      );
     }
 
     // 2. Use `deleteMany` for robust deletion and check ownership
@@ -199,14 +213,18 @@ export async function DELETE(
     if (deleteResult.count === 0) {
       return NextResponse.json(
         { message: "Daily Bloom item not found or permission denied" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // 4. Return a success message
-    console.log(`DELETE /api/user/daily-bloom :: Successfully deleted todo with id: ${id}`);
-    return NextResponse.json({ message: "Deleted successfully" }, { status: 200 });
-
+    console.log(
+      `DELETE /api/user/daily-bloom :: Successfully deleted todo with id: ${id}`,
+    );
+    return NextResponse.json(
+      { message: "Deleted successfully" },
+      { status: 200 },
+    );
   } catch (error: unknown) {
     let errorMessage = "Failed to delete";
     if (error instanceof Error) {

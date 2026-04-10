@@ -271,20 +271,53 @@ export async function handleFailedPayment(paymentOrderId: string) {
 }
 
 
-
 export async function convertCurrency(
   amount: number,
   from: "INR" | "USD",
   to: "INR" | "USD"
 ): Promise<number> {
-
   if (from === to) return amount;
 
-  const res = await fetch(
-    `https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`
-  );
+  // ---- 1. Try Frankfurter ----
+  try {
+    const res = await fetch(
+      `https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`
+    );
 
-  const data = await res.json();
+    if (!res.ok) throw new Error("Frankfurter request failed");
 
-  return Math.round(data.rates[to] * 100) / 100;
+    const data = await res.json();
+
+    const value = data?.rates?.[to];
+    if (typeof value !== "number") {
+      throw new Error("Invalid Frankfurter response");
+    }
+
+    return Math.round(value * 100) / 100;
+  } catch (err) {
+    console.warn("Frankfurter failed:", err);
+  }
+
+  // ---- 2. Fallback API ----
+  try {
+    const res = await fetch(
+      `https://open.er-api.com/v6/latest/${from}`
+    );
+
+    if (!res.ok) throw new Error("Fallback request failed");
+
+    const data = await res.json();
+
+    const rate = data?.rates?.[to];
+    if (typeof rate !== "number") {
+      throw new Error("Invalid fallback response");
+    }
+
+    return Math.round(amount * rate * 100) / 100;
+  } catch (err) {
+    console.error("Fallback API failed:", err);
+  }
+
+  // ---- 3. Explicit failure ----
+  throw new Error("Currency conversion failed: all providers unavailable");
 }

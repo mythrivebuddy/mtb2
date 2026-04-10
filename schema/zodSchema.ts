@@ -369,11 +369,8 @@ export const businessProfileSchema = z
     calendlyUrl: z
       .string()
       .min(1, "Discovery call booking link is required")
-      .url("Please enter a valid URL")
-      .refine(
-        (val) => val.includes("calendly.com"),
-        "Only Calendly links are accepted (e.g. https://calendly.com/your-name)",
-      ),
+      .url("Please enter a valid URL"),
+      
     preferredCurrency: z.enum(["INR", "USD"], {
       required_error: "Please select a currency",
       invalid_type_error: "Please select a valid currency",
@@ -698,6 +695,11 @@ export const mtbBusinessProfileSchema = z.object({
   companyName: z.string().min(2, "Company name is required"),
 
   address: z.string().min(5, "Address is required"),
+  state: z.string().min(2, "State is required"),
+  country: z.string().min(2, "Country is required"),
+  pincode: z
+    .string()
+    .regex(/^\d{6}$/, "Enter a valid 6-digit pincode"),
 
   gstNumber: z
     .string()

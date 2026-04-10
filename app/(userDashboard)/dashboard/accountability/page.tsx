@@ -5,7 +5,13 @@ import { format } from "date-fns";
 import Link from "next/link";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -84,8 +90,8 @@ export default function AccountabilityHubHome() {
 
   const group = groups;
   const activeCycle = group?.cycles?.find(
-  (cycle: Cycle) => cycle.status === "active" || cycle.status === "repeat"
-);
+    (cycle: Cycle) => cycle.status === "active" || cycle.status === "repeat",
+  );
   const {
     items: activityItems,
     isLoading: activityLoading,
@@ -95,7 +101,7 @@ export default function AccountabilityHubHome() {
 
   const isAdmin = group?.members?.some(
     (m: { userId: string; role: string }) =>
-      m.userId === session?.user?.id && m.role?.toLowerCase() === "admin"
+      m.userId === session?.user?.id && m.role?.toLowerCase() === "admin",
   );
 
   const isGroupBlocked = group?.isBlocked == true;
@@ -111,7 +117,6 @@ export default function AccountabilityHubHome() {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
 
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
@@ -120,7 +125,10 @@ export default function AccountabilityHubHome() {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
 
   const [showAllMentionPopover, setShowAllMentionPopover] = useState(false);
-  const [allMentionAnchor, setAllMentionAnchor] = useState<{ x: number; y: number } | null>(null);
+  const [allMentionAnchor, setAllMentionAnchor] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     setIsCompletingCycle(false);
@@ -128,11 +136,12 @@ export default function AccountabilityHubHome() {
   useEffect(() => {
     if (activeCycle) {
       const isExpired = new Date() > new Date(activeCycle.endDate);
-      const isActive =   activeCycle.status === "active" || activeCycle.status === "repeat";
+      const isActive =
+        activeCycle.status === "active" || activeCycle.status === "repeat";
 
       if (isExpired && isActive) {
         router.push(
-          `/dashboard/accountability-hub/cycle/${activeCycle.id}?groupId=${groupId}`
+          `/dashboard/accountability-hub/cycle/${activeCycle.id}?groupId=${groupId}`,
         );
       }
     }
@@ -141,7 +150,6 @@ export default function AccountabilityHubHome() {
     if (group?.notes) setNotes(group.notes);
   }, [group?.notes]);
 
-
   const isPrivate = group?.visibility === "PRIVATE";
   const canSeeNotes = !isPrivate || isAdmin;
   const { mutateAsync: startNewCycle, isPending: isCreatingCycle } =
@@ -149,7 +157,7 @@ export default function AccountabilityHubHome() {
       mutationFn: async () => {
         if (!groupId) throw new Error("Missing group ID");
         const res = await axios.post(
-          `/api/accountability-hub/groups/${groupId}/cycles`
+          `/api/accountability-hub/groups/${groupId}/cycles`,
         );
         return res.data;
       },
@@ -172,8 +180,6 @@ export default function AccountabilityHubHome() {
       toast.success("Notes saved successfully!");
       await refetch();
       setIsEditingNotes(false);
-
-
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -206,7 +212,7 @@ export default function AccountabilityHubHome() {
     setIsLeaving(true);
     try {
       const res = await axios.delete(
-        `/api/accountability-hub/groups/${groupId}/leave`
+        `/api/accountability-hub/groups/${groupId}/leave`,
       );
       if (res.data.success) {
         toast.success("You have successfully left the group.");
@@ -215,7 +221,7 @@ export default function AccountabilityHubHome() {
     } catch (err) {
       if (axios.isAxiosError(err)) {
         toast.error(
-          err.response?.data?.message || "Failed to leave the group."
+          err.response?.data?.message || "Failed to leave the group.",
         );
       } else {
         toast.error("Something went wrong. Please try again.");
@@ -231,7 +237,7 @@ export default function AccountabilityHubHome() {
     setRemovingMemberId(memberId);
     try {
       const res = await axios.delete(
-        `/api/accountability-hub/groups/${groupId}/leave?userId=${memberId}`
+        `/api/accountability-hub/groups/${groupId}/leave?userId=${memberId}`,
         // api/accountability-hub/groups/[groupId]/leave/route.ts
       );
       const { success } = res.data;
@@ -252,8 +258,9 @@ export default function AccountabilityHubHome() {
       setRemovingMemberId(null);
     }
   };
-  const extractMentions = (text: string): { userIds: string[]; everyone: boolean } => {
-
+  const extractMentions = (
+    text: string,
+  ): { userIds: string[]; everyone: boolean } => {
     const everyone = /@all\b/i.test(text);
 
     const userIds: string[] = [];
@@ -292,8 +299,9 @@ export default function AccountabilityHubHome() {
     setMentionQuery(query);
     setMentionStartIndex(atIndex);
 
-    const filteredMembers: MentionSuggestion[] = allMembersData.filter((member: MentionSuggestion) =>
-      member.display.toLowerCase().includes(query.toLowerCase())
+    const filteredMembers: MentionSuggestion[] = allMembersData.filter(
+      (member: MentionSuggestion) =>
+        member.display.toLowerCase().includes(query.toLowerCase()),
     );
 
     // Add @all option
@@ -313,9 +321,7 @@ export default function AccountabilityHubHome() {
 
     const mentionText = `@${suggestion.display} `;
     const part1 = notes.substring(0, mentionStartIndex);
-    const part2 = notes.substring(
-      mentionStartIndex + mentionQuery.length + 1
-    );
+    const part2 = notes.substring(mentionStartIndex + mentionQuery.length + 1);
 
     const newText = part1 + mentionText + part2;
     setNotes(newText);
@@ -341,7 +347,7 @@ export default function AccountabilityHubHome() {
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveSuggestionIndex(
-        (prev) => (prev - 1 + suggestions.length) % suggestions.length
+        (prev) => (prev - 1 + suggestions.length) % suggestions.length,
       );
     } else if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
@@ -351,13 +357,12 @@ export default function AccountabilityHubHome() {
     }
   };
 
-
   /** Filter members */
   const filteredMembers =
     group?.members?.filter(
       (m: Member) =>
         m.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        m?.role?.toLowerCase() !== "admin"
+        m?.role?.toLowerCase() !== "admin",
     ) || [];
 
   const allMembersData =
@@ -370,7 +375,7 @@ export default function AccountabilityHubHome() {
   // Change the function signature to accept members
   const renderNoteContent = (
     content: string,
-    members: MentionSuggestion[] = allMembersData
+    members: MentionSuggestion[] = allMembersData,
   ) => {
     if (!content) return null;
 
@@ -382,10 +387,10 @@ export default function AccountabilityHubHome() {
     if (names.length === 0) return content;
 
     const escapedNames = names.map((name: string) =>
-      name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
     );
 
-    const mentionRegex = new RegExp(`@(all|${escapedNames.join('|')})`, 'gi');
+    const mentionRegex = new RegExp(`@(all|${escapedNames.join("|")})`, "gi");
     const parts = content.split(mentionRegex);
 
     return parts.map((part, index) => {
@@ -398,7 +403,10 @@ export default function AccountabilityHubHome() {
             onClick={(e) => {
               e.stopPropagation();
               const rect = (e.target as HTMLElement).getBoundingClientRect();
-              setAllMentionAnchor({ x: rect.left, y: rect.bottom + window.scrollY });
+              setAllMentionAnchor({
+                x: rect.left,
+                y: rect.bottom + window.scrollY,
+              });
               setShowAllMentionPopover(true);
             }}
             className="text-blue-600 bg-blue-100 px-1 rounded-sm font-semibold hover:bg-blue-200 cursor-pointer"
@@ -464,25 +472,26 @@ export default function AccountabilityHubHome() {
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900">
             Group Name: {group?.name}
           </h1>
-          {
-            group.description && (
-              <p className="text-md text-muted-foreground mt-1">Description:{group?.description}</p>
-            )
-          }
+          {group.description && (
+            <p className="text-md text-muted-foreground mt-1">
+              Description:{group?.description}
+            </p>
+          )}
           <p className="text-sm text-muted-foreground mt-1">
             • Active Cycle:{" "}
             {activeCycle
               ? `${format(new Date(activeCycle.startDate), "MMM d")} – ${format(
-                new Date(activeCycle.endDate),
-                "MMM d, yyyy"
-              )}`
+                  new Date(activeCycle.endDate),
+                  "MMM d, yyyy",
+                )}`
               : "No active cycle"}
           </p>
         </div>
         {/* ✅ GROUP BLOCKED WARNING */}
         {isGroupBlocked && (
           <div className="p-4 rounded-xl bg-red-100 border border-red-300 text-red-700 font-semibold text-center">
-            🚫 This group has been blocked by the platform admin. It is now view-only, and no actions are allowed.
+            🚫 This group has been blocked by the platform admin. It is now
+            view-only, and no actions are allowed.
           </div>
         )}
 
@@ -531,7 +540,9 @@ export default function AccountabilityHubHome() {
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row gap-3">
             <Link href={`/dashboard/accountability-hub?groupId=${group?.id}`}>
-              <Button variant="outline" className="w-full">View Members Table</Button>
+              <Button variant="outline" className="w-full">
+                View Members Table
+              </Button>
             </Link>
 
             {/* Leave Group */}
@@ -582,7 +593,13 @@ export default function AccountabilityHubHome() {
                 />
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="destructive" disabled={isGroupBlocked} className={`${isGroupBlocked ? "opacity-75" : ""}`}>Remove Members</Button>
+                    <Button
+                      variant="destructive"
+                      disabled={isGroupBlocked}
+                      className={`${isGroupBlocked ? "opacity-75" : ""}`}
+                    >
+                      Remove Members
+                    </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-lg">
                     <DialogHeader>
@@ -610,8 +627,8 @@ export default function AccountabilityHubHome() {
                                   member?.user?.image
                                     ? member.user.image
                                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                      member?.user?.name?.charAt(0) || "User"
-                                    )}&background=random&color=fff`
+                                        member?.user?.name?.charAt(0) || "User",
+                                      )}&background=random&color=fff`
                                 }
                                 alt={member.user.name || "Member Avatar"}
                                 width={32}
@@ -627,7 +644,7 @@ export default function AccountabilityHubHome() {
                               onClick={() =>
                                 handleRemoveMember(
                                   member.userId,
-                                  member.user.name
+                                  member.user.name,
                                 )
                               }
                             >
@@ -653,7 +670,13 @@ export default function AccountabilityHubHome() {
         {/* Notes */}
         <Card className="rounded-3xl">
           <CardHeader>
-            <CardTitle className="text-lg">Group Notes</CardTitle>
+            <CardTitle className="text-lg">
+              Group Notes & Notifications
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-xs sm:text-sm">
+              (All the members will receive email and push notifications, you
+              can use @all or @ to mention/tag a person)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {group?.notes && !isEditingNotes && (
@@ -694,8 +717,9 @@ export default function AccountabilityHubHome() {
                             handleSuggestionClick(suggestion);
                           }}
                           onMouseEnter={() => setActiveSuggestionIndex(index)}
-                          className={`flex w-full items-center gap-2 px-2 py-1.5 text-sm rounded ${index === activeSuggestionIndex ? "bg-gray-100" : ""
-                            }`}
+                          className={`flex w-full items-center gap-2 px-2 py-1.5 text-sm rounded ${
+                            index === activeSuggestionIndex ? "bg-gray-100" : ""
+                          }`}
                         >
                           <img
                             src={
@@ -705,7 +729,9 @@ export default function AccountabilityHubHome() {
                             }
                             className="w-6 h-6 rounded-full"
                           />
-                          <span className="font-medium">{suggestion.display}</span>
+                          <span className="font-medium">
+                            {suggestion.display}
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -720,7 +746,6 @@ export default function AccountabilityHubHome() {
                     onKeyDown={handleKeyDown}
                   />
                 </div>
-
 
                 <div className="flex gap-3 mt-4">
                   <Button
@@ -763,7 +788,10 @@ export default function AccountabilityHubHome() {
             <CardContent className="flex flex-wrap gap-3">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button disabled={isCreatingCycle || isGroupBlocked} className="bg-blue-600 hover:bg-blue-700">
+                  <Button
+                    disabled={isCreatingCycle || isGroupBlocked}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
                     {isCreatingCycle
                       ? "Starting New Cycle..."
                       : "Start New Cycle"}
@@ -801,7 +829,9 @@ export default function AccountabilityHubHome() {
             className="fixed z-50 bg-white border rounded-md shadow-md p-1 max-h-60 overflow-y-auto min-w-[180px]"
             style={{ top: allMentionAnchor.y + 4, left: allMentionAnchor.x }}
           >
-            <p className="text-xs text-gray-400 px-2 py-1 font-medium">All members</p>
+            <p className="text-xs text-gray-400 px-2 py-1 font-medium">
+              All members
+            </p>
             {allMembersData.map((member: MentionSuggestion) => (
               <div
                 key={member.id}
