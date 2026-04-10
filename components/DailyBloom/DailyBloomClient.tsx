@@ -93,8 +93,8 @@ interface DailyBloom extends DailyBloomFormType {
   createdAt?: string; // Add this line
   updatedAt?: string; // Optional property for updatedAt
   description: string | null; // Ensure description can be null
-  startTime?: string;
-  endTime?: string;
+  startTime?: string | null;
+  endTime?: string | null;
 }
 // Normalize API responses into this strict type
 export interface ClientDailyBloom {
@@ -185,6 +185,7 @@ export default function DailyBloomClient() {
     title: string;
     description?: string;
     dueDate?: string; // This is the 'start' date from the calendar event
+    end?: string;
   }) => {
     createMutation.mutate({
       // These are the fields from DailyBloomFormType
@@ -197,7 +198,7 @@ export default function DailyBloomClient() {
       startTime: payload.dueDate
         ? format(new Date(payload.dueDate), "HH:mm")
         : "",
-      endTime: "", // Let the user set this later if they want
+      endTime: payload.end ? format(new Date(payload.end), "HH:mm") : undefined,
       taskAddJP: false,
       taskCompleteJP: false,
       isFromEvent: true, // Mark this bloom as created from an even
@@ -321,7 +322,7 @@ export default function DailyBloomClient() {
           const optimisticBloom: DailyBloom = {
             ...newBloom,
             id: `temp-${Date.now()}`,
-           dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : null,
+            dueDate: newBloom.dueDate ? new Date(newBloom.dueDate) : null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             isCompleted: false,
@@ -584,16 +585,16 @@ export default function DailyBloomClient() {
 
     // 2. Construct the *complete* form data object for the update.
     // We use the original bloom data as the base and overwrite it with changes.
-   const newDueDate = payload.updatedData.dueDate
-  ? new Date(payload.updatedData.dueDate)
-  : originalBloom.dueDate
-    ? new Date(originalBloom.dueDate)
-    : null;
-  //  const newEndDate = payload.updatedData.end
-  // ? new Date(payload.updatedData.end)
-  // : originalBloom.endTime
-  //   ? new Date(originalBloom.dueDate!) // fallback
-  //   : null;
+    const newDueDate = payload.updatedData.dueDate
+      ? new Date(payload.updatedData.dueDate)
+      : originalBloom.dueDate
+        ? new Date(originalBloom.dueDate)
+        : null;
+    //  const newEndDate = payload.updatedData.end
+    // ? new Date(payload.updatedData.end)
+    // : originalBloom.endTime
+    //   ? new Date(originalBloom.dueDate!) // fallback
+    //   : null;
 
     const updatedBloomData: DailyBloomFormType = {
       // Start with all original data
@@ -604,10 +605,10 @@ export default function DailyBloomClient() {
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
-     startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
+      startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
       endTime: payload.updatedData.end
         ? format(new Date(payload.updatedData.end), "HH:mm")
-        : "", // IMPORTANT: reset instead of fallback
+        : (originalBloom.endTime ?? undefined),
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
@@ -670,23 +671,27 @@ export default function DailyBloomClient() {
     // 1. Process blooms to create calendar events
     const bloomEvents = uniqueBlooms.reduce<CalendarEvent[]>((acc, bloom) => {
       if (bloom.isFromEvent && bloom.dueDate) {
-        const startDate = new Date(bloom.dueDate);
-        let endDate = new Date(startDate);
+        // Use the date portion only to avoid timezone shift
+        const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
+
+        const [sh, sm] = bloom.startTime
+          ? bloom.startTime.split(":").map(Number)
+          : [0, 0];
+        const [eh, em] = bloom.endTime
+          ? bloom.endTime.split(":").map(Number)
+          : [sh + 1, sm];
+
+        const startDate = new Date(
+          `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`,
+        );
+        const endDate = new Date(
+          `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`,
+        );
 
         // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
         const safeDescription = bloom.description || "";
 
         // Use regex to parse time from the safe description string
-        if (bloom.startTime) {
-          const [h, m] = bloom.startTime.split(":");
-          startDate.setHours(Number(h), Number(m), 0, 0);
-          endDate = new Date(startDate);
-        }
-
-        if (bloom.endTime) {
-          const [h, m] = bloom.endTime.split(":");
-          endDate.setHours(Number(h), Number(m), 0, 0);
-        }
 
         acc.push({
           id: `bloom-${bloom.id}`,

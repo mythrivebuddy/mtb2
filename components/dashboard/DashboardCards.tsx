@@ -1,0 +1,184 @@
+"use client";
+
+import {
+  GraduationCap,
+  ShoppingCart,
+  ArrowRight,
+  type LucideIcon,
+  TrendingUp,
+  Flower,
+  BellRing,
+  LucideSignalHigh,
+  WandSparklesIcon,
+  Swords,
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/utils";
+import { useRouter } from "next/navigation";
+
+type CardItem = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  bg: string;
+  text: string;
+  highlight?: boolean;
+  badge?: string;
+  action?: boolean;
+  path?: string;
+};
+
+const cards: CardItem[] = [
+  {
+    title: "Set Today’s Focus",
+    description:
+      "Define your top priorities and stay focused throughout the day",
+    icon: TrendingUp,
+    bg: "bg-emerald-100 group-hover:bg-emerald-600",
+    text: "text-emerald-600 group-hover:text-white",
+    path: "/dashboard/aligned-actions",
+  },
+  {
+    title: "Plan the Day",
+    description:
+      "Organize your schedule clearly and plan tasks with better flow",
+    icon: Flower,
+    bg: "bg-blue-100 group-hover:bg-blue-600",
+    text: "text-blue-600 group-hover:text-white",
+    path: "/dashboard/daily-bloom",
+  },
+  {
+    title: "Set Reminders",
+    description:
+      "Get timely alerts so you never miss important tasks or events",
+    icon: BellRing,
+    bg: "bg-red-100 group-hover:bg-red-500",
+    text: "text-red-500 group-hover:text-white",
+    path: "/dashboard/reminders",
+  },
+  {
+    title: "Log 1% Progress",
+    description: "Track small daily wins and build consistent growth over time",
+    icon: LucideSignalHigh,
+    bg: "bg-green-100 group-hover:bg-green-500",
+    text: "text-green-700 group-hover:text-white",
+    path: "/dashboard/progress-vault",
+  },
+  {
+    title: "Log Miracles",
+    description: "Capture meaningful moments and reflect on unexpected wins",
+    icon: WandSparklesIcon,
+    bg: "bg-indigo-100 group-hover:bg-indigo-500",
+    text: "text-indigo-600 group-hover:text-white",
+    path: "/dashboard/miracle-log",
+  },
+  {
+    title: "Join Challenges",
+    description: "Participate in challenges to stay consistent and grow daily",
+    icon: Swords,
+    bg: "bg-pink-100 group-hover:bg-pink-500",
+    text: "text-pink-600 group-hover:text-white",
+    path: "/dashboard/challenge?tab=join",
+  },
+  {
+    title: "Mini Mastery Programs",
+    description:
+      "Learn new skills with short programs designed for daily growth",
+    icon: GraduationCap,
+    bg: "bg-gray-200 group-hover:bg-gray-700",
+    text: "text-gray-700 group-hover:text-white",
+    path: "/dashboard/mini-mastery-programs",
+  },
+  {
+    title: "Growth Store",
+    description: "",
+    icon: ShoppingCart,
+    bg: "bg-gradient-to-br from-emerald-500 to-green-500",
+    text: "text-white",
+    highlight: true,
+    action: true,
+    path: "/dashboard/store",
+  },
+];
+
+export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
+  const router = useRouter();
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {cards.map((card, index) => (
+        <Card
+          key={index}
+          onClick={() => card.path && router.push(card.path)}
+          className={cn(
+            "group relative cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border",
+            card.highlight
+              ? "border-emerald-200 overflow-hidden"
+              : "border-gray-200",
+          )}
+        >
+          <CardContent className="p-6">
+            {/* Badge */}
+            {card.badge && (
+              <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-600">
+                {card.badge}
+              </span>
+            )}
+
+            {/* Icon */}
+            <div
+              className={cn(
+                "w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all",
+                card.bg,
+              )}
+            >
+              <card.icon
+                className={cn(
+                  "w-7 h-7 transition-colors duration-300",
+                  card.text,
+                )}
+              />
+            </div>
+
+            {/* Title */}
+            <div className="flex items-center justify-between mb-1">
+              <h3 className={cn("text-lg font-semibold", card.highlight && "")}>
+                {card.title}
+              </h3>
+
+              {card.action && (
+                <span className="text-xs font-semibold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">
+                  {jpBalance} GP Balance
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
+            {card.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {card.description}
+              </p>
+            )}
+
+            {/* Growth Store Special */}
+            {card.action && (
+              <div className="mt-4 space-y-3">
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent card click
+                    router.push("/dashboard/store");
+                  }}
+                  className="w-full rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                >
+                  Redeem Now <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
