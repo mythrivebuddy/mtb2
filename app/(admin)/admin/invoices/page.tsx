@@ -29,8 +29,6 @@ import { Download, ExternalLink, Loader2, Search, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { maskEmail } from "@/utils/mask-email";
 import { Pagination } from "@/components/ui/pagination";
