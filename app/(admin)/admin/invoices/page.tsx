@@ -26,13 +26,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, ExternalLink, Loader2, Search, X } from "lucide-react";
 
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { maskEmail } from "@/utils/mask-email";
 import { Pagination } from "@/components/ui/pagination";
 import { format } from "date-fns";
+import { useDebounce } from "@/hooks/use-debounce";
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -307,6 +305,7 @@ export default function InvoicePage() {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const debouncedSearch = useDebounce(search, 500);
 
   // PDF Dialog state
   const [pdfOpen, setPdfOpen] = useState(false);
@@ -314,7 +313,7 @@ export default function InvoicePage() {
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["invoices", page, limit, search, status],
+    queryKey: ["invoices", page, limit, debouncedSearch, status],
     queryFn: () =>
       fetchInvoices({
         page,
