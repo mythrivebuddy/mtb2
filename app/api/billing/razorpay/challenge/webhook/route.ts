@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
     let paymentMeta: {
       isAdmin?: boolean;
-      adminItemIds?: string[];
+      allItemIds?: string[];
     } = {};
 
     await prisma.$transaction(async (tx) => {
@@ -72,39 +72,27 @@ export async function POST(req: NextRequest) {
       console.log("Order ID:", existingOrder.id);
       console.log("Context Type:", existingOrder.contextType);
       console.log("isAdmin:", paymentMeta.isAdmin);
-      console.log("adminItemIds:", paymentMeta.adminItemIds);
+      console.log("allItemIds:", paymentMeta.allItemIds);
       console.log("================================");
     });
     try {
-      if (inngest && typeof inngest.send === "function") {
-        // 🟢 STORE → partial invoice
-        if (paymentMeta.adminItemIds && paymentMeta.adminItemIds.length > 0) {
-          console.log("📦 STORE INVOICE (PARTIAL)");
-          console.log("Admin Item IDs:", paymentMeta.adminItemIds);
+      try {
+        if (inngest && typeof inngest.send === "function") {
+          console.log("🧾 UNIVERSAL INVOICE TRIGGER");
 
           await inngest.send({
             name: "invoice/send",
             id: `invoice-${payment.id}`,
             data: {
               orderId: existingOrder.id,
-              itemIds: paymentMeta.adminItemIds,
-            },
-          });
-        } else if (paymentMeta.isAdmin) {
-          console.log("🎯 FULL INVOICE (PROGRAM/CHALLENGE - ADMIN)");
-
-          await inngest.send({
-            name: "invoice/send",
-            id: `invoice-${payment.id}`,
-            data: {
-              orderId: existingOrder.id,
+              itemIds: paymentMeta.allItemIds || undefined, // optional
             },
           });
         } else {
-          console.log("❌ NO INVOICE TRIGGERED");
+          console.warn("Inngest not configured, skipping event");
         }
-      } else {
-        console.warn("Inngest not configured, skipping event");
+      } catch (err) {
+        console.error("Inngest failed (ignored):", err);
       }
     } catch (err) {
       console.error("Inngest failed (ignored):", err);
