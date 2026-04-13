@@ -24,6 +24,7 @@ interface Step5Props {
   };
   onBack: () => void;
   onComplete: () => void;
+  isSubmitting?: boolean;
 }
 
 const AREA_ICONS: Record<
@@ -62,7 +63,12 @@ const AREA_ICONS: Record<
   },
 };
 
-const Step5VisionSummary = ({ formData, onBack, onComplete }: Step5Props) => {
+const Step5VisionSummary = ({
+  formData,
+  onBack,
+  onComplete,
+  isSubmitting,
+}: Step5Props) => {
   return (
     <div className="flex min-h-screen flex-col  font-['Inter'] text-[#064e3b]">
       <main className="mx-auto w-full max-w-[1024px] flex-1 px-6 py-8 md:px-10 md:py-12">
@@ -195,7 +201,8 @@ const Step5VisionSummary = ({ formData, onBack, onComplete }: Step5Props) => {
         <OnboardingStickyFooter
           onBack={onBack}
           onNext={onComplete}
-          nextLabel="Proceed"
+          nextLabel={isSubmitting ? "Joining..." : "Join CMP"}
+          disabled={isSubmitting}
         />
       </main>
     </div>

@@ -405,6 +405,7 @@ export default function DailyBloomClient() {
     mutationFn: async (payload: {
       id: string;
       updatedData: DailyBloomFormType;
+       source?: "calendar" | "modal"; 
     }) => {
       const res = await axios.put(
         `/api/user/daily-bloom/${payload.id}`,
@@ -453,7 +454,13 @@ export default function DailyBloomClient() {
       // 4. Return a context object with the snapshotted value
       return { previousBlooms, queryKey };
     },
-
+      onSuccess: (data, variables) => {
+    if (variables.source === "calendar") {
+      toast.success("Event updated successfully 📅");
+    } else {
+      toast.success("Bloom updated successfully ✅");
+    }
+  },
     onError: (error: AxiosError, variables, context) => {
       // If the mutation fails, roll back to the previous state from context
       if (context?.previousBlooms) {
@@ -517,13 +524,7 @@ export default function DailyBloomClient() {
   const onUpdate = (formData: DailyBloomFormType) => {
     if (editData) {
       updateMutation.mutate(
-        { id: editData.id, updatedData: formData },
-        {
-          onSuccess: () => {
-            toast.success("Updated successfully");
-            setEditData(null);
-          },
-        },
+        { id: editData.id, updatedData: formData,  source: "modal", },
       );
     }
   };
@@ -565,6 +566,8 @@ export default function DailyBloomClient() {
       dueDate?: string; // This is the new 'start' date from the calendar event
       // The calendar might also pass an 'end' date if resized
       end?: string;
+      startTime?: string;
+      endTime?: string;
     };
   }) => {
     // CRITICAL: Clean the ID from the "bloom-" prefix
@@ -615,6 +618,7 @@ export default function DailyBloomClient() {
     updateMutation.mutate({
       id: actualBloomId,
       updatedData: updatedBloomData,
+       source: "calendar",
     });
   };
   const handleDeleteBloom = (bloomId: string) => {
@@ -676,7 +680,10 @@ export default function DailyBloomClient() {
 
         const [sh, sm] = bloom.startTime
           ? bloom.startTime.split(":").map(Number)
-          : [0, 0];
+          : (() => {
+              console.log("⚠️ Missing startTime, fallback used:", bloom);
+              return [9, 0]; // safer default
+            })();
         const [eh, em] = bloom.endTime
           ? bloom.endTime.split(":").map(Number)
           : [sh + 1, sm];

@@ -144,12 +144,12 @@ export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
 
             {/* Title */}
             <div className="flex items-center justify-between mb-1">
-              <h3 className={cn("text-lg font-semibold", card.highlight && "")}>
+              <h3 className={cn("text-md sm:text-lg font-semibold", card.highlight && "")}>
                 {card.title}
               </h3>
 
               {card.action && (
-                <span className="text-xs font-semibold bg-emerald-100 text-emerald-600 px-2 py-1 rounded-full">
+                <span className="text-[10px] sm:text-xs font-semibold bg-emerald-100 text-emerald-600 px-1 py-1 rounded-full">
                   {jpBalance} GP Balance
                 </span>
               )}

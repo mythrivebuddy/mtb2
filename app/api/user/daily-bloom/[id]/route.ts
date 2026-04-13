@@ -73,7 +73,21 @@ export async function PUT(
     // Destructure the body to separate calendar-related fields
     // from the actual Todo model data.
     const { addToCalendar, ...todoData } = body;
-    // --- END: THE FIX ---
+    let baseDescription = todoData.description || "";
+
+    // remove old [Time: ...]
+    baseDescription = baseDescription.replace(/\[Time:.*?\]/, "").trim();
+
+    // rebuild with new time
+    let finalDescription = baseDescription;
+
+    if (todoData.startTime) {
+      const timeString = `[Time: ${todoData.startTime}${
+        todoData.endTime ? `-${todoData.endTime}` : ""
+      }]`;
+
+      finalDescription = `${baseDescription} ${timeString}`.trim();
+    }
 
     // Now, validate only the data that is meant for the 'todo' table.
     // Using .partial() allows for updates without requiring all fields.
@@ -85,6 +99,7 @@ export async function PUT(
       where: { id: id, userId: session.user.id },
       data: {
         ...validatedData,
+        description: finalDescription || null,
 
         // ✅ ADD THIS
         startTime: validatedData.startTime || null,

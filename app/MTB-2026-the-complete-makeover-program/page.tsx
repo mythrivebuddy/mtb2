@@ -103,15 +103,20 @@ const CompleteMakeoverPageContent = async () => {
   const res = await axios.get(`${process.env.NEXT_URL}/api/program`);
   const plan = res.data.plan;
   const program = res.data.program;
-  const { isPurchased } = await grantProgramAccessToPage();  
+  const { isPurchased,userProgramState } = await grantProgramAccessToPage();  
+ 
     if (
-    isPurchased &&
+    isPurchased && userProgramState && 
     program.onboardingStartDate &&
     new Date(program?.onboardingStartDate).getTime() <= Date.now()
   ) {
     redirect("/dashboard/complete-makeover-program/makeover-dashboard");
   }
-
+const joinUrl = !userProgramState
+  ? `/dashboard/complete-makeover-program/onboarding?planId=${plan.id}${
+      isPurchased ? "&step=6" : ""
+    }`
+  : `/dashboard/membership/checkout?plan=${plan.id}&context=SUBSCRIPTION`;
 
   return (
     <AppLayout>
@@ -130,7 +135,7 @@ const CompleteMakeoverPageContent = async () => {
                 life with a proven system for success.
               </h2>
               <JoinProgram
-                url={`/dashboard/membership/checkout?plan=${plan.id}&context=SUBSCRIPTION`}
+                url={joinUrl}
               />
             </div>
           </section>
@@ -417,7 +422,7 @@ const CompleteMakeoverPageContent = async () => {
                 your roadmap to becoming your best self.
               </p>
               <JoinProgram
-                url={`/dashboard/membership/checkout?plan=${plan.id}&context=SUBSCRIPTION`}
+                url={joinUrl}
               />
             </div>
           </section>

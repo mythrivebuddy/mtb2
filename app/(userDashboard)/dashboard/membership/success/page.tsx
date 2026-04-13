@@ -21,7 +21,6 @@ type MembershipInfo = {
   endDate?: string | null;
 };
 
-
 export default function SuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,7 +28,7 @@ export default function SuccessPage() {
 
   const pid = searchParams.get("pid");
   const type = searchParams.get("type");
-
+  const isCMP = searchParams.get("isCMP") === "true";
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
   const [redirectTo, setRedirectTo] = useState("/dashboard");
@@ -88,7 +87,6 @@ export default function SuccessPage() {
 
         // ❌ REAL FAILURE
         router.replace("/dashboard");
-
       } catch {
         retries++;
 
@@ -105,6 +103,32 @@ export default function SuccessPage() {
 
     return () => clearTimeout(timer);
   }, [pid, type, router]);
+
+  useEffect(() => {
+    if (!verified || !isCMP) return;
+
+    let seconds = 5;
+
+    const toastId = toast.info(
+      `🎉 Your Makeover Program is ready!\nRedirecting you in ${seconds}s...`,
+      { duration: 6000 },
+    );
+
+    const interval = setInterval(() => {
+      seconds--;
+
+      if (seconds > 0) {
+        toast.info(`🚀 Taking you to onboarding in ${seconds}s...`, {
+          id: toastId,
+        });
+      } else {
+        clearInterval(interval);
+        router.push("/dashboard/complete-makeover-program/onboarding?step=6");
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [verified, isCMP, router]);
 
   /* --------------------------------------------------------------- */
   /* Loading guard */
@@ -168,21 +192,22 @@ export default function SuccessPage() {
           {isMembership && membership && (
             <>
               <p className="text-slate-600 leading-relaxed">
-                🎉 Your <strong>{membership.planName}</strong> membership is now active.
+                🎉 Your <strong>{membership.planName}</strong> membership is now
+                active.
               </p>
 
               <InfoRow text={`Plan type: ${membership.interval}`} />
 
               <InfoRow
                 text={`Activated on: ${new Date(
-                  membership.startDate
+                  membership.startDate,
                 ).toLocaleDateString()}`}
               />
 
               {membership.endDate && membership.interval !== "LIFETIME" && (
                 <InfoRow
                   text={`Valid until: ${new Date(
-                    membership.endDate
+                    membership.endDate,
                   ).toLocaleDateString()}`}
                 />
               )}
@@ -241,4 +266,3 @@ export default function SuccessPage() {
     </div>
   );
 }
-

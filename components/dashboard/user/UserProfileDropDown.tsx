@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -7,28 +6,21 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import {
-  UserRound,
-  BarChart,
-  CreditCard,
-  Users,
-  History,
-  MessageSquare,
-  LogOut,
-  Trophy,
-} from "lucide-react";
+import { UserRound, CreditCard, Users, History, LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { getInitials } from "@/utils/getInitials";// Make sure this helper exists
+import { getInitials } from "@/utils/getInitials"; 
 import { useState } from "react";
 import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
 import { UserDropdownProps } from "@/types/client/nav";
 
-
-const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) => {
+const UserProfileDropdown = ({
+  profilePicture,
+  userName,
+}: UserDropdownProps) => {
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
-  // console.log("UserProfileDropdown", { profilePicture, userName });
+  
 
   return (
     <>
@@ -61,21 +53,20 @@ const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) =>
               <UserRound size={18} />
               <span>My Profile</span>
             </DropdownMenuItem>
-
           </Link>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             onClick={() => setIsComingSoonModalOpen(true)}
             className="cursor-pointer flex items-center space-x-2"
           >
             <Trophy size={20} />
             <span>My Achievements</span>
-          </DropdownMenuItem>
-          <Link href="/dashboard/insights">
+          </DropdownMenuItem> */}
+          {/* <Link href="/dashboard/insights">
             <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
               <BarChart size={18} />
               <span>Insights</span>
             </DropdownMenuItem>
-          </Link>
+          </Link> */}
           <Link href="/dashboard/subscription">
             <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
               <CreditCard size={18} />
@@ -94,20 +85,19 @@ const UserProfileDropdown = ({ profilePicture, userName }: UserDropdownProps) =>
               <span>Transactions</span>
             </DropdownMenuItem>
           </Link>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             onClick={() => setIsComingSoonModalOpen(true)}
             className="cursor-pointer flex items-center space-x-2"
           >
             <MessageSquare size={20} />
             <span>Messages</span>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuItem
             className="cursor-pointer flex items-center space-x-2 text-red-500"
             onSelect={async (e) => {
-              e.preventDefault()
-              await signOut()
-            }
-            }
+              e.preventDefault();
+              await signOut();
+            }}
           >
             <LogOut size={18} />
             <span>Logout</span>
