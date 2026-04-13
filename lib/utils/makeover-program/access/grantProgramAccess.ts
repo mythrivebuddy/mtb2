@@ -13,6 +13,12 @@ export interface ProgramAccessToPage {
   userId: string;
   programId: string | null;
   isPurchased?: boolean;
+  userProgramState?: {
+    id: string;
+    userId:string;
+    programId: string;
+    onboarded:boolean;
+  } | null;
 }
 
 export async function grantProgramAccess(): Promise<ProgramAccess> {
@@ -79,10 +85,28 @@ export async function grantProgramAccessToPage(): Promise<ProgramAccessToPage> {
       productId: true,
     },
   });
+  const userProgramState = await prisma.userProgramState.findUnique({
+    where: {
+      userId_programId: {
+        userId,
+        programId: program.id,
+      },
+   
+    } ,
+       select: {
+        id: true,
+        userId:true,
+        programId: true,
+        onboarded: true,
+      }
+  });
+console.log({userProgramState});
+
 
   return {
     userId,
     programId: program.id,
     isPurchased: Boolean(purchase),
+    userProgramState: userProgramState,
   };
 }

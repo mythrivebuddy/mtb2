@@ -64,6 +64,8 @@ type InitialOnboardingData = {
   identities: Record<string, string>;
   vision: string;
   visionImageUrl?: string;
+  planId?: string | null;
+  step?: number;
 } | null;
 type FormOptionsResponse = {
   areas: ApiArea[];
@@ -81,7 +83,9 @@ const MakeoverOnboardingParent = ({
   const isEditMode = initialData?.onboarded === true;
   const router = useRouter();
 
-  const [step, setStep] = useState<number>(isEditMode ? 2 : 1);
+  const [step, setStep] = useState<number>(
+    initialData?.step ?? (isEditMode ? 2 : 1),
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     requestAnimationFrame(() => {
@@ -111,7 +115,7 @@ const MakeoverOnboardingParent = ({
         acc[key].push(g.title);
         return acc;
       },
-      {} as Record<string, string[]>
+      {} as Record<string, string[]>,
     );
   }, [formOptions.goals]);
 
@@ -123,7 +127,7 @@ const MakeoverOnboardingParent = ({
         acc[key].push(i.statement);
         return acc;
       },
-      {} as Record<string, string[]>
+      {} as Record<string, string[]>,
     );
   }, [formOptions.identities]);
 
@@ -150,7 +154,7 @@ const MakeoverOnboardingParent = ({
           ([areaId, text]) => ({
             areaId: Number(areaId),
             customText: text,
-          })
+          }),
         ),
 
         dailyActions: [],
@@ -171,27 +175,44 @@ const MakeoverOnboardingParent = ({
           programId: initialData?.programId,
           areaIds: formData.selectedAreas,
         });
-
-        axios
-          .post("/api/makeover-program/onboarding/enroll", {
-            programId: initialData?.programId,
-            areaIds: formData.selectedAreas.map(Number),
-          })
-          .catch((error) => {
-            toast.error("Some challenges may take time to appear");
-            console.error(
-              "Error enrolling user into challenges after onboarding ",
-              error
-            );
-          });
       }
-
-      router.push("/dashboard/complete-makeover-program/makeover-dashboard");
+      router.push(
+        `/dashboard/membership/checkout?plan=${initialData?.planId}&context=SUBSCRIPTION`,
+      );
     },
 
     onError: (err: AxiosError<{ error?: string }>) => {
       toast.error(
-        err.response?.data?.error ?? "Something went wrong. Try again."
+        err.response?.data?.error ?? "Something went wrong. Try again.",
+      );
+    },
+  });
+
+  const enrollMutation = useMutation({
+    mutationFn: async () => {
+      return axios.post("/api/makeover-program/onboarding/enroll", {
+        programId: initialData?.programId,
+        areaIds: formData.selectedAreas.map(Number),
+      });
+    },
+
+    onSuccess: () => {
+      toast.success("🎉 You're officially enrolled!");
+      router.push(
+        "/dashboard/complete-makeover-program/daily-actions-task-for-quarter",
+      );
+    },
+
+    onError: (error: AxiosError) => {
+      toast.error("Some challenges may take time to appear");
+      console.error(
+        "Error enrolling user into challenges after onboarding",
+        error,
+      );
+
+      // still redirect (intended behavior)
+      router.push(
+        "/dashboard/complete-makeover-program/daily-actions-task-for-quarter",
       );
     },
   });
@@ -333,15 +354,16 @@ const MakeoverOnboardingParent = ({
           <Step5VisionSummary
             formData={formData}
             onBack={prevStep}
-            onComplete={nextStep}
+            onComplete={() => submitMutation.mutate()}
+            isSubmitting={submitMutation.isPending}
           />
         )}
 
         {step === 6 && (
           <Step6ProgramRules
             onBack={prevStep}
-            onConfirm={() => submitMutation.mutate()}
-            isSubmitting={submitMutation.isPending}
+            onConfirm={() => enrollMutation.mutate()}
+            isSubmitting={enrollMutation.isPending}
           />
         )}
       </div>

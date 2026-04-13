@@ -28,7 +28,7 @@ type StorePurchaseData = {
   items: StoreItem[];
 
   // ✅ ADMIN items (invoice)
-  adminItems: StoreItem[];
+  invoiceItems: StoreItem[];
 
   pricing: {
     baseAmount: number;
@@ -138,11 +138,11 @@ export const sendInvoiceFunction = inngest.createFunction(
               },
             },
           });
-          const adminItemsRaw =
-            storeOrder?.items.filter(
-              (oi) => oi.item.creator?.role === "ADMIN",
-            ) || [];
-          const adminSubtotal = adminItemsRaw.reduce(
+          const isGP = order.currency === "GP";
+
+          const invoiceItemsRaw = isGP ? [] : storeOrder?.items || [];
+
+          const subtotal = invoiceItemsRaw.reduce(
             (sum, item) =>
               sum +
               (item.originalPrice ?? item.priceAtPurchase) * item.quantity,
@@ -154,14 +154,18 @@ export const sendInvoiceFunction = inngest.createFunction(
               ? JSON.parse(order.cartSnapshot)
               : order.cartSnapshot || [];
 
-          const adminDiscount = cart
-            .filter((c) => adminItemsRaw.some((ai) => ai.itemId === c.itemId))
-            .reduce((sum: number, item) => sum + (item.discount || 0), 0);
-          const adminTaxable = adminSubtotal - adminDiscount;
-          const GST_RATE = 18; // or derive dynamically
+          const discount = isGP
+            ? 0
+            : cart
+                .filter((c) =>
+                  invoiceItemsRaw.some((i) => i.itemId === c.itemId),
+                )
+                .reduce((sum, item) => sum + (item.discount || 0), 0);
+          const taxable = subtotal - discount;
+          const GST_RATE = 18;
 
-          const adminGst = Number(((adminTaxable * GST_RATE) / 100).toFixed(2));
-          const adminTotal = adminTaxable + adminGst;
+          const gst = Number(((taxable * GST_RATE) / 100).toFixed(2));
+          const total = taxable + gst;
 
           const allItems =
             storeOrder?.items.map((oi) => ({
@@ -170,11 +174,20 @@ export const sendInvoiceFunction = inngest.createFunction(
               price: oi.priceAtPurchase,
             })) || [];
 
-          const adminItems: StoreItem[] = adminItemsRaw.map((oi) => ({
+          const invoiceItems: StoreItem[] = invoiceItemsRaw.map((oi) => ({
             name: oi.item.name,
             quantity: oi.quantity,
             price: oi.originalPrice ?? oi.priceAtPurchase,
           }));
+
+          // console.log("🧾 STORE INVOICE DEBUG");
+          // console.log("Currency:", order.currency);
+          // console.log("Total Store Items:", storeOrder?.items.length);
+          // console.log("Invoice Items Count:", invoiceItems.length);
+          // console.log("Subtotal:", subtotal);
+          // console.log("Discount:", discount);
+          // console.log("GST:", gst);
+          // console.log("Total:", total);
 
           return {
             type: "store",
@@ -184,14 +197,14 @@ export const sendInvoiceFunction = inngest.createFunction(
             items: allItems,
 
             // ✅ INVOICE WILL USE THIS
-            adminItems,
+            invoiceItems,
 
             pricing: {
-              baseAmount: adminSubtotal,
-              discount: adminDiscount,
-              taxable: adminTaxable,
-              gst: adminGst,
-              total: adminTotal,
+              baseAmount: subtotal,
+              discount,
+              taxable,
+              gst,
+              total,
             },
           };
 
@@ -273,7 +286,7 @@ export const sendInvoiceFunction = inngest.createFunction(
             purchaseData?.type === "store"
               ? {
                   ...(purchaseData as StorePurchaseData),
-                  items: (purchaseData as StorePurchaseData).adminItems,
+                  items: (purchaseData as StorePurchaseData).invoiceItems,
                 }
               : purchaseData,
         },
@@ -321,7 +334,6 @@ export const sendInvoiceFunction = inngest.createFunction(
 
       return data.publicUrl;
     });
-    
 
     await step.run("store-invoice", async () => {
       return prisma.invoice.upsert({
@@ -354,7 +366,7 @@ export const sendInvoiceFunction = inngest.createFunction(
       });
     });
 
-    // await step.sleep("delay-email", "5h");
+    await step.sleep("delay-email", "5h");
     /**
      * 5️⃣ Generate PDF + Send Email
      */
