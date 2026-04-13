@@ -232,7 +232,7 @@ const EventForm = ({
     const times: string[] = [];
 
     for (let h = 0; h < 24; h++) {
-      for (let m of [0, 30]) {
+      for (const m of [0, 30]) {
         const hour = h.toString().padStart(2, "0");
         const min = m.toString().padStart(2, "0");
         times.push(`${hour}:${min}`);
@@ -818,7 +818,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       return;
     }
     setIsSubmitting(true);
-    const isAllDay = currentEvent.allDay;
+    
 
     if (currentEvent.extendedProps?.isBloom) {
       // --- FIX START ---
