@@ -43,7 +43,7 @@ function parseCartSnapshot(snapshot: unknown): CartItem[] {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "6");
+  const limit = parseInt(searchParams.get("limit") || "7");
   const filter = searchParams.get("filter") || "ALL";
   const currency = searchParams.get("currency") || "ALL";
   // const skip = (page - 1) * limit;
