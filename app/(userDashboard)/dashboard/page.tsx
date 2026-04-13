@@ -18,7 +18,6 @@ import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import AnnouncementBar from "@/components/announcement/AnnouncementBar";
 import DashboardCards from "@/components/dashboard/DashboardCards";
 
-
 export default function DashboardPage() {
   const { data: session, status } = useSession();
 
@@ -70,13 +69,13 @@ export default function DashboardPage() {
 
   const currentSpotlight:
     | Prisma.SpotlightGetPayload<{
-      include: { user: true };
-    }>
+        include: { user: true };
+      }>
     | undefined = spotlights?.find((spotlight) => {
-      return ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
-        spotlight.status
-      );
-    });
+    return ["APPLIED", "IN_REVIEW", "APPROVED", "ACTIVE"].includes(
+      spotlight.status,
+    );
+  });
 
   const currentProsperity = prosperityApplications?.find((prosperity) => {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
@@ -85,64 +84,63 @@ export default function DashboardPage() {
   return (
     <>
       <AnnouncementBar />
-    <div className="py-6 px-4">
-      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-        {/* Main Dashboard Content */}
-        <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
-            <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
-            <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
-            <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
+      <div className="py-6 px-4">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* Main Dashboard Content */}
+          <div className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
+              <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
+              <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
+              <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
+            </div>
+
+            <div className="">
+              <DashboardCards jpBalance={userData.jpBalance} />
+            </div>
+            {/* ✅ MOBILE STEPPERS */}
+            {session?.user.userType === "COACH" && (
+              <div className="mt-6 lg:hidden">
+                <h2 className="text-lg mb-3 text-slate-800 font-semibold">
+                  Spotlight
+                </h2>
+                <div className="w-full overflow-x-auto">
+                  <ApplicationStepper
+                    steps={spotlightSteps}
+                    currentStep={
+                      currentSpotlight
+                        ? SpotlightStepperMap[currentSpotlight?.status]
+                        : 0
+                    }
+                  />
+                </div>
+
+                <h2 className="text-lg mt-6 mb-3 text-slate-800 font-semibold">
+                  Prosperity Drop
+                </h2>
+                <div className="w-full overflow-x-auto">
+                  <ApplicationStepper
+                    steps={prosperitySteps}
+                    currentStep={
+                      currentProsperity
+                        ? ProsperityStepperMap[currentProsperity?.status]
+                        : 0
+                    }
+                  />
+                </div>
+              </div>
+            )}
           </div>
-           
-            <div className=""><DashboardCards jpBalance={userData.jpBalance}/></div>
-        {/* ✅ MOBILE STEPPERS */}
-{session?.user.userType === "COACH" && (
-  <div className="mt-6 lg:hidden">
 
-    <h2 className="text-lg mb-3 text-slate-800 font-semibold">
-      Spotlight
-    </h2>
-    <div className="w-full overflow-x-auto">
-      <ApplicationStepper
-        steps={spotlightSteps}
-        currentStep={
-          currentSpotlight
-            ? SpotlightStepperMap[currentSpotlight?.status]
-            : 0
-        }
-      />
-    </div>
+          {/* Divider */}
+          {/* <div className="hidden lg:block h-auto w-px bg-gray-300 dark:bg-brown-500"></div> */}
 
-    <h2 className="text-lg mt-6 mb-3 text-slate-800 font-semibold">
-      Prosperity Drop
-    </h2>
-    <div className="w-full overflow-x-auto">
-      <ApplicationStepper
-        steps={prosperitySteps}
-        currentStep={
-          currentProsperity
-            ? ProsperityStepperMap[currentProsperity?.status]
-            : 0
-        }
-      />
-    </div>
-
-  </div>
-)}
+          {/* Right Panel */}
+          <div className="lg:flex-[0.4] mt-6 lg:mt-0">
+            <RightPanel />
+          </div>
         </div>
-
-        {/* Divider */}
-        {/* <div className="hidden lg:block h-auto w-px bg-gray-300 dark:bg-brown-500"></div> */}
-
-        {/* Right Panel */}
-        <div className="lg:flex-[0.4] mt-6 lg:mt-0">
-          <RightPanel />
-        </div>
-      </div>
-      <div className="hidden lg:block">
-
-        {session?.user.userType === "COACH" && (
+        <div className="hidden lg:block">
+          {session?.user.userType === "COACH" && (
             <>
               <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
                 Spotlight
@@ -151,9 +149,9 @@ export default function DashboardPage() {
                 steps={spotlightSteps}
                 currentStep={
                   currentSpotlight
-                  ? SpotlightStepperMap[currentSpotlight?.status]
+                    ? SpotlightStepperMap[currentSpotlight?.status]
                     : 0
-                  }
+                }
               />
 
               <h2 className="text-xl sm:text-2xl mt-8 mb-4 text-slate-800 font-semibold">
@@ -166,11 +164,11 @@ export default function DashboardPage() {
                     ? ProsperityStepperMap[currentProsperity?.status]
                     : 0
                 }
-                />
+              />
             </>
           )}
-    </div>
+        </div>
       </div>
-          </>
+    </>
   );
 }
