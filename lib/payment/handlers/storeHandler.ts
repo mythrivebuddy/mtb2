@@ -66,7 +66,6 @@ export async function handleStorePayment(
     },
   });
 
-
   const items = await tx.item.findMany({
     where: {
       id: { in: cart.map((c) => c.itemId) },
@@ -81,12 +80,11 @@ export async function handleStorePayment(
       },
     },
   });
-   const allItemIds = items
-  .filter(
-    () =>
-      order.currency !== "GP", //! exclude GP admin items
-  )
-  .map((item) => item.id);
+  const allItemIds = items
+    .filter(
+      () => order.currency !== "GP", //! exclude GP admin items
+    )
+    .map((item) => item.id);
 
   console.log("✅ Admin Item IDs:", allItemIds);
   return { allItemIds };

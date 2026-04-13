@@ -44,14 +44,14 @@ const authOptions: AuthOptions = {
 // --- nextDateUTC helper (unchanged) ---
 const nextDateUTC = (
   startDate: Date,
-  frequency: "Daily" | "Weekly" | "Monthly"
+  frequency: "Daily" | "Weekly" | "Monthly",
 ): Date => {
   const nextDate = new Date(
     Date.UTC(
       startDate.getUTCFullYear(),
       startDate.getUTCMonth(),
-      startDate.getUTCDate()
-    )
+      startDate.getUTCDate(),
+    ),
   );
   if (frequency === "Daily") {
     nextDate.setUTCDate(nextDate.getUTCDate() + 1);
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       .map((task) => {
         const newDate = nextDateUTC(
           task.updatedAt,
-          task.frequency as "Daily" | "Weekly" | "Monthly"
+          task.frequency as "Daily" | "Weekly" | "Monthly",
         );
         if (newDate <= nowForRecurrence) {
           return prisma.todo.update({
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       .filter(Boolean);
     if (updatePromises.length > 0) {
       await prisma.$transaction(
-        updatePromises as unknown as Prisma.PrismaPromise<Prisma.BatchPayload>[]
+        updatePromises as unknown as Prisma.PrismaPromise<Prisma.BatchPayload>[],
       );
     }
 
@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
     if (status === "Pending") {
       const now = new Date();
       const startOfTodayUTC = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
       );
 
       const whereClause: Prisma.TodoWhereInput = {
@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
     console.error("API Error in GET /api/user/daily-bloom:", e);
     return NextResponse.json(
       { message: "Failed to fetch blooms" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
 export async function POST(req: NextRequest) {
   // --- Replace the existing try...catch block in your POST function ---
   try {
-    const session = await checkRole("USER")
+    const session = await checkRole("USER");
 
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -205,17 +205,20 @@ export async function POST(req: NextRequest) {
       console.error("Zod Validation Errors:", validationResult.error.errors);
       return NextResponse.json(
         { message: "Invalid data", errors: validationResult.error.flatten() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { startTime, endTime, addToCalendar, ...bloomData } = validationResult.data;
-    let finalDescription = bloomData.description || '';
+    const { startTime, endTime, addToCalendar, ...bloomData } =
+      validationResult.data;
+    let baseDescription = bloomData.description || "";
+    baseDescription = baseDescription.replace(/\[Time:.*?\]/, "").trim();
+    let finalDescription = baseDescription;
     // If times are provided, embed them into the description string
     if (addToCalendar && startTime) {
-      const timeString = `[Time: ${startTime}${endTime ? `-${endTime}` : ''}]`;
+      const timeString = `[Time: ${startTime}${endTime ? `-${endTime}` : ""}]`;
       // Append the time string to the user's description
-      finalDescription = `${finalDescription} ${timeString}`.trim();
+      finalDescription = `${baseDescription} ${timeString}`.trim();
     }
 
     const featureResult = checkFeature({
@@ -226,7 +229,7 @@ export async function POST(req: NextRequest) {
     if (!featureResult.allowed) {
       return NextResponse.json(
         { error: featureResult.reason },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -238,7 +241,7 @@ export async function POST(req: NextRequest) {
     if (!planConfig) {
       return NextResponse.json(
         { error: "Daily Bloom configuration not found" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -266,7 +269,7 @@ export async function POST(req: NextRequest) {
         {
           message: `You have reached your daily limit of ${planConfig.dailyLimit} Daily Blooms.`,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
     // Create the bloom in a single database call
@@ -279,6 +282,8 @@ export async function POST(req: NextRequest) {
         userId: userId,
         // ✅ CHANGE 1: Save the calendar flag directly to the new todo item
         isFromEvent: addToCalendar,
+        startTime: startTime || null,
+        endTime: endTime || null,
       },
     });
 
@@ -307,7 +312,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating Todo:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -328,30 +333,51 @@ export async function PUT(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { message: "Task ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const body = await req.json();
-    const validationResult = dailyBloomSchema._def.schema.partial().safeParse(body);
+    const validationResult = dailyBloomSchema._def.schema
+      .partial()
+      .safeParse(body);
 
     if (!validationResult.success) {
       return NextResponse.json(
         { message: "Invalid data", errors: validationResult.error.flatten() },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Use the `addToCalendar` flag for `isFromEvent`
     const { addToCalendar, ...updateData } = validationResult.data;
 
+    let baseDescription = updateData.description || "";
+
+    // ❌ remove old time
+    baseDescription = baseDescription.replace(/\[Time:.*?\]/, "").trim();
+
+    // ✅ rebuild description with new time
+    let finalDescription = baseDescription;
+
+    if (updateData.startTime) {
+      const timeString = `[Time: ${updateData.startTime}${
+        updateData.endTime ? `-${updateData.endTime}` : ""
+      }]`;
+
+      finalDescription = `${baseDescription} ${timeString}`.trim();
+    }
+
     const updatedBloom = await prisma.todo.update({
       where: { id, userId: session.user.id },
       data: {
         ...updateData,
+        description: finalDescription || null,
         dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
         // ✅ CHANGE 1: Update the calendar flag on the todo item
         isFromEvent: addToCalendar,
+        startTime: updateData.startTime ?? null,
+        endTime: updateData.endTime ?? null,
       },
     });
 
@@ -381,7 +407,7 @@ export async function PUT(req: NextRequest) {
     console.error("Error updating Todo:", err);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -400,7 +426,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { message: "Task ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -422,7 +448,7 @@ export async function DELETE(req: NextRequest) {
     });
     return NextResponse.json(
       { message: "Daily Bloom deleted successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error deleting Todo:", error);
@@ -434,7 +460,7 @@ export async function DELETE(req: NextRequest) {
     }
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
