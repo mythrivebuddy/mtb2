@@ -54,6 +54,13 @@ import {
 import confetti from "canvas-confetti";
 import { useSupabase } from "./providers/SupabaseClientProvider";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 // ---------------- Types ----------------
 
@@ -73,6 +80,7 @@ interface EventExtendedProps {
   isBloom?: boolean;
   isCompleted?: boolean;
   category?: "holiday" | string;
+  lastTime?: string;
 }
 
 interface CalendarEvent {
@@ -103,12 +111,61 @@ interface Props {
       dueDate?: string;
       end?: string;
       isCompleted?: boolean;
+      startTime?: string;
+      endTime?: string;
     };
   }) => void;
   onDeleteBloomFromEvent: (bloomId: string) => void;
 }
 
 // ---------------- Helpers ----------------
+
+// ---------------- Validation ----------------
+const validateDateTime = (
+  start: string,
+  end?: string,
+): { valid: boolean; message: string | null } => {
+  if (!start) return { valid: true, message: null };
+
+  const now = new Date();
+  const startDate = new Date(start);
+  const endDate = end ? new Date(end) : null;
+
+  const todayStr = now.toISOString().slice(0, 10);
+  const startDateStr = start.slice(0, 10);
+
+  if (startDateStr < todayStr) {
+    return { valid: false, message: "Date cannot be in the past" };
+  }
+
+  const isSameDay = startDateStr === todayStr;
+
+  if (isSameDay && startDate < now) {
+    return { valid: false, message: "Start time cannot be in the past" };
+  }
+
+  if (endDate) {
+    if (endDate <= startDate) {
+      return { valid: false, message: "End must be after start" };
+    }
+  }
+
+  return { valid: true, message: null };
+};
+
+const getNearestHourLocal = () => {
+  const now = new Date();
+
+  // Always go to next hour
+  now.setHours(now.getHours() + 1);
+  now.setMinutes(0, 0, 0);
+
+  return toLocalInput(now.toString());
+};
+const addOneHour = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return toLocalInput(new Date(d.getTime() + 60 * 60 * 1000).toString());
+};
 
 const toLocalInput = (dateStr?: string | null) => {
   if (!dateStr) return "";
@@ -169,7 +226,31 @@ const EventForm = ({
   isEditing: boolean;
   isSubmitting: boolean;
 }) => {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [timeError, setTimeError] = useState<string | null>(null);
+
+  const generateTimeOptions = () => {
+    const times: string[] = [];
+
+    for (let h = 0; h < 24; h++) {
+      for (let m of [0, 30]) {
+        const hour = h.toString().padStart(2, "0");
+        const min = m.toString().padStart(2, "0");
+        times.push(`${hour}:${min}`);
+      }
+    }
+
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+  const timePart = currentEvent.start?.includes("T")
+    ? currentEvent.start.split("T")[1]?.slice(0, 5)
+    : getNearestHourLocal().split("T")[1]?.slice(0, 5);
+
+  const endTimePart = currentEvent.end?.includes("T")
+    ? currentEvent.end.split("T")[1]?.slice(0, 5)
+    : "";
+  const isDisabled = (mode === "view" && !isEditing) || isSubmitting;
   return (
     <div className="grid gap-4 py-4">
       <div className="grid gap-2">
@@ -205,50 +286,133 @@ const EventForm = ({
         />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="due-date">Due Date</Label>
-        <Input
-          id="due-date"
-          ref={inputRef}
-          type={currentEvent.allDay ? "date" : "datetime-local"}
-          value={
-            currentEvent.allDay
-              ? currentEvent.start.slice(0, 10)
-              : currentEvent.start.slice(0, 16)
-          }
-          onChange={(e) => {
-            const newStart = e.target.value;
+        <Label>Due Date</Label>
 
-            setCurrentEvent({ ...currentEvent, start: newStart });
-
-            // ✅ Auto close picker ONLY when datetime fully selected
-            if (!currentEvent.allDay && newStart.length === 16) {
-              setTimeout(() => {
-                inputRef.current?.blur(); // 🔥 closes native picker
-              }, 100);
-            }
-          }}
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
-          className="text-sm"
-        />
-      </div>
-      {!currentEvent.allDay && (
-        <div className="grid gap-2">
-          <Label htmlFor="end-date">End Date (optional)</Label>
+        <div className="flex gap-2">
+          {/* DATE */}
           <Input
-            id="end-date"
-            type="datetime-local"
-            value={currentEvent.end ? currentEvent.end.slice(0, 16) : ""}
-            onChange={(e) =>
+            type="date"
+            min={new Date().toISOString().slice(0, 10)}
+            value={currentEvent.start.slice(0, 10)}
+            onChange={(e) => {
+              const date = e.target.value;
+
+              const timePart = currentEvent.start?.includes("T")
+                ? currentEvent.start.split("T")[1]?.slice(0, 5)
+                : getNearestHourLocal().split("T")[1]?.slice(0, 5);
+
+              const newStart = `${date}T${timePart}`;
+              const newEnd =
+                currentEvent.end &&
+                new Date(currentEvent.end) > new Date(newStart)
+                  ? currentEvent.end
+                  : addOneHour(newStart);
+
               setCurrentEvent({
                 ...currentEvent,
-                end: e.target.value || undefined,
-              })
-            }
+                start: newStart,
+                end: newEnd,
+              });
+
+              const result = validateDateTime(newStart, newEnd);
+              setTimeError(result.message);
+            }}
             disabled={(mode === "view" && !isEditing) || isSubmitting}
-            className="text-sm"
           />
+
+          {/* TIME (24H DROPDOWN) */}
+          <Select
+            value={timePart}
+            onValueChange={(time) => {
+              const date = currentEvent.start?.includes("T")
+                ? currentEvent.start.split("T")[0]
+                : new Date().toISOString().slice(0, 10);
+
+              const newStart = `${date}T${time}`;
+              const newEnd = addOneHour(newStart);
+              setCurrentEvent({
+                ...currentEvent,
+                start: newStart,
+                end: newEnd,
+              });
+              const result = validateDateTime(newStart, newEnd);
+              setTimeError(result.message);
+            }}
+          >
+            <SelectTrigger className="w-[110px]" disabled={isDisabled}>
+              <SelectValue placeholder="Time" />
+            </SelectTrigger>
+
+            <SelectContent className="max-h-60 overflow-y-auto">
+              {timeOptions.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {!currentEvent.allDay && (
+        <div className="flex gap-2">
+          {/* END DATE */}
+          <Input
+            type="date"
+            min={new Date().toISOString().slice(0, 10)}
+            value={
+              currentEvent.end
+                ? currentEvent.end.slice(0, 10)
+                : currentEvent.start.slice(0, 10)
+            }
+            onChange={(e) => {
+              const date = e.target.value;
+              const time = endTimePart || timePart;
+
+              const newEnd = `${date}T${time}`;
+
+              setCurrentEvent({
+                ...currentEvent,
+                end: newEnd,
+              });
+              const result = validateDateTime(currentEvent.start, newEnd);
+              setTimeError(result.message);
+            }}
+            disabled={(mode === "view" && !isEditing) || isSubmitting}
+          />
+
+          {/* END TIME DROPDOWN */}
+          <Select
+            value={endTimePart}
+            onValueChange={(time) => {
+              const date = currentEvent.end?.includes("T")
+                ? currentEvent.end.split("T")[0]
+                : currentEvent.start.split("T")[0];
+
+              const newEnd = `${date}T${time}`;
+
+              setCurrentEvent({
+                ...currentEvent,
+                end: newEnd,
+              });
+              const result = validateDateTime(currentEvent.start, newEnd);
+              setTimeError(result.message);
+            }}
+          >
+            <SelectTrigger className="w-[110px]" disabled={isDisabled}>
+              <SelectValue placeholder="End Time" />
+            </SelectTrigger>
+
+            <SelectContent className="max-h-60 overflow-y-auto">
+              {timeOptions.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
+      {timeError && <p className="text-red-500 text-xs mt-1">{timeError}</p>}
       <div className="flex items-center gap-2 pt-2">
         <Checkbox
           id="all-day"
@@ -258,15 +422,32 @@ const EventForm = ({
             let newStart = currentEvent.start;
             let newEnd: string | undefined = currentEvent.end;
             if (isAllDay) {
-              newStart = newStart.slice(0, 10);
+              // store time before stripping
+              const existingTime = currentEvent.start.includes("T")
+                ? currentEvent.start.split("T")[1]
+                : "09:00";
+
+              newStart = currentEvent.start.slice(0, 10);
               newEnd = undefined;
+
+              // 🔑 store last time in extendedProps (temporary memory)
+              setCurrentEvent({
+                ...currentEvent,
+                extendedProps: {
+                  ...currentEvent.extendedProps,
+                  lastTime: existingTime,
+                },
+              });
             } else {
-              if (newStart.length === 10) newStart += "T09:00";
+              // 🔑 restore previous time instead of defaulting to 09:00
+              const restoredTime =
+                currentEvent.extendedProps?.lastTime ||
+                getNearestHourLocal().split("T")[1];
+
+              newStart = `${currentEvent.start.slice(0, 10)}T${restoredTime}`;
+
               if (!newEnd) {
-                const startD = new Date(newStart);
-                newEnd = toLocalInput(
-                  new Date(startD.getTime() + 3600000).toString(),
-                );
+                newEnd = addOneHour(newStart);
               }
             }
             setCurrentEvent({
@@ -441,14 +622,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleSave = useCallback(async () => {
     if (!currentEvent || !currentEvent.title.trim()) return;
-    if (currentEvent.end && currentEvent.start) {
-      const start = new Date(currentEvent.start);
-      const end = new Date(currentEvent.end);
+    const result = validateDateTime(currentEvent.start, currentEvent.end);
 
-      if (end <= start) {
-        toast.error("End time must be greater than start time");
-        return;
-      }
+    if (!result.valid) {
+      toast.error(result.message);
+      return;
     }
     setIsSubmitting(true);
 
@@ -503,15 +681,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
       // 👇 FIX: force local date without timezone shift
       start = info.dateStr; // "2026-04-10"
     } else {
-      start = toLocalInput(info.dateStr);
+      start = getNearestHourLocal();
     }
     const isAllDay = info.allDay;
     //  start = isAllDay ? startStr.slice(0, 10) : startStr;
-    const end = isAllDay
-      ? undefined
-      : toLocalInput(
-          new Date(new Date(info.dateStr).getTime() + 3600000).toString(),
-        );
+    const end = isAllDay ? undefined : addOneHour(start);
     setCurrentEvent({
       id: `tmp-${Date.now()}`,
       title: "",
@@ -637,14 +811,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
-    if (currentEvent.end && currentEvent.start) {
-      const start = new Date(currentEvent.start);
-      const end = new Date(currentEvent.end);
+    const result = validateDateTime(currentEvent.start, currentEvent.end);
 
-      if (end <= start) {
-        toast.error("End time must be greater than start time");
-        return;
-      }
+    if (!result.valid) {
+      toast.error(result.message);
+      return;
     }
     setIsSubmitting(true);
     const isAllDay = currentEvent.allDay;
@@ -666,7 +837,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
           title: currentEvent.title,
           description: currentEvent.extendedProps?.description,
           dueDate: currentEvent.start,
-          end: isAllDay ? undefined : currentEvent.end,
+          end: currentEvent.end,
+          startTime: currentEvent.start
+            ? new Date(currentEvent.start).toISOString().slice(11, 16)
+            : "",
+          endTime: currentEvent.end
+            ? new Date(currentEvent.end).toISOString().slice(11, 16)
+            : undefined,
         },
       });
 
@@ -818,6 +995,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
               updatedData: {
                 dueDate: info.event.startStr,
                 end: info.event.endStr,
+                startTime: info.event.startStr
+                  ? new Date(info.event.startStr).toISOString().slice(11, 16)
+                  : "",
+                endTime: info.event.endStr
+                  ? new Date(info.event.endStr).toISOString().slice(11, 16)
+                  : undefined,
               },
             });
           } else {
@@ -866,7 +1049,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
               updatedData: {
                 dueDate: info.event.startStr,
                 end: info.event.endStr,
-              }, // Resizing a bloom likely just changes its date
+                startTime: info.event.startStr
+                  ? new Date(info.event.startStr).toISOString().slice(11, 16)
+                  : "",
+                endTime: info.event.endStr
+                  ? new Date(info.event.endStr).toISOString().slice(11, 16)
+                  : undefined,
+              },
             });
           } else {
             // Otherwise, use the generic event API
@@ -1185,12 +1374,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
           <button
             title="Quick add event"
             onClick={() => {
-              const start = new Date().toISOString().slice(0, 10);
+              const start = getNearestHourLocal();
+              const end = addOneHour(start);
               setCurrentEvent({
                 id: `tmp-${Date.now()}`,
                 title: "",
-                start: start,
-                end: undefined,
+                start,
+                end,
                 allDay: true,
                 color: "#4dabf7",
                 extendedProps: {
