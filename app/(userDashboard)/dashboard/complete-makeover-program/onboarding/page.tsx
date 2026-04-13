@@ -12,14 +12,22 @@ export const metadata = {
     "Complete your makeover onboarding to personalize your experience.",
 };
 
-export default async function MakeoverOnboardingPage() {
+export default async function MakeoverOnboardingPage({
+  searchParams,
+}: {
+  searchParams: { planId?: string; step?: string };
+}) {
   /* ───────────── AUTH ───────────── */
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
+  const rawQuery = await searchParams;
+  const planId = rawQuery.planId;
+  const stepParam = rawQuery?.step;
+  const isStep6 = stepParam === "6";
+
   const userId = session.user.id;
   const { isPurchased, programId } = await grantProgramAccessToPage();
-
 
   /* ───────────── FETCH PROGRAM (ALWAYS) ───────────── */
   const program = await prisma.program.findFirst({
@@ -27,7 +35,7 @@ export default async function MakeoverOnboardingPage() {
     select: { id: true, startDate: true },
   });
 
-  if (!isPurchased || !programId || !program) {
+  if (!programId || !program) {
     redirect("/MTB-2026-the-complete-makeover-program");
   }
 
@@ -45,10 +53,9 @@ export default async function MakeoverOnboardingPage() {
     },
   });
 
-
-
   /* ───────────── REDIRECT IF ALREADY STARTED ───────────── */
   const programStarted =
+    !isStep6 &&
     programState?.onboarded &&
     programState?.program?.startDate &&
     new Date() >= new Date(programState.program.startDate);
@@ -71,6 +78,10 @@ export default async function MakeoverOnboardingPage() {
     }),
   ]);
 
+  if (isStep6 && !isPurchased) {
+    redirect("/MTB-2026-the-complete-makeover-program");
+  }
+
   const formOptions = { areas, goals, identities };
   if (!program) {
     return (
@@ -87,11 +98,13 @@ export default async function MakeoverOnboardingPage() {
       <MakeoverOnboardingComponent
         initialData={{
           programId: program.id,
+          planId,
           onboarded: false,
           selectedAreas: [],
           areaGoals: {},
           identities: {},
           vision: "",
+          step: isStep6 && isPurchased ? 6 : 1,
         }}
         formOptions={formOptions}
       />
@@ -115,7 +128,7 @@ export default async function MakeoverOnboardingPage() {
     }),
     prisma.userVisionImage.findFirst({
       where: { userId, programId: program.id },
-    })
+    }),
   ]);
 
   const initialData = {
@@ -123,13 +136,15 @@ export default async function MakeoverOnboardingPage() {
     onboarded: programState.onboarded,
     selectedAreas: userAreas.map((a) => String(a.areaId)),
     areaGoals: Object.fromEntries(
-      commitments.map((c) => [String(c.areaId), c.goalText ?? ""])
+      commitments.map((c) => [String(c.areaId), c.goalText ?? ""]),
     ),
     identities: Object.fromEntries(
-      commitments.map((c) => [String(c.areaId), c.identityText ?? ""])
+      commitments.map((c) => [String(c.areaId), c.identityText ?? ""]),
     ),
     vision: commitments[0]?.visionStatement ?? "",
     visionImageUrl: visionImage?.imageUrl || "",
+    planId,
+    step: isStep6 && isPurchased ? 6 : undefined,
   };
 
   return (
