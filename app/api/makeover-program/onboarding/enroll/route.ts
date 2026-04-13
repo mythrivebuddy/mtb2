@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendMessageForJoining } from "@/lib/utils/system-message-for-joining";
+import { grantProgramAccessToPage } from "@/lib/utils/makeover-program/access/grantProgramAccess";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,12 +18,15 @@ export async function POST(req: NextRequest) {
     const { programId, areaIds } = await req.json();
 
     if (!programId || !Array.isArray(areaIds) || areaIds.length !== 3) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    const { isPurchased } = await grantProgramAccessToPage();
+    if (!isPurchased) {
       return NextResponse.json(
-        { error: "Invalid payload" },
-        { status: 400 }
+        { error: "You have not purchased this program" },
+        { status: 403 },
       );
     }
-
     /* ───────────── FETCH AREA → CHALLENGE MAP ───────────── */
     const mappings = await prisma.makeoverAreaChallengeMap.findMany({
       where: {
@@ -39,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    const challengeIds = [...new Set(mappings.map(m => m.challengeId))];
+    const challengeIds = [...new Set(mappings.map((m) => m.challengeId))];
 
     /* ───────────── UPSERT ENROLLMENTS (SAFE) ───────────── */
     const enrollmentMap = new Map<string, string>();
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
     });
 
     const enrollmentWithTasks = new Set(
-      existingUserTasks.map(t => t.enrollmentId)
+      existingUserTasks.map((t) => t.enrollmentId),
     );
 
     /* ───────────── CREATE USER TASKS ───────────── */
@@ -141,8 +145,13 @@ export async function POST(req: NextRequest) {
       const userName = session?.user?.name || "Someone";
       const joinedUserId = session.user.id;
 
-      void sendMessageForJoining(map.challengeId,userName,null,"SYSTEM",joinedUserId);
-      
+      void sendMessageForJoining(
+        map.challengeId,
+        userName,
+        null,
+        "SYSTEM",
+        joinedUserId,
+      );
     }
 
     if (makeoverEnrollmentData.length) {
@@ -152,13 +161,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("ENROLLMENT ERROR:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

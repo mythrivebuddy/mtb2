@@ -49,40 +49,27 @@ export async function POST(req: Request) {
     const userId = session.user.id;
 
     /* ───────────── BODY ───────────── */
-    const {
-      areas,
-      goals,
-      identities,
-      dailyActions,
-      visionStatement,
-    } = (await req.json()) as OnboardingPayload;
+    const { areas, goals, identities, dailyActions, visionStatement } =
+      (await req.json()) as OnboardingPayload;
 
     /* ───────────── VALIDATION ───────────── */
     if (!Array.isArray(areas) || areas.length !== 3) {
       return NextResponse.json(
         { error: "Exactly 3 areas must be selected" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!visionStatement || visionStatement.trim().length < 10) {
       return NextResponse.json(
         { error: "Vision statement must be at least 10 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-    const { programId, isPurchased } = await grantProgramAccessToPage();
+    const { programId } = await grantProgramAccessToPage();
     if (!programId) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
     }
-
-    if (!isPurchased) {
-      return NextResponse.json(
-        { error: "User has not purchased this program" },
-        { status: 403 }
-      );
-    }
-
 
     const quarter = CURRENT_MAKEOVER_PROGRAM_QUARTER;
     const year = 2026;
@@ -101,9 +88,9 @@ export async function POST(req: Request) {
       /* ✏️ EDIT MODE → commitments only */
       if (isEdit) {
         for (const areaId of areas) {
-          const goal = goals.find(g => g.areaId === areaId);
-          const identity = identities.find(i => i.areaId === areaId);
-          const action = dailyActions.find(a => a.areaId === areaId);
+          const goal = goals.find((g) => g.areaId === areaId);
+          const identity = identities.find((i) => i.areaId === areaId);
+          const action = dailyActions.find((a) => a.areaId === areaId);
 
           await tx.userMakeoverCommitment.update({
             where: {
@@ -132,7 +119,7 @@ export async function POST(req: Request) {
       /* 🆕 CREATE MODE */
 
       await tx.userMakeoverArea.createMany({
-        data: areas.map(areaId => ({
+        data: areas.map((areaId) => ({
           userId,
           programId,
           areaId,
@@ -141,10 +128,10 @@ export async function POST(req: Request) {
       });
 
       await tx.userMakeoverCommitment.createMany({
-        data: areas.map(areaId => {
-          const goal = goals.find(g => g.areaId === areaId);
-          const identity = identities.find(i => i.areaId === areaId);
-          const action = dailyActions.find(a => a.areaId === areaId);
+        data: areas.map((areaId) => {
+          const goal = goals.find((g) => g.areaId === areaId);
+          const identity = identities.find((i) => i.areaId === areaId);
+          const action = dailyActions.find((a) => a.areaId === areaId);
 
           return {
             userId,
@@ -166,8 +153,6 @@ export async function POST(req: Request) {
         where: { userId_programId: { userId, programId } },
         data: { onboarded: true, onboardedAt: new Date() },
       });
-
-
     });
 
     /* ───────────── PHASE 2: CHALLENGE ENROLLMENT (NO TX) ───────────── */
@@ -238,9 +223,7 @@ export async function POST(req: Request) {
           name: "user.onboarding.completed",
           data: { userId, programId },
         })
-        .catch((err) =>
-          console.error("Inngest async error:", err)
-        );
+        .catch((err) => console.error("Inngest async error:", err));
     }
     /* ───────────── RESPONSE ───────────── */
     return NextResponse.json({
@@ -254,7 +237,7 @@ export async function POST(req: Request) {
     console.error("MAKEOVER ONBOARDING ERROR:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -44,7 +44,7 @@ export async function GET(req: Request) {
       });
 
       return NextResponse.redirect(
-        new URL(`/dashboard/membership/success?pid=${purchaseId}&type=program`, req.url),
+        new URL(`/dashboard/membership/success?pid=${purchaseId}&type=program&isCMP=true`, req.url),
         303
       );
     }
