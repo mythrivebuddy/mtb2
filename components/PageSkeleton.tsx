@@ -42,7 +42,7 @@ type PageSkeletonProps = {
     | "transaction-history"
     | "buddylens"
     | "spotlight"
-    | "coach-profile"
+    | "coach-profile";
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -60,70 +60,69 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-xl shadow-md p-4 flex flex-col items-center space-y-2"
+                  className="bg-white rounded-3xl shadow-md p-4 flex flex-row items-center space-x-4"
                 >
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-20" />
+                  {/* Image placeholder with bg like .bg-dashboard */}
+                  <Skeleton className="h-[65px] w-[65px] rounded-xl flex-shrink-0" />
+                  {/* Text lines */}
+                  <div className="flex flex-col space-y-2">
+                    <Skeleton className="h-6 w-16" /> {/* value - text-xl */}
+                    <Skeleton className="h-4 w-28" /> {/* label - text-base */}
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Spotlight */}
-            <div className="mt-6 mb-4">
-              <Skeleton className="h-6 w-32 rounded-md" />
-              <div className="bg-white p-4 rounded-xl shadow-md flex justify-between mt-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex flex-col items-center space-y-1">
-                    <Skeleton className="h-6 w-6 rounded-md" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Prosperity Drop */}
-            <div className="mt-8 mb-4">
-              <Skeleton className="h-6 w-40 rounded-md" />
-              <div className="bg-white p-4 rounded-xl shadow-md flex justify-between mt-2">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex flex-col items-center space-y-1">
-                    <Skeleton className="h-6 w-6 rounded-md" />
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                ))}
+            {/* Dashboard Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col space-y-3"
+                >
+                  <Skeleton className="h-14 w-14 rounded-2xl" />
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              ))}
+              {/* Growth Store card */}
+              <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-6 flex flex-col space-y-3">
+                <Skeleton className="h-14 w-14 rounded-2xl bg-emerald-200" />
+                <Skeleton className="h-5 w-36 bg-emerald-200" />
+                <Skeleton className="h-9 w-full rounded-full bg-emerald-200" />
               </div>
             </div>
           </div>
 
           {/* Right Panel Skeleton */}
           <div className="lg:flex-[0.4] mt-6 lg:mt-0 space-y-6">
-            {/* Simulate sections inside RightPanel */}
-            <div className="bg-white rounded-xl shadow-md p-4 space-y-4">
-              <Skeleton className="h-5 w-24 rounded-md" />
+            {/* Buddies */}
+            <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
+              <Skeleton className="h-5 w-20 rounded-md" />
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center space-x-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
                   <div className="space-y-1">
-                    <Skeleton className="h-3 w-20" />
-                    <Skeleton className="h-2 w-16" />
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-2 w-20" />
                   </div>
                 </div>
               ))}
-              <Skeleton className="h-10 w-full rounded-full bg-green-600" />
+              <Skeleton className="h-10 w-full rounded-full bg-green-200" />
             </div>
 
+            {/* History */}
             <div className="bg-white rounded-xl shadow-md p-4 space-y-4">
-              <Skeleton className="h-5 w-20 rounded-md" />
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="space-y-1">
-                    <Skeleton className="h-3 w-32" />
+              <Skeleton className="h-5 w-16 rounded-md" />
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-start w-full">
+                  <Skeleton className="h-5 w-5 mr-2 rounded-full bg-blue-200" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-3 w-full max-w-[200px]" />
                     <Skeleton className="h-2 w-28" />
                   </div>
-                  <Skeleton className="h-3 w-10 rounded-md bg-red-400" />
+                  <Skeleton className="h-3 w-14 ml-2 bg-red-200" />
                 </div>
               ))}
             </div>
@@ -717,70 +716,68 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   }
   //  for subscription
   if (type === "subscription") {
-  return (
-    <div className="w-full min-h-screen py-10 px-4 sm:px-6 lg:px-8 animate-pulse">
-      <div className="max-w-8xl mx-auto">
+    return (
+      <div className="w-full min-h-screen py-10 px-4 sm:px-6 lg:px-8 animate-pulse">
+        <div className="max-w-8xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12 space-y-3">
+            <Skeleton className="h-10 w-2/3 mx-auto rounded-xl" />
+            <Skeleton className="h-5 w-1/2 mx-auto rounded-lg" />
+          </div>
 
-        {/* Header */}
-        <div className="text-center mb-12 space-y-3">
-          <Skeleton className="h-10 w-2/3 mx-auto rounded-xl" />
-          <Skeleton className="h-5 w-1/2 mx-auto rounded-lg" />
-        </div>
-
-        {/* User Status Banner */}
-        <div className="bg-indigo-50 border-l-4 border-indigo-300 p-5 sm:p-6 rounded-lg shadow-md mb-10">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-            {/* Left side */}
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-6 w-48 rounded-lg" />
-              <Skeleton className="h-4 w-56 rounded" />
-              <Skeleton className="h-4 w-44 rounded" />
-              <Skeleton className="h-4 w-36 rounded" />
-            </div>
-            {/* Right side buttons */}
-            <div className="flex flex-row md:flex-col gap-3">
-              <Skeleton className="h-9 w-32 rounded-lg" />
+          {/* User Status Banner */}
+          <div className="bg-indigo-50 border-l-4 border-indigo-300 p-5 sm:p-6 rounded-lg shadow-md mb-10">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+              {/* Left side */}
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-6 w-48 rounded-lg" />
+                <Skeleton className="h-4 w-56 rounded" />
+                <Skeleton className="h-4 w-44 rounded" />
+                <Skeleton className="h-4 w-36 rounded" />
+              </div>
+              {/* Right side buttons */}
+              <div className="flex flex-row md:flex-col gap-3">
+                <Skeleton className="h-9 w-32 rounded-lg" />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Plan Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-start mb-12">
-          {[1, 2, 3, 4].map((_, i) => (
-            <div
-              key={i}
-              className="relative rounded-2xl p-6 border border-slate-200 bg-white flex flex-col h-full space-y-4"
-            >
-              {/* Plan name */}
-              <Skeleton className="h-4 w-24 mx-auto rounded" />
-
-              {/* Price block */}
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-36 mx-auto rounded-lg" />
+          {/* Plan Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-start mb-12">
+            {[1, 2, 3, 4].map((_, i) => (
+              <div
+                key={i}
+                className="relative rounded-2xl p-6 border border-slate-200 bg-white flex flex-col h-full space-y-4"
+              >
+                {/* Plan name */}
                 <Skeleton className="h-4 w-24 mx-auto rounded" />
-                <Skeleton className="h-3 w-28 mx-auto rounded" />
-              </div>
 
-              {/* Divider + features */}
-              <div className="border-t border-slate-100 pt-4 space-y-3 flex-grow">
-                {[1, 2, 3, 4].map((_, j) => (
-                  <div key={j} className="flex items-start gap-3">
-                    <Skeleton className="h-4 w-4 rounded-full shrink-0 mt-0.5" />
-                    <Skeleton className="h-4 w-full rounded" />
-                  </div>
-                ))}
-              </div>
+                {/* Price block */}
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-36 mx-auto rounded-lg" />
+                  <Skeleton className="h-4 w-24 mx-auto rounded" />
+                  <Skeleton className="h-3 w-28 mx-auto rounded" />
+                </div>
 
-              {/* Button */}
-              <Skeleton className="h-11 w-full rounded-xl mt-2" />
-            </div>
-          ))}
+                {/* Divider + features */}
+                <div className="border-t border-slate-100 pt-4 space-y-3 flex-grow">
+                  {[1, 2, 3, 4].map((_, j) => (
+                    <div key={j} className="flex items-start gap-3">
+                      <Skeleton className="h-4 w-4 rounded-full shrink-0 mt-0.5" />
+                      <Skeleton className="h-4 w-full rounded" />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Button */}
+                <Skeleton className="h-11 w-full rounded-xl mt-2" />
+              </div>
+            ))}
+          </div>
         </div>
-
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // for user-profile
   if (type === " user-profile") {
@@ -1242,171 +1239,196 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   }
 
   // for Coach/Soloprenure Profile
-  if(type === "coach-profile"){
+  if (type === "coach-profile") {
     return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white text-gray-900 animate-pulse">
-      <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 space-y-28">
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white text-gray-900 animate-pulse">
+        <main className="max-w-6xl mx-auto px-6 md:px-10 py-12 space-y-28">
+          {/* ── HERO ── */}
+          <section className="flex flex-col md:flex-row gap-14">
+            {/* LEFT */}
+            <div className="flex-1 space-y-6">
+              <div className="flex items-start gap-6">
+                {/* Avatar */}
+                <div className="w-28 h-28 rounded-full bg-gray-200 border-4 border-white shadow-lg shrink-0" />
 
-        {/* ── HERO ── */}
-        <section className="flex flex-col md:flex-row gap-14">
-
-          {/* LEFT */}
-          <div className="flex-1 space-y-6">
-            <div className="flex items-start gap-6">
-              {/* Avatar */}
-              <div className="w-28 h-28 rounded-full bg-gray-200 border-4 border-white shadow-lg shrink-0" />
-
-              <div className="space-y-3 flex-1 pt-2">
-                {/* Name */}
-                <div className="h-9 w-56 bg-gray-200 rounded-xl" />
-                {/* Tagline */}
-                <div className="h-5 w-80 bg-gray-100 rounded-lg" />
-                <div className="h-5 w-64 bg-gray-100 rounded-lg" />
-                {/* Domain tags */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {[80, 100, 72, 90].map((w, i) => (
-                    <div key={i} className="h-6 rounded-full bg-blue-100" style={{ width: w }} />
-                  ))}
-                </div>
-                {/* Audience tags */}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {[64, 88, 76].map((w, i) => (
-                    <div key={i} className="h-6 rounded-full bg-gray-100" style={{ width: w }} />
-                  ))}
+                <div className="space-y-3 flex-1 pt-2">
+                  {/* Name */}
+                  <div className="h-9 w-56 bg-gray-200 rounded-xl" />
+                  {/* Tagline */}
+                  <div className="h-5 w-80 bg-gray-100 rounded-lg" />
+                  <div className="h-5 w-64 bg-gray-100 rounded-lg" />
+                  {/* Domain tags */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {[80, 100, 72, 90].map((w, i) => (
+                      <div
+                        key={i}
+                        className="h-6 rounded-full bg-blue-100"
+                        style={{ width: w }}
+                      />
+                    ))}
+                  </div>
+                  {/* Audience tags */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {[64, 88, 76].map((w, i) => (
+                      <div
+                        key={i}
+                        className="h-6 rounded-full bg-gray-100"
+                        style={{ width: w }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* RIGHT CARD */}
-          <div className="w-full md:w-96 bg-white rounded-3xl p-8 shadow-xl border space-y-6 shrink-0">
-            <div className="flex justify-between">
-              <div className="h-4 w-24 bg-gray-100 rounded" />
-              <div className="h-4 w-20 bg-gray-100 rounded" />
+            {/* RIGHT CARD */}
+            <div className="w-full md:w-96 bg-white rounded-3xl p-8 shadow-xl border space-y-6 shrink-0">
+              <div className="flex justify-between">
+                <div className="h-4 w-24 bg-gray-100 rounded" />
+                <div className="h-4 w-20 bg-gray-100 rounded" />
+              </div>
+              <div className="h-4 w-32 bg-gray-100 rounded mx-auto" />
+              {/* Book button */}
+              <div className="h-11 w-full bg-blue-200 rounded-xl" />
+              {/* Message button */}
+              <div className="h-11 w-full bg-gray-100 rounded-xl" />
+              <div className="h-3 w-40 bg-gray-100 rounded mx-auto" />
             </div>
-            <div className="h-4 w-32 bg-gray-100 rounded mx-auto" />
-            {/* Book button */}
-            <div className="h-11 w-full bg-blue-200 rounded-xl" />
-            {/* Message button */}
-            <div className="h-11 w-full bg-gray-100 rounded-xl" />
-            <div className="h-3 w-40 bg-gray-100 rounded mx-auto" />
-          </div>
-        </section>
+          </section>
 
-        {/* ── OUTCOME ── */}
-        <section className="bg-white border-t-4 border-blue-200 rounded-3xl p-12 shadow-sm space-y-10">
-          <div className="h-3 w-24 bg-blue-100 rounded" />
-          <div className="space-y-3">
-            <div className="h-8 w-3/4 bg-gray-200 rounded-xl" />
-            <div className="h-8 w-1/2 bg-gray-200 rounded-xl" />
-          </div>
-          <div className="grid md:grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex gap-3 items-start">
-                <div className="w-6 h-6 bg-blue-200 rounded-full shrink-0 mt-0.5" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-full bg-gray-100 rounded" />
-                  <div className="h-4 w-4/5 bg-gray-100 rounded" />
+          {/* ── OUTCOME ── */}
+          <section className="bg-white border-t-4 border-blue-200 rounded-3xl p-12 shadow-sm space-y-10">
+            <div className="h-3 w-24 bg-blue-100 rounded" />
+            <div className="space-y-3">
+              <div className="h-8 w-3/4 bg-gray-200 rounded-xl" />
+              <div className="h-8 w-1/2 bg-gray-200 rounded-xl" />
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <div className="w-6 h-6 bg-blue-200 rounded-full shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-full bg-gray-100 rounded" />
+                    <div className="h-4 w-4/5 bg-gray-100 rounded" />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── PROGRAMS ── */}
-        <section className="space-y-10">
-          <div className="h-8 w-56 bg-gray-200 rounded-xl" />
-          <div className="grid md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white p-8 rounded-3xl border shadow-sm space-y-4">
-                <div className="h-4 w-20 bg-blue-100 rounded-full" />
-                <div className="h-6 w-40 bg-gray-200 rounded-lg mt-4" />
-                <div className="h-4 w-full bg-gray-100 rounded" />
-                <div className="h-4 w-3/4 bg-gray-100 rounded" />
-                <div className="h-4 w-24 bg-blue-100 rounded mt-4" />
-                <div className="h-10 w-full bg-blue-200 rounded-xl mt-6" />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ── ABOUT + EXPERIENCE ── */}
-        <section className="grid md:grid-cols-2 gap-14">
-
-          {/* ABOUT */}
-          <div className="space-y-6">
-            <div className="h-8 w-48 bg-gray-200 rounded-xl" />
-            <div className="space-y-2">
-              {[100, 95, 88, 92, 70].map((w, i) => (
-                <div key={i} className="h-4 bg-gray-100 rounded" style={{ width: `${w}%` }} />
               ))}
             </div>
-            <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl space-y-2">
-              <div className="h-3 w-32 bg-blue-100 rounded" />
-              <div className="h-5 w-48 bg-blue-200 rounded" />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[72, 88, 64, 96, 80].map((w, i) => (
-                <div key={i} className="h-6 rounded-full bg-gray-100" style={{ width: w }} />
-              ))}
-            </div>
-          </div>
+          </section>
 
-          {/* EXPERIENCE */}
-          <div className="space-y-8">
+          {/* ── PROGRAMS ── */}
+          <section className="space-y-10">
             <div className="h-8 w-56 bg-gray-200 rounded-xl" />
-            <div className="grid grid-cols-2 gap-6">
-              {[1, 2].map((i) => (
-                <div key={i} className="bg-white p-6 rounded-2xl border text-center shadow-sm space-y-2">
-                  <div className="h-9 w-16 bg-blue-200 rounded-lg mx-auto" />
-                  <div className="h-3 w-28 bg-gray-100 rounded mx-auto" />
+            <div className="grid md:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white p-8 rounded-3xl border shadow-sm space-y-4"
+                >
+                  <div className="h-4 w-20 bg-blue-100 rounded-full" />
+                  <div className="h-6 w-40 bg-gray-200 rounded-lg mt-4" />
+                  <div className="h-4 w-full bg-gray-100 rounded" />
+                  <div className="h-4 w-3/4 bg-gray-100 rounded" />
+                  <div className="h-4 w-24 bg-blue-100 rounded mt-4" />
+                  <div className="h-10 w-full bg-blue-200 rounded-xl mt-6" />
                 </div>
               ))}
             </div>
-            <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-3">
-              <div className="h-3 w-28 bg-gray-100 rounded" />
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-4 w-4/5 bg-gray-100 rounded" />
+          </section>
+
+          {/* ── ABOUT + EXPERIENCE ── */}
+          <section className="grid md:grid-cols-2 gap-14">
+            {/* ABOUT */}
+            <div className="space-y-6">
+              <div className="h-8 w-48 bg-gray-200 rounded-xl" />
+              <div className="space-y-2">
+                {[100, 95, 88, 92, 70].map((w, i) => (
+                  <div
+                    key={i}
+                    className="h-4 bg-gray-100 rounded"
+                    style={{ width: `${w}%` }}
+                  />
+                ))}
+              </div>
+              <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl space-y-2">
+                <div className="h-3 w-32 bg-blue-100 rounded" />
+                <div className="h-5 w-48 bg-blue-200 rounded" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[72, 88, 64, 96, 80].map((w, i) => (
+                  <div
+                    key={i}
+                    className="h-6 rounded-full bg-gray-100"
+                    style={{ width: w }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* EXPERIENCE */}
+            <div className="space-y-8">
+              <div className="h-8 w-56 bg-gray-200 rounded-xl" />
+              <div className="grid grid-cols-2 gap-6">
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white p-6 rounded-2xl border text-center shadow-sm space-y-2"
+                  >
+                    <div className="h-9 w-16 bg-blue-200 rounded-lg mx-auto" />
+                    <div className="h-3 w-28 bg-gray-100 rounded mx-auto" />
+                  </div>
+                ))}
+              </div>
+              <div className="bg-white p-6 rounded-2xl border shadow-sm space-y-3">
+                <div className="h-3 w-28 bg-gray-100 rounded" />
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-4 w-4/5 bg-gray-100 rounded" />
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── TESTIMONIALS ── */}
+          <section className="space-y-10">
+            <div className="h-8 w-40 bg-gray-200 rounded-xl" />
+            <div className="grid md:grid-cols-2 gap-8">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="bg-white p-8 rounded-3xl border shadow-sm space-y-4"
+                >
+                  {[100, 95, 88, 70].map((w, j) => (
+                    <div
+                      key={j}
+                      className="h-4 bg-gray-100 rounded"
+                      style={{ width: `${w}%` }}
+                    />
+                  ))}
+                  <div className="h-4 w-32 bg-blue-100 rounded mt-4" />
+                  <div className="h-3 w-24 bg-gray-100 rounded" />
+                </div>
               ))}
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── TESTIMONIALS ── */}
-        <section className="space-y-10">
-          <div className="h-8 w-40 bg-gray-200 rounded-xl" />
-          <div className="grid md:grid-cols-2 gap-8">
-            {[1, 2].map((i) => (
-              <div key={i} className="bg-white p-8 rounded-3xl border shadow-sm space-y-4">
-                {[100, 95, 88, 70].map((w, j) => (
-                  <div key={j} className="h-4 bg-gray-100 rounded" style={{ width: `${w}%` }} />
-                ))}
-                <div className="h-4 w-32 bg-blue-100 rounded mt-4" />
-                <div className="h-3 w-24 bg-gray-100 rounded" />
+          {/* ── INTRO VIDEO ── */}
+          <section className="text-center space-y-8">
+            <div className="h-8 w-48 bg-gray-200 rounded-xl mx-auto" />
+            <div className="rounded-3xl overflow-hidden shadow-xl max-w-4xl mx-auto aspect-video bg-gray-200" />
+          </section>
+
+          {/* ── PRACTICAL DETAILS ── */}
+          <section className="space-y-6 max-w-3xl mx-auto">
+            <div className="h-8 w-48 bg-gray-200 rounded-xl mx-auto" />
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="border rounded-2xl bg-white p-6">
+                <div className="h-5 w-48 bg-gray-100 rounded" />
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* ── INTRO VIDEO ── */}
-        <section className="text-center space-y-8">
-          <div className="h-8 w-48 bg-gray-200 rounded-xl mx-auto" />
-          <div className="rounded-3xl overflow-hidden shadow-xl max-w-4xl mx-auto aspect-video bg-gray-200" />
-        </section>
-
-        {/* ── PRACTICAL DETAILS ── */}
-        <section className="space-y-6 max-w-3xl mx-auto">
-          <div className="h-8 w-48 bg-gray-200 rounded-xl mx-auto" />
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="border rounded-2xl bg-white p-6">
-              <div className="h-5 w-48 bg-gray-100 rounded" />
-            </div>
-          ))}
-        </section>
-
-      </main>
-    </div>
-  );
+          </section>
+        </main>
+      </div>
+    );
   }
 
   // fallback default

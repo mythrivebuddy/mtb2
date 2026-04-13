@@ -94,9 +94,55 @@ export default function DashboardPage() {
             <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
             <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
           </div>
-          {session?.user.userType === "ENTHUSIAST" ? (
+           
             <div className=""><DashboardCards jpBalance={userData.jpBalance}/></div>
-          ) : (
+        {/* ✅ MOBILE STEPPERS */}
+{session?.user.userType === "COACH" && (
+  <div className="mt-6 lg:hidden">
+
+    <h2 className="text-lg mb-3 text-slate-800 font-semibold">
+      Spotlight
+    </h2>
+    <div className="w-full overflow-x-auto">
+      <ApplicationStepper
+        steps={spotlightSteps}
+        currentStep={
+          currentSpotlight
+            ? SpotlightStepperMap[currentSpotlight?.status]
+            : 0
+        }
+      />
+    </div>
+
+    <h2 className="text-lg mt-6 mb-3 text-slate-800 font-semibold">
+      Prosperity Drop
+    </h2>
+    <div className="w-full overflow-x-auto">
+      <ApplicationStepper
+        steps={prosperitySteps}
+        currentStep={
+          currentProsperity
+            ? ProsperityStepperMap[currentProsperity?.status]
+            : 0
+        }
+      />
+    </div>
+
+  </div>
+)}
+        </div>
+
+        {/* Divider */}
+        {/* <div className="hidden lg:block h-auto w-px bg-gray-300 dark:bg-brown-500"></div> */}
+
+        {/* Right Panel */}
+        <div className="lg:flex-[0.4] mt-6 lg:mt-0">
+          <RightPanel />
+        </div>
+      </div>
+      <div className="hidden lg:block">
+
+        {session?.user.userType === "COACH" && (
             <>
               <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
                 Spotlight
@@ -123,18 +169,8 @@ export default function DashboardPage() {
                 />
             </>
           )}
-        </div>
-
-        {/* Divider */}
-        {/* <div className="hidden lg:block h-auto w-px bg-gray-300 dark:bg-brown-500"></div> */}
-
-        {/* Right Panel */}
-        <div className="lg:flex-[0.4] mt-6 lg:mt-0">
-          <RightPanel />
-        </div>
-      </div>
-
     </div>
+      </div>
           </>
   );
 }

@@ -1,11 +1,10 @@
 import { PaymentOrder, Prisma } from "@prisma/client";
-import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 export async function handleStorePayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-): Promise<{ adminItemIds: string[] }> {
-  if (order.storeOrderId) return { adminItemIds: [] };
+): Promise<{ allItemIds: string[] }> {
+  if (order.storeOrderId) return { allItemIds: [] };
 
   const storeOrder = await tx.order.create({
     data: {
@@ -67,25 +66,6 @@ export async function handleStorePayment(
     },
   });
 
-  const user = await tx.user.findUnique({
-    where: { id: order.userId },
-    select: { email: true, name: true },
-  });
-  const orderItems = await tx.orderItem.findMany({
-    where: { orderId: storeOrder.id },
-    include: {
-      item: {
-        select: { name: true },
-      },
-    },
-  });
-  const orderDate = new Date(storeOrder.createdAt).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-
-  const appUrl = process.env.NEXT_URL || "";
 
   const items = await tx.item.findMany({
     where: {
@@ -101,55 +81,13 @@ export async function handleStorePayment(
       },
     },
   });
-   const adminItemIds = items
+   const allItemIds = items
   .filter(
-    (item) =>
-      item.creator?.role === "ADMIN" &&
+    () =>
       order.currency !== "GP", //! exclude GP admin items
   )
   .map((item) => item.id);
 
-  const nonAdminOrderItems = orderItems.filter(
-    (oi) => !adminItemIds.includes(oi.itemId),
-  );
- 
-
-  const hasAdminItems = adminItemIds.length > 0;
-  const hasNonAdminItems = nonAdminOrderItems.length > 0;
-
-  if (!hasAdminItems && hasNonAdminItems && user?.email) {
-    const itemCount = nonAdminOrderItems.length;
-
-    const itemNames = nonAdminOrderItems
-      .map(
-        (i) =>
-          `${i.item.name} (×${i.quantity}) - ${i.priceAtPurchase} ${order.currency}`,
-      )
-      .join(", ");
-
-    const nonAdminTotal = nonAdminOrderItems.reduce(
-      (sum, item) => sum + item.priceAtPurchase * item.quantity,
-      0,
-    );
-
-    void sendEmailUsingTemplate({
-      toEmail: user.email,
-      toName: user.name ?? "Customer",
-      templateId: "order-placed",
-      templateData: {
-        username: user.name ?? "Customer",
-        orderId: storeOrder.id,
-        orderDate,
-        totalAmount: `${nonAdminTotal} ${order.currency}`, // ✅ FIXED
-        status: "COMPLETED",
-        itemCount, // ✅ FIXED
-        itemNames, // ✅ FIXED
-        orderUrl: `${appUrl}/dashboard/store/order-history`,
-        currency: order.currency,
-        paymentDetails: `Paid with Razorpay (${order.currency})`,
-      },
-    });
-  }
-  console.log("✅ Admin Item IDs:", adminItemIds);
-  return { adminItemIds };
+  console.log("✅ Admin Item IDs:", allItemIds);
+  return { allItemIds };
 }
