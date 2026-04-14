@@ -166,19 +166,20 @@ const MakeoverOnboardingParent = ({
 
     onSuccess: (res) => {
       const mode = res.data?.mode;
-
+      const isPurchased = res?.data?.isPurchased;
       if (mode === "edited") {
         toast.success("Changes saved successfully");
       } else {
         toast.success("🎉 Makeover Program onboarding completed!");
-        console.log("ENROLL PAYLOAD", {
-          programId: initialData?.programId,
-          areaIds: formData.selectedAreas,
-        });
       }
-      router.push(
-        `/dashboard/membership/checkout?plan=${initialData?.planId}&context=SUBSCRIPTION`,
-      );
+      if (isPurchased) {
+        setStep(6);
+        return;
+      }else {
+        router.push(
+          `/dashboard/membership/checkout?plan=${initialData?.planId}&context=SUBSCRIPTION`,
+        );
+      }
     },
 
     onError: (err: AxiosError<{ error?: string }>) => {
@@ -196,8 +197,8 @@ const MakeoverOnboardingParent = ({
       });
     },
 
-    onSuccess: () => {
-      toast.success("🎉 You're officially enrolled!");
+    onSuccess: (res) => {
+      toast.success(res.data.message ||"🎉 You're officially enrolled!");
       router.push(
         "/dashboard/complete-makeover-program/daily-actions-task-for-quarter",
       );

@@ -49,6 +49,29 @@ export async function POST(req: NextRequest) {
     const enrollmentMap = new Map<string, string>();
 
     for (const challengeId of challengeIds) {
+      // ✅ CHECK: already enrolled?
+      const existingEnrollments = await prisma.challengeEnrollment.findMany({
+        where: {
+          userId,
+          challengeId: { in: challengeIds },
+        },
+        select: {
+          challengeId: true,
+        },
+      });
+
+      const alreadyEnrolledChallengeIds = new Set(
+        existingEnrollments.map((e) => e.challengeId),
+      );
+
+      // ✅ If user already enrolled in ALL challenges → early return
+      if (alreadyEnrolledChallengeIds.size === challengeIds.length) {
+        return NextResponse.json({
+          success: true,
+          message: "You have already enrolled in all challenges",
+        });
+      }
+
       const enrollment = await prisma.challengeEnrollment.upsert({
         where: {
           userId_challengeId: {

@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Award,
   BadgePercent,
+  Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
@@ -31,6 +32,7 @@ import { SearchUser } from "@/types/client/nav";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "./Topbar";
 import { useSession } from "next-auth/react";
+import axios from "axios";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -46,7 +48,7 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
 
   const tab = searchParams.get("tab");
   const view = searchParams.get("view");
-
+  const baseHref = href?.split("?")[0];
   const isActive =
     href === "/dashboard/challenge?tab=join"
       ? pathname === "/dashboard/challenge" && tab === "join"
@@ -55,8 +57,8 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
         : href === "/dashboard/accountability/home?view=true"
           ? pathname === "/dashboard/accountability/home" && view === "true"
           : href === "/dashboard/accountability/home"
-            ? pathname === "/dashboard/accountability/home" && !view // 👈 important
-            : pathname === href;
+            ? pathname === "/dashboard/accountability/home" && !view
+            : pathname === baseHref;
 
   const content = (
     <>
@@ -118,8 +120,15 @@ const Sidebar = ({ user }: { user?: UserType }) => {
     queryFn: () => fetchUsers(searchTerm),
     enabled: searchTerm.length > 0,
   });
+  const { data: cmpPlan } = useQuery({
+    queryKey: ["cmp-program"],
+    queryFn: async () => {
+      const res = await axios.get("/api/program");
+      return res.data.plan;
+    },
+  });
   const pathname = usePathname();
-  // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
+ 
   const session = useSession();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -248,6 +257,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 /> */}
               </NavSection>
               <NavSection title="Features">
+                <NavItem
+                  href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
+                  icon={<Compass size={20} />}
+                  label="Life Blueprint"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
                 <NavItem
                   href="/dashboard/aligned-actions"
                   icon={<TrendingUp size={20} />}

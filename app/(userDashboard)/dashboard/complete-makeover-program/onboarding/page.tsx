@@ -55,14 +55,15 @@ export default async function MakeoverOnboardingPage({
 
   /* ───────────── REDIRECT IF ALREADY STARTED ───────────── */
   const programStarted =
-    !isStep6 &&
-    programState?.onboarded &&
-    programState?.program?.startDate &&
-    new Date() >= new Date(programState.program.startDate);
+    !isStep6 && isPurchased 
+    // &&
+    // programState?.onboarded &&
+    // programState?.program?.startDate &&
+    // new Date() >= new Date(programState.program.startDate);
 
-  if (programStarted) {
-    redirect("/dashboard/complete-makeover-program/makeover-dashboard");
-  }
+  // if (programStarted) {
+  //   redirect("/dashboard/complete-makeover-program/makeover-dashboard");
+  // }
 
   /* ───────────── FORM OPTIONS ───────────── */
   const [areas, goals, identities] = await Promise.all([

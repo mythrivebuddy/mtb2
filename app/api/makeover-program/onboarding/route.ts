@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const { programId } = await grantProgramAccessToPage();
+    const { programId,isPurchased } = await grantProgramAccessToPage();
     if (!programId) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
     }
@@ -232,6 +232,7 @@ export async function POST(req: Request) {
       message: isEdit
         ? "Makeover onboarding updated successfully"
         : "Makeover onboarding completed successfully",
+        isPurchased,
     });
   } catch (error) {
     console.error("MAKEOVER ONBOARDING ERROR:", error);
