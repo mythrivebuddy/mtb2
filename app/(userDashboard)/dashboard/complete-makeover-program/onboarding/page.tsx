@@ -54,8 +54,8 @@ export default async function MakeoverOnboardingPage({
   });
 
   /* ───────────── REDIRECT IF ALREADY STARTED ───────────── */
-  const programStarted =
-    !isStep6 && isPurchased 
+  // const programStarted =
+  //   !isStep6 && isPurchased 
     // &&
     // programState?.onboarded &&
     // programState?.program?.startDate &&

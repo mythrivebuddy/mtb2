@@ -73,7 +73,6 @@ const Step5VisionSummary = ({
   onComplete,
   isSubmitting,
   isPurchased,
-  step,
   onJoin,
   isJoining,
 }: Step5Props) => {
