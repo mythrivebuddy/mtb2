@@ -89,6 +89,7 @@ export default async function MakeoverOnboardingPage({
       <MakeoverOnboardingComponent
         initialData={null}
         formOptions={formOptions}
+        isPurchased={isPurchased}
       />
     );
   }
@@ -108,6 +109,7 @@ export default async function MakeoverOnboardingPage({
           step: isStep6 && isPurchased ? 6 : 1,
         }}
         formOptions={formOptions}
+         isPurchased={isPurchased}
       />
     );
   }
@@ -152,6 +154,7 @@ export default async function MakeoverOnboardingPage({
     <MakeoverOnboardingComponent
       initialData={initialData}
       formOptions={formOptions}
+       isPurchased={isPurchased}
     />
   );
 }
