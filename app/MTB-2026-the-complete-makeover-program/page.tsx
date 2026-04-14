@@ -104,12 +104,13 @@ const CompleteMakeoverPageContent = async () => {
   const plan = res.data.plan;
   const program = res.data.program;
   const { isPurchased,userProgramState } = await grantProgramAccessToPage();  
- 
+  console.log({isPurchased,userProgramState});
     if (
     isPurchased && userProgramState && 
     program.onboardingStartDate &&
     new Date(program?.onboardingStartDate).getTime() <= Date.now()
   ) {
+       
     redirect("/dashboard/complete-makeover-program/makeover-dashboard");
   }
 const joinUrl = !userProgramState

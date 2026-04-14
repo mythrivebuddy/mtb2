@@ -23,8 +23,12 @@ interface Step5Props {
     vision: string;
   };
   onBack: () => void;
+  onJoin: () => void;
   onComplete: () => void;
   isSubmitting?: boolean;
+  isPurchased?: boolean;
+  isJoining?: boolean;
+  step?: number;
 }
 
 const AREA_ICONS: Record<
@@ -68,6 +72,9 @@ const Step5VisionSummary = ({
   onBack,
   onComplete,
   isSubmitting,
+  isPurchased,
+  onJoin,
+  isJoining,
 }: Step5Props) => {
   return (
     <div className="flex min-h-screen flex-col  font-['Inter'] text-[#064e3b]">
@@ -201,8 +208,13 @@ const Step5VisionSummary = ({
         <OnboardingStickyFooter
           onBack={onBack}
           onNext={onComplete}
+          onSave={onComplete} // ✅ save
+          onJoin={onJoin}
           nextLabel={isSubmitting ? "Joining..." : "Join CMP"}
-          disabled={isSubmitting}
+          isSaving={isSubmitting}
+          isJoining={isJoining}
+          isPurchased={isPurchased}
+          step={5}
         />
       </main>
     </div>
