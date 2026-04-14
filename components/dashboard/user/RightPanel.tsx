@@ -8,6 +8,9 @@ import Link from "next/link";
 import React from "react";
 import { format } from "date-fns";
 import PageSkeleton from "@/components/PageSkeleton";
+import { Card } from "@/components/ui/card";
+import { StreakDisplay } from "@/components/userStreak/StreakDisplay";
+
 type Buddy = {
   id: number;
   name: string;
@@ -36,7 +39,43 @@ const fetchUserTransactionHistory = async () => {
   return res.data;
 };
 
-const RightPanel = ({ className }: { className?: string }) => {
+type Props = {
+  value: number;
+  label: string;
+};
+
+const ProgressStatCard = ({ value, label }: Props) => {
+  return (
+    <Card className="p-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all">
+      <div className="flex items-center gap-3">
+        {/* Icon */}
+        <div className="bg-dashboard/10 p-2 rounded-lg">
+          <Image src="/Pearls.png" alt="icon" width={28} height={28} />
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-col">
+          <p className="text-lg font-semibold text-jp-orange leading-none">
+            {value}
+          </p>
+          <p className="text-xs text-gray-500 leading-tight">{label}</p>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const RightPanel = ({
+  className,
+  jpEarned,
+  jpSpent,
+  jpBalance,
+}: {
+  className?: string;
+  jpEarned: number;
+  jpSpent: number;
+  jpBalance: number;
+}) => {
   const buddies: Buddy[] = [
     { id: 1, name: "Alice", access: "Full Access" },
     { id: 2, name: "Bob", access: "Limited Access" },
@@ -74,7 +113,7 @@ const RightPanel = ({ className }: { className?: string }) => {
           date: format(new Date(tx.createdAt), "MMM d, yyyy hh:mm a"),
           amount: tx.jpAmount,
           currency: tx.currency,
-          txType: tx?.activity?.transactionType
+          txType: tx?.activity?.transactionType,
         };
       });
   }
@@ -83,6 +122,19 @@ const RightPanel = ({ className }: { className?: string }) => {
     <div
       className={`w-full overflow-x-hidden overflow-y-auto bg-transparent ${className}`}
     >
+      <section className="mb-6">
+        <div className="space-y-3 bg-white rounded-3xl p-5">
+          <h3 className="font-semibold">Progress Snapshot</h3>
+
+          <div className="grid grid-cols-2 gap-3">
+            <ProgressStatCard value={jpEarned} label="GP Earned" />
+            <ProgressStatCard value={jpSpent} label="GP Spent" />
+            <ProgressStatCard value={jpBalance} label="GP Balance" />
+
+            <StreakDisplay />
+          </div>
+        </div>
+      </section>
       {/* Buddies Section */}
       <section className="mb-6">
         <div className="flex justify-between items-center mb-3">
@@ -143,8 +195,6 @@ const RightPanel = ({ className }: { className?: string }) => {
         </div>
         {isLoading ? (
           <PageSkeleton type="transaction-history" />
-
-
         ) : (
           <div className="space-y-3">
             {historyItems.map((item) => (
@@ -158,7 +208,9 @@ const RightPanel = ({ className }: { className?: string }) => {
                     {item.date}
                   </p>
                 </div>
-                <p className={`${item.txType === "CREDIT" ? "text-green-500" : "text-red-500"} font-medium ml-2 break-words`}>
+                <p
+                  className={`${item.txType === "CREDIT" ? "text-green-500" : "text-red-500"} font-medium ml-2 break-words`}
+                >
                   {item.amount} {item?.currency}
                 </p>
               </div>

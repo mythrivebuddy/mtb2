@@ -88,11 +88,11 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Dashboard Content */}
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
               <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
               <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
               <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
-            </div>
+            </div> */}
 
             <div className="">
               <DashboardCards jpBalance={userData.jpBalance} />
@@ -136,7 +136,11 @@ export default function DashboardPage() {
 
           {/* Right Panel */}
           <div className="lg:flex-[0.4] mt-6 lg:mt-0">
-            <RightPanel />
+            <RightPanel
+              jpEarned={userData?.jpEarned || 0}
+              jpSpent={userData?.jpSpent || 0}
+              jpBalance={userData?.jpBalance || 0}
+            />
           </div>
         </div>
         <div className="hidden lg:block">
