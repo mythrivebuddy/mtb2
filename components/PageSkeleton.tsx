@@ -49,88 +49,129 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // ! user-panel
 
   // for dashboard
-  if (type === "dashboard") {
-    return (
-      <div className="animate-pulse px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Main Dashboard Content Skeleton */}
-          <div className="flex-1">
-            {/* JP Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-3xl shadow-md p-4 flex flex-row items-center space-x-4"
-                >
-                  {/* Image placeholder with bg like .bg-dashboard */}
-                  <Skeleton className="h-[65px] w-[65px] rounded-xl flex-shrink-0" />
-                  {/* Text lines */}
-                  <div className="flex flex-col space-y-2">
-                    <Skeleton className="h-6 w-16" /> {/* value - text-xl */}
-                    <Skeleton className="h-4 w-28" /> {/* label - text-base */}
-                  </div>
-                </div>
-              ))}
-            </div>
+if (type === "dashboard") {
+  return (
+    <div className="animate-pulse px-4 py-6">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        
+        {/* ================= MAIN CONTENT ================= */}
+        <div className="flex-1">
 
-            {/* Dashboard Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col space-y-3"
-                >
-                  <Skeleton className="h-14 w-14 rounded-2xl" />
-                  <Skeleton className="h-5 w-36" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-4/5" />
-                </div>
-              ))}
-              {/* Growth Store card */}
-              <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-6 flex flex-col space-y-3">
-                <Skeleton className="h-14 w-14 rounded-2xl bg-emerald-200" />
-                <Skeleton className="h-5 w-36 bg-emerald-200" />
-                <Skeleton className="h-9 w-full rounded-full bg-emerald-200" />
-              </div>
-            </div>
+          {/* Greeting */}
+          <div className="space-y-3 mb-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-80" />
           </div>
 
-          {/* Right Panel Skeleton */}
-          <div className="lg:flex-[0.4] mt-6 lg:mt-0 space-y-6">
-            {/* Buddies */}
-            <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
-              <Skeleton className="h-5 w-20 rounded-md" />
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center space-x-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-1">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-2 w-20" />
-                  </div>
+          {/* MyLifeBlueprint Skeleton */}
+          <div className="bg-white rounded-2xl p-5 shadow-sm border mb-4 space-y-3">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-5/6" />
+            <Skeleton className="h-3 w-4/6" />
+          </div>
+
+          {/* Dashboard Cards (MATCHES your dynamic cards) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col"
+              >
+                {/* Icon */}
+                <Skeleton className="h-14 w-14 rounded-2xl mb-5" />
+
+                {/* Title */}
+                <Skeleton className="h-5 w-40 mb-2" />
+
+                {/* Content (simulate dynamic card content like blooms/tasks/etc) */}
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                  <Skeleton className="h-3 w-3/5" />
                 </div>
-              ))}
-              <Skeleton className="h-10 w-full rounded-full bg-green-200" />
+
+                {/* CTA Button */}
+                <Skeleton className="h-9 w-full rounded-full mt-4" />
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile Steppers Skeleton */}
+          <div className="mt-6 lg:hidden space-y-6">
+            <div>
+              <Skeleton className="h-5 w-32 mb-3" />
+              <Skeleton className="h-10 w-full rounded-xl" />
             </div>
 
-            {/* History */}
-            <div className="bg-white rounded-xl shadow-md p-4 space-y-4">
-              <Skeleton className="h-5 w-16 rounded-md" />
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-start w-full">
-                  <Skeleton className="h-5 w-5 mr-2 rounded-full bg-blue-200" />
-                  <div className="flex-1 space-y-1">
-                    <Skeleton className="h-3 w-full max-w-[200px]" />
-                    <Skeleton className="h-2 w-28" />
-                  </div>
-                  <Skeleton className="h-3 w-14 ml-2 bg-red-200" />
-                </div>
-              ))}
+            <div>
+              <Skeleton className="h-5 w-40 mb-3" />
+              <Skeleton className="h-10 w-full rounded-xl" />
             </div>
           </div>
         </div>
+
+        {/* ================= RIGHT PANEL ================= */}
+        <div className="lg:flex-[0.4] mt-6 lg:mt-0 space-y-6">
+          
+          {/* Stats / JP Section */}
+          <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
+            <Skeleton className="h-5 w-24" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex justify-between items-center">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            ))}
+          </div>
+
+          {/* Buddies */}
+          <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
+            <Skeleton className="h-5 w-20" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-2 w-20" />
+                </div>
+              </div>
+            ))}
+            <Skeleton className="h-10 w-full rounded-full" />
+          </div>
+
+          {/* History */}
+          <div className="bg-white rounded-xl shadow-md p-4 space-y-4">
+            <Skeleton className="h-5 w-16" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-start w-full">
+                <Skeleton className="h-5 w-5 mr-2 rounded-full" />
+                <div className="flex-1 space-y-1">
+                  <Skeleton className="h-3 w-full max-w-[200px]" />
+                  <Skeleton className="h-2 w-28" />
+                </div>
+                <Skeleton className="h-3 w-14 ml-2" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    );
-  }
+
+      {/* Desktop Stepper Skeleton */}
+      <div className="hidden lg:block mt-8 space-y-6">
+        <div>
+          <Skeleton className="h-6 w-40 mb-4" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+
+        <div>
+          <Skeleton className="h-6 w-48 mb-4" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
   // for leaderboard
   if (type === "leaderboard") {

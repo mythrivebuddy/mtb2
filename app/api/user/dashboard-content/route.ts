@@ -144,6 +144,45 @@ export const GET = async (req: Request) => {
       },
     });
 
+    const now = new Date();
+
+    const events = await prisma.event.findMany({
+      where: {
+        userId: session.user.id,
+
+        // ✅ only future OR ongoing events
+        OR: [
+          {
+            end: {
+              gte: now, // still relevant (ongoing or future)
+            },
+          },
+        ],
+      },
+
+      orderBy: {
+        start: "asc", // nearest first
+      },
+
+      take: 1, // ✅ only ONE needed
+    });
+    const selectedEvent = events[0] || null;
+    const eventData = selectedEvent
+      ? {
+          ...selectedEvent,
+
+          isCompletedByTime: selectedEvent.end
+            ? new Date(selectedEvent.end) < now
+            : false,
+
+          isOngoing:
+            selectedEvent.start && selectedEvent.end
+              ? new Date(selectedEvent.start) <= now &&
+                new Date(selectedEvent.end) >= now
+              : false,
+        }
+      : null;
+
     return NextResponse.json(
       {
         userMakeoverCommitment,
@@ -152,7 +191,8 @@ export const GET = async (req: Request) => {
         onePercentProgressVault,
         miracleLogs,
         challenges,
-        mmpPrograms
+        mmpPrograms,
+        event: eventData,
       },
       { status: 200 },
     );

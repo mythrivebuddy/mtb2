@@ -58,7 +58,7 @@ export default function DashboardPage() {
       retry: false,
       enabled: !!session?.user?.id,
     });
-  const { data: dashboardContent } = useQuery({
+  const { data: dashboardContent,isLoading:dashboardContentLoading } = useQuery({
     queryKey: ["dashboard-content"],
     queryFn: async () => {
       const { start, end } = getTodayRange();
@@ -73,7 +73,7 @@ export default function DashboardPage() {
     spotlightLoading ||
     status === "loading" ||
     userLoading ||
-    prosperityLoading
+    prosperityLoading || dashboardContentLoading
   ) {
     // return <PageLoader />;
     return <PageSkeleton type="dashboard" />;
@@ -130,6 +130,7 @@ export default function DashboardPage() {
                 miracleLogs={dashboardContent?.miracleLogs || []}
                 challenges={dashboardContent?.challenges || []}
                 mmpPrograms={dashboardContent?.mmpPrograms || []}
+                // event={dashboardContent?.events}
               />
             </div>
             {/* ✅ MOBILE STEPPERS */}
