@@ -286,7 +286,7 @@ export default function DashboardCards({
               : "border-gray-200",
           )}
         >
-          <CardContent className="p-6">
+          <CardContent className="p-6 flex flex-col h-full">
             {/* Badge */}
             {card.badge && (
               <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-600">
@@ -328,163 +328,161 @@ export default function DashboardCards({
             </div>
 
             {/* Description */}
-            {index === 0 && hasTodayFocus ? (
-              <div className="flex items-center gap-2 text-sm mt-1">
-                <Input
-                  type="checkbox"
-                  checked={isCompleted}
-                  disabled={isCompleted || completeActionMutation.isPending}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isCompleted && todayAction?.id) {
-                      completeActionMutation.mutate(todayAction.id);
-                    }
-                  }}
-                  className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                />
-                <p className="text-muted-foreground">
-                  {task} • {time}
-                </p>
-              </div>
-            ) : index === 1 && blooms.length > 0 ? (
-              // ✅ DAILY BLOOMS
-              <div className="flex flex-col gap-2 mt-1">
-                {blooms.map((bloom) => (
-                  <div
-                    key={bloom.id}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={bloom.isCompleted}
-                      disabled={
-                        bloom.isCompleted || updateBloomMutation.isPending
+            <div className="flex flex-col flex-1">
+              {index === 0 && hasTodayFocus ? (
+                <div className="flex items-center gap-2 text-sm mt-1">
+                  <Input
+                    type="checkbox"
+                    checked={isCompleted}
+                    disabled={isCompleted || completeActionMutation.isPending}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isCompleted && todayAction?.id) {
+                        completeActionMutation.mutate(todayAction.id);
                       }
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        if (!bloom.isCompleted) {
-                          updateBloomMutation.mutate(bloom.id);
-                        }
-                      }}
-                      className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                    />
-                    <p className="text-muted-foreground line-clamp-1">
-                      {bloom.title}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : index === 3 && progressItems?.length > 0 ? (
-              // ✅ 1% PROGRESS VAULT
-              <div className="flex flex-col gap-2 mt-1">
-                {progressItems.map((item) => (
-                  <p
-                    key={item.id}
-                    className="text-sm text-muted-foreground line-clamp-1"
-                  >
-                    {item.content}
+                    }}
+                    className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                  />
+                  <p className="text-muted-foreground">
+                    {task} • {time}
                   </p>
-                ))}
-
+                </div>
+              ) : index === 1 && blooms.length > 0 ? (
+                // ✅ DAILY BLOOMS
+                <div className="flex flex-col gap-2 mt-1">
+                  {blooms.map((bloom) => (
+                    <div
+                      key={bloom.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={bloom.isCompleted}
+                        disabled={
+                          bloom.isCompleted || updateBloomMutation.isPending
+                        }
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          if (!bloom.isCompleted) {
+                            updateBloomMutation.mutate(bloom.id);
+                          }
+                        }}
+                        className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                      />
+                      <p className="text-muted-foreground line-clamp-1">
+                        {bloom.title}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : index === 3 && progressItems?.length > 0 ? (
+                // ✅ 1% PROGRESS VAULT
+                <div className="flex flex-col gap-2 mt-1">
+                  {progressItems.map((item) => (
+                    <p
+                      key={item.id}
+                      className="text-sm text-muted-foreground line-clamp-1"
+                    >
+                      {item.content}
+                    </p>
+                  ))}
+                </div>
+              ) : index === 4 && miracleItems?.length > 0 ? (
+                // ✅ MIRACLE LOGS
+                <div className="flex flex-col gap-2 mt-1">
+                  {miracleItems.map((item) => (
+                    <p
+                      key={item.id}
+                      className="text-sm text-muted-foreground line-clamp-1"
+                    >
+                      ✨ {item.content}
+                    </p>
+                  ))}
+                </div>
+              ) : index === 5 && challengeItems?.length > 0 ? (
+                // ✅ CHALLENGES
+                <div className="flex flex-col gap-2 mt-1">
+                  {challengeItems.map((item) => (
+                    <p
+                      key={item.challenge.id}
+                      className="text-sm text-muted-foreground line-clamp-1"
+                    >
+                      🔥 {item.challenge.title}
+                    </p>
+                  ))}
+                </div>
+              ) : index === 6 && mmpItems?.length > 0 ? (
+                // ✅ MMP PROGRAMS
+                <div className="flex flex-col gap-2 mt-1">
+                  {mmpItems.map((item) => (
+                    <p
+                      key={item.program.id}
+                      className="text-sm text-muted-foreground line-clamp-1"
+                    >
+                      🎓 {item.program.name}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                card.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {card.description}
+                  </p>
+                )
+              )}
+            </div>
+            <div className="mt-auto pt-4">
+              {index === 1 && blooms.length > 0 && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    router.push("/dashboard/progress-vault");
+                    router.push("/dashboard/daily-bloom");
                   }}
-                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
+                  className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full"
                 >
+                  Add Bloom
+                </Button>
+              )}
+              {index === 3 && progressItems.length > 0 && (
+                <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                   Log Progress
                 </Button>
-              </div>
-            ) : index === 4 && miracleItems?.length > 0 ? (
-              // ✅ MIRACLE LOGS
-              <div className="flex flex-col gap-2 mt-1">
-                {miracleItems.map((item) => (
-                  <p
-                    key={item.id}
-                    className="text-sm text-muted-foreground line-clamp-1"
-                  >
-                    ✨ {item.content}
-                  </p>
-                ))}
+              )}
 
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push("/dashboard/miracle-log");
-                  }}
-                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
-                >
+              {index === 4 && miracleItems.length > 0 && (
+                <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                   Log Miracle
                 </Button>
-              </div>
-            ) : index === 5 && challengeItems?.length > 0 ? (
-              // ✅ CHALLENGES
-              <div className="flex flex-col gap-2 mt-1">
-                {challengeItems.map((item) => (
-                  <p
-                    key={item.challenge.id}
-                    className="text-sm text-muted-foreground line-clamp-1"
-                  >
-                    🔥 {item.challenge.title}
-                  </p>
-                ))}
+              )}
 
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push("/dashboard/challenge?tab=join");
-                  }}
-                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
-                >
+              {index === 5 && challengeItems.length > 0 && (
+                <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                   Join Challenges
                 </Button>
-              </div>
-            ) : index === 6 && mmpItems?.length > 0 ? (
-              // ✅ MMP PROGRAMS
-              <div className="flex flex-col gap-2 mt-1">
-                {mmpItems.map((item) => (
-                  <p
-                    key={item.program.id}
-                    className="text-sm text-muted-foreground line-clamp-1"
-                  >
-                    🎓 {item.program.name}
-                  </p>
-                ))}
+              )}
 
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push("/dashboard/mini-mastery-programs");
-                  }}
-                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
-                >
+              {index === 6 && mmpItems.length > 0 && (
+                <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                   Join MMP
                 </Button>
-              </div>
-            ) : (
-              card.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {card.description}
-                </p>
-              )
-            )}
+              )}
 
-            {/* Growth Store Special */}
-            {card.action && (
-              <div className="mt-4 space-y-3">
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent card click
-                    router.push("/dashboard/store");
-                  }}
-                  className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
-                >
-                  Redeem Your {jpBalance} GP Now{" "}
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
+              {/* Growth Store Special */}
+              {card.action && (
+                <div className="mt-auto space-y-3">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation(); // prevent card click
+                      router.push("/dashboard/store");
+                    }}
+                    className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                  >
+                    Redeem Your {jpBalance} GP Now{" "}
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       ))}
