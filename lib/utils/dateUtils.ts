@@ -7,20 +7,19 @@
  * @returns A new Date object with the combined date and time.
  */
 export const combineDateAndTime = (date: string | Date, time: string): Date => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+  const dateObj = typeof date === "string" ? new Date(date) : date;
+
   // Split "HH:mm" into hours and minutes
-  const [hours, minutes] = time.split(':').map(Number);
-  
+  const [hours, minutes] = time.split(":").map(Number);
+
   // Create a new date object to avoid modifying the original one
   const newDate = new Date(dateObj.valueOf());
-  
+
   // Set the hours and minutes for the new date object
-  newDate.setHours(hours, minutes, 0, 0); 
-  
+  newDate.setHours(hours, minutes, 0, 0);
+
   return newDate;
 };
-
 
 /* ---------------- HELPERS ---------------- */
 
@@ -43,7 +42,6 @@ export function getNowInIST(): Date {
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;
   return new Date(utc + 5.5 * 60 * 60 * 1000);
 }
-
 
 /* ---------------- HELPERS ---------------- */
 
@@ -68,3 +66,18 @@ export function formatDate(date: Date | string | null | undefined) {
     year: "numeric",
   });
 }
+
+export const getTodayRange = () => {
+  const now = new Date();
+
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  };
+};

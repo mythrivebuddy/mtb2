@@ -17,6 +17,24 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/utils";
 import { useRouter } from "next/navigation";
+import { Input } from "../ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import axios from "axios";
+
+type DashboardContent = {
+  alignedAction: AlignedAction[];
+  dailyBlooms: DailyBloom[];
+};
+
+type AlignedAction = {
+  id: string;
+  completed: boolean;
+  selectedTask: string;
+  tasks: string[];
+  timeFrom: string;
+  timeTo: string;
+};
 
 type CardItem = {
   title: string;
@@ -28,6 +46,33 @@ type CardItem = {
   badge?: string;
   action?: boolean;
   path?: string;
+};
+
+type DailyBloom = {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+};
+type OnePercentProgressVault = {
+  id: string;
+  content: string;
+};
+type MiracleLog = {
+  id: string;
+  content: string;
+};
+type Challenge = {
+  challenge: {
+    id: string;
+    title: string;
+  };
+};
+type MMPProgram = {
+  program: {
+    id: string;
+    name: string;
+    slug: string;
+  };
 };
 
 const cards: CardItem[] = [
@@ -103,82 +148,363 @@ const cards: CardItem[] = [
   },
 ];
 
-export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
+export default function DashboardCards({
+  jpBalance,
+  alignedAction,
+  dailyBlooms,
+  onePercentProgressVault,
+  miracleLogs,
+  challenges,
+  mmpPrograms,
+}: {
+  jpBalance: string;
+  alignedAction: AlignedAction[];
+  dailyBlooms: DailyBloom[];
+  onePercentProgressVault: OnePercentProgressVault[];
+  miracleLogs: MiracleLog[];
+  challenges: Challenge[];
+  mmpPrograms: MMPProgram[];
+}) {
   const router = useRouter();
+
+  const queryClient = useQueryClient();
+
+  const completeActionMutation = useMutation({
+    mutationFn: async (actionId: string) => {
+      const res = await fetch("/api/user/aligned-actions/reminders", {
+        method: "POST",
+        body: JSON.stringify({ actionId, completed: true }),
+      });
+
+      if (!res.ok) throw new Error("Failed to complete action");
+    },
+    onSuccess: (_, actionId) => {
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"], // ✅ match your query key
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            alignedAction: old.alignedAction.map((a) =>
+              a.id === actionId ? { ...a, completed: true } : a,
+            ),
+          };
+        },
+      );
+      toast.success("Task completed 🎉");
+    },
+  });
+
+  const updateBloomMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return axios.put(`/api/user/daily-bloom/${id}`, {
+        isCompleted: true,
+      });
+    },
+
+    onSuccess: (_, id) => {
+      // ✅ update dashboard-content cache
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            dailyBlooms: old.dailyBlooms.map((b) =>
+              b.id === id ? { ...b, isCompleted: true } : b,
+            ),
+          };
+        },
+      );
+
+      toast.success("Bloom completed ✅");
+    },
+  });
+
+  const todayAction = alignedAction?.[0];
+  const hasTodayFocus = !!todayAction;
+  // aligned action tasks
+  const task =
+    todayAction?.tasks?.find((t: string) => t === todayAction?.selectedTask) ||
+    todayAction?.selectedTask;
+  // bloooms
+  const blooms = dailyBlooms?.slice(0, 3);
+  // onePercentProgressVault
+  const progressItems = onePercentProgressVault?.slice(0, 3);
+
+  // miracle logs
+  const miracleItems = miracleLogs?.slice(0, 3); // keep short like progress
+  // challenges
+  const challengeItems = challenges?.slice(0, 3);
+
+  // mmp
+  const mmpItems = mmpPrograms?.slice(0, 3);
+
+  const formatTime = (date: string) =>
+    new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false, // ✅ 24-hour format
+    });
+
+  const time =
+    todayAction?.timeFrom && todayAction?.timeTo
+      ? `${formatTime(todayAction.timeFrom)} - ${formatTime(
+          todayAction.timeTo,
+        )}`
+      : "";
+
+  const isCompleted = todayAction?.completed;
+  const dynamicCards: CardItem[] = [
+    {
+      title: hasTodayFocus ? "Your Today’s Focus" : "Set Today’s Focus",
+      description: hasTodayFocus
+        ? `${task} • ${time}`
+        : "Define your top priorities and stay focused throughout the day",
+
+      icon: TrendingUp,
+
+      bg: hasTodayFocus
+        ? "bg-emerald-200 group-hover:bg-emerald-700"
+        : "bg-emerald-100 group-hover:bg-emerald-600",
+
+      text: "text-emerald-600 group-hover:text-white",
+
+      path: "/dashboard/aligned-actions",
+    },
+
+    //  cards same
+    ...cards.slice(1),
+  ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {cards.map((card, index) => (
-        <Card
-          key={index}
-          onClick={() => card.path && router.push(card.path)}
-          className={cn(
-            "group relative cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border",
-            card.highlight
-              ? "border-emerald-200 overflow-hidden"
-              : "border-gray-200",
-          )}
-        >
-          <CardContent className="p-6">
-            {/* Badge */}
-            {card.badge && (
-              <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-600">
-                {card.badge}
-              </span>
+      {dynamicCards.map((card, index) => {
+        const hasCTA =
+          (index === 1 && blooms.length > 0) ||
+          (index === 3 && progressItems.length > 0) ||
+          (index === 4 && miracleItems.length > 0) ||
+          (index === 5 && challengeItems.length > 0) ||
+          (index === 6 && mmpItems.length > 0) ||
+          card.action;
+        return (
+          <Card
+            key={index}
+            onClick={() => {
+              // if (index === 0) return;
+              if (hasCTA) return; // 🚫 block navigation if CTA exists
+              if (card.path) router.push(card.path);
+            }}
+            className={cn(
+              "group relative cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border",
+              card.highlight
+                ? "border-emerald-200 overflow-hidden"
+                : "border-gray-200",
             )}
-
-            {/* Icon */}
-            <div
-              className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all",
-                card.bg,
+          >
+            <CardContent className="p-6 flex flex-col h-full">
+              {/* Badge */}
+              {card.badge && (
+                <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-600">
+                  {card.badge}
+                </span>
               )}
-            >
-              <card.icon
+
+              {/* Icon */}
+              <div
                 className={cn(
-                  "w-7 h-7 transition-colors duration-300",
-                  card.text,
+                  "w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all",
+                  card.bg,
                 )}
-              />
-            </div>
+              >
+                <card.icon
+                  className={cn(
+                    "w-7 h-7 transition-colors duration-300",
+                    card.text,
+                  )}
+                />
+              </div>
 
-            {/* Title */}
-            <div className="flex items-center justify-between mb-1">
-              <h3 className={cn("text-md sm:text-lg font-semibold", card.highlight && "")}>
-                {card.title}
-              </h3>
+              {/* Title */}
+              <div className="flex items-center justify-between mb-1">
+                <h3
+                  className={cn(
+                    "text-md sm:text-lg font-semibold",
+                    card.highlight && "",
+                  )}
+                >
+                  {card.title}
+                </h3>
 
-              {card.action && (
+                {/* {card.action && (
                 <span className="text-[10px] sm:text-xs font-semibold bg-emerald-100 text-emerald-600 px-1 py-1 rounded-full">
                   {jpBalance} GP Balance
                 </span>
-              )}
-            </div>
-
-            {/* Description */}
-            {card.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {card.description}
-              </p>
-            )}
-
-            {/* Growth Store Special */}
-            {card.action && (
-              <div className="mt-4 space-y-3">
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent card click
-                    router.push("/dashboard/store");
-                  }}
-                  className="w-full rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
-                >
-                  Redeem Now <ArrowRight className="w-4 h-4" />
-                </Button>
+              )} */}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+
+              {/* Description */}
+              <div className="flex flex-col flex-1">
+                {index === 0 && hasTodayFocus ? (
+                  <div className="flex items-center gap-2 text-sm mt-1">
+                    <Input
+                      type="checkbox"
+                      checked={isCompleted}
+                      disabled={isCompleted || completeActionMutation.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isCompleted && todayAction?.id) {
+                          completeActionMutation.mutate(todayAction.id);
+                        }
+                      }}
+                      className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    />
+                    <p className="text-muted-foreground">
+                      {task} • {time}
+                    </p>
+                  </div>
+                ) : index === 1 && blooms.length > 0 ? (
+                  // ✅ DAILY BLOOMS
+                  <div className="flex flex-col gap-2 mt-1">
+                    {blooms.map((bloom) => (
+                      <div
+                        key={bloom.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={bloom.isCompleted}
+                          disabled={
+                            bloom.isCompleted || updateBloomMutation.isPending
+                          }
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (!bloom.isCompleted) {
+                              updateBloomMutation.mutate(bloom.id);
+                            }
+                          }}
+                          className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                        />
+                        <p className="text-muted-foreground line-clamp-1">
+                          {bloom.title}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : index === 3 && progressItems?.length > 0 ? (
+                  // ✅ 1% PROGRESS VAULT
+                  <div className="flex flex-col gap-2 mt-1">
+                    {progressItems.map((item) => (
+                      <p
+                        key={item.id}
+                        className="text-sm text-muted-foreground line-clamp-1"
+                      >
+                        {item.content}
+                      </p>
+                    ))}
+                  </div>
+                ) : index === 4 && miracleItems?.length > 0 ? (
+                  // ✅ MIRACLE LOGS
+                  <div className="flex flex-col gap-2 mt-1">
+                    {miracleItems.map((item) => (
+                      <p
+                        key={item.id}
+                        className="text-sm text-muted-foreground line-clamp-1"
+                      >
+                        ✨ {item.content}
+                      </p>
+                    ))}
+                  </div>
+                ) : index === 5 && challengeItems?.length > 0 ? (
+                  // ✅ CHALLENGES
+                  <div className="flex flex-col gap-2 mt-1">
+                    {challengeItems.map((item) => (
+                      <p
+                        key={item.challenge.id}
+                        className="text-sm text-muted-foreground line-clamp-1"
+                      >
+                        🔥 {item.challenge.title}
+                      </p>
+                    ))}
+                  </div>
+                ) : index === 6 && mmpItems?.length > 0 ? (
+                  // ✅ MMP PROGRAMS
+                  <div className="flex flex-col gap-2 mt-1">
+                    {mmpItems.map((item) => (
+                      <p
+                        key={item.program.id}
+                        className="text-sm text-muted-foreground line-clamp-1"
+                      >
+                        🎓 {item.program.name}
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  card.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {card.description}
+                    </p>
+                  )
+                )}
+              </div>
+              <div className="mt-auto pt-4">
+                {index === 1 && blooms.length > 0 && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/dashboard/daily-bloom");
+                    }}
+                    className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full"
+                  >
+                    Add Bloom
+                  </Button>
+                )}
+                {index === 3 && progressItems.length > 0 && (
+                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                    Log Progress
+                  </Button>
+                )}
+
+                {index === 4 && miracleItems.length > 0 && (
+                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                    Log Miracle
+                  </Button>
+                )}
+
+                {index === 5 && challengeItems.length > 0 && (
+                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                    Join Challenges
+                  </Button>
+                )}
+
+                {index === 6 && mmpItems.length > 0 && (
+                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                    Join MMP
+                  </Button>
+                )}
+
+                {/* Growth Store Special */}
+                {card.action && (
+                  <div className="mt-auto space-y-3">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent card click
+                        router.push("/dashboard/store");
+                      }}
+                      className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                    >
+                      Redeem Your {jpBalance} GP Now{" "}
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
