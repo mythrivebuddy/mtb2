@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Prisma } from "@prisma/client";
-import JPCard from "@/components/dashboard/JPCard";
 import RightPanel from "@/components/dashboard/user/RightPanel";
 import { ApplicationStepper } from "@/components/ApplicationStepper";
 import {
@@ -17,6 +16,8 @@ import PageSkeleton from "@/components/PageSkeleton";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import AnnouncementBar from "@/components/announcement/AnnouncementBar";
 import DashboardCards from "@/components/dashboard/DashboardCards";
+import MyLifeBlueprint from "@/components/dashboard/user/MyLifeBlueprint";
+import { getGreetingData } from "@/lib/utils/utils";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -56,7 +57,14 @@ export default function DashboardPage() {
       retry: false,
       enabled: !!session?.user?.id,
     });
-
+  const { data: dashboardContent } = useQuery({
+    queryKey: ["dashboard-content"],
+    queryFn: async () => {
+      const res = await axios.get(`/api/user/dashboard-content`);
+      return res.data;
+    },
+  });
+  const commitments = dashboardContent?.userMakeoverCommitment || [];
   if (
     spotlightLoading ||
     status === "loading" ||
@@ -80,6 +88,7 @@ export default function DashboardPage() {
   const currentProsperity = prosperityApplications?.find((prosperity) => {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
+  const { text, Icon, color } = getGreetingData();
 
   return (
     <>
@@ -88,6 +97,18 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Dashboard Content */}
           <div className="flex-1">
+            <div className="flex flex-col gap-3 mb-4">
+              <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center">
+                {text}, {userData.name}
+                <Icon className={color} />
+              </h1>
+              <p className="text-muted-foreground">
+                MTB is your personal & professional growth environment
+              </p>
+            </div>
+            <MyLifeBlueprint
+              data={dashboardContent?.userMakeoverCommitment || []}
+            />
             {/* <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
               <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
               <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />

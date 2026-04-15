@@ -148,11 +148,11 @@ export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
                 {card.title}
               </h3>
 
-              {card.action && (
+              {/* {card.action && (
                 <span className="text-[10px] sm:text-xs font-semibold bg-emerald-100 text-emerald-600 px-1 py-1 rounded-full">
                   {jpBalance} GP Balance
                 </span>
-              )}
+              )} */}
             </div>
 
             {/* Description */}
@@ -170,9 +170,9 @@ export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
                     e.stopPropagation(); // prevent card click
                     router.push("/dashboard/store");
                   }}
-                  className="w-full rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                  className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
                 >
-                  Redeem Now <ArrowRight className="w-4 h-4" />
+                  Redeem Your {jpBalance} GP Now <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
