@@ -18,6 +18,7 @@ import AnnouncementBar from "@/components/announcement/AnnouncementBar";
 import DashboardCards from "@/components/dashboard/DashboardCards";
 import MyLifeBlueprint from "@/components/dashboard/user/MyLifeBlueprint";
 import { getGreetingData } from "@/lib/utils/utils";
+import { getTodayRange } from "@/lib/utils/dateUtils";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -60,11 +61,14 @@ export default function DashboardPage() {
   const { data: dashboardContent } = useQuery({
     queryKey: ["dashboard-content"],
     queryFn: async () => {
-      const res = await axios.get(`/api/user/dashboard-content`);
+      const { start, end } = getTodayRange();
+      const res = await axios.get(`/api/user/dashboard-content`, {
+        params: { start, end },
+      });
       return res.data;
     },
   });
-  const commitments = dashboardContent?.userMakeoverCommitment || [];
+
   if (
     spotlightLoading ||
     status === "loading" ||
@@ -116,7 +120,10 @@ export default function DashboardPage() {
             </div> */}
 
             <div className="">
-              <DashboardCards jpBalance={userData.jpBalance} />
+              <DashboardCards
+                jpBalance={userData.jpBalance}
+                alignedAction={dashboardContent?.alignedAction || []}
+              />
             </div>
             {/* ✅ MOBILE STEPPERS */}
             {session?.user.userType === "COACH" && (

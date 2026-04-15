@@ -17,6 +17,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/utils";
 import { useRouter } from "next/navigation";
+import { Input } from "../ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+type AlignedAction = {
+  id: string;
+  completed: boolean;
+  selectedTask: string;
+  tasks: string[];
+  timeFrom: string;
+  timeTo: string;
+};
 
 type CardItem = {
   title: string;
@@ -103,15 +115,95 @@ const cards: CardItem[] = [
   },
 ];
 
-export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
+export default function DashboardCards({
+  jpBalance,
+  alignedAction,
+}: {
+  jpBalance: string;
+  alignedAction: AlignedAction[];
+}) {
   const router = useRouter();
 
+  const queryClient = useQueryClient();
+
+  const completeActionMutation = useMutation({
+    mutationFn: async (actionId: string) => {
+      const res = await fetch("/api/user/aligned-actions/reminders", {
+        method: "POST",
+        body: JSON.stringify({ actionId, completed: true }),
+      });
+
+      if (!res.ok) throw new Error("Failed to complete action");
+    },
+    onSuccess: (_, actionId) => {
+      queryClient.setQueryData(
+        ["dashboard-content"], // ✅ match your query key
+        (old: any) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            alignedAction: old.alignedAction.map((a: any) =>
+              a.id === actionId ? { ...a, completed: true } : a,
+            ),
+          };
+        },
+      );
+      toast.success("Task completed 🎉");
+    },
+  });
+  const todayAction = alignedAction?.[0];
+  const hasTodayFocus = !!todayAction;
+
+  const task =
+    todayAction?.tasks?.find((t: string) => t === todayAction?.selectedTask) ||
+    todayAction?.selectedTask;
+
+  const formatTime = (date: string) =>
+    new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false, // ✅ 24-hour format
+    });
+
+  const time =
+    todayAction?.timeFrom && todayAction?.timeTo
+      ? `${formatTime(todayAction.timeFrom)} - ${formatTime(
+          todayAction.timeTo,
+        )}`
+      : "";
+
+  const isCompleted = todayAction?.completed;
+  const dynamicCards: CardItem[] = [
+    {
+      title: hasTodayFocus ? "Your Today’s Focus" : "Set Today’s Focus",
+      description: hasTodayFocus
+        ? `${task} • ${time}`
+        : "Define your top priorities and stay focused throughout the day",
+
+      icon: TrendingUp,
+
+      bg: hasTodayFocus
+        ? "bg-emerald-200 group-hover:bg-emerald-700"
+        : "bg-emerald-100 group-hover:bg-emerald-600",
+
+      text: "text-emerald-600 group-hover:text-white",
+
+      path: "/dashboard/aligned-actions",
+    },
+
+    //  cards same
+    ...cards.slice(1),
+  ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {cards.map((card, index) => (
+      {dynamicCards.map((card, index) => (
         <Card
           key={index}
-          onClick={() => card.path && router.push(card.path)}
+          onClick={() => {
+            if (index === 0) return; // ❌ disable click for Today’s Focus
+            if (card.path) router.push(card.path);
+          }}
           className={cn(
             "group relative cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border",
             card.highlight
@@ -144,7 +236,12 @@ export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
 
             {/* Title */}
             <div className="flex items-center justify-between mb-1">
-              <h3 className={cn("text-md sm:text-lg font-semibold", card.highlight && "")}>
+              <h3
+                className={cn(
+                  "text-md sm:text-lg font-semibold",
+                  card.highlight && "",
+                )}
+              >
                 {card.title}
               </h3>
 
@@ -156,10 +253,30 @@ export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
             </div>
 
             {/* Description */}
-            {card.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {card.description}
-              </p>
+            {index === 0 && hasTodayFocus ? (
+              <div className="flex items-center gap-2 text-sm mt-1">
+                <Input
+                  type="checkbox"
+                  checked={isCompleted}
+                  disabled={isCompleted || completeActionMutation.isPending}
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent card click
+                    if (!isCompleted && todayAction?.id) {
+                      completeActionMutation.mutate(todayAction.id);
+                    }
+                  }}
+                  className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                />
+                <p className="text-muted-foreground">
+                  {task} • {time}
+                </p>
+              </div>
+            ) : (
+              card.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {card.description}
+                </p>
+              )
             )}
 
             {/* Growth Store Special */}
@@ -172,7 +289,8 @@ export default function DashboardCards({ jpBalance }: { jpBalance: string }) {
                   }}
                   className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
                 >
-                  Redeem Your {jpBalance} GP Now <ArrowRight className="w-4 h-4" />
+                  Redeem Your {jpBalance} GP Now{" "}
+                  <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
             )}
