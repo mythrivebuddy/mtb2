@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "../ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import axios from "axios";
 
 type AlignedAction = {
   id: string;
@@ -40,6 +41,33 @@ type CardItem = {
   badge?: string;
   action?: boolean;
   path?: string;
+};
+
+type DailyBloom = {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+};
+type OnePercentProgressVault = {
+  id: string;
+  content: string;
+};
+type MiracleLog = {
+  id: string;
+  content: string;
+};
+type Challenge = {
+  challenge: {
+    id: string;
+    title: string;
+  };
+};
+type MMPProgram = {
+  program: {
+    id: string;
+    name: string;
+    slug: string;
+  };
 };
 
 const cards: CardItem[] = [
@@ -118,9 +146,19 @@ const cards: CardItem[] = [
 export default function DashboardCards({
   jpBalance,
   alignedAction,
+  dailyBlooms,
+  onePercentProgressVault,
+  miracleLogs,
+  challenges,
+  mmpPrograms,
 }: {
   jpBalance: string;
   alignedAction: AlignedAction[];
+  dailyBlooms: DailyBloom[];
+  onePercentProgressVault: OnePercentProgressVault[];
+  miracleLogs: MiracleLog[];
+  challenges: Challenge[];
+  mmpPrograms: MMPProgram[];
 }) {
   const router = useRouter();
 
@@ -152,12 +190,49 @@ export default function DashboardCards({
       toast.success("Task completed 🎉");
     },
   });
+
+  const updateBloomMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return axios.put(`/api/user/daily-bloom/${id}`, {
+        isCompleted: true,
+      });
+    },
+
+    onSuccess: (_, id) => {
+      // ✅ update dashboard-content cache
+      queryClient.setQueryData(["dashboard-content"], (old: any) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          dailyBlooms: old.dailyBlooms.map((b: any) =>
+            b.id === id ? { ...b, isCompleted: true } : b,
+          ),
+        };
+      });
+
+      toast.success("Bloom completed ✅");
+    },
+  });
+
   const todayAction = alignedAction?.[0];
   const hasTodayFocus = !!todayAction;
-
+  // aligned action tasks
   const task =
     todayAction?.tasks?.find((t: string) => t === todayAction?.selectedTask) ||
     todayAction?.selectedTask;
+  // bloooms
+  const blooms = dailyBlooms?.slice(0, 3);
+  // onePercentProgressVault
+  const progressItems = onePercentProgressVault?.slice(0, 3);
+
+  // miracle logs
+  const miracleItems = miracleLogs?.slice(0, 3); // keep short like progress
+  // challenges
+  const challengeItems = challenges?.slice(0, 3);
+
+  // mmp
+  const mmpItems = mmpPrograms?.slice(0, 3);
 
   const formatTime = (date: string) =>
     new Date(date).toLocaleTimeString([], {
@@ -260,7 +335,7 @@ export default function DashboardCards({
                   checked={isCompleted}
                   disabled={isCompleted || completeActionMutation.isPending}
                   onClick={(e) => {
-                    e.stopPropagation(); // prevent card click
+                    e.stopPropagation();
                     if (!isCompleted && todayAction?.id) {
                       completeActionMutation.mutate(todayAction.id);
                     }
@@ -270,6 +345,122 @@ export default function DashboardCards({
                 <p className="text-muted-foreground">
                   {task} • {time}
                 </p>
+              </div>
+            ) : index === 1 && blooms.length > 0 ? (
+              // ✅ DAILY BLOOMS
+              <div className="flex flex-col gap-2 mt-1">
+                {blooms.map((bloom) => (
+                  <div
+                    key={bloom.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={bloom.isCompleted}
+                      disabled={
+                        bloom.isCompleted || updateBloomMutation.isPending
+                      }
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        if (!bloom.isCompleted) {
+                          updateBloomMutation.mutate(bloom.id);
+                        }
+                      }}
+                      className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                    />
+                    <p className="text-muted-foreground line-clamp-1">
+                      {bloom.title}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : index === 3 && progressItems?.length > 0 ? (
+              // ✅ 1% PROGRESS VAULT
+              <div className="flex flex-col gap-2 mt-1">
+                {progressItems.map((item) => (
+                  <p
+                    key={item.id}
+                    className="text-sm text-muted-foreground line-clamp-1"
+                  >
+                    {item.content}
+                  </p>
+                ))}
+
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/dashboard/progress-vault");
+                  }}
+                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
+                >
+                  Log Progress
+                </Button>
+              </div>
+            ) : index === 4 && miracleItems?.length > 0 ? (
+              // ✅ MIRACLE LOGS
+              <div className="flex flex-col gap-2 mt-1">
+                {miracleItems.map((item) => (
+                  <p
+                    key={item.id}
+                    className="text-sm text-muted-foreground line-clamp-1"
+                  >
+                    ✨ {item.content}
+                  </p>
+                ))}
+
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/dashboard/miracle-log");
+                  }}
+                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
+                >
+                  Log Miracle
+                </Button>
+              </div>
+            ) : index === 5 && challengeItems?.length > 0 ? (
+              // ✅ CHALLENGES
+              <div className="flex flex-col gap-2 mt-1">
+                {challengeItems.map((item) => (
+                  <p
+                    key={item.challenge.id}
+                    className="text-sm text-muted-foreground line-clamp-1"
+                  >
+                    🔥 {item.challenge.title}
+                  </p>
+                ))}
+
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/dashboard/challenge?tab=join");
+                  }}
+                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
+                >
+                  Join Challenges
+                </Button>
+              </div>
+            ) : index === 6 && mmpItems?.length > 0 ? (
+              // ✅ MMP PROGRAMS
+              <div className="flex flex-col gap-2 mt-1">
+                {mmpItems.map((item) => (
+                  <p
+                    key={item.program.id}
+                    className="text-sm text-muted-foreground line-clamp-1"
+                  >
+                    🎓 {item.program.name}
+                  </p>
+                ))}
+
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push("/dashboard/mini-mastery-programs");
+                  }}
+                  className="mt-2 w-full text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-full px-3 py-1"
+                >
+                  Join MMP
+                </Button>
               </div>
             ) : (
               card.description && (

@@ -143,12 +143,10 @@ export async function POST(request: Request) {
   challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
 
 const creator =
-  isPaid
-    ? await prisma.user.findUnique({
+ await prisma.user.findUnique({
         where: { id: challengeToJoin.creatorId },
         include: { plan: true },
       })
-    : null;
 
     if (challengeToJoin.cost > 0 && !creator) {
       return NextResponse.json(

@@ -123,6 +123,13 @@ export default function DashboardPage() {
               <DashboardCards
                 jpBalance={userData.jpBalance}
                 alignedAction={dashboardContent?.alignedAction || []}
+                dailyBlooms={dashboardContent?.dailyBlooms || []}
+                onePercentProgressVault={
+                  dashboardContent?.onePercentProgressVault || []
+                }
+                miracleLogs={dashboardContent?.miracleLogs || []}
+                challenges={dashboardContent?.challenges || []}
+                mmpPrograms={dashboardContent?.mmpPrograms || []}
               />
             </div>
             {/* ✅ MOBILE STEPPERS */}

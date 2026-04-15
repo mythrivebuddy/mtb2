@@ -2,6 +2,7 @@
 import { checkRole } from "@/lib/utils/auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export const GET = async (req: Request) => {
   try {
@@ -58,8 +59,101 @@ export const GET = async (req: Request) => {
       },
     });
 
+    const dailyBlooms = await prisma.todo.findMany({
+      where: {
+        userId: session.user.id,
+        createdAt: {
+          gte: start ? new Date(start) : undefined,
+          lte: end ? new Date(end) : undefined,
+        },
+      },
+    });
+
+    const onePercentProgressVault = await prisma.progressVault.findMany({
+      where: {
+        userId: session.user.id,
+        createdAt: {
+          gte: start ? new Date(start) : undefined,
+          lte: end ? new Date(end) : undefined,
+        },
+      },
+    });
+    const miracleLogs = await prisma.miracleLog.findMany({
+      where: {
+        userId: session.user.id,
+        createdAt: {
+          gte: start ? new Date(start) : undefined,
+          lte: end ? new Date(end) : undefined,
+        },
+      },
+    });
+
+    const challenges = await prisma.challengeEnrollment.findMany({
+      where: {
+        userId: session.user.id,
+        challenge: {
+          status: "ACTIVE",
+          startDate: { lte: new Date() },
+          endDate: { gte: new Date() },
+          joinMode: "MANUAL",
+        },
+      },
+      orderBy: [
+        {
+          challenge: {
+            challengeJoiningType: "desc", // ✅ PAID first
+          },
+        },
+        {
+          joinedAt: "desc",
+        },
+      ],
+      take: 3, // ✅ only 3
+      select: {
+        challenge: {
+          select: {
+            id: true,
+            title: true,
+            challengeJoiningType: true,
+          },
+        },
+      },
+    });
+    const mmpPrograms = await prisma.userProgramState.findMany({
+      where: {
+        userId: session.user.id,
+        program: {
+          status: "PUBLISHED",
+          isActive: true,
+          modules: { not: Prisma.JsonNull }, // ✅ only MMP
+          slug: { not: "2026-complete-makeover" }, // ❌ exclude
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 3, // optional (like challenges)
+      select: {
+        program: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
     return NextResponse.json(
-      { userMakeoverCommitment, alignedAction },
+      {
+        userMakeoverCommitment,
+        alignedAction,
+        dailyBlooms,
+        onePercentProgressVault,
+        miracleLogs,
+        challenges,
+        mmpPrograms
+      },
       { status: 200 },
     );
   } catch (error) {
