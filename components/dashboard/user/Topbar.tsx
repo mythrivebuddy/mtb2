@@ -50,7 +50,7 @@ export const fetchUsers = async (searchTerm: string): Promise<SearchUser[]> => {
 // The main TopBar component
 export default function TopBar({ user, toggleSidebar }: TopBarProps) {
   const pathname = usePathname();
-  const [searchTerm, setSearchTerm] = useState("");
+  
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
     user?.image || null,
@@ -75,12 +75,6 @@ export default function TopBar({ user, toggleSidebar }: TopBarProps) {
     };
   }, []);
 
-  // React Query hook for user search
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["users", searchTerm],
-    queryFn: () => fetchUsers(searchTerm),
-    enabled: searchTerm.length > 0, // Only fetch when there's a search term
-  });
 
   // React Query hook for Magic Box status
   const { data: hasUnopenedBox } = useQuery({

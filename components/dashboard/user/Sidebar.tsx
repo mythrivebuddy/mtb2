@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   User,
@@ -25,7 +25,6 @@ import {
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
 import { useQuery } from "@tanstack/react-query";
-import { fetchUsers } from "./Topbar";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 
