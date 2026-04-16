@@ -22,20 +22,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import Link from "next/link";
-
-type DashboardContent = {
-  alignedAction: AlignedAction[];
-  dailyBlooms: DailyBloom[];
-};
-
-type AlignedAction = {
-  id: string;
-  completed: boolean;
-  selectedTask: string;
-  tasks: string[];
-  timeFrom: string;
-  timeTo: string;
-};
+import {
+  DashboardContent,
+} from "@/types/client/dashboard";
 
 type CardItem = {
   title: string;
@@ -48,33 +37,10 @@ type CardItem = {
   action?: boolean;
   path?: string;
 };
+type Props = {
+  jpBalance: string;
+} & DashboardContent;
 
-type DailyBloom = {
-  id: string;
-  title: string;
-  isCompleted: boolean;
-};
-type OnePercentProgressVault = {
-  id: string;
-  content: string;
-};
-type MiracleLog = {
-  id: string;
-  content: string;
-};
-type Challenge = {
-  challenge: {
-    id: string;
-    title: string;
-  };
-};
-type MMPProgram = {
-  program: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-};
 
 const cards: CardItem[] = [
   {
@@ -157,15 +123,7 @@ export default function DashboardCards({
   miracleLogs,
   challenges,
   mmpPrograms,
-}: {
-  jpBalance: string;
-  alignedAction: AlignedAction[];
-  dailyBlooms: DailyBloom[];
-  onePercentProgressVault: OnePercentProgressVault[];
-  miracleLogs: MiracleLog[];
-  challenges: Challenge[];
-  mmpPrograms: MMPProgram[];
-}) {
+}:Props) {
   const router = useRouter();
 
   const queryClient = useQueryClient();

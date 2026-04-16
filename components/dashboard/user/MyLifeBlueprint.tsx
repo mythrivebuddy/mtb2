@@ -4,18 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { AREA_ICON_MAP } from "@/lib/utils/makeover-program/makeover-icons";
+import { Commitment } from "@/types/client/dashboard";
 import { useRouter } from "next/navigation";
-
-type Commitment = {
-  id: string;
-  goalText: string | null;
-  identityText: string | null;
-  visionStatement: string | null;
-  area?: {
-    id: number;
-    name: string;
-  };
-};
 
 const areaColorMap: Record<number, string> = {
   1: "text-red-500",
