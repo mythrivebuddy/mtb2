@@ -21,6 +21,7 @@ import { Input } from "../ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
+import Link from "next/link";
 
 type DashboardContent = {
   alignedAction: AlignedAction[];
@@ -421,24 +422,32 @@ export default function DashboardCards({
                   // ✅ CHALLENGES
                   <div className="flex flex-col gap-2 mt-1">
                     {challengeItems.map((item) => (
-                      <p
+                      <Link
+                        href={`/dashboard/challenge/my-challenges/${item?.challenge?.id}?from=dashboard`}
                         key={item.challenge.id}
                         className="text-sm text-muted-foreground line-clamp-1"
                       >
-                        🔥 {item.challenge.title}
-                      </p>
+                        🔥{" "}
+                        <span className="hover:text-blue-600 hover:underline">
+                          {item.challenge.title}
+                        </span>
+                      </Link>
                     ))}
                   </div>
                 ) : index === 6 && mmpItems?.length > 0 ? (
                   // ✅ MMP PROGRAMS
                   <div className="flex flex-col gap-2 mt-1">
                     {mmpItems.map((item) => (
-                      <p
+                      <Link
+                        href={`/dashboard/mini-mastery-programs/program/${item?.program?.id}?from=dashboard`}
                         key={item.program.id}
-                        className="text-sm text-muted-foreground line-clamp-1"
+                        className="text-sm text-muted-foreground line-clamp-1 "
                       >
-                        🎓 {item.program.name}
-                      </p>
+                        🎓{" "}
+                        <span className="hover:text-blue-600 hover:underline">
+                          {item.program.name}
+                        </span>
+                      </Link>
                     ))}
                   </div>
                 ) : (

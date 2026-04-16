@@ -118,20 +118,36 @@ interface Props {
   onDeleteBloomFromEvent: (bloomId: string) => void;
 }
 
-// ---------------- Helpers ----------------
+// ---------------- Helpers ----------------  
+const parseLocal = (dateTime: string) => {
+  const [date, time] = dateTime.split("T");
+  const [y, m, d] = date.split("-").map(Number);
+  const [h, min] = (time || "00:00").split(":").map(Number);
 
+  return new Date(y, m - 1, d, h, min);
+};
 // ---------------- Validation ----------------
 const validateDateTime = (
   start: string,
   end?: string,
+  allDay?: boolean // ✅ add this
 ): { valid: boolean; message: string | null } => {
   if (!start) return { valid: true, message: null };
 
-  const now = new Date();
-  const startDate = new Date(start);
-  const endDate = end ? new Date(end) : null;
+  // ✅ FIX: skip time validation for all-day
+  if (allDay) {
+    return { valid: true, message: null };
+  }
 
-  const todayStr = now.toISOString().slice(0, 10);
+  const now = new Date();
+
+  const todayStr = `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const startDate = parseLocal(start);
+  const endDate = end ? parseLocal(end) : null;
+
   const startDateStr = start.slice(0, 10);
 
   if (startDateStr < todayStr) {
@@ -139,15 +155,18 @@ const validateDateTime = (
   }
 
   const isSameDay = startDateStr === todayStr;
-
+  console.log({
+    isSameDay,
+    startDate,
+    now
+  });
+  
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
   }
 
-  if (endDate) {
-    if (endDate <= startDate) {
-      return { valid: false, message: "End must be after start" };
-    }
+  if (endDate && endDate <= startDate) {
+    return { valid: false, message: "End must be after start" };
   }
 
   return { valid: true, message: null };
@@ -243,9 +262,9 @@ const EventForm = ({
   };
 
   const timeOptions = generateTimeOptions();
-  const timePart = currentEvent.start?.includes("T")
+const timePart = currentEvent.start?.includes("T")
     ? currentEvent.start.split("T")[1]?.slice(0, 5)
-    : getNearestHourLocal().split("T")[1]?.slice(0, 5);
+    : currentEvent.extendedProps?.lastTime?.slice(0, 5) || getNearestHourLocal().split("T")[1]?.slice(0, 5);
 
   const endTimePart = currentEvent.end?.includes("T")
     ? currentEvent.end.split("T")[1]?.slice(0, 5)
@@ -314,7 +333,7 @@ const EventForm = ({
                 end: newEnd,
               });
 
-              const result = validateDateTime(newStart, newEnd);
+              const result = validateDateTime(newStart, newEnd,currentEvent.allDay);
               setTimeError(result.message);
             }}
             disabled={(mode === "view" && !isEditing) || isSubmitting}
@@ -335,7 +354,7 @@ const EventForm = ({
                 start: newStart,
                 end: newEnd,
               });
-              const result = validateDateTime(newStart, newEnd);
+              const result = validateDateTime(newStart, newEnd,currentEvent.allDay);
               setTimeError(result.message);
             }}
           >
@@ -421,26 +440,29 @@ const EventForm = ({
             const isAllDay = val as boolean;
             let newStart = currentEvent.start;
             let newEnd: string | undefined = currentEvent.end;
+            let newExtendedProps = { ...currentEvent.extendedProps };
+
             if (isAllDay) {
-              // store time before stripping
+              // Capture time NOW into a local variable before stripping
               const existingTime = currentEvent.start.includes("T")
                 ? currentEvent.start.split("T")[1]
                 : "09:00";
 
-              newStart = currentEvent.start.slice(0, 10);
+               newStart = currentEvent.start;
               newEnd = undefined;
-
-              // 🔑 store last time in extendedProps (temporary memory)
-              setCurrentEvent({
-                ...currentEvent,
-                extendedProps: {
-                  ...currentEvent.extendedProps,
-                  lastTime: existingTime,
-                },
-              });
+              newExtendedProps = {
+                ...newExtendedProps,
+                lastTime: existingTime,
+              };
             } else {
-              // 🔑 restore previous time instead of defaulting to 09:00
+              // 👇 FIX: Check if a time was already selected in the dropdown first
+              const currentTimeInStart = currentEvent.start.includes("T")
+                ? currentEvent.start.split("T")[1]
+                : null;
+
+              // Use the currently selected time, or fall back to lastTime / nearest hour
               const restoredTime =
+                currentTimeInStart ||
                 currentEvent.extendedProps?.lastTime ||
                 getNearestHourLocal().split("T")[1];
 
@@ -450,11 +472,14 @@ const EventForm = ({
                 newEnd = addOneHour(newStart);
               }
             }
+
+            // Single setCurrentEvent call with everything updated together
             setCurrentEvent({
               ...currentEvent,
               start: newStart,
               end: newEnd,
               allDay: isAllDay,
+              extendedProps: newExtendedProps,
             });
           }}
           disabled={(mode === "view" && !isEditing) || isSubmitting}
@@ -677,10 +702,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const handleDateClick = useCallback((info: DateClickArg) => {
     let start: string;
 
-    if (info.allDay) {
-      // 👇 FIX: force local date without timezone shift
-      start = info.dateStr; // "2026-04-10"
-    } else {
+   if (info.allDay) {
+  const time =
+    currentEvent?.extendedProps?.lastTime ||
+    getNearestHourLocal().split("T")[1];
+
+  start = `${info.dateStr}T${time}`; // ✅ attach time
+}else {
       start = getNearestHourLocal();
     }
     const isAllDay = info.allDay;
@@ -811,16 +839,16 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
-    const result = validateDateTime(currentEvent.start, currentEvent.end);
+    const result = validateDateTime(currentEvent.start, currentEvent.end,  currentEvent.allDay);
 
     if (!result.valid) {
       toast.error(result.message);
       return;
     }
     setIsSubmitting(true);
-    
 
     if (currentEvent.extendedProps?.isBloom) {
+      const isAllDay = currentEvent.allDay;
       // --- FIX START ---
       // Optimistically update the local events state to immediately reflect UI changes.
       setEvents((prevEvents) =>
@@ -841,9 +869,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
           startTime: currentEvent.start
             ? new Date(currentEvent.start).toISOString().slice(11, 16)
             : "",
-          endTime: currentEvent.end
-            ? new Date(currentEvent.end).toISOString().slice(11, 16)
-            : undefined,
+          endTime: isAllDay
+      ? undefined
+      : currentEvent.end
+      ? new Date(currentEvent.end).toISOString().slice(11, 16)
+      : undefined,
         },
       });
 

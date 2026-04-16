@@ -5,10 +5,24 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  PlayCircle, CheckCircle2, Lock, Clock, ChevronRight,
-  Lightbulb, ArrowLeft, MoreVertical, BookOpen,
-  Loader2, AlertCircle, AlignLeft, Star,
-  Download, Award, PartyPopper, X, Trophy,
+  PlayCircle,
+  CheckCircle2,
+  Lock,
+  Clock,
+  ChevronRight,
+  Lightbulb,
+  ArrowLeft,
+  MoreVertical,
+  BookOpen,
+  Loader2,
+  AlertCircle,
+  AlignLeft,
+  Star,
+  Download,
+  Award,
+  PartyPopper,
+  X,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -103,12 +117,12 @@ function getDayStatus(
       enrollDate.getUTCFullYear(),
       enrollDate.getUTCMonth(),
       enrollDate.getUTCDate() + (dayNumber - 1),
-    )
+    ),
   );
 
   const now = new Date();
   const todayUTC = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
 
   if (todayUTC < unlockDate) return "locked";
@@ -119,8 +133,14 @@ function getDayStatus(
 // ─── Confetti ─────────────────────────────────────────────────────────────────
 
 const CONFETTI_COLORS = [
-  "#3B82F6", "#8B5CF6", "#EC4899", "#F59E0B",
-  "#10B981", "#EF4444", "#06B6D4", "#F97316",
+  "#3B82F6",
+  "#8B5CF6",
+  "#EC4899",
+  "#F59E0B",
+  "#10B981",
+  "#EF4444",
+  "#06B6D4",
+  "#F97316",
 ];
 
 interface ConfettiPiece {
@@ -142,11 +162,14 @@ function Confetti({ active }: { active: boolean }) {
     const newPieces: ConfettiPiece[] = Array.from({ length: 80 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
-      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      color:
+        CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
       size: Math.random() * 10 + 6,
       delay: Math.random() * 1.2,
       duration: Math.random() * 2 + 2.5,
-      shape: (["rect", "circle", "star"] as const)[Math.floor(Math.random() * 3)],
+      shape: (["rect", "circle", "star"] as const)[
+        Math.floor(Math.random() * 3)
+      ],
       rotation: Math.random() * 360,
     }));
     setPieces(newPieces);
@@ -185,7 +208,8 @@ function Confetti({ active }: { active: boolean }) {
                 width: p.size,
                 height: p.size,
                 backgroundColor: p.color,
-                clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
+                clipPath:
+                  "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)",
                 transform: `rotate(${p.rotation}deg)`,
               }}
             />
@@ -231,14 +255,18 @@ function PlayerSkeleton() {
           </div>
           <div className="bg-white rounded-[32px] p-8 space-y-4">
             <div className="h-6 w-48 bg-slate-100 rounded" />
-            {[1, 2, 3].map((i) => <div key={i} className="h-4 w-full bg-slate-100 rounded" />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-4 w-full bg-slate-100 rounded" />
+            ))}
             <div className="h-14 w-full bg-slate-100 rounded-2xl" />
           </div>
         </div>
         <div className="w-full lg:w-80 space-y-6">
           <div className="bg-white rounded-[32px] p-6 h-32" />
           <div className="space-y-2">
-            {[1, 2, 3, 4].map((i) => <div key={i} className="h-14 bg-white rounded-2xl" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-14 bg-white rounded-2xl" />
+            ))}
           </div>
         </div>
       </div>
@@ -281,14 +309,17 @@ function CourseCompletedModal({
             <p className="text-blue-200 text-xs font-black uppercase tracking-widest">
               🎉 Course Complete!
             </p>
-            <h2 className="text-2xl font-black mt-1 leading-tight">{programName}</h2>
+            <h2 className="text-2xl font-black mt-1 leading-tight">
+              {programName}
+            </h2>
           </div>
         </div>
 
         <div className="p-8 space-y-6">
           <div className="text-center space-y-2">
             <p className="text-slate-600 font-medium text-sm leading-relaxed">
-              You have successfully completed all modules. Your certificate is ready to download.
+              You have successfully completed all modules. Your certificate is
+              ready to download.
             </p>
           </div>
 
@@ -297,8 +328,12 @@ function CourseCompletedModal({
               <Award size={24} className="text-white" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Certificate of Completion</p>
-              <p className="text-sm font-black text-slate-800 truncate">{certTitle}</p>
+              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                Certificate of Completion
+              </p>
+              <p className="text-sm font-black text-slate-800 truncate">
+                {certTitle}
+              </p>
             </div>
           </div>
 
@@ -308,10 +343,15 @@ function CourseCompletedModal({
               disabled={isDownloading}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-blue-100 active:scale-95"
             >
-              {isDownloading
-                ? <><Loader2 size={18} className="animate-spin" /> Preparing…</>
-                : <><Download size={18} /> Download Certificate</>
-              }
+              {isDownloading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" /> Preparing…
+                </>
+              ) : (
+                <>
+                  <Download size={18} /> Download Certificate
+                </>
+              )}
             </button>
             <button
               onClick={onClose}
@@ -340,7 +380,6 @@ function CourseFinishedCelebrationModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-sm overflow-hidden relative text-center">
-
         {/* Close */}
         <button
           onClick={onClose}
@@ -351,8 +390,13 @@ function CourseFinishedCelebrationModal({
 
         {/* Top gradient burst */}
         <div className="bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-500 pt-10 pb-8 px-8 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-20"
-            style={{ backgroundImage: "radial-gradient(circle at 30% 50%, white 1px, transparent 1px), radial-gradient(circle at 70% 20%, white 1px, transparent 1px)", backgroundSize: "30px 30px" }}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 30% 50%, white 1px, transparent 1px), radial-gradient(circle at 70% 20%, white 1px, transparent 1px)",
+              backgroundSize: "30px 30px",
+            }}
           />
           {/* Trophy icon with glow */}
           <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
@@ -371,11 +415,13 @@ function CourseFinishedCelebrationModal({
 
         {/* Body */}
         <div className="px-8 py-7 space-y-5">
-
           <div className="space-y-1">
-            <p className="text-slate-800 font-black text-base leading-snug">{programName}</p>
+            <p className="text-slate-800 font-black text-base leading-snug">
+              {programName}
+            </p>
             <p className="text-slate-500 text-sm font-medium">
-              You completed all {totalDays} days. That&apos;s incredible dedication! 🔥
+              You completed all {totalDays} days. That&apos;s incredible
+              dedication! 🔥
             </p>
           </div>
 
@@ -383,15 +429,21 @@ function CourseFinishedCelebrationModal({
           <div className="flex gap-3">
             <div className="flex-1 bg-green-50 border border-green-100 rounded-2xl py-3 px-2 text-center">
               <p className="text-2xl font-black text-green-600">{totalDays}</p>
-              <p className="text-[10px] font-bold text-green-500 uppercase tracking-wide">Days Done</p>
+              <p className="text-[10px] font-bold text-green-500 uppercase tracking-wide">
+                Days Done
+              </p>
             </div>
             <div className="flex-1 bg-blue-50 border border-blue-100 rounded-2xl py-3 px-2 text-center">
               <p className="text-2xl font-black text-blue-600">100%</p>
-              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide">Complete</p>
+              <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wide">
+                Complete
+              </p>
             </div>
             <div className="flex-1 bg-amber-50 border border-amber-100 rounded-2xl py-3 px-2 text-center">
               <p className="text-2xl font-black text-amber-500">🏆</p>
-              <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide">Champion</p>
+              <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wide">
+                Champion
+              </p>
             </div>
           </div>
 
@@ -429,11 +481,14 @@ function CertificateDownloadedModal({
         </button>
 
         <div className="p-8 text-center space-y-5">
-          <div className={`w-20 h-20 ${isError ? "bg-red-100" : "bg-green-100"} rounded-full flex items-center justify-center mx-auto`}>
-            {isError
-              ? <AlertCircle size={40} className="text-red-500" />
-              : <CheckCircle2 size={40} className="text-green-500" />
-            }
+          <div
+            className={`w-20 h-20 ${isError ? "bg-red-100" : "bg-green-100"} rounded-full flex items-center justify-center mx-auto`}
+          >
+            {isError ? (
+              <AlertCircle size={40} className="text-red-500" />
+            ) : (
+              <CheckCircle2 size={40} className="text-green-500" />
+            )}
           </div>
 
           <div className="space-y-1">
@@ -443,15 +498,18 @@ function CertificateDownloadedModal({
             <p className="text-sm text-slate-500 font-medium">
               {isError
                 ? "Something went wrong while downloading your certificate. Please try again."
-                : "Your certificate has been saved to your device."
-              }
+                : "Your certificate has been saved to your device."}
             </p>
           </div>
 
           {!isError && (
             <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Certificate</p>
-              <p className="text-sm font-black text-slate-700 mt-0.5">{certTitle}</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Certificate
+              </p>
+              <p className="text-sm font-black text-slate-700 mt-0.5">
+                {certTitle}
+              </p>
             </div>
           )}
 
@@ -487,10 +545,13 @@ function CertificateCard({
   const unlocked = progressPct >= threshold;
 
   return (
-    <div className={`rounded-[32px] p-6 border space-y-4 relative overflow-hidden transition-all ${unlocked
-      ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg shadow-amber-50"
-      : "bg-white border-slate-100"
-      }`}>
+    <div
+      className={`rounded-[32px] p-6 border space-y-4 relative overflow-hidden transition-all ${
+        unlocked
+          ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg shadow-amber-50"
+          : "bg-white border-slate-100"
+      }`}
+    >
       {unlocked && (
         <>
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-amber-200/30 rounded-full blur-2xl pointer-events-none" />
@@ -498,13 +559,24 @@ function CertificateCard({
         </>
       )}
       <div className="relative flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${unlocked ? "bg-amber-400 shadow-md shadow-amber-100" : "bg-slate-100"
-          }`}>
-          <Award size={20} className={unlocked ? "text-white" : "text-slate-300"} />
+        <div
+          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            unlocked
+              ? "bg-amber-400 shadow-md shadow-amber-100"
+              : "bg-slate-100"
+          }`}
+        >
+          <Award
+            size={20}
+            className={unlocked ? "text-white" : "text-slate-300"}
+          />
         </div>
         <div>
-          <p className={`text-[10px] font-black uppercase tracking-widest ${unlocked ? "text-amber-600" : "text-slate-400"
-            }`}>
+          <p
+            className={`text-[10px] font-black uppercase tracking-widest ${
+              unlocked ? "text-amber-600" : "text-slate-400"
+            }`}
+          >
             {unlocked ? "🎓 Certificate Unlocked" : "Certificate"}
           </p>
           <p className="text-sm font-black text-slate-800 leading-tight truncate max-w-[160px]">
@@ -524,7 +596,11 @@ function CertificateCard({
               disabled={isDownloading}
               className="w-full bg-amber-400 hover:bg-amber-500 disabled:opacity-60 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs transition-all active:scale-95"
             >
-              {isDownloading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+              {isDownloading ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Download size={13} />
+              )}
               Download Again
             </button>
           </div>
@@ -534,22 +610,31 @@ function CertificateCard({
             disabled={isDownloading}
             className="relative w-full bg-amber-400 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black py-3 rounded-xl flex items-center justify-center gap-2 text-sm transition-all active:scale-95 shadow-md shadow-amber-100"
           >
-            {isDownloading
-              ? <><Loader2 size={15} className="animate-spin" /> Preparing…</>
-              : <><Download size={15} /> Download Certificate</>
-            }
+            {isDownloading ? (
+              <>
+                <Loader2 size={15} className="animate-spin" /> Preparing…
+              </>
+            ) : (
+              <>
+                <Download size={15} /> Download Certificate
+              </>
+            )}
           </button>
         )
       ) : (
         <div className="space-y-1.5">
           <div className="flex justify-between text-[10px] font-bold text-slate-400">
             <span>Progress needed</span>
-            <span>{progressPct}% / {threshold}%</span>
+            <span>
+              {progressPct}% / {threshold}%
+            </span>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-400 rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(100, (progressPct / threshold) * 100)}%` }}
+              style={{
+                width: `${Math.min(100, (progressPct / threshold) * 100)}%`,
+              }}
             />
           </div>
           <p className="text-[10px] text-slate-400 font-medium">
@@ -567,6 +652,8 @@ export default function ProgramPlayer() {
   const params = useParams();
   const router = useRouter();
   const qc = useQueryClient();
+  const searchParams = useSearchParams();
+  const from_where_user_came = searchParams.get("from");
   const programId = params?.id as string;
 
   const [activeDay, setActiveDay] = useState<number>(1);
@@ -589,7 +676,7 @@ export default function ProgramPlayer() {
     queryKey: ["program-player", programId],
     queryFn: async () => {
       const res = await axios.get<PlayerData>(
-        `/api/mini-mastery-programs/player/${programId}`
+        `/api/mini-mastery-programs/player/${programId}`,
       );
       return res.data;
     },
@@ -597,15 +684,13 @@ export default function ProgramPlayer() {
     staleTime: 30_000,
   });
 
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     if (searchParams.get("payment") === "success") {
       const name = data?.program?.name;
       toast.success(
         `🎉 Purchase Successful!\n\n` +
-        `${name ? `${name}\n` : ""}` +
-        `You are now enrolled.`
+          `${name ? `${name}\n` : ""}` +
+          `You are now enrolled.`,
       );
       // URL clean karo without reload
       const url = new URL(window.location.href);
@@ -661,17 +746,27 @@ export default function ProgramPlayer() {
 
   // ── Complete day mutation ──────────────────────────────────────────────────
   const completeMutation = useMutation({
-    mutationFn: (vars: { dayNumber: number; actionResponse?: string; undo?: boolean }) =>
-      axios.post(`/api/mini-mastery-programs/player/${programId}/complete`, vars),
+    mutationFn: (vars: {
+      dayNumber: number;
+      actionResponse?: string;
+      undo?: boolean;
+    }) =>
+      axios.post(
+        `/api/mini-mastery-programs/player/${programId}/complete`,
+        vars,
+      ),
     onSuccess: async (_, vars) => {
       setShowResponse(false);
       setActionResponse("");
 
       if (!vars.undo) {
-        const current = qc.getQueryData<PlayerData>(["program-player", programId]);
+        const current = qc.getQueryData<PlayerData>([
+          "program-player",
+          programId,
+        ]);
         const totalDays = current?.progress?.totalDays ?? 0;
         const completed = current?.progress?.completedCount ?? 0;
-        const isLastDay = totalDays > 0 && (completed + 1) >= totalDays;
+        const isLastDay = totalDays > 0 && completed + 1 >= totalDays;
         const notRecorded = !current?.courseCompletion?.courseCompleted;
 
         if (isLastDay && notRecorded) {
@@ -733,6 +828,16 @@ export default function ProgramPlayer() {
       setCertDownloading(false);
     }
   }
+  const handleBack = () => {
+    if (
+      typeof from_where_user_came === "string" &&
+      from_where_user_came.length > 0
+    ) {
+      router.push(`/${from_where_user_came}`);
+    } else {
+      router.push(`/dashboard/mini-mastery-programs`);
+    }
+  };
 
   // ─────────────────────────────────────────────────────────────────────────
   if (isLoading) return <PlayerSkeleton />;
@@ -743,8 +848,10 @@ export default function ProgramPlayer() {
         <div className="text-center space-y-4">
           <AlertCircle size={40} className="text-slate-300 mx-auto" />
           <p className="text-slate-500 font-bold">Unable to load program.</p>
-          <Link href="/dashboard/mini-mastery-programs"
-            className="inline-block text-blue-600 font-bold text-sm underline">
+          <Link
+            href="/dashboard/mini-mastery-programs"
+            className="inline-block text-blue-600 font-bold text-sm underline"
+          >
             Back to Programs
           </Link>
         </div>
@@ -760,12 +867,16 @@ export default function ProgramPlayer() {
 
   const currentLog = logs.find((l) => l.dayNumber === activeDay);
   const isDayComplete = currentLog?.isCompleted ?? false;
-  const dayStatus = getDayStatus(activeDay, logs, program.unlockType, enrolledAt);
+  const dayStatus = getDayStatus(
+    activeDay,
+    logs,
+    program.unlockType,
+    enrolledAt,
+  );
   const isLocked = dayStatus === "locked";
 
   return (
     <div className="min-h-screen bg-slate-50">
-
       {/* ── Confetti ── */}
       <Confetti active={confettiActive} />
 
@@ -777,7 +888,10 @@ export default function ProgramPlayer() {
           onClose={() => {
             setShowCelebrationModal(false);
             // After celebration closes — show cert download modal if not yet downloaded
-            if (!data.courseCompletion?.certificateDownloaded && !completionModalShown) {
+            if (
+              !data.courseCompletion?.certificateDownloaded &&
+              !completionModalShown
+            ) {
               setCompletionModalShown(true);
               setTimeout(() => setShowCompletionModal(true), 200);
             }
@@ -796,7 +910,10 @@ export default function ProgramPlayer() {
       {showDownloadedModal && (
         <CertificateDownloadedModal
           certTitle={program.certificateTitle}
-          onClose={() => { setShowDownloadedModal(false); setDownloadError(false); }}
+          onClose={() => {
+            setShowDownloadedModal(false);
+            setDownloadError(false);
+          }}
           isError={downloadError}
         />
       )}
@@ -804,13 +921,17 @@ export default function ProgramPlayer() {
       {/* ── Top Nav ── */}
       <nav className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between top-0 z-40">
         <div className="flex items-center gap-4">
-          <Link href="/dashboard/mini-mastery-programs">
-            <button className="p-2 hover:bg-slate-50 rounded-full transition-colors">
-              <ArrowLeft size={20} className="text-slate-600" />
-            </button>
-          </Link>
+          <button
+            onClick={handleBack}
+            className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+          >
+            <ArrowLeft size={20} className="text-slate-600" />
+          </button>
+
           <div>
-            <h2 className="font-black text-slate-900 leading-none">{program.name}</h2>
+            <h2 className="font-black text-slate-900 leading-none">
+              {program.name}
+            </h2>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">
               Day {activeDay} of {progress.totalDays}
             </p>
@@ -824,7 +945,9 @@ export default function ProgramPlayer() {
                 style={{ width: `${progress.progressPct}%` }}
               />
             </div>
-            <span className="text-[10px] font-black text-blue-600">{progress.progressPct}%</span>
+            <span className="text-[10px] font-black text-blue-600">
+              {progress.progressPct}%
+            </span>
           </div>
           <button className="p-2 hover:bg-slate-50 rounded-full">
             <MoreVertical size={20} className="text-slate-400" />
@@ -833,17 +956,17 @@ export default function ProgramPlayer() {
       </nav>
 
       <div className="max-w-7xl mx-auto p-6 lg:p-10 flex flex-col lg:flex-row gap-10">
-
         {/* ── LEFT ── */}
         <div className="flex-1 space-y-8">
-
           {isLocked ? (
             <div className="aspect-video bg-slate-100 rounded-[40px] flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-200">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
                 <Lock size={28} className="text-slate-300" />
               </div>
               <div className="text-center">
-                <p className="font-black text-slate-400 text-lg">Day {activeDay} is Locked</p>
+                <p className="font-black text-slate-400 text-lg">
+                  Day {activeDay} is Locked
+                </p>
                 <p className="text-sm text-slate-400 font-medium mt-1">
                   Day {activeDay} will unlock tomorrow.
                 </p>
@@ -877,8 +1000,12 @@ export default function ProgramPlayer() {
                         <AlignLeft size={17} className="text-white" />
                       </div>
                       <div>
-                        <span className="text-blue-400 text-[9px] font-black uppercase tracking-widest block">Text Module</span>
-                        <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">Day {activeDay}</span>
+                        <span className="text-blue-400 text-[9px] font-black uppercase tracking-widest block">
+                          Text Module
+                        </span>
+                        <span className="text-slate-400 text-[9px] font-bold uppercase tracking-wider">
+                          Day {activeDay}
+                        </span>
                       </div>
                     </div>
                     {isDayComplete && (
@@ -888,17 +1015,29 @@ export default function ProgramPlayer() {
                     )}
                   </div>
                   <div className="relative space-y-5 my-6">
-                    <h3 className="text-3xl font-black text-white leading-tight tracking-tight">{currentModule.title}</h3>
+                    <h3 className="text-3xl font-black text-white leading-tight tracking-tight">
+                      {currentModule.title}
+                    </h3>
                     <div
                       className="text-blue-100/80 text-base font-medium leading-relaxed line-clamp-5"
-                      dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+                      dangerouslySetInnerHTML={{
+                        __html: currentModule.instructions,
+                      }}
                     />
                   </div>
                   <div className="relative flex items-center justify-between">
                     <div className="flex -space-x-1.5">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className={`w-6 h-6 rounded-full border-2 border-blue-950 ${i === 0 ? "bg-blue-400" : i === 1 ? "bg-indigo-400" : "bg-slate-500"
-                          }`} />
+                        <div
+                          key={i}
+                          className={`w-6 h-6 rounded-full border-2 border-blue-950 ${
+                            i === 0
+                              ? "bg-blue-400"
+                              : i === 1
+                                ? "bg-indigo-400"
+                                : "bg-slate-500"
+                          }`}
+                        />
                       ))}
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-blue-400 uppercase tracking-widest">
@@ -915,7 +1054,9 @@ export default function ProgramPlayer() {
               {currentModule && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
-                    <div className={`w-2 h-2 rounded-full ${isDayComplete ? "bg-green-500" : "bg-blue-600 animate-pulse"}`} />
+                    <div
+                      className={`w-2 h-2 rounded-full ${isDayComplete ? "bg-green-500" : "bg-blue-600 animate-pulse"}`}
+                    />
                     {isDayComplete ? "Completed" : "Active Module"}
                   </div>
                   <h1 className="text-4xl font-black text-slate-900 tracking-tight">
@@ -923,39 +1064,54 @@ export default function ProgramPlayer() {
                   </h1>
                   <div
                     className="text-lg text-slate-500 leading-relaxed font-medium"
-                    dangerouslySetInnerHTML={{ __html: currentModule.instructions }}
+                    dangerouslySetInnerHTML={{
+                      __html: currentModule.instructions,
+                    }}
                   />
                 </div>
               )}
 
               {currentModule && (
-                <div className={`border rounded-[32px] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all ${isDayComplete ? "bg-green-50 border-green-100" : "bg-white border-blue-100"
-                  }`}>
+                <div
+                  className={`border rounded-[32px] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all ${
+                    isDayComplete
+                      ? "bg-green-50 border-green-100"
+                      : "bg-white border-blue-100"
+                  }`}
+                >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl" />
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${isDayComplete ? "bg-green-500" : "bg-blue-600"
-                      }`}>
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${
+                        isDayComplete ? "bg-green-500" : "bg-blue-600"
+                      }`}
+                    >
                       <CheckCircle2 size={20} />
                     </div>
                     <h3 className="text-xl font-black text-slate-900">
-                      {isDayComplete ? "Task Completed ✓" : "Today's Action Task"}
+                      {isDayComplete
+                        ? "Task Completed ✓"
+                        : "Today's Action Task"}
                     </h3>
                   </div>
                   <div
                     className="text-slate-600 font-medium leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: currentModule.actionTask }}
+                    dangerouslySetInnerHTML={{
+                      __html: currentModule.actionTask,
+                    }}
                   />
 
                   {!isDayComplete && (
                     <div className="space-y-2">
                       <p className="text-xs font-bold text-blue-600">
-  ✍️ Your response <span className="text-red-500">*</span>
-</p>
+                        ✍️ Your response <span className="text-red-500">*</span>
+                      </p>
                       {showResponse && (
                         <textarea
                           value={actionResponse}
                           onChange={(e) => setActionResponse(e.target.value)}
-                          rows={3} maxLength={2000}
+                          rows={3}
+                          maxLength={2000}
                           placeholder="Write your thoughts or answer here..."
                           className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 text-sm font-medium resize-none"
                         />
@@ -965,31 +1121,46 @@ export default function ProgramPlayer() {
 
                   {isDayComplete && currentLog?.actionResponse && (
                     <div className="bg-white border border-green-100 rounded-2xl p-4 space-y-1">
-                      <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">Your Response</p>
+                      <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">
+                        Your Response
+                      </p>
                       <div
                         className="text-sm text-slate-600 font-medium leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: currentLog.actionResponse || "" }}
+                        dangerouslySetInnerHTML={{
+                          __html: currentLog.actionResponse || "",
+                        }}
                       />
                     </div>
                   )}
 
                   {!isDayComplete ? (
                     <button
-  onClick={() => {
-    if (!actionResponse.trim()) {
-      toast.error("Please write your response before marking as complete.");
-      setShowResponse(true);
-      return;
-    }
-    completeMutation.mutate({ dayNumber: activeDay, actionResponse });
-  }}
-  disabled={completeMutation.isPending}
+                      onClick={() => {
+                        if (!actionResponse.trim()) {
+                          toast.error(
+                            "Please write your response before marking as complete.",
+                          );
+                          setShowResponse(true);
+                          return;
+                        }
+                        completeMutation.mutate({
+                          dayNumber: activeDay,
+                          actionResponse,
+                        });
+                      }}
+                      disabled={completeMutation.isPending}
                       className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-100 active:scale-95"
                     >
-                      {completeMutation.isPending
-                        ? <><Loader2 size={20} className="animate-spin" /> Saving…</>
-                        : <>Mark Day {activeDay} as Complete <CheckCircle2 size={20} /></>
-                      }
+                      {completeMutation.isPending ? (
+                        <>
+                          <Loader2 size={20} className="animate-spin" /> Saving…
+                        </>
+                      ) : (
+                        <>
+                          Mark Day {activeDay} as Complete{" "}
+                          <CheckCircle2 size={20} />
+                        </>
+                      )}
                     </button>
                   ) : (
                     <div className="flex gap-3">
@@ -997,7 +1168,12 @@ export default function ProgramPlayer() {
                         <CheckCircle2 size={18} /> Day {activeDay} Complete!
                       </div>
                       <button
-                        onClick={() => completeMutation.mutate({ dayNumber: activeDay, undo: true })}
+                        onClick={() =>
+                          completeMutation.mutate({
+                            dayNumber: activeDay,
+                            undo: true,
+                          })
+                        }
                         disabled={completeMutation.isPending}
                         className="px-5 text-slate-400 hover:text-red-500 font-bold text-xs border border-slate-200 rounded-2xl hover:border-red-200 transition-colors disabled:opacity-40"
                       >
@@ -1013,43 +1189,66 @@ export default function ProgramPlayer() {
 
         {/* ── RIGHT: Sidebar ── */}
         <div className="w-full lg:w-80 space-y-6">
-
           <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Program Progress</span>
-              <span className="text-sm font-black text-blue-600">{progress.progressPct}%</span>
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                Program Progress
+              </span>
+              <span className="text-sm font-black text-blue-600">
+                {progress.progressPct}%
+              </span>
             </div>
             <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-600 rounded-full transition-all duration-700"
-                style={{ width: `${progress.progressPct}%` }} />
+              <div
+                className="h-full bg-blue-600 rounded-full transition-all duration-700"
+                style={{ width: `${progress.progressPct}%` }}
+              />
             </div>
             <div className="flex justify-between mt-3">
               <p className="text-[11px] font-bold text-slate-400">
                 {progress.completedCount} of {progress.totalDays} Days
               </p>
-              <div className={`flex items-center gap-1 text-[11px] font-black uppercase italic ${progress.isFullyCompleted ? "text-green-600" : "text-blue-600"
-                }`}>
-                {progress.isFullyCompleted
-                  ? <><Trophy size={12} /> Complete!</>
-                  : <><Clock size={12} /> Active</>
-                }
+              <div
+                className={`flex items-center gap-1 text-[11px] font-black uppercase italic ${
+                  progress.isFullyCompleted ? "text-green-600" : "text-blue-600"
+                }`}
+              >
+                {progress.isFullyCompleted ? (
+                  <>
+                    <Trophy size={12} /> Complete!
+                  </>
+                ) : (
+                  <>
+                    <Clock size={12} /> Active
+                  </>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5 mt-4">
               {modules.map((_, i) => {
                 const dn = i + 1;
-                const st = getDayStatus(dn, logs, program.unlockType, enrolledAt);
+                const st = getDayStatus(
+                  dn,
+                  logs,
+                  program.unlockType,
+                  enrolledAt,
+                );
                 return (
-                  <button key={dn} onClick={() => st !== "locked" && setActiveDay(dn)}
-                    disabled={st === "locked"} title={`Day ${dn}`}
-                    className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${dn === activeDay
-                      ? "bg-blue-600 text-white scale-110 shadow-md shadow-blue-200"
-                      : st === "completed"
-                        ? "bg-green-100 text-green-600 hover:bg-green-200"
-                        : st === "locked"
-                          ? "bg-slate-100 text-slate-300 cursor-not-allowed"
-                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                      }`}>
+                  <button
+                    key={dn}
+                    onClick={() => st !== "locked" && setActiveDay(dn)}
+                    disabled={st === "locked"}
+                    title={`Day ${dn}`}
+                    className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${
+                      dn === activeDay
+                        ? "bg-blue-600 text-white scale-110 shadow-md shadow-blue-200"
+                        : st === "completed"
+                          ? "bg-green-100 text-green-600 hover:bg-green-200"
+                          : st === "locked"
+                            ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                  >
                     {dn}
                   </button>
                 );
@@ -1062,29 +1261,41 @@ export default function ProgramPlayer() {
             progressPct={progress.progressPct}
             threshold={program.completionThreshold}
             onDownload={handleDownloadCertificate}
-            alreadyDownloaded={data.courseCompletion?.certificateDownloaded ?? false}
+            alreadyDownloaded={
+              data.courseCompletion?.certificateDownloaded ?? false
+            }
             isDownloading={certDownloading}
           />
 
           <div className="space-y-4">
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Curriculum</h4>
+            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">
+              Curriculum
+            </h4>
             <div className="space-y-2">
               {modules.map((mod, i) => {
                 const dn = i + 1;
-                const status = getDayStatus(dn, logs, program.unlockType, enrolledAt);
+                const status = getDayStatus(
+                  dn,
+                  logs,
+                  program.unlockType,
+                  enrolledAt,
+                );
                 const isActive = dn === activeDay;
                 return (
-                  <button key={mod.id ?? dn}
+                  <button
+                    key={mod.id ?? dn}
                     onClick={() => status !== "locked" && setActiveDay(dn)}
                     disabled={status === "locked"}
-                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${isActive
-                      ? "bg-blue-50 border-blue-200 shadow-sm"
-                      : status === "completed"
-                        ? "bg-white border-slate-100 opacity-70 hover:opacity-100"
-                        : status === "locked"
-                          ? "bg-white border-slate-50 opacity-40 cursor-not-allowed"
-                          : "bg-white border-slate-100 hover:border-blue-100 hover:bg-blue-50/30"
-                      }`}>
+                    className={`w-full p-4 rounded-2xl flex items-center justify-between border transition-all text-left ${
+                      isActive
+                        ? "bg-blue-50 border-blue-200 shadow-sm"
+                        : status === "completed"
+                          ? "bg-white border-slate-100 opacity-70 hover:opacity-100"
+                          : status === "locked"
+                            ? "bg-white border-slate-50 opacity-40 cursor-not-allowed"
+                            : "bg-white border-slate-100 hover:border-blue-100 hover:bg-blue-50/30"
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="shrink-0">
                         {status === "completed" ? (
@@ -1100,20 +1311,37 @@ export default function ProgramPlayer() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <span className={`text-xs font-black block ${isActive ? "text-blue-900" : "text-slate-500"}`}>
+                        <span
+                          className={`text-xs font-black block ${isActive ? "text-blue-900" : "text-slate-500"}`}
+                        >
                           Day {dn}
                         </span>
-                        <span className={`text-sm font-bold truncate block ${isActive ? "text-blue-800" : "text-slate-700"}`}>
+                        <span
+                          className={`text-sm font-bold truncate block ${isActive ? "text-blue-800" : "text-slate-700"}`}
+                        >
                           {mod.title}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {mod.type === "video"
-                        ? <PlayCircle size={14} className={isActive ? "text-blue-400" : "text-slate-300"} />
-                        : <AlignLeft size={14} className={isActive ? "text-blue-400" : "text-slate-300"} />
-                      }
-                      {isActive && <ChevronRight size={15} className="text-blue-500" />}
+                      {mod.type === "video" ? (
+                        <PlayCircle
+                          size={14}
+                          className={
+                            isActive ? "text-blue-400" : "text-slate-300"
+                          }
+                        />
+                      ) : (
+                        <AlignLeft
+                          size={14}
+                          className={
+                            isActive ? "text-blue-400" : "text-slate-300"
+                          }
+                        />
+                      )}
+                      {isActive && (
+                        <ChevronRight size={15} className="text-blue-500" />
+                      )}
                     </div>
                   </button>
                 );
@@ -1127,19 +1355,22 @@ export default function ProgramPlayer() {
             </div>
             <div className="flex items-center gap-2">
               <Lightbulb size={18} className="text-blue-200" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Pro Tip</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                Pro Tip
+              </span>
             </div>
             <p className="text-sm font-medium leading-relaxed text-blue-100">
-              Completing modules consistently — even small ones — builds the habit loop that drives long-term transformation.
+              Completing modules consistently — even small ones — builds the
+              habit loop that drives long-term transformation.
             </p>
             <div className="flex items-center gap-2 pt-1">
               <Star size={12} className="text-yellow-300 fill-yellow-300" />
               <span className="text-[10px] font-bold text-blue-100">
-                {progress.completedCount} day{progress.completedCount !== 1 ? "s" : ""} completed so far
+                {progress.completedCount} day
+                {progress.completedCount !== 1 ? "s" : ""} completed so far
               </span>
             </div>
           </div>
-
         </div>
       </div>
     </div>

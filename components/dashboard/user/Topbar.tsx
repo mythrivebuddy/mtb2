@@ -2,24 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Search, Gift } from "lucide-react";
-
+import { Gift, Menu } from "lucide-react";
 import { User as UserType } from "@/types/types";
 import { SearchUser } from "@/types/client/nav";
 import { ROUTE_TITLES } from "@/lib/constants/routeTitles";
 import { cn } from "@/lib/utils/tw";
-import { formatJP } from "@/lib/utils/formatJP";
-import { getInitials } from "@/utils/getInitials";
 
 import { Badge, BadgeProps } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { NotificationIcon } from "@/components/icons/NotificationIcons";
 import MagicBoxModal from "@/components/modals/MagicBoxModal";
 import UserProfileDropdown from "./UserProfileDropDown";
+
+type TopBarProps = {
+  user?: UserType;
+  toggleSidebar: () => void;
+};
 
 // Helper component for consistent badge styling
 const TopBarBadge = ({
@@ -48,10 +48,9 @@ export const fetchUsers = async (searchTerm: string): Promise<SearchUser[]> => {
 };
 
 // The main TopBar component
-export default function TopBar({ user }: { user?: UserType }) {
+export default function TopBar({ user, toggleSidebar }: TopBarProps) {
   const pathname = usePathname();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
+  
   const [isMagicBoxOpen, setIsMagicBoxOpen] = useState(false);
   const [localProfilePicture, setLocalProfilePicture] = useState<string | null>(
     user?.image || null,
@@ -76,12 +75,6 @@ export default function TopBar({ user }: { user?: UserType }) {
     };
   }, []);
 
-  // React Query hook for user search
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["users", searchTerm],
-    queryFn: () => fetchUsers(searchTerm),
-    enabled: searchTerm.length > 0, // Only fetch when there's a search term
-  });
 
   // React Query hook for Magic Box status
   const { data: hasUnopenedBox } = useQuery({
@@ -114,17 +107,22 @@ export default function TopBar({ user }: { user?: UserType }) {
   const pageTitle = ROUTE_TITLES[currentRoute] || "Dashboard";
 
   return (
-    <header className="bg-transparent px-2 sm:px-0  flex items-center justify-between">
-      <div className="flex flex-col xlg:flex-row xlg:justify-between gap-4 sm:gap-12 w-full xlg:items-start  mb-5">
-        <div className="flex flex-col sm:flex-row max-xlg:w-full justify-between w-full sm:w-2/3  gap-4 sm:gap-8 lg:gap-2 items-start">
-          {/* <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-8 w-full items-start sm:items-center mb-5"> */}
-          {/* <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center"> */}
-          <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
-            {pageTitle}
-          </h1>
+    <header className="sticky top-0 z-50 px-2 sm:px-0 flex items-center justify-between lg:static">
+      <button
+        className="lg:hidden p-2 bg-white rounded-md shadow-md"
+        onClick={toggleSidebar}
+      >
+        <Menu size={20} />
+      </button>
+      <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
+        {pageTitle}
+      </h1>
+      <div className="flex justify-between items-center gap-3 ml-auto">
+        {/* <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-8 w-full items-start sm:items-center mb-5"> */}
+        {/* <div className="flex flex-col sm:flex-row justify-between w-full sm:w-2/3 gap-4 sm:gap-0 items-center"> */}
 
-          {/* Search Bar and Dropdown Container */}
-          <div className="relative hidden lg:flex w-full sm:w-80 md:w-94 lg:w-96">
+        {/* Search Bar and Dropdown Container */}
+        {/* <div className="relative hidden lg:flex w-full sm:w-80 md:w-94 lg:w-96">
             <div className="absolute inset-y-0 w-full left-0 flex items-center pl-3 pointer-events-none ">
               <Search className="h-4 w-4 text-slate-400" />
             </div>
@@ -141,7 +139,7 @@ export default function TopBar({ user }: { user?: UserType }) {
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             />
 
-            {/* --- CORRECTED SEARCH DROPDOWN --- */}
+            
             {showDropdown && searchTerm && (
               <div className="absolute  left-0 right-0 top-full z-10 mt-1 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
                 {isLoading ? (
@@ -172,12 +170,11 @@ export default function TopBar({ user }: { user?: UserType }) {
                 )}
               </div>
             )}
-          </div>
-        </div>
+          </div> */}
 
         {/* User Stats and Actions Section */}
-        <div className="flex md:justify-start xlg:justify-center items-center px-1 gap-4">
-          <TopBarBadge>
+
+        {/* <TopBarBadge>
             <Image
               src="/Pearls.png"
               alt="Icon"
@@ -189,38 +186,37 @@ export default function TopBar({ user }: { user?: UserType }) {
             <span className="font-bold text-blue-500 ml-1 text-xs sm:text-base">
               {formatJP(user?.jpBalance || 0)}
             </span>
-          </TopBarBadge>
+          </TopBarBadge> */}
 
-          <Link href="/dashboard/notifications">
-            <TopBarBadge className="cursor-pointer">
-              <div className="relative">
-                <NotificationIcon />
-                {(unreadNotificationsCount ?? 0) > 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
-                    {unreadNotificationsCount}
-                  </div>
-                )}
-              </div>
-            </TopBarBadge>
-          </Link>
-
-          <TopBarBadge
-            className="cursor-pointer"
-            onClick={() => setIsMagicBoxOpen(true)}
-          >
+        <Link href="/dashboard/notifications">
+          <TopBarBadge className="cursor-pointer">
             <div className="relative">
-              <Gift size={20} />
-              {hasUnopenedBox && (
-                <div className="absolute top-[-2px] right-[-2px] w-2 h-2 bg-red-500 rounded-full" />
+              <NotificationIcon />
+              {(unreadNotificationsCount ?? 0) > 0 && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs">
+                  {unreadNotificationsCount}
+                </div>
               )}
             </div>
           </TopBarBadge>
+        </Link>
 
-          <UserProfileDropdown
-            userName={user?.name}
-            profilePicture={localProfilePicture}
-          />
-        </div>
+        <TopBarBadge
+          className="cursor-pointer"
+          onClick={() => setIsMagicBoxOpen(true)}
+        >
+          <div className="relative">
+            <Gift size={20} />
+            {hasUnopenedBox && (
+              <div className="absolute top-[-2px] right-[-2px] w-2 h-2 bg-red-500 rounded-full" />
+            )}
+          </div>
+        </TopBarBadge>
+
+        <UserProfileDropdown
+          userName={user?.name}
+          profilePicture={localProfilePicture}
+        />
       </div>
 
       <MagicBoxModal
