@@ -19,6 +19,7 @@ import DashboardCards from "@/components/dashboard/DashboardCards";
 import MyLifeBlueprint from "@/components/dashboard/user/MyLifeBlueprint";
 import { getGreetingData } from "@/lib/utils/utils";
 import { getTodayRange } from "@/lib/utils/dateUtils";
+import { DashboardContent } from "@/types/client/dashboard";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -59,7 +60,7 @@ export default function DashboardPage() {
       enabled: !!session?.user?.id,
     });
   const { data: dashboardContent, isLoading: dashboardContentLoading } =
-    useQuery({
+    useQuery<DashboardContent>({
       queryKey: ["dashboard-content"],
       queryFn: async () => {
         const { start, end } = getTodayRange();
@@ -102,7 +103,7 @@ export default function DashboardPage() {
       <div className="sm:py-6 px-4">
         <div className="flex flex-col gap-3 mb-4 mt-4 sm:mt-0">
           <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center">
-            {text}, {userData.name}
+            {text}, {userData?.name}
             <Icon className={color} />
           </h1>
           <p className="text-muted-foreground">
@@ -115,6 +116,7 @@ export default function DashboardPage() {
           <div className="flex-1">
             <MyLifeBlueprint
               data={dashboardContent?.userMakeoverCommitment || []}
+              cmpProgramId={dashboardContent?.cmpProgramId || ""}
             />
             {/* <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
               <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />

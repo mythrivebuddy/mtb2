@@ -8,8 +8,8 @@ import Link from "next/link";
 import React from "react";
 import { format } from "date-fns";
 import PageSkeleton from "@/components/PageSkeleton";
-import { Card } from "@/components/ui/card";
 import { StreakDisplay } from "@/components/userStreak/StreakDisplay";
+import { ProgressStatCard } from "./ProgressStatCard";
 
 type Buddy = {
   id: number;
@@ -37,32 +37,6 @@ type HistoryItem = {
 const fetchUserTransactionHistory = async () => {
   const res = await axios.get("/api/user/history");
   return res.data;
-};
-
-type Props = {
-  value: number;
-  label: string;
-};
-
-const ProgressStatCard = ({ value, label }: Props) => {
-  return (
-    <Card className="p-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all">
-      <div className="flex items-center gap-3">
-        {/* Icon */}
-        <div className="bg-dashboard/10 p-2 rounded-lg">
-          <Image src="/Pearls.png" alt="icon" width={28} height={28} />
-        </div>
-
-        {/* Content */}
-        <div className="flex flex-col">
-          <p className="text-lg font-semibold text-jp-orange leading-none">
-            {value}
-          </p>
-          <p className="text-xs text-gray-500 leading-tight">{label}</p>
-        </div>
-      </div>
-    </Card>
-  );
 };
 
 const RightPanel = ({
@@ -124,7 +98,7 @@ const RightPanel = ({
     >
       <section className="mb-6">
         <div className="space-y-3 bg-white rounded-3xl p-5">
-          <h3 className="font-semibold">Progress Snapshot</h3>
+          <h3 className="text-xl  font-semibold">Progress Snapshot</h3>
 
           <div className="grid grid-cols-2 gap-3">
             <ProgressStatCard value={jpEarned} label="GP Earned" />

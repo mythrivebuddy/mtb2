@@ -14,6 +14,13 @@ export const GET = async (req: Request) => {
 
     const program = await prisma.program.findFirst({
       where: { slug: "2026-complete-makeover" },
+      include: {
+        plans: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
     if (!program) {
@@ -59,15 +66,48 @@ export const GET = async (req: Request) => {
       },
     });
 
-    const dailyBlooms = await prisma.todo.findMany({
+    // 👉 start of today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // 👉 end of today
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 1️⃣ Check today's blooms
+    const todaysBlooms = await prisma.todo.findMany({
       where: {
         userId: session.user.id,
-        createdAt: {
-          gte: start ? new Date(start) : undefined,
-          lte: end ? new Date(end) : undefined,
+        dueDate: {
+          gte: startOfDay,
+          lte: endOfDay,
         },
       },
+      orderBy: {
+        createdAt: "desc", // latest first
+      },
+      take: 3,
     });
+
+    // 2️⃣ If today's exist → return them
+    let dailyBlooms = todaysBlooms;
+
+    if (todaysBlooms.length === 0) {
+      // 3️⃣ Otherwise fetch overdue (oldest first)
+      dailyBlooms = await prisma.todo.findMany({
+        where: {
+          userId: session.user.id,
+          createdAt: {
+            lt: startOfDay, // before today
+          },
+          isCompleted: false,
+        },
+        orderBy: {
+          createdAt: "asc", // oldest first
+        },
+        take: 3,
+      });
+    }
 
     const onePercentProgressVault = await prisma.progressVault.findMany({
       where: {
@@ -193,6 +233,7 @@ export const GET = async (req: Request) => {
         challenges,
         mmpPrograms,
         event: eventData,
+        cmpProgramId: program.plans[0].id,
       },
       { status: 200 },
     );
