@@ -460,6 +460,7 @@ export default function DailyBloomClient() {
     } else {
       toast.success("Bloom updated successfully ✅");
     }
+    setEditData(null);
   },
     onError: (error: AxiosError, variables, context) => {
       // If the mutation fails, roll back to the previous state from context

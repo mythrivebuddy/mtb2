@@ -78,7 +78,7 @@ export const featureConfig = {
         access: [PlanUserType.ENTHUSIAST, PlanUserType.COACH],
         plans: {
             free: {
-                COACH: { dailyLimit: 3 },
+                COACH: { dailyLimit: 5 },
                 ENTHUSIAST: { dailyLimit: 3 },
             },
             paid: {

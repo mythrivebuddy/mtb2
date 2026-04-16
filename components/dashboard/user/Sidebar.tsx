@@ -1,13 +1,12 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   User,
   Sparkles,
   ShoppingCartIcon,
-  Menu,
   WandSparklesIcon,
   LucideSignalHigh,
   TrendingUp,
@@ -16,21 +15,18 @@ import {
   Droplet,
   Flower,
   Swords,
-  Search,
   BellRing,
   Crown,
   GraduationCap,
   Award,
   BadgePercent,
+  Compass,
 } from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import { User as UserType } from "@/types/types";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from "@/utils/getInitials";
-import { SearchUser } from "@/types/client/nav";
 import { useQuery } from "@tanstack/react-query";
-import { fetchUsers } from "./Topbar";
 import { useSession } from "next-auth/react";
+import axios from "axios";
 
 // Reusable navigation item component
 type NavItemProps = {
@@ -46,7 +42,7 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
 
   const tab = searchParams.get("tab");
   const view = searchParams.get("view");
-
+  const baseHref = href?.split("?")[0];
   const isActive =
     href === "/dashboard/challenge?tab=join"
       ? pathname === "/dashboard/challenge" && tab === "join"
@@ -55,8 +51,8 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
         : href === "/dashboard/accountability/home?view=true"
           ? pathname === "/dashboard/accountability/home" && view === "true"
           : href === "/dashboard/accountability/home"
-            ? pathname === "/dashboard/accountability/home" && !view // 👈 important
-            : pathname === href;
+            ? pathname === "/dashboard/accountability/home" && !view
+            : pathname === baseHref;
 
   const content = (
     <>
@@ -97,6 +93,11 @@ type NavSectionProps = {
   children: React.ReactNode;
   className?: string;
 };
+type SidebarProps = {
+  user?: UserType;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+};
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
   <div className={cn("space-y-2", className)}>
@@ -108,18 +109,18 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 );
 
 // Main sidebar component
-const Sidebar = ({ user }: { user?: UserType }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
+const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
 
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["users", searchTerm],
-    queryFn: () => fetchUsers(searchTerm),
-    enabled: searchTerm.length > 0,
+
+  const { data: cmpPlan } = useQuery({
+    queryKey: ["cmp-program"],
+    queryFn: async () => {
+      const res = await axios.get("/api/program");
+      return res.data.plan;
+    },
   });
   const pathname = usePathname();
-  // const [isBuddyLensOpen, setIsBuddyLensOpen] = useState(false);
+
   const session = useSession();
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -128,36 +129,13 @@ const Sidebar = ({ user }: { user?: UserType }) => {
     <div className="px-1 md:px-2">
       {/* Hamburger Menu Button for Mobile */}
       <div className="flex items-center pt-1 px-4 gap-4 justify-between w-screen ">
-        <button
-          className="lg:hidden p-2 bg-white rounded-md shadow-md"
-          onClick={toggleSidebar}
-        >
-          {isOpen ? (
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <Menu size={24} />
-          )}
-        </button>
-
         {/* 🛠️ WRAP THE SEARCH BAR IN A FLEX-GROW DIV */}
-        <div className="relative w-full flex-1 lg:hidden">
-          {/* Search Icon */}
+        {/* <div className="relative w-full flex-1 lg:hidden">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <Search className="h-4 w-4 text-slate-400" />
           </div>
 
-          {/* Input */}
+         
           <input
             type="search"
             className="w-[calc(100%-1.5rem)] bg-white shadow-md border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 pl-10 p-2.5"
@@ -171,7 +149,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
             onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           />
 
-          {/* Dropdown */}
+          
           {showDropdown && searchTerm && (
             <div className="absolute left-0 top-full mt-1 w-[calc(100%-1.5rem)] z-10 bg-white rounded-md shadow-lg border border-slate-200 max-h-60 overflow-auto">
               {isLoading ? (
@@ -197,7 +175,7 @@ const Sidebar = ({ user }: { user?: UserType }) => {
               )}
             </div>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* Overlay for Mobile */}
@@ -248,6 +226,12 @@ const Sidebar = ({ user }: { user?: UserType }) => {
                 /> */}
               </NavSection>
               <NavSection title="Features">
+                <NavItem
+                  href={`/dashboard/complete-makeover-program/onboarding?planId=${cmpPlan?.id}`}
+                  icon={<Compass size={20} />}
+                  label="Life Blueprint"
+                  onLinkClick={toggleSidebar} // Pass toggleSidebar
+                />
                 <NavItem
                   href="/dashboard/aligned-actions"
                   icon={<TrendingUp size={20} />}

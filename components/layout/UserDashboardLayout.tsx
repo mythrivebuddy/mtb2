@@ -19,7 +19,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { status: sessionStatus, data: session } = useSession();
 
   const pathname = usePathname();
-
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
   const { data: user } = useQuery<User>({
     queryKey: ["userInfo"],
@@ -37,11 +37,11 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isGuest = sessionStatus === "unauthenticated";
   const isChallengeRoute =
     pathname === "/dashboard/challenge" ||
-    pathname.startsWith("/dashboard/challenge/") || pathname === "/dashboard/store" || pathname.startsWith("/dashboard/store/") || pathname === "/dashboard/mini-mastery-programs";
-  const shouldUseInheritBg =
-    isChallengeRoute &&
-    isGuest &&
-    !isLoading;
+    pathname.startsWith("/dashboard/challenge/") ||
+    pathname === "/dashboard/store" ||
+    pathname.startsWith("/dashboard/store/") ||
+    pathname === "/dashboard/mini-mastery-programs";
+  const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
 
   if (sessionStatus === "loading") {
     return (
@@ -54,31 +54,38 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const isLoggedIn = sessionStatus === "authenticated" && !!user;
 
   return (
-    <div className={`w-full min-h-screen  ${shouldUseInheritBg ? 'bg-inherit' : 'bg-dashboard'} max-w-full overflow-hidden`}>
-      {isLoggedIn && (session.user.role === "USER") && (
+    <div
+      className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard"} max-w-full overflow-hidden`}
+    >
+      {isLoggedIn && session.user.role === "USER" && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">
-          <Sidebar user={user} />
+          <Sidebar
+            user={user}
+            isOpen={isSidebarOpen}
+            setIsOpen={setIsSidebarOpen}
+          />
         </div>
       )}
 
+      {isLoggedIn && session.user.role === "USER" && (
+        <div className="lg:hidden px-6 py-4 mb-8 fixed top-0 left-0 right-0 z-10">
+          <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />
+        </div>
+      )}
       <div
-        className={`flex-1 flex flex-col h-full transition-all duration-300 ${isLoggedIn ? "ml-0 lg:ml-64 md:mt-5 md:mx-5 mt-16" : ""
-          }`}
+        className={`flex-1 flex flex-col h-full transition-all duration-300 ${
+          isLoggedIn ? "ml-0 lg:ml-64 md:mt-5 md:mx-0 mt-8" : ""
+        }`}
       >
-        {isLoggedIn && (session.user.role === "USER") && (
-          <div className="md:mx-10 mx-5">
-            <TopBar user={user} />
+        {isLoggedIn && session.user.role === "USER" && (
+          <div className="md:mx-8 mx-5 hidden lg:block">
+            <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />
           </div>
         )}
 
-        <main className="flex-1 overflow-auto lg:pt-4 px-4 bg-transparent">
+        <main className="flex-1 overflow-auto lg:pt-4 py-6 px-4 bg-transparent">
           {children}
-          <div className="px-4 sm:px-8"
-          >
-            {
-              isLoggedIn && <Footer />
-            }
-          </div>
+          <div className="px-4 sm:px-8">{isLoggedIn && <Footer />}</div>
         </main>
       </div>
       <FirstVisitNotificationPopup />

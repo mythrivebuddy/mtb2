@@ -100,8 +100,6 @@ export async function grantProgramAccessToPage(): Promise<ProgramAccessToPage> {
         onboarded: true,
       }
   });
-console.log({userProgramState});
-
 
   return {
     userId,

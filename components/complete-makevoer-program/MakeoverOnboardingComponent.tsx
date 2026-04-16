@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, Fragment, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useRouter } from "next/navigation";
+import { DashboardContent } from "@/types/client/dashboard";
 
 /* ───────────── TYPES ───────────── */
 
@@ -76,12 +77,15 @@ type FormOptionsResponse = {
 const MakeoverOnboardingParent = ({
   initialData,
   formOptions,
+  isPurchased,
 }: {
   initialData: InitialOnboardingData;
   formOptions: FormOptionsResponse;
+  isPurchased?: boolean;
 }) => {
   const isEditMode = initialData?.onboarded === true;
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState<number>(
     initialData?.step ?? (isEditMode ? 2 : 1),
@@ -138,7 +142,7 @@ const MakeoverOnboardingParent = ({
     identities: initialData?.identities ?? {},
     vision: initialData?.vision ?? "",
   });
-
+  const [actionType, setActionType] = useState<"save" | "join" | null>(null);
   /* ───────────── SUBMIT MUTATION ───────────── */
   const submitMutation = useMutation({
     mutationFn: async () => {
@@ -167,18 +171,42 @@ const MakeoverOnboardingParent = ({
     onSuccess: (res) => {
       const mode = res.data?.mode;
 
+      // ✅ Toast (keep edit support)
       if (mode === "edited") {
         toast.success("Changes saved successfully");
       } else {
         toast.success("🎉 Makeover Program onboarding completed!");
-        console.log("ENROLL PAYLOAD", {
-          programId: initialData?.programId,
-          areaIds: formData.selectedAreas,
-        });
       }
-      router.push(
-        `/dashboard/membership/checkout?plan=${initialData?.planId}&context=SUBSCRIPTION`,
+      // ✅ IMPORTANT: Update dashboard cache
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (oldData) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            userMakeoverCommitment: res.data.userMakeoverCommitment,
+          };
+        },
       );
+      if (actionType === "save") {
+        if (isPurchased) {
+          setStep(6); // ✅ go to rules step
+        } else {
+          router.push("/dashboard"); // ✅ normal save
+        }
+        return;
+      }
+
+      if (actionType === "join") {
+        router.push(
+          `/dashboard/membership/checkout?plan=${initialData?.planId}&context=SUBSCRIPTION`,
+        );
+        return;
+      }
+
+      // ✅ fallback (for other steps)
+      setStep(6);
     },
 
     onError: (err: AxiosError<{ error?: string }>) => {
@@ -196,8 +224,8 @@ const MakeoverOnboardingParent = ({
       });
     },
 
-    onSuccess: () => {
-      toast.success("🎉 You're officially enrolled!");
+    onSuccess: (res) => {
+      toast.success(res.data.message || "🎉 You're officially enrolled!");
       router.push(
         "/dashboard/complete-makeover-program/daily-actions-task-for-quarter",
       );
@@ -233,7 +261,8 @@ const MakeoverOnboardingParent = ({
     if (isEditMode && targetStep === 1) return; // block step 1 in edit mode
     setStep(targetStep);
   };
-
+  const isSaving = submitMutation.isPending && actionType === "save";
+  const isJoining = submitMutation.isPending && actionType === "join";
   return (
     <div className="min-h-screen flex flex-col items-center">
       <div ref={containerRef} />
@@ -354,8 +383,18 @@ const MakeoverOnboardingParent = ({
           <Step5VisionSummary
             formData={formData}
             onBack={prevStep}
-            onComplete={() => submitMutation.mutate()}
-            isSubmitting={submitMutation.isPending}
+            onComplete={() => {
+              setActionType("save"); // ✅ THIS IS THE FIX
+              submitMutation.mutate();
+            }}
+            onJoin={() => {
+              setActionType("join");
+              submitMutation.mutate();
+            }}
+            isSubmitting={isSaving}
+            isJoining={isJoining}
+            isPurchased={isPurchased}
+            step={step}
           />
         )}
 
