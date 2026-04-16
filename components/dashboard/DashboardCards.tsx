@@ -22,9 +22,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import axios from "axios";
 import Link from "next/link";
-import {
-  DashboardContent,
-} from "@/types/client/dashboard";
+import { DashboardContent } from "@/types/client/dashboard";
 
 type CardItem = {
   title: string;
@@ -40,7 +38,6 @@ type CardItem = {
 type Props = {
   jpBalance: string;
 } & DashboardContent;
-
 
 const cards: CardItem[] = [
   {
@@ -123,7 +120,7 @@ export default function DashboardCards({
   miracleLogs,
   challenges,
   mmpPrograms,
-}:Props) {
+}: Props) {
   const router = useRouter();
 
   const queryClient = useQueryClient();
@@ -347,7 +344,12 @@ export default function DashboardCards({
                           className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                         />
                         <p className="text-muted-foreground line-clamp-1">
-                          {bloom.title}
+                          {bloom.title}{" "}
+                          {bloom.isFromEvent && (
+                            <span className=" text-purple-600 font-medium">
+                              (Event)
+                            </span>
+                          )}
                         </p>
                       </div>
                     ))}

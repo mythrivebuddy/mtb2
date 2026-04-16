@@ -269,7 +269,7 @@ const timePart = currentEvent.start?.includes("T")
   const endTimePart = currentEvent.end?.includes("T")
     ? currentEvent.end.split("T")[1]?.slice(0, 5)
     : "";
-  const isDisabled = (mode === "view" && !isEditing) || isSubmitting;
+  const isDisabled = isSubmitting;
   return (
     <div className="grid gap-4 py-4">
       <div className="grid gap-2">
@@ -280,7 +280,7 @@ const timePart = currentEvent.start?.includes("T")
           onChange={(e) =>
             setCurrentEvent({ ...currentEvent, title: e.target.value })
           }
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          disabled={isSubmitting}
           placeholder="Event Title"
           className="text-sm"
         />
@@ -299,7 +299,7 @@ const timePart = currentEvent.start?.includes("T")
               },
             })
           }
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          disabled={isSubmitting}
           placeholder="Optional details..."
           className="text-sm"
         />
@@ -336,7 +336,7 @@ const timePart = currentEvent.start?.includes("T")
               const result = validateDateTime(newStart, newEnd,currentEvent.allDay);
               setTimeError(result.message);
             }}
-            disabled={(mode === "view" && !isEditing) || isSubmitting}
+            disabled={isSubmitting}
           />
 
           {/* TIME (24H DROPDOWN) */}
@@ -396,7 +396,7 @@ const timePart = currentEvent.start?.includes("T")
               const result = validateDateTime(currentEvent.start, newEnd);
               setTimeError(result.message);
             }}
-            disabled={(mode === "view" && !isEditing) || isSubmitting}
+            disabled={ isSubmitting}
           />
 
           {/* END TIME DROPDOWN */}
@@ -482,7 +482,7 @@ const timePart = currentEvent.start?.includes("T")
               extendedProps: newExtendedProps,
             });
           }}
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          disabled={isSubmitting}
         />
         <Label htmlFor="all-day">All Day Event</Label>
       </div>
@@ -1183,7 +1183,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
         )}
         {mode === "view" && currentEvent && (
           <>
-            {!isEditing && !currentEvent.extendedProps?.isCompleted && (
+            {/* {!isEditing && !currentEvent.extendedProps?.isCompleted && (
               <Button
                 onClick={() => setIsEditing(true)}
                 disabled={isSubmitting}
@@ -1191,8 +1191,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
               >
                 Edit
               </Button>
-            )}
-            {isEditing && (
+            )} */}
+            {mode === "view" && (
               <Button
                 onClick={handleUpdate}
                 disabled={isSubmitting}
