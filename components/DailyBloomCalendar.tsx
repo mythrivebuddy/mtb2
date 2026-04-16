@@ -118,7 +118,29 @@ interface Props {
   onDeleteBloomFromEvent: (bloomId: string) => void;
 }
 
-// ---------------- Helpers ----------------  
+// ---------------- Helpers ----------------
+const canMarkCompleted = (start?: string, allDay?: boolean) => {
+  if (!start) return false;
+
+  const now = new Date();
+
+  // For all-day → allow only if today or past
+  if (allDay) {
+    const today = new Date();
+    const eventDate = new Date(start);
+
+    return (
+      eventDate.getFullYear() === today.getFullYear() &&
+      eventDate.getMonth() === today.getMonth() &&
+      eventDate.getDate() === today.getDate()
+    );
+  }
+
+  // Normal event → check full datetime
+  const startDate = new Date(start);
+  return now >= startDate;
+};
+
 const parseLocal = (dateTime: string) => {
   const [date, time] = dateTime.split("T");
   const [y, m, d] = date.split("-").map(Number);
@@ -130,7 +152,7 @@ const parseLocal = (dateTime: string) => {
 const validateDateTime = (
   start: string,
   end?: string,
-  allDay?: boolean // ✅ add this
+  allDay?: boolean, // ✅ add this
 ): { valid: boolean; message: string | null } => {
   if (!start) return { valid: true, message: null };
 
@@ -141,9 +163,10 @@ const validateDateTime = (
 
   const now = new Date();
 
-  const todayStr = `${now.getFullYear()}-${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(now.getDate()).padStart(2, "0")}`;
 
   const startDate = parseLocal(start);
   const endDate = end ? parseLocal(end) : null;
@@ -158,9 +181,9 @@ const validateDateTime = (
   console.log({
     isSameDay,
     startDate,
-    now
+    now,
   });
-  
+
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
   }
@@ -235,8 +258,6 @@ const useMediaQuery = (query: string) => {
 const EventForm = ({
   currentEvent,
   setCurrentEvent,
-  mode,
-  isEditing,
   isSubmitting,
 }: {
   currentEvent: CalendarEvent;
@@ -262,14 +283,16 @@ const EventForm = ({
   };
 
   const timeOptions = generateTimeOptions();
-const timePart = currentEvent.start?.includes("T")
+  const timePart = currentEvent.start?.includes("T")
     ? currentEvent.start.split("T")[1]?.slice(0, 5)
-    : currentEvent.extendedProps?.lastTime?.slice(0, 5) || getNearestHourLocal().split("T")[1]?.slice(0, 5);
+    : currentEvent.extendedProps?.lastTime?.slice(0, 5) ||
+      getNearestHourLocal().split("T")[1]?.slice(0, 5);
 
   const endTimePart = currentEvent.end?.includes("T")
     ? currentEvent.end.split("T")[1]?.slice(0, 5)
     : "";
-  const isDisabled = (mode === "view" && !isEditing) || isSubmitting;
+  const isCompleted = currentEvent.extendedProps?.isCompleted;
+  const isDisabled = isSubmitting || isCompleted;
   return (
     <div className="grid gap-4 py-4">
       <div className="grid gap-2">
@@ -280,7 +303,7 @@ const timePart = currentEvent.start?.includes("T")
           onChange={(e) =>
             setCurrentEvent({ ...currentEvent, title: e.target.value })
           }
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          disabled={isDisabled}
           placeholder="Event Title"
           className="text-sm"
         />
@@ -299,7 +322,7 @@ const timePart = currentEvent.start?.includes("T")
               },
             })
           }
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          disabled={isDisabled}
           placeholder="Optional details..."
           className="text-sm"
         />
@@ -333,10 +356,14 @@ const timePart = currentEvent.start?.includes("T")
                 end: newEnd,
               });
 
-              const result = validateDateTime(newStart, newEnd,currentEvent.allDay);
+              const result = validateDateTime(
+                newStart,
+                newEnd,
+                currentEvent.allDay,
+              );
               setTimeError(result.message);
             }}
-            disabled={(mode === "view" && !isEditing) || isSubmitting}
+            disabled={isDisabled}
           />
 
           {/* TIME (24H DROPDOWN) */}
@@ -354,7 +381,11 @@ const timePart = currentEvent.start?.includes("T")
                 start: newStart,
                 end: newEnd,
               });
-              const result = validateDateTime(newStart, newEnd,currentEvent.allDay);
+              const result = validateDateTime(
+                newStart,
+                newEnd,
+                currentEvent.allDay,
+              );
               setTimeError(result.message);
             }}
           >
@@ -396,7 +427,7 @@ const timePart = currentEvent.start?.includes("T")
               const result = validateDateTime(currentEvent.start, newEnd);
               setTimeError(result.message);
             }}
-            disabled={(mode === "view" && !isEditing) || isSubmitting}
+            disabled={isDisabled}
           />
 
           {/* END TIME DROPDOWN */}
@@ -448,7 +479,7 @@ const timePart = currentEvent.start?.includes("T")
                 ? currentEvent.start.split("T")[1]
                 : "09:00";
 
-               newStart = currentEvent.start;
+              newStart = currentEvent.start;
               newEnd = undefined;
               newExtendedProps = {
                 ...newExtendedProps,
@@ -482,7 +513,7 @@ const timePart = currentEvent.start?.includes("T")
               extendedProps: newExtendedProps,
             });
           }}
-          disabled={(mode === "view" && !isEditing) || isSubmitting}
+          disabled={isDisabled}
         />
         <Label htmlFor="all-day">All Day Event</Label>
       </div>
@@ -513,6 +544,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const supabaseClient = useSupabase();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false); // For form button loading states
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastDeletedEvent, setLastDeletedEvent] =
     useState<CalendarEvent | null>(null);
@@ -653,7 +687,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       toast.error(result.message);
       return;
     }
-    setIsSubmitting(true);
+    setIsSaving(true);
 
     setEvents((prev) => [...prev, currentEvent]);
     handleCloseModal();
@@ -678,7 +712,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       // 4. If the API call fails, remove the optimistically added event.
       setEvents((prev) => prev.filter((e) => e.id !== currentEvent.id));
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   }, [currentEvent, onCreateBloomFromEvent, handleCloseModal]);
 
@@ -702,13 +736,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const handleDateClick = useCallback((info: DateClickArg) => {
     let start: string;
 
-   if (info.allDay) {
-  const time =
-    currentEvent?.extendedProps?.lastTime ||
-    getNearestHourLocal().split("T")[1];
+    if (info.allDay) {
+      const time =
+        currentEvent?.extendedProps?.lastTime ||
+        getNearestHourLocal().split("T")[1];
 
-  start = `${info.dateStr}T${time}`; // ✅ attach time
-}else {
+      start = `${info.dateStr}T${time}`; // ✅ attach time
+    } else {
       start = getNearestHourLocal();
     }
     const isAllDay = info.allDay;
@@ -774,7 +808,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleComplete = useCallback(
     async (id: string) => {
-      setIsSubmitting(true);
+      setIsCompleting(true);
 
       setEvents((prev) =>
         prev.map((e) =>
@@ -831,7 +865,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
         setErrorMessage("Failed to mark completed.");
       } finally {
-        setIsSubmitting(false);
+        setIsCompleting(false);
       }
     },
     [events, onUpdateBloomFromEvent, handleCloseModal],
@@ -839,13 +873,17 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
-    const result = validateDateTime(currentEvent.start, currentEvent.end,  currentEvent.allDay);
+    const result = validateDateTime(
+      currentEvent.start,
+      currentEvent.end,
+      currentEvent.allDay,
+    );
 
     if (!result.valid) {
       toast.error(result.message);
       return;
     }
-    setIsSubmitting(true);
+    setIsSaving(true);
 
     if (currentEvent.extendedProps?.isBloom) {
       const isAllDay = currentEvent.allDay;
@@ -870,14 +908,14 @@ const DailyBloomCalendar: React.FC<Props> = ({
             ? new Date(currentEvent.start).toISOString().slice(11, 16)
             : "",
           endTime: isAllDay
-      ? undefined
-      : currentEvent.end
-      ? new Date(currentEvent.end).toISOString().slice(11, 16)
-      : undefined,
+            ? undefined
+            : currentEvent.end
+              ? new Date(currentEvent.end).toISOString().slice(11, 16)
+              : undefined,
         },
       });
 
-      setIsSubmitting(false);
+      setIsSaving(false);
       handleCloseModal();
       return;
     }
@@ -1183,7 +1221,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
         )}
         {mode === "view" && currentEvent && (
           <>
-            {!isEditing && !currentEvent.extendedProps?.isCompleted && (
+            {/* {!isEditing && !currentEvent.extendedProps?.isCompleted && (
               <Button
                 onClick={() => setIsEditing(true)}
                 disabled={isSubmitting}
@@ -1191,31 +1229,32 @@ const DailyBloomCalendar: React.FC<Props> = ({
               >
                 Edit
               </Button>
-            )}
-            {isEditing && (
+            )} */}
+            {mode === "view" && !currentEvent.extendedProps?.isCompleted && (
               <Button
                 onClick={handleUpdate}
-                disabled={isSubmitting}
+                disabled={isSaving}
                 className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
               >
-                {isSubmitting && (
+                {isSaving  && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Save Changes
               </Button>
             )}
-            {!currentEvent.extendedProps?.isCompleted && (
-              <Button
-                onClick={() => handleComplete(currentEvent.id)}
-                disabled={isSubmitting}
-                className="bg-green-600 hover:bg-green-700  w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
-              >
-                {isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Mark Completed ✅
-              </Button>
-            )}
+            {!currentEvent.extendedProps?.isCompleted &&
+              canMarkCompleted(currentEvent.start, currentEvent.allDay) && (
+                <Button
+                  onClick={() => handleComplete(currentEvent.id)}
+                  disabled={isCompleting}
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
+                >
+                  {isCompleting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Mark Completed ✅
+                </Button>
+              )}
             <Button
               variant="destructive"
               onClick={() => setShowDeleteConfirm(true)}

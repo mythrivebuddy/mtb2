@@ -34,6 +34,7 @@ export type DailyBloom = {
   id: string;
   title: string;
   isCompleted: boolean;
+  isFromEvent:boolean;
 };
 
 /* ───────────── PROGRESS & LOGS ───────────── */
@@ -70,13 +71,13 @@ export type MMPProgram = {
 /* ───────────── MAIN DASHBOARD TYPE ───────────── */
 
 export type DashboardContent = {
-  userMakeoverCommitment: Commitment[];
+  userMakeoverCommitment?: Commitment[];
   alignedAction: AlignedAction[];
   dailyBlooms: DailyBloom[];
   onePercentProgressVault: OnePercentProgressVault[];
   miracleLogs: MiracleLog[];
   challenges: Challenge[];
   mmpPrograms: MMPProgram[];
-  event: unknown; // refine later if needed
-  cmpProgramId: string;
+  event?: unknown; // refine later if needed
+  cmpProgramId?: string;
 };
