@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, Fragment, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
@@ -24,6 +24,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useRouter } from "next/navigation";
+import { DashboardContent } from "@/types/client/dashboard";
 
 /* ───────────── TYPES ───────────── */
 
@@ -84,6 +85,7 @@ const MakeoverOnboardingParent = ({
 }) => {
   const isEditMode = initialData?.onboarded === true;
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [step, setStep] = useState<number>(
     initialData?.step ?? (isEditMode ? 2 : 1),
@@ -175,7 +177,18 @@ const MakeoverOnboardingParent = ({
       } else {
         toast.success("🎉 Makeover Program onboarding completed!");
       }
+      // ✅ IMPORTANT: Update dashboard cache
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (oldData) => {
+          if (!oldData) return oldData;
 
+          return {
+            ...oldData,
+            userMakeoverCommitment: res.data.userMakeoverCommitment,
+          };
+        },
+      );
       if (actionType === "save") {
         if (isPurchased) {
           setStep(6); // ✅ go to rules step
