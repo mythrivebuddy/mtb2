@@ -58,22 +58,24 @@ export default function DashboardPage() {
       retry: false,
       enabled: !!session?.user?.id,
     });
-  const { data: dashboardContent,isLoading:dashboardContentLoading } = useQuery({
-    queryKey: ["dashboard-content"],
-    queryFn: async () => {
-      const { start, end } = getTodayRange();
-      const res = await axios.get(`/api/user/dashboard-content`, {
-        params: { start, end },
-      });
-      return res.data;
-    },
-  });
+  const { data: dashboardContent, isLoading: dashboardContentLoading } =
+    useQuery({
+      queryKey: ["dashboard-content"],
+      queryFn: async () => {
+        const { start, end } = getTodayRange();
+        const res = await axios.get(`/api/user/dashboard-content`, {
+          params: { start, end },
+        });
+        return res.data;
+      },
+    });
 
   if (
     spotlightLoading ||
     status === "loading" ||
     userLoading ||
-    prosperityLoading || dashboardContentLoading
+    prosperityLoading ||
+    dashboardContentLoading
   ) {
     // return <PageLoader />;
     return <PageSkeleton type="dashboard" />;
@@ -97,19 +99,20 @@ export default function DashboardPage() {
   return (
     <>
       <AnnouncementBar />
-      <div className="py-6 px-4">
+      <div className="sm:py-6 px-4">
+        <div className="flex flex-col gap-3 mb-4 mt-4 sm:mt-0">
+          <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center">
+            {text}, {userData.name}
+            <Icon className={color} />
+          </h1>
+          <p className="text-muted-foreground">
+            MTB is your personal & professional growth environment
+          </p>
+        </div>
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Dashboard Content */}
+
           <div className="flex-1">
-            <div className="flex flex-col gap-3 mb-4">
-              <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center">
-                {text}, {userData.name}
-                <Icon className={color} />
-              </h1>
-              <p className="text-muted-foreground">
-                MTB is your personal & professional growth environment
-              </p>
-            </div>
             <MyLifeBlueprint
               data={dashboardContent?.userMakeoverCommitment || []}
             />
