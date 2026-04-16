@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
 import { Prisma } from "@prisma/client";
-import JPCard from "@/components/dashboard/JPCard";
 import RightPanel from "@/components/dashboard/user/RightPanel";
 import { ApplicationStepper } from "@/components/ApplicationStepper";
 import {
@@ -17,6 +16,10 @@ import PageSkeleton from "@/components/PageSkeleton";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import AnnouncementBar from "@/components/announcement/AnnouncementBar";
 import DashboardCards from "@/components/dashboard/DashboardCards";
+import MyLifeBlueprint from "@/components/dashboard/user/MyLifeBlueprint";
+import { getGreetingData } from "@/lib/utils/utils";
+import { getTodayRange } from "@/lib/utils/dateUtils";
+import { DashboardContent } from "@/types/client/dashboard";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -56,12 +59,24 @@ export default function DashboardPage() {
       retry: false,
       enabled: !!session?.user?.id,
     });
+  const { data: dashboardContent, isLoading: dashboardContentLoading } =
+    useQuery<DashboardContent>({
+      queryKey: ["dashboard-content"],
+      queryFn: async () => {
+        const { start, end } = getTodayRange();
+        const res = await axios.get(`/api/user/dashboard-content`, {
+          params: { start, end },
+        });
+        return res.data;
+      },
+    });
 
   if (
     spotlightLoading ||
     status === "loading" ||
     userLoading ||
-    prosperityLoading
+    prosperityLoading ||
+    dashboardContentLoading
   ) {
     // return <PageLoader />;
     return <PageSkeleton type="dashboard" />;
@@ -80,22 +95,48 @@ export default function DashboardPage() {
   const currentProsperity = prosperityApplications?.find((prosperity) => {
     return ["APPLIED", "IN_REVIEW", "APPROVED"].includes(prosperity.status);
   });
+  const { text, Icon, color } = getGreetingData();
 
   return (
     <>
       <AnnouncementBar />
-      <div className="py-6 px-4">
+      <div className="sm:py-6 px-4">
+        <div className="flex flex-col gap-3 mb-4 mt-4 sm:mt-0">
+          <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center">
+            {text}, {userData?.name}
+            <Icon className={color} />
+          </h1>
+          <p className="text-muted-foreground">
+            MTB is your personal & professional growth environment
+          </p>
+        </div>
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Dashboard Content */}
+
           <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
+            <MyLifeBlueprint
+              data={dashboardContent?.userMakeoverCommitment || []}
+              cmpProgramId={dashboardContent?.cmpProgramId || ""}
+            />
+            {/* <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
               <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
               <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
               <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
-            </div>
+            </div> */}
 
             <div className="">
-              <DashboardCards jpBalance={userData.jpBalance} />
+              <DashboardCards
+                jpBalance={userData.jpBalance}
+                alignedAction={dashboardContent?.alignedAction || []}
+                dailyBlooms={dashboardContent?.dailyBlooms || []}
+                onePercentProgressVault={
+                  dashboardContent?.onePercentProgressVault || []
+                }
+                miracleLogs={dashboardContent?.miracleLogs || []}
+                challenges={dashboardContent?.challenges || []}
+                mmpPrograms={dashboardContent?.mmpPrograms || []}
+                // event={dashboardContent?.events}
+              />
             </div>
             {/* ✅ MOBILE STEPPERS */}
             {session?.user.userType === "COACH" && (
@@ -136,7 +177,11 @@ export default function DashboardPage() {
 
           {/* Right Panel */}
           <div className="lg:flex-[0.4] mt-6 lg:mt-0">
-            <RightPanel />
+            <RightPanel
+              jpEarned={userData?.jpEarned || 0}
+              jpSpent={userData?.jpSpent || 0}
+              jpBalance={userData?.jpBalance || 0}
+            />
           </div>
         </div>
         <div className="hidden lg:block">

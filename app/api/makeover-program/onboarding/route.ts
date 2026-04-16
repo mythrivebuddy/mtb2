@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    const { programId } = await grantProgramAccessToPage();
+    const { programId, isPurchased } = await grantProgramAccessToPage();
     if (!programId) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
     }
@@ -155,68 +155,6 @@ export async function POST(req: Request) {
       });
     });
 
-    /* ───────────── PHASE 2: CHALLENGE ENROLLMENT (NO TX) ───────────── */
-    // if (!isEdit) {
-    //   const mappings = await prisma.makeoverAreaChallengeMap.findMany({
-    //     where: { programId, areaId: { in: areas } },
-    //   });
-
-    //   for (const map of mappings) {
-    //     const enrollment = await prisma.challengeEnrollment.upsert({
-    //       where: {
-    //         userId_challengeId: {
-    //           userId,
-    //           challengeId: map.challengeId,
-    //         },
-    //       },
-    //       update: {},
-    //       create: {
-    //         userId,
-    //         challengeId: map.challengeId,
-    //         status: "IN_PROGRESS",
-    //       },
-    //     });
-
-    //     const hasTasks = await prisma.userChallengeTask.findFirst({
-    //       where: { enrollmentId: enrollment.id },
-    //       select: { id: true },
-    //     });
-
-    //     if (!hasTasks) {
-    //       const templateTasks = await prisma.challengeTask.findMany({
-    //         where: { challengeId: map.challengeId },
-    //       });
-
-    //       if (templateTasks.length) {
-    //         await prisma.userChallengeTask.createMany({
-    //           data: templateTasks.map(task => ({
-    //             description: task.description,
-    //             enrollmentId: enrollment.id,
-    //             templateTaskId: task.id,
-    //           })),
-    //         });
-    //       }
-    //     }
-
-    //     await prisma.userMakeoverChallengeEnrollment.upsert({
-    //       where: {
-    //         userId_programId_areaId: {
-    //           userId,
-    //           programId,
-    //           areaId: map.areaId,
-    //         },
-    //       },
-    //       update: {},
-    //       create: {
-    //         userId,
-    //         programId,
-    //         areaId: map.areaId,
-    //         challengeId: map.challengeId,
-    //         enrollmentId: enrollment.id,
-    //       },
-    //     });
-    //   }
-    // }
     if (!isEdit) {
       inngest
         .send({
@@ -225,6 +163,34 @@ export async function POST(req: Request) {
         })
         .catch((err) => console.error("Inngest async error:", err));
     }
+
+    const commitments = await prisma.userMakeoverCommitment.findMany({
+      where: {
+        userId,
+        programId,
+        quarter,
+      },
+      include: {
+        area: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+    const formattedCommitments = commitments.map((c) => ({
+      id: c.id,
+      goalText: c.goalText,
+      identityText: c.identityText,
+      visionStatement: c.visionStatement,
+      area: c.area
+        ? {
+            id: c.area.id,
+            name: c.area.name,
+          }
+        : undefined,
+    }));
     /* ───────────── RESPONSE ───────────── */
     return NextResponse.json({
       success: true,
@@ -232,6 +198,8 @@ export async function POST(req: Request) {
       message: isEdit
         ? "Makeover onboarding updated successfully"
         : "Makeover onboarding completed successfully",
+      isPurchased,
+      userMakeoverCommitment: formattedCommitments,
     });
   } catch (error) {
     console.error("MAKEOVER ONBOARDING ERROR:", error);
