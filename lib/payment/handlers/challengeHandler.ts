@@ -3,8 +3,8 @@ import { PaymentOrder, PaymentStatus, Prisma } from "@prisma/client";
 export async function handleChallengePayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-): Promise<{ isAdmin: boolean }> {
-  if (!order.challengeId) return { isAdmin: false };
+): Promise<{ isAdmin: boolean,allItemIds:string[] }> {
+  if (!order.challengeId) return { isAdmin: false,allItemIds:[] };
   const challenge = await tx.challenge.findUnique({
     where: { id: order.challengeId },
     select: {
@@ -61,5 +61,6 @@ console.log("Creator Role:", challenge?.creator?.role);
   }
   return {
     isAdmin: challenge?.creator?.role === "ADMIN",
+    allItemIds:[order.challengeId],
   };
 }
