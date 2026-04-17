@@ -34,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { ScrollArea } from "./ui/scroll-area";
 import { PopoverClose } from "@radix-ui/react-popover";
-import { LeaderboardPlayer } from "@/app/(userDashboard)/dashboard/challenge/my-challenges/[slug]/page";
+import { LeaderboardPlayer } from "@/app/(userDashboard)/dashboard/challenge/my-challenges/[slug]/_components/ChallengeManagementPageComponent";
 
 // ✅ Import Poll Components
 import { PollCreationModal } from "./PollCreationModal";

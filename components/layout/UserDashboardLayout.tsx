@@ -55,7 +55,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div
-      className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard"} max-w-full overflow-hidden`}
+      className={`w-full min-h-screen  ${shouldUseInheritBg ? "bg-inherit" : "bg-dashboard"} max-w-full`}
     >
       {isLoggedIn && session.user.role === "USER" && (
         <div className="fixed top-0 left-0 w-64 z-20 m-3">
@@ -73,17 +73,16 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       )}
       <div
-        className={`flex-1 flex flex-col h-full transition-all duration-300 ${
-          isLoggedIn ? "ml-0 lg:ml-64 md:mt-5 md:mx-0 mt-8" : ""
-        }`}
-      >
+  className={`flex-1 flex flex-col min-h-screen transition-all duration-300
+  ${isLoggedIn ? "ml-0 lg:ml-64 pt-20 lg:pt-6" : ""}`}
+>
         {isLoggedIn && session.user.role === "USER" && (
           <div className="md:mx-8 mx-5 hidden lg:block">
             <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />
           </div>
         )}
 
-        <main className="flex-1 overflow-auto lg:pt-4 py-6 px-4 bg-transparent">
+        <main className="flex-1 lg:pt-4 py-6 px-4 bg-transparent">
           {children}
           <div className="px-4 sm:px-8">{isLoggedIn && <Footer />}</div>
         </main>

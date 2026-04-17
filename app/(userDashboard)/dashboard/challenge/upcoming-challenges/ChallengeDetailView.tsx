@@ -297,7 +297,7 @@ export default function ChallengeDetailView({
 
   const pageContent = (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Main Content */}
         <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
           {/* Header */}
@@ -351,7 +351,9 @@ export default function ChallengeDetailView({
         </div>
 
         {/* Right Column: Sticky Card with Stats & Actions */}
-        <div className="lg:sticky lg:top-8 lg:col-span-1">
+        <div className="lg:col-span-1">
+
+        <div className="lg:sticky lg:top-8">
           <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6">
             {/* Duration */}
             <div className="flex items-center">
@@ -557,6 +559,8 @@ export default function ChallengeDetailView({
             </div>
           </div>
         </div>
+        </div>
+        
       </div>
     </div>
   );
