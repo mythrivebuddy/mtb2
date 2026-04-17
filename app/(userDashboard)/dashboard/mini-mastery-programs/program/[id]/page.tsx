@@ -876,7 +876,7 @@ export default function ProgramPlayer() {
   const isLocked = dayStatus === "locked";
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen max-sm:mx-4 bg-slate-50">
       {/* ── Confetti ── */}
       <Confetti active={confettiActive} />
 
