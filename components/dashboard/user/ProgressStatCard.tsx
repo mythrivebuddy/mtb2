@@ -8,10 +8,10 @@ type Props = {
 
 export const ProgressStatCard = ({ value, label }: Props) => {
   return (
-    <Card className="p-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all">
-      <div className="flex items-center gap-3">
+   <Card className="py-2 px-4 xl:px-1 xl:py-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all w-full max-w-[180px]">
+      <div className="flex items-center gap-1 xl:gap-3">
         {/* Icon */}
-        <div className="bg-dashboard/10 p-2 rounded-lg">
+        <div className="bg-dashboard/10 shrink-0 w-[40px] h-[40px] p-2 rounded-lg">
           <Image src="/Pearls.png" alt="icon" width={28} height={28} />
         </div>
 
