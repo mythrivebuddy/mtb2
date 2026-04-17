@@ -128,7 +128,7 @@ const DashboardPage = async () => {
     <div className="min-h-screen font-sans text-slate-900 dark:text-slate-100">
       <MakeoverDashboardClientGate isDayLocked={isDayLocked} />
 
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="w-full max-w-8xl mx-auto px-4 py-0 sm:py-4 space-y-8">
         {/* Page Header */}
         <DashboardHeader isProgramStarted={isProgramStarted} hasThreeActions={hasThreeActions} programStartDate={programState.program?.startDate} programEndDate={programState.program.endDate} />
 

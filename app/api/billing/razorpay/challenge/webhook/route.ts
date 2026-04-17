@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       console.log("=== PAYMENT META DEBUG ===");
       console.log("Order ID:", existingOrder.id);
       console.log("Context Type:", existingOrder.contextType);
-      console.log("isAdmin:", paymentMeta.isAdmin);
+      console.log("isProdcutFromAdmin:", paymentMeta.isAdmin);
       console.log("allItemIds:", paymentMeta.allItemIds);
       console.log("================================");
     });
