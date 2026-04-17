@@ -658,7 +658,6 @@ export default function ProgramPlayer() {
 
   const [activeDay, setActiveDay] = useState<number>(1);
   const [actionResponse, setActionResponse] = useState<string>("");
-  const [showResponse, setShowResponse] = useState(true);
 
   // Modal states
   const CELEBRATION_KEY = `mmp-celebration-shown-${programId}`;
@@ -756,9 +755,6 @@ export default function ProgramPlayer() {
         vars,
       ),
     onSuccess: async (_, vars) => {
-      setShowResponse(false);
-      setActionResponse("");
-
       if (!vars.undo) {
         const current = qc.getQueryData<PlayerData>([
           "program-player",
@@ -774,7 +770,11 @@ export default function ProgramPlayer() {
           return;
         }
       }
-
+      if (vars.undo) {
+        toast.success(`Day ${vars.dayNumber} marked incomplete`);
+      } else {
+        toast.success(`Day ${vars.dayNumber} completed 🎉 Keep going 🔥`);
+      }
       void qc.invalidateQueries({ queryKey: ["program-player", programId] });
     },
   });
@@ -1095,7 +1095,10 @@ export default function ProgramPlayer() {
                     </h3>
                   </div>
                   <div
-                    className="text-slate-600 font-medium leading-relaxed"
+                    className="text-slate-600 font-medium leading-relaxed 
+             [&_ul]:list-disc [&_ul]:pl-5 
+             [&_ol]:list-decimal [&_ol]:pl-5 
+             [&_li]:mb-1"
                     dangerouslySetInnerHTML={{
                       __html: currentModule.actionTask,
                     }}
@@ -1106,16 +1109,16 @@ export default function ProgramPlayer() {
                       <p className="text-xs font-bold text-blue-600">
                         ✍️ Your response <span className="text-red-500">*</span>
                       </p>
-                      {showResponse && (
-                        <textarea
-                          value={actionResponse}
-                          onChange={(e) => setActionResponse(e.target.value)}
-                          rows={3}
-                          maxLength={2000}
-                          placeholder="Write your thoughts or answer here..."
-                          className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 text-sm font-medium resize-none"
-                        />
-                      )}
+                      {/* {showResponse && ( */}
+                      <textarea
+                        value={actionResponse}
+                        onChange={(e) => setActionResponse(e.target.value)}
+                        rows={3}
+                        maxLength={2000}
+                        placeholder="Write your thoughts or answer here..."
+                        className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 text-sm font-medium resize-none"
+                      />
+                      {/* )} */}
                     </div>
                   )}
 
@@ -1140,7 +1143,6 @@ export default function ProgramPlayer() {
                           toast.error(
                             "Please write your response before marking as complete.",
                           );
-                          setShowResponse(true);
                           return;
                         }
                         completeMutation.mutate({

@@ -24,7 +24,7 @@ export async function POST(
   }
 
   const userId    = session.user.id;
-  const programId = params.id;
+  const {id:programId} = await params;
 
   // ── Verify enrollment ──────────────────────────────────────────────────────
   const enrolled = await prisma.userProgramState.findUnique({
