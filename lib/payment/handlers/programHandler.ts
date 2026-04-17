@@ -3,8 +3,8 @@ import { PaymentOrder, PaymentStatus, Prisma } from "@prisma/client";
 export async function handleProgramPayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-): Promise<{ isAdmin: boolean }> {
-  if (!order.programId) return { isAdmin: false };
+): Promise<{ isAdmin: boolean,allItemIds: string[]  }> {
+  if (!order.programId) return { isAdmin: false,allItemIds:[] };
 
   const program = await tx.program.findUnique({
     where: { id: order.programId },
@@ -82,5 +82,6 @@ export async function handleProgramPayment(
   }
   return {
     isAdmin: program.creator?.role === "ADMIN",
+    allItemIds: [program.id],
   };
 }

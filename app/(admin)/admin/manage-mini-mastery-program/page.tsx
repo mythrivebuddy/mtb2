@@ -316,7 +316,10 @@ function ViewModal({ program, onClose, onEdit }: { program: Program; onClose: ()
                       }`}>{mod.type?.toUpperCase()}</span>
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{mod.instructions}</p>
-                  <p className="text-xs text-blue-600 font-medium mt-1 line-clamp-1">↳ {mod.actionTask}</p>
+                  <div
+  className="text-xs text-blue-600 font-medium mt-1 line-clamp-2"
+  dangerouslySetInnerHTML={{ __html: mod.actionTask }}
+/>
                 </div>
               </div>
             ))}
@@ -712,9 +715,33 @@ function CreateModal({ onClose, onSuccess, editData }: CreateModalProps) {
                           <label className="text-[10px] font-bold text-gray-400 uppercase">
                             Action Task * <span className="text-blue-500 font-black">Mandatory</span>
                           </label>
-                          <textarea value={mod.actionTask} onChange={(e) => updateMod(idx, "actionTask", e.target.value)}
-                            rows={2} placeholder="Ask a question or assign a task..."
-                            className="w-full p-2.5 bg-blue-50/50 border border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-400 text-sm resize-none" />
+                           <Editor
+                            key={`admin-action-${mod.id}`}
+                            apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
+                            value={mod.actionTask}
+                            onEditorChange={(content) => updateMod(idx, "actionTask", content)}
+                            init={{
+                              height: 200,
+                              menubar: false,
+                              toolbar_mode: "sliding",
+                              promotion: false,
+                              plugins: [
+                                "advlist", "autolink", "lists",
+                                "charmap", "preview",
+                                "searchreplace", "visualblocks",
+                                "fullscreen", "wordcount"
+                              ],
+                              toolbar:"undo redo | bold italic underline | bullist numlist | removeformat",
+                              block_formats: "Paragraph=p",
+                              forced_root_block: "p",
+                              placeholder: "Ask a question or assign a task...",
+                              content_style: `
+                                body { font-family: Inter, sans-serif; font-size: 14px; color: #334155; }
+                                p { margin: 0.4rem 0; }
+                              `,
+                            }}
+                          />
+                    
                         </div>
                       </div>
                     )}

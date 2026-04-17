@@ -89,7 +89,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const { id } = params;
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ message: "Program ID is required." }, { status: 400 });
   }

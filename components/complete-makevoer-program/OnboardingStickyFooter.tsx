@@ -41,7 +41,7 @@ const OnboardingStickyFooter = ({
   step,
 }: OnboardingStickyFooterProps) => {
   return (
-    <div className="sticky  bottom-0 rounded-xl left-0 right-0 border-t border-emerald-100 bg-white/90 backdrop-blur z-20">
+    <div className="  bottom-0 rounded-xl left-0 right-0 border-t border-emerald-100 bg-white/90 backdrop-blur ">
       <div
         className="mx-auto flex flex-col sm:flex-row w-full gap-3 sm:items-center sm:justify-between px-4 py-4 sm:py-6"
         style={{ maxWidth }}

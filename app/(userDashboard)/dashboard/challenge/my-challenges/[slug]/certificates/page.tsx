@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import SignaturePadDialog from "@/components/SignaturePadDialog";
-import { Task } from "../page";
+import { Task } from "../_components/ChallengeManagementPageComponent";
 
 interface ChallengeHistory {
   date: string;

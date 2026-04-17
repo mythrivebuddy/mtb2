@@ -356,7 +356,7 @@ const creator =
       transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
     };
     // ✅ USER EMAIL
-    const shouldSkipUserEmail = isPaid && creator?.role === "ADMIN";
+    const shouldSkipUserEmail = isPaid;
 
     if (!shouldSkipUserEmail) {
       console.log("📧 Sending USER email");

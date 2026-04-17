@@ -271,7 +271,7 @@ export default function EditChallengePage() {
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
-                className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 transition-all disabled:bg-slate-400"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all disabled:bg-sl  ate-400"
               >
                 {updateMutation.isPending ? (
                   <>

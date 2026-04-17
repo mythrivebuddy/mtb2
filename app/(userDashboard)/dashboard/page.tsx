@@ -118,15 +118,9 @@ export default function DashboardPage() {
               data={dashboardContent?.userMakeoverCommitment || []}
               cmpProgramId={dashboardContent?.cmpProgramId || ""}
             />
-            {/* <div className="grid grid-cols-1 sm:grid-cols-2 xlg:grid-cols-3 gap-4 my-3">
-              <JPCard value={userData?.jpEarned || 0} label="Total GP Earned" />
-              <JPCard value={userData?.jpSpent || 0} label="Total GP Spent" />
-              <JPCard value={userData?.jpBalance || 0} label="GP Balance" />
-            </div> */}
-
             <div className="">
               <DashboardCards
-                jpBalance={userData.jpBalance}
+                jpBalance={userData?.jpBalance}
                 alignedAction={dashboardContent?.alignedAction || []}
                 dailyBlooms={dashboardContent?.dailyBlooms || []}
                 onePercentProgressVault={
