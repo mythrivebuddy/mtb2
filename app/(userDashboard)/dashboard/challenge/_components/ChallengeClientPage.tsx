@@ -88,7 +88,11 @@ const getStartDateInfo = (startDate: string): string | null => {
 };
 
 // --- Main Page Component ---
-export default function ChallengePage({ canIssueCertificate }: { canIssueCertificate: boolean }) {
+export default function ChallengePage({
+  canIssueCertificate,
+}: {
+  canIssueCertificate: boolean;
+}) {
   const router = useRouter();
   const { status: authStatus, data: session } = useSession();
   const queryClient = useQueryClient();
@@ -98,10 +102,10 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
   const [searchVisible, setSearchVisible] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [challengeToEdit, setChallengeToEdit] = useState<Challenge | null>(
-    null
+    null,
   );
   const [challengeToDelete, setChallengeToDelete] = useState<Challenge | null>(
-    null
+    null,
   );
   const [editFormData, setEditFormData] = useState<EditFormData>({
     title: "",
@@ -214,7 +218,7 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
   };
 
   const handleEditFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setEditFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -267,7 +271,7 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
       .sort((a, b) =>
         selectedFilters.includes("COMPLETED")
           ? new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-          : 0
+          : 0,
       );
   }, [challenges, searchTerm, selectedFilters, session?.user?.id]);
 
@@ -293,7 +297,10 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                <CreateChallenge onSuccess={() => setIsModalOpen(false)} canIssueCertificate={canIssueCertificate} />
+                <CreateChallenge
+                  onSuccess={() => setIsModalOpen(false)}
+                  canIssueCertificate={canIssueCertificate}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -367,7 +374,7 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
                   ? category1.includes(filter)
                     ? "bg-blue-600 text-white shadow-md"
                     : "bg-green-600 text-white shadow-md"
-                  : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100"
+                  : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100",
               )}
             >
               {filter === "JOINED"
@@ -387,10 +394,10 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
             No challenges found for the selected filters.
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-6">
             {filtered.map((c) => {
               const isJoined = c.enrollments?.some(
-                (e) => e.userId === session?.user?.id
+                (e) => e.userId === session?.user?.id,
               );
               const isHosted = c.creator?.id === session?.user?.id;
               return (
@@ -400,10 +407,10 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
                     router.push(
                       isJoined
                         ? `/dashboard/challenge/my-challenges/${c.id}`
-                        : `/dashboard/challenge/upcoming-challenges/${c.id}`
+                        : `/dashboard/challenge/upcoming-challenges/${c.id}`,
                     )
                   }
-                  className="relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer flex flex-col transition hover:-translate-y-1"
+                 className="break-inside-avoid mb-6 relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer transition hover:-translate-y-1 flex flex-col"
                 >
                   {isJoined && (
                     <div className="absolute top-4 -right-9 transform rotate-45 bg-indigo-500 text-center text-white text-sm font-semibold py-1 w-32">
@@ -417,7 +424,9 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
                   </div>
                   {/* <p className="text-sm text-slate-600 mb-4 line-clamp-2">{c.description || "No desc."}</p> */}
                   {c.description && (
-                    <ChallengeDescription html={c.description} />
+                    <div className="text-sm text-slate-600 mb-4">
+                      <ChallengeDescription html={c.description} />
+                    </div>
                   )}
                   <span className="inline-block w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-purple-100 mb-4">
                     Created By: {c.creatorName}
@@ -430,7 +439,7 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
                     </div>
                   )}
                   <div
-                    className={`flex items-center gap-2 mb-2 text-white bg-orange-700 px-2 py-1 rounded-sm w-fit ${!getStartDateInfo(c.startDate) && "mt-10"}`}
+                  className="flex items-center gap-2 mb-4 text-white bg-orange-700 px-2 py-1 rounded-sm w-fit"
                   >
                     <CalendarDays className="w-4 h-4" />
                     <span className="text-sm">{formatDate(c.startDate)}</span>
@@ -630,6 +639,7 @@ export default function ChallengePage({ canIssueCertificate }: { canIssueCertifi
                 <Button
                   type="submit"
                   disabled={editChallengeMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   {editChallengeMutation.isPending ? (
                     <>
