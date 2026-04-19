@@ -158,6 +158,7 @@
     "react-markdown": "^10.1.0",
     "react-mentions": "^4.4.10",
     "react-redux": "^9.2.0",
+    "react-select": "^5.10.2",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "react-timezone-select": "^3.3.2",
     "react-toastify": "^11.0.5",
