@@ -5,7 +5,14 @@ export default async function MmpEnrolledStudentsAdminPage({
 }: {
   searchParams: { programId?: string };
 }) {
-  const {programId} = await searchParams;
+  const { programId } = await searchParams;
 
-  return <MMPEnrolledStudentsPageComponent programId={programId} />;
+  return (
+    <>
+      <header className="px-6 ">
+        <h1 className="text-2xl">Enrolled Students</h1>
+      </header>
+      <MMPEnrolledStudentsPageComponent programId={programId} />
+    </>
+  );
 }
