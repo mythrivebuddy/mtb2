@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -25,11 +26,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Search, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { getAvatarColor, getInitials } from "@/utils/getInitials";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Pagination } from "@/components/ui/pagination";
+import Link from "next/link";
+import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 
 // ─────────────────────────────
 // TYPES
@@ -40,10 +44,12 @@ type Student = {
   programName: string;
   name: string;
   email: string;
+  image?: string;
   enrolledAt: string;
   currentDay: number;
   progressPercent: number;
   certificateStatus: "ISSUED" | "NOT_ISSUED";
+  certificateUrl?: string | null;
   isCompletedProgram: boolean;
 };
 
@@ -74,6 +80,8 @@ export default function MMPEnrolledStudentsPageComponent({
 }: {
   programId?: string;
 }) {
+  const [openCert, setOpenCert] = useState(false);
+  const [selectedCert, setSelectedCert] = useState<string | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<string>(
     programId || "all",
   );
@@ -170,13 +178,13 @@ export default function MMPEnrolledStudentsPageComponent({
   // UI
   // ─────────────────────────────
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Enrolled Students</h1>
-
+    <div className="p-4 sm:p-6 max-w-8xl mx-auto space-y-6">
+      
       {/* FILTERS */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3">
         {/* SEARCH */}
-        <div className="relative flex-1 min-w-[200px]">
+        {/* SEARCH (FULL WIDTH ALWAYS) */}
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
           <Input
             placeholder="Search student..."
@@ -186,108 +194,116 @@ export default function MMPEnrolledStudentsPageComponent({
           />
         </div>
 
-        {/* PROGRAM */}
-        <Select value={selectedProgram} onValueChange={setSelectedProgram}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Program" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Programs</SelectItem>
-            {programsData?.programs.map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* STATUS */}
-        <Select
-          value={status}
-          onValueChange={(v) => setStatus(v as StatusFilter)}
-        >
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="issued">Issued</SelectItem>
-            <SelectItem value="not_issued">Not Issued</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* COMPLETION */}
-        <Select
-          value={completion}
-          onValueChange={(v) => setCompletion(v as CompletionFilter)}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Completion" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="not_completed">Not Completed</SelectItem>
-          </SelectContent>
-        </Select>
-        {/* LIMIT (Per Page) */}
-        <Select
-          value={String(limit)}
-          onValueChange={(v) => setLimit(Number(v))}
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Per Page" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5 / page</SelectItem>
-            <SelectItem value="10">10 / page</SelectItem>
-            <SelectItem value="20">20 / page</SelectItem>
-            <SelectItem value="50">50 / page</SelectItem>
-          </SelectContent>
-        </Select>
-        {/* DATE MODE */}
-        <Select
-          value={dateMode}
-          onValueChange={(v: "days" | "custom") => setDateMode(v)}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Date Mode" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="days">Last Days</SelectItem>
-            <SelectItem value="custom">Custom</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* DATE FILTER */}
-        {dateMode === "days" && (
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Date Range" />
+        {/* FILTER GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          {/* PROGRAM */}
+          <Select value={selectedProgram} onValueChange={setSelectedProgram}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Program" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="30">30 Days</SelectItem>
-              <SelectItem value="60">60 Days</SelectItem>
-              <SelectItem value="90">90 Days</SelectItem>
+              <SelectItem value="all">All Programs</SelectItem>
+              {programsData?.programs.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-        )}
 
-        {dateMode === "custom" && (
-          <>
-            <Input
-              type="date"
-              value={customFrom}
-              onChange={(e) => setCustomFrom(e.target.value)}
-            />
-            <Input
-              type="date"
-              value={customTo}
-              onChange={(e) => setCustomTo(e.target.value)}
-            />
-          </>
-        )}
+          {/* STATUS */}
+          <Select
+            value={status}
+            onValueChange={(v) => setStatus(v as StatusFilter)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="issued">Issued</SelectItem>
+              <SelectItem value="not_issued">Not Issued</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* COMPLETION */}
+          <Select
+            value={completion}
+            onValueChange={(v) => setCompletion(v as CompletionFilter)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Completion" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="not_completed">Not Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* LIMIT (Per Page) */}
+          <Select
+            value={String(limit)}
+            onValueChange={(v) => setLimit(Number(v))}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Per Page" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 / page</SelectItem>
+              <SelectItem value="10">10 / page</SelectItem>
+              <SelectItem value="20">20 / page</SelectItem>
+              <SelectItem value="50">50 / page</SelectItem>
+            </SelectContent>
+          </Select>
+          {/* DATE MODE */}
+          <Select
+            value={dateMode}
+            onValueChange={(v: "days" | "custom") => setDateMode(v)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Date Mode" />
+            </SelectTrigger>
+            <SelectContent className="max-sm:w-full ">
+              <SelectItem value="days">Last Days</SelectItem>
+              <SelectItem value="custom">Custom</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* DATE FILTER */}
+          {dateMode === "days" && (
+            <Select value={dateFilter} onValueChange={setDateFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Date Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="30">30 Days</SelectItem>
+                <SelectItem value="60">60 Days</SelectItem>
+                <SelectItem value="90">90 Days</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+
+          {dateMode === "custom" && (
+            <div className="col-span-2 lg:col-span-6 grid grid-cols-2 gap-3">
+              <Input
+                type="date"
+                className="w-full"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                onFocus={(e) => e.target.showPicker?.()}
+              />
+
+              <Input
+                type="date"
+                className="w-full"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                onFocus={(e) => e.target.showPicker?.()}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* TABLE */}
@@ -307,11 +323,39 @@ export default function MMPEnrolledStudentsPageComponent({
 
             <TableBody>
               {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10">
-                    <Loader2 className="animate-spin mx-auto" />
-                  </TableCell>
-                </TableRow>
+                [...Array(6)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+                        <div className="space-y-2">
+                          <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+                          <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+                        </div>
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="h-3 w-20 bg-muted animate-pulse rounded" />
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="h-3 w-12 bg-muted animate-pulse rounded" />
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : data?.students.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-10">
@@ -323,9 +367,32 @@ export default function MMPEnrolledStudentsPageComponent({
                   <TableRow key={`${s.userId}-${s.programId}`}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar name={s.name} />
+                        <Link
+                          href={`/profile/${s.userId}`}
+                          className="shrink-0"
+                          target="_blank"
+                        >
+                          {s.image ? (
+                            <Image
+                              height={40}
+                              width={40}
+                              src={s.image}
+                              alt={s.name}
+                              className="h-9 w-9 rounded-full object-cover"
+                            />
+                          ) : (
+                            <Avatar name={s.name} />
+                          )}
+                        </Link>
+
                         <div>
-                          <p className="text-sm font-medium">{s.name}</p>
+                          <Link
+                            href={`/profile/${s.userId}`}
+                            className="text-sm font-medium hover:underline"
+                            target="_blank"
+                          >
+                            {s.name}
+                          </Link>
                           <p className="text-xs text-muted-foreground">
                             {s.email}
                           </p>
@@ -344,17 +411,19 @@ export default function MMPEnrolledStudentsPageComponent({
                     <TableCell>{s.progressPercent}%</TableCell>
 
                     <TableCell>
-                      <Badge
-                        variant={
-                          s.certificateStatus === "ISSUED"
-                            ? "default"
-                            : "outline"
-                        }
-                      >
-                        {s.certificateStatus === "ISSUED"
-                          ? "Issued"
-                          : "Not Issued"}
-                      </Badge>
+                      {s.certificateStatus === "ISSUED" && s.certificateUrl ? (
+                        <Badge
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setSelectedCert(s.certificateUrl || null);
+                            setOpenCert(true);
+                          }}
+                        >
+                          Issued
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">Not Issued</Badge>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
@@ -375,6 +444,21 @@ export default function MMPEnrolledStudentsPageComponent({
           </div>
         </CardContent>
       </Card>
+      <Dialog open={openCert} onOpenChange={setOpenCert}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Certificate Preview</DialogTitle>
+          </DialogHeader>
+
+          {selectedCert && (
+            <img
+              src={selectedCert}
+              alt="Certificate"
+              className="w-full rounded-md"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

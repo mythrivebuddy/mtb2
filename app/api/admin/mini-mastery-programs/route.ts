@@ -80,6 +80,11 @@ export async function GET(req: NextRequest) {
         creator: {
           select: { id: true, name: true, email: true, image: true },
         },
+        _count: {
+    select: {
+      userProgramStates: true,
+    },
+  },
       },
     }),
     prisma.program.count({ where }),

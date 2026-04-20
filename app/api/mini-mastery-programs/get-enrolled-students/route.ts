@@ -9,7 +9,8 @@ export const GET = async (req: Request) => {
   try {
     const session = await checkRole(["ADMIN", "USER"]);
     const userId = session.user.id;
-
+    const userRole = session.user.role;
+    const isAdmin = userRole === "ADMIN";
     const { searchParams } = new URL(req.url);
 
     const programId = searchParams.get("programId");
@@ -47,7 +48,8 @@ export const GET = async (req: Request) => {
     // ─────────────────────────────
     const programs = await prisma.program.findMany({
       where: {
-        createdBy: userId,
+     slug: { not: "2026-complete-makeover" },
+        ...(!isAdmin ? { createdBy: userId } : {}),
         ...(programId ? { id: programId } : {}),
       },
       select: {
@@ -69,6 +71,7 @@ export const GET = async (req: Request) => {
               select: {
                 name: true,
                 email: true,
+                image: true,
               },
             },
           },
@@ -119,6 +122,7 @@ export const GET = async (req: Request) => {
       select: {
         participantId: true,
         programId: true,
+        certificateUrl: true,
       },
     });
 
@@ -136,10 +140,12 @@ export const GET = async (req: Request) => {
       }
     });
 
-    const certSet = new Set(
-      certs.map((c) => `${c.participantId}-${c.programId}`),
-    );
+    const certMap = new Map<string, string>();
 
+    certs.forEach((c) => {
+      const key = `${c.participantId}-${c.programId}`;
+      certMap.set(key, c.certificateUrl);
+    });
     // ─────────────────────────────
     // TRANSFORM
     // ─────────────────────────────
@@ -154,7 +160,8 @@ export const GET = async (req: Request) => {
             ? Math.round((currentDay / program.durationDays) * 100)
             : 0;
 
-        const hasCert = certSet.has(key);
+        const certificateUrl = certMap.get(key);
+        const hasCert = !!certificateUrl;
 
         // ✅ COMPLETION BASED ON PERCENT
         const isCompletedProgram = program.completionThreshold
@@ -171,7 +178,9 @@ export const GET = async (req: Request) => {
           currentDay,
           progressPercent,
           certificateStatus: hasCert ? "ISSUED" : ("NOT_ISSUED" as const),
+          certificateUrl: certificateUrl || null,
           isCompletedProgram,
+          image: u.user.image,
         };
       }),
     );
