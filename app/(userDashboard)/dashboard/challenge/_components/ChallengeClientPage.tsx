@@ -278,7 +278,7 @@ export default function ChallengePage({
   // --- Render Logic ---
   const pageContent = (
     <>
-      <div className="min-h-screen w-full p-4 mt-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen w-full px-4 py-0 sm:mt-4 sm:px-6  sm:py-6 lg:p-8">
         {/* Header and Filters */}
         <div className="flex justify-between items-center w-full mb-4">
           <div>
