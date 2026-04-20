@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -265,8 +266,9 @@ export default function Dashboard() {
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Modules</th>
                   <th className="px-6 py-4">Price</th>
+                  <th className="px-6 py-4 text-center"># of students</th>
                   <th className="px-6 py-4">Last Updated</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  <th className="px-6 py-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -282,7 +284,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </td>
-                    {[...Array(5)].map((_, j) => (
+                    {[...Array(6)].map((_, j) => (
                       <td key={j} className="px-6 py-4"><div className="h-3 w-16 bg-gray-100 rounded" /></td>
                     ))}
                   </tr>
@@ -290,7 +292,7 @@ export default function Dashboard() {
 
                 {!loading && programs.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-16 text-center">
+                    <td colSpan={7} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                           <Plus size={20} className="text-gray-400" />
@@ -350,6 +352,19 @@ export default function Dashboard() {
                       <td className="px-6 py-4 font-bold text-gray-800 text-sm">
                         {formatCurrency(program.price, program.currency)}
                       </td>
+                         {/* Total students enrolled */}
+                       <td className=" py-4 text-sm font-semibold">
+                        <div className="flex justify-center">
+                          <Link
+                            href={`/dashboard/mini-mastery-programs/${program.id}/students`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-500 hover:underline"
+                          >
+                            {program._count.userProgramStates ?? 0} 
+                          </Link>
+                        </div>
+                    </td>
 
                       <td className="px-6 py-4 text-xs md:text-sm text-gray-500">
                         {formatDate(program.updatedAt)}

@@ -120,6 +120,7 @@ const Sidebar = () => {
                 label="MTB Business Profile"
               />
               <NavItem href="/admin/membership-plans" label="Membership Plans" />
+              <NavItem href="/admin/manage-certificates" label="Manage Certificates" />
               <NavItem href="/admin/user-info" label="User Management" />
               <NavItem href="/admin/blog" label="Blog Management" />
               <NavItem
