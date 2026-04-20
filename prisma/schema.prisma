@@ -51,6 +51,7 @@ model User {
   challenge_limit               Int                               @default(1)
   isInBrevo           Boolean  @default(false)
   brevoUserTypeSynced Boolean  @default(false)
+  timezone                     String?
   currentCurrency               SubscriptionPlanCurrency?
   currentPlanId                 String?
   currentPlanInterval           PlanInterval?
