@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -43,6 +43,28 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
     pathname === "/dashboard/mini-mastery-programs";
   const shouldUseInheritBg = isChallengeRoute && isGuest && !isLoading;
 
+  useEffect(() => {
+    if (!user) return;
+
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    // prevent repeat calls per session
+    const lastSent = localStorage.getItem("tz");
+
+    if (user.timezone === timezone && lastSent === timezone) return;
+
+    const updateTimezone = async () => {
+      try {
+        await axios.post("/api/user/timezone", { timezone });
+        localStorage.setItem("tz", timezone);
+      } catch (err) {
+        console.error("Failed to update timezone", err);
+      }
+    };
+
+    updateTimezone();
+  }, [user]);
+
   if (sessionStatus === "loading") {
     return (
       <div className="w-full min-h-screen bg-dashboard flex items-center justify-center">
@@ -73,9 +95,9 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       )}
       <div
-  className={`flex-1 flex flex-col min-h-screen transition-all duration-300
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300
   ${isLoggedIn ? "ml-0 lg:ml-64 pt-20 lg:pt-6" : ""}`}
->
+      >
         {isLoggedIn && session.user.role === "USER" && (
           <div className="md:mx-8 mx-5 hidden lg:block">
             <TopBar user={user} toggleSidebar={() => setIsSidebarOpen(true)} />

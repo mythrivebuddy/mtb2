@@ -88,6 +88,36 @@ export async function POST(req: NextRequest) {
               itemIds: paymentMeta.allItemIds || undefined, // optional
             },
           });
+
+          // ✅ PROGRAM REMINDER TRIGGER
+          try {
+            if (existingOrder.programId) {
+              const user = await prisma.user.findUnique({
+                where: { id: existingOrder.userId },
+                select: { timezone: true },
+              });
+
+              if (user?.timezone) {
+                console.log("⏰ Scheduling daily reminder for program");
+
+                await inngest.send({
+                  name: "mmp-program/reminder.start",
+
+                  id: `mmp-program-reminder-${existingOrder.userId}`,
+
+                  data: {
+                    userId: existingOrder.userId,
+                    // programId: existingOrder.programId,
+                    timezone: user.timezone,
+                  },
+                });
+              } else {
+                console.warn("⚠️ User timezone missing, skipping reminder");
+              }
+            }
+          } catch (err) {
+            console.error("Program reminder scheduling failed:", err);
+          }
         } else {
           console.warn("Inngest not configured, skipping event");
         }
