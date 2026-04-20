@@ -82,7 +82,7 @@ const UserDashboardLayout = ({ children }: { children: React.ReactNode }) => {
           </div>
         )}
 
-        <main className="flex-1 lg:pt-4 py-6 px-4 bg-transparent">
+        <main className="flex-1 lg:pt-4 sm:py-6 px-4 bg-transparent">
           {children}
           <div className="px-4 sm:px-8">{isLoggedIn && <Footer />}</div>
         </main>
