@@ -1,5 +1,5 @@
 import ManageCertificatePageComponent from "@/components/common/manage-certificates/ManageCertificatePageComponent";
 
-export default function ManageCertificatePage() {
+export default function ManageCertificatePageForAdmin() {
   return <ManageCertificatePageComponent />;
 }
