@@ -712,6 +712,13 @@ export default function ProgramPlayer() {
       setActiveDay(data.progress.activeDayNumber);
     }
   }, [data?.progress?.activeDayNumber]);
+  useEffect(() => {
+    if (!data?.progress) return;
+
+    const log = data.progress.logs.find((l) => l.dayNumber === activeDay);
+
+    setActionResponse(log?.actionResponse || "");
+  }, [activeDay, data?.progress]);
 
   // 🎉 Show CELEBRATION when all modules fully done (100%) — only ONCE ever
   // Persisted in localStorage so it never re-shows after the first visit
@@ -1151,7 +1158,7 @@ export default function ProgramPlayer() {
                         });
                       }}
                       disabled={completeMutation.isPending}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-100 active:scale-95"
+                      className="text-xs sm:text-sm w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black max-sm:px-2 py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-100 active:scale-95"
                     >
                       {completeMutation.isPending ? (
                         <>

@@ -115,21 +115,48 @@ export async function POST(req: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: currentUserId },
-      select: { name: true, email: true },
+      select: { id: true, name: true, email: true },
     });
 
     const programUrl = `${process.env.NEXT_URL}/dashboard/mini-mastery-programs/program/${program.id}`;
     const admin = await prisma.user.findFirst({
-      where: { role: "ADMIN",email:process.env.ADMIN_EMAIL},
+      where: { role: "ADMIN", email: process.env.ADMIN_EMAIL },
       select: { id: true, email: true, name: true },
     });
 
-    //  PUSH (ONLY IF NOT CREATOR)
-    if (program.creator?.id && program.creator.id !== currentUserId) {
+    // ✅ JOINER PUSH
+    if (user?.id) {
+      void sendPushNotificationToUser(
+        user.id,
+        "Enrollment Successful 🎉",
+        `You're now enrolled in ${program.name}`,
+        {
+          url: `/dashboard/mini-mastery-programs/program/${program.id}`,
+        },
+      );
+    }
+    // ✅ ADMIN PUSH
+    if (
+      admin?.id &&
+      admin.id !== program.creator?.id && // not creator
+      admin.id !== currentUserId // not joiner
+    ) {
+      void sendPushNotificationToUser(
+        admin.id,
+        "New MMP Enrollment",
+        `${user?.name} joined ${program.name} by ${program.creator?.name}`,
+        {
+          url: `/dashboard/admin/mini-mastery-programs/${program.id}`,
+        },
+      );
+    }
+
+    // ✅ CREATOR PUSH
+    if (program.creator?.id && user?.id && program.creator.id !== user.id) {
       void sendPushNotificationToUser(
         program.creator.id,
         "Mini Mastery Program • New Enrollment 🎉",
-        `${user?.name} joined your ${program.name}`,
+        `${user.name} joined your ${program.name}`,
         {
           url: `/dashboard/mini-mastery-programs/program/${program.id}`,
         },
@@ -182,7 +209,7 @@ export async function POST(req: NextRequest) {
             templateId: "mmp-free-enrolled-admin",
             templateData: {
               username: user?.name,
-              userEmail: maskEmail(user?.email ?? "")?? "N/A",
+              userEmail: maskEmail(user?.email ?? "") ?? "N/A",
               programName: program.name,
               creatorName: program.creator?.name ?? "Unknown",
               programUrl,
