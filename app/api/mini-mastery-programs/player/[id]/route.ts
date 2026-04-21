@@ -37,6 +37,11 @@ export async function GET(
       createdAt: true,
       lastReminderDate: true,
       lastGoaMilestoneNotified: true,
+      user:{
+        select:{
+          timezone:true
+        }
+      }
     },
   });
 
