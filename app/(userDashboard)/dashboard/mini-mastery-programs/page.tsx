@@ -3,39 +3,95 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { signIn, useSession } from "next-auth/react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
-  ChevronDown, ArrowUpDown, Sparkles,
-  ServerCrash, ChevronLeft, ChevronRight,
-  SlidersHorizontal, X, BookOpen,
-  CheckCircle2, PlayCircle, Trophy,
-  Lock, ArrowRight, Target, LayoutPanelLeft,
-  Info, AlertCircle, Clock, GraduationCap,
-  LogIn, Zap, Shield,
+  useQuery,
+  keepPreviousData,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import {
+  ChevronDown,
+  ArrowUpDown,
+  Sparkles,
+  ServerCrash,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  X,
+  BookOpen,
+  CheckCircle2,
+  PlayCircle,
+  Trophy,
+  Lock,
+  ArrowRight,
+  Target,
+  LayoutPanelLeft,
+  Info,
+  AlertCircle,
+  Clock,
+  GraduationCap,
+  LogIn,
+  Zap,
+  Shield,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
-import { ApiResponse, DurationFilter, Filters, MyStatusResponse, PricingFilter, Program, ProgramCompStatus, SortOption } from "@/types/client/mini-mastery-program";
-import { CARD_GRADIENTS, DURATION_OPTIONS, formatPrice, getBgLetter, LIMIT, moduleCount, parseAchievements, parseModules, SORT_LABELS } from "@/lib/utils/mini-mastery-program/mmp-main-page";
+import {
+  ApiResponse,
+  DurationFilter,
+  Filters,
+  MyStatusResponse,
+  PricingFilter,
+  Program,
+  ProgramCompStatus,
+  SortOption,
+} from "@/types/client/mini-mastery-program";
+import {
+  CARD_GRADIENTS,
+  DURATION_OPTIONS,
+  formatPrice,
+  getBgLetter,
+  LIMIT,
+  moduleCount,
+  parseAchievements,
+  parseModules,
+  SORT_LABELS,
+} from "@/lib/utils/mini-mastery-program/mmp-main-page";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 // ─── API fetchers ─────────────────────────────────────────────────────────────
 
-async function fetchPublicPrograms(page: number, filters: Filters): Promise<ApiResponse> {
-  const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+async function fetchPublicPrograms(
+  page: number,
+  filters: Filters,
+): Promise<ApiResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(LIMIT),
+  });
   if (filters.pricing !== "all") params.set("pricing", filters.pricing);
   if (filters.duration !== "all") params.set("duration", filters.duration);
   params.set("sort", filters.sort);
-  const { data } = await axios.get<ApiResponse>(`/api/mini-mastery-programs/public?${params.toString()}`);
+  const { data } = await axios.get<ApiResponse>(
+    `/api/mini-mastery-programs/public?${params.toString()}`,
+  );
   return data;
 }
 
 async function fetchMyStatuses(): Promise<MyStatusResponse> {
-  const { data } = await axios.get<MyStatusResponse>("/api/mini-mastery-programs/my-status");
+  const { data } = await axios.get<MyStatusResponse>(
+    "/api/mini-mastery-programs/my-status",
+  );
   return data;
 }
 
 async function fetchProgramDetail(id: string): Promise<Program> {
-  const { data } = await axios.get<{ program: Program }>(`/api/mini-mastery-programs/public/${id}`);
+  const { data } = await axios.get<{ program: Program }>(
+    `/api/mini-mastery-programs/public/${id}`,
+  );
   return data.program;
 }
 
@@ -73,7 +129,12 @@ interface DropdownProps<T extends string> {
   onChange: (v: T) => void;
 }
 
-function Dropdown<T extends string>({ label, value, options, onChange }: DropdownProps<T>) {
+function Dropdown<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const active = options.find((o) => o.value === value);
 
@@ -81,13 +142,17 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${open
-          ? "bg-slate-900 text-white border-slate-900"
-          : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
-          }`}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${
+          open
+            ? "bg-slate-900 text-white border-slate-900"
+            : "bg-white hover:bg-slate-50 text-slate-600 border-slate-200"
+        }`}
       >
         {active?.label ?? label}
-        <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={12}
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {open && (
@@ -97,9 +162,15 @@ function Dropdown<T extends string>({ label, value, options, onChange }: Dropdow
             {options.map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${value === opt.value ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
-                  }`}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+                  value === opt.value
+                    ? "bg-blue-50 text-blue-700"
+                    : "hover:bg-slate-50 text-slate-600"
+                }`}
               >
                 {opt.label}
               </button>
@@ -123,6 +194,48 @@ function ProgramCTA({
   isLoggedIn: boolean;
   onInfoClick: (prog: Program) => void;
 }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const enrollMutation = useMutation({
+    mutationFn: async (programId: string) => {
+      const res = await axios.post(
+        "/api/mini-mastery-programs/enroll-for-free",
+        { programId },
+      );
+      return res.data;
+    },
+
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.setQueryData<MyStatusResponse>(["mmp-my-status"], (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            statuses: {
+              ...old.statuses,
+              [prog.id]: {
+                enrolled: true,
+                completed: false,
+              } satisfies ProgramCompStatus,
+            },
+          };
+        });
+
+        toast.success(data.message || "You have enrolled successfully");
+
+        setTimeout(() => {
+          router.push(`/dashboard/mini-mastery-programs/program/${prog.id}`);
+        }, 100);
+      }
+    },
+
+    onError: (err) => {
+      console.error("Enroll failed", err);
+      toast.error(getAxiosErrorMessage(err));
+    },
+  });
+
   // Not logged in — both buttons redirect to signIn
   if (!isLoggedIn) {
     return (
@@ -133,7 +246,10 @@ function ProgramCTA({
         >
           <LogIn size={13} /> Enroll
         </button>
-        <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+        <Link
+          href={`/dashboard/mini-mastery-programs/${prog.id}`}
+          className="flex-1 flex"
+        >
           <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
             Info
           </button>
@@ -145,12 +261,18 @@ function ProgramCTA({
   if (status?.completed) {
     return (
       <div className="flex gap-2 pt-1 mt-auto items-stretch">
-        <Link href={`/dashboard/mini-mastery-programs/program/${prog.id}`} className="flex-[2] flex">
+        <Link
+          href={`/dashboard/mini-mastery-programs/program/${prog.id}`}
+          className="flex-[2] flex"
+        >
           <button className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-green-100 flex items-center justify-center gap-1.5">
             <Trophy size={13} /> Completed
           </button>
         </Link>
-        <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+        <Link
+          href={`/dashboard/mini-mastery-programs/${prog.id}`}
+          className="flex-1 flex"
+        >
           <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
             Info
           </button>
@@ -162,12 +284,18 @@ function ProgramCTA({
   if (status?.enrolled) {
     return (
       <div className="flex gap-2 pt-1 mt-auto items-stretch">
-        <Link href={`/dashboard/mini-mastery-programs/program/${prog.id}`} className="flex-[2] flex">
+        <Link
+          href={`/dashboard/mini-mastery-programs/program/${prog.id}`}
+          className="flex-[2] flex"
+        >
           <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5">
             <PlayCircle size={13} /> Continue Learning
           </button>
         </Link>
-        <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+        <Link
+          href={`/dashboard/mini-mastery-programs/${prog.id}`}
+          className="flex-1 flex"
+        >
           <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
             Info
           </button>
@@ -175,15 +303,39 @@ function ProgramCTA({
       </div>
     );
   }
-
+  const isFree = (prog.price ?? 0) === 0;
   return (
-    <div className="flex gap-2 pt-1 mt-auto items-stretch">
-      <Link href={`/dashboard/membership/checkout?mmp_programId=${prog.id}&context=MMP_PROGRAM`} className="flex-[2] flex">
-        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center">
-          Enroll
-        </button>
-      </Link>
-      <Link href={`/dashboard/mini-mastery-programs/${prog.id}`} className="flex-1 flex">
+    <div className="flex gap-2 pt-1 mt-auto ">
+      {isFree ? (
+        <div className="flex-[2] flex">
+          <button
+            onClick={() => enrollMutation.mutate(prog.id)}
+            disabled={enrollMutation.isPending}
+            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center ${enrollMutation.isPending ? "opacity-80" : ""}`}
+          >
+            {enrollMutation.isPending ? (
+              <span className="flex gap-2">
+                Enrolling... <Loader2 className="h-4 w-4 animate-spin" />
+              </span>
+            ) : (
+              <span className="flex gap-2">Start for free</span>
+            )}
+          </button>
+        </div>
+      ) : (
+        <Link
+          href={`/dashboard/membership/checkout?mmp_programId=${prog.id}&context=MMP_PROGRAM`}
+          className="flex-[2] flex"
+        >
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center">
+            Enroll
+          </button>
+        </Link>
+      )}
+      <Link
+        href={`/dashboard/mini-mastery-programs/${prog.id}`}
+        className="flex-1 flex"
+      >
         <button className="w-full bg-slate-50 hover:bg-slate-100 text-slate-900 font-black py-3 rounded-xl text-[11px] tracking-wider transition-all border border-slate-200/60">
           Info
         </button>
@@ -224,7 +376,11 @@ function ProgramDetailModal({
   isLoggedIn: boolean;
   onClose: () => void;
 }) {
-  const { data: program, isLoading, isError } = useQuery({
+  const {
+    data: program,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["mmp-detail-modal", programId],
     queryFn: () => fetchProgramDetail(programId),
     staleTime: 60_000,
@@ -274,48 +430,86 @@ function ProgramDetailModal({
         {isError && (
           <div className="p-8 text-center">
             <AlertCircle size={32} className="text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500 font-bold text-sm">Could not load program details.</p>
+            <p className="text-slate-500 font-bold text-sm">
+              Could not load program details.
+            </p>
           </div>
         )}
 
         {program && (
           <div className="px-6 pb-8 pt-2 space-y-6">
-
             {/* Cover */}
             <div className="relative h-48 rounded-2xl overflow-hidden shadow-lg">
               {program.thumbnailUrl ? (
-                <img src={program.thumbnailUrl} alt={program.name} className="w-full h-full object-cover" />
+                <img
+                  src={program.thumbnailUrl}
+                  alt={program.name}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <div className={`w-full h-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center`}>
+                <div
+                  className={`w-full h-full bg-gradient-to-br from-blue-500 to-indigo-700 flex items-center justify-center`}
+                >
                   <BookOpen size={40} className="text-white/40" />
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4">
-                <p className="text-white font-black text-xl leading-tight">{program.name}</p>
+                <p className="text-white font-black text-xl leading-tight">
+                  {program.name}
+                </p>
                 {program.creator && (
-                  <p className="text-white/70 text-xs font-medium mt-1">by {program.creator.name}</p>
+                  <p className="text-white/70 text-xs font-medium mt-1">
+                    by {program.creator.name}
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Description */}
             {program.description && (
-              <p className="text-slate-500 text-sm font-medium leading-relaxed">{program.description}</p>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                {program.description}
+              </p>
             )}
 
             {/* Stats strip */}
             <div className="grid grid-cols-4 gap-2">
               {[
-                { icon: <Clock size={14} />, label: "Duration", value: `${program.durationDays ?? "?"} Days` },
-                { icon: <BookOpen size={14} />, label: "Modules", value: `${modules.length}` },
-                { icon: <GraduationCap size={14} />, label: "Cert", value: hasCert ? "Included" : "None" },
-                { icon: <Zap size={14} />, label: "Unlock", value: program.unlockType === "daily" ? "Daily" : "All" },
+                {
+                  icon: <Clock size={14} />,
+                  label: "Duration",
+                  value: `${program.durationDays ?? "?"} Days`,
+                },
+                {
+                  icon: <BookOpen size={14} />,
+                  label: "Modules",
+                  value: `${modules.length}`,
+                },
+                {
+                  icon: <GraduationCap size={14} />,
+                  label: "Cert",
+                  value: hasCert ? "Included" : "None",
+                },
+                {
+                  icon: <Zap size={14} />,
+                  label: "Unlock",
+                  value: program.unlockType === "daily" ? "Daily" : "All",
+                },
               ].map(({ icon, label, value }) => (
-                <div key={label} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
-                  <div className="flex justify-center text-blue-500 mb-1">{icon}</div>
-                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-                  <p className="text-xs font-black text-slate-800 mt-0.5 leading-tight">{value}</p>
+                <div
+                  key={label}
+                  className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center"
+                >
+                  <div className="flex justify-center text-blue-500 mb-1">
+                    {icon}
+                  </div>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                    {label}
+                  </p>
+                  <p className="text-xs font-black text-slate-800 mt-0.5 leading-tight">
+                    {value}
+                  </p>
                 </div>
               ))}
             </div>
@@ -327,13 +521,23 @@ function ProgramDetailModal({
                   <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
                     <Target size={14} className="text-white" />
                   </div>
-                  <h3 className="font-black text-slate-900 text-sm">What You&apos;ll Achieve</h3>
+                  <h3 className="font-black text-slate-900 text-sm">
+                    What You&apos;ll Achieve
+                  </h3>
                 </div>
                 <div className="space-y-2">
                   {achievements.map((ach, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <CheckCircle2 size={14} className="text-blue-500 mt-0.5 shrink-0" />
-                      <p className="text-xs font-bold text-slate-700 leading-relaxed">{ach}</p>
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2.5 bg-slate-50 rounded-xl p-3 border border-slate-100"
+                    >
+                      <CheckCircle2
+                        size={14}
+                        className="text-blue-500 mt-0.5 shrink-0"
+                      />
+                      <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                        {ach}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -347,15 +551,22 @@ function ProgramDetailModal({
                   <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
                     <LayoutPanelLeft size={14} className="text-white" />
                   </div>
-                  <h3 className="font-black text-slate-900 text-sm">Program Structure</h3>
+                  <h3 className="font-black text-slate-900 text-sm">
+                    Program Structure
+                  </h3>
                 </div>
                 <div className="space-y-1.5">
                   {modules.slice(0, 5).map((mod, idx) => (
-                    <div key={mod.id ?? idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div
+                      key={mod.id ?? idx}
+                      className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
+                    >
                       <span className="text-[9px] font-black text-blue-400 w-5 shrink-0">
                         {String(idx + 1).padStart(2, "0")}
                       </span>
-                      <p className="text-xs font-bold text-slate-700 flex-1 truncate">{mod.title}</p>
+                      <p className="text-xs font-bold text-slate-700 flex-1 truncate">
+                        {mod.title}
+                      </p>
                       <Lock size={11} className="text-slate-200 shrink-0" />
                     </div>
                   ))}
@@ -373,9 +584,14 @@ function ProgramDetailModal({
               <Info size={16} className="shrink-0 mt-0.5" />
               <p className="text-[11px] font-medium leading-relaxed text-blue-50">
                 Requires{" "}
-                <span className="font-black text-white">{program.completionThreshold ?? 100}% completion</span>{" "}
+                <span className="font-black text-white">
+                  {program.completionThreshold ?? 100}% completion
+                </span>{" "}
                 to unlock the{" "}
-                <span className="font-black text-white">{program.certificateTitle ?? "certificate"}</span>.
+                <span className="font-black text-white">
+                  {program.certificateTitle ?? "certificate"}
+                </span>
+                .
               </p>
             </div>
 
@@ -384,8 +600,12 @@ function ProgramDetailModal({
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 flex items-center gap-3">
                 <Shield size={18} className="text-blue-500 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-black text-slate-800">Sign in to enroll</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Free account — no credit card needed</p>
+                  <p className="text-xs font-black text-slate-800">
+                    Sign in to enroll
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-medium">
+                    Free account — no credit card needed
+                  </p>
                 </div>
               </div>
             )}
@@ -393,7 +613,9 @@ function ProgramDetailModal({
             {/* Sticky footer CTA */}
             <div className="flex items-center justify-between gap-4 pt-2 border-t border-slate-100">
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Investment</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                  Investment
+                </p>
                 <p className="text-2xl font-black text-slate-900">
                   {formatPrice(program.price, program.currency)}
                 </p>
@@ -402,12 +624,19 @@ function ProgramDetailModal({
                 onClick={handleEnroll}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-black px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm"
               >
-                {!isLoggedIn
-                  ? <><LogIn size={16} /> Sign In to Enroll</>
-                  : isPaid
-                    ? <>Enroll Now <ArrowRight size={16} /></>
-                    : <>Start Free <ArrowRight size={16} /></>
-                }
+                {!isLoggedIn ? (
+                  <>
+                    <LogIn size={16} /> Sign In to Enroll
+                  </>
+                ) : isPaid ? (
+                  <>
+                    Enroll Now <ArrowRight size={16} />
+                  </>
+                ) : (
+                  <>
+                    Start Free <ArrowRight size={16} />
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -430,7 +659,9 @@ export default function EnrollPage() {
     sort: "newest",
   });
   const [sortOpen, setSortOpen] = useState(false);
-  const [selectedInfoProg, setSelectedInfoProg] = useState<Program | null>(null);
+  const [selectedInfoProg, setSelectedInfoProg] = useState<Program | null>(
+    null,
+  );
 
   const setFilter = <K extends keyof Filters>(key: K, val: Filters[K]) => {
     setFilters((f) => ({ ...f, [key]: val }));
@@ -442,7 +673,8 @@ export default function EnrollPage() {
     setPage(1);
   };
 
-  const hasActiveFilters = filters.pricing !== "all" || filters.duration !== "all";
+  const hasActiveFilters =
+    filters.pricing !== "all" || filters.duration !== "all";
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["mmp-enroll", page, filters],
@@ -462,10 +694,8 @@ export default function EnrollPage() {
   const pagination = data?.pagination;
   const statuses = statusData?.statuses ?? {};
 
-
   const pageContent = (
     <div className="min-h-screen px-4 sm:px-7 py-4 md:py-10">
-
       {/* ── Info Modal ── */}
       {selectedInfoProg && (
         <ProgramDetailModal
@@ -486,17 +716,24 @@ export default function EnrollPage() {
               Mini-Mastery Programs
             </h1>
             <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl leading-relaxed">
-              Bite-sized daily transformations. Expert-led skills in under 15 minutes a day.
+              Bite-sized daily transformations. Expert-led skills in under 15
+              minutes a day.
             </p>
           </div>
 
           <div className="bg-white px-4 py-2.5 rounded-2xl text-[11px] font-bold text-slate-600 flex items-center gap-3 shadow-sm border border-slate-100 self-start md:mb-1">
             <div className="flex -space-x-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-200" />
+                <div
+                  key={i}
+                  className="w-6 h-6 rounded-full border-2 border-white bg-slate-200"
+                />
               ))}
             </div>
-            <span>Join <span className="text-blue-600 font-black">1,200+</span> growing members</span>
+            <span>
+              Join <span className="text-blue-600 font-black">1,200+</span>{" "}
+              growing members
+            </span>
           </div>
         </div>
       </header>
@@ -556,14 +793,23 @@ export default function EnrollPage() {
 
           {sortOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setSortOpen(false)}
+              />
               <div className="absolute right-0 top-full mt-2 z-20 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden w-48 py-1">
                 {(Object.keys(SORT_LABELS) as SortOption[]).map((s) => (
                   <button
                     key={s}
-                    onClick={() => { setFilter("sort", s); setSortOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${filters.sort === s ? "bg-blue-50 text-blue-700" : "hover:bg-slate-50 text-slate-600"
-                      }`}
+                    onClick={() => {
+                      setFilter("sort", s);
+                      setSortOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+                      filters.sort === s
+                        ? "bg-blue-50 text-blue-700"
+                        : "hover:bg-slate-50 text-slate-600"
+                    }`}
                   >
                     {SORT_LABELS[s]}
                   </button>
@@ -580,7 +826,8 @@ export default function EnrollPage() {
           <ServerCrash size={36} className="text-slate-300" />
           <p className="text-slate-500 font-bold text-sm">
             {axios.isAxiosError(error) && error.response?.data
-              ? (error.response.data as { message?: string }).message ?? "Something went wrong."
+              ? ((error.response.data as { message?: string }).message ??
+                "Something went wrong.")
               : "Could not load programs. Please try again."}
           </p>
           <button
@@ -595,122 +842,138 @@ export default function EnrollPage() {
       {/* ── Grid ── */}
       {!isError && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading
-            ? Array.from({ length: LIMIT }).map((_, i) => <SkeletonCard key={i} />)
-            : programs.length === 0
-              ? (
-                <div className="col-span-full flex flex-col items-center gap-3 py-24">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                    <Sparkles size={24} className="text-slate-300" />
-                  </div>
-                  <p className="text-slate-500 font-bold text-sm">No programs match your filters.</p>
-                  {hasActiveFilters && (
-                    <button onClick={clearFilters} className="text-blue-600 text-xs font-black underline underline-offset-4">
-                      Clear all filters
-                    </button>
-                  )}
-                </div>
-              )
-              : programs.map((prog, idx) => {
-                const isPaid = (prog.price ?? 0) > 0;
-                const modules = moduleCount(prog.modules);
-                const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
-                const bgLetter = getBgLetter(prog.name);
-                const progStatus = isLoggedIn ? statuses[prog.id] : undefined;
+          {isLoading ? (
+            Array.from({ length: LIMIT }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))
+          ) : programs.length === 0 ? (
+            <div className="col-span-full flex flex-col items-center gap-3 py-24">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                <Sparkles size={24} className="text-slate-300" />
+              </div>
+              <p className="text-slate-500 font-bold text-sm">
+                No programs match your filters.
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-blue-600 text-xs font-black underline underline-offset-4"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          ) : (
+            programs.map((prog, idx) => {
+              const isPaid = (prog.price ?? 0) > 0;
+              const modules = moduleCount(prog.modules);
+              const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
+              const bgLetter = getBgLetter(prog.name);
+              const progStatus = isLoggedIn ? statuses[prog.id] : undefined;
 
-                return (
-                  <div
-                    key={prog.id}
-                    className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
-                  >
-                    {/* Cover */}
-                    <div className="relative h-[160px] overflow-hidden">
-                      {prog.thumbnailUrl ? (
-                        <img
-                          src={prog.thumbnailUrl}
-                          alt={prog.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
-                      ) : (
-                        <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
-                          <span className="absolute -bottom-4 -right-3 text-[120px] font-black text-white/10 leading-none select-none pointer-events-none">
-                            {bgLetter}
-                          </span>
-                          <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/10" />
-                          <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-300">
-                            <BookOpen size={22} className="text-white" />
-                          </div>
+              return (
+                <div
+                  key={prog.id}
+                  className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
+                >
+                  {/* Cover */}
+                  <div className="relative h-[160px] overflow-hidden">
+                    {prog.thumbnailUrl ? (
+                      <img
+                        src={prog.thumbnailUrl}
+                        alt={prog.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div
+                        className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center`}
+                      >
+                        <span className="absolute -bottom-4 -right-3 text-[120px] font-black text-white/10 leading-none select-none pointer-events-none">
+                          {bgLetter}
+                        </span>
+                        <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-white/10" />
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                          <BookOpen size={22} className="text-white" />
                         </div>
-                      )}
-
-                      {prog.thumbnailUrl && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                      )}
-
-                      {/* Status badge — only for logged-in users */}
-                      {isLoggedIn && <CardStatusBadge status={progStatus} />}
-
-                      {/* Guest lock badge */}
-                      {!isLoggedIn && (
-                        <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight border border-white/10">
-                          <Lock size={9} /> Sign in to enroll
-                        </div>
-                      )}
-
-                      <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight flex items-center gap-1 border border-white/10">
-                        {prog.durationDays ?? "?"} Days
                       </div>
+                    )}
 
-                      <div className={`absolute bottom-3 right-3 ${isPaid ? "bg-white text-blue-600" : "bg-white text-slate-900"} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md`}>
-                        {formatPrice(prog.price, prog.currency)}
+                    {prog.thumbnailUrl && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    )}
+
+                    {/* Status badge — only for logged-in users */}
+                    {isLoggedIn && <CardStatusBadge status={progStatus} />}
+
+                    {/* Guest lock badge */}
+                    {!isLoggedIn && (
+                      <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight border border-white/10">
+                        <Lock size={9} /> Sign in to enroll
                       </div>
+                    )}
+
+                    <div className="absolute bottom-3 left-3 bg-black/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight flex items-center gap-1 border border-white/10">
+                      {prog.durationDays ?? "?"} Days
                     </div>
 
-                    {/* Content */}
-                    <div className="p-5 flex flex-col flex-1 space-y-4">
-                      <div className="space-y-1.5">
-                        <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
-                          {prog.name}
-                        </h3>
-                        <p className="h-9 text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
-                          {prog.description ?? "Experience a complete transformation with expert-guided sessions designed for your busy lifestyle."}
-                        </p>
-                      </div>
+                    <div
+                      className={`absolute bottom-3 right-3 ${isPaid ? "bg-white text-blue-600" : "bg-white text-slate-900"} px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md`}
+                    >
+                      {formatPrice(prog.price, prog.currency)}
+                    </div>
+                  </div>
 
-                      <div className="flex items-center justify-between border-y border-slate-50 py-3">
-                        <div className="flex items-center gap-2">
-                          {prog.creator?.image ? (
-                            <img src={prog.creator.image} alt={prog.creator.name} className="w-5 h-5 rounded-full object-cover border border-slate-200" />
-                          ) : (
-                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 border border-slate-200 flex items-center justify-center text-white text-[8px] font-black">
-                              {prog.creator?.name?.[0]?.toUpperCase() ?? "C"}
-                            </div>
-                          )}
-                          {/* <span className="text-[10px] font-bold text-slate-400 italic hover:text-underline">
+                  {/* Content */}
+                  <div className="p-5 flex flex-col flex-1 space-y-4">
+                    <div className="space-y-1.5">
+                      <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
+                        {prog.name}
+                      </h3>
+                      <p className="h-9 text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
+                        {prog.description ??
+                          "Experience a complete transformation with expert-guided sessions designed for your busy lifestyle."}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between border-y border-slate-50 py-3">
+                      <div className="flex items-center gap-2">
+                        {prog.creator?.image ? (
+                          <img
+                            src={prog.creator.image}
+                            alt={prog.creator.name}
+                            className="w-5 h-5 rounded-full object-cover border border-slate-200"
+                          />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 border border-slate-200 flex items-center justify-center text-white text-[8px] font-black">
+                            {prog.creator?.name?.[0]?.toUpperCase() ?? "C"}
+                          </div>
+                        )}
+                        {/* <span className="text-[10px] font-bold text-slate-400 italic hover:text-underline">
                             <Link href={`/profile/${prog.createdBy}`}>{prog.creator?.name ?? "Expert Coach"}</Link>
                           </span> */}
-                          <Link
-                            href={`/profile/${prog.createdBy}`}
-                            className="text-[12px] font-bold hover:underline cursor-pointer transition-colors"
-                          >
-                            {prog.creator?.name ?? "Expert Coach"}
-                          </Link>
-                        </div>
-                        <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-md">
-                          {modules} Modules
-                        </div>
+                        <Link
+                          href={`/profile/${prog.createdBy}`}
+                          className="text-[12px] font-bold hover:underline cursor-pointer transition-colors"
+                        >
+                          {prog.creator?.name ?? "Expert Coach"}
+                        </Link>
                       </div>
-
-                      <ProgramCTA
-                        prog={prog}
-                        status={progStatus}
-                        isLoggedIn={isLoggedIn}
-                        onInfoClick={setSelectedInfoProg}
-                      />
+                      <div className="text-[10px] font-black text-slate-900 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-md">
+                        {modules} Modules
+                      </div>
                     </div>
+
+                    <ProgramCTA
+                      prog={prog}
+                      status={progStatus}
+                      isLoggedIn={isLoggedIn}
+                      onInfoClick={setSelectedInfoProg}
+                    />
                   </div>
-                );
-              })}
+                </div>
+              );
+            })
+          )}
         </div>
       )}
 
@@ -728,32 +991,50 @@ export default function EnrollPage() {
 
             <div className="flex items-center gap-1">
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
+                .filter(
+                  (p) =>
+                    p === 1 ||
+                    p === pagination.totalPages ||
+                    Math.abs(p - page) <= 1,
+                )
                 .reduce<(number | "...")[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && typeof arr[idx - 1] === "number" && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                  if (
+                    idx > 0 &&
+                    typeof arr[idx - 1] === "number" &&
+                    (p as number) - (arr[idx - 1] as number) > 1
+                  )
+                    acc.push("...");
                   acc.push(p);
                   return acc;
                 }, [])
                 .map((p, idx) =>
                   p === "..." ? (
-                    <span key={`e-${idx}`} className="px-1 text-slate-400 text-xs">…</span>
+                    <span
+                      key={`e-${idx}`}
+                      className="px-1 text-slate-400 text-xs"
+                    >
+                      …
+                    </span>
                   ) : (
                     <button
                       key={p}
                       onClick={() => setPage(p as number)}
-                      className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${page === p
-                        ? "bg-slate-900 text-white shadow-md"
-                        : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
-                        }`}
+                      className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
+                        page === p
+                          ? "bg-slate-900 text-white shadow-md"
+                          : "hover:bg-slate-100 text-slate-500 bg-white border border-slate-100"
+                      }`}
                     >
                       {p}
                     </button>
-                  )
+                  ),
                 )}
             </div>
 
             <button
-              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              onClick={() =>
+                setPage((p) => Math.min(pagination.totalPages, p + 1))
+              }
               disabled={page >= pagination.totalPages}
               className="flex items-center gap-1 px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
             >
@@ -762,18 +1043,23 @@ export default function EnrollPage() {
           </div>
 
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-            Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, pagination.total)} of {pagination.total} programs
+            Showing {(page - 1) * LIMIT + 1}–
+            {Math.min(page * LIMIT, pagination.total)} of {pagination.total}{" "}
+            programs
           </p>
         </div>
       )}
 
-      {pagination && pagination.totalPages <= 1 && !isLoading && programs.length > 0 && (
-        <p className="mt-12 text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
-          Showing all {pagination.total} programs
-        </p>
-      )}
+      {pagination &&
+        pagination.totalPages <= 1 &&
+        !isLoading &&
+        programs.length > 0 && (
+          <p className="mt-12 text-center text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">
+            Showing all {pagination.total} programs
+          </p>
+        )}
     </div>
-  )
+  );
   return authStatus === "authenticated" ? (
     pageContent
   ) : (

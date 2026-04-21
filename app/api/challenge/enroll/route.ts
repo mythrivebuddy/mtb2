@@ -14,6 +14,7 @@ import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { formatDate } from "@/lib/utils/dateUtils";
+import { maskEmail } from "@/utils/mask-email";
 
 // Define this interface near the top of the file or in your featureConfig types
 interface ChallengesFeatureConfig {
@@ -140,13 +141,12 @@ export async function POST(request: Request) {
 
     // Fetch creator only if there's a cost
     const isPaid =
-  challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
+      challengeToJoin.challengeJoiningType === ChallengeJoiningType.PAID;
 
-const creator =
- await prisma.user.findUnique({
-        where: { id: challengeToJoin.creatorId },
-        include: { plan: true },
-      })
+    const creator = await prisma.user.findUnique({
+      where: { id: challengeToJoin.creatorId },
+      include: { plan: true },
+    });
 
     if (challengeToJoin.cost > 0 && !creator) {
       return NextResponse.json(
@@ -235,7 +235,6 @@ const creator =
       { url: `/dashboard/challenge/my-challenges/${challengeToJoin.id}` },
     );
 
-
     const paidOrder = isPaid
       ? await prisma.paymentOrder.findFirst({
           where: {
@@ -291,16 +290,14 @@ const creator =
       // ✅ SINGLE SOURCE OF TRUTH
       netBase = Number((baseAmount - discount).toFixed(2));
 
-      if (netBase <= 0) {
-        platformFee = totalPaid;
-        coachEarning = 0;
-      } else {
-        platformFee = Number(((netBase * commissionPercent) / 100).toFixed(2));
-        coachEarning = Number((netBase - platformFee).toFixed(2));
-      }
+      // ✅ NEW: commission on net value (excluding GST)
+      // const commissionBase = Number((netBase + gst).toFixed(2));
 
-      platformFee = Number(((netBase * commissionPercent) / 100).toFixed(2));
+      platformFee = Number(
+        ((netBase * commissionPercent) / 100).toFixed(2),
+      );
 
+      // 
       coachEarning = Number((netBase - platformFee).toFixed(2));
     }
     // ⚠️ Optional safety (recommended)
@@ -316,7 +313,7 @@ const creator =
     //  Email Data (FULLY FIXED)
     const emailData = {
       username: joiner.name || "User",
-      userEmail: joiner.email,
+      userEmail: maskEmail(joiner.email),
       coachName: creator?.name || "Coach",
 
       challengeName: challengeToJoin.title,
@@ -368,12 +365,13 @@ const creator =
         templateData: emailData,
       }).catch((err) => console.error("User email failed:", err.message));
     } else {
-      console.log("🚫 Skipping USER email (admin paid challenge)");
+      console.log("🚫 Skipping joined USER email (paid challenge)");
     }
 
     // ✅ COACH EMAIL
     // ✅ COACH EMAIL (SAFE)
     if (creator && creator.id !== joiner.id) {
+        console.log("📧 Sending email to:", creator.email);
       const templateId = isPaid
         ? "coach-user-joined-paid-challenge"
         : "coach-user-joined-challenge";
@@ -382,7 +380,7 @@ const creator =
         toName: creator.name || "Coach",
         templateId,
         templateData: emailData,
-      }).catch((err) => console.error("Coach email failed:", err.message));
+      }).catch((err) => console.error("❌ Coach email failed:", err));
     }
     // Respond to the client immediately after the database is updated.
     return NextResponse.json(
