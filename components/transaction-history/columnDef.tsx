@@ -15,20 +15,21 @@ export interface Transaction {
 
   challengeTitle?: string;
 
-breakdown?: {
-  baseAmount: number;
-  discount?: number;
-  commission: number;
-  commissionPercent?: number;
-  finalAmount: number;
-};
+  breakdown?: {
+    baseAmount: number;
+    discount?: number;
+    commission: number;
+    commissionPercent?: number;
+    finalAmount: number;
+  };
   activityMeta?: {
     userId?: string;
     userName?: string;
     challengeTitle?: string;
     joinerId?: string;
     joinerName?: string;
-     programName?: string;
+    programName?: string;
+    invoiceUrl?: string;
   };
   activity: {
     activity: string;
@@ -52,9 +53,8 @@ export const columns: ColumnDef<Transaction>[] = [
     header: "Activity",
     cell: ({ row }) => {
       const data = row.original;
-const meta = data.activityMeta;
-      const userId =
-        data.activityMeta?.userId || data.activityMeta?.joinerId;
+      const meta = data.activityMeta;
+      const userId = data.activityMeta?.userId || data.activityMeta?.joinerId;
 
       const userName =
         data.activityMeta?.userName || data.activityMeta?.joinerName;
@@ -74,7 +74,20 @@ const meta = data.activityMeta;
         );
       }
 
-      return <span>{data.activity.displayName}</span>;
+      return (
+        <div className="flex items-center gap-2">
+          <span>{data.activity.displayName}</span>
+
+          {meta?.invoiceUrl && (
+            <button
+              onClick={() => window.open(meta.invoiceUrl, "_blank")}
+              className="text-xs text-blue-600 hover:underline"
+            >
+              View Invoice
+            </button>
+          )}
+        </div>
+      );
     },
   },
   {
@@ -92,25 +105,25 @@ const meta = data.activityMeta;
         return (
           <div className="text-sm text-start">
             <div
-              className={`font-medium ${isCredit ? "text-green-600" : "text-red-600"
-                }`}
+              className={`font-medium ${
+                isCredit ? "text-green-600" : "text-red-600"
+              }`}
             >
-              {isCredit ? "+" : "-"} {data.currency} {data.breakdown.finalAmount.toFixed(2)}
+              {isCredit ? "+" : "-"} {data.currency}{" "}
+              {data.breakdown.finalAmount.toFixed(2)}
             </div>
 
-           <div className="text-xs text-gray-500">
-  {data.currency} {data.breakdown.baseAmount.toFixed(2)}
-
-  {data.breakdown.discount ? (
-    <>
-      {" - "}
-      {data.currency} {data.breakdown.discount.toFixed(2)} discount
-    </>
-  ) : null}
-
-  {" - "}
-  {data.currency} {data.breakdown.commission.toFixed(2)} commission
-</div>
+            <div className="text-xs text-gray-500">
+              {data.currency} {data.breakdown.baseAmount.toFixed(2)}
+              {data.breakdown.discount ? (
+                <>
+                  {" - "}
+                  {data.currency} {data.breakdown.discount.toFixed(2)} discount
+                </>
+              ) : null}
+              {" - "}
+              {data.currency} {data.breakdown.commission.toFixed(2)} commission
+            </div>
           </div>
         );
       }
@@ -121,5 +134,5 @@ const meta = data.activityMeta;
         </span>
       );
     },
-  }
+  },
 ];
