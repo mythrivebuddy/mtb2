@@ -15,18 +15,20 @@ export interface Transaction {
 
   challengeTitle?: string;
 
-  breakdown?: {
-    baseAmount: number;
-    commission: number;
-    commissionPercent?: number;
-    finalAmount: number;
-  };
+breakdown?: {
+  baseAmount: number;
+  discount?: number;
+  commission: number;
+  commissionPercent?: number;
+  finalAmount: number;
+};
   activityMeta?: {
     userId?: string;
     userName?: string;
     challengeTitle?: string;
     joinerId?: string;
     joinerName?: string;
+     programName?: string;
   };
   activity: {
     activity: string;
@@ -50,14 +52,14 @@ export const columns: ColumnDef<Transaction>[] = [
     header: "Activity",
     cell: ({ row }) => {
       const data = row.original;
-
+const meta = data.activityMeta;
       const userId =
         data.activityMeta?.userId || data.activityMeta?.joinerId;
 
       const userName =
         data.activityMeta?.userName || data.activityMeta?.joinerName;
-
-      if (userId && userName) {
+      const title = meta?.challengeTitle || meta?.programName;
+      if (userId && userName && title) {
         return (
           <div>
             <Link
@@ -67,7 +69,7 @@ export const columns: ColumnDef<Transaction>[] = [
             >
               {userName?.trim()}
             </Link>{" "}
-            joined {data.activityMeta?.challengeTitle}
+            joined {title}
           </div>
         );
       }
@@ -96,11 +98,19 @@ export const columns: ColumnDef<Transaction>[] = [
               {isCredit ? "+" : "-"} {data.currency} {data.breakdown.finalAmount.toFixed(2)}
             </div>
 
-            <div className="text-xs  text-gray-500">
-              {data.currency} {data.breakdown.baseAmount.toFixed(2)}
-              {" - "}
-              {data.currency} {data.breakdown.commission.toFixed(2)} commision
-            </div>
+           <div className="text-xs text-gray-500">
+  {data.currency} {data.breakdown.baseAmount.toFixed(2)}
+
+  {data.breakdown.discount ? (
+    <>
+      {" - "}
+      {data.currency} {data.breakdown.discount.toFixed(2)} discount
+    </>
+  ) : null}
+
+  {" - "}
+  {data.currency} {data.breakdown.commission.toFixed(2)} commission
+</div>
           </div>
         );
       }
