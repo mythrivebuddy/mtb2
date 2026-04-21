@@ -460,7 +460,7 @@ async function main() {
           <td style="padding:6px 0;color:#111827;font-size:14px;text-align:right;">₹{{gst}}</td>
         </tr>
         <tr style="border-top:2px solid #16a34a;">
-          <td style="padding:8px 0;color:#111827;font-weight:700;font-size:15px;">Total Paid</td>
+          <td style="padding:8px 0;color:#111827;font-weight:700;font-size:15px;">Total Paid (incl. GST)</td>
           <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:15px;text-align:right;">₹{{totalPaid}}</td>
         </tr>
       </table>
@@ -471,7 +471,7 @@ async function main() {
       <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">🏢 Your Earnings</h3>
       <table style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Platform Commission ({{commissionPercent}}%)</td>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Platform Commission ({{commissionPercent}}% of ₹{{netBase}})</td>
           <td style="padding:6px 0;color:#dc2626;font-size:14px;text-align:right;">− ₹{{platformFee}}</td>
         </tr>
         <tr style="border-top:2px solid #e5e7eb;">
@@ -479,6 +479,9 @@ async function main() {
           <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:16px;text-align:right;">₹{{coachEarning}}</td>
         </tr>
       </table>
+      <p style="margin:10px 0 0;color:#9ca3af;font-size:12px;">
+  GST is collected as a tax component and is not part of your earnings.
+</p>
       <p style="margin:10px 0 0;color:#9ca3af;font-size:13px;">Payment Date: {{paymentDate}}</p>
     </div>
  
@@ -670,6 +673,166 @@ async function main() {
 
 </div>
   `.trim(),
+    },
+    {
+      templateId: "mmp-free-enrolled-user",
+      subject: "You're in! {{programName}} is now unlocked 🚀",
+      description: "Sent when a user enrolls in a FREE Mini Mastery Program",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#ecfdf5;">
+    <h1 style="margin:0;color:#065f46;font-size:24px;">You're In! 🎉</h1>
+    <p style="margin:6px 0 0;color:#4b5563;">Your free learning journey starts now</p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{username}}</strong>,</p>
+
+    <p style="color:#4b5563;">You've successfully joined:</p>
+    <h2 style="margin:10px 0 20px;color:#111827;">{{programName}}</h2>
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px;border-radius:8px;margin-bottom:20px;">
+      <p style="margin:0;color:#166534;font-size:14px;">
+        ✅ Free access unlocked
+      </p>
+    </div>
+
+    <p style="color:#374151;font-size:14px;">
+      Show up daily, stay consistent, and build momentum 
+    </p>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{programUrl}}" style="background:#16a34a;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;">
+        Start Learning →
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy</p>
+  </div>
+
+</div>
+`.trim(),
+    },
+    {
+      templateId: "mmp-free-enrolled-creator",
+      subject: "New learner joined {{programName}} 🎉",
+      description:
+        "Sent to creator when someone joins their FREE Mini Mastery Program",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#eff6ff;">
+    <h1 style="margin:0;color:#1d4ed8;font-size:24px;">New Enrollment 🎉</h1>
+    <p style="margin:6px 0 0;color:#4b5563;">Your program is gaining traction</p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{creatorName}}</strong>,</p>
+
+    <p style="color:#4b5563;">
+      <strong>{{username}}</strong> just joined your program:
+    </p>
+
+    <h2 style="margin:10px 0 20px;color:#111827;">{{programName}}</h2>
+
+    <div style="background:#f9fafb;padding:14px;border-radius:8px;margin-bottom:20px;">
+      <p style="margin:0;color:#374151;font-size:14px;">
+        💡 Free programs are powerful entry points—keep delivering value!
+      </p>
+    </div>
+
+    <p style="color:#374151;font-size:14px;">
+      Keep building momentum and impact 🚀
+    </p>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{programUrl}}" style="background:#3b82f6;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;">
+        View Program →
+      </a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy</p>
+  </div>
+
+</div>
+`.trim(),
+    },
+    {
+      templateId: "mmp-free-enrolled-admin",
+      subject: "{{username}} joined {{programName}} ({{creatorName}})",
+      description:
+        "Sent to admin when a user enrolls in a free Mini Mastery Program",
+      htmlContent: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+
+          <!-- HEADER -->
+          <div style="padding:24px;text-align:center;background:#f1f5f9;">
+            <h2 style="margin:0;color:#111827;font-size:20px;">New Program Enrollment</h2>
+            <p style="margin:6px 0 0;color:#6b7280;font-size:13px;">Mini Mastery Program</p>
+          </div>
+
+          <!-- BODY -->
+          <div style="padding:24px;">
+            <p style="font-size:14px;color:#374151;">
+              <strong>{{username}}</strong> has joined the program
+              <strong>"{{programName}}"</strong> created by
+              <strong>{{creatorName}}</strong>.
+            </p>
+
+            <!-- DETAILS -->
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-top:16px;">
+              <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">User</p>
+              <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+                {{username}} ({{userEmail}})
+              </p>
+
+              <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">Program</p>
+              <p style="margin:0 0 12px;font-size:14px;color:#111827;font-weight:600;">
+                {{programName}}
+              </p>
+
+              <p style="margin:0 0 6px;font-size:13px;color:#6b7280;">Creator</p>
+              <p style="margin:0;font-size:14px;color:#111827;font-weight:600;">
+                {{creatorName}}
+              </p>
+            </div>
+
+            <!-- CTA -->
+            <div style="text-align:center;margin-top:24px;">
+              <a href="{{programUrl}}" style="
+                background:#111827;
+                color:white;
+                padding:12px 24px;
+                border-radius:6px;
+                text-decoration:none;
+                font-size:14px;
+                font-weight:600;
+                display:inline-block;
+              ">
+                View Program →
+              </a>
+            </div>
+          </div>
+
+          <!-- FOOTER -->
+          <div style="background:#f9fafb;padding:14px;text-align:center;border-top:1px solid #e5e7eb;">
+            <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy</p>
+          </div>
+          </div>
+`.trim(),
     },
   ];
 

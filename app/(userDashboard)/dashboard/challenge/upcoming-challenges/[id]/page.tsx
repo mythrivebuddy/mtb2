@@ -109,8 +109,8 @@ async function getChallengeData(challengeId: string, userId?: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default async function ChallengeDetailPage(props: any) {
-  const id = props.params.id;
+export default async function ChallengeDetailPage({params}: {params:{id:string}}) {
+  const {id} = await params;
 
   // Use getServerSession instead of check Role to handle null sessions gracefully
   const session = await getServerSession(authConfig);
