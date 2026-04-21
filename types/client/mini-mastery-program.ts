@@ -89,6 +89,9 @@ export interface Program {
   thumbnailUrl: string | null;
   creator: Creator | null;
   createdBy: string;
+  _count:{
+    userProgramStates:number;
+  }
 }
 
 export interface Pagination {

@@ -104,7 +104,7 @@ const CompleteMakeoverPageContent = async () => {
   const plan = res.data.plan;
   const program = res.data.program;
   const { isPurchased,userProgramState } = await grantProgramAccessToPage();  
-  console.log({isPurchased,userProgramState});
+  
     if (
     isPurchased && userProgramState && 
     program.onboardingStartDate &&

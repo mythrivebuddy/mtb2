@@ -6,8 +6,67 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ChallengeDetailView from "../ChallengeDetailView";
 import type { ChallengeEnrollment, UserChallengeTask } from "@prisma/client";
+import { Metadata } from "next";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
 
+  const { id: challengeId } = await params;
+  const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
+
+  const logoUrl = `${baseUrl}/logo.png`;
+  let challenge = null;
+
+  try {
+    challenge = await prisma.challenge.findUnique({
+      where: { id: challengeId },
+      select: {
+        title: true,
+        description: true,
+      },
+    });
+  } catch (err) {
+    console.error("Metadata fetch failed:", err);
+  }
+
+  if (!challenge) {
+    return {
+      title: "Challenge | MythriveBuddy",
+    };
+  }
+
+  return {
+    metadataBase: new URL(baseUrl),
+    title: challenge.title ? `${challenge.title} | MythriveBuddy` : "Challenge | MythriveBuddy",
+    description: challenge.description ?? undefined,
+
+    openGraph: {
+      title: challenge.title ? `${challenge.title} | MythriveBuddy` : "Challenge | MythriveBuddy",
+      description: challenge.description ?? undefined,
+      url: `${baseUrl}/dashboard/challenge/upcoming-challenges/${challengeId}`,
+      siteName: "MyThriveBuddy",
+      images: [
+        {
+          url: logoUrl,
+          width: 1200,
+          height: 630,
+          alt: challenge.title,
+        },
+      ],
+      type: "website",
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title: `${challenge.title} | MythriveBuddy`,
+      description: challenge.description ?? undefined,
+      images: [logoUrl],
+    },
+  };
+}
 export type EnrollmentWithTasks = ChallengeEnrollment & {
   userTasks: UserChallengeTask[];
 };
