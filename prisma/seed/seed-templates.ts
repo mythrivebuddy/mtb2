@@ -460,7 +460,7 @@ async function main() {
           <td style="padding:6px 0;color:#111827;font-size:14px;text-align:right;">₹{{gst}}</td>
         </tr>
         <tr style="border-top:2px solid #16a34a;">
-          <td style="padding:8px 0;color:#111827;font-weight:700;font-size:15px;">Total Paid</td>
+          <td style="padding:8px 0;color:#111827;font-weight:700;font-size:15px;">Total Paid (incl. GST)</td>
           <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:15px;text-align:right;">₹{{totalPaid}}</td>
         </tr>
       </table>
@@ -471,7 +471,7 @@ async function main() {
       <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">🏢 Your Earnings</h3>
       <table style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Platform Commission ({{commissionPercent}}%)</td>
+          <td style="padding:6px 0;color:#6b7280;font-size:14px;">Platform Commission ({{commissionPercent}}% of ₹{{netBase}})</td>
           <td style="padding:6px 0;color:#dc2626;font-size:14px;text-align:right;">− ₹{{platformFee}}</td>
         </tr>
         <tr style="border-top:2px solid #e5e7eb;">
@@ -479,6 +479,9 @@ async function main() {
           <td style="padding:8px 0;color:#16a34a;font-weight:700;font-size:16px;text-align:right;">₹{{coachEarning}}</td>
         </tr>
       </table>
+      <p style="margin:10px 0 0;color:#9ca3af;font-size:12px;">
+  GST is collected as a tax component and is not part of your earnings.
+</p>
       <p style="margin:10px 0 0;color:#9ca3af;font-size:13px;">Payment Date: {{paymentDate}}</p>
     </div>
  
