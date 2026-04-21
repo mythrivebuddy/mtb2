@@ -192,7 +192,7 @@ const RightPanel = ({
                 <p
                   className={`${item.txType === "CREDIT" ? "text-green-500" : "text-red-500"} font-medium ml-2 break-words`}
                 >
-                  {item.amount} {item?.currency}
+                  {item?.amount?.toFixed(2)} {item?.currency}
                 </p>
               </div>
             ))}
