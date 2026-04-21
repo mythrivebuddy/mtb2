@@ -269,6 +269,23 @@ export async function GET(request: Request) {
       coachChallengeEarningsPromise,
     ]);
 
+    const paymentOrderIds = paymentOrders.map((po) => po.id);
+
+const invoices = await prisma.invoice.findMany({
+  where: {
+    paymentOrderId: { in: paymentOrderIds },
+    status: "PAID",
+  },
+  select: {
+    paymentOrderId: true,
+    pdfUrl: true,
+  },
+});
+
+const invoiceMap = new Map(
+  invoices.map((inv) => [inv.paymentOrderId, inv.pdfUrl])
+);
+
     // After the main Promise.all, fetch UNFILTERED data for balance cards
     const [allCoachEarnings] = await Promise.all([
       prisma.challengePayment.findMany({
@@ -353,6 +370,7 @@ export async function GET(request: Request) {
         activityMeta: {
           programId: po.programId,
           storeOrderId: po.storeOrderId,
+          invoiceUrl: invoiceMap.get(po.id) ?? null,
         },
       };
     });
