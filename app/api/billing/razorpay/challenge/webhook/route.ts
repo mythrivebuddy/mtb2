@@ -78,16 +78,46 @@ export async function POST(req: NextRequest) {
     try {
       try {
         if (inngest && typeof inngest.send === "function") {
-          console.log("🧾 UNIVERSAL INVOICE TRIGGER");
-
+          await new Promise((res) => setTimeout(res, 500));
+          console.log("🧾 UNIVERSAL INVOICE TRIGGER after 500 ms ");
           await inngest.send({
             name: "invoice/send",
-            id: `invoice-${payment.id}`,
+            id: `invoice-${payment.id}-${Date.now()}`,
             data: {
               orderId: existingOrder.id,
               itemIds: paymentMeta.allItemIds || undefined, // optional
             },
           });
+
+          // ✅ PROGRAM REMINDER TRIGGER
+          try {
+            if (existingOrder.programId) {
+              const user = await prisma.user.findUnique({
+                where: { id: existingOrder.userId },
+                select: { timezone: true },
+              });
+
+              if (user?.timezone) {
+                console.log("⏰ Scheduling daily reminder for program");
+
+                await inngest.send({
+                  name: "mmp-program/reminder.start",
+
+                  id: `mmp-program-reminder-${existingOrder.userId}`,
+
+                  data: {
+                    userId: existingOrder.userId,
+                    // programId: existingOrder.programId,
+                    timezone: user.timezone,
+                  },
+                });
+              } else {
+                console.warn("⚠️ User timezone missing, skipping reminder");
+              }
+            }
+          } catch (err) {
+            console.error("Program reminder scheduling failed:", err);
+          }
         } else {
           console.warn("Inngest not configured, skipping event");
         }

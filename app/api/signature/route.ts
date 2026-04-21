@@ -9,7 +9,7 @@ import { checkRole } from "@/lib/utils/auth";
 
 export const GET = async() => {
   try {
-    const session = await checkRole("USER");
+    const session = await checkRole(["USER","ADMIN"]);
     const userId = session.user.id;
     const signature = await prisma.challengeCreatorSignature.findUnique({
       where: { userId },

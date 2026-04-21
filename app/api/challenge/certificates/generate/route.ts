@@ -7,6 +7,7 @@ import { generateCertificateId } from "@/lib/certificates/generateCertificateId"
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { renderCertificateImage } from "@/lib/certificates/renderCerticiate";
 import sharp from "sharp";
+import { checkRole } from "@/lib/utils/auth";
 
 const CERT_BUCKET = "certificates";
 
@@ -18,6 +19,7 @@ function serializeError(e: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
+    await checkRole(["ADMIN","USER"]);
     const body = await req.json();
 
     const { participantId, challengeId, issuedById } = body;

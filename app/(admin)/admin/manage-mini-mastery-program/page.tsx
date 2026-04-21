@@ -43,6 +43,9 @@ interface Program {
   createdAt: string;
   updatedAt: string;
   creator: Creator | null;
+  _count: {
+  userProgramStates: number;
+};
 }
 
 interface Pagination {
@@ -927,7 +930,7 @@ export default function AdminMMPPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {["Program", "Status", "Creator", "Modules", "Price", "Created", "Actions"].map((h) => (
+                {["Program", "Status", "Creator", "Modules","# of Students", "Price", "Created", "Actions"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -935,7 +938,7 @@ export default function AdminMMPPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? <SkeletonRows /> : programs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center text-gray-500 text-sm">
+                  <td colSpan={8} className="px-6 py-16 text-center text-gray-500 text-sm">
                     {statusFilter || search ? "No programs match your filters." : "No programs found."}
                   </td>
                 </tr>
@@ -984,6 +987,18 @@ export default function AdminMMPPage() {
                     </td>
 
                     <td className="px-4 py-4 text-sm text-gray-600 font-medium">{moduleCount(prog.modules)}</td>
+                    <td className="px-4 py-4 text-sm ">
+                        <div className="flex justify-center">
+
+  <Link
+    href={`/admin/manage-mini-mastery-program/students?programId=${prog.id}`}
+    target="_blank"
+    className="hover:underline hover:text-blue-600"
+    >
+    {prog._count?.userProgramStates ?? 0}
+  </Link>
+    </div>
+</td>
                     <td className="px-4 py-4 text-sm font-bold text-gray-800">{formatPrice(prog.price, prog.currency)}</td>
                     <td className="px-4 py-4 text-xs text-gray-500">{formatDate(prog.createdAt)}</td>
 

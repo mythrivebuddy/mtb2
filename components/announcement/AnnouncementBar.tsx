@@ -13,7 +13,7 @@ export default function AnnouncementBar() {
     }
     return (
         <>
-            <div className="md:mx-6 mx-0 px-3 sm:px-2 relative mb-4  h-[40px] text-center overflow-hidden">
+            <div className=" mx-0 px-3 sm:px-4 relative mb-4  h-[40px] text-center overflow-hidden">
                 <AnimatePresence mode="wait">
                     {currentAnnouncement && (
                         <motion.div

@@ -60,6 +60,7 @@ const notificationTypes = [
 
   // CMP – Onboarding
   "CMP_ONBOARDING_PENDING",
+  "MMP_DAILY_REMINDER"
 ] as const;
 
 const placeholderValue = "__placeholder__";

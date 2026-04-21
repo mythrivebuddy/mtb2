@@ -306,7 +306,7 @@ export default function CoachCouponsPage() {
     /* ---- Render ---- */
 
     return (
-        <div className="py-8 px-4 sm:px-8 space-y-8 max-w-8xl  min-h-screen">
+        <div className="sm:py-8 px-4 sm:px-8 space-y-8 max-w-8xl  min-h-screen">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>

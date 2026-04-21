@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { ChallengeJoinMode } from "@prisma/client";
 
 type ParticipantProgress = {
   participantId: string;
@@ -24,7 +25,7 @@ type ParticipantProgress = {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await checkRole("USER");
+    const session = await checkRole(["USER","ADMIN"]);
     const userId = session.user.id;
 
     const { searchParams } = new URL(req.url);
@@ -59,6 +60,7 @@ export async function GET(req: NextRequest) {
           creatorId: userId,
           startDate: { lte: toDate },
           endDate: { gte: fromDate },
+          joinMode:ChallengeJoinMode.MANUAL
         },
         select: { id: true, title: true, startDate: true, endDate: true },
       });
