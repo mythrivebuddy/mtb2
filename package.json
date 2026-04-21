@@ -13,8 +13,7 @@
     "postinstall": "prisma generate",
     "migrate": "npx prisma migrate deploy",
     "seed": "tsx prisma/seed/seed-activity.ts && tsx prisma/seed/seed-magic-box-settings.ts && tsx prisma/seed/seed-templates.ts && tsx prisma/seed/seed-new-subscription-plans.ts && tsx prisma/seed/seed-programs.ts && tsx prisma/seed/makover-program/index.ts && tsx prisma/seed/seed-notification.ts && tsx prisma/seed/seed-features-of-feature-controls.ts",
-    "postbuild": "npm run migrate && npm run seed",
-    "pnseed":"tsx prisma/seed/seed-notification.ts"
+    "postbuild": "npm run migrate && npm run seed"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

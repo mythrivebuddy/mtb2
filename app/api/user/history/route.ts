@@ -69,16 +69,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    const challengePaymentsPromise =
-      filter === "ALL" || filter === "CHALLENGE"
-        ? prisma.challengePayment.findMany({
-            where: { userId },
-            include: {
-              challenge: true,
-              paymentOrder: true,
-            },
-          })
-        : Promise.resolve([]);
+    // const challengePaymentsPromise =
+    //   filter === "ALL" || filter === "CHALLENGE"
+    //     ? prisma.challengePayment.findMany({
+    //         where: { userId },
+    //         include: {
+    //           challenge: true,
+    //           paymentOrder: true,
+    //         },
+    //       })
+    //     : Promise.resolve([]);
 
     const coachChallengeEarningsPromise =
       filter === "ALL" || filter === "COACH_EARNING" || filter === "CHALLENGE"
@@ -92,6 +92,7 @@ export async function GET(request: Request) {
             include: {
               challenge: true,
               user: true, // the participant
+              paymentOrder: true,
             },
           })
         : Promise.resolve([]);
@@ -100,6 +101,14 @@ export async function GET(request: Request) {
       where: {
         status: PaymentStatus.PAID,
         contextType: "MMP_PROGRAM",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
     const mmpProgramIds = mmpOrders
@@ -126,17 +135,47 @@ export async function GET(request: Request) {
       })
       .map((po) => {
         const program = mmpProgramMap.get(po.programId!);
+        const feature = checkFeature({
+          feature: "miniMasteryPrograms", // or same "challenges" if shared config
+          user: {
+            userType: session.user.userType,
+            membership: session.user.membership,
+          },
+        });
 
+        const commissionPercent = feature.allowed
+          ? ((feature.config as { commissionPercent?: number })
+              .commissionPercent ?? 0)
+          : 0;
+
+        const baseAmount = po.baseAmount ?? po.totalAmount;
+        const discount = po.discountApplied ?? 0;
+
+        const netBase = baseAmount - discount;
+
+        const commission = (netBase * commissionPercent) / 100;
+        const finalAmount = netBase - commission;
         return {
           id: `mmp-${po.id}`,
           createdAt: po.paidAt || po.createdAt,
-          jpAmount: po.totalAmount,
+          jpAmount: finalAmount,
           currency: po.currency,
-
+          breakdown: {
+            baseAmount,
+            commission,
+            finalAmount,
+            discount,
+          },
           activity: {
             activity: "MMP_EARNING",
             transactionType: "CREDIT",
-            displayName: `MMP Purchase: ${program?.name}`,
+            displayName: `${po.user?.name} joined ${program?.name}`,
+          },
+          activityMeta: {
+            joinerId: po.user?.id,
+            joinerName: po.user?.name,
+            programId: po.programId,
+            programName: program?.name,
           },
         };
       });
@@ -162,6 +201,7 @@ export async function GET(request: Request) {
             },
             include: {
               plan: true,
+              challenge: true,
             },
           })
         : Promise.resolve([]);
@@ -179,7 +219,7 @@ export async function GET(request: Request) {
     const [
       user,
       transactions,
-      challengePayments,
+
       paymentOrders,
       cmpPurchases,
       coachChallengeEarnings,
@@ -224,51 +264,38 @@ export async function GET(request: Request) {
           })
         : Promise.resolve([]),
 
-      challengePaymentsPromise,
       paymentOrdersPromise,
       cmpPurchasesPromise,
       coachChallengeEarningsPromise,
     ]);
 
+    const paymentOrderIds = paymentOrders.map((po) => po.id);
+
+const invoices = await prisma.invoice.findMany({
+  where: {
+    paymentOrderId: { in: paymentOrderIds },
+    status: "PAID",
+  },
+  select: {
+    paymentOrderId: true,
+    pdfUrl: true,
+  },
+});
+
+const invoiceMap = new Map(
+  invoices.map((inv) => [inv.paymentOrderId, inv.pdfUrl])
+);
+
     // After the main Promise.all, fetch UNFILTERED data for balance cards
-    const [
-      allTransactions,
-      allPaymentOrders,
-      allCmpPurchases,
-      allCoachEarnings,
-    ] = await Promise.all([
-      prisma.transaction.findMany({
-        where: { userId },
-        include: { activity: true },
-      }),
-      prisma.paymentOrder.findMany({
-        where: { userId, status: PaymentStatus.PAID },
-        include: { plan: true },
-      }),
-      prisma.oneTimeProgramPurchase.findMany({
-        where: { userId, status: PaymentStatus.PAID },
-        include: { product: true },
-      }),
+    const [allCoachEarnings] = await Promise.all([
       prisma.challengePayment.findMany({
         where: {
           status: PaymentStatus.PAID,
           challenge: { creatorId: userId },
         },
-        include: { challenge: true, user: true },
+        include: { challenge: true, user: true, paymentOrder: true },
       }),
     ]);
-
-    const challengeHistory = challengePayments.map((cp) => ({
-      id: cp.id,
-      createdAt: cp.paidAt || cp.joinedAt,
-      jpAmount: cp.amountPaid,
-      currency: cp.currency,
-      activity: {
-        activity: "CHALLENGE_JOIN",
-        transactionType: "DEBIT",
-        displayName: `Joined Challenge: ${cp.challenge.title}`,
-      },
-    }));
 
     const programIds = paymentOrders.map((po) => po.programId).filter(Boolean);
 
@@ -304,6 +331,11 @@ export async function GET(request: Request) {
       if (po.contextType === "SUBSCRIPTION") {
         displayName = `Membership: ${po.plan?.name}`;
       }
+      if (po.contextType === "CHALLENGE") {
+        displayName = po.challenge?.title
+          ? `Joined Challenge: ${po.challenge.title}`
+          : "Joined Challenge";
+      }
 
       if (po.contextType === "STORE_PRODUCT") {
         const items = parseCartSnapshot(po.cartSnapshot);
@@ -320,7 +352,7 @@ export async function GET(request: Request) {
       if (po.contextType === "MMP_PROGRAM") {
         const name = po.programId ? programMap.get(po.programId) : null;
 
-        displayName = name ? `Program Purchase : ${name}` : "Program Purchase";
+        displayName = name ? `MMP Purchase : ${name}` : "Program Purchase";
       }
 
       return {
@@ -338,6 +370,7 @@ export async function GET(request: Request) {
         activityMeta: {
           programId: po.programId,
           storeOrderId: po.storeOrderId,
+          invoiceUrl: invoiceMap.get(po.id) ?? null,
         },
       };
     });
@@ -405,9 +438,13 @@ export async function GET(request: Request) {
             .commissionPercent ?? 0)
         : 0;
 
-      const baseAmount = cp.amountPaid;
-      const commission = (baseAmount * commissionPercent) / 100;
-      const finalAmount = baseAmount - commission;
+      const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
+      const discount = cp.paymentOrder?.discountApplied ?? 0;
+
+      const netBase = baseAmount - discount;
+
+      const commission = (netBase * commissionPercent) / 100;
+      const finalAmount = netBase - commission;
 
       return {
         id: `coach-${cp.id}`,
@@ -419,12 +456,13 @@ export async function GET(request: Request) {
           baseAmount,
           commission,
           finalAmount,
+          discount,
         },
 
         activity: {
           activity: "CHALLENGE_EARNING",
           transactionType: "CREDIT",
-          displayName: `${cp.user.name} joined ${cp.challenge.title}`,
+          displayName: `${cp.user.name} joining ${cp.challenge.title}`,
         },
 
         activityMeta: {
@@ -437,18 +475,17 @@ export async function GET(request: Request) {
 
     let combined = [
       ...gpHistory,
-      ...challengeHistory,
       ...paymentHistory,
       ...cmpHistory,
       ...coachEarningsHistory,
       ...coachMmpEarnings,
     ];
-// ✅ Filter by CREDIT / DEBIT
-if (txType !== "ALL") {
-  combined = combined.filter(
-    (tx) => tx.activity.transactionType === txType
-  );
-}
+    // ✅ Filter by CREDIT / DEBIT
+    if (txType !== "ALL") {
+      combined = combined.filter(
+        (tx) => tx.activity.transactionType === txType,
+      );
+    }
     // ✅ Apply date range filter
     if (from || to) {
       const fromDate = from ? new Date(from) : null;
@@ -504,17 +541,27 @@ if (txType !== "ALL") {
     const inrCredits = allCoachEarnings
       .filter((cp) => cp.currency === "INR")
       .reduce((sum, cp) => {
-        const commission = (cp.amountPaid * commissionPercent) / 100;
-        return sum + (cp.amountPaid - commission);
+        const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
+        const discount = cp.paymentOrder?.discountApplied ?? 0;
+
+        const netBase = baseAmount - discount;
+
+        const commission = (netBase * commissionPercent) / 100;
+        return sum + (netBase - commission);
       }, 0);
-   
+
     const inrBalance = inrCredits;
 
     const usdCredits = allCoachEarnings
       .filter((cp) => cp.currency === "USD")
       .reduce((sum, cp) => {
-        const commission = (cp.amountPaid * commissionPercent) / 100;
-        return sum + (cp.amountPaid - commission);
+        const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
+        const discount = cp.paymentOrder?.discountApplied ?? 0;
+
+        const netBase = baseAmount - discount;
+
+        const commission = (netBase * commissionPercent) / 100;
+        return sum + (netBase - commission);
       }, 0);
 
     const usdBalance = usdCredits;
@@ -527,44 +574,18 @@ if (txType !== "ALL") {
       spent: { GP: 0, INR: 0, USD: 0 },
     };
 
-    // GP earned/spent from ALL transactions (unfiltered)
-    allTransactions.forEach((tx) => {
+    combined.forEach((tx) => {
       const amount = Number(tx.jpAmount) || 0;
-      if (tx.activity.transactionType === "CREDIT") totals.earned.GP += amount;
-      else if (tx.activity.transactionType === "DEBIT")
-        totals.spent.GP += amount;
-    });
+      const cur = tx.currency as "GP" | "INR" | "USD";
 
-    // INR/USD spent from ALL payment orders
-    allPaymentOrders.forEach((po) => {
-      const amount = Number(po.totalAmount) || 0;
-      const cur = po.currency as "INR" | "USD";
-      if (cur === "INR" || cur === "USD") totals.spent[cur] += amount;
-    });
+      if (!cur) return;
 
-    // INR/USD spent from ALL CMP purchases
-    allCmpPurchases.forEach((cp) => {
-      const amount = Number(cp.totalAmount) || 0;
-      const cur = cp.currency as "INR" | "USD";
-      if (cur === "INR" || cur === "USD") totals.spent[cur] += amount;
+      if (tx.activity.transactionType === "CREDIT") {
+        totals.earned[cur] += Number(amount.toFixed(2));
+      } else if (tx.activity.transactionType === "DEBIT") {
+        totals.spent[cur] += Number(amount.toFixed(2));
+      }
     });
-
-    // INR/USD earned from ALL coach challenge earnings
-    allCoachEarnings.forEach((cp) => {
-      const commission = (cp.amountPaid * commissionPercent) / 100;
-      const finalAmount = cp.amountPaid - commission;
-      const cur = cp.currency as "INR" | "USD";
-      if (cur === "INR" || cur === "USD") totals.earned[cur] += finalAmount;
-    });
-
-    // INR/USD earned from ALL MMP coach earnings
-    mmpOrders
-      .filter((po) => mmpProgramMap.get(po.programId!)?.createdBy === userId)
-      .forEach((po) => {
-        const amount = Number(po.totalAmount) || 0;
-        const cur = po.currency as "INR" | "USD";
-        if (cur === "INR" || cur === "USD") totals.earned[cur] += amount;
-      });
 
     return NextResponse.json({
       transactions: paginated,

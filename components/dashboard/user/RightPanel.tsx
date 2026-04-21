@@ -77,9 +77,16 @@ const RightPanel = ({
       .map((tx: HistoryItem) => {
         const isDebit = tx.activity.transactionType === "DEBIT";
 
+        const cleanName = tx.activity.displayName.replace(
+          /^Joined Challenge:\s*/i,
+          "Challenge: ",
+        );
+
         const description = isDebit
-          ? `Spent on ${tx.activity.displayName}`
-          : `Earned for ${tx.activity.displayName}`;
+          ? tx.activity.activity === "CHALLENGE"
+            ? `Spent on joining ${cleanName.toLocaleLowerCase()}`
+            : `Spent on ${tx.activity.displayName.toLocaleLowerCase()}`
+          : `Earned from ${tx.activity.displayName}`;
 
         return {
           id: tx.id,
@@ -185,7 +192,7 @@ const RightPanel = ({
                 <p
                   className={`${item.txType === "CREDIT" ? "text-green-500" : "text-red-500"} font-medium ml-2 break-words`}
                 >
-                  {item.amount} {item?.currency}
+                  {item?.amount?.toFixed(2)} {item?.currency}
                 </p>
               </div>
             ))}
