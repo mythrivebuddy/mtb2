@@ -76,6 +76,9 @@ interface PlayerData {
     onboarded: boolean;
     onboardedAt: string | null;
     createdAt: string;
+    user:{
+      timezone:string;
+    }
   };
   progress?: {
     logs: ProgressLog[];
@@ -94,12 +97,20 @@ function parseModules(raw: unknown): ModuleItem[] {
   if (!Array.isArray(raw)) return [];
   return raw as ModuleItem[];
 }
+function toDateString(date: Date, tz: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
 
 function getDayStatus(
   dayNumber: number,
   logs: ProgressLog[],
   unlockType: string,
-  enrolledAt: string,
+    userTimezone: string 
 ): "completed" | "active" | "locked" {
   const log = logs.find((l) => l.dayNumber === dayNumber);
   if (log?.isCompleted) return "completed";
@@ -109,23 +120,21 @@ function getDayStatus(
   if (dayNumber === 1) return "active";
 
   const prevLog = logs.find((l) => l.dayNumber === dayNumber - 1);
-  if (!prevLog?.isCompleted) return "locked";
 
-  const enrollDate = new Date(enrolledAt);
-  const unlockDate = new Date(
-    Date.UTC(
-      enrollDate.getUTCFullYear(),
-      enrollDate.getUTCMonth(),
-      enrollDate.getUTCDate() + (dayNumber - 1),
-    ),
-  );
+  // must complete previous day
+  if (!prevLog?.isCompleted || !prevLog.completedAt) return "locked";
 
-  const now = new Date();
-  const todayUTC = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
+ const completedDateStr = toDateString(
+  new Date(prevLog.completedAt),
+  userTimezone
+);
 
-  if (todayUTC < unlockDate) return "locked";
+const todayDateStr = toDateString(new Date(), userTimezone);
+
+const completedDate = new Date(completedDateStr);
+const todayDate = new Date(todayDateStr);
+
+if (todayDate.getTime() <= completedDate.getTime()) return "locked";
 
   return "active";
 }
@@ -682,7 +691,7 @@ export default function ProgramPlayer() {
     enabled: !!programId,
     staleTime: 30_000,
   });
-
+const tz = data?.state?.user?.timezone || "UTC";
   useEffect(() => {
     if (searchParams.get("payment") === "success") {
       const name = data?.program?.name;
@@ -870,16 +879,10 @@ export default function ProgramPlayer() {
   const modules = parseModules(program.modules);
   const currentModule = modules[activeDay - 1];
   const logs = progress.logs;
-  const enrolledAt = data.state?.createdAt ?? new Date().toISOString();
 
   const currentLog = logs.find((l) => l.dayNumber === activeDay);
   const isDayComplete = currentLog?.isCompleted ?? false;
-  const dayStatus = getDayStatus(
-    activeDay,
-    logs,
-    program.unlockType,
-    enrolledAt,
-  );
+  const dayStatus = getDayStatus(activeDay, logs, program.unlockType,tz);
   const isLocked = dayStatus === "locked";
 
   return (
@@ -1236,12 +1239,7 @@ export default function ProgramPlayer() {
             <div className="flex flex-wrap gap-1.5 mt-4">
               {modules.map((_, i) => {
                 const dn = i + 1;
-                const st = getDayStatus(
-                  dn,
-                  logs,
-                  program.unlockType,
-                  enrolledAt,
-                );
+                const st = getDayStatus(dn, logs, program.unlockType,tz);
                 return (
                   <button
                     key={dn}
@@ -1283,12 +1281,7 @@ export default function ProgramPlayer() {
             <div className="space-y-2">
               {modules.map((mod, i) => {
                 const dn = i + 1;
-                const status = getDayStatus(
-                  dn,
-                  logs,
-                  program.unlockType,
-                  enrolledAt,
-                );
+                const status = getDayStatus(dn, logs, program.unlockType,tz);
                 const isActive = dn === activeDay;
                 return (
                   <button
