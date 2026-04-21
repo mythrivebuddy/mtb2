@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { maskEmail } from "@/utils/mask-email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -181,7 +182,7 @@ export async function POST(req: NextRequest) {
             templateId: "mmp-free-enrolled-admin",
             templateData: {
               username: user?.name,
-              userEmail: user?.email ?? "N/A",
+              userEmail: maskEmail(user?.email ?? "")?? "N/A",
               programName: program.name,
               creatorName: program.creator?.name ?? "Unknown",
               programUrl,

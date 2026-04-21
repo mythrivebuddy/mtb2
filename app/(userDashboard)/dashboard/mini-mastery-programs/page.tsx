@@ -3,7 +3,12 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { signIn, useSession } from "next-auth/react";
-import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
+import {
+  useQuery,
+  keepPreviousData,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   ChevronDown,
   ArrowUpDown,
@@ -190,6 +195,7 @@ function ProgramCTA({
   onInfoClick: (prog: Program) => void;
 }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const enrollMutation = useMutation({
     mutationFn: async (programId: string) => {
       const res = await axios.post(
@@ -201,9 +207,26 @@ function ProgramCTA({
 
     onSuccess: (data) => {
       if (data.success) {
+        queryClient.setQueryData<MyStatusResponse>(["mmp-my-status"], (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            statuses: {
+              ...old.statuses,
+              [prog.id]: {
+                enrolled: true,
+                completed: false,
+              } satisfies ProgramCompStatus,
+            },
+          };
+        });
+
         toast.success(data.message || "You have enrolled successfully");
 
-        router.push(`/dashboard/mini-mastery-programs/program/${prog.id}`);
+        setTimeout(() => {
+          router.push(`/dashboard/mini-mastery-programs/program/${prog.id}`);
+        }, 100);
       }
     },
 
@@ -295,7 +318,7 @@ function ProgramCTA({
                 Enrolling... <Loader2 className="h-4 w-4 animate-spin" />
               </span>
             ) : (
-              <span className="flex gap-2">Enroll for free</span>
+              <span className="flex gap-2">Start for free</span>
             )}
           </button>
         </div>

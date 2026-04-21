@@ -2,19 +2,42 @@
 
 import React, { useState } from "react";
 import axios from "axios";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useSession, signIn } from "next-auth/react";
 import {
-  CheckCircle2, Lock, Clock, GraduationCap,
-  ArrowRight, Target, LayoutPanelLeft, Info,
-  AlertCircle, ChevronLeft, BookOpen,
-  PlayCircle, Trophy, LogIn,
-  ArrowLeft, Share2, X, Copy,
-  Facebook, Twitter, Send,
+  CheckCircle2,
+  Lock,
+  Clock,
+  GraduationCap,
+  ArrowRight,
+  Target,
+  LayoutPanelLeft,
+  Info,
+  AlertCircle,
+  ChevronLeft,
+  BookOpen,
+  PlayCircle,
+  Trophy,
+  LogIn,
+  ArrowLeft,
+  Share2,
+  X,
+  Copy,
+  Facebook,
+  Twitter,
+  Send,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { ModuleItem, MyStatusResponse, Program, ProgramCompStatus } from "@/types/client/mini-mastery-program";
+import {
+  ModuleItem,
+  MyStatusResponse,
+  Program,
+  ProgramCompStatus,
+} from "@/types/client/mini-mastery-program";
+import { toast } from "sonner";
+import { getAxiosErrorMessage } from "@/utils/ax";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -25,7 +48,8 @@ function formatPrice(price: number | null, currency: string | null): string {
 }
 
 function parseAchievements(raw: unknown): string[] {
-  if (Array.isArray(raw)) return raw.filter((v): v is string => typeof v === "string");
+  if (Array.isArray(raw))
+    return raw.filter((v): v is string => typeof v === "string");
   return [];
 }
 
@@ -38,19 +62,29 @@ function parseModules(raw: unknown): ModuleItem[] {
 
 async function fetchProgram(id: string): Promise<Program> {
   const { data } = await axios.get<{ program: Program }>(
-    `/api/mini-mastery-programs/public/${id}`
+    `/api/mini-mastery-programs/public/${id}`,
   );
   return data.program;
 }
 
 async function fetchMyStatuses(): Promise<MyStatusResponse> {
-  const { data } = await axios.get<MyStatusResponse>("/api/mini-mastery-programs/my-status");
+  const { data } = await axios.get<MyStatusResponse>(
+    "/api/mini-mastery-programs/my-status",
+  );
   return data;
 }
 
 // ─── Share Modal ──────────────────────────────────────────────────────────────
 
-function ShareModal({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
+function ShareModal({
+  url,
+  title,
+  onClose,
+}: {
+  url: string;
+  title: string;
+  onClose: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -62,7 +96,11 @@ function ShareModal({ url, title, onClose }: { url: string; title: string; onClo
   const socialLinks = [
     {
       name: "WhatsApp",
-      onClick: () => window.open(`https://wa.me/?text=${encodeURIComponent(title + " " + url)}`, "_blank"),
+      onClick: () =>
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(title + " " + url)}`,
+          "_blank",
+        ),
       icon: (
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -71,17 +109,29 @@ function ShareModal({ url, title, onClose }: { url: string; title: string; onClo
     },
     {
       name: "Twitter/X",
-      onClick: () => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, "_blank"),
+      onClick: () =>
+        window.open(
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+          "_blank",
+        ),
       icon: <Twitter className="w-5 h-5" />,
     },
     {
       name: "Facebook",
-      onClick: () => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank"),
+      onClick: () =>
+        window.open(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+          "_blank",
+        ),
       icon: <Facebook className="w-5 h-5" />,
     },
     {
       name: "Telegram",
-      onClick: () => window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, "_blank"),
+      onClick: () =>
+        window.open(
+          `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
+          "_blank",
+        ),
       icon: <Send className="w-5 h-5" />,
     },
   ];
@@ -97,12 +147,17 @@ function ShareModal({ url, title, onClose }: { url: string; title: string; onClo
       >
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-slate-800">Share</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600"
+          >
             <X size={24} />
           </button>
         </div>
 
-        <h3 className="text-sm font-semibold text-slate-500 mb-3">Share link via</h3>
+        <h3 className="text-sm font-semibold text-slate-500 mb-3">
+          Share link via
+        </h3>
 
         <div className="flex items-center justify-start gap-4 text-slate-700 mb-6 flex-wrap">
           {socialLinks.map((social) => (
@@ -117,7 +172,9 @@ function ShareModal({ url, title, onClose }: { url: string; title: string; onClo
           ))}
         </div>
 
-        <h3 className="text-sm font-semibold text-slate-500 mb-3">Page direct</h3>
+        <h3 className="text-sm font-semibold text-slate-500 mb-3">
+          Page direct
+        </h3>
 
         <button
           onClick={handleCopy}
@@ -143,6 +200,47 @@ function EnrollButton({
   isLoggedIn: boolean;
 }) {
   const isPaid = (program.price ?? 0) > 0;
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const enrollMutation = useMutation({
+    mutationFn: async (programId: string) => {
+      const res = await axios.post(
+        "/api/mini-mastery-programs/enroll-for-free",
+        { programId },
+      );
+      return res.data;
+    },
+
+    onSuccess: (data) => {
+      if (data.success) {
+        queryClient.setQueryData<MyStatusResponse>(["mmp-my-status"], (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            statuses: {
+              ...old.statuses,
+              [program.id]: {
+                enrolled: true,
+                completed: false,
+              } satisfies ProgramCompStatus,
+            },
+          };
+        });
+
+        toast.success(data.message || "You have enrolled successfully");
+
+        setTimeout(() => {
+          router.push(`/dashboard/mini-mastery-programs/program/${program.id}`);
+        }, 100);
+      }
+    },
+
+    onError: (err) => {
+      console.error("Enroll failed", err);
+      toast.error(getAxiosErrorMessage(err));
+    },
+  });
 
   if (!isLoggedIn) {
     return (
@@ -175,15 +273,30 @@ function EnrollButton({
     );
   }
 
-  return (
-    <Link href={`/dashboard/membership/checkout?mmp_programId=${program.id}&context=MMP_PROGRAM`}>
+  return isPaid ? (
+    <Link
+      href={`/dashboard/membership/checkout?mmp_programId=${program.id}&context=MMP_PROGRAM`}
+    >
       <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-sm">
-        {isPaid ? "Enroll Now" : "Start Free"} <ArrowRight size={18} />
+        Enroll Now <ArrowRight size={18} />
       </button>
     </Link>
+  ) : (
+    <button
+      onClick={() => enrollMutation.mutate(program.id)}
+      disabled={enrollMutation.isPending}
+      className={`bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 text-xs sm:text-sm" ${enrollMutation.isPending ? "opacity-80" : ""}`}
+    >
+      {enrollMutation.isPending ? (
+        <span className="flex gap-2">
+          Enrolling... <Loader2 className="h-4 w-4 animate-spin" />
+        </span>
+      ) : (
+        <span className="flex gap-2">Start for free</span>
+      )}
+    </button>
   );
 }
-
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 function HeroStatusBadge({ status }: { status?: ProgramCompStatus }) {
@@ -255,7 +368,9 @@ function ErrorState({ message }: { message: string }) {
       <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
         <AlertCircle size={28} className="text-red-400" />
       </div>
-      <p className="text-slate-600 font-bold text-sm text-center max-w-xs">{message}</p>
+      <p className="text-slate-600 font-bold text-sm text-center max-w-xs">
+        {message}
+      </p>
       <Link
         href="/dashboard/mini-mastery-programs"
         className="flex items-center gap-2 text-blue-600 text-sm font-bold hover:underline underline-offset-4"
@@ -279,7 +394,12 @@ const ProgramDetails = () => {
 
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
 
-  const { data: program, isLoading, isError, error } = useQuery({
+  const {
+    data: program,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["mmp-detail", id],
     queryFn: () => fetchProgram(id),
     enabled: !!id,
@@ -293,13 +413,15 @@ const ProgramDetails = () => {
     enabled: isLoggedIn,
   });
 
-  const progStatus = program && statusData ? statusData.statuses[program.id] : undefined;
+  const progStatus =
+    program && statusData ? statusData.statuses[program.id] : undefined;
 
   if (isLoading) return <Skeleton />;
 
   if (isError) {
     const msg = axios.isAxiosError(error)
-      ? (error.response?.data as { message?: string })?.message ?? "Program not found."
+      ? ((error.response?.data as { message?: string })?.message ??
+        "Program not found.")
       : "Something went wrong.";
     return <ErrorState message={msg} />;
   }
@@ -312,7 +434,6 @@ const ProgramDetails = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 selection:bg-blue-100">
-
       {/* Share Modal */}
       {isShareModalOpen && (
         <ShareModal
@@ -324,7 +445,6 @@ const ProgramDetails = () => {
 
       {/* ── Hero ── */}
       <div className="max-w-6xl mx-auto px-4 pt-10">
-
         {/* Back + Share row */}
         <div className="flex items-center justify-between mb-6">
           <button
@@ -334,7 +454,9 @@ const ProgramDetails = () => {
             <div className="w-8 h-8 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center group-hover:shadow-md transition-all">
               <ArrowLeft size={15} className="text-slate-500" />
             </div>
-            <span className="text-xs font-bold uppercase tracking-widest">Back</span>
+            <span className="text-xs font-bold uppercase tracking-widest">
+              Back
+            </span>
           </button>
 
           {/* Share Button */}
@@ -348,7 +470,6 @@ const ProgramDetails = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-10 items-center">
-
           {/* Thumbnail */}
           <div className="w-full lg:w-1/2 aspect-video rounded-[32px] overflow-hidden shadow-2xl shadow-blue-100/50 bg-black relative group border-4 border-white">
             {program.thumbnailUrl ? (
@@ -382,7 +503,9 @@ const ProgramDetails = () => {
               <HeroStatusBadge status={progStatus} />
 
               <div className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 px-3 py-1.5 mx-3 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                {program.unlockType === "daily" ? "Daily Unlock" : "Self-Guided Experience"}
+                {program.unlockType === "daily"
+                  ? "Daily Unlock"
+                  : "Self-Guided Experience"}
               </div>
               <h1 className="text-3xl md:text-4xl font-black text-slate-900 leading-tight tracking-tight">
                 {program.name}
@@ -419,7 +542,9 @@ const ProgramDetails = () => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1.5">
                     <Clock size={12} /> Duration
                   </p>
-                  <p className="text-lg font-bold text-slate-800">{program.durationDays ?? "?"} Days</p>
+                  <p className="text-lg font-bold text-slate-800">
+                    {program.durationDays ?? "?"} Days
+                  </p>
                 </div>
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1.5">
@@ -427,28 +552,44 @@ const ProgramDetails = () => {
                   </p>
                   {hasCert ? (
                     <p className="text-xs font-bold text-blue-600 flex items-center gap-1">
-                      <CheckCircle2 size={14} fill="currentColor" className="text-blue-50" />
+                      <CheckCircle2
+                        size={14}
+                        fill="currentColor"
+                        className="text-blue-50"
+                      />
                       Certificate Included
                     </p>
                   ) : (
-                    <p className="text-xs font-bold text-slate-400">No certificate</p>
+                    <p className="text-xs font-bold text-slate-400">
+                      No certificate
+                    </p>
                   )}
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Modules</p>
-                  <p className="text-lg font-bold text-slate-800">{modules.length}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                    Modules
+                  </p>
+                  <p className="text-lg font-bold text-slate-800">
+                    {modules.length}
+                  </p>
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Unlock</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                    Unlock
+                  </p>
                   <p className="text-xs font-bold text-slate-700">
-                    {program.unlockType === "daily" ? "One per day" : "All at once"}
+                    {program.unlockType === "daily"
+                      ? "One per day"
+                      : "All at once"}
                   </p>
                 </div>
               </div>
 
               <div className="pt-5 border-t border-slate-50 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Investment</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                    Investment
+                  </p>
                   <p className="text-2xl font-black text-slate-900">
                     {formatPrice(program.price, program.currency)}
                   </p>
@@ -466,7 +607,6 @@ const ProgramDetails = () => {
 
       {/* ── Main Content ── */}
       <div className="max-w-6xl mx-auto px-4 mt-16 space-y-20">
-
         {achievements.length > 0 && (
           <section className="space-y-8">
             <div className="flex items-center gap-3">
@@ -484,7 +624,9 @@ const ProgramDetails = () => {
                   <div className="mt-1 bg-blue-50 text-blue-600 p-1.5 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
                     <CheckCircle2 size={16} />
                   </div>
-                  <p className="text-sm font-bold text-slate-800 leading-relaxed">{ach}</p>
+                  <p className="text-sm font-bold text-slate-800 leading-relaxed">
+                    {ach}
+                  </p>
                 </div>
               ))}
             </div>
@@ -498,10 +640,13 @@ const ProgramDetails = () => {
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-100">
                   <LayoutPanelLeft size={20} />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Program Structure</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Program Structure
+                </h2>
               </div>
               <span className="text-xs font-bold text-slate-400 italic">
-                {modules.length} Modules • {program.durationDays ?? modules.length} Days
+                {modules.length} Modules •{" "}
+                {program.durationDays ?? modules.length} Days
               </span>
             </div>
 
@@ -515,17 +660,25 @@ const ProgramDetails = () => {
                     <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 transition-colors">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
-                    <h4 className="text-sm font-bold text-slate-700">{mod.title}</h4>
+                    <h4 className="text-sm font-bold text-slate-700">
+                      {mod.title}
+                    </h4>
                   </div>
-                  <Lock size={14} className="text-slate-200 group-hover:text-blue-400 transition-colors shrink-0" />
+                  <Lock
+                    size={14}
+                    className="text-slate-200 group-hover:text-blue-400 transition-colors shrink-0"
+                  />
                 </div>
               ))}
 
-              {program.durationDays && program.durationDays > modules.length && (
-                <div className="p-4 text-center bg-slate-100/50 rounded-xl border border-dashed border-slate-200 text-slate-400 text-[10px] font-bold tracking-widest uppercase">
-                  Days {String(modules.length + 1).padStart(2, "0")} – {String(program.durationDays).padStart(2, "0")}: Advanced Content Unlocks Daily
-                </div>
-              )}
+              {program.durationDays &&
+                program.durationDays > modules.length && (
+                  <div className="p-4 text-center bg-slate-100/50 rounded-xl border border-dashed border-slate-200 text-slate-400 text-[10px] font-bold tracking-widest uppercase">
+                    Days {String(modules.length + 1).padStart(2, "0")} –{" "}
+                    {String(program.durationDays).padStart(2, "0")}: Advanced
+                    Content Unlocks Daily
+                  </div>
+                )}
             </div>
           </section>
         )}
@@ -536,17 +689,23 @@ const ProgramDetails = () => {
             <Info size={24} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-xl font-black italic">Completion Requirement</h3>
+            <h3 className="text-xl font-black italic">
+              Completion Requirement
+            </h3>
             <p className="text-blue-50 text-[12px] leading-relaxed max-w-2xl font-medium opacity-90">
               Requires{" "}
-              <span className="font-black text-white">{program.completionThreshold ?? 100}% completion</span>{" "}
+              <span className="font-black text-white">
+                {program.completionThreshold ?? 100}% completion
+              </span>{" "}
               and all daily tasks marked as done to unlock the{" "}
-              <span className="font-black text-white">{program.certificateTitle ?? "certificate"}</span>.
-              Complete within the platform to qualify for your official digital credential.
+              <span className="font-black text-white">
+                {program.certificateTitle ?? "certificate"}
+              </span>
+              . Complete within the platform to qualify for your official
+              digital credential.
             </p>
           </div>
         </div>
-
       </div>
     </div>
   );
