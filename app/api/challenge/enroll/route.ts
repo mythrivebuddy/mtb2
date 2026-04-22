@@ -228,7 +228,7 @@ export async function POST(request: Request) {
     ).filter((id) => id !== joinedUserId); // Don't notify the person who just joined
 
     // 3. Use your new batch function
-    void sendPushNotificationMultipleUsers(
+    await sendPushNotificationMultipleUsers(
       notificationRecipients,
       "New challenger alert 🚀",
       `${userName} joined "${challengeToJoin.title}"!`,
@@ -358,7 +358,7 @@ export async function POST(request: Request) {
     if (!shouldSkipUserEmail) {
       console.log("📧 Sending USER email");
 
-      void sendEmailUsingTemplate({
+      await sendEmailUsingTemplate({
         toEmail: joiner.email!,
         toName: joiner.name || "User",
         templateId: isPaid ? "challenge-joined-paid" : "challenge-joined-free",
@@ -375,7 +375,7 @@ export async function POST(request: Request) {
       const templateId = isPaid
         ? "coach-user-joined-paid-challenge"
         : "coach-user-joined-challenge";
-      void sendEmailUsingTemplate({
+      await sendEmailUsingTemplate({
         toEmail: creator.email,
         toName: creator.name || "Coach",
         templateId,
