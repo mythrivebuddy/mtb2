@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
-import { sendEmailUsingTemplate } from "@/utils/sendEmail";
-import { maskEmail } from "@/utils/mask-email";
+
+import { inngest } from "@/lib/inngest";
 
 export async function POST(req: NextRequest) {
   try {
@@ -113,113 +112,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const user = await prisma.user.findUnique({
-      where: { id: currentUserId },
-      select: { id: true, name: true, email: true },
+    await inngest.send({
+      name: "mmp-challenge-store.notify",
+      data: {
+        userId: currentUserId,
+        entityType: "MMP",
+        entityId: program.id,
+        isFree: true, //  FREE MMP FLOW
+      },
     });
-
-    const programUrl = `${process.env.NEXT_URL}/dashboard/mini-mastery-programs/program/${program.id}`;
-    const admin = await prisma.user.findFirst({
-      where: { role: "ADMIN", email: process.env.ADMIN_EMAIL },
-      select: { id: true, email: true, name: true },
-    });
-
-    // ✅ JOINER PUSH
-    if (user?.id) {
-      void sendPushNotificationToUser(
-        user.id,
-        "Enrollment Successful 🎉",
-        `You're now enrolled in ${program.name}`,
-        {
-          url: `/dashboard/mini-mastery-programs/program/${program.id}`,
-        },
-      );
-    }
-    // ✅ ADMIN PUSH
-    if (
-      admin?.id &&
-      admin.id !== program.creator?.id && // not creator
-      admin.id !== currentUserId // not joiner
-    ) {
-      void sendPushNotificationToUser(
-        admin.id,
-        "New MMP Enrollment",
-        `${user?.name} joined ${program.name} by ${program.creator?.name}`,
-        {
-          url: `/dashboard/admin/mini-mastery-programs/${program.id}`,
-        },
-      );
-    }
-
-    // ✅ CREATOR PUSH
-    if (program.creator?.id && user?.id && program.creator.id !== user.id) {
-      void sendPushNotificationToUser(
-        program.creator.id,
-        "Mini Mastery Program • New Enrollment 🎉",
-        `${user.name} joined your ${program.name}`,
-        {
-          url: `/dashboard/mini-mastery-programs/program/${program.id}`,
-        },
-      );
-    }
-
-    // ✅ EMAILS (ASYNC NON-BLOCKING)
-    void (async () => {
-      try {
-        // 1️⃣ User email
-        if (user?.email) {
-          await sendEmailUsingTemplate({
-            toEmail: user.email,
-            toName: user.name ?? "User",
-            templateId: "mmp-free-enrolled-user",
-            templateData: {
-              username: user.name ?? "User",
-              programName: program.name,
-              programUrl,
-            },
-          });
-        }
-
-        // 2️⃣ Creator email
-        if (program.creator?.email && program.creator.id !== currentUserId) {
-          await sendEmailUsingTemplate({
-            toEmail: program.creator.email,
-            toName: program.creator.name ?? "Creator",
-            templateId: "mmp-free-enrolled-creator",
-            templateData: {
-              creatorName: program.creator.name ?? "Creator",
-              username: user?.name,
-              programName: program.name,
-              programUrl,
-            },
-          });
-        }
-        // ⚠️ Admin email Conditions:
-        // - admin exists
-        // - admin has email
-        // - admin is NOT creator (avoid duplicate)
-        if (
-          admin?.email &&
-          admin.id !== program.creator?.id && // avoid duplicate with creator
-          admin.id !== currentUserId // avoid self-trigger
-        ) {
-          await sendEmailUsingTemplate({
-            toEmail: admin.email,
-            toName: admin.name ?? "Admin",
-            templateId: "mmp-free-enrolled-admin",
-            templateData: {
-              username: user?.name,
-              userEmail: maskEmail(user?.email ?? "") ?? "N/A",
-              programName: program.name,
-              creatorName: program.creator?.name ?? "Unknown",
-              programUrl,
-            },
-          });
-        }
-      } catch (err) {
-        console.error("Email error:", err);
-      }
-    })();
 
     return NextResponse.json({
       success: true,

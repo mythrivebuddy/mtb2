@@ -834,6 +834,188 @@ async function main() {
           </div>
 `.trim(),
     },
+    {
+  templateId: "mmp-paid-enrolled-creator",
+  subject: "💰 New Paid Enrollment in {{programName}}",
+  description: "Sent to creator when a user joins a paid MMP",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;">
+
+  <div style="padding:28px;text-align:center;background:#ecfdf5;">
+    <h1 style="margin:0;color:#065f46;">New Paid Enrollment 💰</h1>
+    <p style="color:#4b5563;">Someone invested in your program</p>
+  </div>
+
+  <div style="padding:28px;">
+    <p>Hi <strong>{{creatorName}}</strong>,</p>
+
+    <p><strong>{{username}}</strong> enrolled in:</p>
+    <h2>{{programName}}</h2>
+
+    <!-- PAYMENT BREAKDOWN -->
+    <div style="background:#f0fdf4;padding:16px;border-radius:8px;margin-top:20px;">
+      <h3>💳 Payment Breakdown</h3>
+
+      <table style="width:100%;">
+        <tr>
+          <td>Base Price</td>
+          <td style="text-align:right;">₹{{baseAmount}}</td>
+        </tr>
+
+        <tr>
+          <td>Discount</td>
+          <td style="text-align:right;color:#dc2626;">
+            − ₹{{discount}}
+          </td>
+        </tr>
+
+        <tr>
+          <td>Net Amount</td>
+          <td style="text-align:right;">₹{{netBase}}</td>
+        </tr>
+
+        <tr>
+          <td>GST</td>
+          <td style="text-align:right;">₹{{gst}}</td>
+        </tr>
+
+        <tr style="border-top:2px solid #16a34a;">
+          <td><strong>Total Paid</strong></td>
+          <td style="text-align:right;color:#16a34a;">
+            <strong>₹{{totalPaid}}</strong>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- EARNINGS -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-top:20px;">
+      <h3>🏢 Your Earnings</h3>
+
+      <table style="width:100%;">
+        <tr>
+          <td>Platform Fee ({{commissionPercent}}%) of ₹{{netBase}})</td>
+          <td style="text-align:right;color:#dc2626;">
+            − ₹{{platformFee}}
+          </td>
+        </tr>
+
+        <tr style="border-top:2px solid #e5e7eb;">
+          <td><strong>Your Earnings</strong></td>
+          <td style="text-align:right;color:#16a34a;">
+            <strong>₹{{creatorEarning}}</strong>
+          </td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#9ca3af;margin-top:10px;">
+        Commission is calculated after discount (on net amount).
+        GST is excluded from earnings.
+      </p>
+    </div>
+
+  </div>
+</div>
+`.trim(),
+},
+{
+  templateId: "mmp-paid-enrolled-admin",
+  subject: "New MMP Purchase — {{programName}}",
+  description: "Sent to admin when a paid MMP purchase happens",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;">
+
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2>New Paid Enrollment</h2>
+    <p style="color:#6b7280;">Mini Mastery Program</p>
+  </div>
+
+  <div style="padding:24px;">
+
+    <p><strong>{{username}}</strong> purchased:</p>
+    <h3>{{programName}}</h3>
+
+    <p>Creator: <strong>{{creatorName}}</strong></p>
+
+    <!-- PAYMENT -->
+    <div style="background:#f0fdf4;padding:16px;border-radius:8px;margin-top:16px;">
+      <h3>💳 Payment Breakdown</h3>
+
+      <table style="width:100%;">
+        <tr>
+          <td>Base Price</td>
+          <td style="text-align:right;">₹{{baseAmount}}</td>
+        </tr>
+
+        <tr>
+          <td>Discount</td>
+          <td style="text-align:right;color:#dc2626;">
+            − ₹{{discount}}
+          </td>
+        </tr>
+
+        <tr>
+          <td>Net Amount</td>
+          <td style="text-align:right;">₹{{netBase}}</td>
+        </tr>
+
+        <tr>
+          <td>GST</td>
+          <td style="text-align:right;">₹{{gst}}</td>
+        </tr>
+
+        <tr style="border-top:2px solid #16a34a;">
+          <td><strong>Total Paid</strong></td>
+          <td style="text-align:right;color:#16a34a;">
+            <strong>₹{{totalPaid}}</strong>
+          </td>
+        </tr>
+      </table>
+      
+    </div>
+
+    <!-- REVENUE SPLIT -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-top:20px;">
+      <h3>🏢 Revenue Split</h3>
+
+      <table style="width:100%;">
+        <tr>
+          <td>Platform Fee ({{commissionPercent}}%) of ₹{{netBase}})</td>
+          <td style="text-align:right;color:#2563eb;">
+            ₹{{platformFee}}
+          </td>
+        </tr>
+
+        <tr>
+          <td>Creator Earning</td>
+          <td style="text-align:right;color:#16a34a;">
+            ₹{{creatorEarning}}
+          </td>
+        </tr>
+
+        <tr style="border-top:2px solid #e5e7eb;">
+          <td><strong>Platform Revenue</strong></td>
+          <td style="text-align:right;color:#2563eb;">
+            <strong>₹{{platformEarning}}</strong>
+          </td>
+        </tr>
+      </table>
+
+      <p style="font-size:12px;color:#9ca3af;margin-top:10px;">
+        Commission is calculated on net amount (after discount).
+        GST is not included in revenue.
+      </p>
+    </div>
+
+    <p style="margin-top:16px;font-size:13px;color:#6b7280;">
+      Payment Date: {{paymentDate}} <br/>
+      Transaction ID: {{transactionId}}
+    </p>
+
+  </div>
+</div>
+`.trim(),
+}
   ];
 
   for (const tmpl of templates) {
