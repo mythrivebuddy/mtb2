@@ -82,12 +82,25 @@ export async function POST(req: NextRequest) {
           console.log("🧾 UNIVERSAL INVOICE TRIGGER after 500 ms ");
           await inngest.send({
             name: "invoice/send",
-            id: `invoice-${payment.id}-${Date.now()}`,
+            id: `invoice-${existingOrder.id}`,
             data: {
               orderId: existingOrder.id,
               itemIds: paymentMeta.allItemIds || undefined, // optional
             },
           });
+
+          // notify-creator-admin
+          await inngest.send({
+            name: "mmp-challenge-store.notify",
+            id: `notify-${existingOrder.id}`,
+            data: {
+              orderId: existingOrder.id,
+              userId: existingOrder.userId,
+              isFree: false, // paid flow
+            },
+          });
+
+          console.log("📣 Notification event triggered");
 
           // ✅ PROGRAM REMINDER TRIGGER
           try {

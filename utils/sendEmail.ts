@@ -1,6 +1,6 @@
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
-import { renderEmailTemplate } from "@/utils/renderEmailContent";
+import { renderEmailTemplate, renderEmailTemplateUsingConditionals } from "@/utils/renderEmailContent";
 import { formatDate } from "@/lib/utils/dateUtils";
 
 interface EmailData {
@@ -218,4 +218,62 @@ export async function sendInvoiceEmail({
       },
     },
   );
+}
+
+export async function sendEmailUsingTemplateWithConditionals({
+  toEmail,
+  toName,
+  templateId,
+  templateData,
+}: EmailData) {
+  const senderEmail = process.env.CONTACT_SENDER_EMAIL;
+  const brevoApiKey = process.env.BREVO_API_KEY;
+
+  if (!senderEmail || !brevoApiKey) {
+    throw new Error("Missing email environment variables");
+  }
+
+  // 🔹 Fetch template
+  const template = await prisma.emailTemplate.findUnique({
+    where: { templateId },
+  });
+
+  if (!template) {
+    throw new Error(`Template "${templateId}" not found`);
+  }
+
+  // 🔹 Render using YOUR conditional engine
+  const htmlContent = renderEmailTemplateUsingConditionals(
+    template.htmlContent,
+    templateData
+  );
+
+  const subject = renderEmailTemplateUsingConditionals(
+    template.subject,
+    templateData
+  );
+
+  // 🔹 Brevo payload
+  const payload = {
+    sender: {
+      email: senderEmail,
+      name: "MyThriveBuddy",
+    },
+    to: [
+      {
+        email: toEmail,
+        name: toName,
+      },
+    ],
+    subject,
+    htmlContent,
+  };
+
+  // 🔹 Send
+  await axios.post("https://api.brevo.com/v3/smtp/email", payload, {
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": brevoApiKey,
+    },
+  });
 }
