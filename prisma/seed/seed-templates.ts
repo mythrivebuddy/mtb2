@@ -1128,6 +1128,235 @@ async function main() {
   </div>
 </div>
 `.trim(),
+},
+{
+  templateId: "store-order-seller",
+  subject: "💰 New Purchase — {{productName}}",
+  description: "Sent to seller when a product is purchased",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+ 
+  <!-- HEADER -->
+  <div style="padding:28px;text-align:center;background:#ecfdf5;">
+    <h1 style="margin:0;color:#065f46;font-size:24px;">New Sale 💰</h1>
+    <p style="margin:6px 0 0;color:#4b5563;font-size:15px;">Someone purchased your product</p>
+  </div>
+ 
+  <!-- BODY -->
+  <div style="padding:28px;">
+    <p style="font-size:15px;color:#374151;">Hi <strong>{{sellerName}}</strong>,</p>
+
+    <p style="color:#4b5563;"><strong>{{username}}</strong> purchased:</p>
+    <h2 style="margin:8px 0 20px;color:#111827;font-size:20px;">{{productName}}</h2>
+
+    <!-- PAYMENT BREAKDOWN -->
+    {{#if isGP}}
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:8px;margin-bottom:20px;">
+        <h3 style="margin:0 0 12px;color:#166534;font-size:15px;">💰 GP Payment</h3>
+        <p style="margin:0;font-size:15px;">
+          Total Received: <strong>{{totalPaid}} GP</strong>
+        </p>
+      </div>
+    {{else}}
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:8px;margin-bottom:20px;">
+        <h3 style="margin:0 0 12px;color:#166534;font-size:15px;">💳 Payment Breakdown</h3>
+
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;">Base Price</td>
+            <td style="text-align:right;">{{currencySymbol}}{{baseAmount}}</td>
+          </tr>
+
+          <tr style="border-top:1px solid #dcfce7;">
+            <td style="padding:6px 0;color:#6b7280;">Discount</td>
+            <td style="text-align:right;color:#dc2626;">− {{currencySymbol}}{{discount}}</td>
+          </tr>
+
+          <tr style="border-top:1px solid #dcfce7;">
+            <td style="padding:6px 0;color:#6b7280;">Net Amount</td>
+            <td style="text-align:right;">{{currencySymbol}}{{netBase}}</td>
+          </tr>
+
+          <tr style="border-top:1px solid #dcfce7;">
+            <td style="padding:6px 0;color:#6b7280;">GST</td>
+            <td style="text-align:right;">{{currencySymbol}}{{gst}}</td>
+          </tr>
+
+          <tr style="border-top:2px solid #16a34a;">
+            <td style="padding:8px 0;font-weight:700;">Total Paid</td>
+            <td style="text-align:right;color:#16a34a;font-weight:700;">
+              {{currencySymbol}}{{totalPaid}}
+            </td>
+          </tr>
+        </table>
+      </div>
+    {{/if}}
+
+    <!-- EARNINGS -->
+    {{#if isGP}}
+      <!-- skip earnings for GP -->
+    {{else}}
+      <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
+        <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">🏢 Your Earnings</h3>
+
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:6px 0;color:#6b7280;">Platform Fee ({{commissionPercent}}% of {{currencySymbol}}{{netBase}})</td>
+            <td style="text-align:right;color:#dc2626;">− {{currencySymbol}}{{platformFee}}</td>
+          </tr>
+
+          <tr style="border-top:2px solid #e5e7eb;">
+            <td style="padding:8px 0;color:#065f46;font-weight:700;">Your Earnings</td>
+            <td style="text-align:right;color:#16a34a;font-weight:700;">
+              {{currencySymbol}}{{creatorEarning}}
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:10px 0 0;color:#9ca3af;font-size:12px;">
+          GST is collected as tax and is not part of your earnings.
+        </p>
+      </div>
+    {{/if}}
+
+    <!-- META -->
+    <p style="font-size:13px;color:#6b7280;">
+      Payment Date: {{paymentDate}} <br/>
+      Transaction ID: {{transactionId}}
+    </p>
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{programUrl}}" style="background:#16a34a;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
+        View Orders →
+      </a>
+    </div>
+
+    <p style="color:#9ca3af;font-size:13px;">Keep growing your store 🚀</p>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">© My Thrive Buddy. All rights reserved.</p>
+  </div>
+
+</div>
+`
+},
+{
+  templateId: "store-order-admin",
+  subject: "🛒 New Store Order",
+  description: "Sent to admin when a product is purchased",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
+
+  <!-- HEADER -->
+  <div style="padding:24px;text-align:center;background:#eff6ff;">
+    <h2 style="margin:0;color:#1d4ed8;">New Store Order</h2>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:24px;">
+    
+    <p><strong>{{username}}</strong> purchased:</p>
+    <h3 style="margin:8px 0 16px;">{{productName}}</h3>
+
+    <p>Seller: <strong>{{creatorName}}</strong></p>
+
+    <!-- PAYMENT -->
+<!-- PAYMENT -->
+{{#if isGP}}
+  <div style="background:#f0fdf4;padding:16px;border-radius:8px;margin-top:16px;">
+    <p style="margin:0;">
+      💰 GP Amount: <strong>{{totalPaid}} GP</strong>
+    </p>
+  </div>
+{{else}}
+  <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-top:16px;">
+    <h3 style="margin:0 0 12px;font-size:15px;">💳 Payment Breakdown</h3>
+
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td>Base Price</td>
+        <td style="text-align:right;">{{currencySymbol}}{{baseAmount}}</td>
+      </tr>
+
+      <tr>
+        <td>Discount</td>
+        <td style="text-align:right;color:#dc2626;">
+          − {{currencySymbol}}{{discount}}
+        </td>
+      </tr>
+
+      <tr>
+        <td>Net Amount</td>
+        <td style="text-align:right;">
+          {{currencySymbol}}{{netBase}}
+        </td>
+      </tr>
+
+      <tr>
+        <td>GST</td>
+        <td style="text-align:right;">
+          {{currencySymbol}}{{gst}}
+        </td>
+      </tr>
+
+      <tr style="border-top:2px solid #16a34a;">
+        <td><strong>Total Paid</strong></td>
+        <td style="text-align:right;color:#16a34a;">
+          <strong>{{currencySymbol}}{{totalPaid}}</strong>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 🔥 NEW: REVENUE SPLIT -->
+  <div style="background:#f1f5f9;padding:16px;border-radius:8px;margin-top:20px;">
+    <h3 style="margin:0 0 12px;font-size:15px;">🏢 Revenue Split</h3>
+
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="color:#6b7280;">
+          Platform Fee ({{commissionPercent}}% of {{currencySymbol}}{{netBase}})
+        </td>
+        <td style="text-align:right;color:#2563eb;">
+          {{currencySymbol}}{{platformFee}}
+        </td>
+      </tr>
+
+      <tr>
+        <td style="color:#6b7280;">Creator Earning</td>
+        <td style="text-align:right;color:#16a34a;">
+          {{currencySymbol}}{{creatorEarning}}
+        </td>
+      </tr>
+
+      <tr style="border-top:2px solid #e5e7eb;">
+        <td><strong>Platform Revenue</strong></td>
+        <td style="text-align:right;color:#2563eb;">
+          <strong>{{currencySymbol}}{{platformEarning}}</strong>
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-size:12px;color:#9ca3af;margin-top:10px;">
+      Commission is calculated on net amount (after discount).
+      GST is excluded from platform revenue.
+    </p>
+  </div>
+{{/if}}
+
+    <!-- META -->
+    <div style="margin-top:16px;font-size:13px;color:#6b7280;">
+      <p style="margin:4px 0;">Transaction ID: <strong>{{transactionId}}</strong></p>
+      <p style="margin:4px 0;">Payment Method: {{paymentMethod}}</p>
+      <p style="margin:4px 0;">Payment Date: {{paymentDate}}</p>
+    </div>
+
+  </div>
+</div>
+`
 }
   ];
 

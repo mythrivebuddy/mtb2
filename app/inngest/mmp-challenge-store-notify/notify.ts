@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
-import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { sendEmailUsingTemplate, sendEmailUsingTemplateWithConditionals } from "@/utils/sendEmail";
 import { maskEmail } from "@/utils/mask-email";
 import { inngest } from "@/lib/inngest";
 import { checkFeature } from "@/lib/access-control/checkFeature";
@@ -131,8 +131,63 @@ export const notifyStakeholders = inngest.createFunction(
       } else {
         finalEntityType = "STORE";
         finalEntityId = orderId!;
-        entityName = "Your Purchase";
-        redirectUrl = `${process.env.NEXT_URL}/dashboard/store/orders`;
+
+        const storeOrder = await prisma.paymentOrder.findUnique({
+          where: { id: orderId },
+          select: {
+            cartSnapshot: true,
+            storeOrderId: true,
+          },
+        });
+
+        if (!storeOrder) return;
+
+        let itemName = "Your Purchase";
+        let itemId: string | null = null;
+
+        try {
+          let item = null;
+
+          if (Array.isArray(storeOrder.cartSnapshot)) {
+            item = storeOrder.cartSnapshot[0];
+          } else if (typeof storeOrder.cartSnapshot === "string") {
+            try {
+              const parsed = JSON.parse(storeOrder.cartSnapshot);
+              item = Array.isArray(parsed) ? parsed[0] : null;
+            } catch (err) {
+              console.error("Cart snapshot parse failed:", err);
+            }
+          }
+
+          itemName = item?.name || "Your Purchase";
+
+          // 🔥 FIX: support both keys
+          itemId = item?.itemId || item?.productId || null;
+          console.log("🧾 STORE ITEM DEBUG:", {
+            rawSnapshot: storeOrder.cartSnapshot,
+            parsedItem: item,
+            itemId,
+          });
+        } catch {}
+
+        entityName = itemName;
+
+        // 🔥 fetch actual product (to get creator)
+        if (itemId) {
+          const product = await prisma.item.findUnique({
+            where: { id: itemId },
+            select: {
+              createdByUserId: true,
+              currency: true,
+            },
+          });
+          console.log("🛒 PRODUCT DEBUG:", product);
+          if (product?.createdByUserId) {
+            creatorId = product.createdByUserId;
+          }
+        }
+
+        redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
       }
     } else {
       finalEntityType = entityType!;
@@ -224,6 +279,10 @@ export const notifyStakeholders = inngest.createFunction(
         select: { id: true, name: true, email: true },
       }),
     ]);
+    console.log("DEBUG CREATOR:", {
+      creatorId,
+      creatorFound: !!creator,
+    });
 
     if (!user) return;
 
@@ -249,7 +308,7 @@ export const notifyStakeholders = inngest.createFunction(
     }
     let financials = null;
 
-    if (!isFree && paymentData) {
+    if (!isFree && paymentData && finalEntityType !== "STORE") {
       const baseAmount = paymentData.baseAmount ?? 0;
       const discount = paymentData.discountApplied ?? 0;
       const gst = paymentData.gstAmount ?? 0;
@@ -257,7 +316,7 @@ export const notifyStakeholders = inngest.createFunction(
 
       const netBase = Math.max(baseAmount - discount, 0);
 
-      let commissionPercent: number;
+      let commissionPercent = 0;
 
       if (!creator) {
         throw new Error("Creator required for commission calculation");
@@ -299,9 +358,6 @@ export const notifyStakeholders = inngest.createFunction(
             commissionPercent: number;
           }
         ).commissionPercent;
-      } else {
-        // STORE or anything else → no commission logic
-        throw new Error("Commission not applicable for this entity type");
       }
       const platformFee = (netBase * commissionPercent) / 100;
       const creatorEarning = netBase - platformFee;
@@ -320,6 +376,62 @@ export const notifyStakeholders = inngest.createFunction(
         platformEarning: platformEarning.toFixed(2),
       };
     }
+if (!isFree && paymentData && finalEntityType === "STORE") {
+  if (!creator) {
+    throw new Error("Creator required for store commission calculation");
+  }
+
+  const baseAmount = paymentData.baseAmount ?? 0;
+  const discount = paymentData.discountApplied ?? 0;
+  const gst = paymentData.gstAmount ?? 0;
+  const totalPaid = paymentData.totalAmount ?? 0;
+
+  const netBase = Math.max(baseAmount - discount, 0);
+
+  // 🔥 SAME PATTERN AS OTHERS
+  const featureCheck = checkFeature({
+    feature: "store",
+    user: {
+      userType: creator.userType,
+      membership: creator.membership,
+    },
+  });
+
+  if (!featureCheck.allowed) {
+    throw new Error("Commission config not found for store");
+  }
+
+  const commissionPercent = (
+    featureCheck.config as {
+      commissionPercent: number;
+    }
+  ).commissionPercent;
+
+  const platformFee = (netBase * commissionPercent) / 100;
+  const creatorEarning = netBase - platformFee;
+
+  financials = {
+    baseAmount: baseAmount.toFixed(2),
+    discount: discount.toFixed(2),
+    netBase: netBase.toFixed(2),
+    gst: gst.toFixed(2),
+    totalPaid: totalPaid.toFixed(2),
+
+    commissionPercent,
+    platformFee: platformFee.toFixed(2),
+    creatorEarning: creatorEarning.toFixed(2),
+    platformEarning: platformFee.toFixed(2),
+  };
+}
+
+    const isGP = paymentData?.currency === "GP";
+
+    const currencySymbol =
+      paymentData?.currency === "INR"
+        ? "₹"
+        : paymentData?.currency === "USD"
+          ? "$"
+          : "";
     /* =============================
        🔹 Template Map
     ============================= */
@@ -391,20 +503,42 @@ export const notifyStakeholders = inngest.createFunction(
     ============================= */
 
     await step.run("push-joiner", async () => {
-      await sendPushNotificationToUser(
-        user.id,
-        "You're In! 🎉",
-        `You’ve successfully joined "${entityName}". Tap to start.`,
-        { url: redirectUrl },
-      );
+      try {
+        const buyerTitle =
+          finalEntityType === "STORE"
+            ? "🛍️ Purchase Successful"
+            : "You're In! 🎉";
+
+        const buyerMessage =
+          finalEntityType === "STORE"
+            ? `You purchased "${entityName}". Tap to view your order.`
+            : `You’ve successfully joined "${entityName}". Tap to start.`;
+
+        await sendPushNotificationToUser(user.id, buyerTitle, buyerMessage, {
+          url: redirectUrl,
+        });
+      } catch (err) {
+        console.error("Buyer push failed:", err);
+      }
     });
+    const creatorMessage =
+      finalEntityType === "STORE"
+        ? `You made a sale! ${user.name} purchased "${entityName}".`
+        : `${user.name} joined ${entityName}`;
+
+    const creatorTitle =
+      finalEntityType === "STORE"
+        ? "🛒 New Product Purchase"
+        : finalEntityType === "CHALLENGE"
+          ? "🎯 New Challenge Participant"
+          : "📘 New Program Enrollment";
 
     if (creator?.id && creator.id !== user.id) {
       await step.run("push-creator", async () => {
         await sendPushNotificationToUser(
           creator.id,
-          `${finalEntityType} • New Enrollment`,
-          `${user.name} joined ${entityName}`,
+          creatorTitle,
+          creatorMessage,
           { url: redirectUrl },
         );
       });
@@ -412,12 +546,16 @@ export const notifyStakeholders = inngest.createFunction(
 
     if (admin?.id && admin.id !== creator?.id && admin.id !== user.id) {
       await step.run("push-admin", async () => {
-        await sendPushNotificationToUser(
-          admin.id,
-          "New Enrollment",
-          `${user.name} joined ${entityName}`,
-          { url: adminUrl },
-        );
+        const adminTitle =
+          finalEntityType === "STORE" ? "🛒 New Store Order" : "New Enrollment";
+
+        const adminMessage =
+          finalEntityType === "STORE"
+            ? `${user.name} purchased ${entityName}`
+            : `${user.name} joined ${entityName}`;
+        await sendPushNotificationToUser(admin.id, adminTitle, adminMessage, {
+          url: adminUrl,
+        });
       });
     }
 
@@ -449,21 +587,25 @@ export const notifyStakeholders = inngest.createFunction(
     // CREATOR
     if (creator?.email && creator.id !== user.id) {
       await step.run("email-creator", async () => {
-        await sendEmailUsingTemplate({
+        await sendEmailUsingTemplateWithConditionals({
           toEmail: creator.email,
           toName: creator.name,
           templateId: templates.creator,
           templateData: {
             coachName: creator.name,
+            sellerName: finalEntityType === "STORE" ? creator.name : null,
             username: user.name,
             [nameKey]: entityName,
+            productName: finalEntityType === "STORE" ? entityName : null,
             [urlKey]: redirectUrl,
             userEmail: maskEmail(user.email ?? ""),
 
             ...(financials || {}),
             coachEarning: financials?.creatorEarning,
             ...commonChallengeData,
-
+            isStore: finalEntityType === "STORE",
+            isGP,
+            currencySymbol,
             amount: financials?.totalPaid ?? null,
             paymentMethod: "Online",
 
@@ -482,7 +624,7 @@ export const notifyStakeholders = inngest.createFunction(
     // ADMIN
     if (admin?.email && admin.id !== creator?.id && admin.id !== user.id) {
       await step.run("email-admin", async () => {
-        await sendEmailUsingTemplate({
+        await sendEmailUsingTemplateWithConditionals({
           toEmail: admin.email,
           toName: admin.name,
           templateId: templates.admin,
@@ -496,7 +638,11 @@ export const notifyStakeholders = inngest.createFunction(
             ...(financials || {}),
 
             ...commonChallengeData,
+            isStore: finalEntityType === "STORE",
+            productName: finalEntityType === "STORE" ? entityName : null,
 
+            isGP,
+            currencySymbol,
             amount: financials?.totalPaid ?? null,
             paymentMethod: "Online",
 
