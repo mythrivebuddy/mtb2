@@ -12,9 +12,7 @@ import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse"
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
-import { sendEmailUsingTemplate } from "@/utils/sendEmail";
-import { formatDate } from "@/lib/utils/dateUtils";
-import { maskEmail } from "@/utils/mask-email";
+import { inngest } from "@/lib/inngest";
 
 // Define this interface near the top of the file or in your featureConfig types
 interface ChallengesFeatureConfig {
@@ -248,59 +246,6 @@ export async function POST(request: Request) {
           },
         })
       : null;
-
-    // ✅ ONLY RUN FOR PAID CHALLENGE
-    let baseAmount = 0;
-    let discount = 0;
-    let gst = 0;
-    let totalPaid = 0;
-    let finalPayable = 0;
-
-    let commissionPercent = 0;
-    let platformFee = 0;
-    let coachEarning = 0;
-    let netBase = 0;
-
-    if (isPaid && paidOrder && creator) {
-      baseAmount = Number(paidOrder.baseAmount ?? 0);
-      discount = Number(paidOrder.discountApplied ?? 0);
-      gst = Number(paidOrder.gstAmount ?? 0);
-      totalPaid = Number(paidOrder.totalAmount ?? 0);
-
-      finalPayable = Number((baseAmount - discount + gst).toFixed(2));
-
-      // If gateway forced ₹1 minimum
-      if (finalPayable <= 0 && totalPaid > 0) {
-        finalPayable = totalPaid;
-      }
-
-      const feature = checkFeature({
-        feature: "challenges",
-        user: {
-          userType: creator.userType,
-          membership: creator.membership,
-        },
-      });
-
-      if (feature.allowed) {
-        commissionPercent =
-          (feature.config as ChallengesFeatureConfig).commissionPercent ?? 0;
-      }
-
-      // ✅ SINGLE SOURCE OF TRUTH
-      netBase = Number((baseAmount - discount).toFixed(2));
-
-      // ✅ NEW: commission on net value (excluding GST)
-      // const commissionBase = Number((netBase + gst).toFixed(2));
-
-      platformFee = Number(
-        ((netBase * commissionPercent) / 100).toFixed(2),
-      );
-
-      // 
-      coachEarning = Number((netBase - platformFee).toFixed(2));
-    }
-    // ⚠️ Optional safety (recommended)
     if (isPaid && !paidOrder) {
       return NextResponse.json(
         { error: "Payment not found for this challenge." },
@@ -308,80 +253,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const baseUrl = process.env.NEXT_URL || "https://www.mythrivebuddy.com";
-
-    //  Email Data (FULLY FIXED)
-    const emailData = {
-      username: joiner.name || "User",
-      userEmail: maskEmail(joiner.email),
-      coachName: creator?.name || "Coach",
-
-      challengeName: challengeToJoin.title,
-
-      startDate: challengeToJoin.startDate
-        ? formatDate(challengeToJoin.startDate)
-        : "N/A",
-
-      challengeType: isPaid ? "Paid" : "Free",
-
-      // ✅ USER CTA
-      challengeUrl: `${baseUrl}/dashboard/challenge/my-challenges/${challengeToJoin.id}`,
-
-      // ✅ COACH CTA (FIXED — for View Participants)
-      participantsUrl: `${baseUrl}/dashboard/challenge/${challengeToJoin.id}/participants`,
-
-      // ✅ FIX: No amount for free challenge
-      amount: isPaid ? finalPayable : null,
-
-      transactionId: paidOrder?.paymentId || paidOrder?.orderId || "N/A",
-      paymentMethod: paidOrder?.paymentMethod || "Online",
-
-      // ✅ Coach payment breakdown
-      baseAmount,
-      discount,
-      netBase,
-      gst,
-      totalPaid,
-
-      commissionPercent,
-      platformFee,
-      coachEarning,
-
-      paymentDate: paidOrder?.paidAt ? formatDate(paidOrder?.paidAt) : "N/A",
-
-      // ✅ Coach paid CTA
-      transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
-    };
-    // ✅ USER EMAIL
-    const shouldSkipUserEmail = isPaid;
-
-    if (!shouldSkipUserEmail) {
-      console.log("📧 Sending USER email");
-
-      await sendEmailUsingTemplate({
-        toEmail: joiner.email!,
-        toName: joiner.name || "User",
-        templateId: isPaid ? "challenge-joined-paid" : "challenge-joined-free",
-        templateData: emailData,
-      }).catch((err) => console.error("User email failed:", err.message));
-    } else {
-      console.log("🚫 Skipping joined USER email (paid challenge)");
+    // ✅ ONLY trigger for FREE
+    if (!isPaid) {
+      await inngest.send({
+        name: "mmp-challenge-store.notify",
+        id: `notify-free-challenge-${challengeToJoin.id}-${joinerId}`, // optional but good
+        data: {
+          userId: joinerId,
+          isFree: true,
+          entityType: "CHALLENGE",
+          entityId: challengeToJoin.id,
+        },
+      });
     }
 
-    // ✅ COACH EMAIL
-    // ✅ COACH EMAIL (SAFE)
-    if (creator && creator.id !== joiner.id) {
-        console.log("📧 Sending email to:", creator.email);
-      const templateId = isPaid
-        ? "coach-user-joined-paid-challenge"
-        : "coach-user-joined-challenge";
-      await sendEmailUsingTemplate({
-        toEmail: creator.email,
-        toName: creator.name || "Coach",
-        templateId,
-        templateData: emailData,
-      }).catch((err) => console.error("❌ Coach email failed:", err));
-    }
     // Respond to the client immediately after the database is updated.
     return NextResponse.json(
       {

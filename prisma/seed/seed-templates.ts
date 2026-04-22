@@ -1015,6 +1015,119 @@ async function main() {
   </div>
 </div>
 `.trim(),
+},
+{
+  templateId: "challenge-joined-admin-free",
+  subject: "{{username}} joined {{challengeName}} Challenge",
+  description: "Admin email for  free challenge join enrollmet of user",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e5e7eb;border-radius:10px;padding:20px;">
+
+  <h2 style="margin:0 0 10px;">New Free Challenge Enrollment</h2>
+
+  <p style="font-size:14px;color:#374151;">
+    <strong>{{username}}</strong> joined 
+    <strong>{{challengeName}}</strong>
+  </p>
+
+  <div style="background:#f9fafb;padding:12px;border-radius:6px;margin-top:12px;">
+    <p style="margin:0;font-size:13px;color:#6b7280;">User</p>
+    <p style="margin:0;font-weight:600;">{{username}} ({{userEmail}})</p>
+
+    <p style="margin:10px 0 0;font-size:13px;color:#6b7280;">Creator</p>
+    <p style="margin:0;font-weight:600;">{{creatorName}}</p>
+
+    <p style="margin:10px 0 0;font-size:13px;color:#6b7280;">Type</p>
+    <p style="margin:0;font-weight:600;color:#16a34a;">Free</p>
+  </div>
+
+</div>
+`.trim(),
+},
+// paid challenge admin template 
+{
+  templateId: "challenge-joined-admin-paid",
+  subject: "New Challenge Purchase — {{challengeName}}",
+  description: "Admin email for paid challenge enrollment",
+  htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;">
+
+  <div style="padding:24px;text-align:center;background:#f1f5f9;">
+    <h2>New Paid Challenge Enrollment</h2>
+    <p style="color:#6b7280;">Challenge</p>
+  </div>
+
+  <div style="padding:24px;">
+
+    <p><strong>{{username}}</strong> purchased:</p>
+    <h3>{{challengeName}}</h3>
+
+    <p>Creator: <strong>{{creatorName}}</strong></p>
+
+    <!-- PAYMENT -->
+    <div style="background:#f0fdf4;padding:16px;border-radius:8px;margin-top:16px;">
+      <h3>💳 Payment Breakdown</h3>
+
+      <table style="width:100%;">
+        <tr>
+          <td>Base Price</td>
+          <td style="text-align:right;">₹{{baseAmount}}</td>
+        </tr>
+
+        <tr>
+          <td>Discount</td>
+          <td style="text-align:right;color:#dc2626;">− ₹{{discount}}</td>
+        </tr>
+
+        <tr>
+          <td>Net Amount</td>
+          <td style="text-align:right;">₹{{netBase}}</td>
+        </tr>
+
+        <tr>
+          <td>GST</td>
+          <td style="text-align:right;">₹{{gst}}</td>
+        </tr>
+
+        <tr style="border-top:2px solid #16a34a;">
+          <td><strong>Total Paid</strong></td>
+          <td style="text-align:right;color:#16a34a;">
+            <strong>₹{{totalPaid}}</strong>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- REVENUE -->
+    <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-top:20px;">
+      <h3>🏢 Revenue Split</h3>
+
+      <table style="width:100%;">
+        <tr>
+          <td>Platform Fee ({{commissionPercent}}%)</td>
+          <td style="text-align:right;">₹{{platformFee}}</td>
+        </tr>
+
+        <tr>
+          <td>Creator Earning</td>
+          <td style="text-align:right;color:#16a34a;">₹{{creatorEarning}}</td>
+        </tr>
+
+        <tr style="border-top:2px solid #e5e7eb;">
+          <td><strong>Platform Revenue</strong></td>
+          <td style="text-align:right;">₹{{platformEarning}}</td>
+        </tr>
+      </table>
+    </div>
+
+    <p style="margin-top:16px;font-size:13px;color:#6b7280;">
+      Payment Date: {{paymentDate}} <br/>
+      Transaction ID: {{transactionId}}
+    </p>
+
+  </div>
+</div>
+`.trim(),
 }
   ];
 

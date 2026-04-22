@@ -3,6 +3,7 @@ import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { maskEmail } from "@/utils/mask-email";
 import { inngest } from "@/lib/inngest";
+import { checkFeature } from "@/lib/access-control/checkFeature";
 
 /* =============================
    🔹 TYPES
@@ -52,8 +53,8 @@ type PaymentData = {
   paymentId: string | null;
   currency: string;
   createdAt: Date;
-    baseAmount: number;
-          gstAmount: number,
+  baseAmount: number;
+  gstAmount: number;
 } | null;
 
 /* =============================
@@ -77,6 +78,8 @@ export const notifyStakeholders = inngest.createFunction(
     let entityName: string;
     let creatorId: string | null = null;
     let redirectUrl: string;
+    let startDate: string | null = null;
+    const baseUrl = process.env.NEXT_URL!;
 
     if (!isFree) {
       const order = await prisma.paymentOrder.findUnique({
@@ -113,6 +116,7 @@ export const notifyStakeholders = inngest.createFunction(
           select: {
             id: true,
             title: true,
+            startDate: true,
             creator: { select: { id: true } },
           },
         });
@@ -123,7 +127,7 @@ export const notifyStakeholders = inngest.createFunction(
         finalEntityId = challenge.id;
         entityName = challenge.title;
         creatorId = challenge.creator?.id ?? null;
-        redirectUrl = `${process.env.NEXT_URL}/dashboard/challenges/${challenge.id}`;
+        redirectUrl = `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challenge.id}`;
       } else {
         finalEntityType = "STORE";
         finalEntityId = orderId!;
@@ -153,6 +157,7 @@ export const notifyStakeholders = inngest.createFunction(
           where: { id: entityId },
           select: {
             title: true,
+            startDate: true,
             creator: { select: { id: true } },
           },
         });
@@ -161,10 +166,33 @@ export const notifyStakeholders = inngest.createFunction(
 
         entityName = challenge.title;
         creatorId = challenge.creator?.id ?? null;
-        redirectUrl = `${process.env.NEXT_URL}/dashboard/challenges/${entityId}`;
+        redirectUrl = `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${entityId}`;
+        startDate = challenge.startDate
+          ? new Date(challenge.startDate).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            })
+          : "N/A";
       }
     }
+    const isChallenge = finalEntityType === "CHALLENGE";
 
+    const nameKey = isChallenge ? "challengeName" : "programName";
+    const urlKey = isChallenge ? "challengeUrl" : "programUrl";
+    const commonChallengeData = isChallenge
+      ? {
+          challengeType: isFree ? "Free" : "Paid",
+
+          challengeUrl: redirectUrl,
+
+          participantsUrl: `${baseUrl}/dashboard/challenge/${finalEntityId}/participants`,
+
+          startDate, // optional: fetch if needed
+
+          transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
+        }
+      : {};
     /* =============================
        🔹 Fetch Users
     ============================= */
@@ -178,7 +206,13 @@ export const notifyStakeholders = inngest.createFunction(
       creatorId
         ? prisma.user.findUnique({
             where: { id: creatorId },
-            select: { id: true, name: true, email: true },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              userType: true,
+              membership: true,
+            },
           })
         : null,
 
@@ -213,35 +247,79 @@ export const notifyStakeholders = inngest.createFunction(
         },
       });
     }
-   let financials = null;
+    let financials = null;
 
-if (!isFree && paymentData) {
-  const baseAmount = paymentData.baseAmount ?? 0;
-  const discount = paymentData.discountApplied ?? 0;
-  const gst = paymentData.gstAmount ?? 0;
-  const totalPaid = paymentData.totalAmount ?? 0;
+    if (!isFree && paymentData) {
+      const baseAmount = paymentData.baseAmount ?? 0;
+      const discount = paymentData.discountApplied ?? 0;
+      const gst = paymentData.gstAmount ?? 0;
+      const totalPaid = paymentData.totalAmount ?? 0;
 
-  const netBase = Math.max(baseAmount - discount, 0);
+      const netBase = Math.max(baseAmount - discount, 0);
 
-  const commissionPercent = 20;
+      let commissionPercent: number;
 
-  const platformFee = (netBase * commissionPercent) / 100;
-  const creatorEarning = netBase - platformFee;
-  const platformEarning = platformFee;
+      if (!creator) {
+        throw new Error("Creator required for commission calculation");
+      }
 
-  financials = {
-    baseAmount: baseAmount.toFixed(2),
-    discount: discount.toFixed(2),
-    netBase: netBase.toFixed(2),
-    gst: gst.toFixed(2),
-    totalPaid: totalPaid.toFixed(2),
+      if (finalEntityType === "CHALLENGE") {
+        const featureCheck = checkFeature({
+          feature: "challenges",
+          user: {
+            userType: creator.userType,
+            membership: creator.membership,
+          },
+        });
 
-    commissionPercent,
-    platformFee: platformFee.toFixed(2),
-    creatorEarning: creatorEarning.toFixed(2),
-    platformEarning: platformEarning.toFixed(2),
-  };
-}
+        if (!featureCheck.allowed) {
+          throw new Error("Commission config not found for challenge");
+        }
+
+        commissionPercent = (
+          featureCheck.config as {
+            commissionPercent: number;
+          }
+        ).commissionPercent;
+      } else if (finalEntityType === "MMP") {
+        const featureCheck = checkFeature({
+          feature: "miniMasteryPrograms",
+          user: {
+            userType: creator.userType,
+            membership: creator.membership,
+          },
+        });
+
+        if (!featureCheck.allowed) {
+          throw new Error("Commission config not found for MMP");
+        }
+
+        commissionPercent = (
+          featureCheck.config as {
+            commissionPercent: number;
+          }
+        ).commissionPercent;
+      } else {
+        // STORE or anything else → no commission logic
+        throw new Error("Commission not applicable for this entity type");
+      }
+      const platformFee = (netBase * commissionPercent) / 100;
+      const creatorEarning = netBase - platformFee;
+      const platformEarning = platformFee;
+
+      financials = {
+        baseAmount: baseAmount.toFixed(2),
+        discount: discount.toFixed(2),
+        netBase: netBase.toFixed(2),
+        gst: gst.toFixed(2),
+        totalPaid: totalPaid.toFixed(2),
+
+        commissionPercent,
+        platformFee: platformFee.toFixed(2),
+        creatorEarning: creatorEarning.toFixed(2),
+        platformEarning: platformEarning.toFixed(2),
+      };
+    }
     /* =============================
        🔹 Template Map
     ============================= */
@@ -264,11 +342,11 @@ if (!isFree && paymentData) {
         free: {
           user: "challenge-joined-free",
           creator: "coach-user-joined-challenge",
-          admin: "challenge-joined-admin",
+          admin: "challenge-joined-admin-free",
         },
         paid: {
           creator: "coach-user-joined-paid-challenge",
-          admin: "challenge-joined-admin",
+          admin: "challenge-joined-admin-paid",
         },
       },
 
@@ -359,8 +437,10 @@ if (!isFree && paymentData) {
           templateId: freeTemplates.user,
           templateData: {
             username: user.name,
-            programName: entityName,
-            programUrl: redirectUrl,
+            [nameKey]: entityName,
+            [urlKey]: redirectUrl,
+
+            ...commonChallengeData,
           },
         });
       });
@@ -374,13 +454,26 @@ if (!isFree && paymentData) {
           toName: creator.name,
           templateId: templates.creator,
           templateData: {
-            creatorName: creator.name,
+            coachName: creator.name,
             username: user.name,
-            programName: entityName,
-            programUrl: redirectUrl,
+            [nameKey]: entityName,
+            [urlKey]: redirectUrl,
             userEmail: maskEmail(user.email ?? ""),
-            ...financials,
-            paymentDate: paymentData?.createdAt,
+
+            ...(financials || {}),
+            coachEarning: financials?.creatorEarning,
+            ...commonChallengeData,
+
+            amount: financials?.totalPaid ?? null,
+            paymentMethod: "Online",
+
+            paymentDate: paymentData?.createdAt
+              ? new Date(paymentData.createdAt).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "N/A",
           },
         });
       });
@@ -396,13 +489,25 @@ if (!isFree && paymentData) {
           templateData: {
             username: user.name,
             userEmail: maskEmail(user.email ?? ""),
-            programName: entityName,
+            [nameKey]: entityName,
             creatorName: creator?.name ?? "Unknown",
-            programUrl: adminUrl,
+            [urlKey]: adminUrl,
 
-            ...financials,
+            ...(financials || {}),
 
-            paymentDate: paymentData?.createdAt,
+            ...commonChallengeData,
+
+            amount: financials?.totalPaid ?? null,
+            paymentMethod: "Online",
+
+            paymentDate: paymentData?.createdAt
+              ? new Date(paymentData.createdAt).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })
+              : "N/A",
+
             transactionId: paymentData?.paymentId,
           },
         });
