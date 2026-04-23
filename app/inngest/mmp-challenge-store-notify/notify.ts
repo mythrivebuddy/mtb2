@@ -11,6 +11,18 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 /* =============================
    🔹 TYPES
 ============================= */
+type CartItem = {
+  itemId?: string | null;
+  productId?: string | null;
+  name?: string;
+  item?: {
+    name?: string;
+  };
+  price?: number;
+  discount?: number;
+  quantity?: number;
+  gst?: number;
+};
 type StoreOrderItem = {
   itemId: string | null;
   quantity: number;
@@ -103,6 +115,8 @@ export const notifyStakeholders = inngest.createFunction(
     let redirectUrl: string;
     let startDate: string | null = null;
     const baseUrl = process.env.NEXT_URL!;
+    let entityDisplayName = "";
+    let entityFullNames = "";
     const creatorMap = new Map<
       string,
       {
@@ -110,6 +124,14 @@ export const notifyStakeholders = inngest.createFunction(
         items: StoreOrderItem[];
       }
     >();
+    const admin = await prisma.user.findFirst({
+      where: {
+        role: "ADMIN",
+        email: process.env.ADMIN_EMAIL,
+      },
+      select: { id: true, name: true, email: true },
+    });
+
     if (!isFree) {
       // ✅ WALLET FLOW (NO paymentOrder)
       if (event.data.isWallet) {
@@ -166,10 +188,20 @@ export const notifyStakeholders = inngest.createFunction(
           });
         }
         // ✅ pick name (first item only for display)
-        entityName =
+        entityFullNames = products
+          .filter((p) => p.createdByUserId !== admin?.id)
+          .map((p) => p.name || "Product")
+          .join(", ");
+
+        entityDisplayName =
           products.length === 1
-            ? products[0]?.name || "Your Purchase"
+            ? products[0]?.name || "Product"
             : `${products.length} items`;
+
+        entityName = entityDisplayName;
+        if (!entityFullNames) {
+          entityFullNames = entityName;
+        }
 
         // ❗ DO NOT set creatorId here (multi creator case)
         creatorId = null;
@@ -236,7 +268,7 @@ export const notifyStakeholders = inngest.createFunction(
 
           if (!storeOrder) return;
 
-          let itemName = "Your Purchase";
+          // const itemName = "Your Purchase";
           // let itemId: string | null = null;
 
           let items = [];
@@ -252,22 +284,10 @@ export const notifyStakeholders = inngest.createFunction(
               console.error("Cart snapshot parse failed:", err);
             }
 
-            console.log("🧾 FULL CART ITEMS:", items);
-            console.log("🚀 FINAL ITEMS USED:", items.length, items);
-
             // ✅ derive entity name
-            itemName =
-              items.length === 1
-                ? items[0]?.name || "Your Purchase"
-                : `${items.length} items`;
-
-            console.log("🧾 STORE ITEMS DEBUG:", {
-              rawSnapshot: storeOrder.cartSnapshot,
-              items,
-            });
           } catch {}
 
-          entityName = itemName;
+          // entityName = itemName;
 
           // 🔥 fetch actual product (to get creator)
           const itemIds = items
@@ -285,7 +305,25 @@ export const notifyStakeholders = inngest.createFunction(
           });
 
           const productMap = new Map(products.map((p) => [p.id, p]));
+          const getItemName = (i: CartItem) =>
+            i?.item?.name || i?.name || "Product";
 
+          entityDisplayName =
+            items.length === 1
+              ? getItemName(items[0])
+              : `${items.length} items`;
+
+          entityFullNames = items
+            .filter((i) => {
+              const itemId = i.itemId || i.productId;
+              const product = productMap.get(itemId);
+              return product?.createdByUserId !== admin?.id;
+            })
+            .map(getItemName)
+            .join(", ");
+
+          // IMPORTANT
+          entityName = entityDisplayName;
           // ✅ BUILD creatorMap properly
           for (const cartItem of items) {
             const itemId = cartItem.itemId || cartItem.productId;
@@ -321,10 +359,7 @@ export const notifyStakeholders = inngest.createFunction(
               },
             });
           }
-          console.log(
-            "🔥 FINAL CREATOR MAP:",
-            Array.from(creatorMap.entries()),
-          );
+
           redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
         }
       }
@@ -471,7 +506,7 @@ export const notifyStakeholders = inngest.createFunction(
         creatorMap.get(creatorId)!.items.push(item);
       }
     }
-    const [user, creators, admin] = await Promise.all([
+    const [user, creators] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, name: true, email: true },
@@ -496,14 +531,6 @@ export const notifyStakeholders = inngest.createFunction(
           membership: true,
         },
       }),
-
-      prisma.user.findFirst({
-        where: {
-          role: "ADMIN",
-          email: process.env.ADMIN_EMAIL,
-        },
-        select: { id: true, name: true, email: true },
-      }),
     ]);
 
     const creator =
@@ -512,11 +539,6 @@ export const notifyStakeholders = inngest.createFunction(
           ? creators[0]
           : null
         : creators[0] || null;
-
-    console.log("DEBUG CREATOR:", {
-      creatorId,
-      creatorFound: !!creator,
-    });
 
     if (!user) return;
     let itemNames = "";
@@ -937,10 +959,6 @@ export const notifyStakeholders = inngest.createFunction(
 
     // CREATOR
     if (finalEntityType === "STORE") {
-      console.log("🧠 MULTI CREATOR DEBUG:", {
-        creatorMapKeys: Array.from(creatorMap.keys()),
-        creatorsFromDB: creators.map((c) => c.id),
-      });
       for (const creator of creators) {
         if (creator.id === user.id || !creator.email) continue;
         const creatorItems = creatorMap.get(creator.id)?.items || [];
@@ -965,12 +983,6 @@ export const notifyStakeholders = inngest.createFunction(
         }, 0);
         const netBase = creatorBase;
         const totalPaid = netBase + creatorGST;
-        console.log("💰 CREATOR FINANCIAL DEBUG:", {
-          creatorId: creator.id,
-          creatorItems,
-          creatorBase,
-          creatorDiscount,
-        });
 
         const featureCheck = checkFeature({
           feature: "store",
@@ -1013,12 +1025,7 @@ export const notifyStakeholders = inngest.createFunction(
           platformFee: platformFee,
           creatorEarning: creatorEarning,
         });
-        console.log("📧 SENDING EMAIL TO CREATOR:", {
-          creatorId: creator.id,
-          email: creator.email,
-          items: creatorItemNames,
-          amount: creatorFinancials.totalPaid,
-        });
+
         await step.run(`email-creator-${creator.id}`, async () => {
           await sendEmailUsingTemplateWithConditionals({
             toEmail: creator.email,
@@ -1032,6 +1039,8 @@ export const notifyStakeholders = inngest.createFunction(
 
               ...creatorFinancials,
               isStore: true,
+
+              showEarnings: creator.id !== admin?.id,
               isGP,
               currencySymbol,
               amount: creatorFinancials.totalPaid,
@@ -1055,6 +1064,16 @@ export const notifyStakeholders = inngest.createFunction(
               username: user.name,
               [nameKey]: entityName,
               [urlKey]: redirectUrl,
+              showEarnings: creator.id !== admin?.id,
+              ...(financials
+                ? {
+                    ...financials,
+                    coachEarning: financials.creatorEarning, 
+                  }
+                : {}),
+              paymentDate: paymentData?.createdAt
+                ? new Date(paymentData.createdAt).toLocaleDateString("en-GB")
+                : "N/A",
             },
           });
         });
@@ -1083,6 +1102,7 @@ export const notifyStakeholders = inngest.createFunction(
       let totalCreatorEarning = 0;
 
       for (const [creatorIdKey, data] of creatorFinancialsMap.entries()) {
+        if (creatorIdKey === admin?.id) continue;
         totalOriginal += data.baseAmount;
         totalDiscount += data.discount;
         totalNetBase += data.netBase;
@@ -1091,6 +1111,8 @@ export const notifyStakeholders = inngest.createFunction(
         totalCreatorEarning += data.creatorEarning;
 
         // ✅ Build per-product rows for admin breakdown table
+        // ❗ skip admin products in breakdown
+        if (creatorIdKey === admin?.id) continue;
         const creatorUser = creators.find((c) => c.id === creatorIdKey);
         const creatorItems = creatorMap.get(creatorIdKey)?.items || [];
 
@@ -1138,10 +1160,6 @@ export const notifyStakeholders = inngest.createFunction(
 
       const totalPaid = totalNetBase + totalGST;
 
-      console.log(
-        "📊 ADMIN PER-PRODUCT BREAKDOWN:",
-        JSON.stringify(perProductBreakdown, null, 2),
-      );
       const avgCommissionPercent =
         totalNetBase > 0 ? (totalPlatformFee / totalNetBase) * 100 : 0;
       adminFinancials = {
@@ -1157,7 +1175,7 @@ export const notifyStakeholders = inngest.createFunction(
       };
     }
     // ADMIN
-    if (admin?.email && admin.id !== creator?.id && admin.id !== user.id) {
+    if (admin?.email && admin.id !== user.id && admin.id !== creator?.id) {
       await step.run("email-admin", async () => {
         await sendEmailUsingTemplateWithConditionals({
           toEmail: admin.email,
@@ -1169,11 +1187,17 @@ export const notifyStakeholders = inngest.createFunction(
             [nameKey]: entityName,
             creatorName:
               finalEntityType === "STORE"
-                ? creators.map((c) => c.name).join(", ")
+                ? creators
+                    .filter((c) => c.id !== admin?.id)
+                    .map((c) => c.name)
+                    .join(", ")
                 : (creator?.name ?? "Unknown"),
             [urlKey]: adminUrl,
 
             ...(adminFinancials || financials || {}),
+
+            showRevenueSplit: true,
+
             perProductBreakdown:
               finalEntityType === "STORE" ? perProductBreakdown : [],
             isMultiCreator:
@@ -1181,11 +1205,17 @@ export const notifyStakeholders = inngest.createFunction(
 
             ...commonChallengeData,
             isStore: finalEntityType === "STORE",
-            productName: finalEntityType === "STORE" ? entityName : null,
+            productName:
+              finalEntityType === "STORE"
+                ? entityFullNames || entityName
+                : null,
 
             isGP,
             currencySymbol,
-            amount: adminFinancials?.totalPaid ?? null,
+            amount:
+              adminFinancials && Number(adminFinancials.totalPaid) > 0
+                ? adminFinancials.totalPaid
+                : null,
             paymentMethod: event.data.isWallet ? "Wallet (GP)" : "Online",
 
             paymentDate: paymentData?.createdAt
