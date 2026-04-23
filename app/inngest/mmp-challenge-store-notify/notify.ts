@@ -11,6 +11,19 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 /* =============================
    🔹 TYPES
 ============================= */
+type StoreOrderItem = {
+  itemId: string | null;
+  quantity: number;
+  priceAtPurchase: number;
+  originalPrice: number | null;
+  gstAmount?: number | null;
+  item: {
+    id: string;
+    name: string;
+    currency: string;
+  } | null;
+};
+
 type OrderItemLite = {
   originalPrice: number | null;
   priceAtPurchase: number;
@@ -90,7 +103,13 @@ export const notifyStakeholders = inngest.createFunction(
     let redirectUrl: string;
     let startDate: string | null = null;
     const baseUrl = process.env.NEXT_URL!;
-
+    const creatorMap = new Map<
+      string,
+      {
+        creatorId: string;
+        items: StoreOrderItem[];
+      }
+    >();
     if (!isFree) {
       // ✅ WALLET FLOW (NO paymentOrder)
       if (event.data.isWallet) {
@@ -105,23 +124,55 @@ export const notifyStakeholders = inngest.createFunction(
         });
 
         if (!order) return;
+        const productIds = order.items
+          .map((i) => i.itemId)
+          .filter((id): id is string => !!id);
 
-        const firstItem = order.items[0];
+        // ✅ fetch all products in ONE query
+        const products = await prisma.item.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            createdByUserId: true,
+          },
+        });
 
-        let product = null;
+        const productMap = new Map(products.map((p) => [p.id, p]));
 
-        if (firstItem?.itemId) {
-          product = await prisma.item.findUnique({
-            where: { id: firstItem.itemId },
-            select: {
-              name: true,
-              createdByUserId: true,
+        for (const orderItem of order.items) {
+          const product = productMap.get(orderItem.itemId);
+          if (!product?.createdByUserId) continue;
+
+          const creatorId = product.createdByUserId;
+
+          if (!creatorMap.has(creatorId)) {
+            creatorMap.set(creatorId, {
+              creatorId,
+              items: [],
+            });
+          }
+
+          creatorMap.get(creatorId)!.items.push({
+            itemId: orderItem.itemId,
+            quantity: orderItem.quantity,
+            priceAtPurchase: orderItem.priceAtPurchase ?? 0,
+            originalPrice: null,
+            item: {
+              id: orderItem.itemId!,
+              name: product.name,
+              currency: "GP",
             },
           });
         }
+        // ✅ pick name (first item only for display)
+        entityName =
+          products.length === 1
+            ? products[0]?.name || "Your Purchase"
+            : `${products.length} items`;
 
-        entityName = product?.name || "Your Purchase";
-        creatorId = product?.createdByUserId ?? null;
+        // ❗ DO NOT set creatorId here (multi creator case)
+        creatorId = null;
 
         redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
       } else {
@@ -186,50 +237,94 @@ export const notifyStakeholders = inngest.createFunction(
           if (!storeOrder) return;
 
           let itemName = "Your Purchase";
-          let itemId: string | null = null;
+          // let itemId: string | null = null;
 
+          let items = [];
           try {
-            let item = null;
-
-            if (Array.isArray(storeOrder.cartSnapshot)) {
-              item = storeOrder.cartSnapshot[0];
-            } else if (typeof storeOrder.cartSnapshot === "string") {
-              try {
+            try {
+              if (Array.isArray(storeOrder.cartSnapshot)) {
+                items = storeOrder.cartSnapshot;
+              } else if (typeof storeOrder.cartSnapshot === "string") {
                 const parsed = JSON.parse(storeOrder.cartSnapshot);
-                item = Array.isArray(parsed) ? parsed[0] : null;
-              } catch (err) {
-                console.error("Cart snapshot parse failed:", err);
+                items = Array.isArray(parsed) ? parsed : [];
               }
+            } catch (err) {
+              console.error("Cart snapshot parse failed:", err);
             }
 
-            itemName = item?.name || "Your Purchase";
+            console.log("🧾 FULL CART ITEMS:", items);
+            console.log("🚀 FINAL ITEMS USED:", items.length, items);
 
-            // 🔥 FIX: support both keys
-            itemId = item?.itemId || item?.productId || null;
-            console.log("🧾 STORE ITEM DEBUG:", {
+            // ✅ derive entity name
+            itemName =
+              items.length === 1
+                ? items[0]?.name || "Your Purchase"
+                : `${items.length} items`;
+
+            console.log("🧾 STORE ITEMS DEBUG:", {
               rawSnapshot: storeOrder.cartSnapshot,
-              parsedItem: item,
-              itemId,
+              items,
             });
           } catch {}
 
           entityName = itemName;
 
           // 🔥 fetch actual product (to get creator)
-          if (itemId) {
-            const product = await prisma.item.findUnique({
-              where: { id: itemId },
-              select: {
-                createdByUserId: true,
-                currency: true,
+          const itemIds = items
+            .map((i) => i.itemId || i.productId)
+            .filter(Boolean);
+
+          const products = await prisma.item.findMany({
+            where: { id: { in: itemIds } },
+            select: {
+              id: true,
+              createdByUserId: true,
+              name: true,
+              currency: true,
+            },
+          });
+
+          const productMap = new Map(products.map((p) => [p.id, p]));
+
+          // ✅ BUILD creatorMap properly
+          for (const cartItem of items) {
+            const itemId = cartItem.itemId || cartItem.productId;
+            if (!itemId) continue;
+
+            const product = productMap.get(itemId);
+            if (!product?.createdByUserId) continue;
+
+            const creatorIdLocal = product.createdByUserId;
+
+            if (!creatorMap.has(creatorIdLocal)) {
+              creatorMap.set(creatorIdLocal, {
+                creatorId: creatorIdLocal,
+                items: [],
+              });
+            }
+
+            // AFTER (correct)
+            const basePrice = cartItem.price || 0;
+            const discount = cartItem.discount || 0;
+            const paidBase = basePrice - discount;
+
+            creatorMap.get(creatorIdLocal)!.items.push({
+              itemId,
+              quantity: cartItem.quantity || 1,
+              priceAtPurchase: paidBase,
+              originalPrice: basePrice,
+              gstAmount: cartItem.gst || 0,
+              item: {
+                id: itemId,
+                name: product.name,
+                currency: product.currency || "INR",
               },
             });
-            console.log("🛒 PRODUCT DEBUG:", product);
-            if (product?.createdByUserId) {
-              creatorId = product.createdByUserId;
-            }
           }
-
+          console.log(
+            "🔥 FINAL CREATOR MAP:",
+            Array.from(creatorMap.entries()),
+          );
           redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
         }
       }
@@ -292,57 +387,16 @@ export const notifyStakeholders = inngest.createFunction(
           transactionPageUrl: `${baseUrl}/dashboard/transactions-history`,
         }
       : {};
+
     /* =============================
        🔹 Fetch Users
     ============================= */
-
-    const [user, creator, admin] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, name: true, email: true },
-      }),
-
-      creatorId
-        ? prisma.user.findUnique({
-            where: { id: creatorId },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              userType: true,
-              membership: true,
-            },
-          })
-        : null,
-
-      prisma.user.findFirst({
-        where: {
-          role: "ADMIN",
-          email: process.env.ADMIN_EMAIL,
-        },
-        select: { id: true, name: true, email: true },
-      }),
-    ]);
-    console.log("DEBUG CREATOR:", {
-      creatorId,
-      creatorFound: !!creator,
-    });
-
-    if (!user) return;
 
     let orderItems: OrderItemLite[] = [];
     type OrderWithItems = Awaited<
       ReturnType<typeof prisma.order.findUnique>
     > & {
-      items: {
-        quantity: number;
-        priceAtPurchase: number;
-        originalPrice: number | null;
-        item: {
-          name: string;
-          currency: string;
-        } | null;
-      }[];
+      items: StoreOrderItem[];
     };
 
     let orderWithItems: OrderWithItems | null = null;
@@ -356,6 +410,7 @@ export const notifyStakeholders = inngest.createFunction(
             include: {
               item: {
                 select: {
+                  id: true,
                   name: true,
                   currency: true,
                 },
@@ -378,6 +433,92 @@ export const notifyStakeholders = inngest.createFunction(
         }, 0);
       }
     }
+
+    if (
+      orderWithItems?.items?.length &&
+      creatorMap.size === 0 // ✅ ONLY if not already built
+    ) {
+      const productIds = orderWithItems.items
+        .map((i) => i.item?.id || i.itemId)
+        .filter((id): id is string => !!id);
+
+      const products = await prisma.item.findMany({
+        where: { id: { in: productIds } },
+        select: {
+          id: true,
+          createdByUserId: true,
+        },
+      });
+
+      const productToCreator = new Map(
+        products.map((p) => [p.id, p.createdByUserId]),
+      );
+
+      for (const item of orderWithItems.items) {
+        const productId = item.item?.id || item.itemId;
+        if (!productId) continue;
+
+        const creatorId = productToCreator.get(productId);
+        if (!creatorId) continue;
+
+        if (!creatorMap.has(creatorId)) {
+          creatorMap.set(creatorId, {
+            creatorId,
+            items: [],
+          });
+        }
+
+        creatorMap.get(creatorId)!.items.push(item);
+      }
+    }
+    const [user, creators, admin] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true },
+      }),
+
+      prisma.user.findMany({
+        where: {
+          id: {
+            in:
+              finalEntityType === "STORE"
+                ? Array.from(creatorMap.keys())
+                : creatorId
+                  ? [creatorId]
+                  : [],
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          userType: true,
+          membership: true,
+        },
+      }),
+
+      prisma.user.findFirst({
+        where: {
+          role: "ADMIN",
+          email: process.env.ADMIN_EMAIL,
+        },
+        select: { id: true, name: true, email: true },
+      }),
+    ]);
+
+    const creator =
+      finalEntityType === "STORE"
+        ? creators.length === 1
+          ? creators[0]
+          : null
+        : creators[0] || null;
+
+    console.log("DEBUG CREATOR:", {
+      creatorId,
+      creatorFound: !!creator,
+    });
+
+    if (!user) return;
     let itemNames = "";
     let itemCount = 0;
     let orderDate = "";
@@ -523,7 +664,8 @@ export const notifyStakeholders = inngest.createFunction(
       !isFree &&
       paymentData &&
       finalEntityType === "STORE" &&
-      !event.data.isWallet
+      !event.data.isWallet &&
+      creators.length === 1
     ) {
       if (!creator) {
         throw new Error("Creator required for store commission calculation");
@@ -536,7 +678,7 @@ export const notifyStakeholders = inngest.createFunction(
           : (paymentData.discountApplied ?? 0);
       const gst = paymentData.gstAmount ?? 0;
       const totalPaid = paymentData.totalAmount ?? 0;
-
+      //
       const netBase = Math.max(baseAmount - discount, 0);
 
       // 🔥 SAME PATTERN AS OTHERS
@@ -709,16 +851,48 @@ export const notifyStakeholders = inngest.createFunction(
         : finalEntityType === "CHALLENGE"
           ? "🎯 New Challenge Participant"
           : "📘 New Program Enrollment";
+    const creatorFinancialsMap = new Map<
+      string,
+      {
+        baseAmount: number;
+        discount: number;
+        netBase: number;
+        gst: number;
+        totalPaid: number;
+        platformFee: number;
+        creatorEarning: number;
+      }
+    >();
+    if (finalEntityType === "STORE") {
+      for (const creator of creators) {
+        if (creator.id === user.id) continue;
+        const creatorItems = creatorMap.get(creator.id)?.items || [];
 
-    if (creator?.id && creator.id !== user.id) {
-      await step.run("push-creator", async () => {
-        await sendPushNotificationToUser(
-          creator.id,
-          creatorTitle,
-          creatorMessage,
-          { url: redirectUrl },
-        );
-      });
+        const creatorItemNames = creatorItems
+          .map((i) => i.item?.name || "Product")
+          .join(", ");
+        if (!creator.email) continue;
+
+        await step.run(`push-creator-${creator.id}`, async () => {
+          await sendPushNotificationToUser(
+            creator.id,
+            creatorTitle,
+            `${user.name} purchased ${creatorItemNames}`,
+            { url: redirectUrl },
+          );
+        });
+      }
+    } else {
+      if (creator?.id && creator.id !== user.id) {
+        await step.run("push-creator", async () => {
+          await sendPushNotificationToUser(
+            creator.id,
+            creatorTitle,
+            creatorMessage,
+            { url: redirectUrl },
+          );
+        });
+      }
     }
 
     if (admin?.id && admin.id !== creator?.id && admin.id !== user.id) {
@@ -762,42 +936,226 @@ export const notifyStakeholders = inngest.createFunction(
     }
 
     // CREATOR
-    if (creator?.email && creator.id !== user.id) {
-      await step.run("email-creator", async () => {
-        await sendEmailUsingTemplateWithConditionals({
-          toEmail: creator.email,
-          toName: creator.name,
-          templateId: templates.creator,
-          templateData: {
-            coachName: creator.name,
-            sellerName: finalEntityType === "STORE" ? creator.name : null,
-            username: user.name,
-            [nameKey]: entityName,
-            productName: finalEntityType === "STORE" ? entityName : null,
-            [urlKey]: redirectUrl,
-            userEmail: maskEmail(user.email ?? ""),
+    if (finalEntityType === "STORE") {
+      console.log("🧠 MULTI CREATOR DEBUG:", {
+        creatorMapKeys: Array.from(creatorMap.keys()),
+        creatorsFromDB: creators.map((c) => c.id),
+      });
+      for (const creator of creators) {
+        if (creator.id === user.id || !creator.email) continue;
+        const creatorItems = creatorMap.get(creator.id)?.items || [];
 
-            ...(financials || {}),
-            coachEarning: financials?.creatorEarning,
-            ...commonChallengeData,
-            isStore: finalEntityType === "STORE",
-            isGP,
-            currencySymbol,
-            amount: financials?.totalPaid ?? null,
-            paymentMethod: event.data.isWallet ? "Wallet (GP)" : "Online",
+        const creatorItemNames = creatorItems
+          .map((i) => i.item?.name || "Product")
+          .join(", ");
 
-            paymentDate: paymentData?.createdAt
-              ? new Date(paymentData.createdAt).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                })
-              : "N/A",
+        // 🔥 CALCULATE PER CREATOR TOTAL
+        const creatorBase = creatorItems.reduce((sum, item) => {
+          return sum + item.priceAtPurchase * item.quantity;
+        }, 0);
+
+        const creatorOriginal = creatorItems.reduce((sum, item) => {
+          const original = item.originalPrice ?? item.priceAtPurchase;
+          return sum + original * item.quantity;
+        }, 0);
+
+        const creatorDiscount = Math.max(creatorOriginal - creatorBase, 0);
+        const creatorGST = creatorItems.reduce((sum, item) => {
+          return sum + (item.gstAmount || 0) * item.quantity;
+        }, 0);
+        const netBase = creatorBase;
+        const totalPaid = netBase + creatorGST;
+        console.log("💰 CREATOR FINANCIAL DEBUG:", {
+          creatorId: creator.id,
+          creatorItems,
+          creatorBase,
+          creatorDiscount,
+        });
+
+        const featureCheck = checkFeature({
+          feature: "store",
+          user: {
+            userType: creator.userType,
+            membership: creator.membership,
           },
         });
-      });
-    }
 
+        if (!featureCheck.allowed) {
+          console.log("❌ No commission config for creator:", creator.id);
+          return;
+        }
+
+        const commissionPercent = (
+          featureCheck.config as { commissionPercent: number }
+        ).commissionPercent;
+
+        const platformFee = (netBase * commissionPercent) / 100;
+        const creatorEarning = netBase - platformFee;
+
+        const creatorFinancials = {
+          baseAmount: creatorOriginal.toFixed(2),
+          discount: creatorDiscount.toFixed(2),
+          netBase: netBase.toFixed(2),
+          gst: creatorGST.toFixed(2),
+          totalPaid: totalPaid.toFixed(2),
+
+          commissionPercent,
+          platformFee: platformFee.toFixed(2),
+          creatorEarning: creatorEarning.toFixed(2),
+          platformEarning: platformFee.toFixed(2),
+        };
+        creatorFinancialsMap.set(creator.id, {
+          baseAmount: creatorOriginal,
+          discount: creatorDiscount,
+          netBase: netBase,
+          gst: creatorGST,
+          totalPaid: totalPaid,
+          platformFee: platformFee,
+          creatorEarning: creatorEarning,
+        });
+        console.log("📧 SENDING EMAIL TO CREATOR:", {
+          creatorId: creator.id,
+          email: creator.email,
+          items: creatorItemNames,
+          amount: creatorFinancials.totalPaid,
+        });
+        await step.run(`email-creator-${creator.id}`, async () => {
+          await sendEmailUsingTemplateWithConditionals({
+            toEmail: creator.email,
+            toName: creator.name,
+            templateId: templates.creator,
+            templateData: {
+              sellerName: creator.name,
+              username: user.name,
+              productName: creatorItemNames,
+              userEmail: maskEmail(user.email ?? ""),
+
+              ...creatorFinancials,
+              isStore: true,
+              isGP,
+              currencySymbol,
+              amount: creatorFinancials.totalPaid,
+              paymentMethod: event.data.isWallet ? "Wallet (GP)" : "Online",
+
+              paymentDate: paymentData?.createdAt
+                ? new Date(paymentData.createdAt).toLocaleDateString("en-GB")
+                : "N/A",
+            },
+          });
+        });
+      }
+    } else {
+      if (creator?.email && creator.id !== user.id) {
+        await step.run("email-creator", async () => {
+          await sendEmailUsingTemplateWithConditionals({
+            toEmail: creator.email,
+            toName: creator.name,
+            templateId: templates.creator,
+            templateData: {
+              username: user.name,
+              [nameKey]: entityName,
+              [urlKey]: redirectUrl,
+            },
+          });
+        });
+      }
+    }
+    let adminFinancials = null;
+    const perProductBreakdown: Array<{
+      productName: string;
+      sellerName: string;
+      baseAmount: string;
+      discount: string;
+      netBase: string;
+      gst: string;
+      totalPaid: string;
+      commissionPercent: number;
+      platformFee: string;
+      creatorEarning: string;
+    }> = [];
+
+    if (finalEntityType === "STORE" && creatorFinancialsMap.size > 0) {
+      let totalOriginal = 0;
+      let totalDiscount = 0;
+      let totalNetBase = 0;
+      let totalGST = 0;
+      let totalPlatformFee = 0;
+      let totalCreatorEarning = 0;
+
+      for (const [creatorIdKey, data] of creatorFinancialsMap.entries()) {
+        totalOriginal += data.baseAmount;
+        totalDiscount += data.discount;
+        totalNetBase += data.netBase;
+        totalGST += data.gst;
+        totalPlatformFee += data.platformFee;
+        totalCreatorEarning += data.creatorEarning;
+
+        // ✅ Build per-product rows for admin breakdown table
+        const creatorUser = creators.find((c) => c.id === creatorIdKey);
+        const creatorItems = creatorMap.get(creatorIdKey)?.items || [];
+
+        for (const item of creatorItems) {
+          const itemOriginal =
+            (item.originalPrice ?? item.priceAtPurchase) * item.quantity;
+          const itemPaid = item.priceAtPurchase * item.quantity;
+          const itemDiscount = Math.max(itemOriginal - itemPaid, 0);
+          const itemGST = (item.gstAmount || 0) * item.quantity;
+
+          // Get this creator's commission percent
+          let itemCommissionPercent = 0;
+          if (creatorUser) {
+            const fc = checkFeature({
+              feature: "store",
+              user: {
+                userType: creatorUser.userType,
+                membership: creatorUser.membership,
+              },
+            });
+            if (fc.allowed) {
+              itemCommissionPercent = (
+                fc.config as { commissionPercent: number }
+              ).commissionPercent;
+            }
+          }
+
+          const itemPlatformFee = (itemPaid * itemCommissionPercent) / 100;
+          const itemCreatorEarning = itemPaid - itemPlatformFee;
+
+          perProductBreakdown.push({
+            productName: item.item?.name || "Product",
+            sellerName: creatorUser?.name || "Unknown",
+            baseAmount: itemOriginal.toFixed(2),
+            discount: itemDiscount.toFixed(2),
+            netBase: itemPaid.toFixed(2),
+            gst: itemGST.toFixed(2),
+            totalPaid: (itemPaid + itemGST).toFixed(2),
+            commissionPercent: itemCommissionPercent,
+            platformFee: itemPlatformFee.toFixed(2),
+            creatorEarning: itemCreatorEarning.toFixed(2),
+          });
+        }
+      }
+
+      const totalPaid = totalNetBase + totalGST;
+
+      console.log(
+        "📊 ADMIN PER-PRODUCT BREAKDOWN:",
+        JSON.stringify(perProductBreakdown, null, 2),
+      );
+      const avgCommissionPercent =
+        totalNetBase > 0 ? (totalPlatformFee / totalNetBase) * 100 : 0;
+      adminFinancials = {
+        baseAmount: totalOriginal.toFixed(2),
+        discount: totalDiscount.toFixed(2),
+        netBase: totalNetBase.toFixed(2),
+        gst: totalGST.toFixed(2),
+        totalPaid: totalPaid.toFixed(2),
+        commissionPercent: avgCommissionPercent.toFixed(2),
+        platformFee: totalPlatformFee.toFixed(2),
+        creatorEarning: totalCreatorEarning.toFixed(2),
+        platformEarning: totalPlatformFee.toFixed(2),
+      };
+    }
     // ADMIN
     if (admin?.email && admin.id !== creator?.id && admin.id !== user.id) {
       await step.run("email-admin", async () => {
@@ -809,10 +1167,17 @@ export const notifyStakeholders = inngest.createFunction(
             username: user.name,
             userEmail: maskEmail(user.email ?? ""),
             [nameKey]: entityName,
-            creatorName: creator?.name ?? "Unknown",
+            creatorName:
+              finalEntityType === "STORE"
+                ? creators.map((c) => c.name).join(", ")
+                : (creator?.name ?? "Unknown"),
             [urlKey]: adminUrl,
 
-            ...(financials || {}),
+            ...(adminFinancials || financials || {}),
+            perProductBreakdown:
+              finalEntityType === "STORE" ? perProductBreakdown : [],
+            isMultiCreator:
+              finalEntityType === "STORE" && perProductBreakdown.length > 1,
 
             ...commonChallengeData,
             isStore: finalEntityType === "STORE",
@@ -820,7 +1185,7 @@ export const notifyStakeholders = inngest.createFunction(
 
             isGP,
             currencySymbol,
-            amount: financials?.totalPaid ?? null,
+            amount: adminFinancials?.totalPaid ?? null,
             paymentMethod: event.data.isWallet ? "Wallet (GP)" : "Online",
 
             paymentDate: paymentData?.createdAt

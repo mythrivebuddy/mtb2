@@ -311,6 +311,7 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         price: price,
         discount: discountForItem,
+        gst: Number(itemGst.toFixed(2)), 
         finalPrice: Number(finalPriceWithGst.toFixed(2)),
         currency: selectedCurrency,
       });
@@ -599,33 +600,29 @@ async function handleWalletTransaction({
     },
     { timeout: 15000 },
   );
-  // const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
-  //   day: "numeric",
-  //   month: "long",
-  //   year: "numeric",
-  // });
+ 
+ const isInngestEnabled = Boolean(process.env.INNGEST_EVENT_KEY!);
 
-  // const itemNames = items
-  //   .map((i) => {
-  //     const product = productMap.get(i.itemId)!;
-  //     return `${product.name ?? product.id} (×${i.quantity}) - ${product.basePrice} ${product.currency}`;
-  //   })
-  //   .join(", ");
-
-  // const appUrl = process.env.NEXT_URL || "";
-  await inngest.send({
-    name: "mmp-challenge-store.notify",
-    data: {
-      userId: user.id,
-      orderId: order.id, // ⚠️ This is NOT paymentOrder, but we will handle it
-      entityType: "STORE",
-      entityId: order.id,
-      isFree: false,
-      isWallet: true, // ✅ NEW FLAG
-      walletCurrency: products[0].currency, // "GP"
-      walletAmount: walletTotal,
-    },
-  });
+if (isInngestEnabled) {
+  try {
+    await inngest.send({
+      name: "mmp-challenge-store.notify",
+      data: {
+        userId: user.id,
+        orderId: order.id,
+        entityType: "STORE",
+        entityId: order.id,
+        isFree: false,
+        isWallet: true,
+        walletCurrency: products[0].currency,
+        walletAmount: walletTotal,
+      },
+    });
+  } catch (err) {
+    // 🔑 This is what makes it "safe"
+    console.error("Inngest not reachable, skipping... and this is error => ",err);
+  }
+}
 
   return NextResponse.json({
     success: true,
