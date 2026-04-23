@@ -20,13 +20,60 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { GST_REGEX } from "@/lib/constant";
 import { openRazorpayCheckout } from "@/lib/razorpay/client/razorpay-client";
-import { convertCurrency } from "@/lib/payment/payment.utils";
 import { Button } from "@/components/ui/button";
 
 // ─── Currency helpers ──────────────────────────────────────────────────────────
 const CURRENCY_SYMBOLS: Record<string, string> = { INR: "₹", USD: "$", GP: "GP" };
 const getCurrencySymbol = (currency?: string): string => CURRENCY_SYMBOLS[currency ?? "INR"] ?? "₹";
 
+ async function convertCurrency(
+  amount: number,
+  from: "INR" | "USD",
+  to: "INR" | "USD"
+): Promise<number> {
+  if (from === to) return amount;
+
+  // ---- 1. Try Frankfurter ----
+  try {
+    const res = await fetch(
+      `https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`
+    );
+
+    if (!res.ok) throw new Error("Frankfurter request failed");
+
+    const data = await res.json();
+
+    const value = data?.rates?.[to];
+    if (typeof value !== "number") {
+      throw new Error("Invalid Frankfurter response");
+    }
+
+    return Math.round(value * 100) / 100;
+  } catch (err) {
+    console.warn("Frankfurter failed:", err);
+  }
+
+  // ---- 2. Fallback API ----
+  try {
+    const res = await fetch(
+      `https://open.er-api.com/v6/latest/${from}`
+    );
+
+    if (!res.ok) throw new Error("Fallback request failed");
+
+    const data = await res.json();
+
+    const rate = data?.rates?.[to];
+    if (typeof rate !== "number") {
+      throw new Error("Invalid fallback response");
+    }
+
+    return Math.round(amount * rate * 100) / 100;
+  } catch (err) {
+    console.error("Fallback API failed:", err);
+    return 0;
+  }
+}
 
 // types/coupon.ts
 type CouponType = "PERCENTAGE" | "FIXED" | "FULL_DISCOUNT";

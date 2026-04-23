@@ -400,11 +400,11 @@ export const sendInvoiceFunction = inngest.createFunction(
       console.log("⏳ EMAIL DELAY SCHEDULED");
       console.log({
         orderId,
-        delay: "5h",
+        delay: "10m",
         scheduledAt: new Date().toISOString(),
       });
     });
-    await step.sleep("delay-email", "5h");
+    await step.sleep("delay-email", "10m");
     /**
      * 5️⃣ Generate PDF + Send Email
      */
