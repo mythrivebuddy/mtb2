@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
-import { sendEmailUsingTemplate, sendEmailUsingTemplateWithConditionals } from "@/utils/sendEmail";
+import {
+  sendEmailUsingTemplate,
+  sendEmailUsingTemplateWithConditionals,
+} from "@/utils/sendEmail";
 import { maskEmail } from "@/utils/mask-email";
 import { inngest } from "@/lib/inngest";
 import { checkFeature } from "@/lib/access-control/checkFeature";
@@ -8,7 +11,11 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 /* =============================
    🔹 TYPES
 ============================= */
-
+type OrderItemLite = {
+  originalPrice: number | null;
+  priceAtPurchase: number;
+  quantity: number;
+};
 type NotifyEvent = {
   userId: string;
 
@@ -20,6 +27,9 @@ type NotifyEvent = {
   entityId?: string;
 
   isFree: boolean;
+  isWallet?: boolean;
+  walletCurrency?: string;
+  walletAmount?: number;
 };
 
 type FreeTemplateGroup = {
@@ -82,112 +92,146 @@ export const notifyStakeholders = inngest.createFunction(
     const baseUrl = process.env.NEXT_URL!;
 
     if (!isFree) {
-      const order = await prisma.paymentOrder.findUnique({
-        where: { id: orderId },
-        select: {
-          programId: true,
-          challengeId: true,
-          contextType: true,
-        },
-      });
-
-      if (!order) return;
-
-      if (order.programId) {
-        const program = await prisma.program.findUnique({
-          where: { id: order.programId },
-          select: {
-            id: true,
-            name: true,
-            creator: { select: { id: true } },
-          },
-        });
-
-        if (!program) return;
-
-        finalEntityType = "MMP";
-        finalEntityId = program.id;
-        entityName = program.name;
-        creatorId = program.creator?.id ?? null;
-        redirectUrl = `${process.env.NEXT_URL}/dashboard/mini-mastery-programs/program/${program.id}`;
-      } else if (order.challengeId) {
-        const challenge = await prisma.challenge.findUnique({
-          where: { id: order.challengeId },
-          select: {
-            id: true,
-            title: true,
-            startDate: true,
-            creator: { select: { id: true } },
-          },
-        });
-
-        if (!challenge) return;
-
-        finalEntityType = "CHALLENGE";
-        finalEntityId = challenge.id;
-        entityName = challenge.title;
-        creatorId = challenge.creator?.id ?? null;
-        redirectUrl = `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challenge.id}`;
-      } else {
+      // ✅ WALLET FLOW (NO paymentOrder)
+      if (event.data.isWallet) {
         finalEntityType = "STORE";
         finalEntityId = orderId!;
 
-        const storeOrder = await prisma.paymentOrder.findUnique({
+        const order = await prisma.order.findUnique({
           where: { id: orderId },
-          select: {
-            cartSnapshot: true,
-            storeOrderId: true,
+          include: {
+            items: true,
           },
         });
 
-        if (!storeOrder) return;
+        if (!order) return;
 
-        let itemName = "Your Purchase";
-        let itemId: string | null = null;
+        const firstItem = order.items[0];
 
-        try {
-          let item = null;
+        let product = null;
 
-          if (Array.isArray(storeOrder.cartSnapshot)) {
-            item = storeOrder.cartSnapshot[0];
-          } else if (typeof storeOrder.cartSnapshot === "string") {
-            try {
-              const parsed = JSON.parse(storeOrder.cartSnapshot);
-              item = Array.isArray(parsed) ? parsed[0] : null;
-            } catch (err) {
-              console.error("Cart snapshot parse failed:", err);
+        if (firstItem?.itemId) {
+          product = await prisma.item.findUnique({
+            where: { id: firstItem.itemId },
+            select: {
+              name: true,
+              createdByUserId: true,
+            },
+          });
+        }
+
+        entityName = product?.name || "Your Purchase";
+        creatorId = product?.createdByUserId ?? null;
+
+        redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
+      } else {
+        const order = await prisma.paymentOrder.findUnique({
+          where: { id: orderId },
+          select: {
+            programId: true,
+            challengeId: true,
+            contextType: true,
+          },
+        });
+
+        if (!order) return;
+
+        if (order.programId) {
+          const program = await prisma.program.findUnique({
+            where: { id: order.programId },
+            select: {
+              id: true,
+              name: true,
+              creator: { select: { id: true } },
+            },
+          });
+
+          if (!program) return;
+
+          finalEntityType = "MMP";
+          finalEntityId = program.id;
+          entityName = program.name;
+          creatorId = program.creator?.id ?? null;
+          redirectUrl = `${process.env.NEXT_URL}/dashboard/mini-mastery-programs/program/${program.id}`;
+        } else if (order.challengeId) {
+          const challenge = await prisma.challenge.findUnique({
+            where: { id: order.challengeId },
+            select: {
+              id: true,
+              title: true,
+              startDate: true,
+              creator: { select: { id: true } },
+            },
+          });
+
+          if (!challenge) return;
+
+          finalEntityType = "CHALLENGE";
+          finalEntityId = challenge.id;
+          entityName = challenge.title;
+          creatorId = challenge.creator?.id ?? null;
+          redirectUrl = `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challenge.id}`;
+        } else {
+          finalEntityType = "STORE";
+          finalEntityId = orderId!;
+
+          const storeOrder = await prisma.paymentOrder.findUnique({
+            where: { id: orderId },
+            select: {
+              cartSnapshot: true,
+              storeOrderId: true,
+            },
+          });
+
+          if (!storeOrder) return;
+
+          let itemName = "Your Purchase";
+          let itemId: string | null = null;
+
+          try {
+            let item = null;
+
+            if (Array.isArray(storeOrder.cartSnapshot)) {
+              item = storeOrder.cartSnapshot[0];
+            } else if (typeof storeOrder.cartSnapshot === "string") {
+              try {
+                const parsed = JSON.parse(storeOrder.cartSnapshot);
+                item = Array.isArray(parsed) ? parsed[0] : null;
+              } catch (err) {
+                console.error("Cart snapshot parse failed:", err);
+              }
+            }
+
+            itemName = item?.name || "Your Purchase";
+
+            // 🔥 FIX: support both keys
+            itemId = item?.itemId || item?.productId || null;
+            console.log("🧾 STORE ITEM DEBUG:", {
+              rawSnapshot: storeOrder.cartSnapshot,
+              parsedItem: item,
+              itemId,
+            });
+          } catch {}
+
+          entityName = itemName;
+
+          // 🔥 fetch actual product (to get creator)
+          if (itemId) {
+            const product = await prisma.item.findUnique({
+              where: { id: itemId },
+              select: {
+                createdByUserId: true,
+                currency: true,
+              },
+            });
+            console.log("🛒 PRODUCT DEBUG:", product);
+            if (product?.createdByUserId) {
+              creatorId = product.createdByUserId;
             }
           }
 
-          itemName = item?.name || "Your Purchase";
-
-          // 🔥 FIX: support both keys
-          itemId = item?.itemId || item?.productId || null;
-          console.log("🧾 STORE ITEM DEBUG:", {
-            rawSnapshot: storeOrder.cartSnapshot,
-            parsedItem: item,
-            itemId,
-          });
-        } catch {}
-
-        entityName = itemName;
-
-        // 🔥 fetch actual product (to get creator)
-        if (itemId) {
-          const product = await prisma.item.findUnique({
-            where: { id: itemId },
-            select: {
-              createdByUserId: true,
-              currency: true,
-            },
-          });
-          console.log("🛒 PRODUCT DEBUG:", product);
-          if (product?.createdByUserId) {
-            creatorId = product.createdByUserId;
-          }
+          redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
         }
-
-        redirectUrl = `${process.env.NEXT_URL}/dashboard/store`;
       }
     } else {
       finalEntityType = entityType!;
@@ -286,13 +330,95 @@ export const notifyStakeholders = inngest.createFunction(
 
     if (!user) return;
 
+    let orderItems: OrderItemLite[] = [];
+    type OrderWithItems = Awaited<
+      ReturnType<typeof prisma.order.findUnique>
+    > & {
+      items: {
+        quantity: number;
+        priceAtPurchase: number;
+        originalPrice: number | null;
+        item: {
+          name: string;
+          currency: string;
+        } | null;
+      }[];
+    };
+
+    let orderWithItems: OrderWithItems | null = null;
+    let derivedDiscount = 0;
+
+    if (!isFree && orderId && finalEntityType === "STORE") {
+      orderWithItems = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            include: {
+              item: {
+                select: {
+                  name: true,
+                  currency: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (orderWithItems?.items) {
+        orderItems = orderWithItems.items;
+      }
+      if (orderItems.length > 0) {
+        derivedDiscount = orderItems.reduce((sum, item) => {
+          const original = item.originalPrice ?? item.priceAtPurchase;
+          const discountPerUnit = original - item.priceAtPurchase;
+          const itemDiscount = discountPerUnit * item.quantity;
+
+          return sum + Math.max(itemDiscount, 0);
+        }, 0);
+      }
+    }
+    let itemNames = "";
+    let itemCount = 0;
+    let orderDate = "";
+    let currency = "";
+
+    if (orderWithItems) {
+      itemCount = orderWithItems.items.length;
+
+      itemNames = orderWithItems.items
+        .map((i) => i.item?.name || "Product")
+        .join(", ");
+
+      orderDate = new Date(orderWithItems.createdAt).toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        },
+      );
+
+      currency = orderWithItems.items[0]?.item?.currency || "INR";
+    }
     /* =============================
        🔹 Payment Data
     ============================= */
 
     let paymentData: PaymentData = null;
+    if (event.data.isWallet) {
+      const totalPaid = event.data.walletAmount || 0;
 
-    if (!isFree && orderId) {
+      paymentData = {
+        totalAmount: totalPaid,
+        discountApplied: derivedDiscount, // ✅ FIX
+        paymentId: null,
+        currency: event.data.walletCurrency || "GP",
+        createdAt: new Date(),
+        baseAmount: totalPaid + derivedDiscount, // ✅ FIX
+        gstAmount: 0,
+      };
+    } else if (!isFree && orderId && !event.data.wallet) {
       paymentData = await prisma.paymentOrder.findUnique({
         where: { id: orderId },
         select: {
@@ -307,7 +433,24 @@ export const notifyStakeholders = inngest.createFunction(
       });
     }
     let financials = null;
+    if (event.data.isWallet && finalEntityType === "STORE") {
+      const totalPaid = event.data.walletAmount || 0;
+      const discount = derivedDiscount;
+      const baseAmount = totalPaid + discount;
 
+      financials = {
+        baseAmount: baseAmount.toFixed(2),
+        discount: discount.toFixed(2),
+        netBase: totalPaid.toFixed(2),
+        gst: "0.00",
+        totalPaid: totalPaid.toFixed(2),
+
+        commissionPercent: 0,
+        platformFee: "0.00",
+        creatorEarning: totalPaid.toFixed(2),
+        platformEarning: "0.00",
+      };
+    }
     if (!isFree && paymentData && finalEntityType !== "STORE") {
       const baseAmount = paymentData.baseAmount ?? 0;
       const discount = paymentData.discountApplied ?? 0;
@@ -376,53 +519,61 @@ export const notifyStakeholders = inngest.createFunction(
         platformEarning: platformEarning.toFixed(2),
       };
     }
-if (!isFree && paymentData && finalEntityType === "STORE") {
-  if (!creator) {
-    throw new Error("Creator required for store commission calculation");
-  }
+    if (
+      !isFree &&
+      paymentData &&
+      finalEntityType === "STORE" &&
+      !event.data.isWallet
+    ) {
+      if (!creator) {
+        throw new Error("Creator required for store commission calculation");
+      }
 
-  const baseAmount = paymentData.baseAmount ?? 0;
-  const discount = paymentData.discountApplied ?? 0;
-  const gst = paymentData.gstAmount ?? 0;
-  const totalPaid = paymentData.totalAmount ?? 0;
+      const baseAmount = paymentData.baseAmount ?? 0;
+      const discount =
+        derivedDiscount > 0
+          ? derivedDiscount
+          : (paymentData.discountApplied ?? 0);
+      const gst = paymentData.gstAmount ?? 0;
+      const totalPaid = paymentData.totalAmount ?? 0;
 
-  const netBase = Math.max(baseAmount - discount, 0);
+      const netBase = Math.max(baseAmount - discount, 0);
 
-  // 🔥 SAME PATTERN AS OTHERS
-  const featureCheck = checkFeature({
-    feature: "store",
-    user: {
-      userType: creator.userType,
-      membership: creator.membership,
-    },
-  });
+      // 🔥 SAME PATTERN AS OTHERS
+      const featureCheck = checkFeature({
+        feature: "store",
+        user: {
+          userType: creator.userType,
+          membership: creator.membership,
+        },
+      });
 
-  if (!featureCheck.allowed) {
-    throw new Error("Commission config not found for store");
-  }
+      if (!featureCheck.allowed) {
+        throw new Error("Commission config not found for store");
+      }
 
-  const commissionPercent = (
-    featureCheck.config as {
-      commissionPercent: number;
+      const commissionPercent = (
+        featureCheck.config as {
+          commissionPercent: number;
+        }
+      ).commissionPercent;
+
+      const platformFee = (netBase * commissionPercent) / 100;
+      const creatorEarning = netBase - platformFee;
+
+      financials = {
+        baseAmount: baseAmount.toFixed(2),
+        discount: discount.toFixed(2),
+        netBase: netBase.toFixed(2),
+        gst: gst.toFixed(2),
+        totalPaid: totalPaid.toFixed(2),
+
+        commissionPercent,
+        platformFee: platformFee.toFixed(2),
+        creatorEarning: creatorEarning.toFixed(2),
+        platformEarning: platformFee.toFixed(2),
+      };
     }
-  ).commissionPercent;
-
-  const platformFee = (netBase * commissionPercent) / 100;
-  const creatorEarning = netBase - platformFee;
-
-  financials = {
-    baseAmount: baseAmount.toFixed(2),
-    discount: discount.toFixed(2),
-    netBase: netBase.toFixed(2),
-    gst: gst.toFixed(2),
-    totalPaid: totalPaid.toFixed(2),
-
-    commissionPercent,
-    platformFee: platformFee.toFixed(2),
-    creatorEarning: creatorEarning.toFixed(2),
-    platformEarning: platformFee.toFixed(2),
-  };
-}
 
     const isGP = paymentData?.currency === "GP";
 
@@ -431,7 +582,9 @@ if (!isFree && paymentData && finalEntityType === "STORE") {
         ? "₹"
         : paymentData?.currency === "USD"
           ? "$"
-          : "";
+          : paymentData?.currency === "GP"
+            ? "GP"
+            : "";
     /* =============================
        🔹 Template Map
     ============================= */
@@ -511,7 +664,9 @@ if (!isFree && paymentData && finalEntityType === "STORE") {
 
         const buyerMessage =
           finalEntityType === "STORE"
-            ? `You purchased "${entityName}". Tap to view your order.`
+            ? event.data.isWallet
+              ? `You purchased "${entityName}" using GP wallet.`
+              : `You purchased "${entityName}". Tap to view your order.`
             : `You’ve successfully joined "${entityName}". Tap to start.`;
 
         await sendPushNotificationToUser(user.id, buyerTitle, buyerMessage, {
@@ -521,6 +676,28 @@ if (!isFree && paymentData && finalEntityType === "STORE") {
         console.error("Buyer push failed:", err);
       }
     });
+
+    if (!isFree && event.data.isWallet && user.email) {
+      await step.run("email-buyer-wallet", async () => {
+        await sendEmailUsingTemplate({
+          toEmail: user.email!,
+          toName: user.name ?? "Customer",
+          templateId: "order-placed",
+          templateData: {
+            username: user.name ?? "Customer",
+            orderId: orderId,
+            orderDate,
+            totalAmount: `${event.data.walletAmount} ${currency}`,
+            status: "COMPLETED",
+            itemCount,
+            itemNames,
+            orderUrl: `${baseUrl}/dashboard/store/profile`,
+            currency,
+            paymentDetails: `Paid entirely with ${currency} from your balance`,
+          },
+        });
+      });
+    }
     const creatorMessage =
       finalEntityType === "STORE"
         ? `You made a sale! ${user.name} purchased "${entityName}".`
@@ -607,7 +784,7 @@ if (!isFree && paymentData && finalEntityType === "STORE") {
             isGP,
             currencySymbol,
             amount: financials?.totalPaid ?? null,
-            paymentMethod: "Online",
+            paymentMethod: event.data.isWallet ? "Wallet (GP)" : "Online",
 
             paymentDate: paymentData?.createdAt
               ? new Date(paymentData.createdAt).toLocaleDateString("en-GB", {
@@ -644,7 +821,7 @@ if (!isFree && paymentData && finalEntityType === "STORE") {
             isGP,
             currencySymbol,
             amount: financials?.totalPaid ?? null,
-            paymentMethod: "Online",
+            paymentMethod: event.data.isWallet ? "Wallet (GP)" : "Online",
 
             paymentDate: paymentData?.createdAt
               ? new Date(paymentData.createdAt).toLocaleDateString("en-GB", {
