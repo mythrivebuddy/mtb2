@@ -5,6 +5,7 @@ import { alignedActionReminders } from "@/app/inngest/aligned-action/aligned-act
 import { alignedActionSnooze } from "@/app/inngest/aligned-action/aligned-action-snooze";
 import { sendInvoiceFunction } from "@/app/inngest/invoice/send-invoice";
 import { mmpProgramReminder } from "@/app/inngest/mmp-reminder/mmpReminder";
+import { notifyStakeholders } from "@/app/inngest/mmp-challenge-store-notify/notify";
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
@@ -16,5 +17,6 @@ export const { GET, POST, PUT } = serve({
     alignedActionSnooze,
     sendInvoiceFunction,
     mmpProgramReminder,
+    notifyStakeholders
   ],
 });

@@ -321,4 +321,28 @@ export const featureConfig = {
             },
         },
     },
+    store: {
+  access: [PlanUserType.COACH],
+
+  actions: {
+    create: [PlanUserType.COACH],
+    sell: [PlanUserType.COACH],
+  },
+
+  plans: {
+    free: {
+      COACH: {
+        // productLimit: 5,            // optional but recommended
+        commissionPercent: 25,      // same as free challenge
+      },
+    },
+
+    paid: {
+      COACH: {
+        // productLimit: UNLIMITED,
+        commissionPercent: 10,      // align with MMP (or 5 if aggressive)
+      },
+    },
+  },
+},
 } as const;
