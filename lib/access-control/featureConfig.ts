@@ -332,15 +332,15 @@ export const featureConfig = {
   plans: {
     free: {
       COACH: {
-        // productLimit: 5,            // optional but recommended
-        commissionPercent: 25,      // same as free challenge
+       
+        commissionPercent: 15,      // same as free challenge
       },
     },
 
     paid: {
       COACH: {
-        // productLimit: UNLIMITED,
-        commissionPercent: 10,      // align with MMP (or 5 if aggressive)
+       
+        commissionPercent: 5,      // align with MMP (or 5 if aggressive)
       },
     },
   },

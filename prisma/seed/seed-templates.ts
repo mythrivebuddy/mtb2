@@ -467,6 +467,7 @@ async function main() {
     </div>
  
     <!-- PLATFORM FEE + EARNING -->
+    {{#if showEarnings}}
     <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
       <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">🏢 Your Earnings</h3>
       <table style="width:100%;border-collapse:collapse;">
@@ -484,7 +485,7 @@ async function main() {
 </p>
       <p style="margin:10px 0 0;color:#9ca3af;font-size:13px;">Payment Date: {{paymentDate}}</p>
     </div>
- 
+ {{/if}}
     <!-- CTA -->
     <div style="text-align:center;margin:28px 0;">
       <a href="{{transactionPageUrl}}" style="background:#16a34a;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;display:inline-block;">
@@ -889,6 +890,7 @@ async function main() {
     </div>
 
     <!-- EARNINGS -->
+    {{#if showEarnings}}
     <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-top:20px;">
       <h3>🏢 Your Earnings</h3>
 
@@ -916,6 +918,7 @@ async function main() {
 
   </div>
 </div>
+{{/if}}
 `.trim(),
 },
 {
@@ -1196,6 +1199,7 @@ async function main() {
     {{#if isGP}}
       <!-- skip earnings for GP -->
     {{else}}
+      {{#if showEarnings}}
       <div style="background:#f9fafb;padding:16px;border-radius:8px;margin-bottom:20px;">
         <h3 style="margin:0 0 12px;color:#374151;font-size:14px;text-transform:uppercase;letter-spacing:.5px;">🏢 Your Earnings</h3>
 
@@ -1217,6 +1221,7 @@ async function main() {
           GST is collected as tax and is not part of your earnings.
         </p>
       </div>
+      {{/if}}
     {{/if}}
 
     <!-- META -->
@@ -1312,6 +1317,7 @@ async function main() {
   </div>
 
   <!-- 🔥 NEW: REVENUE SPLIT -->
+{{#if showRevenueSplit}}
   <div style="background:#f1f5f9;padding:16px;border-radius:8px;margin-top:20px;">
     <h3 style="margin:0 0 12px;font-size:15px;">🏢 Revenue Split</h3>
 
@@ -1345,6 +1351,7 @@ async function main() {
       GST is excluded from platform revenue.
     </p>
   </div>
+  {{/if}}
 {{/if}}
 
     <!-- META -->

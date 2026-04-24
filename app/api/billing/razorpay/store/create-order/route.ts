@@ -5,7 +5,7 @@ import { checkRole } from "@/lib/utils/auth";
 import { convertCurrency } from "@/lib/payment/payment.utils";
 import { createRazorpayOrder } from "@/lib/payment/createRazorpayOrder";
 import { assignJp, deductJp } from "@/lib/utils/jp";
-import { sendEmailUsingTemplate } from "@/utils/sendEmail";
+import { inngest } from "@/lib/inngest";
 
 type Currency = "INR" | "USD";
 
@@ -311,6 +311,7 @@ export async function POST(req: NextRequest) {
         quantity: item.quantity,
         price: price,
         discount: discountForItem,
+        gst: Number(itemGst.toFixed(2)), 
         finalPrice: Number(finalPriceWithGst.toFixed(2)),
         currency: selectedCurrency,
       });
@@ -599,37 +600,29 @@ async function handleWalletTransaction({
     },
     { timeout: 15000 },
   );
-  const orderDate = new Date(order.createdAt).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+ 
+ const isInngestEnabled = Boolean(process.env.INNGEST_EVENT_KEY!);
 
-  const itemNames = items
-    .map((i) => {
-      const product = productMap.get(i.itemId)!;
-      return `${product.name ?? product.id} (×${i.quantity}) - ${product.basePrice} ${product.currency}`;
-    })
-    .join(", ");
-
-  const appUrl = process.env.NEXT_URL || "";
-  void sendEmailUsingTemplate({
-    toEmail: user.email!,
-    toName: user.name ?? "Customer",
-    templateId: "order-placed",
-    templateData: {
-      username: user.name ?? "Customer",
-      orderId: order.id,
-      orderDate,
-      totalAmount: `${walletTotal} ${products[0].currency}`,
-      status: "COMPLETED",
-      itemCount: items.length,
-      itemNames,
-      orderUrl: `${appUrl}/dashboard/store/profile`,
-      currency: products[0].currency,
-      paymentDetails: `Paid entirely with ${products[0].currency} from your balance`,
-    },
-  });
+if (isInngestEnabled) {
+  try {
+    await inngest.send({
+      name: "mmp-challenge-store.notify",
+      data: {
+        userId: user.id,
+        orderId: order.id,
+        entityType: "STORE",
+        entityId: order.id,
+        isFree: false,
+        isWallet: true,
+        walletCurrency: products[0].currency,
+        walletAmount: walletTotal,
+      },
+    });
+  } catch (err) {
+    // 🔑 This is what makes it "safe"
+    console.error("Inngest not reachable, skipping... and this is error => ",err);
+  }
+}
 
   return NextResponse.json({
     success: true,
