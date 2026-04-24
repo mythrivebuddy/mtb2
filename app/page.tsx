@@ -60,7 +60,7 @@ export default async function Home({ searchParams }: HomeProps) {
       redirect("/admin/dashboard");
     } else {
       redirect("/dashboard");
-    }
+    } 
   }
   return (
     <>
