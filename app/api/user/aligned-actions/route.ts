@@ -71,8 +71,9 @@ export async function POST(req: NextRequest) {
         reminderSent: false,
       },
     });
+    let createdBloom = null;
     try {
-      await createDailyBloom({
+      createdBloom = await createDailyBloom({
         title: data.selectedTask,
         description: data.selectedTask,
         dueDate: data.timeFrom,
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
         addToCalendar: true,
         userId,
         user: session.user,
-        alignedActionId: alignedAction.id
+        alignedActionId: alignedAction.id,
       });
     } catch (err: unknown) {
       console.warn("⚠️ Daily Bloom creation skipped:", {
@@ -91,17 +92,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    await inngest.send({
-      name: "aligned-action/created",
-      data: {
-        actionId: alignedAction.id,
-        userId,
-        timeFrom: alignedAction.timeFrom,
-        timeTo: alignedAction.timeTo,
-      },
-    });
+    try {
+      await inngest.send({
+        name: "aligned-action/created",
+        data: {
+          actionId: alignedAction.id,
+          userId,
+          timeFrom: alignedAction.timeFrom,
+          timeTo: alignedAction.timeTo,
+        },
+      });
+    } catch (err) {
+      console.error("❌ Inngest event failed:", err);
+    }
 
-    return NextResponse.json(alignedAction, { status: 201 });
+    return NextResponse.json(
+      { action: alignedAction, bloom: createdBloom },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Error creating 1% Start action:", error);
     return NextResponse.json(

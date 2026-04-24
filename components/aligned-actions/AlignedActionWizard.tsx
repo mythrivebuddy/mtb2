@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import {  DashboardContent } from "@/types/client/dashboard";
 
 // function roundUpTo30Min(date: Date) {
 //   const d = new Date(date);
@@ -42,6 +43,7 @@ export default function AlignedActionWizard({
   onComplete: () => void;
   onCancel: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     mood: "",
@@ -110,10 +112,34 @@ export default function AlignedActionWizard({
       }
       return res.json();
     },
-    onSuccess: () => {
-      toast.success("1% Start action created successfully!");
-      onComplete();
-    },
+   onSuccess: (data) => {
+  const { action, bloom } = data;
+
+  // ✅ update dashboard
+  queryClient.setQueryData<DashboardContent>(
+    ["dashboard-content"],
+    (old) => {
+      if (!old) return old;
+
+      return {
+        ...old,
+        alignedAction: [action],
+        dailyBlooms: bloom
+          ? [bloom, ...(old.dailyBlooms || [])]
+          : old.dailyBlooms,
+      };
+    }
+  );
+
+   // 🔥 force daily bloom sync
+  queryClient.invalidateQueries({
+    queryKey: ["dailyBloom"],
+    exact: false,
+    refetchType: "all",
+  });
+  toast.success("1% Start action created successfully!");
+  onComplete();
+},
     onError: (error: Error) => {
       if (
         error.message.includes("already created an 1% Startaction for today")
