@@ -268,21 +268,7 @@ const EventForm = ({
 }) => {
   const [timeError, setTimeError] = useState<string | null>(null);
 
-  const generateTimeOptions = () => {
-    const times: string[] = [];
-
-    for (let h = 0; h < 24; h++) {
-      for (const m of [0, 30]) {
-        const hour = h.toString().padStart(2, "0");
-        const min = m.toString().padStart(2, "0");
-        times.push(`${hour}:${min}`);
-      }
-    }
-
-    return times;
-  };
-
-  const timeOptions = generateTimeOptions();
+  // 1. Move time extraction BEFORE generating the options
   const timePart = currentEvent.start?.includes("T")
     ? currentEvent.start.split("T")[1]?.slice(0, 5)
     : currentEvent.extendedProps?.lastTime?.slice(0, 5) ||
@@ -291,6 +277,36 @@ const EventForm = ({
   const endTimePart = currentEvent.end?.includes("T")
     ? currentEvent.end.split("T")[1]?.slice(0, 5)
     : "";
+
+  // 2. Update the generator to use a Set and inject the exact times
+  const generateTimeOptions = () => {
+    const times = new Set<string>();
+
+    for (let h = 0; h < 24; h++) {
+      for (const m of [0, 30]) {
+        const hour = h.toString().padStart(2, "0");
+        const min = m.toString().padStart(2, "0");
+        times.add(`${hour}:${min}`);
+      }
+    }
+
+    // Ensure the event's specific start and end times exist in the dropdown
+    if (timePart) times.add(timePart);
+    if (endTimePart) times.add(endTimePart);
+
+    // Return as an array and sort them chronologically
+    return Array.from(times).sort();
+  };
+
+  const timeOptions = generateTimeOptions();
+  // const timePart = currentEvent.start?.includes("T")
+  //   ? currentEvent.start.split("T")[1]?.slice(0, 5)
+  //   : currentEvent.extendedProps?.lastTime?.slice(0, 5) ||
+  //     getNearestHourLocal().split("T")[1]?.slice(0, 5);
+
+  // const endTimePart = currentEvent.end?.includes("T")
+  //   ? currentEvent.end.split("T")[1]?.slice(0, 5)
+  //   : "";
   const isCompleted = currentEvent.extendedProps?.isCompleted;
   const isDisabled = isSubmitting || isCompleted;
   return (
@@ -546,7 +562,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const [isSubmitting, setIsSubmitting] = useState(false); // For form button loading states
   const [isSaving, setIsSaving] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastDeletedEvent, setLastDeletedEvent] =
     useState<CalendarEvent | null>(null);
@@ -1236,9 +1252,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 disabled={isSaving}
                 className="bg-green-600 hover:bg-green-700 w-full sm:w-auto py-2 px-3 text-sm sm:text-base"
               >
-                {isSaving  && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>
             )}

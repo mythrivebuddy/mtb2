@@ -4,6 +4,7 @@ import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay } from "date-fns";
 import { inngest } from "@/lib/inngest";
+import { createDailyBloom } from "@/lib/daily-bloom/daily-bloom";
 
 // Note: We're using a CRON job at /api/cron/aligned-actions-reminders
 // to handle sending emails before actions start, which is more reliable
@@ -12,19 +13,14 @@ import { inngest } from "@/lib/inngest";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
-  
+
     const body = await req.json();
-    
 
     // Add userId to body for validation
     // const dataToValidate = {
@@ -43,7 +39,6 @@ export async function POST(req: NextRequest) {
 
     const data = body;
 
-
     // Check if user already has an aligned action for today
     const today = new Date();
     const existingAction = await prisma.alignedAction.findFirst({
@@ -59,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (existingAction) {
       return NextResponse.json(
         { error: "You already created an aligned action for today" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -76,6 +71,25 @@ export async function POST(req: NextRequest) {
         reminderSent: false,
       },
     });
+    try {
+      await createDailyBloom({
+        title: data.selectedTask,
+        description: data.selectedTask,
+        dueDate: data.timeFrom,
+        startTime: new Date(data.timeFrom).toTimeString().slice(0, 5),
+        endTime: new Date(data.timeTo).toTimeString().slice(0, 5),
+        addToCalendar: true,
+        userId,
+        user: session.user,
+        alignedActionId: alignedAction.id
+      });
+    } catch (err: unknown) {
+      console.warn("⚠️ Daily Bloom creation skipped:", {
+        err,
+        userId,
+        task: data.selectedTask,
+      });
+    }
 
     await inngest.send({
       name: "aligned-action/created",
@@ -92,7 +106,7 @@ export async function POST(req: NextRequest) {
     console.error("Error creating 1% Start action:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -102,10 +116,7 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authConfig);
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
@@ -139,7 +150,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching 1% Start actions:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

@@ -70,6 +70,7 @@ import { Switch } from "@/components/ui/switch";
 // Add this near your other imports at the top
 import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
 import UpgradeMessageModal from "../common/UpgradeMessageModal";
+import { AlignedAction, DashboardContent } from "@/types/client/dashboard";
 // FIX: Define a specific type for extendedProps
 interface CalendarEventExtendedProps {
   isBloom?: boolean;
@@ -405,7 +406,7 @@ export default function DailyBloomClient() {
     mutationFn: async (payload: {
       id: string;
       updatedData: DailyBloomFormType;
-       source?: "calendar" | "modal"; 
+      source?: "calendar" | "modal";
     }) => {
       const res = await axios.put(
         `/api/user/daily-bloom/${payload.id}`,
@@ -454,14 +455,61 @@ export default function DailyBloomClient() {
       // 4. Return a context object with the snapshotted value
       return { previousBlooms, queryKey };
     },
-      onSuccess: (data, variables) => {
-    if (variables.source === "calendar") {
-      toast.success("Event updated successfully 📅");
-    } else {
-      toast.success("Bloom updated successfully ✅");
-    }
-    setEditData(null);
-  },
+    onSuccess: (data, variables) => {
+      const updatedBloom = data as {
+        id: string;
+        isCompleted: boolean;
+        alignedActionId?: string | null;
+      };
+
+      const { id, isCompleted, alignedActionId } = updatedBloom;
+
+      // ✅ 1. Sync Dashboard Cards
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+
+            // update bloom
+            dailyBlooms: old.dailyBlooms.map((b) =>
+              b.id === id ? { ...b, isCompleted } : b,
+            ),
+
+            // update aligned action if linked
+            alignedAction: alignedActionId
+              ? old.alignedAction.map((a) =>
+                  a.id === alignedActionId
+                    ? { ...a, completed: isCompleted }
+                    : a,
+                )
+              : old.alignedAction,
+          };
+        },
+      );
+
+      // ✅ 2. Sync Aligned Actions Page
+      if (alignedActionId) {
+        const today = new Date().toISOString().split("T")[0];
+        queryClient.setQueryData<AlignedAction[]>(
+          ["aligned-actions", today],
+          (old) =>
+            old?.map((a) =>
+              a.id === alignedActionId ? { ...a, completed: isCompleted } : a,
+            ) ?? old,
+        );
+      }
+      if (variables.source === "calendar") {
+        toast.success("Event updated successfully 📅");
+      } else {
+        toast.success("Bloom updated successfully ✅");
+      }
+      console.log("Mark completed called ");
+
+      setEditData(null);
+    },
     onError: (error: AxiosError, variables, context) => {
       // If the mutation fails, roll back to the previous state from context
       if (context?.previousBlooms) {
@@ -524,9 +572,11 @@ export default function DailyBloomClient() {
 
   const onUpdate = (formData: DailyBloomFormType) => {
     if (editData) {
-      updateMutation.mutate(
-        { id: editData.id, updatedData: formData,  source: "modal", },
-      );
+      updateMutation.mutate({
+        id: editData.id,
+        updatedData: formData,
+        source: "modal",
+      });
     }
   };
 
@@ -619,7 +669,7 @@ export default function DailyBloomClient() {
     updateMutation.mutate({
       id: actualBloomId,
       updatedData: updatedBloomData,
-       source: "calendar",
+      source: "calendar",
     });
   };
   const handleDeleteBloom = (bloomId: string) => {
