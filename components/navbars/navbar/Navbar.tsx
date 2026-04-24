@@ -27,7 +27,7 @@ export default function Navbar() {
     <div className="sticky top-0 z-50 bg-white  ">
       <div className="flex items-center justify-between relative py-1.5">
         {/* Logo Section */}
-        <Link href="/" className="flex items-center space-x-2 relative">
+        <Link href="/?from=user-consent" className="flex items-center space-x-2 relative">
           <Image
             src="/icon-logo-mtb.png"
             alt="MyThriveBuddy"

@@ -240,7 +240,6 @@ export const GET = async (req: Request) => {
         name: true,
       },
     });
-    console.log({accountabilityHubGroups});
     
     return NextResponse.json(
       {
