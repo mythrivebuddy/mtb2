@@ -14,8 +14,10 @@ function getNext10AM(timezone: string) {
 }
 
 export const mmpProgramReminder = inngest.createFunction(
-  { id: "mmp-program-daily-reminder" },
-  { event: "mmp-program/reminder.start" },
+  {
+    id: "mmp-program-daily-reminder",
+    triggers: [{ event: "mmp-program/reminder.start" }],
+  },
 
   async ({ event, step }) => {
     const { userId, timezone } = event.data;

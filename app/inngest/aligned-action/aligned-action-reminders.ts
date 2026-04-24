@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { toZonedTime, fromZonedTime } from "date-fns-tz";
 
 export const alignedActionReminders = inngest.createFunction(
-  { id: "aligned-action-reminders" },
-  { event: "aligned-action/created" },
+   {
+    id: "aligned-action-reminders",
+    triggers: [{ event: "aligned-action/created" }],
+  },
   async ({ event, step }) => {
     const { userId, timeFrom, timeTo, timezone } = event.data;
 
