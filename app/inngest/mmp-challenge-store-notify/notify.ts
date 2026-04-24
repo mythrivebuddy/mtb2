@@ -97,8 +97,10 @@ type PaymentData = {
 ============================= */
 
 export const notifyStakeholders = inngest.createFunction(
-  { id: "mmp-challenge-store-notify" },
-  { event: "mmp-challenge-store.notify" },
+  {
+    id: "mmp-challenge-store-notify",
+    triggers: [{ event: "mmp-challenge-store.notify" }],
+  },
 
   async ({ event, step }) => {
     const { userId, orderId, entityType, entityId, isFree } =
@@ -1068,7 +1070,7 @@ export const notifyStakeholders = inngest.createFunction(
               ...(financials
                 ? {
                     ...financials,
-                    coachEarning: financials.creatorEarning, 
+                    coachEarning: financials.creatorEarning,
                   }
                 : {}),
               paymentDate: paymentData?.createdAt

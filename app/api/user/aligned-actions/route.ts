@@ -38,15 +38,16 @@ export async function POST(req: NextRequest) {
     // }
 
     const data = body;
+    const finalTimeFrom = new Date(data.timeFrom);
+    const finalTimeTo = new Date(data.timeTo);
 
-    // Check if user already has an aligned action for today
-    const today = new Date();
-    const existingAction = await prisma.alignedAction.findFirst({
+
+   const existingAction = await prisma.alignedAction.findFirst({
       where: {
         userId,
-        createdAt: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
+        timeFrom: {
+          gte: startOfDay(finalTimeFrom),
+          lte: endOfDay(finalTimeFrom),
         },
       },
     });
@@ -66,22 +67,30 @@ export async function POST(req: NextRequest) {
         tasks: data.tasks,
         selectedTask: data.selectedTask,
         category: data.category,
-        timeFrom: data.timeFrom,
-        timeTo: data.timeTo,
+       timeFrom: finalTimeFrom.toISOString(), // Use the extended date
+        timeTo: finalTimeTo.toISOString(),
         reminderSent: false,
       },
+      include:{
+        user:{
+          select:{
+            timezone:true,
+          }
+        }
+      }
     });
+    let createdBloom = null;
     try {
-      await createDailyBloom({
+      createdBloom = await createDailyBloom({
         title: data.selectedTask,
         description: data.selectedTask,
-        dueDate: data.timeFrom,
-        startTime: new Date(data.timeFrom).toTimeString().slice(0, 5),
-        endTime: new Date(data.timeTo).toTimeString().slice(0, 5),
+      dueDate: finalTimeFrom.toISOString(),
+        startTime: finalTimeFrom.toTimeString().slice(0, 5),
+        endTime: finalTimeTo.toTimeString().slice(0, 5),
         addToCalendar: true,
         userId,
         user: session.user,
-        alignedActionId: alignedAction.id
+        alignedActionId: alignedAction.id,
       });
     } catch (err: unknown) {
       console.warn("⚠️ Daily Bloom creation skipped:", {
@@ -91,17 +100,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    await inngest.send({
-      name: "aligned-action/created",
-      data: {
-        actionId: alignedAction.id,
-        userId,
-        timeFrom: alignedAction.timeFrom,
-        timeTo: alignedAction.timeTo,
-      },
-    });
+    try {
+      await inngest.send({
+        name: "aligned-action/created",
+        data: {
+          actionId: alignedAction.id,
+          userId,
+          timeFrom: alignedAction.timeFrom,
+          timeTo: alignedAction.timeTo,
+          timezone: alignedAction.user.timezone, 
+        },
+      });
+    } catch (err) {
+      console.error("❌ Inngest event failed:", err);
+    }
 
-    return NextResponse.json(alignedAction, { status: 201 });
+    return NextResponse.json(
+      { action: alignedAction, bloom: createdBloom },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Error creating 1% Start action:", error);
     return NextResponse.json(

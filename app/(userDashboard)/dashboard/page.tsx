@@ -129,6 +129,7 @@ export default function DashboardPage() {
                 miracleLogs={dashboardContent?.miracleLogs || []}
                 challenges={dashboardContent?.challenges || []}
                 mmpPrograms={dashboardContent?.mmpPrograms || []}
+                accountabilityHubGroups={dashboardContent?.accountabilityHubGroups || []}
                 // event={dashboardContent?.events}
               />
             </div>

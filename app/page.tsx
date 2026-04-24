@@ -8,14 +8,18 @@ import Features from "@/components/home/Features";
 import ThreePillars from "@/components/home/ThreePillars";
 import CTA from "@/components/home/CTA";
 import Philosophy from "@/components/home/Philosophy";
-
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+  title:
+    "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
   description:
     "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
   openGraph: {
-    title: "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+    title:
+      "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
       "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
     url: "https://mythrivebuddy.com",
@@ -33,16 +37,31 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
+    title:
+      "MyThriveBuddy - Your Personal & Professional Growth Environment For Coaches, Solopreneurs & Self-Growth Enthusiasts.",
     description:
       "A structured environment that makes consistent growth inevitable — without hustle, hype, or burnout.",
     images: ["/logo.png"],
   },
 };
+type HomeProps = {
+  searchParams?: {
+    from?: string;
+  };
+};
 
-
-export default function Home() {
- 
+export default async function Home({ searchParams }: HomeProps) {
+  const session = await getServerSession(authOptions);
+  const queryString = await searchParams;
+  const from = queryString?.from;
+  const allowHome = from === "user-consent";
+  if (session && !allowHome) {
+    if (session.user?.role === "ADMIN") {
+      redirect("/admin/dashboard");
+    } else {
+      redirect("/dashboard");
+    } 
+  }
   return (
     <>
       <AppLayout>
@@ -52,15 +71,14 @@ export default function Home() {
           </div>
           <div className="hidden lg:flex flex-col ">
             <SpotlightCard />
-            
           </div>
         </div>
-         <Pillars/>
-         <CoachVsGrowth/>
-         <Features/>
-         <ThreePillars/>
-         <Philosophy/>
-         <CTA/>
+        <Pillars />
+        <CoachVsGrowth />
+        <Features />
+        <ThreePillars />
+        <Philosophy />
+        <CTA />
       </AppLayout>
     </>
   );
