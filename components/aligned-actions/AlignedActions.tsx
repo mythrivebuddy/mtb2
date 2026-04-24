@@ -17,6 +17,7 @@ import ReminderListener from "@/components/aligned-actions/ReminderListener";
 import CustomAccordion from "@/components/dashboard/user/ CustomAccordion";
 import PageSkeleton from "../PageSkeleton";
 import { AlignedAction } from "@/types/client/align-action";
+import { DailyBloom, DashboardContent } from "@/types/client/dashboard";
 
 export default function AlignedActionsPage() {
   const { data: session } = useSession();
@@ -55,13 +56,45 @@ export default function AlignedActionsPage() {
       if (!res.ok) throw new Error("Failed to complete action");
     },
     onSuccess: (_, actionId) => {
+      // ✅ dashboard-content
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+
+            // ✅ update aligned action
+            alignedAction: old.alignedAction.map((a) =>
+              a.id === actionId ? { ...a, completed: true } : a,
+            ),
+
+            // ✅ update linked blooms
+            dailyBlooms: old.dailyBlooms.map((b) =>
+              b.alignedActionId === actionId ? { ...b, isCompleted: true } : b,
+            ),
+          };
+        },
+      );
       // ✅ update cached query data (NO refetch)
       queryClient.setQueryData(
         ["aligned-actions", today],
         (old: AlignedAction[] | undefined) =>
           old?.map((a) => (a.id === actionId ? { ...a, completed: true } : a)),
       );
-
+      // ✅ daily-blooms cache
+      queryClient.setQueryData<DailyBloom[]>(
+        ["daily-blooms"],
+        (old) =>
+          old?.map((b) =>
+            b.alignedActionId === actionId ? { ...b, isCompleted: true } : b,
+          ) ?? old,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["dailyBloom"],
+        refetchType: "inactive", // this avoids refetching active UI immediately
+      });
       setShowReminder(false);
     },
   });

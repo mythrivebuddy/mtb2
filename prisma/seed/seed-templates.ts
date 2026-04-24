@@ -836,10 +836,10 @@ async function main() {
 `.trim(),
     },
     {
-  templateId: "mmp-paid-enrolled-creator",
-  subject: "💰 New Paid Enrollment in {{programName}}",
-  description: "Sent to creator when a user joins a paid MMP",
-  htmlContent: `
+      templateId: "mmp-paid-enrolled-creator",
+      subject: "💰 New Paid Enrollment in {{programName}}",
+      description: "Sent to creator when a user joins a paid MMP",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;border:1px solid #e5e7eb;">
 
   <div style="padding:28px;text-align:center;background:#ecfdf5;">
@@ -920,12 +920,12 @@ async function main() {
 </div>
 {{/if}}
 `.trim(),
-},
-{
-  templateId: "mmp-paid-enrolled-admin",
-  subject: "New MMP Purchase — {{programName}}",
-  description: "Sent to admin when a paid MMP purchase happens",
-  htmlContent: `
+    },
+    {
+      templateId: "mmp-paid-enrolled-admin",
+      subject: "New MMP Purchase — {{programName}}",
+      description: "Sent to admin when a paid MMP purchase happens",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;">
 
   <div style="padding:24px;text-align:center;background:#f1f5f9;">
@@ -1018,12 +1018,12 @@ async function main() {
   </div>
 </div>
 `.trim(),
-},
-{
-  templateId: "challenge-joined-admin-free",
-  subject: "{{username}} joined {{challengeName}} Challenge",
-  description: "Admin email for  free challenge join enrollmet of user",
-  htmlContent: `
+    },
+    {
+      templateId: "challenge-joined-admin-free",
+      subject: "{{username}} joined {{challengeName}} Challenge",
+      description: "Admin email for  free challenge join enrollmet of user",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e5e7eb;border-radius:10px;padding:20px;">
 
   <h2 style="margin:0 0 10px;">New Free Challenge Enrollment</h2>
@@ -1046,13 +1046,13 @@ async function main() {
 
 </div>
 `.trim(),
-},
-// paid challenge admin template 
-{
-  templateId: "challenge-joined-admin-paid",
-  subject: "New Challenge Purchase — {{challengeName}}",
-  description: "Admin email for paid challenge enrollment",
-  htmlContent: `
+    },
+    // paid challenge admin template
+    {
+      templateId: "challenge-joined-admin-paid",
+      subject: "New Challenge Purchase — {{challengeName}}",
+      description: "Admin email for paid challenge enrollment",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;">
 
   <div style="padding:24px;text-align:center;background:#f1f5f9;">
@@ -1131,12 +1131,12 @@ async function main() {
   </div>
 </div>
 `.trim(),
-},
-{
-  templateId: "store-order-seller",
-  subject: "💰 New Purchase — {{productName}}",
-  description: "Sent to seller when a product is purchased",
-  htmlContent: `
+    },
+    {
+      templateId: "store-order-seller",
+      subject: "💰 New Purchase — {{productName}}",
+      description: "Sent to seller when a product is purchased",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
  
   <!-- HEADER -->
@@ -1246,13 +1246,13 @@ async function main() {
   </div>
 
 </div>
-`
-},
-{
-  templateId: "store-order-admin",
-  subject: "🛒 New Store Order",
-  description: "Sent to admin when a product is purchased",
-  htmlContent: `
+`,
+    },
+    {
+      templateId: "store-order-admin",
+      subject: "🛒 New Store Order",
+      description: "Sent to admin when a product is purchased",
+      htmlContent: `
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border-radius:12px;border:1px solid #e5e7eb;">
 
   <!-- HEADER -->
@@ -1363,23 +1363,41 @@ async function main() {
 
   </div>
 </div>
-`
-}
+`,
+    },
   ];
 
+  let createdCount = 0;
+  let skippedCount = 0;
+
   for (const tmpl of templates) {
-    await prisma.emailTemplate.upsert({
+    const exists = await prisma.emailTemplate.findUnique({
       where: { templateId: tmpl.templateId },
-      update: {
-        subject: tmpl.subject,
-        description: tmpl.description,
-        htmlContent: tmpl.htmlContent.trim(),
-      },
-      create: tmpl,
     });
+
+    if (!exists) {
+      await prisma.emailTemplate.create({
+        data: {
+          ...tmpl,
+          htmlContent: tmpl.htmlContent.trim(),
+        },
+      });
+
+      createdCount++;
+    } else {
+      skippedCount++;
+    }
   }
 
-  console.log("Seeded email templates successfully!");
+  if (createdCount > 0) {
+    console.log(`Seeded ${createdCount} email template(s) successfully!`);
+  }
+
+  if (skippedCount > 0) {
+    console.log(
+      `Skipped ${skippedCount} email template(s) (already exist, admin edits preserved)`,
+    );
+  }
 }
 
 main()

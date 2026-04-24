@@ -24,6 +24,16 @@ import axios from "axios";
 import Link from "next/link";
 import { DashboardContent } from "@/types/client/dashboard";
 
+type AlignedAction = {
+  id: string;
+  completed: boolean;
+};
+
+type DailyBloom = {
+  id: string;
+  isCompleted: boolean;
+  alignedActionId?: string | null;
+};
 type CardItem = {
   title: string;
   description: string;
@@ -136,31 +146,73 @@ export default function DashboardCards({
     },
     onSuccess: (_, actionId) => {
       queryClient.setQueryData<DashboardContent>(
-        ["dashboard-content"], // ✅ match your query key
+        ["dashboard-content"],
         (old) => {
           if (!old) return old;
 
           return {
             ...old,
+
+            // ✅ update aligned action
             alignedAction: old.alignedAction.map((a) =>
               a.id === actionId ? { ...a, completed: true } : a,
+            ),
+
+            // 🔥 FIX: update linked blooms INSIDE dashboard cache
+            dailyBlooms: old.dailyBlooms.map((b) =>
+              b.alignedActionId === actionId ? { ...b, isCompleted: true } : b,
             ),
           };
         },
       );
+      const today = new Date().toISOString().split("T")[0];
+      // ✅ aligned-actions page cache (NO any)
+      queryClient.setQueryData<AlignedAction[]>(
+        ["aligned-actions", today],
+        (old) =>
+          old?.map((a) =>
+            a.id === actionId ? { ...a, completed: true } : a,
+          ) ?? old,
+      );
+
+      // ✅ daily-blooms cache
+      queryClient.setQueryData<DailyBloom[]>(
+        ["dailyBloom"],
+        (old) =>
+          old?.map((b) =>
+            b.alignedActionId === actionId ? { ...b, isCompleted: true } : b,
+          ) ?? old,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["dailyBloom"],
+        refetchType: "inactive", // 🔥 avoids refetching active UI immediately
+      });
       toast.success("Task completed 🎉");
     },
   });
 
   const updateBloomMutation = useMutation({
     mutationFn: async (id: string) => {
-      return axios.put(`/api/user/daily-bloom/${id}`, {
+      const res = await axios.put(`/api/user/daily-bloom/${id}`, {
         isCompleted: true,
       });
+
+      return res.data as {
+        id: string;
+        isCompleted: boolean;
+        alignedActionId?: string | null;
+      };
     },
 
-    onSuccess: (_, id) => {
-      // ✅ update dashboard-content cache
+    onSuccess: (data, id) => {
+      const updatedBloom = data as {
+        id: string;
+        isCompleted: boolean;
+        alignedActionId?: string | null;
+      };
+
+      const { alignedActionId, isCompleted } = updatedBloom;
+
       queryClient.setQueryData<DashboardContent>(
         ["dashboard-content"],
         (old) => {
@@ -168,13 +220,46 @@ export default function DashboardCards({
 
           return {
             ...old,
+
+            // update bloom
             dailyBlooms: old.dailyBlooms.map((b) =>
-              b.id === id ? { ...b, isCompleted: true } : b,
+              b.id === id ? { ...b, isCompleted } : b,
             ),
+
+            // 🔥 sync aligned action
+            alignedAction: alignedActionId
+              ? old.alignedAction.map((a) =>
+                  a.id === alignedActionId
+                    ? { ...a, completed: isCompleted }
+                    : a,
+                )
+              : old.alignedAction,
           };
         },
       );
 
+      // ✅ 2. update aligned-actions cache
+      const today = new Date().toISOString().split("T")[0];
+      if (alignedActionId) {
+        queryClient.setQueryData<AlignedAction[]>(
+          ["aligned-actions", today],
+          (old) =>
+            old?.map((a) =>
+              a.id === alignedActionId ? { ...a, completed: isCompleted } : a,
+            ) ?? old,
+        );
+      }
+
+      // ✅ 3. update daily-blooms cache
+      queryClient.setQueryData<DailyBloom[]>(
+        ["dailyBloom"],
+        (old) =>
+          old?.map((b) => (b.id === id ? { ...b, isCompleted } : b)) ?? old,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["dailyBloom"],
+        refetchType: "inactive", // 🔥 avoids refetching active UI immediately
+      });
       toast.success("Bloom completed ✅");
     },
   });
@@ -308,14 +393,21 @@ export default function DashboardCards({
                     <Input
                       type="checkbox"
                       checked={isCompleted}
-                      disabled={isCompleted || completeActionMutation.isPending}
+                      // disabled={isCompleted || completeActionMutation.isPending}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (isCompleted || completeActionMutation.isPending)
+                          return;
                         if (!isCompleted && todayAction?.id) {
                           completeActionMutation.mutate(todayAction.id);
                         }
                       }}
-                      className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                      className={cn(
+                        "w-4 h-4 accent-blue-600",
+                        isCompleted || completeActionMutation.isPending
+                          ? "cursor-not-allowed"
+                          : "cursor-pointer",
+                      )}
                     />
                     <p className="text-muted-foreground">
                       {task} • {time}
@@ -329,25 +421,32 @@ export default function DashboardCards({
                         key={bloom.id}
                         className="flex items-center gap-2 text-sm"
                       >
-                        <input
+                        <Input
                           type="checkbox"
                           checked={bloom.isCompleted}
-                          disabled={
-                            bloom.isCompleted || updateBloomMutation.isPending
-                          }
                           onChange={(e) => {
                             e.stopPropagation();
+                            if (
+                              bloom.isCompleted ||
+                              updateBloomMutation.isPending
+                            )
+                              return;
                             if (!bloom.isCompleted) {
                               updateBloomMutation.mutate(bloom.id);
                             }
                           }}
-                          className="w-4 h-4 accent-blue-600 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                          className={cn(
+                            "w-4 h-4 accent-blue-600",
+                            isCompleted || completeActionMutation.isPending
+                              ? "cursor-not-allowed"
+                              : "cursor-pointer",
+                          )}
                         />
                         <p className="text-muted-foreground line-clamp-1">
                           {bloom.title}{" "}
                           {bloom.isFromEvent && (
-                            <span className=" text-purple-600 font-medium">
-                              (Event)
+                            <span className="text-xs text-blue-600 font-medium bg-blue-100 px-1.5 py-0.5 rounded">
+                              Event
                             </span>
                           )}
                         </p>

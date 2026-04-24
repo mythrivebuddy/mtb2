@@ -35,6 +35,7 @@ export type DailyBloom = {
   title: string;
   isCompleted: boolean;
   isFromEvent:boolean;
+  alignedActionId?: string | null;
 };
 
 /* ───────────── PROGRESS & LOGS ───────────── */
