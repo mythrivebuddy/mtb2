@@ -225,8 +225,8 @@ export default function AlignedActionsPage() {
                           {getMoodEmoji(action.mood)}
                         </span>
                         <span>
-                          {format(new Date(action.timeFrom), "h:mm a")} -{" "}
-                          {format(new Date(action.timeTo), "h:mm a")}
+                          {format(new Date(action.timeFrom), "HH:mm")} -{" "}
+                          {format(new Date(action.timeTo), "HH:mm")}
                         </span>
                       </CardTitle>
                       <div className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm">

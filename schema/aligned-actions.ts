@@ -20,6 +20,7 @@ export const Step3Schema = z
       required_error: "End time is required",
       invalid_type_error: "Invalid end time",
     }),
+    day: z.enum(["today", "tomorrow"]).optional(),
   })
   .refine(
     (data) => {
