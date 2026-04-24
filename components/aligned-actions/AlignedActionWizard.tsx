@@ -1,6 +1,6 @@
 "use client";
 
-import {  useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,8 +27,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardContent } from "@/types/client/dashboard";
 import { Clock } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 // function roundUpTo30Min(date: Date) {
 //   const d = new Date(date);
@@ -38,17 +43,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 //   if (next === 60) d.setHours(d.getHours() + 1);
 //   return d;
 // }
-const getDefaultDay = () => {
-  const now = new Date();
-  const hour = now.getHours(); // 0–23
 
-  return hour < 20 ? "today" : "tomorrow";
+const getDefaultDay = () => {
+  const { start } = getNearestHourRange();
+  const hour = start.getHours();
+
+  // If the calculated start hour is 20 or greater, default to tomorrow
+  return hour >= 20 ? "tomorrow" : "today";
 };
+
 const getNearestHourRange = () => {
   const now = new Date();
+  const start = new Date(now);
 
   // round up to next hour
-  const start = new Date(now);
   if (start.getMinutes() > 0) {
     start.setHours(start.getHours() + 1, 0, 0, 0);
   } else {
@@ -58,11 +66,18 @@ const getNearestHourRange = () => {
   const end = new Date(start);
   end.setHours(start.getHours() + 1);
 
+  // CHANGE: If start hour is >= 20, set end date to tomorrow
+  if (start.getHours() >= 20) {
+    end.setDate(end.getDate() + 1);
+  }
+
   return { start, end };
 };
 
 const timeOptions = Array.from({ length: 48 }).map((_, i) => {
-  const h = Math.floor(i / 2).toString().padStart(2, "0");
+  const h = Math.floor(i / 2)
+    .toString()
+    .padStart(2, "0");
   const m = i % 2 === 0 ? "00" : "30";
   return `${h}:${m}`;
 });
@@ -87,7 +102,11 @@ const TimeInput = ({
   };
 
   return (
-    <Select value={selectedTime} onValueChange={handleTimeChange} disabled={disabled}>
+    <Select
+      value={selectedTime}
+      onValueChange={handleTimeChange}
+      disabled={disabled}
+    >
       {/* We use relative positioning and pl-10 just like the Input to fit the icon */}
       <SelectTrigger className="relative pl-10 w-full text-left">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
@@ -122,6 +141,7 @@ export default function AlignedActionWizard({
     category: "",
     timeFrom: "",
     timeTo: "",
+    day: "" as "" | "today" | "tomorrow",
   });
 
   // Step 1 form
@@ -155,7 +175,8 @@ export default function AlignedActionWizard({
   const step3Form = useForm({
     resolver: zodResolver(Step3Schema),
     defaultValues: {
-      day: getDefaultDay(),
+      // This will now return "tomorrow" if start.getHours() >= 20
+      day: (formData.day as "today" | "tomorrow") || getDefaultDay(),
       timeFrom: formData.timeFrom ? new Date(formData.timeFrom) : start,
       timeTo: formData.timeTo ? new Date(formData.timeTo) : end,
     },
@@ -170,6 +191,7 @@ export default function AlignedActionWizard({
       category: string;
       timeFrom: string;
       timeTo: string;
+      day?: string;
     }) => {
       const res = await fetch("/api/user/aligned-actions", {
         method: "POST",
@@ -248,12 +270,50 @@ export default function AlignedActionWizard({
   };
 
   // Handle step 3 submission
-  
-  const onSubmitStep3 = (data: { timeFrom: Date; timeTo: Date }) => {
+  // here everything works
+  // Inside AlignedActionWizard component...
+
+  const onSubmitStep3 = (data: {
+    day?: "today" | "tomorrow";
+    timeFrom: Date;
+    timeTo: Date;
+  }) => {
+    const selectedDay = data.day ?? "today";
+    const now = new Date();
+
+    // 1. Force a clean base date starting at TODAY 00:00:00
+    const baseDate = new Date();
+    baseDate.setHours(0, 0, 0, 0);
+
+    // 2. Adjust based on the radio selection
+    if (selectedDay === "tomorrow") {
+      baseDate.setDate(baseDate.getDate() + 1);
+    } else {
+      // Ensure it is today even if the default state was tomorrow
+      baseDate.setDate(now.getDate());
+    }
+
+    const finalFrom = new Date(baseDate);
+    finalFrom.setHours(
+      data.timeFrom.getHours(),
+      data.timeFrom.getMinutes(),
+      0,
+      0,
+    );
+
+    const finalTo = new Date(baseDate);
+    finalTo.setHours(data.timeTo.getHours(), data.timeTo.getMinutes(), 0, 0);
+
+    // 3. Handle crossing midnight (e.g., 23:00 to 01:00)
+    if (finalTo.getTime() <= finalFrom.getTime()) {
+      finalTo.setDate(finalTo.getDate() + 1);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      timeFrom: data.timeFrom.toISOString(),
-      timeTo: data.timeTo.toISOString(),
+      day: selectedDay,
+      timeFrom: finalFrom.toISOString(),
+      timeTo: finalTo.toISOString(),
     }));
     setStep(4);
   };
@@ -267,14 +327,13 @@ export default function AlignedActionWizard({
       category: formData.category,
       timeFrom: formData.timeFrom,
       timeTo: formData.timeTo,
+      day: formData.day,
     });
   };
 
   // Convert time input value to date object
 
-
   // Convert date object to time input value
-
 
   return (
     <>
@@ -807,7 +866,10 @@ export default function AlignedActionWizard({
                         <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                           <TimeInput value={field.value} onChange={field.onChange} />
+                            <TimeInput
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
@@ -836,7 +898,10 @@ export default function AlignedActionWizard({
                         <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                         <TimeInput value={field.value} onChange={field.onChange} />
+                            <TimeInput
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
@@ -857,14 +922,6 @@ export default function AlignedActionWizard({
                     )}
                   />
                 </div>
-
-                {step3Form.formState.errors.timeTo?.message ===
-                  "Time window cannot exceed 3 hours." && (
-                  <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-sm text-red-700">
-                    Time window cannot exceed 3 hours. Please select an end time
-                    within 3 hours of the start time.
-                  </div>
-                )}
               </div>
 
               <div className="flex justify-between pt-4">

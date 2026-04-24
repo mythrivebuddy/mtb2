@@ -19,6 +19,7 @@ import PageSkeleton from "../PageSkeleton";
 import { AlignedAction } from "@/types/client/align-action";
 import { DailyBloom, DashboardContent } from "@/types/client/dashboard";
 
+
 export default function AlignedActionsPage() {
   const { data: session } = useSession();
   const [showWizard, setShowWizard] = useState(false);
@@ -154,6 +155,21 @@ export default function AlignedActionsPage() {
         return category;
     }
   }
+function formatTimeWithDateIfNeeded(from: string, to: string) {
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+
+  const today = new Date();
+
+  const isToday =
+    fromDate.toDateString() === today.toDateString();
+
+  if (!isToday) {
+    return `${format(fromDate, "dd MMM, HH:mm")} - ${format(toDate, "HH:mm")}`;
+  }
+
+  return `${format(fromDate, "HH:mm")} - ${format(toDate, "HH:mm")}`;
+}
 
   return (
     <>
@@ -225,8 +241,7 @@ export default function AlignedActionsPage() {
                           {getMoodEmoji(action.mood)}
                         </span>
                         <span>
-                          {format(new Date(action.timeFrom), "HH:mm")} -{" "}
-                          {format(new Date(action.timeTo), "HH:mm")}
+                        {formatTimeWithDateIfNeeded(action.timeFrom, action.timeTo)}
                         </span>
                       </CardTitle>
                       <div className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm">

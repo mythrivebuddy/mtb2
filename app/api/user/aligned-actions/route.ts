@@ -38,15 +38,16 @@ export async function POST(req: NextRequest) {
     // }
 
     const data = body;
+    const finalTimeFrom = new Date(data.timeFrom);
+    const finalTimeTo = new Date(data.timeTo);
 
-    // Check if user already has an aligned action for today
-    const today = new Date();
-    const existingAction = await prisma.alignedAction.findFirst({
+
+   const existingAction = await prisma.alignedAction.findFirst({
       where: {
         userId,
-        createdAt: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
+        timeFrom: {
+          gte: startOfDay(finalTimeFrom),
+          lte: endOfDay(finalTimeFrom),
         },
       },
     });
@@ -66,19 +67,26 @@ export async function POST(req: NextRequest) {
         tasks: data.tasks,
         selectedTask: data.selectedTask,
         category: data.category,
-        timeFrom: data.timeFrom,
-        timeTo: data.timeTo,
+       timeFrom: finalTimeFrom.toISOString(), // Use the extended date
+        timeTo: finalTimeTo.toISOString(),
         reminderSent: false,
       },
+      include:{
+        user:{
+          select:{
+            timezone:true,
+          }
+        }
+      }
     });
     let createdBloom = null;
     try {
       createdBloom = await createDailyBloom({
         title: data.selectedTask,
         description: data.selectedTask,
-        dueDate: data.timeFrom,
-        startTime: new Date(data.timeFrom).toTimeString().slice(0, 5),
-        endTime: new Date(data.timeTo).toTimeString().slice(0, 5),
+      dueDate: finalTimeFrom.toISOString(),
+        startTime: finalTimeFrom.toTimeString().slice(0, 5),
+        endTime: finalTimeTo.toTimeString().slice(0, 5),
         addToCalendar: true,
         userId,
         user: session.user,
@@ -100,6 +108,7 @@ export async function POST(req: NextRequest) {
           userId,
           timeFrom: alignedAction.timeFrom,
           timeTo: alignedAction.timeTo,
+          timezone: alignedAction.user.timezone, 
         },
       });
     } catch (err) {

@@ -44,16 +44,6 @@ export const Step3Schema = z
   )
   .refine(
     (data) => {
-      const timeDifference = data.timeTo.getTime() - data.timeFrom.getTime();
-      return timeDifference <= 3 * 60 * 60 * 1000; // 3 hours in milliseconds
-    },
-    {
-      message: "Time window cannot exceed 3 hours.",
-      path: ["timeTo"],
-    }
-  )
-  .refine(
-    (data) => {
       return data.timeTo > data.timeFrom;
     },
     {
