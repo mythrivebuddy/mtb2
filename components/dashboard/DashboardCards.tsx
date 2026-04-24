@@ -11,6 +11,7 @@ import {
   LucideSignalHigh,
   WandSparklesIcon,
   Swords,
+  LayoutDashboard,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -110,6 +111,7 @@ const cards: CardItem[] = [
     text: "text-gray-700 group-hover:text-white",
     path: "/dashboard/mini-mastery-programs",
   },
+
   {
     title: "Growth Store",
     description: "",
@@ -119,6 +121,13 @@ const cards: CardItem[] = [
     highlight: true,
     action: true,
     path: "/dashboard/store",
+  },
+  {
+    title: "View Groups",
+    description: "Stay accountable with your groups",
+    icon: LayoutDashboard, // or Users if you prefer
+    bg: "bg-yellow-100 group-hover:bg-yellow-500",
+    text: "text-yellow-600 group-hover:text-white",
   },
 ];
 
@@ -130,6 +139,7 @@ export default function DashboardCards({
   miracleLogs,
   challenges,
   mmpPrograms,
+  accountabilityHubGroups,
 }: Props) {
   const router = useRouter();
 
@@ -282,6 +292,7 @@ export default function DashboardCards({
 
   // mmp
   const mmpItems = mmpPrograms?.slice(0, 3);
+  const groupItems = (accountabilityHubGroups ?? []).slice(0, 3);
 
   const formatTime = (date: string) =>
     new Date(date).toLocaleTimeString([], {
@@ -329,6 +340,7 @@ export default function DashboardCards({
           (index === 4 && miracleItems.length > 0) ||
           (index === 5 && challengeItems.length > 0) ||
           (index === 6 && mmpItems.length > 0) ||
+          (index === 8 && groupItems?.length > 0) ||
           card.action;
         return (
           <Card
@@ -505,6 +517,22 @@ export default function DashboardCards({
                         🎓{" "}
                         <span className="hover:text-blue-600 hover:underline">
                           {item.program.name}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : index === 8 && groupItems?.length > 0 ? (
+                  // ✅ GROUPS
+                  <div className="flex flex-col gap-2 mt-1">
+                    {groupItems.map((group) => (
+                      <Link
+                        href={`/dashboard/accountability?groupId=${group.id}`}
+                        key={group.id}
+                        className="text-sm text-muted-foreground line-clamp-1"
+                      >
+                        👥 {" "}
+                        <span className="hover:text-blue-600 hover:underline">
+                          {group.name}
                         </span>
                       </Link>
                     ))}
