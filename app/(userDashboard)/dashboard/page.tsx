@@ -56,8 +56,8 @@ export default function DashboardPage() {
         const response = await axios.get(`/api/user/prosperity`);
         return response.data;
       },
-      retry: false,
-      enabled: !!session?.user?.id,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
     });
   const { data: dashboardContent, isLoading: dashboardContentLoading } =
     useQuery<DashboardContent>({
@@ -129,6 +129,7 @@ export default function DashboardPage() {
                 miracleLogs={dashboardContent?.miracleLogs || []}
                 challenges={dashboardContent?.challenges || []}
                 mmpPrograms={dashboardContent?.mmpPrograms || []}
+                accountabilityHubGroups={dashboardContent?.accountabilityHubGroups || []}
                 // event={dashboardContent?.events}
               />
             </div>

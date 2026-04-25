@@ -20,6 +20,7 @@ export const Step3Schema = z
       required_error: "End time is required",
       invalid_type_error: "Invalid end time",
     }),
+    day: z.enum(["today", "tomorrow"]).optional(),
   })
   .refine(
     (data) => {
@@ -38,16 +39,6 @@ export const Step3Schema = z
     },
     {
       message: "Please select a current or future time.",
-      path: ["timeTo"],
-    }
-  )
-  .refine(
-    (data) => {
-      const timeDifference = data.timeTo.getTime() - data.timeFrom.getTime();
-      return timeDifference <= 3 * 60 * 60 * 1000; // 3 hours in milliseconds
-    },
-    {
-      message: "Time window cannot exceed 3 hours.",
       path: ["timeTo"],
     }
   )

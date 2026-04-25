@@ -113,7 +113,16 @@ export async function PUT(
         { status: 404 },
       );
     }
-
+    if (updatedBloom.alignedActionId) {
+      await prisma.alignedAction.update({
+        where: {
+          id: updatedBloom.alignedActionId,
+        },
+        data: {
+          completed: updatedBloom.isCompleted,
+        },
+      });
+    }
     // --- Handle Calendar Event Logic Separately ---
     // You'll need to add your logic here to find, create, update, or delete the associated calendar event.
     // For example:

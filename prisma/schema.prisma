@@ -670,6 +670,7 @@ model Todo {
   isFromEvent    Boolean    @default(false)
   startTime      String?
   endTime        String?
+  alignedActionId String?   
   user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])

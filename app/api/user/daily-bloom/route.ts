@@ -380,7 +380,20 @@ export async function PUT(req: NextRequest) {
         endTime: updateData.endTime ?? null,
       },
     });
-
+    if (
+      updatedBloom.alignedActionId &&
+      typeof updateData.isCompleted === "boolean" &&
+      updateData.isCompleted !== updatedBloom.isCompleted
+    ) {
+      await prisma.alignedAction.update({
+        where: {
+          id: updatedBloom.alignedActionId,
+        },
+        data: {
+          completed: updateData.isCompleted,
+        },
+      });
+    }
     // ❌ CHANGE 2: All logic that created/updated/deleted a linked event is REMOVED.
 
     if (updateData.isCompleted && !updatedBloom.taskCompleteJP) {

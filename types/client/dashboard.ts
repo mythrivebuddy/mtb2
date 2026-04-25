@@ -35,6 +35,7 @@ export type DailyBloom = {
   title: string;
   isCompleted: boolean;
   isFromEvent:boolean;
+  alignedActionId?: string | null;
 };
 
 /* ───────────── PROGRESS & LOGS ───────────── */
@@ -67,6 +68,10 @@ export type MMPProgram = {
     slug: string;
   };
 };
+export type AccountabilityGroup = {
+  id: string;
+  name: string;
+};
 
 /* ───────────── MAIN DASHBOARD TYPE ───────────── */
 
@@ -80,4 +85,5 @@ export type DashboardContent = {
   mmpPrograms: MMPProgram[];
   event?: unknown; // refine later if needed
   cmpProgramId?: string;
+  accountabilityHubGroups?: AccountabilityGroup[];
 };

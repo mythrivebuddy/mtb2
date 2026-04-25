@@ -4,6 +4,7 @@ import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay } from "date-fns";
 import { inngest } from "@/lib/inngest";
+import { createDailyBloom } from "@/lib/daily-bloom/daily-bloom";
 
 // Note: We're using a CRON job at /api/cron/aligned-actions-reminders
 // to handle sending emails before actions start, which is more reliable
@@ -12,19 +13,14 @@ import { inngest } from "@/lib/inngest";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authConfig);
-    
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
-  
+
     const body = await req.json();
-    
 
     // Add userId to body for validation
     // const dataToValidate = {
@@ -42,16 +38,16 @@ export async function POST(req: NextRequest) {
     // }
 
     const data = body;
+    const finalTimeFrom = new Date(data.timeFrom);
+    const finalTimeTo = new Date(data.timeTo);
 
 
-    // Check if user already has an aligned action for today
-    const today = new Date();
-    const existingAction = await prisma.alignedAction.findFirst({
+   const existingAction = await prisma.alignedAction.findFirst({
       where: {
         userId,
-        createdAt: {
-          gte: startOfDay(today),
-          lte: endOfDay(today),
+        timeFrom: {
+          gte: startOfDay(finalTimeFrom),
+          lte: endOfDay(finalTimeFrom),
         },
       },
     });
@@ -59,7 +55,7 @@ export async function POST(req: NextRequest) {
     if (existingAction) {
       return NextResponse.json(
         { error: "You already created an aligned action for today" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -71,28 +67,63 @@ export async function POST(req: NextRequest) {
         tasks: data.tasks,
         selectedTask: data.selectedTask,
         category: data.category,
-        timeFrom: data.timeFrom,
-        timeTo: data.timeTo,
+       timeFrom: finalTimeFrom.toISOString(), // Use the extended date
+        timeTo: finalTimeTo.toISOString(),
         reminderSent: false,
       },
+      include:{
+        user:{
+          select:{
+            timezone:true,
+          }
+        }
+      }
     });
-
-    await inngest.send({
-      name: "aligned-action/created",
-      data: {
-        actionId: alignedAction.id,
+    let createdBloom = null;
+    try {
+      createdBloom = await createDailyBloom({
+        title: data.selectedTask,
+        description: data.selectedTask,
+      dueDate: finalTimeFrom.toISOString(),
+        startTime: finalTimeFrom.toTimeString().slice(0, 5),
+        endTime: finalTimeTo.toTimeString().slice(0, 5),
+        addToCalendar: true,
         userId,
-        timeFrom: alignedAction.timeFrom,
-        timeTo: alignedAction.timeTo,
-      },
-    });
+        user: session.user,
+        alignedActionId: alignedAction.id,
+      });
+    } catch (err: unknown) {
+      console.warn("⚠️ Daily Bloom creation skipped:", {
+        err,
+        userId,
+        task: data.selectedTask,
+      });
+    }
 
-    return NextResponse.json(alignedAction, { status: 201 });
+    try {
+      await inngest.send({
+        name: "aligned-action/created",
+        data: {
+          actionId: alignedAction.id,
+          userId,
+          timeFrom: alignedAction.timeFrom,
+          timeTo: alignedAction.timeTo,
+          timezone: alignedAction.user.timezone, 
+        },
+      });
+    } catch (err) {
+      console.error("❌ Inngest event failed:", err);
+    }
+
+    return NextResponse.json(
+      { action: alignedAction, bloom: createdBloom },
+      { status: 201 },
+    );
   } catch (error) {
     console.error("Error creating 1% Start action:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -102,10 +133,7 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authConfig);
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
@@ -139,7 +167,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching 1% Start actions:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-} 
+}

@@ -6,8 +6,10 @@ import { NotificationType } from "@prisma/client";
 
 
 export const onboardingReminder = inngest.createFunction(
-    { id: "onboarding-reminder" },
-    { event: "user.onboarding.completed" },
+      {
+    id: "onboarding-reminder",
+    triggers: [{ event: "user.onboarding.completed" }],
+  },
 
     async ({ event, step }) => {
         const { userId, programId } = event.data;

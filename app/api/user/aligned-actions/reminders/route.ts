@@ -12,10 +12,7 @@ export async function GET() {
     const session = await getServerSession(authConfig);
 
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
@@ -71,7 +68,7 @@ export async function GET() {
     console.error("Error fetching 1% Start action reminders:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -80,22 +77,23 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = checkRole("USER");
-    const userId = (await session).user.id
+    const userId = (await session).user.id;
     const body = await req.json();
     const { actionId, completed } = body;
 
     if (!actionId) {
       return NextResponse.json(
         { error: "Action ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
-      }, include: {
-        plan: true
-      }
+      },
+      include: {
+        plan: true,
+      },
     });
 
     // Check if the action exists and belongs to the user
@@ -107,10 +105,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!action) {
-      return NextResponse.json(
-        { error: "Action not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Action not found" }, { status: 404 });
     }
 
     // Mark the action as completed
@@ -121,14 +116,25 @@ export async function POST(req: NextRequest) {
       data: {
         completed: completed ?? true,
         popupShown: true,
-        activeReminder: null,   // to  kill reminders
+        activeReminder: null, // to  kill reminders
         reminderAt: null,
       },
     });
-
+    await prisma.todo.updateMany({
+      where: {
+        alignedActionId: actionId,
+        userId,
+        isCompleted: {
+          not: completed ?? true,
+        },
+      },
+      data: {
+        isCompleted: completed ?? true,
+      },
+    });
     let jpAwarded = 0;
 
-    if (completed) {
+    if (completed && !action.completed) {
       if (user) {
         try {
           await assignJp(user, ActivityType.ALIGNED_ACTION);
@@ -138,34 +144,35 @@ export async function POST(req: NextRequest) {
           // Continue execution even if JP assignment fails
         }
       }
-    }
-
-    // Add to progress vault
+       // Add to progress vault
     await prisma.progressVault.create({
       data: {
         userId,
         content: `Completed 1% Start: ${action.selectedTask}`,
-        jpPointsAssigned: jpAwarded > 0
+        jpPointsAssigned: jpAwarded > 0,
       },
     });
+    }
+
+   
 
     // Fetch the updated user data to get the current JP balance
     const updatedUser = await prisma.user.findUnique({
       where: {
         id: userId,
-      }
+      },
     });
 
     return NextResponse.json({
       action: updatedAction,
       jpAwarded,
-      newBalance: updatedUser?.jpBalance
+      newBalance: updatedUser?.jpBalance,
     });
   } catch (error) {
     console.error("Error updating 1% Start action:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
