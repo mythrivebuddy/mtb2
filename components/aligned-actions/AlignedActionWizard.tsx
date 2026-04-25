@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -25,6 +25,15 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { DashboardContent } from "@/types/client/dashboard";
+import { Clock } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 // function roundUpTo30Min(date: Date) {
 //   const d = new Date(date);
@@ -35,6 +44,87 @@ import { Card, CardContent } from "@/components/ui/card";
 //   return d;
 // }
 
+const getDefaultDay = () => {
+  const { start } = getNearestHourRange();
+  const hour = start.getHours();
+
+  // If the calculated start hour is 20 or greater, default to tomorrow
+  return hour >= 20 ? "tomorrow" : "today";
+};
+
+const getNearestHourRange = () => {
+  const now = new Date();
+  const start = new Date(now);
+
+  // round up to next hour
+  if (start.getMinutes() > 0) {
+    start.setHours(start.getHours() + 1, 0, 0, 0);
+  } else {
+    start.setMinutes(0, 0, 0);
+  }
+
+  const end = new Date(start);
+  end.setHours(start.getHours() + 1);
+
+  // CHANGE: If start hour is >= 20, set end date to tomorrow
+  if (start.getHours() >= 20) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { start, end };
+};
+
+const timeOptions = Array.from({ length: 48 }).map((_, i) => {
+  const h = Math.floor(i / 2)
+    .toString()
+    .padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
+
+const TimeInput = ({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: Date | undefined;
+  onChange: (date: Date) => void;
+  disabled?: boolean;
+}) => {
+  // Extract the HH:mm string to bind to the Select value
+  const selectedTime = value ? format(value, "HH:mm") : "";
+
+  const handleTimeChange = (newTime: string) => {
+    const [h, m] = newTime.split(":").map(Number);
+    const updatedDate = new Date(value || new Date());
+    updatedDate.setHours(h, m, 0, 0);
+    onChange(updatedDate);
+  };
+
+  return (
+    <Select
+      value={selectedTime}
+      onValueChange={handleTimeChange}
+      disabled={disabled}
+    >
+      {/* We use relative positioning and pl-10 just like the Input to fit the icon */}
+      <SelectTrigger className="relative pl-10 w-full text-left">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+          <Clock className="h-4 w-4" />
+        </div>
+        <SelectValue placeholder="Select time" />
+      </SelectTrigger>
+
+      <SelectContent className="max-h-60 overflow-y-auto">
+        {timeOptions.map((time) => (
+          <SelectItem key={time} value={time}>
+            {time}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
 export default function AlignedActionWizard({
   onComplete,
   onCancel,
@@ -42,6 +132,7 @@ export default function AlignedActionWizard({
   onComplete: () => void;
   onCancel: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     mood: "",
@@ -50,6 +141,7 @@ export default function AlignedActionWizard({
     category: "",
     timeFrom: "",
     timeTo: "",
+    day: "" as "" | "today" | "tomorrow",
   });
 
   // Step 1 form
@@ -79,11 +171,14 @@ export default function AlignedActionWizard({
   });
 
   // Step 3 form
+  const { start, end } = getNearestHourRange();
   const step3Form = useForm({
     resolver: zodResolver(Step3Schema),
     defaultValues: {
-      timeFrom: formData.timeFrom ? new Date(formData.timeFrom) : new Date(),
-      timeTo: formData.timeTo ? new Date(formData.timeTo) : new Date(),
+      // This will now return "tomorrow" if start.getHours() >= 20
+      day: (formData.day as "today" | "tomorrow") || getDefaultDay(),
+      timeFrom: formData.timeFrom ? new Date(formData.timeFrom) : start,
+      timeTo: formData.timeTo ? new Date(formData.timeTo) : end,
     },
   });
 
@@ -96,6 +191,7 @@ export default function AlignedActionWizard({
       category: string;
       timeFrom: string;
       timeTo: string;
+      day?: string;
     }) => {
       const res = await fetch("/api/user/aligned-actions", {
         method: "POST",
@@ -110,7 +206,31 @@ export default function AlignedActionWizard({
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const { action, bloom } = data;
+
+      // ✅ update dashboard
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            alignedAction: [action],
+            dailyBlooms: bloom
+              ? [bloom, ...(old.dailyBlooms || [])]
+              : old.dailyBlooms,
+          };
+        },
+      );
+
+      // 🔥 force daily bloom sync
+      queryClient.invalidateQueries({
+        queryKey: ["dailyBloom"],
+        exact: false,
+        refetchType: "all",
+      });
       toast.success("1% Start action created successfully!");
       onComplete();
     },
@@ -150,11 +270,50 @@ export default function AlignedActionWizard({
   };
 
   // Handle step 3 submission
-  const onSubmitStep3 = (data: { timeFrom: Date; timeTo: Date }) => {
+  // here everything works
+  // Inside AlignedActionWizard component...
+
+  const onSubmitStep3 = (data: {
+    day?: "today" | "tomorrow";
+    timeFrom: Date;
+    timeTo: Date;
+  }) => {
+    const selectedDay = data.day ?? "today";
+    const now = new Date();
+
+    // 1. Force a clean base date starting at TODAY 00:00:00
+    const baseDate = new Date();
+    baseDate.setHours(0, 0, 0, 0);
+
+    // 2. Adjust based on the radio selection
+    if (selectedDay === "tomorrow") {
+      baseDate.setDate(baseDate.getDate() + 1);
+    } else {
+      // Ensure it is today even if the default state was tomorrow
+      baseDate.setDate(now.getDate());
+    }
+
+    const finalFrom = new Date(baseDate);
+    finalFrom.setHours(
+      data.timeFrom.getHours(),
+      data.timeFrom.getMinutes(),
+      0,
+      0,
+    );
+
+    const finalTo = new Date(baseDate);
+    finalTo.setHours(data.timeTo.getHours(), data.timeTo.getMinutes(), 0, 0);
+
+    // 3. Handle crossing midnight (e.g., 23:00 to 01:00)
+    if (finalTo.getTime() <= finalFrom.getTime()) {
+      finalTo.setDate(finalTo.getDate() + 1);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      timeFrom: data.timeFrom.toISOString(),
-      timeTo: data.timeTo.toISOString(),
+      day: selectedDay,
+      timeFrom: finalFrom.toISOString(),
+      timeTo: finalTo.toISOString(),
     }));
     setStep(4);
   };
@@ -168,24 +327,13 @@ export default function AlignedActionWizard({
       category: formData.category,
       timeFrom: formData.timeFrom,
       timeTo: formData.timeTo,
+      day: formData.day,
     });
   };
 
   // Convert time input value to date object
-  const timeToDate = (timeString: string) => {
-    if (!timeString) return undefined;
-
-    const [hours, minutes] = timeString.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    return date;
-  };
 
   // Convert date object to time input value
-  const dateToTime = (date: Date | undefined) => {
-    if (!date) return "";
-    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`;
-  };
 
   return (
     <>
@@ -196,19 +344,21 @@ export default function AlignedActionWizard({
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${s === step
-                    ? "bg-jp-orange text-white"
-                    : s < step
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-gray-500"
-                    }`}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    s === step
+                      ? "bg-jp-orange text-white"
+                      : s < step
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 text-gray-500"
+                  }`}
                 >
                   {s < step ? "✓" : s}
                 </div>
                 {s < 4 && (
                   <div
-                    className={`w-12 h-1 ${s < step ? "bg-green-500" : "bg-gray-200"
-                      }`}
+                    className={`w-12 h-1 ${
+                      s < step ? "bg-green-500" : "bg-gray-200"
+                    }`}
                   />
                 )}
               </div>
@@ -245,10 +395,11 @@ export default function AlignedActionWizard({
                         <div
                           key={option.value}
                           onClick={() => field.onChange(option.value)}
-                          className={`cursor-pointer text-center p-4 rounded-lg transition-all ${field.value === option.value
-                            ? "bg-jp-orange/10 border-2 border-jp-orange"
-                            : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
-                            }`}
+                          className={`cursor-pointer text-center p-4 rounded-lg transition-all ${
+                            field.value === option.value
+                              ? "bg-jp-orange/10 border-2 border-jp-orange"
+                              : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
+                          }`}
                         >
                           <div className="text-4xl mb-2">{option.emoji}</div>
                           <div className="text-sm font-medium">
@@ -301,8 +452,12 @@ export default function AlignedActionWizard({
                     !step1Form.formState.isValid ||
                     step1Form.formState.isSubmitting
                   }
-                  className={`bg-green-600 hover:bg-green-700 ${!step1Form.formState.isValid ||
-                    step1Form.formState.isSubmitting ? "bg-green-600/80" : ""}`}
+                  className={`bg-green-600 hover:bg-green-700 ${
+                    !step1Form.formState.isValid ||
+                    step1Form.formState.isSubmitting
+                      ? "bg-green-600/80"
+                      : ""
+                  }`}
                 >
                   Next
                 </Button>
@@ -558,8 +713,12 @@ export default function AlignedActionWizard({
                     !step2Form.formState.isValid ||
                     step2Form.formState.isSubmitting
                   }
-                  className={`bg-green-600 hover:bg-green-700 ${!step1Form.formState.isValid ||
-                    step1Form.formState.isSubmitting ? "bg-green-600/80" : ""}`}
+                  className={`bg-green-600 hover:bg-green-700 ${
+                    !step1Form.formState.isValid ||
+                    step1Form.formState.isSubmitting
+                      ? "bg-green-600/80"
+                      : ""
+                  }`}
                 >
                   Next
                 </Button>
@@ -661,10 +820,42 @@ export default function AlignedActionWizard({
                 <FormLabel className="text-lg font-medium">
                   When will you work on this task?
                 </FormLabel>
-                <FormDescription>
-                  Select a time window of up to 3 hours, starting from the
-                  current time or later.
-                </FormDescription>
+                <FormField
+                  control={step3Form.control}
+                  name="day"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex gap-6"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="today" id="today" />
+                            <label
+                              htmlFor="today"
+                              className="text-sm font-medium"
+                            >
+                              Today
+                            </label>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="tomorrow" id="tomorrow" />
+                            <label
+                              htmlFor="tomorrow"
+                              className="text-sm font-medium"
+                            >
+                              Tomorrow
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -675,14 +866,9 @@ export default function AlignedActionWizard({
                         <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input
-                              type="time"
-                              value={dateToTime(field.value)}
-                              onChange={(e) => {
-                                const date = timeToDate(e.target.value);
-                                if (date) field.onChange(date);
-                              }}
-                            // className="pl-10"
+                            <TimeInput
+                              value={field.value}
+                              onChange={field.onChange}
                             />
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
@@ -712,14 +898,9 @@ export default function AlignedActionWizard({
                         <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input
-                              type="time"
-                              value={dateToTime(field.value)}
-                              onChange={(e) => {
-                                const date = timeToDate(e.target.value);
-                                if (date) field.onChange(date);
-                              }}
-                            // className="pl-10"
+                            <TimeInput
+                              value={field.value}
+                              onChange={field.onChange}
                             />
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
@@ -741,14 +922,6 @@ export default function AlignedActionWizard({
                     )}
                   />
                 </div>
-
-                {step3Form.formState.errors.timeTo?.message ===
-                  "Time window cannot exceed 3 hours." && (
-                    <div className="bg-red-50 p-3 rounded-lg border border-red-200 text-sm text-red-700">
-                      Time window cannot exceed 3 hours. Please select an end time
-                      within 3 hours of the start time.
-                    </div>
-                  )}
               </div>
 
               <div className="flex justify-between pt-4">
@@ -762,8 +935,12 @@ export default function AlignedActionWizard({
                 <Button
                   type="submit"
                   disabled={step3Form.formState.isSubmitting}
-                  className={`bg-green-600 hover:bg-green-700 ${!step1Form.formState.isValid ||
-                    step1Form.formState.isSubmitting ? "bg-green-600/80" : ""}`}
+                  className={`bg-green-600 hover:bg-green-700 ${
+                    !step1Form.formState.isValid ||
+                    step1Form.formState.isSubmitting
+                      ? "bg-green-600/80"
+                      : ""
+                  }`}
                 >
                   Next
                 </Button>
@@ -771,7 +948,6 @@ export default function AlignedActionWizard({
             </form>
           </Form>
         )}
-
 
         {step === 4 && (
           <div className="space-y-4">
@@ -816,16 +992,18 @@ export default function AlignedActionWizard({
                       {formData.tasks.map((task, i) => (
                         <li
                           key={i}
-                          className={`flex items-center gap-2 text-gray-800 p-2 rounded-md text-sm ${task === formData.selectedTask
-                            ? "bg-green-500/10 font-bold text-green-500"
-                            : "bg-gray-50"
-                            }`}
+                          className={`flex items-center gap-2 text-gray-800 p-2 rounded-md text-sm ${
+                            task === formData.selectedTask
+                              ? "bg-green-500/10 font-bold text-green-500"
+                              : "bg-gray-50"
+                          }`}
                         >
                           <span
-                            className={`w-4 h-4 flex items-center justify-center rounded-full ${task === formData.selectedTask
-                              ? "bg-green-500 text-white text-xs"
-                              : "bg-gray-400 text-white text-xs"
-                              }`}
+                            className={`w-4 h-4 flex items-center justify-center rounded-full ${
+                              task === formData.selectedTask
+                                ? "bg-green-500 text-white text-xs"
+                                : "bg-gray-400 text-white text-xs"
+                            }`}
                           >
                             {task === formData.selectedTask ? "✓" : "+"}
                           </span>
@@ -864,8 +1042,8 @@ export default function AlignedActionWizard({
                       <span className="w-4 h-4 rounded-full bg-green-500"></span>
                       {formData.timeFrom && formData.timeTo && (
                         <>
-                          {format(new Date(formData.timeFrom), "h:mm a")} -{" "}
-                          {format(new Date(formData.timeTo), "h:mm a")}
+                          {format(new Date(formData.timeFrom), "HH:mm")} -{" "}
+                          {format(new Date(formData.timeTo), "HH:mm")}
                         </>
                       )}
                     </div>
@@ -910,9 +1088,9 @@ export default function AlignedActionWizard({
                               ★
                             </span>
                             <span>
-                              <strong>Growth Points:</strong> Earn +50 Growth Points
-                              for completing your task, saved to your Progress
-                              Vault.
+                              <strong>Growth Points:</strong> Earn +50 Growth
+                              Points for completing your task, saved to your
+                              Progress Vault.
                             </span>
                           </li>
                           <li className="flex items-center gap-3">

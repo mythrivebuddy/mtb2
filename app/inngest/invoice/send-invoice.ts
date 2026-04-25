@@ -43,8 +43,8 @@ export const sendInvoiceFunction = inngest.createFunction(
   {
     id: "send-invoice",
     retries: 3,
+    triggers: [{ event: "invoice/send" }],
   },
-  { event: "invoice/send" },
 
   async ({ event, step }) => {
     const { orderId } = event.data as { orderId: string };

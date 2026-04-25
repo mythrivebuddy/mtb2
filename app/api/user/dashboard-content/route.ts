@@ -223,6 +223,24 @@ export const GET = async (req: Request) => {
         }
       : null;
 
+    const accountabilityHubGroups = await prisma.group.findMany({
+      where: {
+        members: {
+          some: {
+            userId: session.user.id,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 3, // same pattern as challenges/mmp
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    
     return NextResponse.json(
       {
         userMakeoverCommitment,
@@ -231,8 +249,10 @@ export const GET = async (req: Request) => {
         onePercentProgressVault,
         miracleLogs,
         challenges,
+
         mmpPrograms,
         event: eventData,
+        accountabilityHubGroups,
         cmpProgramId: program.plans[0].id,
       },
       { status: 200 },
