@@ -307,6 +307,30 @@ export default function DailyBloomClient() {
       );
     });
   }, [dailyBloom]);
+const sortedBlooms = useMemo(() => {
+  return [...uniqueBlooms].sort((a, b) => {
+    const aStart = a.dueDate
+      ? new Date(
+          `${new Date(a.dueDate).toISOString().split("T")[0]}T${a.startTime || "00:00"}`
+        ).getTime()
+      : Infinity;
+
+    const bStart = b.dueDate
+      ? new Date(
+          `${new Date(b.dueDate).toISOString().split("T")[0]}T${b.startTime || "00:00"}`
+        ).getTime()
+      : Infinity;
+
+    // 1. Sort by start datetime
+    if (aStart !== bStart) return aStart - bStart;
+
+    // 2. SAME TIME → use createdAt (OLDER FIRST like calendar)
+    const aCreated = new Date(a.createdAt || 0).getTime();
+    const bCreated = new Date(b.createdAt || 0).getTime();
+
+    return aCreated - bCreated;
+  });
+}, [uniqueBlooms]);
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -704,7 +728,7 @@ export default function DailyBloomClient() {
       endTime?: string;
       isCompleted?: boolean;
     };
-      source?: "calendar" | "modal"; 
+    source?: "calendar" | "modal";
   }) => {
     // CRITICAL: Clean the ID from the "bloom-" prefix
     const actualBloomId = payload.id.replace("bloom-", "");
@@ -1032,7 +1056,7 @@ export default function DailyBloomClient() {
                   {isMobile ? (
                     // --- MOBILE: Card View ---
                     <div className="space-y-4">
-                      {uniqueBlooms.map((bloom: DailyBloom) => (
+                      {sortedBlooms.map((bloom: DailyBloom) => (
                         <Card key={bloom.id} className="p-4">
                           <div className="flex flex-col space-y-3">
                             <div className="flex items-start justify-between gap-4">
@@ -1120,7 +1144,7 @@ export default function DailyBloomClient() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {uniqueBlooms.map((bloom) => (
+                        {sortedBlooms.map((bloom) => (
                           <TableRow key={bloom.id}>
                             <TableCell className="text-center">
                               <Input
