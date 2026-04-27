@@ -126,20 +126,20 @@ export default function AlignedActionsPage() {
 
   const hasCreatedToday = actions && actions.length > 0;
 
-  function getMoodEmoji(mood: string) {
-    switch (mood) {
-      case "sleep":
-        return "😴";
-      case "goodToGo":
-        return "😐";
-      case "motivated":
-        return "😊";
-      case "highlyMotivated":
-        return "😃";
-      default:
-        return "";
-    }
-  }
+  // function getMoodEmoji(mood: string) {
+  //   switch (mood) {
+  //     case "sleep":
+  //       return "😴";
+  //     case "goodToGo":
+  //       return "😐";
+  //     case "motivated":
+  //       return "😊";
+  //     case "highlyMotivated":
+  //       return "😃";
+  //     default:
+  //       return "";
+  //   }
+  // }
 
   function getCategoryLabel(category: string) {
     switch (category) {
@@ -207,7 +207,7 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
               <CardHeader>
                 <CardTitle>Create 1% Start actions</CardTitle>
                 <CardDescription>
-                  Complete all steps to create your 1% Start actions for today
+                  Complete all steps to create your 1% Start actions for today/tomorrow
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -237,9 +237,9 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle className="flex items-center gap-2">
-                        <span className="text-2xl">
+                        {/* <span className="text-2xl">
                           {getMoodEmoji(action.mood)}
-                        </span>
+                        </span> */}
                         <span>
                         {formatTimeWithDateIfNeeded(action.timeFrom, action.timeTo)}
                         </span>
@@ -300,10 +300,10 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
           !showWizard && (
             <div className="text-center py-12 bg-gray-50 rounded-lg">
               <h3 className="text-xl font-medium mb-2">
-                No 1% Start Action Created Today
+                No 1% Start Action Created Today/Tomorrow
               </h3>
               <p className="text-gray-500 mb-4">
-                Create an 1% Start actions to focus on what matters most to you
+                Create a 1% Start actions to focus on what matters most to you
                 today.
               </p>
               <Button
