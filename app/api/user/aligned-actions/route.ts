@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     const alignedAction = await prisma.alignedAction.create({
       data: {
         userId,
-        mood: data.mood,
+        // mood: data.mood,
         tasks: data.tasks,
         selectedTask: data.selectedTask,
         category: data.category,

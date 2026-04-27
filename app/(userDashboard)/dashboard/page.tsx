@@ -130,7 +130,7 @@ export default function DashboardPage() {
                 challenges={dashboardContent?.challenges || []}
                 mmpPrograms={dashboardContent?.mmpPrograms || []}
                 accountabilityHubGroups={dashboardContent?.accountabilityHubGroups || []}
-                // event={dashboardContent?.events}
+                events={dashboardContent?.events || []}
               />
             </div>
             {/* ✅ MOBILE STEPPERS */}

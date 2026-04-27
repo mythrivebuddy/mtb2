@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const Step1Schema = z.object({
-  mood: z.enum(["sleep", "goodToGo", "motivated", "highlyMotivated"]),
+  // mood: z.enum(["sleep", "goodToGo", "motivated", "highlyMotivated"]).optional(),
   tasks: z.array(z.string().max(120).min(1, "Task cannot be empty")).length(3),
 });
 
@@ -55,7 +55,7 @@ export const Step3Schema = z
 export const AlignedActionSchema = z
   .object({
     userId: z.string(),
-    mood: z.enum(["sleep", "goodToGo", "motivated", "highlyMotivated"]),
+    // mood: z.enum(["sleep", "goodToGo", "motivated", "highlyMotivated"]).optional(),
     tasks: z.array(z.string().max(120).min(1, "Task cannot be empty")).length(3),
     selectedTask: z.string().min(1, "Please select a task"),
     category: z.enum(["creative", "nurturing", "revenueGenerating", "admin"]),

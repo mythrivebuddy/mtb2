@@ -594,7 +594,7 @@ model PushSubscription {
 model AlignedAction {
   id           String   @id @default(uuid())
   userId       String
-  mood         String
+  mood         String?
   completed    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

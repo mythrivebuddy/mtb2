@@ -135,7 +135,7 @@ export default function AlignedActionWizard({
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    mood: "",
+    // mood: "",
     tasks: ["", "", ""],
     selectedTask: "",
     category: "",
@@ -148,11 +148,11 @@ export default function AlignedActionWizard({
   const step1Form = useForm({
     resolver: zodResolver(Step1Schema),
     defaultValues: {
-      mood: (formData.mood || "") as
-        | "sleep"
-        | "goodToGo"
-        | "motivated"
-        | "highlyMotivated",
+      // mood: (formData.mood || "") as
+      //   | "sleep"
+      //   | "goodToGo"
+      //   | "motivated"
+      //   | "highlyMotivated",
       tasks: formData.tasks,
     },
   });
@@ -185,7 +185,7 @@ export default function AlignedActionWizard({
   // Create aligned action mutation
   const createAlignedAction = useMutation({
     mutationFn: async (data: {
-      mood: string;
+      // mood: string;
       tasks: string[];
       selectedTask: string;
       category: string;
@@ -249,10 +249,14 @@ export default function AlignedActionWizard({
 
   // Handle step 1 submission
   const onSubmitStep1 = (data: {
-    mood: "sleep" | "goodToGo" | "motivated" | "highlyMotivated";
+    // mood: "sleep" | "goodToGo" | "motivated" | "highlyMotivated";
     tasks: string[];
   }) => {
-    setFormData((prev) => ({ ...prev, mood: data.mood, tasks: data.tasks }));
+    setFormData((prev) => ({
+      ...prev,
+      //  mood: data.mood,
+      tasks: data.tasks,
+    }));
     setStep(2);
   };
 
@@ -321,7 +325,7 @@ export default function AlignedActionWizard({
   // Handle final submission
   const handleSubmit = () => {
     createAlignedAction.mutate({
-      mood: formData.mood,
+      // mood: formData.mood,
       tasks: formData.tasks,
       selectedTask: formData.selectedTask,
       category: formData.category,
@@ -373,7 +377,7 @@ export default function AlignedActionWizard({
               onSubmit={step1Form.handleSubmit(onSubmitStep1)}
               className="space-y-6"
             >
-              <FormField
+              {/* <FormField
                 control={step1Form.control}
                 name="mood"
                 render={({ field }) => (
@@ -411,11 +415,11 @@ export default function AlignedActionWizard({
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <div className="space-y-4">
                 <FormLabel className="text-lg font-medium">
-                  List 3 tasks you want to accomplish today
+                  List 3 tasks you want to accomplish today/tomorrow
                 </FormLabel>
                 <FormDescription>
                   These should be tasks that would make today feel productive
@@ -962,7 +966,7 @@ export default function AlignedActionWizard({
               <CardContent className="pt-6 pb-8">
                 <div className="space-y-6">
                   {/* Mood Section */}
-                  <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-md">
+                  {/* <div className="flex items-center gap-3 bg-gray-50 p-3 rounded-md">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-500/20 border border-green-500 text-2xl">
                       {formData.mood === "sleep" && "😴"}
                       {formData.mood === "goodToGo" && "😐"}
@@ -981,7 +985,7 @@ export default function AlignedActionWizard({
                           "Highly Motivated"}
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Tasks Section */}
                   <div>
@@ -1117,7 +1121,7 @@ export default function AlignedActionWizard({
                           </li>
                         </ul>
                         <p className="text-xs text-blue-800 mt-4 italic">
-                          Stay focused, and lets make this task a win!
+                          Stay focused, and let&apos;s make this task a win!
                         </p>
                       </div>
                     </div>

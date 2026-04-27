@@ -129,8 +129,18 @@ export async function GET(request: NextRequest) {
 
       const whereClause: Prisma.TodoWhereInput = {
         userId: session.user.id,
-        isCompleted: false,
-        OR: [{ dueDate: null }, { dueDate: { gte: startOfTodayUTC } }],
+        OR: [
+          // ✅ pending blooms
+          {
+            isCompleted: false,
+            OR: [{ dueDate: null }, { dueDate: { gte: startOfTodayUTC } }],
+          },
+
+          // ✅ ALL events (past + future)
+          {
+            isFromEvent: true,
+          },
+        ],
       };
 
       if (frequency && frequency !== "All") {
@@ -157,6 +167,7 @@ export async function GET(request: NextRequest) {
       const whereClause: Prisma.TodoWhereInput = { userId: session.user.id };
       if (status === "Completed") {
         whereClause.isCompleted = true;
+        whereClause.dueDate = { not: null };
       }
       if (frequency && frequency !== "All") {
         whereClause.frequency = frequency as "Daily" | "Weekly" | "Monthly";
@@ -165,7 +176,10 @@ export async function GET(request: NextRequest) {
       const [blooms, totalCount] = await prisma.$transaction([
         prisma.todo.findMany({
           where: whereClause,
-          orderBy: { updatedAt: "desc" },
+          orderBy: [
+            { dueDate: "asc" }, // calendar order
+            { createdAt: "desc" },
+          ],
           skip: skip,
           take: limit,
         }),
