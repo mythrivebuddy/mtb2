@@ -53,6 +53,7 @@ import {
 } from "@/types/client/progress-vault";
 import useOnlineUserLeaderBoard from "@/hooks/useOnlineUserLeaderBoard";
 import Link from "next/link";
+import { DashboardContent } from "@/types/client/dashboard";
 
 // --- START: useMediaQuery Hook ---
 // This custom hook helps determine the screen size for responsive rendering.
@@ -153,6 +154,36 @@ export default function ProgressVaultClient({
       toast.success("Log created successfully");
       return res.data;
     },
+    onSuccess: (createdItem) => {
+  queryClient.setQueryData<DashboardContent>(
+    ["dashboard-content"],
+    (old) => {
+      if (!old) return old;
+
+      const existing = old.onePercentProgressVault || [];
+
+      // ✅ SAFETY: ensure valid id
+      const safeId =
+        createdItem?.id ?? `temp-${Date.now()}`;
+
+      // ✅ remove duplicates safely
+      const filtered = existing.filter(
+        (item) => item.id !== safeId
+      );
+
+      return {
+        ...old,
+        onePercentProgressVault: [
+          {
+            id: safeId,
+            content: createdItem.content,
+          },
+          ...filtered,
+        ].slice(0, 3),
+      };
+    }
+  );
+},
     onError: (error) => {
       const errorMessage = getAxiosErrorMessage(error, "An error occurred");
       if (errorMessage.includes("Daily limit of 3 entries reached")) {
@@ -575,7 +606,11 @@ export default function ProgressVaultClient({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateMutation.isPending} className="bg-green-600 hover:bg-green-700 ">
+                <Button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700 "
+                >
                   {updateMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}

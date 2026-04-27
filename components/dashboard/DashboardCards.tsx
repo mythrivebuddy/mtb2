@@ -36,7 +36,7 @@ type DailyBloom = {
   title: string;
   isCompleted: boolean;
   alignedActionId?: string | null;
-    isFromEvent?: boolean;
+  isFromEvent?: boolean;
 };
 type CardItem = {
   type: string;
@@ -158,7 +158,6 @@ export default function DashboardCards({
   const router = useRouter();
 
   const queryClient = useQueryClient();
- 
 
   const completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
@@ -585,25 +584,47 @@ export default function DashboardCards({
                   </Button>
                 )}
                 {card.type === "progressVault" && progressItems.length > 0 && (
-                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/dashboard/progress-vault");
+                    }}
+                  className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                     Log Progress
                   </Button>
                 )}
 
                 {card.type === "miracleLog" && miracleItems.length > 0 && (
-                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/dashboard/miracle-log");
+                    }}
+                    className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full"
+                  >
                     Log Miracle
                   </Button>
                 )}
 
                 {card.type === "challenges" && challengeItems.length > 0 && (
-                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                  <Button
+                   onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/dashboard/challenge?tab=join");
+                    }}
+                  className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                     Join Challenges
                   </Button>
                 )}
 
                 {card.type === "mmp" && mmpItems.length > 0 && (
-                  <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push("/dashboard/mini-mastery-programs");
+                    }}
+                    className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full"
+                  >
                     Join MMP
                   </Button>
                 )}
