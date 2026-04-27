@@ -186,42 +186,54 @@ export const GET = async (req: Request) => {
 
     const now = new Date();
 
-    const events = await prisma.event.findMany({
+    // 1. Try to find the first event today (or future) that is NOT yet completed
+    let selectedEvents = await prisma.todo.findMany({
       where: {
         userId: session.user.id,
-
-        // ✅ only future OR ongoing events
-        OR: [
-          {
-            end: {
-              gte: now, // still relevant (ongoing or future)
-            },
-          },
-        ],
+        isFromEvent: true,
+        isCompleted: false,
+        dueDate: {
+          gte: startOfDay,
+        },
       },
-
       orderBy: {
-        start: "asc", // nearest first
+        dueDate: "asc", // earliest first
       },
-
-      take: 1, // ✅ only ONE needed
+      take: 3, // ✅ max 3
     });
-    const selectedEvent = events[0] || null;
-    const eventData = selectedEvent
-      ? {
-          ...selectedEvent,
 
-          isCompletedByTime: selectedEvent.end
-            ? new Date(selectedEvent.end) < now
-            : false,
+    // 2. If everything today is completed, fallback to showing the first event
+    // of today specifically, so it stays on the dashboard all day.
+    if (selectedEvents.length === 0) {
+      selectedEvents = await prisma.todo.findMany({
+        where: {
+          userId: session.user.id,
+          isFromEvent: true,
+          dueDate: {
+            gte: startOfDay,
+            lte: endOfDay,
+          },
+        },
+        orderBy: {
+          dueDate: "asc",
+        },
+        take: 3,
+      });
+    }
 
-          isOngoing:
-            selectedEvent.start && selectedEvent.end
-              ? new Date(selectedEvent.start) <= now &&
-                new Date(selectedEvent.end) >= now
-              : false,
-        }
-      : null;
+    // 3. Map the data with time-based status flags
+    const eventData = selectedEvents.map((event) => ({
+      ...event,
+      isCompletedByTime: event.dueDate ? new Date(event.dueDate) < now : false,
+
+      isOngoing:
+        event.dueDate && event.endTime
+          ? new Date(event.dueDate) <= now &&
+            new Date(
+              `${event.dueDate.toISOString().split("T")[0]}T${event.endTime}:00`,
+            ) >= now
+          : false,
+    }));
 
     const accountabilityHubGroups = await prisma.group.findMany({
       where: {
@@ -240,7 +252,7 @@ export const GET = async (req: Request) => {
         name: true,
       },
     });
-    
+
     return NextResponse.json(
       {
         userMakeoverCommitment,
@@ -251,7 +263,7 @@ export const GET = async (req: Request) => {
         challenges,
 
         mmpPrograms,
-        event: eventData,
+        events: eventData,
         accountabilityHubGroups,
         cmpProgramId: program.plans[0].id,
       },

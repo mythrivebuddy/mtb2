@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import ProgressVaultClient from "@/components/progress-vault/progress-vault-client";
-import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { checkFeature } from "@/lib/access-control/checkFeature";
+import PageLoader from "@/components/PageLoader";
 
 async function getProgressVault() {
   const session = await checkRole("USER");
@@ -16,14 +16,14 @@ async function getProgressVault() {
       userId: session.user.id,
       deletedAt: null,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
 
-  return logs.map(log => ({
+  return logs.map((log) => ({
     ...log,
     createdAt: log.createdAt.toISOString(),
     updatedAt: log.updatedAt.toISOString(),
-    deletedAt: log.deletedAt?.toISOString() || null
+    deletedAt: log.deletedAt?.toISOString() || null,
   }));
 }
 
@@ -38,10 +38,7 @@ async function getProgressVaultDailyLimit() {
     user: session.user,
   });
 
-   if (
-    !featureResult.allowed ||
-    typeof featureResult.config !== "object"
-  ) {
+  if (!featureResult.allowed || typeof featureResult.config !== "object") {
     return {
       dailyLimit: 0,
       isUpgradeFlagShow: false,
@@ -69,34 +66,38 @@ async function getStreak() {
     where: {
       userId_type: {
         userId: session.user.id,
-        type: "PROGRESS_VAULT"
-      }
+        type: "PROGRESS_VAULT",
+      },
     },
     select: {
-      progress_vault_count: true
-    }
+      progress_vault_count: true,
+    },
   });
 
   return { count: streak?.progress_vault_count || 0 };
 }
 
 export default async function ProgressVaultPage() {
-  const [logs, streak,progressVaultConfig] = await Promise.all([
+  const [logs, streak, progressVaultConfig] = await Promise.all([
     getProgressVault(),
     getStreak(),
-    getProgressVaultDailyLimit()
+    getProgressVaultDailyLimit(),
   ]);
 
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center h-40">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading your progress vault...</span>
+        <div className="flex justify-center items-center min-h-screen">
+          <PageLoader />
         </div>
       }
     >
-      <ProgressVaultClient initialLogs={logs} initialStreak={streak} dailyLimit={progressVaultConfig.dailyLimit} isUpgradeFlagShow={progressVaultConfig.isUpgradeFlagShow} />
+      <ProgressVaultClient
+        initialLogs={logs}
+        initialStreak={streak}
+        dailyLimit={progressVaultConfig.dailyLimit}
+        isUpgradeFlagShow={progressVaultConfig.isUpgradeFlagShow}
+      />
     </Suspense>
   );
 }

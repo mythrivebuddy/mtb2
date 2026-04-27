@@ -96,6 +96,7 @@ interface DailyBloom extends DailyBloomFormType {
   description: string | null; // Ensure description can be null
   startTime?: string | null;
   endTime?: string | null;
+  alignedActionId?: string | null;
 }
 // Normalize API responses into this strict type
 export interface ClientDailyBloom {
@@ -163,7 +164,7 @@ export default function DailyBloomClient() {
   const [addData, setAddData] = useState<boolean>(false);
   const [frequencyFilter, setFrequencyFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("Pending");
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
   const [addInputType, setAddInputType] = useState<"frequency" | "date">(
     "date",
   );
@@ -288,8 +289,48 @@ export default function DailyBloomClient() {
   // Add this entire block to de-duplicate the list before rendering
   const uniqueBlooms = useMemo(() => {
     const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
-    return Array.from(bloomMap.values());
+
+    const now = new Date();
+
+    return Array.from(bloomMap.values()).filter((bloom) => {
+      // ✅ keep normal blooms (your existing logic)
+      if (!bloom.isFromEvent) return true;
+
+      // ✅ for events → filter OUT past completed events
+      if (!bloom.dueDate) return true;
+
+      const eventDate = new Date(bloom.dueDate);
+
+      return (
+        eventDate >= now || // future/today events
+        !bloom.isCompleted // OR incomplete events
+      );
+    });
   }, [dailyBloom]);
+const sortedBlooms = useMemo(() => {
+  return [...uniqueBlooms].sort((a, b) => {
+    const aStart = a.dueDate
+      ? new Date(
+          `${new Date(a.dueDate).toISOString().split("T")[0]}T${a.startTime || "00:00"}`
+        ).getTime()
+      : Infinity;
+
+    const bStart = b.dueDate
+      ? new Date(
+          `${new Date(b.dueDate).toISOString().split("T")[0]}T${b.startTime || "00:00"}`
+        ).getTime()
+      : Infinity;
+
+    // 1. Sort by start datetime
+    if (aStart !== bStart) return aStart - bStart;
+
+    // 2. SAME TIME → use createdAt (OLDER FIRST like calendar)
+    const aCreated = new Date(a.createdAt || 0).getTime();
+    const bCreated = new Date(b.createdAt || 0).getTime();
+
+    return aCreated - bCreated;
+  });
+}, [uniqueBlooms]);
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -374,6 +415,72 @@ export default function DailyBloomClient() {
           };
         },
       );
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) {
+            return {
+              dailyBlooms: [
+                {
+                  id: createdBloom.id,
+                  title: createdBloom.title,
+                  isCompleted: createdBloom.isCompleted,
+                  alignedActionId: createdBloom.alignedActionId ?? null,
+                  isFromEvent: createdBloom.isFromEvent ?? false,
+                },
+              ],
+            } as DashboardContent;
+          }
+          return {
+            ...old,
+            dailyBlooms: [
+              {
+                id: createdBloom.id,
+                title: createdBloom.title,
+                isCompleted: createdBloom.isCompleted,
+                alignedActionId: createdBloom.alignedActionId ?? null,
+                isFromEvent: createdBloom.isFromEvent ?? false,
+              },
+              ...old.dailyBlooms, // add on top like your UI expects
+            ].slice(0, 3), // 🔥 keep same limit as dashboard
+          };
+        },
+      );
+      // ✅ ADD THIS BLOCK
+      if (createdBloom.isFromEvent && createdBloom.dueDate) {
+        queryClient.setQueryData<DashboardContent>(
+          ["dashboard-content"],
+          (old) => {
+            if (!old) return old;
+
+            const existingEvents = Array.isArray(old.events) ? old.events : [];
+
+            const alreadyExists = existingEvents.some(
+              (e) => e.id === `bloom-${createdBloom.id}`,
+            );
+            if (alreadyExists) return old;
+
+            const startTime = createdBloom.startTime || "09:00";
+
+            const newEvent = {
+              id: `bloom-${createdBloom.id}`,
+              title: createdBloom.title,
+              startTime: startTime,
+
+              // ✅ MUST be string
+              endTime: createdBloom.endTime || startTime,
+
+              isOngoing: true,
+              isCompletedByTime: false,
+            };
+
+            return {
+              ...old,
+              events: [newEvent, ...existingEvents],
+            };
+          },
+        );
+      }
       toast.success("Bloom created successfully!");
     },
     onError: (err, newBloom, context) => {
@@ -619,7 +726,9 @@ export default function DailyBloomClient() {
       end?: string;
       startTime?: string;
       endTime?: string;
+      isCompleted?: boolean;
     };
+    source?: "calendar" | "modal";
   }) => {
     // CRITICAL: Clean the ID from the "bloom-" prefix
     const actualBloomId = payload.id.replace("bloom-", "");
@@ -659,6 +768,7 @@ export default function DailyBloomClient() {
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
+      isCompleted: payload.updatedData.isCompleted ?? originalBloom.isCompleted,
       startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
       endTime: payload.updatedData.end
         ? format(new Date(payload.updatedData.end), "HH:mm")
@@ -724,7 +834,7 @@ export default function DailyBloomClient() {
 
   const combinedCalendarItems = useMemo(() => {
     // 1. Process blooms to create calendar events
-    const bloomEvents = uniqueBlooms.reduce<CalendarEvent[]>((acc, bloom) => {
+    const bloomEvents = dailyBloom.reduce<CalendarEvent[]>((acc, bloom) => {
       if (bloom.isFromEvent && bloom.dueDate) {
         // Use the date portion only to avoid timezone shift
         const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
@@ -946,7 +1056,7 @@ export default function DailyBloomClient() {
                   {isMobile ? (
                     // --- MOBILE: Card View ---
                     <div className="space-y-4">
-                      {uniqueBlooms.map((bloom: DailyBloom) => (
+                      {sortedBlooms.map((bloom: DailyBloom) => (
                         <Card key={bloom.id} className="p-4">
                           <div className="flex flex-col space-y-3">
                             <div className="flex items-start justify-between gap-4">
@@ -1034,7 +1144,7 @@ export default function DailyBloomClient() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {uniqueBlooms.map((bloom) => (
+                        {sortedBlooms.map((bloom) => (
                           <TableRow key={bloom.id}>
                             <TableCell className="text-center">
                               <Input
