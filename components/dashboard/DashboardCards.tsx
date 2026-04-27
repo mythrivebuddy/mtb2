@@ -33,8 +33,10 @@ type AlignedAction = {
 
 type DailyBloom = {
   id: string;
+  title: string;
   isCompleted: boolean;
   alignedActionId?: string | null;
+    isFromEvent?: boolean;
 };
 type CardItem = {
   type: string;
@@ -156,6 +158,7 @@ export default function DashboardCards({
   const router = useRouter();
 
   const queryClient = useQueryClient();
+ 
 
   const completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {

@@ -96,6 +96,7 @@ interface DailyBloom extends DailyBloomFormType {
   description: string | null; // Ensure description can be null
   startTime?: string | null;
   endTime?: string | null;
+  alignedActionId?: string | null;
 }
 // Normalize API responses into this strict type
 export interface ClientDailyBloom {
@@ -371,6 +372,37 @@ export default function DailyBloomClient() {
                 bloom.id.startsWith("temp-") ? createdBloom : bloom,
               ),
             })),
+          };
+        },
+      );
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) {
+            return {
+              dailyBlooms: [
+                {
+                  id: createdBloom.id,
+                  title: createdBloom.title,
+                  isCompleted: createdBloom.isCompleted,
+                  alignedActionId: createdBloom.alignedActionId ?? null,
+                  isFromEvent: createdBloom.isFromEvent ?? false,
+                },
+              ],
+            } as DashboardContent;
+          }
+          return {
+            ...old,
+            dailyBlooms: [
+              {
+                id: createdBloom.id,
+                title: createdBloom.title,
+                isCompleted: createdBloom.isCompleted,
+                alignedActionId: createdBloom.alignedActionId ?? null,
+                isFromEvent: createdBloom.isFromEvent ?? false,
+              },
+              ...old.dailyBlooms, // add on top like your UI expects
+            ].slice(0, 3), // 🔥 keep same limit as dashboard
           };
         },
       );
