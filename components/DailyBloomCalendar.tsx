@@ -73,6 +73,7 @@ interface EventPayload {
   isBloom?: boolean;
   isCompleted?: boolean;
   allDay?: boolean;
+  createdAt?: string;
 }
 
 interface EventExtendedProps {
@@ -81,6 +82,7 @@ interface EventExtendedProps {
   isCompleted?: boolean;
   category?: "holiday" | string;
   lastTime?: string;
+  createdAt?: string;
 }
 
 interface CalendarEvent {
@@ -91,6 +93,7 @@ interface CalendarEvent {
   allDay?: boolean;
   color?: string;
   extendedProps?: EventExtendedProps;
+  createdAt?: string;
 }
 
 interface Props {
@@ -114,6 +117,7 @@ interface Props {
       startTime?: string;
       endTime?: string;
     };
+    source?: "calendar" | "modal";
   }) => void;
   onDeleteBloomFromEvent: (bloomId: string) => void;
 }
@@ -202,22 +206,25 @@ const getNearestHourLocal = () => {
   now.setHours(now.getHours() + 1);
   now.setMinutes(0, 0, 0);
 
-  return toLocalInput(now.toString());
+  return toLocalInput(now);
 };
 const addOneHour = (dateStr: string) => {
   const d = new Date(dateStr);
-  return toLocalInput(new Date(d.getTime() + 60 * 60 * 1000).toString());
+  return toLocalInput(new Date(d.getTime() + 60 * 60 * 1000));
 };
 
-const toLocalInput = (dateStr?: string | null) => {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const y = date.getFullYear();
-  const m = (date.getMonth() + 1).toString().padStart(2, "0");
-  const d = date.getDate().toString().padStart(2, "0");
-  const h = date.getHours().toString().padStart(2, "0");
-  const min = date.getMinutes().toString().padStart(2, "0");
-  return `${y}-${m}-${d}T${h}:${min}`;
+const toLocalInput = (date?: Date | string | null): string => {
+  if (!date) return "";
+
+  const d = typeof date === "string" ? new Date(date) : date;
+
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+
+  return `${y}-${m}-${day}T${h}:${min}`;
 };
 
 const isTempId = (id?: string | number | null) =>
@@ -230,10 +237,12 @@ const toCalendarEventFromServer = (row: EventPayload): CalendarEvent => ({
   end: row.end || undefined,
   allDay: row.allDay ?? (!row.end && !row.start?.includes("T")),
   color: row.isBloom ? "#4dabf7" : "#2ecc71",
+  createdAt: row.createdAt || new Date().toISOString(),
   extendedProps: {
     description: row.description || "",
     isBloom: !!row.isBloom,
     isCompleted: !!row.isCompleted,
+    createdAt: row.createdAt || new Date().toISOString(),
   },
 });
 
@@ -750,26 +759,31 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, [mode, currentEvent, isEditing, handleSave, handleCloseModal]);
 
   const handleDateClick = useCallback((info: DateClickArg) => {
-    let start: string;
+    const base = new Date(info.date.getTime());
 
     if (info.allDay) {
-      const time =
-        currentEvent?.extendedProps?.lastTime ||
-        getNearestHourLocal().split("T")[1];
-
-      start = `${info.dateStr}T${time}`; // ✅ attach time
+      // 1. If clicking a day in Month view or an All-Day slot, info.date is midnight (00:00:00).
+      // We want to apply the CURRENT real-world nearest hour to that clicked date.
+      const now = new Date();
+      base.setHours(now.getHours() + 1, 0, 0, 0);
     } else {
-      start = getNearestHourLocal();
+      // 2. If clicking a specific time slot in Week/Day view (e.g., 10:30),
+      // we round up to the nearest hour. If they click exactly 10:00, we leave it.
+      if (base.getMinutes() > 0) {
+        base.setHours(base.getHours() + 1, 0, 0, 0);
+      }
     }
-    const isAllDay = info.allDay;
-    //  start = isAllDay ? startStr.slice(0, 10) : startStr;
-    const end = isAllDay ? undefined : addOneHour(start);
+
+    const start = toLocalInput(base);
+    const end = addOneHour(start); // Automatically sets end = start + 1 hour
+
     setCurrentEvent({
       id: `tmp-${Date.now()}`,
       title: "",
       start,
       end,
-      allDay: isAllDay,
+      allDay: false, // Defaulting to false so the time inputs show up properly
+      createdAt: new Date().toISOString(),
       color: "#4dabf7",
       extendedProps: { description: "", isBloom: true, isCompleted: false },
     });
@@ -779,24 +793,25 @@ const DailyBloomCalendar: React.FC<Props> = ({
 
   const handleQuickAdd = useCallback(async () => {
     if (!quickText.trim()) return;
-
+    const todayDateString = toLocalInput(new Date());
     const textToSubmit = quickText;
     const tempId = `tmp-${Date.now()}`;
 
     // --- FIX START: Get local date string instead of UTC ---
-    const localDate = new Date();
-    const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, "0");
-    const day = String(localDate.getDate()).padStart(2, "0");
-    const todayDateString = `${year}-${month}-${day}`;
+
+    const start = getNearestHourLocal();
+    const end = addOneHour(start);
     // --- FIX END ---
 
     const newEvent: CalendarEvent = {
       id: tempId,
       title: textToSubmit,
-      start: todayDateString, // Use the correct local date string
-      allDay: true,
+      start, // Use the correct local date string
+      end,
+      allDay: false,
       color: "#4dabf7",
+      createdAt: new Date().toISOString(),
+
       extendedProps: {
         description: "Quick add",
         isBloom: true,
@@ -844,6 +859,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
             updatedData: {
               isCompleted: true,
             },
+            source: "calendar",
           });
         } else {
           // ✅ EVENT → correct API
@@ -886,7 +902,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
     },
     [events, onUpdateBloomFromEvent, handleCloseModal],
   );
-
+  const getTimeHHMM = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(
+      d.getMinutes(),
+    ).padStart(2, "0")}`;
+  };
   const handleUpdate = useCallback(async () => {
     if (!currentEvent) return;
     const result = validateDateTime(
@@ -902,7 +923,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
     setIsSaving(true);
 
     if (currentEvent.extendedProps?.isBloom) {
-      const isAllDay = currentEvent.allDay;
+      // const isAllDay = currentEvent.allDay;
       // --- FIX START ---
       // Optimistically update the local events state to immediately reflect UI changes.
       setEvents((prevEvents) =>
@@ -920,14 +941,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
           description: currentEvent.extendedProps?.description,
           dueDate: currentEvent.start,
           end: currentEvent.end,
-          startTime: currentEvent.start
-            ? new Date(currentEvent.start).toISOString().slice(11, 16)
-            : "",
-          endTime: isAllDay
-            ? undefined
-            : currentEvent.end
-              ? new Date(currentEvent.end).toISOString().slice(11, 16)
-              : undefined,
+          startTime: getTimeHHMM(currentEvent.start),
+          endTime: currentEvent.end ? getTimeHHMM(currentEvent.end) : undefined,
         },
       });
 
@@ -1079,11 +1094,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
               updatedData: {
                 dueDate: info.event.startStr,
                 end: info.event.endStr,
-                startTime: info.event.startStr
-                  ? new Date(info.event.startStr).toISOString().slice(11, 16)
-                  : "",
+                startTime: getTimeHHMM(info.event.startStr),
                 endTime: info.event.endStr
-                  ? new Date(info.event.endStr).toISOString().slice(11, 16)
+                  ? getTimeHHMM(info.event.endStr)
                   : undefined,
               },
             });
@@ -1133,11 +1146,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
               updatedData: {
                 dueDate: info.event.startStr,
                 end: info.event.endStr,
-                startTime: info.event.startStr
-                  ? new Date(info.event.startStr).toISOString().slice(11, 16)
-                  : "",
+                startTime: getTimeHHMM(info.event.startStr),
                 endTime: info.event.endStr
-                  ? new Date(info.event.endStr).toISOString().slice(11, 16)
+                  ? getTimeHHMM(info.event.endStr)
                   : undefined,
               },
             });
@@ -1167,7 +1178,25 @@ const DailyBloomCalendar: React.FC<Props> = ({
     },
     [onUpdateBloomFromEvent],
   );
+  const formatEventTime = (start?: string, end?: string, allDay?: boolean) => {
+    // 1. If marked all-day OR no end time → treat as All Day
+    if (allDay || !end) return "All Day";
 
+    if (!start) return "";
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    // 2. 24-hour format (HH:mm)
+    const format = (d: Date) =>
+      d.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false, // 🔥 force 24-hour
+      });
+
+    return `${format(startDate)} - ${format(endDate)}`;
+  };
   const eventContent = useCallback((arg: EventContentArg) => {
     const ext = arg.event.extendedProps as EventExtendedProps;
     const isListView = arg.view.type === "listWeek";
@@ -1212,6 +1241,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-bold">{arg.event.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatEventTime(
+                arg.event.startStr,
+                arg.event.endStr,
+                arg.event.allDay,
+              )}
+            </p>
             {ext?.description && (
               <p className="text-sm text-muted-foreground">{ext.description}</p>
             )}
@@ -1291,6 +1327,26 @@ const DailyBloomCalendar: React.FC<Props> = ({
       handleComplete,
     ],
   );
+const sortedEvents = React.useMemo(() => {
+  return [...events].sort((a, b) => {
+    const getStartTime = (event: CalendarEvent) => {
+      if (!event.start) return Infinity;
+
+      // ✅ USE LOCAL TIME (NO toISOString)
+      return new Date(event.start).getTime();
+    };
+
+    const aStart = getStartTime(a);
+    const bStart = getStartTime(b);
+
+    if (aStart !== bStart) return aStart - bStart;
+
+    const aCreated = new Date(a.createdAt || 0).getTime();
+    const bCreated = new Date(b.createdAt || 0).getTime();
+
+    return aCreated - bCreated;
+  });
+}, [events]);
 
   // ----- CHANGE: Added key prop to Skeleton Loader elements -----
   const SkeletonLoader = () => (
@@ -1412,7 +1468,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
               center: "title",
               right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
             }}
-            events={events}
+            events={sortedEvents}
             editable={true}
             selectable={true}
             dayMaxEvents={true}
@@ -1464,13 +1520,14 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 title: "",
                 start,
                 end,
-                allDay: true,
+                allDay: false,
                 color: "#4dabf7",
                 extendedProps: {
                   description: "",
                   isBloom: true,
                   isCompleted: false,
                 },
+                createdAt: new Date().toISOString(),
               });
               setMode("create");
               setIsEditing(false);
