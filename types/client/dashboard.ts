@@ -72,7 +72,14 @@ export type AccountabilityGroup = {
   id: string;
   name: string;
 };
-
+export type Event = {
+      id: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    isOngoing: boolean;
+    isCompletedByTime: boolean;
+}
 /* ───────────── MAIN DASHBOARD TYPE ───────────── */
 
 export type DashboardContent = {
@@ -83,7 +90,7 @@ export type DashboardContent = {
   miracleLogs: MiracleLog[];
   challenges: Challenge[];
   mmpPrograms: MMPProgram[];
-  event?: unknown; // refine later if needed
+  events: Event[];
   cmpProgramId?: string;
   accountabilityHubGroups?: AccountabilityGroup[];
 };

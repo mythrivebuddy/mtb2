@@ -12,6 +12,7 @@ import {
   WandSparklesIcon,
   Swords,
   LayoutDashboard,
+  CalendarDays,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +37,7 @@ type DailyBloom = {
   alignedActionId?: string | null;
 };
 type CardItem = {
+  type: string;
   title: string;
   description: string;
   icon: LucideIcon;
@@ -52,6 +54,7 @@ type Props = {
 
 const cards: CardItem[] = [
   {
+    type: "alignedAction",
     title: "Set Today’s Focus",
     description:
       "Define your top priorities and stay focused throughout the day",
@@ -61,6 +64,7 @@ const cards: CardItem[] = [
     path: "/dashboard/aligned-actions",
   },
   {
+    type: "dailyBloom",
     title: "Plan the Day",
     description:
       "Organize your schedule clearly and plan tasks with better flow",
@@ -70,6 +74,7 @@ const cards: CardItem[] = [
     path: "/dashboard/daily-bloom",
   },
   {
+    type: "reminders",
     title: "Set Reminders",
     description:
       "Get timely alerts so you never miss important tasks or events",
@@ -79,6 +84,7 @@ const cards: CardItem[] = [
     path: "/dashboard/reminders",
   },
   {
+    type: "progressVault",
     title: "Log 1% Progress",
     description: "Track small daily wins and build consistent growth over time",
     icon: LucideSignalHigh,
@@ -87,6 +93,7 @@ const cards: CardItem[] = [
     path: "/dashboard/progress-vault",
   },
   {
+    type: "miracleLog",
     title: "Log Miracles",
     description: "Capture meaningful moments and reflect on unexpected wins",
     icon: WandSparklesIcon,
@@ -95,6 +102,7 @@ const cards: CardItem[] = [
     path: "/dashboard/miracle-log",
   },
   {
+    type: "challenges",
     title: "Join Challenges",
     description: "Participate in challenges to stay consistent and grow daily",
     icon: Swords,
@@ -103,6 +111,7 @@ const cards: CardItem[] = [
     path: "/dashboard/challenge?tab=join",
   },
   {
+    type: "mmp",
     title: "Mini Mastery Programs",
     description:
       "Learn new skills with short programs designed for daily growth",
@@ -113,6 +122,7 @@ const cards: CardItem[] = [
   },
 
   {
+    type: "store",
     title: "Growth Store",
     description: "",
     icon: ShoppingCart,
@@ -123,8 +133,9 @@ const cards: CardItem[] = [
     path: "/dashboard/store",
   },
   {
+    type: "groups",
     title: "View Groups",
-    description: "Stay accountable with your groups",
+    description: "Stay accountable with your accountability hub groups",
     icon: LayoutDashboard, // or Users if you prefer
     bg: "bg-yellow-100 group-hover:bg-yellow-500",
     text: "text-yellow-600 group-hover:text-white",
@@ -140,6 +151,7 @@ export default function DashboardCards({
   challenges,
   mmpPrograms,
   accountabilityHubGroups,
+  events,
 }: Props) {
   const router = useRouter();
 
@@ -311,6 +323,7 @@ export default function DashboardCards({
   const isCompleted = todayAction?.completed;
   const dynamicCards: CardItem[] = [
     {
+      type: "alignedAction",
       title: hasTodayFocus ? "Your Today’s Focus" : "Set Today’s Focus",
       description: hasTodayFocus
         ? `${task} • ${time}`
@@ -328,19 +341,40 @@ export default function DashboardCards({
     },
 
     //  cards same
-    ...cards.slice(1),
+    cards.find((c) => c.type === "dailyBloom")!,
   ];
+  // ✅ Add Event Card if it exists
+  if (events?.length > 0) {
+    dynamicCards.push({
+      type: "event",
+      title: "Today's Events",
+      description: "", // we will render inside UI
+      icon: CalendarDays,
+      bg: "bg-purple-100 group-hover:bg-purple-600",
+      text: "text-purple-600 group-hover:text-white",
+      path: "/dashboard/daily-bloom",
+    });
+  }
 
+  dynamicCards.push(
+    cards.find((c) => c.type === "reminders")!,
+    cards.find((c) => c.type === "progressVault")!,
+    cards.find((c) => c.type === "miracleLog")!,
+    cards.find((c) => c.type === "challenges")!,
+    cards.find((c) => c.type === "mmp")!,
+    cards.find((c) => c.type === "store")!,
+    cards.find((c) => c.type === "groups")!,
+  );
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {dynamicCards.map((card, index) => {
         const hasCTA =
-          (index === 1 && blooms.length > 0) ||
-          (index === 3 && progressItems.length > 0) ||
-          (index === 4 && miracleItems.length > 0) ||
-          (index === 5 && challengeItems.length > 0) ||
-          (index === 6 && mmpItems.length > 0) ||
-          (index === 8 && groupItems?.length > 0) ||
+          (card.type === "dailyBloom" && blooms.length > 0) ||
+          (card.type === "progressVault" && progressItems.length > 0) ||
+          (card.type === "miracleLog" && miracleItems.length > 0) ||
+          (card.type === "challenges" && challengeItems.length > 0) ||
+          (card.type === "mmp" && mmpItems.length > 0) ||
+          (card.type === "groups" && groupItems.length > 0) ||
           card.action;
         return (
           <Card
@@ -357,7 +391,7 @@ export default function DashboardCards({
                 : "border-gray-200",
             )}
           >
-            <CardContent className="p-6 flex flex-col h-full">
+            <CardContent className="p-4 flex flex-col h-full">
               {/* Badge */}
               {card.badge && (
                 <span className="absolute top-4 right-4 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-600">
@@ -366,46 +400,34 @@ export default function DashboardCards({
               )}
 
               {/* Icon */}
-              <div
-                className={cn(
-                  "w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all",
-                  card.bg,
-                )}
-              >
-                <card.icon
+              {/* Header: Icon + Title inline */}
+              <div className="flex items-center gap-3 mb-2">
+                <div
                   className={cn(
-                    "w-7 h-7 transition-colors duration-300",
-                    card.text,
-                  )}
-                />
-              </div>
-
-              {/* Title */}
-              <div className="flex items-center justify-between mb-1">
-                <h3
-                  className={cn(
-                    "text-md sm:text-lg font-semibold",
-                    card.highlight && "",
+                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0",
+                    card.bg,
                   )}
                 >
+                  <card.icon
+                    className={cn(
+                      "w-5 h-5 transition-colors duration-300",
+                      card.text,
+                    )}
+                  />
+                </div>
+
+                <h3 className="text-sm sm:text-base font-semibold leading-tight">
                   {card.title}
                 </h3>
-
-                {/* {card.action && (
-                <span className="text-[10px] sm:text-xs font-semibold bg-emerald-100 text-emerald-600 px-1 py-1 rounded-full">
-                  {jpBalance} GP Balance
-                </span>
-              )} */}
               </div>
 
               {/* Description */}
-              <div className="flex flex-col flex-1">
-                {index === 0 && hasTodayFocus ? (
+              <div className="flex flex-col flex-1 mt-1">
+                {card.type === "alignedAction" && hasTodayFocus ? (
                   <div className="flex items-center gap-2 text-sm mt-1">
                     <Input
                       type="checkbox"
                       checked={isCompleted}
-                      // disabled={isCompleted || completeActionMutation.isPending}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isCompleted || completeActionMutation.isPending)
@@ -425,8 +447,7 @@ export default function DashboardCards({
                       {task} • {time}
                     </p>
                   </div>
-                ) : index === 1 && blooms.length > 0 ? (
-                  // ✅ DAILY BLOOMS
+                ) : card.type === "dailyBloom" && blooms.length > 0 ? (
                   <div className="flex flex-col gap-2 mt-1">
                     {blooms.map((bloom) => (
                       <div
@@ -443,21 +464,14 @@ export default function DashboardCards({
                               updateBloomMutation.isPending
                             )
                               return;
-                            if (!bloom.isCompleted) {
-                              updateBloomMutation.mutate(bloom.id);
-                            }
+                            updateBloomMutation.mutate(bloom.id);
                           }}
-                          className={cn(
-                            "w-4 h-4 accent-blue-600",
-                            isCompleted || completeActionMutation.isPending
-                              ? "cursor-not-allowed"
-                              : "cursor-pointer",
-                          )}
+                          className="w-4 h-4 accent-blue-600"
                         />
                         <p className="text-muted-foreground line-clamp-1">
-                          {bloom.title}{" "}
+                          {bloom.title}
                           {bloom.isFromEvent && (
-                            <span className="text-xs text-blue-600 font-medium bg-blue-100 px-1.5 py-0.5 rounded">
+                            <span className="text-xs text-blue-600 font-medium bg-blue-100 px-1.5 py-0.5 rounded ml-1">
                               Event
                             </span>
                           )}
@@ -465,8 +479,22 @@ export default function DashboardCards({
                       </div>
                     ))}
                   </div>
-                ) : index === 3 && progressItems?.length > 0 ? (
-                  // ✅ 1% PROGRESS VAULT
+                ) : card.type === "event" && events.length > 0 ? (
+                  <div className="flex flex-col gap-2 mt-1">
+                    {events.map((event) => (
+                      <div
+                        key={event.id}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <p className="text-muted-foreground line-clamp-1">
+                          {event.title} • {event.startTime}
+                          {event.endTime ? ` - ${event.endTime}` : ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : card.type === "progressVault" &&
+                  progressItems.length > 0 ? (
                   <div className="flex flex-col gap-2 mt-1">
                     {progressItems.map((item) => (
                       <p
@@ -477,8 +505,7 @@ export default function DashboardCards({
                       </p>
                     ))}
                   </div>
-                ) : index === 4 && miracleItems?.length > 0 ? (
-                  // ✅ MIRACLE LOGS
+                ) : card.type === "miracleLog" && miracleItems.length > 0 ? (
                   <div className="flex flex-col gap-2 mt-1">
                     {miracleItems.map((item) => (
                       <p
@@ -489,12 +516,11 @@ export default function DashboardCards({
                       </p>
                     ))}
                   </div>
-                ) : index === 5 && challengeItems?.length > 0 ? (
-                  // ✅ CHALLENGES
+                ) : card.type === "challenges" && challengeItems.length > 0 ? (
                   <div className="flex flex-col gap-2 mt-1">
                     {challengeItems.map((item) => (
                       <Link
-                        href={`/dashboard/challenge/my-challenges/${item?.challenge?.id}?from=dashboard`}
+                        href={`/dashboard/challenge/my-challenges/${item.challenge.id}?from=dashboard`}
                         key={item.challenge.id}
                         className="text-sm text-muted-foreground line-clamp-1"
                       >
@@ -505,14 +531,13 @@ export default function DashboardCards({
                       </Link>
                     ))}
                   </div>
-                ) : index === 6 && mmpItems?.length > 0 ? (
-                  // ✅ MMP PROGRAMS
+                ) : card.type === "mmp" && mmpItems.length > 0 ? (
                   <div className="flex flex-col gap-2 mt-1">
                     {mmpItems.map((item) => (
                       <Link
-                        href={`/dashboard/mini-mastery-programs/program/${item?.program?.id}?from=dashboard`}
+                        href={`/dashboard/mini-mastery-programs/program/${item.program.id}?from=dashboard`}
                         key={item.program.id}
-                        className="text-sm text-muted-foreground line-clamp-1 "
+                        className="text-sm text-muted-foreground line-clamp-1"
                       >
                         🎓{" "}
                         <span className="hover:text-blue-600 hover:underline">
@@ -521,8 +546,7 @@ export default function DashboardCards({
                       </Link>
                     ))}
                   </div>
-                ) : index === 8 && groupItems?.length > 0 ? (
-                  // ✅ GROUPS
+                ) : card.type === "groups" && groupItems.length > 0 ? (
                   <div className="flex flex-col gap-2 mt-1">
                     {groupItems.map((group) => (
                       <Link
@@ -530,7 +554,7 @@ export default function DashboardCards({
                         key={group.id}
                         className="text-sm text-muted-foreground line-clamp-1"
                       >
-                        👥 {" "}
+                        👥{" "}
                         <span className="hover:text-blue-600 hover:underline">
                           {group.name}
                         </span>
@@ -546,7 +570,7 @@ export default function DashboardCards({
                 )}
               </div>
               <div className="mt-auto pt-4">
-                {index === 1 && blooms.length > 0 && (
+                {card.type === "dailyBloom" && blooms.length > 0 && (
                   <Button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -557,25 +581,25 @@ export default function DashboardCards({
                     Add Bloom
                   </Button>
                 )}
-                {index === 3 && progressItems.length > 0 && (
+                {card.type === "progressVault" && progressItems.length > 0 && (
                   <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                     Log Progress
                   </Button>
                 )}
 
-                {index === 4 && miracleItems.length > 0 && (
+                {card.type === "miracleLog" && miracleItems.length > 0 && (
                   <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                     Log Miracle
                   </Button>
                 )}
 
-                {index === 5 && challengeItems.length > 0 && (
+                {card.type === "challenges" && challengeItems.length > 0 && (
                   <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                     Join Challenges
                   </Button>
                 )}
 
-                {index === 6 && mmpItems.length > 0 && (
+                {card.type === "mmp" && mmpItems.length > 0 && (
                   <Button className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
                     Join MMP
                   </Button>
