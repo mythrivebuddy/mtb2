@@ -406,6 +406,41 @@ export default function DailyBloomClient() {
           };
         },
       );
+      // ✅ ADD THIS BLOCK
+      if (createdBloom.isFromEvent && createdBloom.dueDate) {
+        queryClient.setQueryData<DashboardContent>(
+          ["dashboard-content"],
+          (old) => {
+            if (!old) return old;
+
+            const existingEvents = Array.isArray(old.events) ? old.events : [];
+
+            const alreadyExists = existingEvents.some(
+              (e) => e.id === `bloom-${createdBloom.id}`,
+            );
+            if (alreadyExists) return old;
+
+            const startTime = createdBloom.startTime || "09:00";
+
+            const newEvent = {
+              id: `bloom-${createdBloom.id}`,
+              title: createdBloom.title,
+              startTime: startTime,
+
+              // ✅ MUST be string
+              endTime: createdBloom.endTime || startTime,
+
+              isOngoing: true,
+              isCompletedByTime: false,
+            };
+
+            return {
+              ...old,
+              events: [newEvent, ...existingEvents],
+            };
+          },
+        );
+      }
       toast.success("Bloom created successfully!");
     },
     onError: (err, newBloom, context) => {
