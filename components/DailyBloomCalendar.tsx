@@ -114,6 +114,7 @@ interface Props {
       startTime?: string;
       endTime?: string;
     };
+    source?: "calendar" | "modal";
   }) => void;
   onDeleteBloomFromEvent: (bloomId: string) => void;
 }
@@ -844,6 +845,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
             updatedData: {
               isCompleted: true,
             },
+              source: "calendar",
           });
         } else {
           // ✅ EVENT → correct API

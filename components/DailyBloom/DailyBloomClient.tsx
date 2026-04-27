@@ -164,7 +164,7 @@ export default function DailyBloomClient() {
   const [addData, setAddData] = useState<boolean>(false);
   const [frequencyFilter, setFrequencyFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("Pending");
-  const itemsPerPage = 8;
+  const itemsPerPage = 10;
   const [addInputType, setAddInputType] = useState<"frequency" | "date">(
     "date",
   );
@@ -289,7 +289,23 @@ export default function DailyBloomClient() {
   // Add this entire block to de-duplicate the list before rendering
   const uniqueBlooms = useMemo(() => {
     const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
-    return Array.from(bloomMap.values());
+
+    const now = new Date();
+
+    return Array.from(bloomMap.values()).filter((bloom) => {
+      // ✅ keep normal blooms (your existing logic)
+      if (!bloom.isFromEvent) return true;
+
+      // ✅ for events → filter OUT past completed events
+      if (!bloom.dueDate) return true;
+
+      const eventDate = new Date(bloom.dueDate);
+
+      return (
+        eventDate >= now || // future/today events
+        !bloom.isCompleted // OR incomplete events
+      );
+    });
   }, [dailyBloom]);
 
   const invalidateAllQueries = () => {
@@ -686,7 +702,9 @@ export default function DailyBloomClient() {
       end?: string;
       startTime?: string;
       endTime?: string;
+      isCompleted?: boolean;
     };
+      source?: "calendar" | "modal"; 
   }) => {
     // CRITICAL: Clean the ID from the "bloom-" prefix
     const actualBloomId = payload.id.replace("bloom-", "");
@@ -726,6 +744,7 @@ export default function DailyBloomClient() {
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
+      isCompleted: payload.updatedData.isCompleted ?? originalBloom.isCompleted,
       startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
       endTime: payload.updatedData.end
         ? format(new Date(payload.updatedData.end), "HH:mm")
@@ -791,7 +810,7 @@ export default function DailyBloomClient() {
 
   const combinedCalendarItems = useMemo(() => {
     // 1. Process blooms to create calendar events
-    const bloomEvents = uniqueBlooms.reduce<CalendarEvent[]>((acc, bloom) => {
+    const bloomEvents = dailyBloom.reduce<CalendarEvent[]>((acc, bloom) => {
       if (bloom.isFromEvent && bloom.dueDate) {
         // Use the date portion only to avoid timezone shift
         const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
