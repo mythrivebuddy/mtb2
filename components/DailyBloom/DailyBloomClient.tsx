@@ -333,26 +333,51 @@ export default function DailyBloomClient() {
   }, [data]);
 
   // Add this entire block to de-duplicate the list before rendering
+// Add this entire block to de-duplicate the list before rendering
   const uniqueBlooms = useMemo(() => {
     const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
-
+    
     const now = new Date();
+    // Get midnight of today in local time for accurate day-to-day comparisons
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     return Array.from(bloomMap.values()).filter((bloom) => {
-      // ✅ keep normal blooms (your existing logic)
-      if (!bloom.isFromEvent) return true;
+      // ✅ 1. STATUS FILTER
+      if (statusFilter === "Pending" && bloom.isCompleted) return false;
+      if (statusFilter === "Completed" && !bloom.isCompleted) return false;
 
-      // ✅ for events → filter OUT past completed events
       if (!bloom.dueDate) return true;
 
-      const eventDate = new Date(bloom.dueDate);
+      const dueDateObj = new Date(bloom.dueDate);
+      let isOverdue = false;
 
-      return (
-        eventDate >= now || // future/today events
-        !bloom.isCompleted // OR incomplete events
-      );
+      // ✅ 2. FIX OVERDUE LOGIC
+      if (bloom.isFromEvent && bloom.endTime) {
+        // If it's a calendar event with a specific end time, use the endDate (if multi-day) or dueDate
+        const targetDateObj = bloom.endDate ? new Date(bloom.endDate) : dueDateObj;
+        const y = targetDateObj.getFullYear();
+        const m = String(targetDateObj.getMonth() + 1).padStart(2, "0");
+        const d = String(targetDateObj.getDate()).padStart(2, "0");
+        
+        // Construct the exact completion deadline
+        const exactEnd = new Date(`${y}-${m}-${d}T${bloom.endTime}`);
+        isOverdue = exactEnd < now;
+      } else {
+        // For standard daily tasks (and all-day events), they are only overdue if the whole day has passed (yesterday or older)
+        const dueStart = new Date(
+          dueDateObj.getFullYear(),
+          dueDateObj.getMonth(),
+          dueDateObj.getDate()
+        );
+        isOverdue = dueStart < todayStart;
+      }
+
+      // ❌ remove overdue blooms from main list (they belong in the Overdue component)
+      if (isOverdue && !bloom.isCompleted) return false;
+
+      return true;
     });
-  }, [dailyBloom]);
+  }, [dailyBloom, statusFilter]);
   const sortedBlooms = useMemo(() => {
     return [...uniqueBlooms].sort((a, b) => {
       const aStart = a.dueDate
@@ -1355,7 +1380,7 @@ export default function DailyBloomClient() {
               )}
             </CardContent>
             <CardFooter className="p-4">
-              {hasNextPage && (
+              {hasNextPage && sortedBlooms.length >= itemsPerPage && (
                 <Button
                   onClick={() => fetchNextPage()}
                   disabled={isFetchingNextPage}
