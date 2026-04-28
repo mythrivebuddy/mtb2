@@ -293,6 +293,7 @@ export async function POST(req: NextRequest) {
         description: finalDescription || null,
         frequency: bloomData.frequency || null,
         dueDate: bloomData.dueDate ? new Date(bloomData.dueDate) : null,
+        endDate: bloomData.endDate ? new Date(bloomData.endDate) : null,
         userId: userId,
         // ✅ CHANGE 1: Save the calendar flag directly to the new todo item
         isFromEvent: addToCalendar,
@@ -388,6 +389,7 @@ export async function PUT(req: NextRequest) {
         ...updateData,
         description: finalDescription || null,
         dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
+        endDate: updateData.endDate ? new Date(updateData.endDate) : undefined,
         // ✅ CHANGE 1: Update the calendar flag on the todo item
         isFromEvent: addToCalendar,
         startTime: updateData.startTime ?? null,

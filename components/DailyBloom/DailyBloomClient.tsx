@@ -237,6 +237,7 @@ export default function DailyBloomClient() {
         ? format(new Date(payload.dueDate), "HH:mm")
         : "",
       endTime: payload.end ? format(new Date(payload.end), "HH:mm") : undefined,
+      endDate: payload.end ? new Date(payload.end) : undefined,
       taskAddJP: false,
       taskCompleteJP: false,
       isFromEvent: true, // Mark this bloom as created from an even
@@ -697,7 +698,6 @@ export default function DailyBloomClient() {
         toast.success("Bloom updated successfully ✅");
       }
 
-
       setEditData(null);
     },
     onError: (error: AxiosError, variables, context) => {
@@ -748,7 +748,6 @@ export default function DailyBloomClient() {
       addInputType === "date"
         ? { ...formData, frequency: undefined }
         : { ...formData, dueDate: undefined };
-
     // Create a payload that correctly uses the `isFromEvent` flag
     // to track if this bloom should be on the calendar.
     const payload = {
@@ -765,6 +764,12 @@ export default function DailyBloomClient() {
 
   const onUpdate = (formData: DailyBloomFormType) => {
     if (editData) {
+      const dataToSubmit = { ...formData };
+
+      // ✅ FIX: Strip endDate to prevent Zod string/date validation errors
+      if ("endDate" in dataToSubmit) {
+        delete (dataToSubmit as { endDate?: unknown }).endDate;
+      }
       updateMutation.mutate({
         id: editData.id,
         updatedData: formData,
@@ -811,6 +816,7 @@ export default function DailyBloomClient() {
       dueDate?: string; // This is the new 'start' date from the calendar event
       // The calendar might also pass an 'end' date if resized
       end?: string;
+      endDate?: string | null; // Optional end date for events that have a duration
       startTime?: string;
       endTime?: string | null;
       isCompleted?: boolean;
@@ -840,6 +846,15 @@ export default function DailyBloomClient() {
       : originalBloom.dueDate
         ? new Date(originalBloom.dueDate)
         : null;
+    // Explicitly check for null so we don't accidentally fall back to originalBloom.endDate when clearing it
+    const newEndDate =
+      payload.updatedData.endDate === null || payload.updatedData.end === null
+        ? null
+        : payload.updatedData.endDate
+          ? new Date(payload.updatedData.endDate)
+          : originalBloom.endDate
+            ? new Date(originalBloom.endDate)
+            : undefined;
     //  const newEndDate = payload.updatedData.end
     // ? new Date(payload.updatedData.end)
     // : originalBloom.endTime
@@ -864,6 +879,7 @@ export default function DailyBloomClient() {
           : payload.updatedData.end
             ? format(new Date(payload.updatedData.end), "HH:mm")
             : (originalBloom.endTime ?? undefined),
+      endDate: newEndDate,
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
@@ -924,32 +940,39 @@ export default function DailyBloomClient() {
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
   const combinedCalendarItems = useMemo(() => {
-    // 1. Process blooms to create calendar events
     const bloomEvents = dailyBloom.reduce<CalendarEvent[]>((acc, bloom) => {
       if (bloom.isFromEvent && bloom.dueDate) {
-        // Use the date portion only to avoid timezone shift
         const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
+        // ✅ Grab the endDate part if it exists, otherwise fallback to start date
+        const endDatePart = bloom.endDate
+          ? new Date(bloom.endDate).toISOString().split("T")[0]
+          : datePart;
 
-        const [sh, sm] = bloom.startTime
-          ? bloom.startTime.split(":").map(Number)
-          : (() => {
-            
-              return [9, 0]; // safer default
-            })();
-        const [eh, em] = bloom.endTime
-          ? bloom.endTime.split(":").map(Number)
-          : [sh + 1, sm];
+        let startLocalString = "";
+        let endLocalString: string | undefined = undefined;
 
-        const startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
-        const endLocalString = bloom.endTime
-          ? `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`
-          : undefined;
+        if (bloom.endTime) {
+          // TIMED EVENT (e.g. spans multiple days with specific hours)
+          const [sh, sm] = bloom.startTime
+            ? bloom.startTime.split(":").map(Number)
+            : [9, 0];
+          const [eh, em] = bloom.endTime.split(":").map(Number);
 
-        // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
+          startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
+          endLocalString = `${endDatePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`;
+        } else {
+          // ALL DAY EVENT (No end time)
+          startLocalString = datePart; // FullCalendar uses YYYY-MM-DD for all day
+
+          if (bloom.endDate && datePart !== endDatePart) {
+            // FullCalendar requires the end date of an all-day event to be EXCLUSIVE (the day after)
+            const exclusiveEnd = new Date(bloom.endDate);
+            exclusiveEnd.setDate(exclusiveEnd.getDate() + 1);
+            endLocalString = exclusiveEnd.toISOString().split("T")[0];
+          }
+        }
+
         const safeDescription = bloom.description || "";
-
-        // Use regex to parse time from the safe description string
-
         acc.push({
           id: `bloom-${bloom.id}`,
           title: bloom.title,
