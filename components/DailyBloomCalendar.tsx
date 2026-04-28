@@ -83,6 +83,7 @@ interface EventExtendedProps {
   category?: "holiday" | string;
   lastTime?: string;
   createdAt?: string;
+  isAllDay?: boolean;
 }
 
 interface CalendarEvent {
@@ -115,6 +116,7 @@ interface Props {
       description?: string;
       dueDate?: string;
       end?: string;
+      endDate?: string | null;
       isCompleted?: boolean;
       startTime?: string;
       endTime?: string | null;
@@ -184,11 +186,7 @@ const validateDateTime = (
   }
 
   const isSameDay = startDateStr === todayStr;
-  console.log({
-    isSameDay,
-    startDate,
-    now,
-  });
+
 
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
@@ -611,10 +609,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, [initialEventId, events, onClearInitialEvent]);
 
   useEffect(() => {
-    console.log(
-      "PROPS_CHANGED: eventsProp has changed. Overwriting local events state.",
-      eventsProp,
-    );
+ 
     setEvents(eventsProp);
     setIsLoading(false);
   }, [eventsProp]);
@@ -976,6 +971,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
             : currentEvent.end
               ? getTimeHHMM(currentEvent.end)
               : undefined,
+           endDate: currentEvent.allDay ? null : currentEvent.end,
+            
         },
       });
 
@@ -1132,6 +1129,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
+                  endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1184,6 +1182,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
+                  endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {

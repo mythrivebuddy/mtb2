@@ -66,6 +66,7 @@ const nextDateUTC = (
 // --- GET Function (unchanged) ---
 type DailyBloomPlanConfig = {
   dailyLimit: number;
+  canCreateRecurringBlooms: boolean;
 };
 
 export async function GET(request: NextRequest) {
@@ -258,6 +259,15 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
+    if (bloomData.frequency && !planConfig.canCreateRecurringBlooms) {
+      return NextResponse.json(
+        {
+          message:
+            "Recurring blooms are not available in your current plan. Please upgrade.",
+        },
+        { status: 403 },
+      );
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -293,6 +303,7 @@ export async function POST(req: NextRequest) {
         description: finalDescription || null,
         frequency: bloomData.frequency || null,
         dueDate: bloomData.dueDate ? new Date(bloomData.dueDate) : null,
+        endDate: bloomData.endDate ? new Date(bloomData.endDate) : null,
         userId: userId,
         // ✅ CHANGE 1: Save the calendar flag directly to the new todo item
         isFromEvent: addToCalendar,
@@ -388,6 +399,7 @@ export async function PUT(req: NextRequest) {
         ...updateData,
         description: finalDescription || null,
         dueDate: updateData.dueDate ? new Date(updateData.dueDate) : undefined,
+        endDate: updateData.endDate ? new Date(updateData.endDate) : undefined,
         // ✅ CHANGE 1: Update the calendar flag on the todo item
         isFromEvent: addToCalendar,
         startTime: updateData.startTime ?? null,
