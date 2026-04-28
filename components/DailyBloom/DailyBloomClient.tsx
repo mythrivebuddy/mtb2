@@ -76,6 +76,7 @@ interface CalendarEventExtendedProps {
   isBloom?: boolean;
   isCompleted?: boolean;
   description?: string;
+  lastTime?: string;
   [key: string]: unknown; // Allows for other, unknown properties if necessary
 }
 
@@ -85,7 +86,8 @@ interface CalendarEvent {
   id: string;
   title: string;
   start: string; // Keep as strings for FullCalendar
-  end: string;
+  end?: string;
+  allDay?: boolean;
 }
 
 interface DailyBloom extends DailyBloomFormType {
@@ -768,7 +770,7 @@ export default function DailyBloomClient() {
       // The calendar might also pass an 'end' date if resized
       end?: string;
       startTime?: string;
-      endTime?: string;
+      endTime?: string | null;
       isCompleted?: boolean;
     };
     source?: "calendar" | "modal";
@@ -814,9 +816,11 @@ export default function DailyBloomClient() {
       // Update start and end times based on the calendar drag/resize
       isCompleted: payload.updatedData.isCompleted ?? originalBloom.isCompleted,
       startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
-      endTime: payload.updatedData.end
-        ? format(new Date(payload.updatedData.end), "HH:mm")
-        : (originalBloom.endTime ?? undefined),
+   endTime: payload.updatedData.endTime !== undefined 
+        ? payload.updatedData.endTime 
+        : (payload.updatedData.end
+            ? format(new Date(payload.updatedData.end), "HH:mm")
+            : (originalBloom.endTime ?? undefined)),
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
@@ -894,7 +898,9 @@ export default function DailyBloomClient() {
           : [sh + 1, sm];
 
         const startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
-        const endLocalString = `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`;
+        const endLocalString = bloom.endTime 
+            ? `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00` 
+            : undefined;
 
         // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
         const safeDescription = bloom.description || "";
@@ -906,10 +912,12 @@ export default function DailyBloomClient() {
           title: bloom.title,
           start: startLocalString,
           end: endLocalString,
+          allDay: !bloom.endTime,
           extendedProps: {
             description: safeDescription.replace(/\[Time:.*?\]/, "").trim(),
             isBloom: true,
             isCompleted: bloom.isCompleted,
+            lastTime: bloom.startTime || undefined,
           },
         });
       }

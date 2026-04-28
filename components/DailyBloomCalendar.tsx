@@ -117,7 +117,7 @@ interface Props {
       end?: string;
       isCompleted?: boolean;
       startTime?: string;
-      endTime?: string;
+      endTime?: string | null;
     };
     source?: "calendar" | "modal";
   }) => void;
@@ -593,7 +593,10 @@ const DailyBloomCalendar: React.FC<Props> = ({
       );
 
       if (target) {
-        setCurrentEvent(target);
+       setCurrentEvent({
+          ...target,
+          allDay: target.allDay || !target.end
+        });
         setMode("view");
         setIsEditing(false);
 
@@ -968,7 +971,11 @@ const DailyBloomCalendar: React.FC<Props> = ({
           dueDate: currentEvent.start,
           end: currentEvent.end,
           startTime: getTimeHHMM(currentEvent.start),
-          endTime: currentEvent.end ? getTimeHHMM(currentEvent.end) : undefined,
+          endTime: currentEvent.allDay
+            ? null
+            : currentEvent.end
+              ? getTimeHHMM(currentEvent.end)
+              : undefined,
         },
       });
 
@@ -1245,12 +1252,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
                   title: arg.event.title,
                   start: arg.event.startStr,
                   end: arg.event.endStr,
-                  allDay: arg.event.allDay,
+                  allDay: arg.event.allDay || !arg.event.endStr,
                   color: arg.event.backgroundColor,
                   extendedProps: {
                     description: ext?.description,
                     isBloom: ext?.isBloom,
                     isCompleted: ext?.isCompleted,
+                    lastTime: ext?.lastTime,
                   },
                 });
                 setMode("view");
