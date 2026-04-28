@@ -76,6 +76,7 @@ interface CalendarEventExtendedProps {
   isBloom?: boolean;
   isCompleted?: boolean;
   description?: string;
+  lastTime?: string;
   [key: string]: unknown; // Allows for other, unknown properties if necessary
 }
 
@@ -85,7 +86,8 @@ interface CalendarEvent {
   id: string;
   title: string;
   start: string; // Keep as strings for FullCalendar
-  end: string;
+  end?: string;
+  allDay?: boolean;
 }
 
 interface DailyBloom extends DailyBloomFormType {
@@ -179,6 +181,7 @@ export default function DailyBloomClient() {
     title: "",
     message: "",
   });
+  const [initialEventId, setInitialEventId] = useState<string | null>(null);
   useOnlineUserLeaderBoard();
 
   // --- In DailyBloomClient.tsx ---
@@ -307,30 +310,30 @@ export default function DailyBloomClient() {
       );
     });
   }, [dailyBloom]);
-const sortedBlooms = useMemo(() => {
-  return [...uniqueBlooms].sort((a, b) => {
-    const aStart = a.dueDate
-      ? new Date(
-          `${new Date(a.dueDate).toISOString().split("T")[0]}T${a.startTime || "00:00"}`
-        ).getTime()
-      : Infinity;
+  const sortedBlooms = useMemo(() => {
+    return [...uniqueBlooms].sort((a, b) => {
+      const aStart = a.dueDate
+        ? new Date(
+            `${new Date(a.dueDate).toISOString().split("T")[0]}T${a.startTime || "00:00"}`,
+          ).getTime()
+        : Infinity;
 
-    const bStart = b.dueDate
-      ? new Date(
-          `${new Date(b.dueDate).toISOString().split("T")[0]}T${b.startTime || "00:00"}`
-        ).getTime()
-      : Infinity;
+      const bStart = b.dueDate
+        ? new Date(
+            `${new Date(b.dueDate).toISOString().split("T")[0]}T${b.startTime || "00:00"}`,
+          ).getTime()
+        : Infinity;
 
-    // 1. Sort by start datetime
-    if (aStart !== bStart) return aStart - bStart;
+      // 1. Sort by start datetime
+      if (aStart !== bStart) return aStart - bStart;
 
-    // 2. SAME TIME → use createdAt (OLDER FIRST like calendar)
-    const aCreated = new Date(a.createdAt || 0).getTime();
-    const bCreated = new Date(b.createdAt || 0).getTime();
+      // 2. SAME TIME → use createdAt (OLDER FIRST like calendar)
+      const aCreated = new Date(a.createdAt || 0).getTime();
+      const bCreated = new Date(b.createdAt || 0).getTime();
 
-    return aCreated - bCreated;
-  });
-}, [uniqueBlooms]);
+      return aCreated - bCreated;
+    });
+  }, [uniqueBlooms]);
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -527,10 +530,14 @@ const sortedBlooms = useMemo(() => {
 
       // 1. Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey: ["events"] });
 
       // 2. Snapshot the previous value
       const previousBlooms =
         queryClient.getQueryData<InfiniteData<DailyBloomPage>>(queryKey);
+      const previousEvents = queryClient.getQueryData<CalendarEvent[]>([
+        "events",
+      ]); // ✅ ADDED
 
       // 3. Optimistically update to the new value
       queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
@@ -558,9 +565,43 @@ const sortedBlooms = useMemo(() => {
           };
         },
       );
+      // ✅ 4. ADDED: Optimistically update the raw events cache to prevent the "ghost" duplicate
+      if (previousBlooms && previousEvents) {
+        const oldBloom = previousBlooms.pages
+          .flatMap((page) => page.data)
+          .find((bloom) => bloom.id === newBloomData.id);
 
+        if (oldBloom) {
+          const oldDate = oldBloom.dueDate
+            ? new Date(oldBloom.dueDate).toISOString().split("T")[0]
+            : "";
+          const oldIdentifier = `${oldDate}_${oldBloom.title}`;
+
+          queryClient.setQueryData<CalendarEvent[]>(["events"], (oldEvents) => {
+            if (!oldEvents) return oldEvents;
+            return oldEvents.map((ev) => {
+              const evDate = new Date(ev.start).toISOString().split("T")[0];
+              const evIdentifier = `${evDate}_${ev.title}`;
+
+              // If this event matches the OLD bloom, update it to match the NEW bloom so it gets filtered out properly
+              if (evIdentifier === oldIdentifier) {
+                const newDueDate = newBloomData.updatedData.dueDate
+                  ? new Date(newBloomData.updatedData.dueDate)
+                  : new Date(ev.start);
+
+                return {
+                  ...ev,
+                  title: newBloomData.updatedData.title ?? ev.title,
+                  start: newDueDate.toISOString(),
+                };
+              }
+              return ev;
+            });
+          });
+        }
+      }
       // 4. Return a context object with the snapshotted value
-      return { previousBlooms, queryKey };
+      return { previousBlooms, previousEvents, queryKey };
     },
     onSuccess: (data, variables) => {
       const updatedBloom = data as {
@@ -621,6 +662,9 @@ const sortedBlooms = useMemo(() => {
       // If the mutation fails, roll back to the previous state from context
       if (context?.previousBlooms) {
         queryClient.setQueryData(context.queryKey, context.previousBlooms);
+      }
+      if (context?.previousEvents) {
+        queryClient.setQueryData(["events"], context.previousEvents); // ✅ ADDED
       }
       const errorMessage = getAxiosErrorMessage(
         error,
@@ -721,11 +765,12 @@ const sortedBlooms = useMemo(() => {
     id: string; // This is the raw bloom ID from the calendar (e.g., 'bloom-clyg1234')
     updatedData: {
       title?: string;
+      description?: string;
       dueDate?: string; // This is the new 'start' date from the calendar event
       // The calendar might also pass an 'end' date if resized
       end?: string;
       startTime?: string;
-      endTime?: string;
+      endTime?: string | null;
       isCompleted?: boolean;
     };
     source?: "calendar" | "modal";
@@ -763,16 +808,19 @@ const sortedBlooms = useMemo(() => {
       // Start with all original data
       ...originalBloom,
       title: payload.updatedData.title ?? originalBloom.title,
-      description: originalBloom.description ?? "",
+      description:
+        payload.updatedData.description ?? originalBloom.description ?? "",
       dueDate: newDueDate ?? undefined,
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
       isCompleted: payload.updatedData.isCompleted ?? originalBloom.isCompleted,
       startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
-      endTime: payload.updatedData.end
-        ? format(new Date(payload.updatedData.end), "HH:mm")
-        : (originalBloom.endTime ?? undefined),
+   endTime: payload.updatedData.endTime !== undefined 
+        ? payload.updatedData.endTime 
+        : (payload.updatedData.end
+            ? format(new Date(payload.updatedData.end), "HH:mm")
+            : (originalBloom.endTime ?? undefined)),
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
@@ -849,12 +897,10 @@ const sortedBlooms = useMemo(() => {
           ? bloom.endTime.split(":").map(Number)
           : [sh + 1, sm];
 
-        const startDate = new Date(
-          `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`,
-        );
-        const endDate = new Date(
-          `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`,
-        );
+        const startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
+        const endLocalString = bloom.endTime 
+            ? `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00` 
+            : undefined;
 
         // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
         const safeDescription = bloom.description || "";
@@ -864,12 +910,14 @@ const sortedBlooms = useMemo(() => {
         acc.push({
           id: `bloom-${bloom.id}`,
           title: bloom.title,
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
+          start: startLocalString,
+          end: endLocalString,
+          allDay: !bloom.endTime,
           extendedProps: {
             description: safeDescription.replace(/\[Time:.*?\]/, "").trim(),
             isBloom: true,
             isCompleted: bloom.isCompleted,
+            lastTime: bloom.startTime || undefined,
           },
         });
       }
@@ -1114,7 +1162,16 @@ const sortedBlooms = useMemo(() => {
                               </Button>
                               <Button
                                 className="p-2 h-auto bg-amber-100 text-amber-800 hover:bg-amber-200 rounded-md transition-colors"
-                                onClick={() => setEditData(bloom)}
+                                onClick={() => {
+                                  if (bloom.isFromEvent) {
+                                    // If it's an event bloom, open the calendar directly to its edit dialog
+                                    setInitialEventId(bloom.id);
+                                    setCalendarOpen(true);
+                                  } else {
+                                    // Regular bloom uses the standard edit modal
+                                    setEditData(bloom);
+                                  }
+                                }}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -1202,7 +1259,16 @@ const sortedBlooms = useMemo(() => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setEditData(bloom)}
+                                onClick={() => {
+                                  if (bloom.isFromEvent) {
+                                    // If it's an event bloom, open the calendar directly to its edit dialog
+                                    setInitialEventId(bloom.id);
+                                    setCalendarOpen(true);
+                                  } else {
+                                    // Regular bloom uses the standard edit modal
+                                    setEditData(bloom);
+                                  }
+                                }}
                               >
                                 <Pencil className="w-4 h-4" />
                               </Button>
@@ -1693,7 +1759,13 @@ const sortedBlooms = useMemo(() => {
         </Dialog>
 
         {/* New Dialog for Calendar */}
-        <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <Dialog
+          open={calendarOpen}
+          onOpenChange={(open) => {
+            setCalendarOpen(open);
+            if (!open) setInitialEventId(null); // <--- Reset when closing
+          }}
+        >
           <DialogContent className="w-[90vw] max-w-4xl rounded-2xl bg-white p-2 shadow-xl border">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-800">
@@ -1704,6 +1776,8 @@ const sortedBlooms = useMemo(() => {
               <DailyBloomCalendar
                 blooms={normalizedBlooms}
                 events={combinedCalendarItems}
+                initialEventId={initialEventId}
+                onClearInitialEvent={() => setInitialEventId(null)}
                 onCreateBloomFromEvent={handleCreateBloomFromEvent}
                 onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
                 onDeleteBloomFromEvent={handleDeleteBloom}

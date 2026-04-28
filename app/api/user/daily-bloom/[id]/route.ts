@@ -94,7 +94,9 @@ export async function PUT(
     const validatedData = dailyBloomSchema._def.schema
       .partial()
       .parse(todoData);
-
+    const oldBloom = await prisma.todo.findUnique({
+      where: { id: id, userId: session.user.id },
+    });
     const updatedBloom = await prisma.todo.update({
       where: { id: id, userId: session.user.id },
       data: {
@@ -128,7 +130,7 @@ export async function PUT(
     // For example:
     const linkedEvent = await prisma.event.findFirst({
       // A more robust relation is better, e.g., where: { todoId: id }
-      where: { title: updatedBloom.title, userId: session.user.id },
+      where: { title: oldBloom?.title || updatedBloom.title, userId: session.user.id },
     });
 
     if (addToCalendar && updatedBloom.dueDate) {
