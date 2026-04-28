@@ -66,6 +66,7 @@ const nextDateUTC = (
 // --- GET Function (unchanged) ---
 type DailyBloomPlanConfig = {
   dailyLimit: number;
+  canCreateRecurringBlooms: boolean;
 };
 
 export async function GET(request: NextRequest) {
@@ -256,6 +257,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Daily Bloom configuration not found" },
         { status: 500 },
+      );
+    }
+    if (bloomData.frequency && !planConfig.canCreateRecurringBlooms) {
+      return NextResponse.json(
+        {
+          message:
+            "Recurring blooms are not available in your current plan. Please upgrade.",
+        },
+        { status: 403 },
       );
     }
 
