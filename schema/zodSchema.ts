@@ -71,6 +71,7 @@ export const dailyBloomSchema = z
     addToCalendar: z.boolean().optional(),
     startTime: z.string().nullable().optional(), // Storing as string e.g., "14:30"
     endTime: z.string().nullable().optional(), // Storing as string e.g., "16:00"
+    endDate: z.coerce.date().optional().nullable(),
   })
   .superRefine((data, ctx) => {
     // Rule 1: Ensure EITHER a dueDate OR a frequency is selected, but not both.

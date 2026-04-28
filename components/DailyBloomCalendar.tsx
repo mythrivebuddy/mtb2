@@ -184,11 +184,7 @@ const validateDateTime = (
   }
 
   const isSameDay = startDateStr === todayStr;
-  console.log({
-    isSameDay,
-    startDate,
-    now,
-  });
+
 
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
@@ -611,10 +607,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, [initialEventId, events, onClearInitialEvent]);
 
   useEffect(() => {
-    console.log(
-      "PROPS_CHANGED: eventsProp has changed. Overwriting local events state.",
-      eventsProp,
-    );
+ 
     setEvents(eventsProp);
     setIsLoading(false);
   }, [eventsProp]);
