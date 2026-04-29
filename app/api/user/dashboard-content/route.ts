@@ -119,6 +119,7 @@ export const GET = async (req: Request) => {
           gte: start ? new Date(start) : undefined,
           lte: end ? new Date(end) : undefined,
         },
+        deletedAt:null,
       },
     });
     const miracleLogs = await prisma.miracleLog.findMany({
@@ -128,6 +129,7 @@ export const GET = async (req: Request) => {
           gte: start ? new Date(start) : undefined,
           lte: end ? new Date(end) : undefined,
         },
+        deletedAt:null,
       },
     });
 

@@ -314,7 +314,7 @@ export default function DashboardCards({
   const progressItems = onePercentProgressVault?.slice(0, 3);
 
   // miracle logs
-  const miracleItems = miracleLogs?.slice(0, 3); // keep short like progress
+  const miracleItems = miracleLogs?.slice(-3); // keep short like progress
   // challenges
   const challengeItems = challenges?.slice(0, 3);
 
