@@ -38,6 +38,7 @@ import {
 } from "@/types/client/mini-mastery-program";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { DashboardContent } from "@/types/client/dashboard";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -218,7 +219,40 @@ function EnrollButton({
             },
           };
         });
+        queryClient.setQueryData<DashboardContent>(
+          ["dashboard-content"],
+          (old: DashboardContent | undefined) => {
+            if (!old) {
+              return {
+                mmpPrograms: [
+                  {
+                    program: {
+                      id: program.id,
+                      name: program.name,
+                      slug: program.slug,
+                    },
+                  },
+                ],
+              } as DashboardContent;
+            }
 
+            const existing = old.mmpPrograms || [];
+
+            return {
+              ...old,
+              mmpPrograms: [
+                ...existing.filter((item) => item.program.id !== program.id),
+                {
+                  program: {
+                    id: program.id,
+                    name: program.name,
+                    slug: program.slug,
+                  },
+                },
+              ].slice(-3), // ✅ consistent with other features
+            };
+          },
+        );
         toast.success(data.message || "You have enrolled successfully");
 
         setTimeout(() => {

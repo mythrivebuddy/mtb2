@@ -502,6 +502,8 @@ export default function DailyBloomClient() {
               ],
             } as DashboardContent;
           }
+             // ❌ if it's event → don't touch dailyBlooms
+            if (createdBloom.isFromEvent) return old;
           return {
             ...old,
             dailyBlooms: [
@@ -527,14 +529,14 @@ export default function DailyBloomClient() {
             const existingEvents = Array.isArray(old.events) ? old.events : [];
 
             const alreadyExists = existingEvents.some(
-              (e) => e.id === `bloom-${createdBloom.id}`,
+              (e) => e.id === createdBloom.id,
             );
             if (alreadyExists) return old;
 
             const startTime = createdBloom.startTime || "09:00";
 
             const newEvent = {
-              id: `bloom-${createdBloom.id}`,
+             id: createdBloom.id,
               title: createdBloom.title,
               startTime: startTime,
 
@@ -547,7 +549,7 @@ export default function DailyBloomClient() {
 
             return {
               ...old,
-              events: [newEvent, ...existingEvents],
+             events: [newEvent, ...existingEvents].slice(0, 3),
             };
           },
         );

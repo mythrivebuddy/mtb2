@@ -30,6 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import ChallengeDescription from "@/components/Dompurify";
 import { toast } from "sonner";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { DashboardContent } from "@/types/client/dashboard";
 //import { useSearchParams } from "next/navigation";
 
 type Creator = Pick<User, "id" | "name">;
@@ -127,7 +128,29 @@ export default function ChallengeDetailView({
               `/api/challenge/enrollments/${challenge.id}`,
             );
             setEnrollment(enrollmentResp.data.enrollment);
+            queryClient.setQueryData<DashboardContent>(
+              ["dashboard-content"],
+              (old) => {
+                if (!old) return old;
 
+                const existing = old.challenges || [];
+
+                return {
+                  ...old,
+                  challenges: [
+                    ...existing.filter(
+                      (item) => item.challenge.id !== challenge.id,
+                    ),
+                    {
+                      challenge: {
+                        id: challenge.id,
+                        title: challenge.title,
+                      },
+                    },
+                  ].slice(0, 3),
+                };
+              },
+            );
             await Promise.all([
               queryClient.invalidateQueries({
                 queryKey: ["myChallenges", "hosted"],
@@ -207,7 +230,27 @@ export default function ChallengeDetailView({
         enrollmentResp.data.enrollment;
 
       setEnrollment(fetchedEnrollment);
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
 
+          const existing = old.challenges || [];
+
+          return {
+            ...old,
+            challenges: [
+              ...existing.filter((item) => item.challenge.id !== challenge.id),
+              {
+                challenge: {
+                  id: challenge.id,
+                  title: challenge.title,
+                },
+              },
+            ].slice(0, 3), // keep same pattern as dashboard
+          };
+        },
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["myChallenges", "hosted"] }),
         queryClient.invalidateQueries({ queryKey: ["myChallenges", "joined"] }),
@@ -297,7 +340,7 @@ export default function ChallengeDetailView({
 
   const pageContent = (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Main Content */}
         <div className="lg:col-span-2 bg-white p-6 sm:p-8 rounded-2xl shadow-lg">
           {/* Header */}
@@ -352,215 +395,215 @@ export default function ChallengeDetailView({
 
         {/* Right Column: Sticky Card with Stats & Actions */}
         <div className="lg:col-span-1">
-
-        <div className="lg:sticky lg:top-8">
-          <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6">
-            {/* Duration */}
-            <div className="flex items-center">
-              <Calendar className="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" />
-              <div>
-                <div className="text-sm text-slate-500">Duration</div>
-                <div className="font-semibold text-slate-700 flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                  <span>
-                    {formatDate(challenge.startDate)} to{" "}
-                    {formatDate(challenge.endDate)}
-                  </span>
-                  <span className="text-blue-600 font-medium">
-                    {getChallengeDuration(
-                      challenge.startDate,
-                      challenge.endDate,
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats List */}
-            <div className="border-t border-slate-200 pt-6 space-y-4">
+          <div className="lg:sticky lg:top-8">
+            <div className="bg-white p-6 rounded-2xl shadow-lg space-y-6">
+              {/* Duration */}
               <div className="flex items-center">
-                <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
+                <Calendar className="w-6 h-6 text-blue-500 mr-3 flex-shrink-0" />
                 <div>
-                  <div className="text-sm text-slate-500">Joining Cost</div>
-                  <div className="font-semibold text-slate-700">
-                    {challenge.challengeJoiningType ===
-                      ChallengeJoiningType.PAID && (
-                      <>
-                        ({challenge.challengeJoiningFee.toLocaleString()}{" "}
-                        {challenge.challengeJoiningFeeCurrency}
-                        {challenge.challengeJoiningFeeCurrency === "INR" && (
-                          <span className="text-xs"> + GST</span>
-                        )}
-                        ){" + "}
-                      </>
-                    )}{" "}
-                    {challenge.cost > 0 ? `${challenge.cost} GP ` : "Free GP"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
-                <div>
-                  <div className="text-sm text-slate-500">Reward</div>
-                  <div className="font-semibold text-slate-700">
-                    {challenge.reward} GP
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <ShieldAlert
-                  className={`w-6 h-6 mr-3 flex-shrink-0 ${challenge.penalty > 0 ? "text-red-500" : "text-gray-400"}`}
-                />
-                <div>
-                  <div className="text-sm text-slate-500">Penalty</div>
-                  <div className="font-semibold text-slate-700">
-                    {challenge.penalty > 0 ? `${challenge.penalty} GP` : "None"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
-                <div>
-                  <div className="text-sm text-slate-500">Participants</div>
-                  <div className="font-semibold text-slate-700">
-                    {challenge._count.enrollments}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <UserCircle className="w-6 h-6 text-gray-500 mr-3 flex-shrink-0" />
-                <div>
-                  <div className="text-sm text-slate-500">Created By</div>
-                  <div className="font-semibold text-slate-700">
-                    {challenge.creator?.name ?? "Unknown User"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Button Section */}
-            <div className="pt-6 border-t border-slate-200">
-              {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 font-medium">
-                  <div className="flex items-center">
-                    <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0" />
+                  <div className="text-sm text-slate-500">Duration</div>
+                  <div className="font-semibold text-slate-700 flex flex-col sm:flex-row sm:items-center sm:gap-2">
                     <span>
-                      {error.message}
-
-                      {error.isUpgradeFlagShow &&
-                        session?.user.membership === "FREE" && (
-                          <>
-                            {" "}
-                            <span
-                              onClick={() =>
-                                router.push("/pricing?ref=join-challenge")
-                              }
-                              className="underline cursor-pointer font-medium"
-                            >
-                              Upgrade
-                            </span>{" "}
-                            to increase the limit.
-                          </>
-                        )}
+                      {formatDate(challenge.startDate)} to{" "}
+                      {formatDate(challenge.endDate)}
+                    </span>
+                    <span className="text-blue-600 font-medium">
+                      {getChallengeDuration(
+                        challenge.startDate,
+                        challenge.endDate,
+                      )}
                     </span>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {(() => {
-                // ✅ Already fully enrolled
-                if (enrollment && enrollment.userTasks.length > 0) {
-                  return (
-                    <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg flex items-center justify-center">
-                      <PartyPopper className="w-6 h-6 mr-2" />
-                      <span className="font-semibold text-lg">
-                        You have joined!
+              {/* Stats List */}
+              <div className="border-t border-slate-200 pt-6 space-y-4">
+                <div className="flex items-center">
+                  <Coins className="w-6 h-6 text-green-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm text-slate-500">Joining Cost</div>
+                    <div className="font-semibold text-slate-700">
+                      {challenge.challengeJoiningType ===
+                        ChallengeJoiningType.PAID && (
+                        <>
+                          ({challenge.challengeJoiningFee.toLocaleString()}{" "}
+                          {challenge.challengeJoiningFeeCurrency}
+                          {challenge.challengeJoiningFeeCurrency === "INR" && (
+                            <span className="text-xs"> + GST</span>
+                          )}
+                          ){" + "}
+                        </>
+                      )}{" "}
+                      {challenge.cost > 0 ? `${challenge.cost} GP ` : "Free GP"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <Award className="w-6 h-6 text-yellow-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm text-slate-500">Reward</div>
+                    <div className="font-semibold text-slate-700">
+                      {challenge.reward} GP
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <ShieldAlert
+                    className={`w-6 h-6 mr-3 flex-shrink-0 ${challenge.penalty > 0 ? "text-red-500" : "text-gray-400"}`}
+                  />
+                  <div>
+                    <div className="text-sm text-slate-500">Penalty</div>
+                    <div className="font-semibold text-slate-700">
+                      {challenge.penalty > 0
+                        ? `${challenge.penalty} GP`
+                        : "None"}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <Users className="w-6 h-6 text-slate-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm text-slate-500">Participants</div>
+                    <div className="font-semibold text-slate-700">
+                      {challenge._count.enrollments}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <UserCircle className="w-6 h-6 text-gray-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <div className="text-sm text-slate-500">Created By</div>
+                    <div className="font-semibold text-slate-700">
+                      {challenge.creator?.name ?? "Unknown User"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button Section */}
+              <div className="pt-6 border-t border-slate-200">
+                {error && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 font-medium">
+                    <div className="flex items-center">
+                      <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0" />
+                      <span>
+                        {error.message}
+
+                        {error.isUpgradeFlagShow &&
+                          session?.user.membership === "FREE" && (
+                            <>
+                              {" "}
+                              <span
+                                onClick={() =>
+                                  router.push("/pricing?ref=join-challenge")
+                                }
+                                className="underline cursor-pointer font-medium"
+                              >
+                                Upgrade
+                              </span>{" "}
+                              to increase the limit.
+                            </>
+                          )}
                       </span>
                     </div>
-                  );
-                }
+                  </div>
+                )}
 
-                // ✅ Payment verification loading
-                if (isCheckingPayment) {
-                  return (
-                    <div className="text-center p-4 bg-yellow-100 text-yellow-800 rounded-lg flex items-center justify-center">
-                      <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                      <span className="font-semibold text-lg">
-                        Verifying payment...
-                      </span>
-                    </div>
-                  );
-                }
-
-                // ✅ Payment verified but not enrolled yet
-                if (hasPaidOrder && !enrollment) {
-                  return (
-                    <div className="space-y-3">
-                      <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
-                        <span className="font-semibold">
-                          You purchased this challenge. Please wait while we
-                          confirm your enrollment.
+                {(() => {
+                  // ✅ Already fully enrolled
+                  if (enrollment && enrollment.userTasks.length > 0) {
+                    return (
+                      <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg flex items-center justify-center">
+                        <PartyPopper className="w-6 h-6 mr-2" />
+                        <span className="font-semibold text-lg">
+                          You have joined!
                         </span>
                       </div>
+                    );
+                  }
 
-                      <button
-                        onClick={handleEnroll}
-                        disabled={isEnrolling}
-                        className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
-                      >
-                        {isEnrolling ? (
-                          <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Enrolling...
-                          </>
-                        ) : (
-                          "Enroll Now"
-                        )}
-                      </button>
-                    </div>
-                  );
-                }
+                  // ✅ Payment verification loading
+                  if (isCheckingPayment) {
+                    return (
+                      <div className="text-center p-4 bg-yellow-100 text-yellow-800 rounded-lg flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                        <span className="font-semibold text-lg">
+                          Verifying payment...
+                        </span>
+                      </div>
+                    );
+                  }
 
-                // ✅ Preparing tasks state
-                if (
-                  isPolling ||
-                  (enrollment && enrollment.userTasks.length === 0)
-                ) {
+                  // ✅ Payment verified but not enrolled yet
+                  if (hasPaidOrder && !enrollment) {
+                    return (
+                      <div className="space-y-3">
+                        <div className="text-center p-4 bg-green-100 text-green-800 rounded-lg">
+                          <span className="font-semibold">
+                            You purchased this challenge. Please wait while we
+                            confirm your enrollment.
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={handleEnroll}
+                          disabled={isEnrolling}
+                          className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                        >
+                          {isEnrolling ? (
+                            <>
+                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                              Enrolling...
+                            </>
+                          ) : (
+                            "Enroll Now"
+                          )}
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  // ✅ Preparing tasks state
+                  if (
+                    isPolling ||
+                    (enrollment && enrollment.userTasks.length === 0)
+                  ) {
+                    return (
+                      <div className="text-center p-4 bg-blue-100 text-blue-800 rounded-lg flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                        <span className="font-semibold text-lg">
+                          Preparing tasks...
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  // ✅ Default join/pay button
                   return (
-                    <div className="text-center p-4 bg-blue-100 text-blue-800 rounded-lg flex items-center justify-center">
-                      <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                      <span className="font-semibold text-lg">
-                        Preparing tasks...
-                      </span>
-                    </div>
+                    <button
+                      onClick={handleJoinClick}
+                      disabled={isEnrolling || sessionStatus === "loading"}
+                      className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                    >
+                      {isEnrolling ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Enrolling...
+                        </>
+                      ) : challenge.challengeJoiningType ===
+                        ChallengeJoiningType.PAID ? (
+                        "Pay & Join Challenge"
+                      ) : (
+                        "Join Challenge"
+                      )}
+                    </button>
                   );
-                }
-
-                // ✅ Default join/pay button
-                return (
-                  <button
-                    onClick={handleJoinClick}
-                    disabled={isEnrolling || sessionStatus === "loading"}
-                    className="w-full py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center disabled:bg-indigo-400 disabled:cursor-not-allowed"
-                  >
-                    {isEnrolling ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Enrolling...
-                      </>
-                    ) : challenge.challengeJoiningType ===
-                      ChallengeJoiningType.PAID ? (
-                      "Pay & Join Challenge"
-                    ) : (
-                      "Join Challenge"
-                    )}
-                  </button>
-                );
-              })()}
+                })()}
+              </div>
             </div>
           </div>
         </div>
-        </div>
-        
       </div>
     </div>
   );

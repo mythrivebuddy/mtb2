@@ -167,6 +167,8 @@ export async function PUT(
           end: endDateTime,
           all_day: false,
           userId: session.user.id,
+          is_completed: updatedBloom.isCompleted,
+          description: updatedBloom.description,
         };
       }
 
@@ -175,7 +177,8 @@ export async function PUT(
           where: { id: linkedEvent.id },
           data: eventData,
         });
-      } else {
+      } 
+      else {
         await prisma.event.create({ data: eventData });
       }
     } else if (!addToCalendar && linkedEvent) {

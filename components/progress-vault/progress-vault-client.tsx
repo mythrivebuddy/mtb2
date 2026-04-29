@@ -154,36 +154,29 @@ export default function ProgressVaultClient({
       toast.success("Log created successfully");
       return res.data;
     },
-    onSuccess: (createdItem) => {
-  queryClient.setQueryData<DashboardContent>(
-    ["dashboard-content"],
-    (old) => {
-      if (!old) return old;
+    onSuccess: (data) => {
+      const createdLog = data.log; // ✅ extract correct object
 
-      const existing = old.onePercentProgressVault || [];
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
 
-      // ✅ SAFETY: ensure valid id
-      const safeId =
-        createdItem?.id ?? `temp-${Date.now()}`;
+          const existing = old.onePercentProgressVault || [];
 
-      // ✅ remove duplicates safely
-      const filtered = existing.filter(
-        (item) => item.id !== safeId
+          return {
+            ...old,
+            onePercentProgressVault: [
+              ...existing.filter((item) => item.id !== createdLog.id),
+              {
+                id: createdLog.id,
+                content: createdLog.content,
+              },
+            ].slice(-3), // ✅ keep last 3 instead of first 3
+          };
+        },
       );
-
-      return {
-        ...old,
-        onePercentProgressVault: [
-          {
-            id: safeId,
-            content: createdItem.content,
-          },
-          ...filtered,
-        ].slice(0, 3),
-      };
-    }
-  );
-},
+    },
     onError: (error) => {
       const errorMessage = getAxiosErrorMessage(error, "An error occurred");
       if (errorMessage.includes("Daily limit of 3 entries reached")) {
@@ -203,7 +196,26 @@ export default function ProgressVaultClient({
       });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      const { id, content } = variables; // ✅ we already have latest content
+
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            onePercentProgressVault:
+              old.onePercentProgressVault?.map((item) =>
+                item.id === id
+                  ? { ...item, content } // ✅ update content in-place
+                  : item,
+              ) || [],
+          };
+        },
+      );
+
       queryClient.invalidateQueries({ queryKey: ["progressvault"] });
       setEditingLog(null);
       setUpdateDialogOpen(false);
@@ -219,7 +231,22 @@ export default function ProgressVaultClient({
       const res = await axios.delete(`/api/user/progress-vault/${id}`);
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
+      queryClient.setQueryData<DashboardContent>(
+        ["dashboard-content"],
+        (old) => {
+          if (!old) return old;
+
+          return {
+            ...old,
+            onePercentProgressVault:
+              old.onePercentProgressVault?.filter(
+                (item) => item.id !== deletedId,
+              ) || [],
+          };
+        },
+      );
+
       queryClient.invalidateQueries({ queryKey: ["progressvault"] });
       toast.success("Log deleted successfully");
       setDeleteLog(null);

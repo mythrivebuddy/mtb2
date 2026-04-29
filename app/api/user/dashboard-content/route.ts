@@ -82,6 +82,8 @@ export const GET = async (req: Request) => {
           gte: startOfDay,
           lte: endOfDay,
         },
+        isFromEvent: false,
+        isCompleted: false,
       },
       orderBy: {
         createdAt: "desc", // latest first
@@ -101,6 +103,7 @@ export const GET = async (req: Request) => {
             lt: startOfDay, // before today
           },
           isCompleted: false,
+          isFromEvent: false,
         },
         orderBy: {
           createdAt: "asc", // oldest first
@@ -116,6 +119,7 @@ export const GET = async (req: Request) => {
           gte: start ? new Date(start) : undefined,
           lte: end ? new Date(end) : undefined,
         },
+        deletedAt:null,
       },
     });
     const miracleLogs = await prisma.miracleLog.findMany({
@@ -125,6 +129,7 @@ export const GET = async (req: Request) => {
           gte: start ? new Date(start) : undefined,
           lte: end ? new Date(end) : undefined,
         },
+        deletedAt:null,
       },
     });
 
@@ -186,32 +191,32 @@ export const GET = async (req: Request) => {
 
     const now = new Date();
 
-    // 1. Try to find the first event today (or future) that is NOT yet completed
+    // 1️⃣ First: Upcoming + Ongoing events
     let selectedEvents = await prisma.todo.findMany({
       where: {
         userId: session.user.id,
         isFromEvent: true,
         isCompleted: false,
         dueDate: {
-          gte: startOfDay,
+          gte: now, // ✅ upcoming
         },
       },
       orderBy: {
         dueDate: "asc", // earliest first
       },
-      take: 3, // ✅ max 3
+      take: 3,
     });
 
-    // 2. If everything today is completed, fallback to showing the first event
-    // of today specifically, so it stays on the dashboard all day.
+    // 2️⃣ If none → include ongoing events that already started today
     if (selectedEvents.length === 0) {
       selectedEvents = await prisma.todo.findMany({
         where: {
           userId: session.user.id,
           isFromEvent: true,
+          isCompleted: false,
           dueDate: {
-            gte: startOfDay,
-            lte: endOfDay,
+            gte: startOfDay, // started today
+            lt: now, // but already passed start → ongoing/just passed
           },
         },
         orderBy: {
@@ -220,6 +225,24 @@ export const GET = async (req: Request) => {
         take: 3,
       });
     }
+
+    // 3️⃣ If still none → fallback to overdue
+    // if (selectedEvents.length === 0) {
+    //   selectedEvents = await prisma.todo.findMany({
+    //     where: {
+    //       userId: session.user.id,
+    //       isFromEvent: true,
+    //       isCompleted: false,
+    //       dueDate: {
+    //         lt: startOfDay, // ❗ strictly overdue (before today)
+    //       },
+    //     },
+    //     orderBy: {
+    //       dueDate: "asc", // oldest overdue first
+    //     },
+    //     take: 3,
+    //   });
+    // }
 
     // 3. Map the data with time-based status flags
     const eventData = selectedEvents.map((event) => ({

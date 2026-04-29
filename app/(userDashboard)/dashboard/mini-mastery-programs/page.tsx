@@ -61,6 +61,7 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAxiosErrorMessage } from "@/utils/ax";
+import { DashboardContent } from "@/types/client/dashboard";
 
 // ─── API fetchers ─────────────────────────────────────────────────────────────
 
@@ -221,7 +222,40 @@ function ProgramCTA({
             },
           };
         });
+        queryClient.setQueryData<DashboardContent>(
+          ["dashboard-content"],
+          (old: DashboardContent | undefined) => {
+            if (!old) {
+              return {
+                mmpPrograms: [
+                  {
+                    program: {
+                      id: prog.id,
+                      name: prog.name,
+                      slug: prog.slug,
+                    },
+                  },
+                ],
+              } as DashboardContent;
+            }
 
+            const existing = old.mmpPrograms || [];
+
+            return {
+              ...old,
+              mmpPrograms: [
+                ...existing.filter((item) => item.program.id !== prog.id),
+                {
+                  program: {
+                    id: prog.id,
+                    name: prog.name,
+                    slug: prog.slug,
+                  },
+                },
+              ].slice(-3), //  consistent with other features
+            };
+          },
+        );
         toast.success(data.message || "You have enrolled successfully");
 
         setTimeout(() => {
