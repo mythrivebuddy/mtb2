@@ -1577,8 +1577,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
         <Drawer
           open={!!mode}
           onOpenChange={(isOpen) => !isOpen && handleCloseModal()}
+          dismissible={false}
         >
-          <DrawerContent>
+          <DrawerContent className="max-h-[90vh]">
             <DrawerHeader className="text-left">
               <DrawerTitle>
                 {mode === "create" ? "Create Event" : "Event Details"}
@@ -1589,7 +1590,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                   : "View or manage your event details."}
               </DrawerDescription>
             </DrawerHeader>
-            <div className="px-4 overflow-y-auto">
+            <div className="px-4 overflow-y-auto pb-24">
               {currentEvent && (
                 <EventForm
                   currentEvent={currentEvent}
@@ -1602,6 +1603,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
             </div>
             <DrawerFooter className="pt-4">
               <FormButtons />
+              <Button variant="outline" onClick={handleCloseModal}>Cancel</Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>
