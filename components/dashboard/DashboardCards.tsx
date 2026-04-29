@@ -26,6 +26,7 @@ import axios from "axios";
 import Link from "next/link";
 import { DashboardContent } from "@/types/client/dashboard";
 import { useState } from "react";
+import { formatJP } from "@/lib/utils/formatJP";
 
 type AlignedAction = {
   id: string;
@@ -659,13 +660,15 @@ export default function DashboardCards({
                   <div className="mt-auto space-y-3">
                     <Button
                       onClick={(e) => {
-                        e.stopPropagation(); // prevent card click
+                        e.stopPropagation();
                         router.push("/dashboard/store");
                       }}
-                      className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                      className="w-full text-xs rounded-full px-2 bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
                     >
-                      Redeem Your {jpBalance} GP Now{" "}
-                      <ArrowRight className="w-4 h-4" />
+                      <span className="truncate">
+                        Redeem {formatJP(Number(jpBalance))} GP Now
+                      </span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
                     </Button>
                   </div>
                 )}

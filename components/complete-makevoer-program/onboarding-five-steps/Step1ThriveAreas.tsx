@@ -178,7 +178,7 @@ const Step1ThriveAreas = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-100 dark:border-gray-800 rounded-xl px-6 py-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bottom-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border border-gray-100 dark:border-gray-800 rounded-xl px-6 py-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Info size={20} className="text-emerald-500" />
             <p className="text-sm dark:text-gray-300">
