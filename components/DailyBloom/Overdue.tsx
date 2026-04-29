@@ -35,6 +35,7 @@ import HoverDetails from "./HoverDetails";
 
 interface DailyBloom extends DailyBloomFormType {
   id: string;
+  isFromEvent?: boolean;
 }
 
 interface OverdueProps {
@@ -111,9 +112,17 @@ export default function Overdue({
               <Card key={bloom.id} className="p-4 bg-background/50">
                 <div className="flex flex-col space-y-3">
                   <div className="flex items-start justify-between gap-4">
-                    <CardTitle className="text-md sm:text-lg max-w-[80%] break-words">
-                      {bloom.title}
-                    </CardTitle>
+                    <div className="flex items-start gap-2 max-w-[80%]">
+                      <CardTitle className="text-md sm:text-lg break-words">
+                        {bloom.title}
+                      </CardTitle>
+
+                      {bloom.isFromEvent && (
+                        <span className="text-xs text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded-md">
+                          Event
+                        </span>
+                      )}
+                    </div>
                     <Input
                       type="checkbox"
                       checked={bloom.isCompleted}
@@ -199,8 +208,14 @@ export default function Overdue({
                     onMouseEnter={() => setHoveredBloomId(bloom.id)}
                     onMouseLeave={() => setHoveredBloomId(null)}
                   >
-                    <div className="text-md max-w-[300px] break-words">
-                      {bloom.title}
+                    <div className="flex items-center gap-2 max-w-[300px] break-words">
+                      <span>{bloom.title}</span>
+
+                      {bloom.isFromEvent && (
+                        <span className="text-xs text-blue-600 font-medium bg-blue-100 px-1.5 py-0.5 rounded">
+                          Event
+                        </span>
+                      )}
                     </div>
                     {hoveredBloomId === bloom.id && (
                       <div className="absolute z-50 top-0 left-full ml-2 h-fit w-80 rounded-lg border bg-background p-4 shadow-xl">

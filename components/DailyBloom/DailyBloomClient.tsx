@@ -71,11 +71,20 @@ import { Switch } from "@/components/ui/switch";
 import { type DailyBloom as CalendarBloom } from "@/types/client/daily-bloom";
 import UpgradeMessageModal from "../common/UpgradeMessageModal";
 import { AlignedAction, DashboardContent } from "@/types/client/dashboard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Checkbox } from "../ui/checkbox";
 // FIX: Define a specific type for extendedProps
 interface CalendarEventExtendedProps {
   isBloom?: boolean;
   isCompleted?: boolean;
   description?: string;
+  lastTime?: string;
   [key: string]: unknown; // Allows for other, unknown properties if necessary
 }
 
@@ -85,7 +94,8 @@ interface CalendarEvent {
   id: string;
   title: string;
   start: string; // Keep as strings for FullCalendar
-  end: string;
+  end?: string;
+  allDay?: boolean;
 }
 
 interface DailyBloom extends DailyBloomFormType {
@@ -123,6 +133,7 @@ const defaultFormValues: DailyBloomFormType = {
   description: "",
   frequency: undefined,
   dueDate: new Date(),
+  endDate: new Date(),
   isCompleted: false,
   taskAddJP: false,
   taskCompleteJP: false,
@@ -179,7 +190,32 @@ export default function DailyBloomClient() {
     title: "",
     message: "",
   });
+  const [initialEventId, setInitialEventId] = useState<string | null>(null);
   useOnlineUserLeaderBoard();
+  const timeOptions = useMemo(() => {
+    const times = new Set<string>();
+    for (let h = 0; h < 24; h++) {
+      for (const m of [0, 30]) {
+        const hour = h.toString().padStart(2, "0");
+        const min = m.toString().padStart(2, "0");
+        times.add(`${hour}:${min}`);
+      }
+    }
+    return Array.from(times).sort();
+  }, []);
+
+  const getNearestHourLocal = () => {
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0, 0, 0);
+
+    return `${String(now.getHours()).padStart(2, "0")}:00`;
+  };
+  const addOneHour = (time: string) => {
+    const [h, m] = time.split(":").map(Number);
+    const next = (h + 1) % 24;
+    return `${String(next).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
 
   // --- In DailyBloomClient.tsx ---
 
@@ -201,6 +237,7 @@ export default function DailyBloomClient() {
         ? format(new Date(payload.dueDate), "HH:mm")
         : "",
       endTime: payload.end ? format(new Date(payload.end), "HH:mm") : undefined,
+      endDate: payload.end ? new Date(payload.end) : undefined,
       taskAddJP: false,
       taskCompleteJP: false,
       isFromEvent: true, // Mark this bloom as created from an even
@@ -253,7 +290,16 @@ export default function DailyBloomClient() {
   useEffect(() => {
     if (addData) {
       setAddInputType("date");
-      reset(defaultFormValues);
+
+      const start = getNearestHourLocal();
+      const end = addOneHour(start);
+
+      reset({
+        ...defaultFormValues,
+        endDate: new Date(),
+        startTime: start,
+        endTime: end,
+      });
     }
   }, [addData, reset]);
 
@@ -285,52 +331,77 @@ export default function DailyBloomClient() {
   const dailyBloom = useMemo(() => {
     return data?.pages.flatMap((page) => page.data) || [];
   }, [data]);
-  console.log("Blooms data from API:", dailyBloom); // <-- ADD THIS
+
   // Add this entire block to de-duplicate the list before rendering
+// Add this entire block to de-duplicate the list before rendering
   const uniqueBlooms = useMemo(() => {
     const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
-
+    
     const now = new Date();
+    // Get midnight of today in local time for accurate day-to-day comparisons
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     return Array.from(bloomMap.values()).filter((bloom) => {
-      // ✅ keep normal blooms (your existing logic)
-      if (!bloom.isFromEvent) return true;
+      // ✅ 1. STATUS FILTER
+      if (statusFilter === "Pending" && bloom.isCompleted) return false;
+      if (statusFilter === "Completed" && !bloom.isCompleted) return false;
 
-      // ✅ for events → filter OUT past completed events
       if (!bloom.dueDate) return true;
 
-      const eventDate = new Date(bloom.dueDate);
+      const dueDateObj = new Date(bloom.dueDate);
+      let isOverdue = false;
 
-      return (
-        eventDate >= now || // future/today events
-        !bloom.isCompleted // OR incomplete events
-      );
+      // ✅ 2. FIX OVERDUE LOGIC
+      if (bloom.isFromEvent && bloom.endTime) {
+        // If it's a calendar event with a specific end time, use the endDate (if multi-day) or dueDate
+        const targetDateObj = bloom.endDate ? new Date(bloom.endDate) : dueDateObj;
+        const y = targetDateObj.getFullYear();
+        const m = String(targetDateObj.getMonth() + 1).padStart(2, "0");
+        const d = String(targetDateObj.getDate()).padStart(2, "0");
+        
+        // Construct the exact completion deadline
+        const exactEnd = new Date(`${y}-${m}-${d}T${bloom.endTime}`);
+        isOverdue = exactEnd < now;
+      } else {
+        // For standard daily tasks (and all-day events), they are only overdue if the whole day has passed (yesterday or older)
+        const dueStart = new Date(
+          dueDateObj.getFullYear(),
+          dueDateObj.getMonth(),
+          dueDateObj.getDate()
+        );
+        isOverdue = dueStart < todayStart;
+      }
+
+      // ❌ remove overdue blooms from main list (they belong in the Overdue component)
+      if (isOverdue && !bloom.isCompleted) return false;
+
+      return true;
     });
-  }, [dailyBloom]);
-const sortedBlooms = useMemo(() => {
-  return [...uniqueBlooms].sort((a, b) => {
-    const aStart = a.dueDate
-      ? new Date(
-          `${new Date(a.dueDate).toISOString().split("T")[0]}T${a.startTime || "00:00"}`
-        ).getTime()
-      : Infinity;
+  }, [dailyBloom, statusFilter]);
+  const sortedBlooms = useMemo(() => {
+    return [...uniqueBlooms].sort((a, b) => {
+      const aStart = a.dueDate
+        ? new Date(
+            `${new Date(a.dueDate).toISOString().split("T")[0]}T${a.startTime || "00:00"}`,
+          ).getTime()
+        : Infinity;
 
-    const bStart = b.dueDate
-      ? new Date(
-          `${new Date(b.dueDate).toISOString().split("T")[0]}T${b.startTime || "00:00"}`
-        ).getTime()
-      : Infinity;
+      const bStart = b.dueDate
+        ? new Date(
+            `${new Date(b.dueDate).toISOString().split("T")[0]}T${b.startTime || "00:00"}`,
+          ).getTime()
+        : Infinity;
 
-    // 1. Sort by start datetime
-    if (aStart !== bStart) return aStart - bStart;
+      // 1. Sort by start datetime
+      if (aStart !== bStart) return aStart - bStart;
 
-    // 2. SAME TIME → use createdAt (OLDER FIRST like calendar)
-    const aCreated = new Date(a.createdAt || 0).getTime();
-    const bCreated = new Date(b.createdAt || 0).getTime();
+      // 2. SAME TIME → use createdAt (OLDER FIRST like calendar)
+      const aCreated = new Date(a.createdAt || 0).getTime();
+      const bCreated = new Date(b.createdAt || 0).getTime();
 
-    return aCreated - bCreated;
-  });
-}, [uniqueBlooms]);
+      return aCreated - bCreated;
+    });
+  }, [uniqueBlooms]);
 
   const invalidateAllQueries = () => {
     if (!userId) {
@@ -527,10 +598,14 @@ const sortedBlooms = useMemo(() => {
 
       // 1. Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey: ["events"] });
 
       // 2. Snapshot the previous value
       const previousBlooms =
         queryClient.getQueryData<InfiniteData<DailyBloomPage>>(queryKey);
+      const previousEvents = queryClient.getQueryData<CalendarEvent[]>([
+        "events",
+      ]); // ✅ ADDED
 
       // 3. Optimistically update to the new value
       queryClient.setQueryData<InfiniteData<DailyBloomPage> | undefined>(
@@ -558,9 +633,43 @@ const sortedBlooms = useMemo(() => {
           };
         },
       );
+      // ✅ 4. ADDED: Optimistically update the raw events cache to prevent the "ghost" duplicate
+      if (previousBlooms && previousEvents) {
+        const oldBloom = previousBlooms.pages
+          .flatMap((page) => page.data)
+          .find((bloom) => bloom.id === newBloomData.id);
 
+        if (oldBloom) {
+          const oldDate = oldBloom.dueDate
+            ? new Date(oldBloom.dueDate).toISOString().split("T")[0]
+            : "";
+          const oldIdentifier = `${oldDate}_${oldBloom.title}`;
+
+          queryClient.setQueryData<CalendarEvent[]>(["events"], (oldEvents) => {
+            if (!oldEvents) return oldEvents;
+            return oldEvents.map((ev) => {
+              const evDate = new Date(ev.start).toISOString().split("T")[0];
+              const evIdentifier = `${evDate}_${ev.title}`;
+
+              // If this event matches the OLD bloom, update it to match the NEW bloom so it gets filtered out properly
+              if (evIdentifier === oldIdentifier) {
+                const newDueDate = newBloomData.updatedData.dueDate
+                  ? new Date(newBloomData.updatedData.dueDate)
+                  : new Date(ev.start);
+
+                return {
+                  ...ev,
+                  title: newBloomData.updatedData.title ?? ev.title,
+                  start: newDueDate.toISOString(),
+                };
+              }
+              return ev;
+            });
+          });
+        }
+      }
       // 4. Return a context object with the snapshotted value
-      return { previousBlooms, queryKey };
+      return { previousBlooms, previousEvents, queryKey };
     },
     onSuccess: (data, variables) => {
       const updatedBloom = data as {
@@ -613,7 +722,6 @@ const sortedBlooms = useMemo(() => {
       } else {
         toast.success("Bloom updated successfully ✅");
       }
-      console.log("Mark completed called ");
 
       setEditData(null);
     },
@@ -621,6 +729,9 @@ const sortedBlooms = useMemo(() => {
       // If the mutation fails, roll back to the previous state from context
       if (context?.previousBlooms) {
         queryClient.setQueryData(context.queryKey, context.previousBlooms);
+      }
+      if (context?.previousEvents) {
+        queryClient.setQueryData(["events"], context.previousEvents); // ✅ ADDED
       }
       const errorMessage = getAxiosErrorMessage(
         error,
@@ -662,7 +773,6 @@ const sortedBlooms = useMemo(() => {
       addInputType === "date"
         ? { ...formData, frequency: undefined }
         : { ...formData, dueDate: undefined };
-
     // Create a payload that correctly uses the `isFromEvent` flag
     // to track if this bloom should be on the calendar.
     const payload = {
@@ -679,6 +789,12 @@ const sortedBlooms = useMemo(() => {
 
   const onUpdate = (formData: DailyBloomFormType) => {
     if (editData) {
+      const dataToSubmit = { ...formData };
+
+      // ✅ FIX: Strip endDate to prevent Zod string/date validation errors
+      if ("endDate" in dataToSubmit) {
+        delete (dataToSubmit as { endDate?: unknown }).endDate;
+      }
       updateMutation.mutate({
         id: editData.id,
         updatedData: formData,
@@ -721,11 +837,13 @@ const sortedBlooms = useMemo(() => {
     id: string; // This is the raw bloom ID from the calendar (e.g., 'bloom-clyg1234')
     updatedData: {
       title?: string;
+      description?: string;
       dueDate?: string; // This is the new 'start' date from the calendar event
       // The calendar might also pass an 'end' date if resized
       end?: string;
+      endDate?: string | null; // Optional end date for events that have a duration
       startTime?: string;
-      endTime?: string;
+      endTime?: string | null;
       isCompleted?: boolean;
     };
     source?: "calendar" | "modal";
@@ -753,6 +871,15 @@ const sortedBlooms = useMemo(() => {
       : originalBloom.dueDate
         ? new Date(originalBloom.dueDate)
         : null;
+    // Explicitly check for null so we don't accidentally fall back to originalBloom.endDate when clearing it
+    const newEndDate =
+      payload.updatedData.endDate === null || payload.updatedData.end === null
+        ? null
+        : payload.updatedData.endDate
+          ? new Date(payload.updatedData.endDate)
+          : originalBloom.endDate
+            ? new Date(originalBloom.endDate)
+            : undefined;
     //  const newEndDate = payload.updatedData.end
     // ? new Date(payload.updatedData.end)
     // : originalBloom.endTime
@@ -763,16 +890,21 @@ const sortedBlooms = useMemo(() => {
       // Start with all original data
       ...originalBloom,
       title: payload.updatedData.title ?? originalBloom.title,
-      description: originalBloom.description ?? "",
+      description:
+        payload.updatedData.description ?? originalBloom.description ?? "",
       dueDate: newDueDate ?? undefined,
       // Ensure this flag stays true
       addToCalendar: true,
       // Update start and end times based on the calendar drag/resize
       isCompleted: payload.updatedData.isCompleted ?? originalBloom.isCompleted,
       startTime: newDueDate ? format(newDueDate, "HH:mm") : "",
-      endTime: payload.updatedData.end
-        ? format(new Date(payload.updatedData.end), "HH:mm")
-        : (originalBloom.endTime ?? undefined),
+      endTime:
+        payload.updatedData.endTime !== undefined
+          ? payload.updatedData.endTime
+          : payload.updatedData.end
+            ? format(new Date(payload.updatedData.end), "HH:mm")
+            : (originalBloom.endTime ?? undefined),
+      endDate: newEndDate,
     };
 
     // 3. Call the existing updateMutation with the correct ID and complete data.
@@ -833,43 +965,50 @@ const sortedBlooms = useMemo(() => {
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
   const combinedCalendarItems = useMemo(() => {
-    // 1. Process blooms to create calendar events
     const bloomEvents = dailyBloom.reduce<CalendarEvent[]>((acc, bloom) => {
       if (bloom.isFromEvent && bloom.dueDate) {
-        // Use the date portion only to avoid timezone shift
         const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
+        // ✅ Grab the endDate part if it exists, otherwise fallback to start date
+        const endDatePart = bloom.endDate
+          ? new Date(bloom.endDate).toISOString().split("T")[0]
+          : datePart;
 
-        const [sh, sm] = bloom.startTime
-          ? bloom.startTime.split(":").map(Number)
-          : (() => {
-              console.log("⚠️ Missing startTime, fallback used:", bloom);
-              return [9, 0]; // safer default
-            })();
-        const [eh, em] = bloom.endTime
-          ? bloom.endTime.split(":").map(Number)
-          : [sh + 1, sm];
+        let startLocalString = "";
+        let endLocalString: string | undefined = undefined;
 
-        const startDate = new Date(
-          `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`,
-        );
-        const endDate = new Date(
-          `${datePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`,
-        );
+        if (bloom.endTime) {
+          // TIMED EVENT (e.g. spans multiple days with specific hours)
+          const [sh, sm] = bloom.startTime
+            ? bloom.startTime.split(":").map(Number)
+            : [9, 0];
+          const [eh, em] = bloom.endTime.split(":").map(Number);
 
-        // ✅ FIX: `safeDescription` is now correctly declared within the scope of the reduce function
+          startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
+          endLocalString = `${endDatePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`;
+        } else {
+          // ALL DAY EVENT (No end time)
+          startLocalString = datePart; // FullCalendar uses YYYY-MM-DD for all day
+
+          if (bloom.endDate && datePart !== endDatePart) {
+            // FullCalendar requires the end date of an all-day event to be EXCLUSIVE (the day after)
+            const exclusiveEnd = new Date(bloom.endDate);
+            exclusiveEnd.setDate(exclusiveEnd.getDate() + 1);
+            endLocalString = exclusiveEnd.toISOString().split("T")[0];
+          }
+        }
+
         const safeDescription = bloom.description || "";
-
-        // Use regex to parse time from the safe description string
-
         acc.push({
           id: `bloom-${bloom.id}`,
           title: bloom.title,
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
+          start: startLocalString,
+          end: endLocalString,
+          allDay: !bloom.endTime,
           extendedProps: {
             description: safeDescription.replace(/\[Time:.*?\]/, "").trim(),
             isBloom: true,
             isCompleted: bloom.isCompleted,
+            lastTime: bloom.startTime || undefined,
           },
         });
       }
@@ -1114,7 +1253,16 @@ const sortedBlooms = useMemo(() => {
                               </Button>
                               <Button
                                 className="p-2 h-auto bg-amber-100 text-amber-800 hover:bg-amber-200 rounded-md transition-colors"
-                                onClick={() => setEditData(bloom)}
+                                onClick={() => {
+                                  if (bloom.isFromEvent) {
+                                    // If it's an event bloom, open the calendar directly to its edit dialog
+                                    setInitialEventId(bloom.id);
+                                    setCalendarOpen(true);
+                                  } else {
+                                    // Regular bloom uses the standard edit modal
+                                    setEditData(bloom);
+                                  }
+                                }}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
@@ -1202,7 +1350,16 @@ const sortedBlooms = useMemo(() => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setEditData(bloom)}
+                                onClick={() => {
+                                  if (bloom.isFromEvent) {
+                                    // If it's an event bloom, open the calendar directly to its edit dialog
+                                    setInitialEventId(bloom.id);
+                                    setCalendarOpen(true);
+                                  } else {
+                                    // Regular bloom uses the standard edit modal
+                                    setEditData(bloom);
+                                  }
+                                }}
                               >
                                 <Pencil className="w-4 h-4" />
                               </Button>
@@ -1223,7 +1380,7 @@ const sortedBlooms = useMemo(() => {
               )}
             </CardContent>
             <CardFooter className="p-4">
-              {hasNextPage && (
+              {hasNextPage && sortedBlooms.length >= itemsPerPage && (
                 <Button
                   onClick={() => fetchNextPage()}
                   disabled={isFetchingNextPage}
@@ -1313,42 +1470,174 @@ const sortedBlooms = useMemo(() => {
                 </div>
 
                 {/* --- MODIFIED SECTION START --- */}
+                {/* --- MODIFIED SECTION START --- */}
                 {addInputType === "date" ? (
-                  <>
-                    <Controller
-                      name="dueDate"
-                      control={control}
-                      render={({ field }) => (
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label>Due Date</Label>
-                          <Input
-                            type="date"
-                            min={today}
-                            value={
-                              field.value &&
-                              !isNaN(new Date(field.value).getTime())
-                                ? format(new Date(field.value), "yyyy-MM-dd")
-                                : ""
-                            }
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  ? new Date(e.target.value)
-                                  : undefined,
-                              )
-                            }
-                          />
-                          {errors.dueDate && (
-                            <p className="text-sm text-red-500 mt-1">
-                              {errors.dueDate.message}
-                            </p>
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label>Due Date</Label>
+                      <div className="flex gap-2">
+                        {/* DATE */}
+                        <Controller
+                          name="dueDate"
+                          control={control}
+                          render={({ field }) => (
+                            <Input
+                              type="date"
+                              min={today}
+                              value={
+                                field.value &&
+                                !isNaN(new Date(field.value).getTime())
+                                  ? format(new Date(field.value), "yyyy-MM-dd")
+                                  : ""
+                              }
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? new Date(e.target.value)
+                                    : undefined,
+                                )
+                              }
+                              className="flex-1"
+                            />
                           )}
-                        </div>
-                      )}
-                    />
+                        />
 
-                    {/* --- NEW: Add to Calendar Switch --- */}
-                    <div className="flex items-center space-x-2 rounded-md border p-3">
+                        {/* START TIME */}
+                        {watchAddToCalendar && (
+                          <Controller
+                            name="startTime"
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                value={field.value || ""}
+                                onValueChange={(time) => {
+                                  field.onChange(time);
+                                  setValue("endTime", addOneHour(time));
+                                }}
+                              >
+                                <SelectTrigger className="w-[110px]">
+                                  <SelectValue placeholder="Time" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-60 overflow-y-auto">
+                                  {timeOptions.map((t) => (
+                                    <SelectItem key={t} value={t}>
+                                      {t}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        )}
+                      </div>
+                      {errors.dueDate && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {errors.dueDate.message}
+                        </p>
+                      )}
+                      {errors.startTime && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {errors.startTime.message}
+                        </p>
+                      )}
+                    </div>
+
+                    {watchAddToCalendar && (
+                      <>
+                        {/* END DATE / END TIME (Hidden if All Day is checked) */}
+                        {!!watch("endTime") && (
+                          <div className="flex gap-2">
+                            {/* Disabled End Date - Automatically Synced to Due Date */}
+                            <Controller
+                              name="endDate"
+                              control={control}
+                              render={({ field }) => (
+                                <Input
+                                  type="date"
+                                  min={today}
+                                  value={
+                                    field.value instanceof Date &&
+                                    !isNaN(field.value.getTime())
+                                      ? format(field.value, "yyyy-MM-dd")
+                                      : ""
+                                  }
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      e.target.value
+                                        ? new Date(e.target.value)
+                                        : undefined,
+                                    )
+                                  }
+                                  className="flex-1"
+                                />
+                              )}
+                            />
+                            {/* END TIME */}
+                            <Controller
+                              name="endTime"
+                              control={control}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value || ""}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger className="w-[110px]">
+                                    <SelectValue placeholder="End Time" />
+                                  </SelectTrigger>
+                                  <SelectContent className="max-h-60 overflow-y-auto">
+                                    {timeOptions.map((t) => (
+                                      <SelectItem key={t} value={t}>
+                                        {t}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
+                        )}
+                        {errors.endTime && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.endTime.message}
+                          </p>
+                        )}
+
+                        {/* ALL DAY CHECKBOX */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <Checkbox
+                            id="all-day-toggle"
+                            checked={!watch("endTime")} // Checked if endTime is completely empty
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setValue("endTime", ""); // Clear end time for All Day
+                              } else {
+                                // Default end time 1 hour after start if unchecked
+                                const start =
+                                  watch("startTime") || getNearestHourLocal();
+                                const [h, m] = start.split(":").map(Number);
+                                const endH = String((h + 1) % 24).padStart(
+                                  2,
+                                  "0",
+                                );
+                                setValue(
+                                  "endTime",
+                                  `${endH}:${String(m).padStart(2, "0")}`,
+                                );
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor="all-day-toggle"
+                            className="cursor-pointer"
+                          >
+                            All Day Event
+                          </Label>
+                        </div>
+                      </>
+                    )}
+
+                    {/* ADD TO CALENDAR SWITCH */}
+                    <div className="flex items-center space-x-2 rounded-md border p-3 mt-2">
                       <Controller
                         name="addToCalendar"
                         control={control}
@@ -1356,7 +1645,17 @@ const sortedBlooms = useMemo(() => {
                           <Switch
                             id="add-to-calendar"
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(val) => {
+                              field.onChange(val);
+                              if (val && !watch("startTime")) {
+                                const start = getNearestHourLocal();
+                                setValue("startTime", start);
+                                setValue("endTime", addOneHour(start)); /// Default to All Day when toggled on
+                                const todayDate =
+                                  watch("dueDate") || new Date();
+                                setValue("endDate", todayDate);
+                              }
+                            }}
                           />
                         )}
                       />
@@ -1367,44 +1666,7 @@ const sortedBlooms = useMemo(() => {
                         Add to Calendar
                       </Label>
                     </div>
-                    {errors.addToCalendar && (
-                      <p className="text-sm text-red-500 -mt-2">
-                        {errors.addToCalendar.message}
-                      </p>
-                    )}
-
-                    {/* --- NEW: Conditional Time Inputs --- */}
-                    {watchAddToCalendar && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="startTime-add">Start Time</Label>
-                          <Input
-                            id="startTime-add"
-                            type="time"
-                            {...register("startTime")}
-                          />
-                          {errors.startTime && (
-                            <p className="text-red-500 text-sm">
-                              {errors.startTime.message}
-                            </p>
-                          )}
-                        </div>
-                        <div className="grid w-full items-center gap-1.5">
-                          <Label htmlFor="endTime-add">End Time</Label>
-                          <Input
-                            id="endTime-add"
-                            type="time"
-                            {...register("endTime")}
-                          />
-                          {errors.endTime && (
-                            <p className="text-red-500 text-sm">
-                              {errors.endTime.message}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  </div>
                 ) : (
                   <Controller
                     name="frequency"
@@ -1693,7 +1955,13 @@ const sortedBlooms = useMemo(() => {
         </Dialog>
 
         {/* New Dialog for Calendar */}
-        <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <Dialog
+          open={calendarOpen}
+          onOpenChange={(open) => {
+            setCalendarOpen(open);
+            if (!open) setInitialEventId(null); // <--- Reset when closing
+          }}
+        >
           <DialogContent className="w-[90vw] max-w-4xl rounded-2xl bg-white p-2 shadow-xl border">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-800">
@@ -1704,6 +1972,8 @@ const sortedBlooms = useMemo(() => {
               <DailyBloomCalendar
                 blooms={normalizedBlooms}
                 events={combinedCalendarItems}
+                initialEventId={initialEventId}
+                onClearInitialEvent={() => setInitialEventId(null)}
                 onCreateBloomFromEvent={handleCreateBloomFromEvent}
                 onUpdateBloomFromEvent={handleUpdateBloomFromEvent}
                 onDeleteBloomFromEvent={handleDeleteBloom}
