@@ -83,6 +83,7 @@ interface EventExtendedProps {
   category?: "holiday" | string;
   lastTime?: string;
   createdAt?: string;
+  isAllDay?: boolean;
 }
 
 interface CalendarEvent {
@@ -99,6 +100,8 @@ interface CalendarEvent {
 interface Props {
   blooms?: DailyBloom[];
   events: CalendarEvent[];
+  initialEventId?: string | null;
+  onClearInitialEvent?: () => void;
   onCreateBloomFromEvent: (payload: {
     title: string;
     description?: string;
@@ -113,9 +116,10 @@ interface Props {
       description?: string;
       dueDate?: string;
       end?: string;
+      endDate?: string | null;
       isCompleted?: boolean;
       startTime?: string;
-      endTime?: string;
+      endTime?: string | null;
     };
     source?: "calendar" | "modal";
   }) => void;
@@ -182,11 +186,7 @@ const validateDateTime = (
   }
 
   const isSameDay = startDateStr === todayStr;
-  console.log({
-    isSameDay,
-    startDate,
-    now,
-  });
+
 
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
@@ -553,6 +553,8 @@ const DailyBloomCalendar: React.FC<Props> = ({
   onCreateBloomFromEvent,
   onUpdateBloomFromEvent,
   onDeleteBloomFromEvent,
+  initialEventId,
+  onClearInitialEvent,
 }) => {
   // ----- CHANGE: Using the new useMediaQuery hook -----
   const isMobile = useMediaQuery("(max-width: 640px)");
@@ -582,10 +584,32 @@ const DailyBloomCalendar: React.FC<Props> = ({
   const resizeViewDebounceRef = useRef<number | null>(null);
 
   useEffect(() => {
-    console.log(
-      "PROPS_CHANGED: eventsProp has changed. Overwriting local events state.",
-      eventsProp,
-    );
+    if (initialEventId) {
+      // Look for the event (trying both raw ID and bloom-prefixed ID)
+      const target = events.find(
+        (e) => e.id === initialEventId || e.id === `bloom-${initialEventId}`,
+      );
+
+      if (target) {
+       setCurrentEvent({
+          ...target,
+          allDay: target.allDay || !target.end
+        });
+        setMode("view");
+        setIsEditing(false);
+
+        // <--- ADD THIS BLOCK --->
+        // Clear the ID so it doesn't re-open the dialog when events update
+        if (onClearInitialEvent) {
+          onClearInitialEvent();
+        }
+        // <--- END ADD --->
+      }
+    }
+  }, [initialEventId, events, onClearInitialEvent]);
+
+  useEffect(() => {
+ 
     setEvents(eventsProp);
     setIsLoading(false);
   }, [eventsProp]);
@@ -942,7 +966,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
           dueDate: currentEvent.start,
           end: currentEvent.end,
           startTime: getTimeHHMM(currentEvent.start),
-          endTime: currentEvent.end ? getTimeHHMM(currentEvent.end) : undefined,
+          endTime: currentEvent.allDay
+            ? null
+            : currentEvent.end
+              ? getTimeHHMM(currentEvent.end)
+              : undefined,
+           endDate: currentEvent.allDay ? null : currentEvent.end,
+            
         },
       });
 
@@ -975,6 +1005,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       setErrorMessage("Failed to update event.");
     } finally {
       setIsSubmitting(false);
+      setIsSaving(false);
     }
   }, [currentEvent, handleCloseModal, onUpdateBloomFromEvent]);
 
@@ -1098,6 +1129,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
+                  endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1150,6 +1182,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
+                  endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1218,12 +1251,13 @@ const DailyBloomCalendar: React.FC<Props> = ({
                   title: arg.event.title,
                   start: arg.event.startStr,
                   end: arg.event.endStr,
-                  allDay: arg.event.allDay,
+                  allDay: arg.event.allDay || !arg.event.endStr,
                   color: arg.event.backgroundColor,
                   extendedProps: {
                     description: ext?.description,
                     isBloom: ext?.isBloom,
                     isCompleted: ext?.isCompleted,
+                    lastTime: ext?.lastTime,
                   },
                 });
                 setMode("view");
@@ -1327,26 +1361,26 @@ const DailyBloomCalendar: React.FC<Props> = ({
       handleComplete,
     ],
   );
-const sortedEvents = React.useMemo(() => {
-  return [...events].sort((a, b) => {
-    const getStartTime = (event: CalendarEvent) => {
-      if (!event.start) return Infinity;
+  const sortedEvents = React.useMemo(() => {
+    return [...events].sort((a, b) => {
+      const getStartTime = (event: CalendarEvent) => {
+        if (!event.start) return Infinity;
 
-      // ✅ USE LOCAL TIME (NO toISOString)
-      return new Date(event.start).getTime();
-    };
+        // ✅ USE LOCAL TIME (NO toISOString)
+        return new Date(event.start).getTime();
+      };
 
-    const aStart = getStartTime(a);
-    const bStart = getStartTime(b);
+      const aStart = getStartTime(a);
+      const bStart = getStartTime(b);
 
-    if (aStart !== bStart) return aStart - bStart;
+      if (aStart !== bStart) return aStart - bStart;
 
-    const aCreated = new Date(a.createdAt || 0).getTime();
-    const bCreated = new Date(b.createdAt || 0).getTime();
+      const aCreated = new Date(a.createdAt || 0).getTime();
+      const bCreated = new Date(b.createdAt || 0).getTime();
 
-    return aCreated - bCreated;
-  });
-}, [events]);
+      return aCreated - bCreated;
+    });
+  }, [events]);
 
   // ----- CHANGE: Added key prop to Skeleton Loader elements -----
   const SkeletonLoader = () => (

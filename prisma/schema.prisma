@@ -660,6 +660,7 @@ model Todo {
   title          String
   description    String?
   dueDate        DateTime?
+   endDate       DateTime?  
   frequency      Frequency?
   isCompleted    Boolean    @default(false)
   createdAt      DateTime   @default(now())
