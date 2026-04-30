@@ -376,7 +376,8 @@ export interface AnnouncementType {
   linkUrl?: string | null;
   openInNewTab: boolean;
   isActive: boolean;
-  audience: "EVERYONE" | "PAID" | "FREE" | "COACH" | "SGE";
+  audience: "EVERYONE" | "PAID" | "FREE" | "COACH" | "ENTHUSIAST";
+  audiences?: string[]; 
   expireAt?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -397,7 +398,7 @@ const formatDate = (dateStr?: string | null) => {
   });
 };
 
-type AudienceFilter = "ALL" | "EVERYONE" | "PAID" | "FREE" | "COACH" | "SGE";
+type AudienceFilter = "ALL" | "EVERYONE" | "PAID" | "FREE" | "COACH" | "ENTHUSIAST";
 
 const AUDIENCE_FILTERS: AudienceFilter[] = [
   "ALL",
@@ -405,7 +406,7 @@ const AUDIENCE_FILTERS: AudienceFilter[] = [
   "PAID",
   "FREE",
   "COACH",
-  "SGE",
+  "ENTHUSIAST",
 ];
 
 export default function Announcement() {
@@ -614,7 +615,9 @@ export default function Announcement() {
 
                           {/* Audience */}
                           <td className="align-middle text-center">
-                            {announcement.audience}
+                           {announcement.audiences?.length
+  ? announcement.audiences.join(", ")
+  : announcement.audience}
                           </td>
 
                           {/* Expire At */}
