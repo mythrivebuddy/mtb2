@@ -12,7 +12,7 @@ import {
   Category,
 } from "@/types/client/manage-store-product";
 import PageSkeleton from "@/components/PageSkeleton";
-import { CheckCircle, XCircle, Pencil, Trash2, Eye } from "lucide-react";
+import { CheckCircle, XCircle, Pencil, Trash2, Eye, Copy } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,6 +56,8 @@ const BLANK_FORM: ItemFormData = {
   yearlyPrice: "" as unknown as number,
   lifetimePrice: "" as unknown as number,
   currency: "INR",
+   imageUrl: undefined,
+  downloadUrl: undefined,
 };
 
 // ─── SVG Icons ─────────────────────────────────────────────────────────────────
@@ -207,8 +209,17 @@ export default function ProductManagement() {
     fd.append("yearlyPrice", (Number(data.yearlyPrice) || 0).toString());
     fd.append("lifetimePrice", (Number(data.lifetimePrice) || 0).toString());
     fd.append("currency", data.currency ?? "INR");
-    if (data.imageFile) fd.append("image", data.imageFile);
-    if (data.downloadFile) fd.append("download", data.downloadFile);
+  if (data.imageFile) {
+    fd.append("image", data.imageFile);
+  } else if (data.imageUrl) {
+    fd.append("imageUrl", data.imageUrl);
+  }
+
+  if (data.downloadFile) {
+    fd.append("download", data.downloadFile);
+  } else if (data.downloadUrl) {
+    fd.append("downloadUrl", data.downloadUrl);
+  }
     return fd;
   };
 
@@ -364,7 +375,7 @@ export default function ProductManagement() {
       toast.error("Please select a category");
       return;
     }
-    if (!editingItem && !formData.imageFile) {
+  if (!editingItem && !formData.imageFile && !formData.imageUrl) {
       toast.error("Please upload an image");
       return;
     }
@@ -391,6 +402,9 @@ export default function ProductManagement() {
       yearlyPrice: item.yearlyPrice,
       lifetimePrice: item.lifetimePrice,
       currency: item.currency ?? "INR",
+
+      imageUrl: item.imageUrl,
+    downloadUrl: item.downloadUrl,
     });
     setModalOpen(true);
   };
@@ -430,7 +444,23 @@ export default function ProductManagement() {
       setFormData((prev) => ({ ...prev, [key]: value }));
     }
   };
+const handleClone = (item: Item) => {
+  setEditingItem(null); // IMPORTANT → forces CREATE mode
 
+  setFormData({
+    name: item.name,
+    category: item.categoryId,
+    basePrice: item.basePrice,
+    monthlyPrice: item.monthlyPrice,
+    yearlyPrice: item.yearlyPrice,
+    lifetimePrice: item.lifetimePrice,
+    currency: item.currency ?? "INR",
+       imageUrl: item.imageUrl,
+    downloadUrl: item.downloadUrl,
+  });
+
+  setModalOpen(true);
+};
   // ─── JSX ──────────────────────────────────────────────────────────────────────
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -469,7 +499,7 @@ export default function ProductManagement() {
             {/* Header */}
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg font-semibold">
-                {editingItem ? "Edit Item" : "Create New Item"}
+          {editingItem ? "Edit Item" : formData.name?.includes("(Copy)") ? "Clone Item" : "Create New Item"}
               </h3>
               <button
                 onClick={() => {
@@ -634,6 +664,19 @@ export default function ProductManagement() {
                 <label className="block text-sm font-medium mb-1">
                   Image {!editingItem && "*"}
                 </label>
+                  {formData.imageUrl && !formData.imageFile && (
+    <div className="mb-2">
+      <img
+        src={formData.imageUrl}
+        alt="Preview"
+        className="h-20 w-20 object-cover rounded border"
+      />
+      <p className="text-xs text-gray-500">
+        Existing image will be reused if not changed
+      </p>
+    </div>
+  )}
+
                 <input
                   type="file"
                   accept="image/*"
@@ -644,7 +687,7 @@ export default function ProductManagement() {
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required={!editingItem}
+                required={!editingItem && !formData.imageUrl}
                 />
                 {editingItem && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -657,6 +700,12 @@ export default function ProductManagement() {
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Download File{" "}
+                    {formData?.downloadUrl && !formData.downloadFile && (
+    <p className="text-xs text-gray-500 mb-2">
+      Existing file will be reused
+    </p>
+  )}
+
                   <span className="text-gray-400 font-normal">
                     (Optional — PDF only)
                   </span>
@@ -1108,6 +1157,13 @@ export default function ProductManagement() {
                         >
                           <XCircle className="w-4 h-4" />
                         </button>
+             <button
+  onClick={() => handleClone(item)}
+  className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
+  title="Clone"
+>
+  <Copy className="w-4 h-4" />
+</button>
                         <button
                           onClick={() => handleEdit(item)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"

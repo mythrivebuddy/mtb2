@@ -86,7 +86,9 @@ export async function POST(request: NextRequest) {
     const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
     const currency = (formData.get("currency") as string) || "USD";
     const imageFile = formData.get("image") as File;
+    const imageUrlFromBody = formData.get("imageUrl") as string | null;
     const downloadFile = formData.get("download") as File | null;
+    const downloadUrlFromBody = formData.get("downloadUrl") as string | null;
 
     // ✅ Added GP to valid currencies
     if (!["USD", "INR", "GP"].includes(currency)) {
@@ -96,17 +98,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!name || !category || !imageFile || isNaN(basePrice)) {
+if (!name || !category || (!imageFile && !imageUrlFromBody) || isNaN(basePrice)) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+  let imageUrl: string;
 
-    let downloadUrl: string | undefined;
+if (imageFile && imageFile.size > 0) {
+  imageUrl = await handleSupabaseImageUpload(
+    imageFile,
+    "store-images",
+    "store-images"
+  );
+} else if (imageUrlFromBody) {
+  imageUrl = imageUrlFromBody; // reuse existing
+} else {
+  return NextResponse.json(
+    { error: "Image is required" },
+    { status: 400 }
+  );
+}
+let downloadUrl: string | undefined;
 
-    if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
-    }
+if (downloadFile && downloadFile.size > 0) {
+  downloadUrl = await handleSupabaseImageUpload(
+    downloadFile,
+    "store-images",
+    "store-images"
+  );
+} else if (downloadUrlFromBody) {
+  downloadUrl = downloadUrlFromBody;
+}
 
     const item = await prisma.item.create({
       data: {
