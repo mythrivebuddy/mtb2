@@ -9,6 +9,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        isDeleted: true,
       },
     });
 
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         name: true,
+        isDeleted:true,
       },
     });
 

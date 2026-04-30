@@ -4,6 +4,9 @@ import { NextResponse } from "next/server";
 export async function GET(): Promise<NextResponse> {
   try {
     const categories = await prisma.category.findMany({
+      where: {
+        isDeleted: false,
+      },
       select: {
         id: true,
         name: true,
@@ -15,7 +18,7 @@ export async function GET(): Promise<NextResponse> {
     console.error("Error fetching categories:", error);
     return NextResponse.json(
       { error: "Failed to fetch categories" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
