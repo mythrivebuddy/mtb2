@@ -56,7 +56,7 @@ const BLANK_FORM: ItemFormData = {
   yearlyPrice: "" as unknown as number,
   lifetimePrice: "" as unknown as number,
   currency: "INR",
-   imageUrl: undefined,
+  imageUrl: undefined,
   downloadUrl: undefined,
 };
 
@@ -209,23 +209,22 @@ export default function ProductManagement() {
     fd.append("yearlyPrice", (Number(data.yearlyPrice) || 0).toString());
     fd.append("lifetimePrice", (Number(data.lifetimePrice) || 0).toString());
     fd.append("currency", data.currency ?? "INR");
-  if (data.imageFile) {
-    fd.append("image", data.imageFile);
-  } else if (data.imageUrl) {
-    fd.append("imageUrl", data.imageUrl);
-  }
+    if (data.imageFile) {
+      fd.append("image", data.imageFile);
+    } else if (data.imageUrl) {
+      fd.append("imageUrl", data.imageUrl);
+    }
 
-  if (data.downloadFile) {
-    fd.append("download", data.downloadFile);
-  } else if (data.downloadUrl) {
-    fd.append("downloadUrl", data.downloadUrl);
-  }
+if (data.downloadFile) {
+  fd.append("download", data.downloadFile);
+}
     return fd;
   };
 
   // ─── Mutations ────────────────────────────────────────────────────────────────
   const createMutation = useMutation({
     mutationFn: (newItem: ItemFormData) =>
+      
       axios.post("/api/admin/store/items", buildFd(newItem), {
         headers: { "Content-Type": "multipart/form-data" },
       }),
@@ -375,7 +374,7 @@ export default function ProductManagement() {
       toast.error("Please select a category");
       return;
     }
-  if (!editingItem && !formData.imageFile && !formData.imageUrl) {
+    if (!editingItem && !formData.imageFile && !formData.imageUrl) {
       toast.error("Please upload an image");
       return;
     }
@@ -404,7 +403,7 @@ export default function ProductManagement() {
       currency: item.currency ?? "INR",
 
       imageUrl: item.imageUrl,
-    downloadUrl: item.downloadUrl,
+      downloadUrl: item.downloadUrl,
     });
     setModalOpen(true);
   };
@@ -444,23 +443,23 @@ export default function ProductManagement() {
       setFormData((prev) => ({ ...prev, [key]: value }));
     }
   };
-const handleClone = (item: Item) => {
-  setEditingItem(null); // IMPORTANT → forces CREATE mode
+  const handleClone = (item: Item) => {
+    setEditingItem(null); // IMPORTANT → forces CREATE mode
 
-  setFormData({
-    name: item.name,
-    category: item.categoryId,
-    basePrice: item.basePrice,
-    monthlyPrice: item.monthlyPrice,
-    yearlyPrice: item.yearlyPrice,
-    lifetimePrice: item.lifetimePrice,
-    currency: item.currency ?? "INR",
-       imageUrl: item.imageUrl,
-    downloadUrl: item.downloadUrl,
-  });
+    setFormData({
+      name: item.name,
+      category: item.categoryId,
+      basePrice: item.basePrice,
+      monthlyPrice: item.monthlyPrice,
+      yearlyPrice: item.yearlyPrice,
+      lifetimePrice: item.lifetimePrice,
+      currency: item.currency ?? "INR",
+      imageUrl: item.imageUrl,
+      downloadUrl: item.downloadUrl,
+    });
 
-  setModalOpen(true);
-};
+    setModalOpen(true);
+  };
   // ─── JSX ──────────────────────────────────────────────────────────────────────
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -499,7 +498,11 @@ const handleClone = (item: Item) => {
             {/* Header */}
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-lg font-semibold">
-          {editingItem ? "Edit Item" : formData.name?.includes("(Copy)") ? "Clone Item" : "Create New Item"}
+                {editingItem
+                  ? "Edit Item"
+                  : formData.name?.includes("(Copy)")
+                    ? "Clone Item"
+                    : "Create New Item"}
               </h3>
               <button
                 onClick={() => {
@@ -664,18 +667,18 @@ const handleClone = (item: Item) => {
                 <label className="block text-sm font-medium mb-1">
                   Image {!editingItem && "*"}
                 </label>
-                  {formData.imageUrl && !formData.imageFile && (
-    <div className="mb-2">
-      <img
-        src={formData.imageUrl}
-        alt="Preview"
-        className="h-20 w-20 object-cover rounded border"
-      />
-      <p className="text-xs text-gray-500">
-        Existing image will be reused if not changed
-      </p>
-    </div>
-  )}
+                {formData.imageUrl && !formData.imageFile && (
+                  <div className="mb-2">
+                    <img
+                      src={formData.imageUrl}
+                      alt="Preview"
+                      className="h-20 w-20 object-cover rounded border"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Existing image will be reused if not changed
+                    </p>
+                  </div>
+                )}
 
                 <input
                   type="file"
@@ -684,10 +687,11 @@ const handleClone = (item: Item) => {
                     setFormData({
                       ...formData,
                       imageFile: e.target.files?.[0] || undefined,
+                        imageUrl: undefined, 
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required={!editingItem && !formData.imageUrl}
+                  required={!editingItem && !formData.imageUrl}
                 />
                 {editingItem && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -700,12 +704,11 @@ const handleClone = (item: Item) => {
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Download File{" "}
-                    {formData?.downloadUrl && !formData.downloadFile && (
-    <p className="text-xs text-gray-500 mb-2">
-      Existing file will be reused
-    </p>
-  )}
-
+                  {formData?.downloadUrl && !formData.downloadFile && (
+                    <p className="text-xs text-gray-500 mb-2">
+                      Existing file will be reused
+                    </p>
+                  )}
                   <span className="text-gray-400 font-normal">
                     (Optional — PDF only)
                   </span>
@@ -723,6 +726,7 @@ const handleClone = (item: Item) => {
                     setFormData({
                       ...formData,
                       downloadFile: file || undefined,
+                      downloadUrl: undefined, 
                     });
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1157,13 +1161,15 @@ const handleClone = (item: Item) => {
                         >
                           <XCircle className="w-4 h-4" />
                         </button>
-             <button
-  onClick={() => handleClone(item)}
-  className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
-  title="Clone"
->
-  <Copy className="w-4 h-4" />
-</button>
+                        {item.createdByRole !== "ADMIN" && (
+                        <button
+                          onClick={() => handleClone(item)}
+                          className="p-1.5 text-purple-600 hover:bg-purple-50 rounded"
+                          title="Clone"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        )}
                         <button
                           onClick={() => handleEdit(item)}
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
