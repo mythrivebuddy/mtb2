@@ -398,6 +398,8 @@ model Item {
 model Category {
   id        String   @id @default(cuid())
   name      String
+  
+  isDeleted Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   items     Item[]
