@@ -999,6 +999,7 @@ model Announcement {
   openInNewTab    Boolean?  @default(false) @map("open_in_new_tab")
   isActive        Boolean   @default(true) @map("is_active")
   audience        Audience
+  audiences       String[]  @default([]) 
   expireAt        DateTime? @map("expire_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -2349,6 +2350,7 @@ enum Audience {
   FREE
   COACH
   SGE
+ ENTHUSIAST
 }
 
 enum Role {
