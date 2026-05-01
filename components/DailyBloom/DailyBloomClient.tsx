@@ -191,7 +191,9 @@ export default function DailyBloomClient() {
     message: "",
   });
   const [initialEventId, setInitialEventId] = useState<string | null>(null);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   useOnlineUserLeaderBoard();
+
   const timeOptions = useMemo(() => {
     const times = new Set<string>();
     for (let h = 0; h < 24; h++) {
@@ -331,15 +333,33 @@ export default function DailyBloomClient() {
   const dailyBloom = useMemo(() => {
     return data?.pages.flatMap((page) => page.data) || [];
   }, [data]);
+  const { data: completedEventBlooms } = useQuery({
+    queryKey: ["completedEventBlooms"],
+    queryFn: async () => {
+      const res = await axios.get(
+        `/api/user/daily-bloom?status=CompletedEvents`,
+      );
+      return res.data.data;
+    },
+  });
 
+  const completedEventList = useMemo(() => {
+    return (completedEventBlooms || []).filter(
+      (b: DailyBloom) => b.isFromEvent && b.dueDate,
+    );
+  }, [completedEventBlooms]);
   // Add this entire block to de-duplicate the list before rendering
-// Add this entire block to de-duplicate the list before rendering
+  // Add this entire block to de-duplicate the list before rendering
   const uniqueBlooms = useMemo(() => {
     const bloomMap = new Map(dailyBloom.map((bloom) => [bloom.id, bloom]));
-    
+
     const now = new Date();
     // Get midnight of today in local time for accurate day-to-day comparisons
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
 
     return Array.from(bloomMap.values()).filter((bloom) => {
       // ✅ 1. STATUS FILTER
@@ -354,11 +374,13 @@ export default function DailyBloomClient() {
       // ✅ 2. FIX OVERDUE LOGIC
       if (bloom.isFromEvent && bloom.endTime) {
         // If it's a calendar event with a specific end time, use the endDate (if multi-day) or dueDate
-        const targetDateObj = bloom.endDate ? new Date(bloom.endDate) : dueDateObj;
+        const targetDateObj = bloom.endDate
+          ? new Date(bloom.endDate)
+          : dueDateObj;
         const y = targetDateObj.getFullYear();
         const m = String(targetDateObj.getMonth() + 1).padStart(2, "0");
         const d = String(targetDateObj.getDate()).padStart(2, "0");
-        
+
         // Construct the exact completion deadline
         const exactEnd = new Date(`${y}-${m}-${d}T${bloom.endTime}`);
         isOverdue = exactEnd < now;
@@ -367,13 +389,14 @@ export default function DailyBloomClient() {
         const dueStart = new Date(
           dueDateObj.getFullYear(),
           dueDateObj.getMonth(),
-          dueDateObj.getDate()
+          dueDateObj.getDate(),
         );
         isOverdue = dueStart < todayStart;
       }
 
       // ❌ remove overdue blooms from main list (they belong in the Overdue component)
       if (isOverdue && !bloom.isCompleted) return false;
+      // if (isOverdue && !bloom.isCompleted && !bloom.isFromEvent) return false;
 
       return true;
     });
@@ -502,8 +525,8 @@ export default function DailyBloomClient() {
               ],
             } as DashboardContent;
           }
-             // ❌ if it's event → don't touch dailyBlooms
-            if (createdBloom.isFromEvent) return old;
+          // ❌ if it's event → don't touch dailyBlooms
+          if (createdBloom.isFromEvent) return old;
           return {
             ...old,
             dailyBlooms: [
@@ -536,7 +559,7 @@ export default function DailyBloomClient() {
             const startTime = createdBloom.startTime || "09:00";
 
             const newEvent = {
-             id: createdBloom.id,
+              id: createdBloom.id,
               title: createdBloom.title,
               startTime: startTime,
 
@@ -549,7 +572,7 @@ export default function DailyBloomClient() {
 
             return {
               ...old,
-             events: [newEvent, ...existingEvents].slice(0, 3),
+              events: [newEvent, ...existingEvents].slice(0, 3),
             };
           },
         );
@@ -967,55 +990,67 @@ export default function DailyBloomClient() {
   })) as CalendarBloom[]; // This assertion forces TypeScript to accept the correct type
 
   const combinedCalendarItems = useMemo(() => {
-    const bloomEvents = dailyBloom.reduce<CalendarEvent[]>((acc, bloom) => {
-      if (bloom.isFromEvent && bloom.dueDate) {
-        const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
-        // ✅ Grab the endDate part if it exists, otherwise fallback to start date
-        const endDatePart = bloom.endDate
-          ? new Date(bloom.endDate).toISOString().split("T")[0]
-          : datePart;
+    const allEventBlooms = [...dailyBloom, ...completedEventList];
+    const uniqueEventMap = new Map<string, DailyBloom>();
 
-        let startLocalString = "";
-        let endLocalString: string | undefined = undefined;
+    allEventBlooms.forEach((b) => {
+      uniqueEventMap.set(b.id, b); // dedupe by ID
+    });
 
-        if (bloom.endTime) {
-          // TIMED EVENT (e.g. spans multiple days with specific hours)
-          const [sh, sm] = bloom.startTime
-            ? bloom.startTime.split(":").map(Number)
-            : [9, 0];
-          const [eh, em] = bloom.endTime.split(":").map(Number);
+    const dedupedEventBlooms = Array.from(uniqueEventMap.values());
 
-          startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
-          endLocalString = `${endDatePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`;
-        } else {
-          // ALL DAY EVENT (No end time)
-          startLocalString = datePart; // FullCalendar uses YYYY-MM-DD for all day
+    const bloomEvents = dedupedEventBlooms.reduce<CalendarEvent[]>(
+      (acc, bloom) => {
+        if (bloom.isFromEvent && bloom.dueDate) {
+          const datePart = new Date(bloom.dueDate).toISOString().split("T")[0];
+          // ✅ Grab the endDate part if it exists, otherwise fallback to start date
+          const endDatePart = bloom.endDate
+            ? new Date(bloom.endDate).toISOString().split("T")[0]
+            : datePart;
 
-          if (bloom.endDate && datePart !== endDatePart) {
-            // FullCalendar requires the end date of an all-day event to be EXCLUSIVE (the day after)
-            const exclusiveEnd = new Date(bloom.endDate);
-            exclusiveEnd.setDate(exclusiveEnd.getDate() + 1);
-            endLocalString = exclusiveEnd.toISOString().split("T")[0];
+          let startLocalString = "";
+          let endLocalString: string | undefined = undefined;
+
+          if (bloom.endTime) {
+            // TIMED EVENT (e.g. spans multiple days with specific hours)
+            const [sh, sm] = bloom.startTime
+              ? bloom.startTime.split(":").map(Number)
+              : [9, 0];
+            const [eh, em] = bloom.endTime.split(":").map(Number);
+
+            startLocalString = `${datePart}T${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}:00`;
+            endLocalString = `${endDatePart}T${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}:00`;
+          } else {
+            // ALL DAY EVENT (No end time)
+            startLocalString = datePart; // FullCalendar uses YYYY-MM-DD for all day
+
+            if (bloom.endDate && datePart !== endDatePart) {
+              // FullCalendar requires the end date of an all-day event to be EXCLUSIVE (the day after)
+              const exclusiveEnd = new Date(bloom.endDate);
+              exclusiveEnd.setDate(exclusiveEnd.getDate() + 1);
+              endLocalString = exclusiveEnd.toISOString().split("T")[0];
+            }
           }
-        }
 
-        const safeDescription = bloom.description || "";
-        acc.push({
-          id: `bloom-${bloom.id}`,
-          title: bloom.title,
-          start: startLocalString,
-          end: endLocalString,
-          allDay: !bloom.endTime,
-          extendedProps: {
-            description: safeDescription.replace(/\[Time:.*?\]/, "").trim(),
-            isBloom: true,
-            isCompleted: bloom.isCompleted,
-            lastTime: bloom.startTime || undefined,
-          },
-        });
-      }
-      return acc;
-    }, []);
+          const safeDescription = bloom.description || "";
+          acc.push({
+            id: `bloom-${bloom.id}`,
+            title: bloom.title,
+            start: startLocalString,
+            end: endLocalString,
+            allDay: !bloom.endTime,
+            extendedProps: {
+              description: safeDescription.replace(/\[Time:.*?\]/, "").trim(),
+              isBloom: true,
+              isCompleted: bloom.isCompleted,
+              lastTime: bloom.startTime || undefined,
+            },
+          });
+        }
+        return acc;
+      },
+      [],
+    );
 
     // 2. Filter out any "ghost" events (logic unchanged)
     const bloomEventIdentifiers = new Set(
@@ -1034,7 +1069,7 @@ export default function DailyBloomClient() {
 
     // 3. Combine the clean lists
     return [...pureEvents, ...bloomEvents];
-  }, [uniqueBlooms, events]);
+  }, [dailyBloom, completedEventList, events]);
 
   return (
     <div className="w-full">
@@ -1099,34 +1134,47 @@ export default function DailyBloomClient() {
                       type="button"
                       variant="outline"
                       className="w-full justify-between"
+                      onClick={() => {
+                        // e.stopPropagation();
+                        setStatusDropdownOpen((prev) => !prev);
+                      }}
                     >
                       <span>{statusFilter}</span>
                       <ListChecks className="h-4 w-4 text-muted-foreground" />
                     </Button>
-                    <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        type="button"
-                        variant={
-                          statusFilter === "Pending" ? "secondary" : "ghost"
-                        }
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setStatusFilter("Pending")}
-                      >
-                        Pending
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={
-                          statusFilter === "Completed" ? "secondary" : "ghost"
-                        }
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setStatusFilter("Completed")}
-                      >
-                        Completed
-                      </Button>
-                    </div>
+                    {statusDropdownOpen && (
+                      <div className="absolute z-10 w-full top-full mt-1 bg-background border rounded-md shadow-lg p-1">
+                        <Button
+                          type="button"
+                          variant={
+                            statusFilter === "Pending" ? "secondary" : "ghost"
+                          }
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setStatusFilter("Pending");
+                            setStatusDropdownOpen(false); // close after click
+                          }}
+                        >
+                          Pending
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant={
+                            statusFilter === "Completed" ? "secondary" : "ghost"
+                          }
+                          size="sm"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setStatusFilter("Completed");
+                            setStatusDropdownOpen(false); // close after click
+                          }}
+                        >
+                          Completed
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   <div className="relative group w-1/2 md:w-36">
                     <Button
