@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { formatJP } from "@/lib/utils/formatJP";
 import Image from "next/image";
 
 type Props = {
@@ -17,8 +18,8 @@ export const ProgressStatCard = ({ value, label }: Props) => {
 
         {/* Content */}
         <div className="flex flex-col">
-          <p className="text-lg font-semibold text-jp-orange leading-none">
-            {value}
+          <p className="text-sm xlg:text-md font-semibold text-jp-orange leading-none">
+            {formatJP(Number(value))}
           </p>
           <p className="text-xs text-gray-500 leading-tight">{label}</p>
         </div>

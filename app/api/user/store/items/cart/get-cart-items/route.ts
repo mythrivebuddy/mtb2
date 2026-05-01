@@ -12,7 +12,14 @@ export async function GET(): Promise<NextResponse> {
     }
 
     const cartItems = await prisma?.cart.findMany({
-      where: { userId: session.user.id },
+      where: {
+        userId: session.user.id,
+        item: {
+          category: {
+            isDeleted: false, // exclude archived categories
+          },
+        },
+      },
       include: {
         item: {
           include: {

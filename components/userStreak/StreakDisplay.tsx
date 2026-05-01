@@ -42,7 +42,7 @@ export function StreakDisplay() {
 
         {/* Content */}
         <div className="flex flex-col">
-          <p className="text-lg font-semibold text-orange-500 leading-none">
+          <p className="text-sm xlg:text-md font-semibold text-orange-500 leading-none">
             {streakCount}
           </p>
           <p className="text-xs text-gray-500 leading-tight">

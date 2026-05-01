@@ -19,7 +19,7 @@ function serializeError(e: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    await checkRole(["ADMIN","USER"]);
+    await checkRole(["ADMIN", "USER"]);
     const body = await req.json();
 
     const { participantId, challengeId, issuedById } = body;
@@ -37,7 +37,25 @@ export async function POST(req: NextRequest) {
 
     if (!enrollment)
       return NextResponse.json({ error: "No enrollment" }, { status: 404 });
+    // ✅ 1. Check existing certificate
+    const existingCertificate = await prisma.challengeCertificate.findFirst({
+      where: {
+          participantId,
+          challengeId,
+      },
+    });
 
+    if (existingCertificate) {
+      return NextResponse.json(
+        {
+          success: true,
+          certificate: existingCertificate,
+          pngUrl: existingCertificate.certificateUrl,
+          isExisting: true, // optional flag
+        },
+        { status: 200 },
+      );
+    }
     const { user, challenge } = enrollment;
 
     // 2. Completion
@@ -96,7 +114,6 @@ export async function POST(req: NextRequest) {
       qrCodeDataUrl: qr,
       baseUrl: process.env.NEXT_PUBLIC_BASE_URL!,
     });
-
 
     const pngBuffer = Buffer.from(await og.arrayBuffer());
 

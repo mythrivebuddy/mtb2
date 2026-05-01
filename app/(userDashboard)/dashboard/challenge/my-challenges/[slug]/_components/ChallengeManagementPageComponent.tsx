@@ -583,7 +583,75 @@ export default function ChallengeManagementPage({
       throw new Error("Unexpected error while deleting enrollment");
     }
   };
+  const downloadCertificateMutation = useMutation({
+    mutationFn: async ({ participantId }: { participantId: string }) => {
+      const res = await axios.post(`/api/challenge/certificates/generate`, {
+        participantId,
+        challengeId: challenge?.id,
+        issuedById: challenge?.creatorId,
+      });
 
+      return res.data;
+    },
+
+    onSuccess: async (data) => {
+      // ✅ ONLY download (no new tab)
+      const certUrl = data.pngUrl;
+      if (certUrl) {
+        const response = await fetch(certUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `certificate-${data.certificate.certificateId}.webp`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(blobUrl);
+      }
+
+      queryClient.setQueryData(
+        ["getChallengeDetails", slug],
+        (oldData: ChallengeDetails | undefined) => {
+          if (!oldData) return oldData;
+
+          const userId = session.data?.user.id;
+
+          return {
+            ...oldData,
+            participants: oldData.participants.map((p) =>
+              p.id === userId
+                ? {
+                    ...p,
+                    isCertificateIssued: true,
+                  }
+                : p,
+            ),
+          };
+        },
+      );
+
+      // // ✅ optional: ensure consistency with backend
+      // queryClient.invalidateQueries({
+      //   queryKey: ["getChallengeDetails", slug],
+      // });
+
+      toast.success("Certificate downloaded 🎉", {
+        id: "cert-download",
+      });
+    },
+
+    onError: (error: AxiosError<{ error?: string }>) => {
+      const message =
+        error.response?.data?.error || "Failed to download certificate";
+
+      toast.error(message, {
+        id: "cert-download",
+      });
+    },
+  });
   /**
    * Handles the deletion flow (confirmation + toast feedback)
    */
@@ -616,7 +684,13 @@ export default function ChallengeManagementPage({
       setIsUserDeleting(false);
     }
   };
+  const handleDownloadCertificate = () => {
+    if (!session.data?.user?.id) return;
 
+    downloadCertificateMutation.mutate({
+      participantId: session.data.user.id,
+    });
+  };
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -654,6 +728,21 @@ export default function ChallengeManagementPage({
   const totalCompletedDays = (challenge.history || []).filter(
     (day) => day.status === "COMPLETED",
   ).length;
+  const usersCompletedDays =
+    challenge.leaderboard.find((player) => player.id === session.data?.user.id)
+      ?.completedDays ?? 0;
+
+  const totalDays =
+    Math.ceil(
+      (new Date(challenge.endDate).getTime() -
+        new Date(challenge.startDate).getTime()) /
+        (1000 * 60 * 60 * 24),
+    ) + 1;
+
+  const completionPercentage =
+    totalDays === 0 ? 0 : (usersCompletedDays / totalDays) * 100;
+
+  const is75PercentCompleted = completionPercentage >= 75;
 
   const handleBack = () => {
     if (
@@ -752,14 +841,40 @@ export default function ChallengeManagementPage({
                 </Link>
               </div>
             )}
-          {hasUserCertificateIssued && (
-            <Link
-              href={`/dashboard/challenge/my-challenges/my-achievements/${challenge.id}`}
-            >
-              <button className="w-full rounded-lg shadow-md  py-3 bg-fuchsia-800 text-white mt-2">
-                My Achievements
-              </button>
-            </Link>
+          {(hasUserCertificateIssued || is75PercentCompleted) && (
+            <div className="flex flex-col gap-2 mt-2">
+              {/* ✅ Achievements always visible if issued */}
+              {hasUserCertificateIssued && (
+                <button
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/challenge/my-challenges/my-achievements/${challenge.id}`,
+                    )
+                  }
+                  className="w-full rounded-lg shadow-md py-3 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  My Achievements
+                </button>
+              )}
+
+              {/* ✅ Download only if 75% reached */}
+              {is75PercentCompleted && !hasUserCertificateIssued && (
+                <button
+                  onClick={handleDownloadCertificate}
+                  disabled={downloadCertificateMutation.isPending}
+                  className="w-full rounded-lg shadow-md py-3 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {downloadCertificateMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    "Download Certificate"
+                  )}
+                </button>
+              )}
+            </div>
           )}
 
           {/* STAT CARDS */}

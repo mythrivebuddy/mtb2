@@ -12,17 +12,42 @@ export const POST = async (request: NextRequest) => {
       linkUrl,
       openInNewTab,
       isActive,
-      audience,
+      audience, // old legacy
+       audiences,   //NEw
       expireAt,
     } = body;
 
     // Validate only required fields
-    if (!title || !backgroundColor || !fontColor || !audience) {
+    if (!title || !backgroundColor || !fontColor) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
+    
+   const normalizedAudiences =
+  audiences && audiences.length > 0
+    ? Array.from(new Set(audiences)) // ✅ dedupe
+    : audience
+      ? [audience]
+      : ["EVERYONE"];
+      const VALID_AUDIENCES = ["EVERYONE", "PAID", "FREE", "COACH", "ENTHUSIAST"];
+
+const isValid = normalizedAudiences.every(a =>
+  VALID_AUDIENCES.includes(a)
+);
+
+if (!isValid) {
+  return NextResponse.json(
+    { error: "Invalid audience values" },
+    { status: 400 }
+  );
+}
+
+      const legacyAudience =
+  audience ??
+  normalizedAudiences.find((a) => a !== "EVERYONE") ??
+  "EVERYONE";
 
     const announcement = await prisma.announcement.create({
       data: {
@@ -32,7 +57,8 @@ export const POST = async (request: NextRequest) => {
         linkUrl: linkUrl || null,
         openInNewTab: openInNewTab ?? false,
         isActive: isActive ?? true,
-        audience,
+          audience: legacyAudience, // legacy safe
+    audiences: normalizedAudiences,       // new 
         expireAt: expireAt ? new Date(expireAt) : null,
       },
     });

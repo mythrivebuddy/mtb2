@@ -30,7 +30,9 @@ interface AnnouncementFormValues {
   linkUrl?: string;
   openInNewTab: "same" | "new";
   isActive: "on" | "off";
-  audience: "EVERYONE" | "PAID" | "FREE" | "COACH" | "SGE";
+
+  plan: "EVERYONE" | "PAID" | "FREE";
+  role: "EVERYONE" | "COACH" | "ENTHUSIAST";
   expireAt?: string;
 }
 
@@ -56,6 +58,23 @@ export default function AnnouncementDialog({
   // Reset form values for edit / create
   useEffect(() => {
     if (announcement) {
+      const targets: string[] =
+        announcement.audiences && announcement.audiences.length > 0
+          ? announcement.audiences
+          : [announcement.audience];
+
+      // ✅ FIX: ignore EVERYONE if specific value exists
+      const planValues = ["PAID", "FREE"];
+      const roleValues = ["COACH", "ENTHUSIAST"];
+
+      const plan =
+        (targets.find((t) => planValues.includes(t)) as "PAID" | "FREE") ??
+        "EVERYONE";
+
+      const role =
+        (targets.find((t) => roleValues.includes(t)) as "COACH" | "ENTHUSIAST") ??
+        "EVERYONE";
+
       reset({
         title: announcement.title,
         backgroundColor: announcement.backgroundColor,
@@ -63,9 +82,12 @@ export default function AnnouncementDialog({
         linkUrl: announcement.linkUrl || "",
         openInNewTab: announcement.openInNewTab ? "new" : "same",
         isActive: announcement.isActive ? "on" : "off",
-        audience: announcement.audience,
+
+        plan,
+        role,
+
         expireAt: announcement.expireAt
-          ? new Date(announcement.expireAt).toISOString().split("T")[0] // ✅ YYYY-MM-DD
+          ? new Date(announcement.expireAt).toISOString().split("T")[0]
           : "",
       });
     } else {
@@ -74,7 +96,8 @@ export default function AnnouncementDialog({
         fontColor: "#000000",
         openInNewTab: "same",
         isActive: "on",
-        audience: "EVERYONE",
+        plan: "EVERYONE",
+        role: "EVERYONE",
       });
     }
   }, [announcement, reset]);
@@ -82,10 +105,15 @@ export default function AnnouncementDialog({
   // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: AnnouncementFormValues) => {
+      const audiences = Array.from(new Set([data.plan, data.role]));
       const payload = {
         ...data,
         openInNewTab: data.openInNewTab === "new",
         isActive: data.isActive === "on",
+
+        audiences,
+        audience: data.plan === "EVERYONE" ? "EVERYONE" : data.plan,
+        expireAt: data.expireAt ? new Date(data.expireAt) : null,
       };
       return axios.post("/api/admin/announcement", payload);
     },
@@ -99,12 +127,20 @@ export default function AnnouncementDialog({
 
   const editMutation = useMutation({
     mutationFn: async (data: AnnouncementFormValues) => {
+      const audiences = Array.from(new Set([data.plan, data.role]));
       const payload = {
         ...data,
         openInNewTab: data.openInNewTab === "new",
         isActive: data.isActive === "on",
+
+        audiences,
+        audience: data.plan === "EVERYONE" ? "EVERYONE" : data.plan,
+        expireAt: data.expireAt ? new Date(data.expireAt) : null,
       };
-      return axios.patch(`/api/admin/announcement/${announcement?.id}`, payload);
+      return axios.patch(
+        `/api/admin/announcement/${announcement?.id}`,
+        payload,
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
@@ -121,13 +157,6 @@ export default function AnnouncementDialog({
       createMutation.mutate(data);
     }
   };
-  const formatInputDate = (dateStr?: string | null) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    // return YYYY-MM-DD
-    return date.toISOString().split("T")[0];
-  };
-
   // Watch form values for preview
   const watchValues = watch();
 
@@ -261,51 +290,72 @@ export default function AnnouncementDialog({
             </div> */}
             {/* Audience */}
             <div className="space-y-2">
-              <Label>Audience</Label>
+              <Label>Plan Audience</Label>
+
               <Controller
                 control={control}
-                name="audience"
+                name="plan"
                 render={({ field }) => (
                   <RadioGroup
                     value={field.value}
                     onValueChange={field.onChange}
-                    className="flex flex-wrap gap-4"
+                    className="flex gap-4"
                   >
                     <div className="flex items-center gap-2">
-                      <RadioGroupItem value="EVERYONE" id="everyone" />
-                      <Label htmlFor="everyone">Everyone</Label>
+                      <RadioGroupItem value="EVERYONE" id="plan-everyone" />
+                      <Label htmlFor="plan-everyone">Everyone</Label>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="PAID" id="paid" />
                       <Label htmlFor="paid">Paid</Label>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <RadioGroupItem value="FREE" id="free" />
                       <Label htmlFor="free">Free</Label>
-                    </div>
-                    {/* ✅ New options */}
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="COACH" id="coach" />
-                      <Label htmlFor="coach">Coach</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="SGE" id="sge" />
-                      <Label htmlFor="sge">SGE</Label>
                     </div>
                   </RadioGroup>
                 )}
               />
             </div>
 
+            {/* Role */}
+            <div className="space-y-2">
+              <Label>User Type Audience</Label>
+              <Controller
+                control={control}
+                name="role"
+                render={({ field }) => (
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="EVERYONE" id="role-everyone" />
+                      <Label htmlFor="role-everyone">Everyone</Label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="COACH" id="coach" />
+                      <Label htmlFor="coach">Coach</Label>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="ENTHUSIAST" id="enthusiast" />
+                      <Label htmlFor="enthusiast">Enthusiast</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
+            </div>
             {/* Expire At */}
             <div className="space-y-2">
               <Label htmlFor="expire">Expire At</Label>
               <Input
                 id="expire"
                 type="date"
-                defaultValue={
-                  announcement ? formatInputDate(announcement.expireAt) : ""
-                }
                 {...register("expireAt", {
                   required: "Expiry date is required",
                 })}

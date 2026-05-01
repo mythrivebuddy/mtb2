@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import axios from "axios";
 import Link from "next/link";
 import { DashboardContent } from "@/types/client/dashboard";
+import { useState } from "react";
+import { formatJP } from "@/lib/utils/formatJP";
 
 type AlignedAction = {
   id: string;
@@ -158,6 +160,9 @@ export default function DashboardCards({
   const router = useRouter();
 
   const queryClient = useQueryClient();
+  const [localCompleted, setLocalCompleted] = useState<Record<string, boolean>>(
+    {},
+  );
 
   const completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
@@ -234,7 +239,11 @@ export default function DashboardCards({
         isCompleted: boolean;
         alignedActionId?: string | null;
       };
-
+      setLocalCompleted((prev) => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
       const { alignedActionId, isCompleted } = updatedBloom;
 
       queryClient.setQueryData<DashboardContent>(
@@ -246,10 +255,7 @@ export default function DashboardCards({
             ...old,
 
             // update bloom
-            dailyBlooms: old.dailyBlooms.map((b) =>
-              b.id === id ? { ...b, isCompleted } : b,
-            ),
-
+            dailyBlooms: old.dailyBlooms.filter((b) => b.id !== id),
             // 🔥 sync aligned action
             alignedAction: alignedActionId
               ? old.alignedAction.map((a) =>
@@ -277,14 +283,23 @@ export default function DashboardCards({
       // ✅ 3. update daily-blooms cache
       queryClient.setQueryData<DailyBloom[]>(
         ["dailyBloom"],
-        (old) =>
-          old?.map((b) => (b.id === id ? { ...b, isCompleted } : b)) ?? old,
+        (old) => old?.filter((b) => b.id !== id) ?? old,
       );
       queryClient.invalidateQueries({
         queryKey: ["dailyBloom"],
         refetchType: "inactive", // 🔥 avoids refetching active UI immediately
       });
       toast.success("Bloom completed ✅");
+    },
+    onError: (_err, id) => {
+      // ❌ revert checkbox if API fails
+      setLocalCompleted((prev) => {
+        const updated = { ...prev };
+        delete updated[id]; // remove local override
+        return updated;
+      });
+
+      toast.error("Failed to complete bloom");
     },
   });
 
@@ -295,12 +310,12 @@ export default function DashboardCards({
     todayAction?.tasks?.find((t: string) => t === todayAction?.selectedTask) ||
     todayAction?.selectedTask;
   // bloooms
-  const blooms = dailyBlooms?.slice(0, 3);
+  const blooms = (dailyBlooms ?? []).slice(0, 3);
   // onePercentProgressVault
   const progressItems = onePercentProgressVault?.slice(0, 3);
 
   // miracle logs
-  const miracleItems = miracleLogs?.slice(0, 3); // keep short like progress
+  const miracleItems = miracleLogs?.slice(-3); // keep short like progress
   // challenges
   const challengeItems = challenges?.slice(0, 3);
 
@@ -349,7 +364,7 @@ export default function DashboardCards({
   if (events?.length > 0) {
     dynamicCards.push({
       type: "event",
-      title: "Today's Events",
+      title: "My Events",
       description: "", // we will render inside UI
       icon: CalendarDays,
       bg: "bg-purple-100 group-hover:bg-purple-600",
@@ -458,14 +473,23 @@ export default function DashboardCards({
                       >
                         <Input
                           type="checkbox"
-                          checked={bloom.isCompleted}
+                          checked={
+                            localCompleted[bloom.id] ?? bloom.isCompleted
+                          }
                           onChange={(e) => {
                             e.stopPropagation();
+
                             if (
                               bloom.isCompleted ||
                               updateBloomMutation.isPending
                             )
                               return;
+
+                            setLocalCompleted((prev) => ({
+                              ...prev,
+                              [bloom.id]: true,
+                            }));
+
                             updateBloomMutation.mutate(bloom.id);
                           }}
                           className="w-4 h-4 accent-blue-600"
@@ -589,7 +613,8 @@ export default function DashboardCards({
                       e.stopPropagation();
                       router.push("/dashboard/progress-vault");
                     }}
-                  className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                    className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full"
+                  >
                     Log Progress
                   </Button>
                 )}
@@ -608,11 +633,12 @@ export default function DashboardCards({
 
                 {card.type === "challenges" && challengeItems.length > 0 && (
                   <Button
-                   onClick={(e) => {
+                    onClick={(e) => {
                       e.stopPropagation();
                       router.push("/dashboard/challenge?tab=join");
                     }}
-                  className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full">
+                    className="w-full text-xs bg-green-600 hover:bg-green-700 text-white rounded-full"
+                  >
                     Join Challenges
                   </Button>
                 )}
@@ -634,13 +660,15 @@ export default function DashboardCards({
                   <div className="mt-auto space-y-3">
                     <Button
                       onClick={(e) => {
-                        e.stopPropagation(); // prevent card click
+                        e.stopPropagation();
                         router.push("/dashboard/store");
                       }}
-                      className="w-full text-xs  rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2"
+                      className="w-full text-xs rounded-full px-2 bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden text-ellipsis"
                     >
-                      Redeem Your {jpBalance} GP Now{" "}
-                      <ArrowRight className="w-4 h-4" />
+                      <span className="truncate">
+                        Redeem {formatJP(Number(jpBalance))} GP Now
+                      </span>
+                      <ArrowRight className="w-4 h-4 shrink-0" />
                     </Button>
                   </div>
                 )}

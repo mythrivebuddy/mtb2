@@ -439,12 +439,20 @@ const CheckoutContent = () => {
         });
         toast.success("Coupon applied");
       } else {
-        toast.error(data.message);
+         // 🔥 RESET EVERYTHING
+      setAppliedCoupon(null);
+      setManualCouponCode("");
+
+      toast.error(data.message || "Invalid coupon");
+      return;
       }
     },
 
     onError: (error: unknown) => {
+      setAppliedCoupon(null);
+      setManualCouponCode("");
       toast.error(getAxiosErrorMessage(error, "Failed to apply coupon"));
+      return;
     },
   });
 
