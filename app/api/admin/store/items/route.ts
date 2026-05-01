@@ -1,12 +1,9 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-
-
 
 function extractStoragePath(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -56,11 +53,14 @@ export async function GET() {
           updatedAt: item.updatedAt.toISOString(),
         })),
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error fetching items:", error);
-    return NextResponse.json({ error: "Failed to fetch items" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch items" },
+      { status: 500 },
+    );
   } finally {
     await prisma.$disconnect();
   }
@@ -81,31 +81,124 @@ export async function POST(request: NextRequest) {
     const name = formData.get("name") as string;
     const category = formData.get("category") as string;
     const basePrice = parseFloat(formData.get("basePrice") as string);
-    const monthlyPrice = parseFloat(formData.get("monthlyPrice") as string) || 0;
+    const monthlyPrice =
+      parseFloat(formData.get("monthlyPrice") as string) || 0;
     const yearlyPrice = parseFloat(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
+    const lifetimePrice =
+      parseFloat(formData.get("lifetimePrice") as string) || 0;
     const currency = (formData.get("currency") as string) || "USD";
     const imageFile = formData.get("image") as File;
+    const imageUrlFromBody = formData.get("imageUrl") as string | null;
     const downloadFile = formData.get("download") as File | null;
+    const downloadUrlFromBody = formData.get("downloadUrl") as string | null;
 
     // ✅ Added GP to valid currencies
     if (!["USD", "INR", "GP"].includes(currency)) {
       return NextResponse.json(
         { error: "Invalid currency. Must be USD, INR, or GP." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    if (!name || !category || !imageFile || isNaN(basePrice)) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (
+      !name ||
+      !category ||
+      (!imageFile && !imageUrlFromBody) ||
+      isNaN(basePrice)
+    ) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
-    const imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+    let imageUrl: string;
 
+    if (imageFile && imageFile.size > 0) {
+      const uploadedImage = await handleSupabaseImageUpload(
+        imageFile,
+        "store-images",
+        "store-images",
+      );
+
+      imageUrl = `${uploadedImage}?t=${Date.now()}`;
+    } else if (imageUrlFromBody) {
+      const oldPath = extractStoragePath(imageUrlFromBody);
+
+      if (!oldPath) {
+        return NextResponse.json(
+          { error: "Invalid image URL" },
+          { status: 400 },
+        );
+      }
+
+      const fileName = `${Date.now()}-${oldPath.split("/").pop()}`;
+      const newPath = `store-images/${fileName}`;
+
+      // 🔥 COPY FILE inside Supabase
+      const { error: copyError } = await supabaseAdmin.storage
+        .from("store-images")
+        .copy(oldPath, newPath);
+
+      if (copyError) {
+        console.error("Copy failed:", copyError);
+        return NextResponse.json(
+          { error: "Failed to clone image" },
+          { status: 500 },
+        );
+      }
+
+      const { data } = supabaseAdmin.storage
+        .from("store-images")
+        .getPublicUrl(newPath);
+
+      imageUrl = data.publicUrl;
+    } else {
+      return NextResponse.json({ error: "Image is required" }, { status: 400 });
+    }
     let downloadUrl: string | undefined;
 
     if (downloadFile && downloadFile.size > 0) {
-      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
+   
+
+      const uploadedDownload = await handleSupabaseImageUpload(
+        downloadFile,
+        "store-images",
+        "store-images",
+      );
+
+  
+
+      downloadUrl = `${uploadedDownload}?t=${Date.now()}`;
+
+    } else if (downloadUrlFromBody) {
+    
+
+      const oldPath = extractStoragePath(downloadUrlFromBody);
+     
+
+      if (oldPath) {
+        const fileName = `${Date.now()}-${oldPath.split("/").pop()}`;
+        const newPath = `store-images/${fileName}`;
+
+       
+
+        const { error } = await supabaseAdmin.storage
+          .from("store-images")
+          .copy(oldPath, newPath);
+
+       
+
+        if (!error) {
+          const { data } = supabaseAdmin.storage
+            .from("store-images")
+            .getPublicUrl(newPath);
+
+          downloadUrl = data.publicUrl;
+
+        
+        }
+      }
     }
 
     const item = await prisma.item.create({
@@ -134,11 +227,14 @@ export async function POST(request: NextRequest) {
           updatedAt: item.updatedAt.toISOString(),
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating item:", error);
-    return NextResponse.json({ error: "Failed to create item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create item" },
+      { status: 500 },
+    );
   }
 }
 
@@ -153,7 +249,7 @@ export async function PUT(request: NextRequest) {
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden - Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -161,7 +257,10 @@ export async function PUT(request: NextRequest) {
     const id = url.pathname.split("/").pop();
 
     if (!id) {
-      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Item ID is required" },
+        { status: 400 },
+      );
     }
 
     const existingItem = await prisma.item.findUnique({
@@ -178,9 +277,11 @@ export async function PUT(request: NextRequest) {
     const name = formData.get("name") as string;
     const category = formData.get("category") as string;
     const basePrice = parseFloat(formData.get("basePrice") as string);
-    const monthlyPrice = parseFloat(formData.get("monthlyPrice") as string) || 0;
+    const monthlyPrice =
+      parseFloat(formData.get("monthlyPrice") as string) || 0;
     const yearlyPrice = parseFloat(formData.get("yearlyPrice") as string) || 0;
-    const lifetimePrice = parseFloat(formData.get("lifetimePrice") as string) || 0;
+    const lifetimePrice =
+      parseFloat(formData.get("lifetimePrice") as string) || 0;
     const currency = (formData.get("currency") as string) || "USD";
     const imageFile = formData.get("image") as File | null;
     const downloadFile = formData.get("download") as File | null;
@@ -189,12 +290,15 @@ export async function PUT(request: NextRequest) {
     if (!["USD", "INR", "GP"].includes(currency)) {
       return NextResponse.json(
         { error: "Invalid currency. Must be USD, INR, or GP." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!name || !category || isNaN(basePrice)) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
     }
 
     let imageUrl = existingItem.imageUrl;
@@ -205,15 +309,27 @@ export async function PUT(request: NextRequest) {
       if (oldImagePath) {
         await supabaseAdmin.storage.from("store-images").remove([oldImagePath]);
       }
-      imageUrl = await handleSupabaseImageUpload(imageFile, "store-images", "store-images");
+      const uploadedImage = await handleSupabaseImageUpload(
+        imageFile,
+        "store-images",
+        "store-images",
+      );
+      imageUrl = `${uploadedImage}?t=${Date.now()}`;
     }
 
     if (downloadFile && downloadFile.size > 0) {
       const oldDownloadPath = extractStoragePath(existingItem.downloadUrl);
       if (oldDownloadPath) {
-        await supabaseAdmin.storage.from("store-images").remove([oldDownloadPath]);
+        await supabaseAdmin.storage
+          .from("store-images")
+          .remove([oldDownloadPath]);
       }
-      downloadUrl = await handleSupabaseImageUpload(downloadFile, "store-images", "store-images");
+      const uploadedDownload = await handleSupabaseImageUpload(
+        downloadFile,
+        "store-images",
+        "store-images",
+      );
+      downloadUrl = `${uploadedDownload}?t=${Date.now()}`;
     }
 
     const updatedItem = await prisma.item.update({
@@ -256,11 +372,14 @@ export async function PUT(request: NextRequest) {
           updatedAt: updatedItem.updatedAt.toISOString(),
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Error updating item:", error);
-    return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update item" },
+      { status: 500 },
+    );
   }
 }
 
@@ -275,7 +394,7 @@ export async function DELETE(request: NextRequest) {
     if (session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: "Forbidden - Admin access required" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -283,7 +402,10 @@ export async function DELETE(request: NextRequest) {
     const id = url.pathname.split("/").pop();
 
     if (!id) {
-      return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Item ID is required" },
+        { status: 400 },
+      );
     }
 
     const existingItem = await prisma.item.findUnique({
@@ -306,9 +428,15 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.item.delete({ where: { id } });
 
-    return NextResponse.json({ message: "Item deleted successfully" }, { status: 200 });
+    return NextResponse.json(
+      { message: "Item deleted successfully" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("Error deleting item:", error);
-    return NextResponse.json({ error: "Failed to delete item" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete item" },
+      { status: 500 },
+    );
   }
 }

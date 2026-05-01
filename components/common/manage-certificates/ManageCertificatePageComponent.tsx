@@ -125,7 +125,7 @@ interface ProgramRow {
 //  HELPERS
 // ─────────────────────────────────────────────
 const getStatus = (p: Participant): "eligible" | "not_eligible" | "issued" => {
-  if (p.isCertificateIssued) return "issued";
+  if (p.isCertificateIssued && p.certificateUrl) return "issued";
   if (p.completionPercentage >= 75) return "eligible";
   return "not_eligible";
 };
@@ -459,7 +459,11 @@ export function SignatureDialog({
 type ParticipantsTableProps = {
   programs: ProgramRow[];
   isLoading?: boolean;
-  onIssue: (participantId: string, programId: string) => void;
+  onIssue: (
+    participantId: string,
+    programId: string,
+    programType: "CHALLENGE" | "MMP",
+  ) => void;
   onPreview: (participantId: string, programId: string, name: string) => void;
   issuingId: string | null;
   activeTab: activeTabType;
@@ -519,7 +523,7 @@ function ParticipantsTable({
   }, [programs]);
 
   const handleIssueClick = (p: Participant) => {
-    onIssue(p.id, p.programId);
+    onIssue(p.id, p.programId, p.programType);
   };
   useEffect(() => {
     onPageChange(1);
@@ -798,8 +802,28 @@ function ParticipantsTable({
                                 )}
                               </span>
                             )}
-
-                          {p.isCertificateIssued && (
+                          {p?.programType === "MMP" &&
+                            p?.isCertificateIssued &&
+                            !p.certificateUrl && (
+                              <span
+                                onClick={() => handleIssueClick(p)}
+                                className={`cursor-pointer text-indigo-600 hover:text-indigo-800 ${
+                                  isIssuingThis
+                                    ? "opacity-50 pointer-events-none"
+                                    : ""
+                                }`}
+                              >
+                                {isIssuingThis ? (
+                                  <span className="flex items-center gap-1">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Issuing
+                                  </span>
+                                ) : (
+                                  "Issue Certificate"
+                                )}
+                              </span>
+                            )}
+                          {p.isCertificateIssued && p.certificateUrl && (
                             <span
                               onClick={() =>
                                 onPreview(p.id, p.programId, p.name)
@@ -914,12 +938,14 @@ export default function ManageCertificatePageComponent() {
   const issueCertificateMutation = useMutation({
     mutationFn: async ({
       participantId,
-      challengeId,
+      programId,
       issuedById,
+      programType,
     }: {
       participantId: string;
-      challengeId: string;
+      programId: string;
       issuedById: string;
+      programType: "CHALLENGE" | "MMP";
     }) => {
       setIssuingId(participantId);
 
@@ -928,11 +954,21 @@ export default function ManageCertificatePageComponent() {
         id: "cert-issue",
       });
 
-      const res = await axios.post("/api/challenge/certificates/generate", {
-        participantId,
-        challengeId,
-        issuedById,
-      });
+      let res;
+
+      if (programType === "CHALLENGE") {
+        res = await axios.post("/api/challenge/certificates/generate", {
+          participantId,
+          challengeId: programId,
+          issuedById,
+        });
+      } else {
+        //  MMP API (manual generation)
+        res = await axios.post(
+          `/api/mini-mastery-programs/player/${programId}/certificate`,
+          { issuedById, participantId },
+        );
+      }
 
       return res.data;
     },
@@ -950,7 +986,7 @@ export default function ManageCertificatePageComponent() {
             ...oldData,
             participants: oldData.participants.map((p) =>
               p.participantId === variables.participantId &&
-              p.programId === variables.challengeId
+              p.programId === variables.programId
                 ? {
                     ...p,
                     isCertificateIssued: true,
@@ -1037,11 +1073,16 @@ export default function ManageCertificatePageComponent() {
   const [isSignatureUploading, setIsSignatureUploading] = useState(false);
   const queryClient = useQueryClient();
 
-  const handleIssue = (participantId: string, programId: string) => {
+  const handleIssue = (
+    participantId: string,
+    programId: string,
+    programType: "CHALLENGE" | "MMP",
+  ) => {
     issueCertificateMutation.mutate({
       participantId,
-      challengeId: programId,
+      programId,
       issuedById: session.data?.user?.id as string,
+      programType,
     });
   };
 

@@ -38,9 +38,13 @@ export interface ItemFormData {
   currency: string;              // ✅ ADDED
   imageFile?: File;
   downloadFile?: File;
+
+   imageUrl?: string;
+  downloadUrl?: string;
 }
 
 export interface Category {
   id: string;
   name: string;
+  isDeleted?: boolean;
 }

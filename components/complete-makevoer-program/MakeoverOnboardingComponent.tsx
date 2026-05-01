@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useRouter } from "next/navigation";
 import { DashboardContent } from "@/types/client/dashboard";
-
 /* ───────────── TYPES ───────────── */
 
 type ApiArea = {
@@ -90,16 +89,19 @@ const MakeoverOnboardingParent = ({
   const [step, setStep] = useState<number>(
     initialData?.step ?? (isEditMode ? 2 : 1),
   );
-  const containerRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    requestAnimationFrame(() => {
-      containerRef.current?.scrollIntoView({
+    const timeout = setTimeout(() => {
+      topRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
-    });
-  }, [step]);
+    }, 120); // sweet spot
 
+    return () => clearTimeout(timeout);
+  }, [step]);
+  
   /* ───────────── NORMALIZATION ───────────── */
 
   const areas = useMemo<NormalizedArea[]>(() => {
@@ -265,7 +267,7 @@ const MakeoverOnboardingParent = ({
   const isJoining = submitMutation.isPending && actionType === "join";
   return (
     <div className="min-h-screen flex flex-col items-center">
-      <div ref={containerRef} />
+      <div ref={topRef} />
 
       {/* ───────────── Breadcrumbs ───────────── */}
       <div className="flex flex-col items-start">
