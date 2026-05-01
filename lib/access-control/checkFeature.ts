@@ -1,7 +1,8 @@
 // lib/access-control/checkFeature.ts
 
 import { PlanUserType } from "@prisma/client";
-import { featureConfig, UNLIMITED } from "./featureConfig";
+import { featureConfig } from "./featureConfig";
+import { getFeatureAccess } from "./getFeatureAccess";
 
 /* ----------------------------------
  * 🔐 Helper Types
@@ -9,37 +10,148 @@ import { featureConfig, UNLIMITED } from "./featureConfig";
 
 export type FeatureKey = keyof typeof featureConfig;
 
-type FeatureConfigMap = typeof featureConfig;
-type SupportedUserType = "COACH" | "ENTHUSIAST";
+type SupportedUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" ;
 
+type FeatureActionsMap = Record<string, SupportedUserType[]>;
 
-
-
-type FeatureActions<F extends FeatureKey> =
-  FeatureConfigMap[F] extends { actions: infer A } ? keyof A : never;
+type FeatureFromDB = {
+  actions: string | FeatureActionsMap | null;
+};
 
 /* ----------------------------------
  * 🔎 Feature-Level Check
  * ---------------------------------- */
 
-export function checkFeature<F extends FeatureKey>(params: {
-  feature: F;
+// export function checkFeature<F extends FeatureKey>(params: {
+//   feature: F;
+//   user: {
+//     userType?: unknown;
+//     membership?: unknown;
+//   };
+// }) {
+//   const { feature, user } = params;
+//   const config = featureConfig[feature];
+
+//   // ---------- validation ----------
+//   if (!user?.userType || !user?.membership) {
+//     return { allowed: false as const, reason: "INVALID_SESSION_STATE" as const };
+//   }
+
+//   if (
+//     !Object.values(PlanUserType).includes(user.userType as PlanUserType)
+//   ) {
+//     return { allowed: false as const, reason: "INVALID_USER_TYPE" as const };
+//   }
+
+//   if (user.membership !== "FREE" && user.membership !== "PAID") {
+//     return { allowed: false as const, reason: "INVALID_PLAN" as const };
+//   }
+
+//   if (
+//     user.userType !== PlanUserType.COACH &&
+//     user.userType !== PlanUserType.ENTHUSIAST
+//   ) {
+//     return { allowed: false as const, reason: "USER_TYPE_NOT_SUPPORTED" as const };
+//   }
+
+//   const userType = user.userType as SupportedUserType;
+
+//   const planKey = user.membership === "PAID" ? "paid" : "free";
+
+//   // ---------- access ----------
+//   const allowedUserTypes = config.access as readonly SupportedUserType[];
+
+//   if (!allowedUserTypes.includes(userType)) {
+//     return { allowed: false as const, reason: "USER_TYPE_NOT_ALLOWED" as const };
+//   }
+
+//   if (!("plans" in config)) {
+//     return { allowed: false as const, reason: "NO_PLAN_CONFIG" as const };
+//   }
+
+//   const plans = config.plans as Record<
+//     "free" | "paid",
+//     Partial<Record<SupportedUserType, unknown>>
+//   >;
+
+//   const planConfig = plans[planKey]?.[userType];
+
+//   if (planConfig === undefined) {
+//     return { allowed: false as const, reason: "PLAN_NOT_ALLOWED" as const };
+//   }
+
+//   return {
+//     allowed: true as const,
+//     config: planConfig,
+//     isUnlimited: (value?: number) => value === UNLIMITED,
+//   };
+// }
+
+/* ----------------------------------
+ * 🔑 Action-Level Permission Check
+ * ---------------------------------- */
+
+// export function checkFeatureAction<
+//   F extends FeatureKey,
+//   A extends FeatureActions<F>
+// >(params: {
+//   feature: F;
+//   action: A;
+//   userType?: unknown;
+// }) {
+//   const { feature, action, userType } = params;
+//   const config = featureConfig[feature];
+
+//   if (
+//     !userType ||
+//     !Object.values(PlanUserType).includes(
+//       userType as PlanUserType
+//     )
+//   ) {
+//     return false;
+//   }
+
+//   const normalizedUserType = userType as PlanUserType;
+
+//   if (
+//     normalizedUserType === PlanUserType.SOLOPRENEUR ||
+//     normalizedUserType === PlanUserType.ALL
+//   ) {
+//     return false;
+//   }
+
+//   if (!("actions" in config)) {
+//     return false;
+//   }
+
+//   const allowedUserTypes =
+//     config.actions[action] as readonly PlanUserType[];
+
+//   return allowedUserTypes.includes(normalizedUserType);
+// }
+
+/* ----------------------------------
+ * 🔎 Feature-Level Check (DB Driven)
+ * ---------------------------------- */
+
+export async function checkFeature(params: {
+  feature: string;
   user: {
-    userType?: unknown;
-    membership?: unknown;
+    userType?: SupportedUserType;
+    membership?: string;
   };
 }) {
   const { feature, user } = params;
-  const config = featureConfig[feature];
 
   // ---------- validation ----------
   if (!user?.userType || !user?.membership) {
-    return { allowed: false as const, reason: "INVALID_SESSION_STATE" as const };
+    return {
+      allowed: false as const,
+      reason: "INVALID_SESSION_STATE" as const,
+    };
   }
 
-  if (
-    !Object.values(PlanUserType).includes(user.userType as PlanUserType)
-  ) {
+  if (!Object.values(PlanUserType).includes(user.userType as PlanUserType)) {
     return { allowed: false as const, reason: "INVALID_USER_TYPE" as const };
   }
 
@@ -51,84 +163,100 @@ export function checkFeature<F extends FeatureKey>(params: {
     user.userType !== PlanUserType.COACH &&
     user.userType !== PlanUserType.ENTHUSIAST
   ) {
-    return { allowed: false as const, reason: "USER_TYPE_NOT_SUPPORTED" as const };
+    return {
+      allowed: false as const,
+      reason: "USER_TYPE_NOT_SUPPORTED" as const,
+    };
   }
 
-  const userType = user.userType as SupportedUserType;
+  const userType = user.userType as "COACH" | "ENTHUSIAST";
+  const membership = user.membership as "FREE" | "PAID";
 
-  const planKey = user.membership === "PAID" ? "paid" : "free";
+  // ---------- DB call ----------
+  const result = await getFeatureAccess({
+    featureKey: feature,
+    userType,
+    membership,
+  });
 
-  // ---------- access ----------
-  const allowedUserTypes = config.access as readonly SupportedUserType[];
-
-  if (!allowedUserTypes.includes(userType)) {
-    return { allowed: false as const, reason: "USER_TYPE_NOT_ALLOWED" as const };
+  if (!result.allowed) {
+    return result;
   }
 
-
-  if (!("plans" in config)) {
-    return { allowed: false as const, reason: "NO_PLAN_CONFIG" as const };
-  }
-
-  const plans = config.plans as Record<
-    "free" | "paid",
-    Partial<Record<SupportedUserType, unknown>>
-  >;
-
-  const planConfig = plans[planKey]?.[userType];
-  
-
-  if (planConfig === undefined) {
-    return { allowed: false as const, reason: "PLAN_NOT_ALLOWED" as const };
-  }
+  // ---------- parse config (IMPORTANT) ----------
+  const parsedConfig =
+    typeof result.config === "string"
+      ? JSON.parse(result.config)
+      : result.config;
 
   return {
     allowed: true as const,
-    config: planConfig,
-    isUnlimited: (value?: number) => value === UNLIMITED,
+    config: parsedConfig,
+    feature: result.feature, // needed for actions
+    isUnlimited: (value?: number) => value === -1,
   };
 }
 
-
 /* ----------------------------------
- * 🔑 Action-Level Permission Check
+ * 🔑 Action-Level Permission Check (DB)
  * ---------------------------------- */
+function parseActions(
+  actions: string | FeatureActionsMap | null,
+): FeatureActionsMap | null {
+  if (!actions) return null;
 
-export function checkFeatureAction<
-  F extends FeatureKey,
-  A extends FeatureActions<F>
->(params: {
-  feature: F;
-  action: A;
-  userType?: unknown;
+  if (typeof actions === "string") {
+    try {
+      const parsed: unknown = JSON.parse(actions);
+
+      // runtime validation (IMPORTANT)
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        !Array.isArray(parsed)
+      ) {
+        const record = parsed as Record<string, unknown>;
+
+        for (const key in record) {
+          if (
+            !Array.isArray(record[key]) ||
+            !record[key].every((v) => v === "COACH" || v === "ENTHUSIAST")
+          ) {
+            return null;
+          }
+        }
+
+        return record as FeatureActionsMap;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  return actions;
+}
+export function checkFeatureAction(params: {
+  feature: FeatureFromDB;
+  action: string;
+  userType?: PlanUserType;
 }) {
   const { feature, action, userType } = params;
-  const config = featureConfig[feature];
 
-  if (
-    !userType ||
-    !Object.values(PlanUserType).includes(
-      userType as PlanUserType
-    )
-  ) {
+  if (!userType) return false;
+
+  if (userType !== PlanUserType.COACH && userType !== PlanUserType.ENTHUSIAST) {
     return false;
   }
 
-  const normalizedUserType = userType as PlanUserType;
+  const actions = parseActions(feature.actions);
 
-  if (
-    normalizedUserType === PlanUserType.SOLOPRENEUR ||
-    normalizedUserType === PlanUserType.ALL
-  ) {
-    return false;
-  }
+  if (!actions) return false;
 
-  if (!("actions" in config)) {
-    return false;
-  }
+  const allowedUsers = actions[action];
 
-  const allowedUserTypes =
-    config.actions[action] as readonly PlanUserType[];
+  if (!allowedUsers) return false;
 
-  return allowedUserTypes.includes(normalizedUserType);
+  return allowedUsers.includes(userType);
 }
