@@ -4,13 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import PageLoader from "@/components/PageLoader";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { Session } from "next-auth";
 
-async function getProgressVault() {
-  const session = await checkRole("USER");
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
+async function getProgressVault(session: Session) {
   const logs = await prisma.progressVault.findMany({
     where: {
       userId: session.user.id,
@@ -27,18 +24,19 @@ async function getProgressVault() {
   }));
 }
 
-async function getProgressVaultDailyLimit() {
-  const session = await checkRole("USER");
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+async function getProgressVaultDailyLimit(session: Session) {
+  const userType = normalizeUserType(session.user.userType);
 
-  const featureResult = checkFeature({
+  const featureResult = await checkFeature({
     feature: "onePercentProgressVault",
-    user: session.user,
+    user: {
+      userType: userType ?? undefined,
+      membership: session.user.membership ?? undefined,
+    },
   });
 
-  if (!featureResult.allowed || typeof featureResult.config !== "object") {
+  // ❗ safety check
+  if (!featureResult.config || typeof featureResult.config !== "object") {
     return {
       dailyLimit: 0,
       isUpgradeFlagShow: false,
@@ -52,16 +50,12 @@ async function getProgressVaultDailyLimit() {
 
   return {
     dailyLimit: config.dailyLimit,
+    // 🔥 IMPORTANT: don't tie this to allowed
     isUpgradeFlagShow: config.isUpgradeFlagShow ?? false,
   };
 }
 
-async function getStreak() {
-  const session = await checkRole("USER");
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
+async function getStreak(session: Session) {
   const streak = await prisma.streak.findUnique({
     where: {
       userId_type: {
@@ -78,10 +72,14 @@ async function getStreak() {
 }
 
 export default async function ProgressVaultPage() {
+  const session = await checkRole("USER");
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
   const [logs, streak, progressVaultConfig] = await Promise.all([
-    getProgressVault(),
-    getStreak(),
-    getProgressVaultDailyLimit(),
+    getProgressVault(session),
+    getStreak(session),
+    getProgressVaultDailyLimit(session),
   ]);
 
   return (
