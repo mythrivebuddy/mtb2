@@ -1,6 +1,6 @@
 // lib/access-control/checkFeature.ts
 
-import { PlanUserType } from "@prisma/client";
+import { PlanUserType, Prisma } from "@prisma/client";
 import { featureConfig } from "./featureConfig";
 import { getFeatureAccess } from "./getFeatureAccess";
 
@@ -10,12 +10,12 @@ import { getFeatureAccess } from "./getFeatureAccess";
 
 export type FeatureKey = keyof typeof featureConfig;
 
-type SupportedUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" ;
+type SupportedUserType = "COACH" | "ENTHUSIAST" | "SOLOPRENEUR";
 
 type FeatureActionsMap = Record<string, SupportedUserType[]>;
 
 type FeatureFromDB = {
-  actions: string | FeatureActionsMap | null;
+  actions: Prisma.JsonValue; // ✅ correct source type
 };
 
 /* ----------------------------------
@@ -200,42 +200,44 @@ export async function checkFeature(params: {
 /* ----------------------------------
  * 🔑 Action-Level Permission Check (DB)
  * ---------------------------------- */
-function parseActions(
-  actions: string | FeatureActionsMap | null,
-): FeatureActionsMap | null {
+function validateActions(input: unknown): FeatureActionsMap | null {
+  if (typeof input !== "object" || input === null) return null;
+
+  const record = input as Record<string, unknown>;
+
+  for (const key in record) {
+    const value = record[key];
+
+    if (
+      !Array.isArray(value) ||
+      !value.every((v) => v === "COACH" || v === "ENTHUSIAST")
+    ) {
+      return null;
+    }
+  }
+
+  return record as FeatureActionsMap;
+}
+function parseActions(actions: Prisma.JsonValue): FeatureActionsMap | null {
   if (!actions) return null;
 
+  // ✅ Case 1: string → parse JSON
   if (typeof actions === "string") {
     try {
-      const parsed: unknown = JSON.parse(actions);
-
-      // runtime validation (IMPORTANT)
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        !Array.isArray(parsed)
-      ) {
-        const record = parsed as Record<string, unknown>;
-
-        for (const key in record) {
-          if (
-            !Array.isArray(record[key]) ||
-            !record[key].every((v) => v === "COACH" || v === "ENTHUSIAST")
-          ) {
-            return null;
-          }
-        }
-
-        return record as FeatureActionsMap;
-      }
-
-      return null;
+      const parsed = JSON.parse(actions);
+      return validateActions(parsed);
     } catch {
       return null;
     }
   }
 
-  return actions;
+  // ✅ Case 2: already object → validate directly
+  if (typeof actions === "object" && !Array.isArray(actions)) {
+    return validateActions(actions);
+  }
+
+  // ❌ reject everything else (number, boolean, array)
+  return null;
 }
 export function checkFeatureAction(params: {
   feature: FeatureFromDB;
