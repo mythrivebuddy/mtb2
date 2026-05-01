@@ -121,7 +121,22 @@ export async function GET(request: NextRequest) {
     const totalCompleted = await prisma.todo.count({
       where: { userId: session.user.id, isCompleted: true },
     });
+    if (status === "CompletedEvents") {
+      const whereClause: Prisma.TodoWhereInput = {
+        userId: session.user.id,
+        isFromEvent: true,
+        isCompleted: true,
+      };
 
+      const blooms = await prisma.todo.findMany({
+        where: whereClause,
+        orderBy: [{ dueDate: "asc" }],
+      });
+
+      return NextResponse.json({
+        data: blooms,
+      });
+    }
     if (status === "Pending") {
       const now = new Date();
       const startOfTodayUTC = new Date(
@@ -130,14 +145,15 @@ export async function GET(request: NextRequest) {
 
       const whereClause: Prisma.TodoWhereInput = {
         userId: session.user.id,
+        isCompleted: false,
         OR: [
-          // ✅ pending blooms
+          // ✅ Normal tasks → keep your logic
           {
-            isCompleted: false,
+            isFromEvent: false,
             OR: [{ dueDate: null }, { dueDate: { gte: startOfTodayUTC } }],
           },
 
-          // ✅ ALL events (past + future)
+          // ✅ Event blooms → ALWAYS include
           {
             isFromEvent: true,
           },
