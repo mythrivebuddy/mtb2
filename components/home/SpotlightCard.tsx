@@ -208,7 +208,7 @@ export default function SpotlightCard() {
           <div className="relative  md:w-[160px] md:h-[160px] w-[90px] h-[70px]">
             <Image
               src={
-                spotlight?.user?.userBusinessProfile?.featuredWorkImage ||
+                spotlight?.user?.userBusinessProfile?.featuredWorkImage || spotlight?.user.userBusinessProfile?.profilePhoto   ||
                 avtarImg
               }
               alt="Profile"
