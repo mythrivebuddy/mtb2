@@ -5,7 +5,7 @@ import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { calculateDiscount, calculateFinal } from "@/lib/payment/payment.utils";
-import { PaymentStatus } from "@prisma/client";
+import { PaymentContextType, PaymentStatus } from "@prisma/client";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
 
 export const POST = async (req: NextRequest) => {
@@ -185,6 +185,7 @@ export const POST = async (req: NextRequest) => {
               : 0,
           totalAmount: finalAmount,
           billingInfoId: billingInfo.id,
+            contextType:PaymentContextType.SUBSCRIPTION
         },
       });
     }

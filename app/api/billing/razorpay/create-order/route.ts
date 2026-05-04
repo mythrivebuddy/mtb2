@@ -3,6 +3,7 @@ import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
 import { checkRole } from "@/lib/utils/auth";
+import { PaymentContextType } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (plan.userType !== "COACH" && plan.userType !== "ALL") {
       return NextResponse.json(
         { error: "Invalid plan for coach" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
           status: "PAID",
           paidAt: new Date(),
           couponId,
+          contextType: PaymentContextType.SUBSCRIPTION,
         },
       });
 
@@ -105,6 +107,7 @@ export async function POST(req: NextRequest) {
         currency: "INR",
         status: "CREATED",
         couponId,
+        contextType: PaymentContextType.SUBSCRIPTION,
       },
     });
 
@@ -143,7 +146,7 @@ export async function POST(req: NextRequest) {
     console.error("Razorpay create order error:", error);
     return NextResponse.json(
       { error: "Payment initiation failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

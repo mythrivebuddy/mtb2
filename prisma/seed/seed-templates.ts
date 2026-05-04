@@ -1365,6 +1365,81 @@ async function main() {
 </div>
 `,
     },
+    {
+      templateId: "invoice-subscription",
+      subject: "Payment Successful 🎉 Your Invoice",
+      description: "Subscription invoice email with attachment.",
+      htmlContent: `
+
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);;">
+
+  <!-- HEADER -->
+  <div style="background: linear-gradient(90deg, #8b5cf6, #6d28d9); padding: 32px 20px; text-align: center;">
+    <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 700;">Payment Successful 🎉</h1>
+    <p style="margin: 8px 0 0; color: #ede9fe; font-size: 15px;">Your subscription is active and ready</p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding: 32px 28px;">
+
+    <p style="font-size: 16px; color: #374151; margin-top: 0;">
+      Hello <strong>{{username}}</strong>,
+    </p>
+
+    <p style="color: #4b5563; font-size: 15px; line-height: 1.6;">
+      Your subscription payment has been successfully processed for:
+    </p>
+
+    <!-- PLAN -->
+    <div style="text-align: center; margin: 24px 0;">
+      <span style="display: inline-block; background: #f3f4f6; color: #111827; font-weight: 700; font-size: 18px; padding: 12px 24px; border-radius: 8px; border: 1px solid #e5e7eb;">
+        {{planName}}
+      </span>
+    </div>
+
+    <!-- DETAILS -->
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 24px 0;">
+      <h3 style="margin: 0 0 16px; color: #475569; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+        Invoice Details
+      </h3>
+
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Invoice Number</td>
+          <td style="padding: 8px 0; color: #0f172a; font-weight: 600; font-size: 14px; text-align: right;">
+            {{invoiceNumber}}
+          </td>
+        </tr>
+
+        <tr style="border-top: 1px solid #e2e8f0;">
+          <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Order ID</td>
+          <td style="padding: 8px 0; color: #0f172a; font-weight: 600; font-size: 14px; text-align: right;">
+            {{orderId}}
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- ATTACHMENT -->
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; text-align: center;">
+      <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 500;">
+        📎 Your detailed PDF invoice is attached to this email.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+    <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+      © {{companyName}}. All rights reserved.
+    </p>
+  </div>
+
+</div>
+
+  `.trim(),
+    },
   ];
 
   let createdCount = 0;
