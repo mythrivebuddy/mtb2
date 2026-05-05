@@ -496,7 +496,7 @@ export default function ChallengeDetailView({
                               {" "}
                               <span
                                 onClick={() =>
-                                  router.push("/pricing?ref=join-challenge")
+                                  router.push("/dashboard/subscription?ref=join-challenge")
                                 }
                                 className="underline cursor-pointer font-medium"
                               >

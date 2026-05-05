@@ -4,6 +4,7 @@ import { UNLIMITED } from "../access-control/featureConfig";
 import { assignJp } from "../utils/jp";
 import { ActivityType } from "@prisma/client";
 import { Session } from "next-auth";
+import { normalizeUserType } from "../utils/normalizedUserTypes";
 
 type DailyBloomPlanConfig = {
   dailyLimit: number;
@@ -32,22 +33,28 @@ export async function createDailyBloom({
   alignedActionId,
 }: CreateDailyBloomInput) {
   // ✅ Feature check
-  const featureResult = checkFeature({
+  const userType = normalizeUserType(user.userType);
+  if (!userType) {
+    throw new Error("INVALID_USER_TYPE");
+  }
+
+  const featureResult = await checkFeature({
     feature: "dailyBlooms",
-    user,
+    user: {
+      userType,
+      membership: user.membership ?? undefined,
+    },
   });
 
   if (!featureResult.allowed) {
-    throw new Error(featureResult.reason || "Feature not allowed");
+    const reason = "reason" in featureResult ? featureResult.reason : undefined;
+    throw new Error(reason || "FEATURE_NOT_AVAILABLE");
   }
-  const planConfig =
-    typeof featureResult.config === "object"
-      ? (featureResult.config as DailyBloomPlanConfig)
-      : null;
+  if (!featureResult.config) {
+    throw new Error("FEATURE_CONFIG_MISSING");
+  }
 
-  if (!planConfig) {
-    throw new Error("Daily Bloom configuration not found");
-  }
+  const planConfig = featureResult.config as DailyBloomPlanConfig;
 
   // ✅ Daily limit check
   const today = new Date();

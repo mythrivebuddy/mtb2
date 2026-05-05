@@ -7,11 +7,11 @@ import {
   getRazorpayConfig,
   verifyRazorpaySignature,
 } from "@/lib/razorpay/razorpay";
+import { inngest } from "@/lib/inngest";
 
 export const POST = async (req: NextRequest) => {
   try {
     const { razorpayWebhookSecret: webhookSecret } = await getRazorpayConfig();
-    
 
     if (!webhookSecret) {
       console.error("❌ Missing RAZORPAY_WEBHOOK_SECRET");
@@ -25,21 +25,29 @@ export const POST = async (req: NextRequest) => {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
 
-    
-
     if (!signature) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
     const isValid = verifyRazorpaySignature(rawBody, signature, webhookSecret);
-   
+
     if (!isValid) {
       console.error("❌ Invalid Razorpay signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const event = JSON.parse(rawBody);
+    console.log("🔔 Razorpay Webhook Received");
+    console.log("Event Type:", event.event);
+    console.log("Event ID:", event.id);
 
+    // Helpful identifiers (not always present)
+    console.log("Payment ID:", event.payload?.payment?.entity?.id);
+    console.log("Order ID:", event.payload?.payment?.entity?.order_id);
+    console.log("Subscription ID:", event.payload?.subscription?.entity?.id);
+
+    // Optional: full payload (use only in dev)
+    console.log("Full Payload:", JSON.stringify(event, null, 2));
     /* ========================================================= */
     /* 🔵 ONE-TIME PAYMENT SUCCESS (LIFETIME UPGRADE FIX)        */
     /* ========================================================= */
@@ -193,7 +201,11 @@ export const POST = async (req: NextRequest) => {
           data: { membership: "PAID" },
         });
       });
-
+      await inngest.send({
+        name: "invoice/send",
+        data: { orderId: order.id },
+        id: `invoice-${order.id}`,
+      });
       return NextResponse.json({ received: true });
     }
 
@@ -205,7 +217,7 @@ export const POST = async (req: NextRequest) => {
       event.event === "subscription.authenticated"
     ) {
       const subscription = event.payload.subscription.entity;
-
+      const payment = event.payload.payment?.entity;
       const order = await prisma.paymentOrder.findFirst({
         where: { razorpaySubscriptionId: subscription.id },
         include: {
@@ -243,6 +255,8 @@ export const POST = async (req: NextRequest) => {
           where: { id: order.id },
           data: {
             status: PaymentStatus.PAID,
+            paymentId: payment?.id, // Save the payment ID here
+            paymentMethod: payment?.method,
             paidAt: new Date(),
           },
         });
@@ -353,7 +367,11 @@ export const POST = async (req: NextRequest) => {
           data: { membership: "PAID" },
         });
       });
-
+      await inngest.send({
+        name: "invoice/send",
+        data: { orderId: order.id },
+        id: `invoice-${order.id}`,
+      });
       return NextResponse.json({ received: true });
     }
 
@@ -362,7 +380,6 @@ export const POST = async (req: NextRequest) => {
     /* ========================================================= */
     if (event.event === "invoice.paid") {
       const invoice = event.payload.invoice.entity;
-
 
       const subscription = await prisma.subscription.findFirst({
         where: { razorpaySubscriptionId: invoice.subscription_id },

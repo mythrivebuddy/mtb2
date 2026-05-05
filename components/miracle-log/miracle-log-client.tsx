@@ -103,9 +103,6 @@ export default function MiracleLogClient({
 
   useOnlineUserLeaderBoard();
 
-  useEffect(() => {
-    console.log("error", errors);
-  }, [errors]);
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["miracleLogs"],
@@ -300,7 +297,7 @@ export default function MiracleLogClient({
 
             <CardContent className="space-y-6">
               {/* Info Box */}
-              {todayEntriesCount >= DAILY_LIMIT ? (
+           {(todayEntriesCount >= DAILY_LIMIT) ? (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-yellow-800 flex items-center flex-wrap">
                     <Info className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -313,7 +310,7 @@ export default function MiracleLogClient({
                           {" "}
                           or{" "}
                           <Link
-                            href="/pricing?ref=miracle-log"
+                            href="/dashboard/subscription?ref=miracle-log"
                             className="underline underline-offset-4 font-medium"
                           >
                             upgrade

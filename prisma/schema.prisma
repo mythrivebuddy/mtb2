@@ -1418,6 +1418,7 @@ enum PaymentContextType {
   STORE_ORDER
   STORE_PRODUCT
   MMP_PROGRAM
+  CMP
 }
 
 

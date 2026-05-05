@@ -9,8 +9,7 @@ import {
   createJpSpentNotification,
 } from "./notifications";
 import { checkFeature } from "../access-control/checkFeature";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth";
+import { normalizeUserType } from "./normalizedUserTypes";
 
 type UserWithPlan = Prisma.UserGetPayload<{
   include: { plan: true };
@@ -174,21 +173,33 @@ export function getJpToDeduct(user: UserWithPlan, activityData: Activity) {
   return Math.ceil(activityData.jpAmount * (1 - discount / 100));
 }
 
-async function getJoyPearlsConfig(user: UserWithPlan) {
-  const session = await getServerSession(authOptions);
+type JoyPearlsConfig = {
+  earnRateMultiplier?: number;
+  spendRateMultiplier?: number;
+  bonusEligible?: boolean;
+};
 
-  const result = checkFeature({
+async function getJoyPearlsConfig(user: UserWithPlan) {
+  const userType = normalizeUserType(user.userType);
+
+  if (!userType) return null;
+
+  const result = await checkFeature({
     feature: "joyPearls",
-    user: session?.user ?? user, // Pass session user if available, otherwise fallback to provided user
+    user: {
+      userType,
+      membership: user.membership ?? undefined,
+    },
   });
 
+  
   if (!result.allowed) {
-    return null;
+    throw new Error("JOY_PEARLS_ACCESS_DENIED");
   }
 
-  return result.config as {
-    earnRateMultiplier?: number;
-    spendRateMultiplier?: number;
-    bonusEligible?: boolean;
-  };
+  const config = result.config;
+
+  if (!config || typeof config !== "object") return null;
+  
+  return config as JoyPearlsConfig;
 }

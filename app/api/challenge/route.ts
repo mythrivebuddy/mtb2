@@ -1,12 +1,16 @@
 // app/api/challenge/route.ts
 
-import { checkFeature, checkFeatureAction } from "@/lib/access-control/checkFeature";
+import {
+  checkFeature,
+  checkFeatureAction,
+} from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { deductJp } from "@/lib/utils/jp";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 import { challengeSchema } from "@/schema/zodSchema";
 import { ActivityType } from "@prisma/client";
 import { NextResponse } from "next/server";
@@ -27,9 +31,7 @@ type ChallengePlanConfig = {
   canIssueCertificate?: boolean;
 };
 
-
 export async function POST(request: Request) {
-
   try {
     //  Authenticate user
     const session = await checkRole("USER");
@@ -37,27 +39,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     //  Action-level check: if only COACH can create challenges
-    const canCreate = checkFeatureAction({
-      feature: "challenges",
-      action: "create",
-      userType: session.user.userType,
-    });
-
-    if (!canCreate) {
-      return NextResponse.json(
-        {
-          message: "Only coaches are allowed to create challenges.",
-          isUpgradeFlagShow: false,
-        },
-        { status: 403 }
-      );
-    }
-
+    const normalizedUserType = normalizeUserType(session.user.userType);
 
     const userId = session.user.id;
-    const featureResult = checkFeature({
+    const featureResult = await checkFeature({
       feature: "challenges",
-      user: session.user,
+      user: {
+        userType: normalizedUserType ?? undefined,
+        membership: session.user.membership ?? undefined,
+      },
     });
 
     if (!featureResult.allowed) {
@@ -67,15 +57,38 @@ export async function POST(request: Request) {
       );
     }
 
-    const planConfig =
-      featureResult.allowed && typeof featureResult.config === "object"
-        ? (featureResult.config as ChallengePlanConfig)
-        : null;
+    if (!featureResult.config || typeof featureResult.config !== "object") {
+      return NextResponse.json(
+        { message: "Challenge configuration not found" },
+        { status: 500 },
+      );
+    }
+    if (!featureResult.feature) {
+      return NextResponse.json(
+        { message: "Feature metadata missing" },
+        { status: 500 },
+      );
+    }
+    const canCreate = checkFeatureAction({
+      feature: featureResult.feature,
+      action: "create",
+      userType: normalizedUserType ?? undefined,
+    });
+    if (!canCreate) {
+      return NextResponse.json(
+        {
+          message: "Only coaches are allowed to create challenges.",
+          isUpgradeFlagShow: false,
+        },
+        { status: 403 },
+      );
+    }
+    const planConfig = featureResult.config as ChallengePlanConfig;
 
     if (!planConfig) {
       return NextResponse.json(
         { message: "Challenge configuration not found" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -91,7 +104,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
-    //  Count challenges created this limitType 
+    //  Count challenges created this limitType
     const periodStart = getLimitPeriodStart(limitType);
 
     const createdCount = await prisma.challenge.count({
@@ -103,7 +116,6 @@ export async function POST(request: Request) {
       },
     });
 
-
     //  Enforce the limit
     const limitLabel =
       limitType === "MONTHLY"
@@ -114,17 +126,19 @@ export async function POST(request: Request) {
 
     const message =
       createLimit === 0
-        ? `You cannot create challenges on the Free plan.${isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
-        }`
-        : `You have reached your Free Membership limit of ${createLimit} challenge${createLimit === 1 ? "" : "s"
-        } ${limitLabel}.${isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
-        }`;
+        ? `You cannot create challenges on the Free plan.${
+            isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
+          }`
+        : `You have reached your Free Membership limit of ${createLimit} challenge${
+            createLimit === 1 ? "" : "s"
+          } ${limitLabel}.${
+            isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
+          }`;
 
     const limitResponse = await enforceLimitResponse({
       limit: createLimit,
       currentCount: createdCount,
-      message
-
+      message,
     });
 
     if (limitResponse) {
@@ -158,23 +172,20 @@ export async function POST(request: Request) {
       challengeJoiningFeeCurrency,
     } = validationResult.data;
 
-    if (
-      challengeType === "PAID" &&
-      !planConfig.canCreatePaidChallenge
-    ) {
+    if (challengeType === "PAID" && !planConfig.canCreatePaidChallenge) {
       return NextResponse.json(
         {
-          message: "Your current plan doesn't support paid challenges. Upgrade your plan to create them.",
-          isUpgradeFlagShow: true
+          message:
+            "Your current plan doesn't support paid challenges. Upgrade your plan to create them.",
+          isUpgradeFlagShow: planConfig.isUpgradeFlagShow ?? true,
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     // Transaction: create challenge, enroll, deduct JP
     const newChallenge = await prisma.$transaction(
       async (tx) => {
-
         // A: Set RLS context
         await tx.$executeRawUnsafe(
           `SELECT set_config('request.jwt.claims', '{"sub": "${userId}", "role": "authenticated"}', true);`,
@@ -199,11 +210,10 @@ export async function POST(request: Request) {
             isIssuingCertificate,
 
             challengeJoiningType: challengeType,
-            challengeJoiningFee: challengeType === "PAID" ? challengeJoiningFee : 0,
+            challengeJoiningFee:
+              challengeType === "PAID" ? challengeJoiningFee : 0,
             challengeJoiningFeeCurrency:
-              challengeType === "PAID"
-                ? challengeJoiningFeeCurrency
-                : "INR",
+              challengeType === "PAID" ? challengeJoiningFeeCurrency : "INR",
 
             creator: { connect: { id: userId } },
             templateTasks: {
@@ -213,7 +223,6 @@ export async function POST(request: Request) {
           },
           include: { templateTasks: true },
         });
-
 
         // D: Enroll creator and create tasks
         await tx.challengeEnrollment.create({

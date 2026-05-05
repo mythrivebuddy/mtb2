@@ -6,7 +6,8 @@ import {
   activityDisplayMapV3,
 } from "@/lib/constants/activityNames";
 import { PaymentStatus } from "@prisma/client";
-import { checkFeature } from "@/lib/access-control/checkFeature";
+import { getCommissionPercent } from "@/lib/commission/getCommissionPercent";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 type TransactionMetadata = {
   joinerName?: string;
@@ -20,6 +21,8 @@ type TransactionMetadata = {
 type CartItem = {
   itemId: string;
   quantity?: number;
+  price: number; // ✅ ADD
+  discount?: number;
 };
 
 // 🔹 safe JSON parser
@@ -69,16 +72,32 @@ export async function GET(request: Request) {
   }
 
   try {
-    // const challengePaymentsPromise =
-    //   filter === "ALL" || filter === "CHALLENGE"
-    //     ? prisma.challengePayment.findMany({
-    //         where: { userId },
-    //         include: {
-    //           challenge: true,
-    //           paymentOrder: true,
-    //         },
-    //       })
-    //     : Promise.resolve([]);
+    const userType = normalizeUserType(session.user.userType);
+    if (!userType || !session.user.membership) {
+      return NextResponse.json(
+        { error: "Invalid user type or membership" },
+        { status: 400 },
+      );
+    }
+
+    const [challengeCommission, mmpCommission, storeCommission] =
+      await Promise.all([
+        getCommissionPercent({
+          feature: "challenges",
+          userType,
+          membership: session.user.membership,
+        }),
+        getCommissionPercent({
+          feature: "miniMasteryPrograms",
+          userType,
+          membership: session.user.membership,
+        }),
+        getCommissionPercent({
+          feature: "store", // ✅ IMPORTANT
+          userType,
+          membership: session.user.membership,
+        }),
+      ]);
 
     const coachChallengeEarningsPromise =
       filter === "ALL" || filter === "COACH_EARNING" || filter === "CHALLENGE"
@@ -128,57 +147,48 @@ export async function GET(request: Request) {
 
     const mmpProgramMap = new Map(mmpPrograms.map((p) => [p.id, p]));
 
-    const coachMmpEarnings = mmpOrders
-      .filter((po) => {
-        const program = mmpProgramMap.get(po.programId!);
-        return program?.createdBy === userId;
-      })
-      .map((po) => {
-        const program = mmpProgramMap.get(po.programId!);
-        const feature = checkFeature({
-          feature: "miniMasteryPrograms", // or same "challenges" if shared config
-          user: {
-            userType: session.user.userType,
-            membership: session.user.membership,
-          },
-        });
+    const coachMmpEarnings = await Promise.all(
+      mmpOrders
+        .filter((po) => {
+          const program = mmpProgramMap.get(po.programId!);
+          return program?.createdBy === userId;
+        })
+        .map(async (po) => {
+          const program = mmpProgramMap.get(po.programId!);
+          const commissionPercent = mmpCommission;
+          const baseAmount = po.baseAmount ?? po.totalAmount;
+          const discount = po.discountApplied ?? 0;
 
-        const commissionPercent = feature.allowed
-          ? ((feature.config as { commissionPercent?: number })
-              .commissionPercent ?? 0)
-          : 0;
+          const netBase = baseAmount - discount;
 
-        const baseAmount = po.baseAmount ?? po.totalAmount;
-        const discount = po.discountApplied ?? 0;
+          const commission = (netBase * commissionPercent) / 100;
+          const finalAmount = netBase - commission;
+          return {
+            id: `mmp-${po.id}`,
+            createdAt: po.paidAt || po.createdAt,
+            jpAmount: finalAmount,
+            currency: po.currency,
+            breakdown: {
+              baseAmount,
+              commission,
+              finalAmount,
+              discount,
+            },
+            activity: {
+              activity: "MMP_EARNING",
+              transactionType: "CREDIT",
+              displayName: `${po.user?.name} joined ${program?.name}`,
+            },
+            activityMeta: {
+              joinerId: po.user?.id,
+              joinerName: po.user?.name,
+              programId: po.programId,
+              programName: program?.name,
+            },
+          };
+        }),
+    );
 
-        const netBase = baseAmount - discount;
-
-        const commission = (netBase * commissionPercent) / 100;
-        const finalAmount = netBase - commission;
-        return {
-          id: `mmp-${po.id}`,
-          createdAt: po.paidAt || po.createdAt,
-          jpAmount: finalAmount,
-          currency: po.currency,
-          breakdown: {
-            baseAmount,
-            commission,
-            finalAmount,
-            discount,
-          },
-          activity: {
-            activity: "MMP_EARNING",
-            transactionType: "CREDIT",
-            displayName: `${po.user?.name} joined ${program?.name}`,
-          },
-          activityMeta: {
-            joinerId: po.user?.id,
-            joinerName: po.user?.name,
-            programId: po.programId,
-            programName: program?.name,
-          },
-        };
-      });
     const paymentOrdersPromise =
       filter === "ALL" ||
       filter === "SUBSCRIPTION" ||
@@ -202,26 +212,36 @@ export async function GET(request: Request) {
             include: {
               plan: true,
               challenge: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           })
         : Promise.resolve([]);
 
-    const cmpPurchasesPromise =
-      filter === "ALL" || filter === "CMP"
-        ? prisma.oneTimeProgramPurchase.findMany({
-            where: { userId, status: PaymentStatus.PAID },
-            include: {
-              product: true,
-            },
-          })
-        : Promise.resolve([]);
+    const storeOrdersPromise = prisma.paymentOrder.findMany({
+      where: {
+        status: PaymentStatus.PAID,
+        contextType: "STORE_PRODUCT",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
 
     const [
       user,
       transactions,
-
       paymentOrders,
-      cmpPurchases,
+      storeOrders,
       coachChallengeEarnings,
     ] = await Promise.all([
       prisma.user.findUnique({
@@ -265,26 +285,101 @@ export async function GET(request: Request) {
         : Promise.resolve([]),
 
       paymentOrdersPromise,
-      cmpPurchasesPromise,
+      storeOrdersPromise,
       coachChallengeEarningsPromise,
     ]);
+    const storeItemIds = storeOrders
+      .filter((po) => po.contextType === "STORE_PRODUCT")
+      .flatMap((po) => {
+        const items = parseCartSnapshot(po.cartSnapshot);
+        return items.map((item) => item.itemId);
+      })
+      .filter((id): id is string => Boolean(id));
+
+    const storeProducts = await prisma.item.findMany({
+      where: {
+        id: { in: storeItemIds },
+      },
+    });
+
+    const coachStoreEarnings = await Promise.all(
+      storeOrders
+        .flatMap((po) => {
+          const items = parseCartSnapshot(po.cartSnapshot);
+
+          return items.map((item) => ({
+            po,
+            itemId: item.itemId,
+          }));
+        })
+        .map(async ({ po, itemId }) => {
+          const product = storeProducts.find((p) => p.id === itemId);
+
+          if (!product || product.createdByUserId !== userId) return null;
+
+          const items = parseCartSnapshot(po.cartSnapshot);
+          const item = items.find((i) => i.itemId === itemId);
+
+          if (!item) return null;
+
+          // 👇 ONLY THIS ITEM's value (NOT full order)
+          const itemBase = item.price * (item.quantity ?? 1);
+
+          // if discount exists per item
+          const itemDiscount = item.discount ?? 0;
+
+          const netBase = itemBase - itemDiscount;
+
+          // commission only on THIS item
+          const commission = (netBase * storeCommission) / 100;
+
+          const finalAmount = netBase - commission;
+
+          return {
+            id: `store-${po.id}-${itemId}`,
+            createdAt: po.paidAt || po.createdAt,
+            jpAmount: finalAmount,
+            currency: po.currency,
+
+            breakdown: {
+              baseAmount: itemBase,
+              commission,
+              finalAmount,
+              discount: itemDiscount,
+            },
+
+            activity: {
+              activity: "STORE_EARNING",
+              transactionType: "CREDIT",
+              displayName: `${po.user?.name ?? "Someone"} bought ${product.name}`,
+            },
+
+            activityMeta: {
+              productId: product.id,
+              productName: product.name,
+              buyerId: po.user?.id,
+              buyerName: po.user?.name,
+            },
+          };
+        }),
+    );
 
     const paymentOrderIds = paymentOrders.map((po) => po.id);
 
-const invoices = await prisma.invoice.findMany({
-  where: {
-    paymentOrderId: { in: paymentOrderIds },
-    status: "PAID",
-  },
-  select: {
-    paymentOrderId: true,
-    pdfUrl: true,
-  },
-});
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        paymentOrderId: { in: paymentOrderIds },
+        status: "PAID",
+      },
+      select: {
+        paymentOrderId: true,
+        pdfUrl: true,
+      },
+    });
 
-const invoiceMap = new Map(
-  invoices.map((inv) => [inv.paymentOrderId, inv.pdfUrl])
-);
+    const invoiceMap = new Map(
+      invoices.map((inv) => [inv.paymentOrderId, inv.pdfUrl]),
+    );
 
     // After the main Promise.all, fetch UNFILTERED data for balance cards
     const [allCoachEarnings] = await Promise.all([
@@ -306,19 +401,6 @@ const invoiceMap = new Map(
       select: {
         id: true,
         name: true,
-      },
-    });
-    const storeItemIds = paymentOrders
-      .filter((po) => po.contextType === "STORE_PRODUCT")
-      .flatMap((po) => {
-        const items = parseCartSnapshot(po.cartSnapshot);
-        return items.map((item) => item.itemId);
-      })
-      .filter((id): id is string => Boolean(id));
-
-    const storeProducts = await prisma.item.findMany({
-      where: {
-        id: { in: storeItemIds },
       },
     });
 
@@ -354,6 +436,12 @@ const invoiceMap = new Map(
 
         displayName = name ? `MMP Purchase : ${name}` : "Program Purchase";
       }
+      if (po.contextType === "CMP") {
+        // you MUST have programId or metadata
+        const name = po.programId ? programMap.get(po.programId) : null;
+
+        displayName = name ? `Purchase ${name}` : "Complete Makeover Program";
+      }
 
       return {
         id: po.id,
@@ -374,18 +462,6 @@ const invoiceMap = new Map(
         },
       };
     });
-
-    const cmpHistory = cmpPurchases.map((cp) => ({
-      id: cp.id,
-      createdAt: cp.purchasedAt,
-      jpAmount: cp.totalAmount,
-      currency: cp.currency,
-      activity: {
-        activity: "CMP_PURCHASE",
-        transactionType: "DEBIT",
-        displayName: `${cp.product.name}`,
-      },
-    }));
 
     const gpHistory = transactions.map((tx) => {
       let displayName =
@@ -424,61 +500,54 @@ const invoiceMap = new Map(
       };
     });
 
-    const coachEarningsHistory = coachChallengeEarnings.map((cp) => {
-      const feature = checkFeature({
-        feature: "challenges",
-        user: {
-          userType: session.user.userType,
-          membership: session.user.membership,
-        },
-      });
+    const coachEarningsHistory = await Promise.all(
+      coachChallengeEarnings.map(async (cp) => {
+        const commissionPercent = challengeCommission;
 
-      const commissionPercent = feature.allowed
-        ? ((feature.config as { commissionPercent?: number })
-            .commissionPercent ?? 0)
-        : 0;
+        const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
+        const discount = cp.paymentOrder?.discountApplied ?? 0;
 
-      const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
-      const discount = cp.paymentOrder?.discountApplied ?? 0;
+        const netBase = baseAmount - discount;
 
-      const netBase = baseAmount - discount;
+        const commission = (netBase * commissionPercent) / 100;
+        const finalAmount = netBase - commission;
 
-      const commission = (netBase * commissionPercent) / 100;
-      const finalAmount = netBase - commission;
+        return {
+          id: `coach-${cp.id}`,
+          createdAt: cp.paidAt || cp.joinedAt,
+          jpAmount: finalAmount,
+          currency: cp.currency,
 
-      return {
-        id: `coach-${cp.id}`,
-        createdAt: cp.paidAt || cp.joinedAt,
-        jpAmount: finalAmount,
-        currency: cp.currency,
+          breakdown: {
+            baseAmount,
+            commission,
+            finalAmount,
+            discount,
+          },
 
-        breakdown: {
-          baseAmount,
-          commission,
-          finalAmount,
-          discount,
-        },
+          activity: {
+            activity: "CHALLENGE_EARNING",
+            transactionType: "CREDIT",
+            displayName: `${cp.user.name} joining ${cp.challenge.title}`,
+          },
 
-        activity: {
-          activity: "CHALLENGE_EARNING",
-          transactionType: "CREDIT",
-          displayName: `${cp.user.name} joining ${cp.challenge.title}`,
-        },
-
-        activityMeta: {
-          userId: cp.user.id,
-          userName: cp.user.name,
-          challengeTitle: cp.challenge.title,
-        },
-      };
-    });
+          activityMeta: {
+            userId: cp.user.id,
+            userName: cp.user.name,
+            challengeTitle: cp.challenge.title,
+          },
+        };
+      }),
+    );
 
     let combined = [
       ...gpHistory,
       ...paymentHistory,
-      ...cmpHistory,
       ...coachEarningsHistory,
       ...coachMmpEarnings,
+      ...coachStoreEarnings.filter(
+        (tx): tx is NonNullable<typeof tx> => tx !== null,
+      ),
     ];
     // ✅ Filter by CREDIT / DEBIT
     if (txType !== "ALL") {
@@ -525,18 +594,7 @@ const invoiceMap = new Map(
     const paginated = combined.slice(skipSafe, skipSafe + limit);
 
     const gpBalance = user?.jpBalance ?? 0;
-    const feature = checkFeature({
-      feature: "challenges",
-      user: {
-        userType: session.user.userType,
-        membership: session.user.membership,
-      },
-    });
-
-    const commissionPercent = feature.allowed
-      ? ((feature.config as { commissionPercent?: number }).commissionPercent ??
-        0)
-      : 0;
+    const commissionPercent = challengeCommission;
     // INR balance (coach challenge earnings after commission)
     const inrCredits = allCoachEarnings
       .filter((cp) => cp.currency === "INR")
@@ -595,6 +653,10 @@ const invoiceMap = new Map(
       totalPages,
       version: versionFlag ? "v3" : "default",
       currentPage,
+      commission: {
+        challenges: challengeCommission,
+        miniMasteryPrograms: mmpCommission,
+      },
       balances: {
         GP: gpBalance,
         INR: inrBalance,

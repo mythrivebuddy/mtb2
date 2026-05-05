@@ -306,7 +306,7 @@ export default function ProgressVaultClient({
                         {" "}
                         or{" "}
                         <Link
-                          href="/pricing?ref=progress-vault"
+                          href="/dashboard/subscription?ref=progress-vault"
                           className="underline underline-offset-4 font-medium"
                         >
                           upgrade

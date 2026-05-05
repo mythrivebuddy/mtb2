@@ -23,6 +23,8 @@ declare module "next-auth" {
     user: {
       id: string;
       role: UserRole;
+      userType?: string | null;
+      membership?: string | null;
       rememberMe?: boolean;
       isFirstTimeSurvey: boolean;
       lastSurveyTime: string | null; // Dates are serialized to strings in the session

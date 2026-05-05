@@ -19,6 +19,7 @@ import {
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 import { LimitType } from "@/lib/access-control/featureConfig";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 // Mappings from form values to Prisma enums
 const visibilityMap: Record<string, Visibility> = {
@@ -26,11 +27,6 @@ const visibilityMap: Record<string, Visibility> = {
   admin_only: Visibility.PRIVATE,
 };
 
-// // ✅ FIX: Use the correct enum members that actually exist on the NotesPrivacy type.
-// const notesPrivacyMap: Record<string, NotesPrivacy> = {
-//     member_and_admin: NotesPrivacy.MEMBER_AND_ADMIN,
-//     admin_only: NotesPrivacy.ADMIN_ONLY,
-// };
 const notesPrivacyMap: Record<string, NotesPrivacy> = {
   member_and_admin: NotesPrivacy.VISIBLE_TO_GROUP, // same meaning
   admin_only: NotesPrivacy.PRIVATE_TO_AUTHOR,
@@ -42,18 +38,35 @@ export async function POST(req: Request) {
     if (!session?.user?.id || !session.user.name) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const feature = checkFeature({
+
+    const userType = normalizeUserType(session.user.userType);
+
+    if (!userType) {
+      return NextResponse.json({ error: "INVALID_USER_TYPE" }, { status: 400 });
+    }
+
+    // feature check
+    const featureCheck = await checkFeature({
       feature: "accountabilityHub",
       user: {
-        userType: session.user.userType,
-        membership: session.user.membership,
+        userType,
+        membership: session?.user?.membership ?? undefined,
       },
     });
+    if (!featureCheck.allowed) {
+      return NextResponse.json(
+        { error: featureCheck.reason || "FEATURE_NOT_AVAILABLE" },
+        { status: 403 },
+      );
+    }
 
-    const canCreate = checkFeatureAction({
-      feature: "accountabilityHub",
+    if (!featureCheck.feature) {
+      return NextResponse.json({ error: "FEATURE_NOT_FOUND" }, { status: 403 });
+    }
+    const canCreate = await checkFeatureAction({
+      feature: featureCheck.feature,
       action: "create",
-      userType: session.user.userType,
+      userType,
     });
 
     if (!canCreate) {
@@ -63,11 +76,12 @@ export async function POST(req: Request) {
       );
     }
     const creatorId = session.user.id;
-    const { createLimit, limitType, isUpgradeFlagShow } = feature.config as {
-      createLimit: number;
-      limitType: LimitType;
-      isUpgradeFlagShow?: boolean;
-    };
+    const { createLimit, limitType, isUpgradeFlagShow } =
+      featureCheck.config as {
+        createLimit: number;
+        limitType: LimitType;
+        isUpgradeFlagShow?: boolean;
+      };
 
     const periodStart = getLimitPeriodStart(limitType);
 
@@ -116,7 +130,7 @@ export async function POST(req: Request) {
           stages in ProgressStage
             ? (stages as ProgressStage)
             : ProgressStage.STAGE_3,
-        // ✅ FIX: The fallback value must also be a valid enum member.
+        //  The fallback value must also be a valid enum member.
         notesPrivacy: notesPrivacyMap[notesPrivacy],
         cycleDuration: CycleDuration.MONTHLY,
         members: {
@@ -167,13 +181,13 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const groupId = searchParams.get("groupId");
 
-    // ✅ If groupId is provided, return only that group
+    //  If groupId is provided, return only that group
     if (groupId) {
       const isAdmin = session.user.role === "ADMIN";
 
       const group = await prisma.group.findFirst({
         where: isAdmin
-          ? { id: groupId } // ✅ admin can view ANY group
+          ? { id: groupId } //  admin can view ANY group
           : {
               id: groupId,
               members: {
@@ -216,7 +230,7 @@ export async function GET(req: Request) {
       return NextResponse.json(group);
     }
 
-    // ✅ Otherwise return all groups the user is a member of
+    //  Otherwise return all groups the user is a member of
     const groups = await prisma.group.findMany({
       where: {
         members: {

@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { getSpotlightAppliedNotificationData } from "@/lib/utils/notifications";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 //! add check for profile completion
 
@@ -19,11 +20,9 @@ export async function POST() {
     // Check user role and get session
     const session = await checkRole(
       "USER",
-      "You are not authorized for this action"
+      "You are not authorized for this action",
     );
     const userId = session.user.id;
-    
-
 
     // Get spotlight activity data
     const spotlightActivity = await prisma.activity.findUnique({
@@ -33,7 +32,7 @@ export async function POST() {
     if (!spotlightActivity) {
       return NextResponse.json(
         { error: "Spotlight activity not configured" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,32 +53,35 @@ export async function POST() {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    const featureCheck = checkFeature({
+    const userType = normalizeUserType(session.user.userType);
+
+    if (!userType) {
+      return NextResponse.json({ error: "INVALID USER TYPE" }, { status: 400 });
+    }
+    const featureCheck = await checkFeature({
       feature: "spotlight",
       user: {
-        userType: session.user.userType,
-        membership: session.user.membership,
+        userType,
+        membership: session.user.membership ?? undefined,
       },
     });
- 
 
     if (!featureCheck.allowed) {
       return NextResponse.json(
         { error: "You are not eligible to apply for Spotlight" },
-        { status: 403 }
+        { status: 403 },
       );
     }
-    const { eligible, applyLimit, applyLimitType } =
-      featureCheck.config as {
-        eligible: boolean;
-        applyLimit: number;
-        applyLimitType: "MONTHLY" | "YEARLY" | "LIFETIME";
-      };
+    const { eligible, applyLimit, applyLimitType } = featureCheck.config as {
+      eligible: boolean;
+      applyLimit: number;
+      applyLimitType: "MONTHLY" | "YEARLY" | "LIFETIME";
+    };
 
     if (!eligible) {
       return NextResponse.json(
         { message: "Please Upgrade to apply for Spotlight" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -108,14 +110,12 @@ export async function POST() {
     const isPaidUser = session.user.membership === "PAID";
 
     const limitMessage = isPaidUser
-  ? applyLimit > 0
-    ? `You have reached the ${applyLimit} Spotlight ${applyLimitType.toLowerCase()} limit.`
-    : "You have reached your Spotlight limit."
-  : applyLimit > 0
-    ? `You can apply for up to ${applyLimit} Spotlight in the ${applyLimitType.toLowerCase()} period. Please upgrade to increase your limit.`
-    : "Please upgrade to apply for Spotlight.";
-
-
+      ? applyLimit > 0
+        ? `You have reached the ${applyLimit} Spotlight ${applyLimitType.toLowerCase()} limit.`
+        : "You have reached your Spotlight limit."
+      : applyLimit > 0
+        ? `You can apply for up to ${applyLimit} Spotlight in the ${applyLimitType.toLowerCase()} period. Please upgrade to increase your limit.`
+        : "Please upgrade to apply for Spotlight.";
 
     const limitResponse = await enforceLimitResponse({
       limit: applyLimit,
@@ -126,18 +126,16 @@ export async function POST() {
 
     if (limitResponse) return limitResponse;
 
-
-
     const jpRequired = getJpToDeduct(user, spotlightActivity);
 
     // Check if user's business profile is complete
     const businessProfile = user.userBusinessProfile;
-    if (!businessProfile || !businessProfile.isProfileComplete) {
+    if (!businessProfile) {
       return NextResponse.json(
         {
           error: "Complete your business profile before applying for spotlight",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -146,7 +144,7 @@ export async function POST() {
       if (user.spotlight[0].status === SpotlightStatus.ACTIVE) {
         return NextResponse.json(
           { error: "You already have an active spotlight" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       if (
@@ -155,13 +153,13 @@ export async function POST() {
       ) {
         return NextResponse.json(
           { error: "You already have a spotlight application in review" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       if (user.spotlight[0].status === "APPROVED") {
         return NextResponse.json(
           { error: "You already have an approved spotlight" },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -187,7 +185,7 @@ export async function POST() {
 
     if (latestSpotlight && latestSpotlight.activatedAt) {
       estimatedActivationDate = new Date(
-        latestSpotlight.activatedAt.getTime() + 24 * 60 * 60 * 1000
+        latestSpotlight.activatedAt.getTime() + 24 * 60 * 60 * 1000,
       );
     } else {
       estimatedActivationDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -241,13 +239,13 @@ export async function POST() {
           "Spotlight application created successfully, checkout your mailbox for more information.",
         estimatedActivationDate,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -258,7 +256,7 @@ export async function GET() {
     // Check user role and get session
     const session = await checkRole(
       "USER",
-      "You are not authorized for this action"
+      "You are not authorized for this action",
     );
     const userId = session.user.id;
 
@@ -278,12 +276,10 @@ export async function GET() {
       },
     });
 
-
-
     if (!spotlightApplications) {
       return NextResponse.json(
         { message: "No spotlight application found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -292,7 +288,7 @@ export async function GET() {
     console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

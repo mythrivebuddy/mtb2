@@ -118,6 +118,10 @@ export async function sendInvoiceEmail({
     templateId = "invoice-mmp";
   } else if (purchaseData?.type === "store") {
     templateId = "order-placed";
+  } else if (purchaseData?.type === "subscription") {
+    templateId = "invoice-subscription";
+  } else if (purchaseData?.type === "cmp") {
+    templateId = "invoice-cmp";
   }
 
   // 2️⃣ Get template
@@ -183,7 +187,10 @@ export async function sendInvoiceEmail({
 
           programName:
             purchaseData?.type === "mmp" ? purchaseData.name : undefined,
-
+          planName:
+            purchaseData?.type === "subscription" ? purchaseData.name : undefined,
+            cmpProgramName:
+          purchaseData?.type === "cmp" ? purchaseData.name : undefined,
           items:
             purchaseData?.type === "store" ? purchaseData.items : undefined,
         };

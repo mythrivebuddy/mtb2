@@ -29,6 +29,9 @@ export interface Transaction {
     joinerId?: string;
     joinerName?: string;
     programName?: string;
+    buyerId?: string;
+    buyerName?: string;
+    productName?: string;
     invoiceUrl?: string;
   };
   activity: {
@@ -54,11 +57,13 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const data = row.original;
       const meta = data.activityMeta;
-      const userId = data.activityMeta?.userId || data.activityMeta?.joinerId;
+      const userId = meta?.userId || meta?.joinerId || meta?.buyerId;
 
-      const userName =
-        data.activityMeta?.userName || data.activityMeta?.joinerName;
+      const userName = meta?.userName || meta?.joinerName || meta?.buyerName;
+
       const title = meta?.challengeTitle || meta?.programName;
+
+      // ✅ Challenge / MMP
       if (userId && userName && title) {
         return (
           <div>
@@ -70,6 +75,22 @@ export const columns: ColumnDef<Transaction>[] = [
               {userName?.trim()}
             </Link>{" "}
             joined {title}
+          </div>
+        );
+      }
+
+      // ✅ STORE PURCHASE (NEW)
+      if (meta?.buyerId && meta?.buyerName && meta?.productName) {
+        return (
+          <div>
+            <Link
+              href={`/profile/${meta.buyerId}`}
+              className="hover:underline text-blue-700 hover:text-blue-800"
+              target="_blank"
+            >
+              {meta.buyerName}
+            </Link>{" "}
+            bought {meta.productName}
           </div>
         );
       }
