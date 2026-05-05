@@ -353,7 +353,8 @@ export const notifyStakeholders = inngest.createFunction(
               quantity: cartItem.quantity || 1,
               priceAtPurchase: paidBase,
               originalPrice: basePrice,
-              gstAmount: cartItem.gst || 0,
+              gstAmount:
+              (cartItem.gst || 0) / (cartItem.quantity || 1),
               item: {
                 id: itemId,
                 name: product.name,

@@ -222,15 +222,6 @@ export async function GET(request: Request) {
           })
         : Promise.resolve([]);
 
-    const cmpPurchasesPromise =
-      filter === "ALL" || filter === "CMP"
-        ? prisma.oneTimeProgramPurchase.findMany({
-            where: { userId, status: PaymentStatus.PAID },
-            include: {
-              product: true,
-            },
-          })
-        : Promise.resolve([]);
     const storeOrdersPromise = prisma.paymentOrder.findMany({
       where: {
         status: PaymentStatus.PAID,
@@ -251,7 +242,6 @@ export async function GET(request: Request) {
       transactions,
       paymentOrders,
       storeOrders,
-      cmpPurchases,
       coachChallengeEarnings,
     ] = await Promise.all([
       prisma.user.findUnique({
@@ -296,7 +286,6 @@ export async function GET(request: Request) {
 
       paymentOrdersPromise,
       storeOrdersPromise,
-      cmpPurchasesPromise,
       coachChallengeEarningsPromise,
     ]);
     const storeItemIds = storeOrders
@@ -447,6 +436,12 @@ export async function GET(request: Request) {
 
         displayName = name ? `MMP Purchase : ${name}` : "Program Purchase";
       }
+      if (po.contextType === "CMP") {
+        // you MUST have programId or metadata
+        const name = po.programId ? programMap.get(po.programId) : null;
+
+        displayName = name ? `Purchase ${name}` : "Complete Makeover Program";
+      }
 
       return {
         id: po.id,
@@ -467,18 +462,6 @@ export async function GET(request: Request) {
         },
       };
     });
-
-    const cmpHistory = cmpPurchases.map((cp) => ({
-      id: cp.id,
-      createdAt: cp.purchasedAt,
-      jpAmount: cp.totalAmount,
-      currency: cp.currency,
-      activity: {
-        activity: "CMP_PURCHASE",
-        transactionType: "DEBIT",
-        displayName: `${cp.product.name}`,
-      },
-    }));
 
     const gpHistory = transactions.map((tx) => {
       let displayName =
@@ -560,7 +543,6 @@ export async function GET(request: Request) {
     let combined = [
       ...gpHistory,
       ...paymentHistory,
-      ...cmpHistory,
       ...coachEarningsHistory,
       ...coachMmpEarnings,
       ...coachStoreEarnings.filter(

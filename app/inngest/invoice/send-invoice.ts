@@ -236,6 +236,27 @@ export const sendInvoiceFunction = inngest.createFunction(
               },
             ],
           };
+        case "CMP":
+          if (!order.programId) {
+            console.error("❌ MISSING  CMP programId", order);
+            return null;
+          }
+          const cmpProgram = await prisma.program.findUnique({
+            where: { id: order.programId },
+            select: { name: true },
+          });
+          return {
+            type: "cmp",
+            name: cmpProgram?.name || "2026 Complete Makeover Program",
+            items: [
+              {
+                name: cmpProgram?.name || "2026 Complete Makeover Program",
+                quantity: 1,
+                price: order.baseAmount,
+              },
+            ],
+          };
+
         default:
           return {
             type: "unknown",
@@ -394,10 +415,10 @@ export const sendInvoiceFunction = inngest.createFunction(
         update: {}, // do nothing if already exists
         create: {
           user: {
-            connect: { id: order.userId }
+            connect: { id: order.userId },
           },
           paymentOrder: {
-            connect: { id: order.id }
+            connect: { id: order.id },
           },
 
           contextType: order.contextType!,
@@ -421,7 +442,7 @@ export const sendInvoiceFunction = inngest.createFunction(
       });
     });
 
-    // await step.sleep("delay-email", "10m");
+    await step.sleep("delay-email", "10m");
     /**
      * 5️⃣ Generate PDF + Send Email
      */
