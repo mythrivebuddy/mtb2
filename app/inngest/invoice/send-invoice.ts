@@ -442,7 +442,7 @@ export const sendInvoiceFunction = inngest.createFunction(
       });
     });
 
-    // await step.sleep("delay-email", "10m");
+    await step.sleep("delay-email", "10m");
     /**
      * 5️⃣ Generate PDF + Send Email
      */
