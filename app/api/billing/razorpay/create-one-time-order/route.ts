@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
-import { calculateDiscount, calculateFinal } from "@/lib/payment/payment.utils";
-import { PaymentContextType, PaymentStatus } from "@prisma/client";
+import { calculateDiscount } from "@/lib/payment/payment.utils";
+import { PaymentContextType, PaymentStatus, Prisma } from "@prisma/client";
 import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
 
 export const POST = async (req: NextRequest) => {
@@ -16,12 +16,12 @@ export const POST = async (req: NextRequest) => {
     const session = await checkRole("USER");
     const userId = session.user.id;
 
-    const { planId, couponCode, billingDetails } = await req.json();
+    const { planId, couponCode, billingDetails, action } = await req.json();
 
     if (!billingDetails?.country) {
       return NextResponse.json(
         { error: "Billing details missing" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,10 +37,9 @@ export const POST = async (req: NextRequest) => {
     if (!plan || plan.interval !== "LIFETIME") {
       return NextResponse.json(
         { error: "Invalid lifetime plan" },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
     const currency = isIndia ? "INR" : "USD";
     const baseAmount = isIndia ? plan.amountINR : plan.amountUSD;
     const gstRate = plan.gstPercentage / 100;
@@ -48,7 +47,7 @@ export const POST = async (req: NextRequest) => {
     if (!baseAmount || baseAmount < 1) {
       return NextResponse.json(
         { error: "Invalid plan amount" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -75,7 +74,7 @@ export const POST = async (req: NextRequest) => {
       ) {
         return NextResponse.json(
           { error: "Coupon expired or inactive" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -86,25 +85,83 @@ export const POST = async (req: NextRequest) => {
       if (coupon.maxUsesPerUser && used >= coupon.maxUsesPerUser) {
         return NextResponse.json(
           { error: "Coupon already used" },
-          { status: 400 }
+          { status: 400 },
         );
+      }
+    }
+    const discountValue = calculateDiscount(baseAmount, coupon, currency);
+    // Step 1: apply coupon
+    const discountedBase = Math.max(0, baseAmount - discountValue);
+
+    let proratedDiscount = 0;
+
+    if (action === "UPGRADE") {
+      const currentSub = await prisma.subscription.findFirst({
+        where: {
+          userId,
+          status: "ACTIVE",
+        },
+        include: {
+          plan: true,
+        },
+        orderBy: {
+          endDate: "desc",
+        },
+      });
+
+      if (currentSub) {
+        const lastPayment = await prisma.paymentOrder.findFirst({
+          where: {
+            userId,
+            planId: currentSub.planId,
+            status: PaymentStatus.PAID,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+        console.log("PAYMENT DEBUG", {
+          userId,
+          planId: currentSub.planId,
+          lastPayment,
+        });
+
+        const now = new Date().getTime();
+        const start = new Date(currentSub.startDate).getTime();
+        const end = new Date(currentSub.endDate).getTime();
+
+        const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+        const remainingDays = Math.max(0, (end - now) / (1000 * 60 * 60 * 24));
+
+        const oldPrice = isIndia
+          ? (currentSub.plan.amountINR ?? 0)
+          : (currentSub.plan.amountUSD ?? 0);
+
+        if (remainingDays > 0 && totalDays > 0) {
+          proratedDiscount = (remainingDays / totalDays) * oldPrice;
+        }
+        proratedDiscount = Math.min(proratedDiscount, discountedBase);
       }
     }
 
     // --------------------------------------------------
     // 4️⃣ PRICE CALCULATION
     // --------------------------------------------------
-    const discountValue = calculateDiscount(baseAmount, coupon,currency);
 
-    const finalAmount = calculateFinal(
-      baseAmount,
-      discountValue,
-      isIndia,
-      plan.gstEnabled,
-      plan.gstPercentage / 100
-    );
+    // Step 2: apply prorated credit
+    const taxableAmount = Math.max(0, discountedBase - proratedDiscount);
 
-    const payableAmount = finalAmount;
+    // Step 3: GST
+    const gstAmount =
+      isIndia && plan.gstEnabled
+        ? Number((taxableAmount * gstRate).toFixed(2))
+        : 0;
+
+    // Step 4: final payable
+    const finalAmount = Number((taxableAmount + gstAmount).toFixed(2));
+
+    // Razorpay minimum safeguard
+    const payableAmount = finalAmount <= 0 ? 1 : finalAmount;
 
     // --------------------------------------------------
     // 5️⃣ SAVE BILLING INFO
@@ -121,7 +178,7 @@ export const POST = async (req: NextRequest) => {
         state: billingDetails.state,
         postalCode: billingDetails.postalCode,
         country: billingDetails.country,
-         gstNumber: billingDetails.gstNumber || null,
+        gstNumber: billingDetails.gstNumber || null,
       },
       create: {
         userId,
@@ -138,7 +195,6 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-
     // --------------------------------------------------
     // 6️⃣ INTERNAL PAYMENT ORDER
     // --------------------------------------------------
@@ -151,7 +207,7 @@ export const POST = async (req: NextRequest) => {
         createdAt: "desc", // optional but recommended
       },
     });
-    let paymentOrder;
+    let paymentOrder: Prisma.PaymentOrderGetPayload<Prisma.PaymentOrderDefaultArgs>;
     if (existingOrder) {
       paymentOrder = await prisma.paymentOrder.update({
         where: { id: existingOrder.id }, // must use unique field here
@@ -163,7 +219,7 @@ export const POST = async (req: NextRequest) => {
           discountApplied: discountValue,
           gstAmount:
             isIndia && plan.gstEnabled
-              ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
+              ? Number((taxableAmount * gstRate).toFixed(2))
               : 0,
           totalAmount: finalAmount,
           billingInfoId: billingInfo.id,
@@ -181,11 +237,11 @@ export const POST = async (req: NextRequest) => {
           discountApplied: discountValue,
           gstAmount:
             isIndia && plan.gstEnabled
-              ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
+              ? Number((taxableAmount * gstRate).toFixed(2))
               : 0,
           totalAmount: finalAmount,
           billingInfoId: billingInfo.id,
-            contextType:PaymentContextType.SUBSCRIPTION
+          contextType: PaymentContextType.SUBSCRIPTION,
         },
       });
     }
@@ -224,7 +280,7 @@ export const POST = async (req: NextRequest) => {
     //       startDate: new Date(),
     //       endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 99)),
     //       // If you have a recurring subscription ID from Razorpay, clear it
-    //       razorpaySubscriptionId: null, 
+    //       razorpaySubscriptionId: null,
     //     },
     //   });
     // } else {
@@ -251,10 +307,17 @@ export const POST = async (req: NextRequest) => {
       key_id: razorpayKeyId,
       key_secret: razorpayKeySecret,
     });
-
+    console.log("FINAL CALC", {
+      baseAmount,
+      discountValue,
+      discountedBase,
+      proratedDiscount,
+      taxableAmount,
+      finalAmount,
+    });
     const razorpayOrder = await razorpay.orders.create({
       amount: Math.round(payableAmount * 100), // paise
-      currency, 
+      currency,
       receipt: razorpayReceipt,
       notes: {
         paymentOrderId: paymentOrder.id,
@@ -272,7 +335,6 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-
     // --------------------------------------------------
     // 9️⃣ RETURN (FIXED CONTRACT)
     // --------------------------------------------------
@@ -283,12 +345,11 @@ export const POST = async (req: NextRequest) => {
       currency: razorpayOrder.currency,
       purchaseId: paymentOrder.id,
     });
-
   } catch (error) {
     console.error("Razorpay create order error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 };
