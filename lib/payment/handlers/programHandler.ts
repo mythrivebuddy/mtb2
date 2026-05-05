@@ -1,10 +1,11 @@
-import { PaymentOrder, PaymentStatus, Prisma } from "@prisma/client";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { PaymentOrder, PaymentStatus, Prisma, Role } from "@prisma/client";
 
 export async function handleProgramPayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-): Promise<{ isAdmin: boolean,allItemIds: string[]  }> {
-  if (!order.programId) return { isAdmin: false,allItemIds:[] };
+): Promise<{ isAdmin: boolean; allItemIds: string[] }> {
+  if (!order.programId) return { isAdmin: false, allItemIds: [] };
 
   const program = await tx.program.findUnique({
     where: { id: order.programId },
@@ -13,6 +14,8 @@ export async function handleProgramPayment(
         select: {
           id: true,
           role: true,
+          membership: true, 
+          userType: true,
         },
       },
     },
@@ -80,8 +83,93 @@ export async function handleProgramPayment(
       }
     }
   }
+
+  // ─────────────────────────────────────────────
+  // 2. Skip platform products (ADMIN)
+  // ─────────────────────────────────────────────
+  if (!program.creator) {
+    return { isAdmin: false, allItemIds: [] };
+  }
+  const role = program.creator.role as Role;
+  if (role === Role.ADMIN) {
+    return {
+      isAdmin: true,
+      allItemIds: [program.id],
+    };
+  }
+  if (!program.createdBy) {
+    return {
+      isAdmin: true,
+      allItemIds: [program.id],
+    };
+  }
+  // ─────────────────────────────────────────────
+  // 3. Get commission config (feature-based)
+  // ─────────────────────────────────────────────
+  const feature = await tx.feature.findFirst({
+    where: { key: "miniMasteryPrograms" },
+  });
+
+  const creatorUserType = normalizeUserType(program.creator.userType);
+  if (!creatorUserType) {
+    return { isAdmin: false, allItemIds: [] };
+  }
+
+  const featureConfig = await tx.featurePlanConfig.findFirst({
+    where: {
+      featureId: feature?.id,
+      membership: program.creator.membership,
+      userType: creatorUserType,
+      isActive: true,
+    },
+  });
+
+  const config = featureConfig?.config as {
+    commissionPercent?: number;
+  } | null;
+
+  const commissionPercent = Number(config?.commissionPercent ?? 0);
+
+  // ─────────────────────────────────────────────
+  // 4. Financial calculation (IMPORTANT)
+  // ─────────────────────────────────────────────
+  const baseAmount =
+    (order.baseAmount ?? order.totalAmount) - (order.discountApplied ?? 0);
+
+  const platformFee = (baseAmount * commissionPercent) / 100;
+  const earnedAmount = baseAmount - platformFee;
+
+  // ─────────────────────────────────────────────
+  // 5. Ledger entry (idempotent)
+  // ─────────────────────────────────────────────
+  await tx.creatorEarningLedger.upsert({
+    where: {
+      paymentOrderId_contextId_contextType_currency: {
+        paymentOrderId: order.id,
+        contextId: order.programId,
+        contextType: "MMP_PROGRAM",
+        currency: order.currency,
+      },
+    },
+    update: {},
+    create: {
+      creatorId: program.createdBy,
+      paymentOrderId: order.id,
+      contextId: order.programId,
+      contextType: "MMP_PROGRAM",
+
+      baseAmount,
+      commissionRate: commissionPercent,
+      platformFee,
+      earnedAmount,
+
+      currency: order.currency,
+      status: "PENDING",
+    },
+  });
+
   return {
-    isAdmin: program.creator?.role === "ADMIN",
+    isAdmin: false,
     allItemIds: [program.id],
   };
 }

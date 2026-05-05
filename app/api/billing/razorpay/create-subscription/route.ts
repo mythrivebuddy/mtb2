@@ -17,7 +17,7 @@ export const POST = async (req: NextRequest) => {
     /* -------------------------------------------------- */
     const session = await checkRole("USER");
     const userId = session.user.id;
-    const { planId, couponCode, billingDetails } = await req.json();
+    const { planId, couponCode, billingDetails,action } = await req.json();
 
     if (!billingDetails?.country) {
       return NextResponse.json(
@@ -56,7 +56,35 @@ export const POST = async (req: NextRequest) => {
 
     const baseAmount = isIndia ? plan.amountINR : plan.amountUSD;
     const gstRate = plan.gstPercentage / 100;
+    // --- NEW: UPGRADE / DOWNGRADE SERVER LOGIC ---
+    let proratedDiscount = 0;
+    let downgradeStartDate: Date | null = null;
+    let activeSubId: string | null = null;
 
+    if (action === "UPGRADE" || action === "DOWNGRADE") {
+      const activeSub = await prisma.subscription.findFirst({
+        where: { userId, status: "ACTIVE" },
+        include: { plan: true },
+      });
+
+      if (activeSub) {
+        activeSubId = activeSub.id;
+        if (action === "UPGRADE") {
+          const now = new Date().getTime();
+          const start = new Date(activeSub.startDate).getTime();
+          const end = new Date(activeSub.endDate).getTime();
+          const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+          const remainingDays = (end - now) / (1000 * 60 * 60 * 24);
+          const oldBaseAmount = isIndia ? activeSub.plan.amountINR : activeSub.plan.amountUSD;
+
+          if (remainingDays > 0 && totalDays > 0) {
+            proratedDiscount = (remainingDays / totalDays) * oldBaseAmount;
+          }
+        } else if (action === "DOWNGRADE") {
+          downgradeStartDate = new Date(activeSub.endDate);
+        }
+      }
+    }
     /* -------------------------------------------------- */
     /* 3️⃣ COUPON VALIDATION */
     /* -------------------------------------------------- */
@@ -114,14 +142,17 @@ export const POST = async (req: NextRequest) => {
     const isMultiCycleCoupon = coupon?.multiCycle === true;
 
     const discountValue = calculateDiscount(baseAmount, coupon, currency);
-
-    let finalAmount = calculateFinal(
-      baseAmount,
-      discountValue,
-      isIndia,
-      plan.gstEnabled,
-      gstRate
-    );
+    const totalDiscountToApply = discountValue + proratedDiscount;
+   // If downgrading, only charge Rs 1 to setup the future mandate
+    let finalAmount = action === "DOWNGRADE" 
+     ? (isIndia ? 5 : 1)
+      : calculateFinal(
+          baseAmount,
+          totalDiscountToApply,
+          isIndia,
+          plan.gstEnabled,
+          gstRate
+        );
 
     finalAmount = (finalAmount <= 0) ? 1 : finalAmount;
 
@@ -196,7 +227,7 @@ export const POST = async (req: NextRequest) => {
           couponId: coupon?.id,
           status: PaymentStatus.CREATED,
           baseAmount,
-          discountApplied: discountValue,
+          discountApplied: discountValue+ proratedDiscount,
           gstAmount:
             isIndia && plan.gstEnabled
               ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))
@@ -316,30 +347,56 @@ export const POST = async (req: NextRequest) => {
         paymentOrderId: paymentOrder.id,
         userId,
         internalOrderId,
+        action: action || "NEW",               // Passing action  to Webhook
+        cancelOldSubId: activeSubId || "",     // Pass activeSubId to cancel current subscription to Webhook
+        newPlanId: plan.id, 
       },
     };
 
     // Delay the standard plan billing to next cycle and charge the discounted amount right now via addons
-    if (firstCycleChargeAmount !== razorpayPlanAmount) {
-      const nextCycleDate = new Date();
-      if (plan.interval === "MONTHLY") {
-        nextCycleDate.setMonth(nextCycleDate.getMonth() + 1);
-      } else {
-        nextCycleDate.setFullYear(nextCycleDate.getFullYear() + 1);
-      }
+    // if (firstCycleChargeAmount !== razorpayPlanAmount) {
+    //   const nextCycleDate = new Date();
+    //   if (plan.interval === "MONTHLY") {
+    //     nextCycleDate.setMonth(nextCycleDate.getMonth() + 1);
+    //   } else {
+    //     nextCycleDate.setFullYear(nextCycleDate.getFullYear() + 1);
+    //   }
 
-      subscriptionPayload.start_at = Math.floor(nextCycleDate.getTime() / 1000);
-      subscriptionPayload.addons = [
-        {
-          item: {
-            name: "First Cycle Charge",
-            amount: Math.round(firstCycleChargeAmount * 100),
-            currency,
+    //   subscriptionPayload.start_at = Math.floor(nextCycleDate.getTime() / 1000);
+    //   subscriptionPayload.addons = [
+    //     {
+    //       item: {
+    //         name: "First Cycle Charge",
+    //         amount: Math.round(firstCycleChargeAmount * 100),
+    //         currency,
+    //       },
+    //     },
+    //   ];
+    // }
+    if (action === "DOWNGRADE" && downgradeStartDate) {
+      // Downgrades: Start billing when the current plan expires. No addons charged now.
+      subscriptionPayload.start_at = Math.floor(downgradeStartDate.getTime() / 1000);
+    } else {
+      // Normal or Upgrade: Charge now, next billing cycle shifts.
+      if (firstCycleChargeAmount !== razorpayPlanAmount) {
+        const nextCycleDate = new Date();
+        if (plan.interval === "MONTHLY") {
+          nextCycleDate.setMonth(nextCycleDate.getMonth() + 1);
+        } else {
+          nextCycleDate.setFullYear(nextCycleDate.getFullYear() + 1);
+        }
+        subscriptionPayload.start_at = Math.floor(nextCycleDate.getTime() / 1000);
+        subscriptionPayload.addons = [
+          {
+            item: {
+              name: action === "UPGRADE" ? "First Cycle Charge (Prorated)" : "First Cycle Charge",
+              amount: Math.round(firstCycleChargeAmount * 100),
+              currency,
+            },
           },
-        },
-      ];
+        ];
+      }
     }
-
     // Create the actual subscription
     const razorpaySubscription = await razorpay.subscriptions.create(subscriptionPayload);
 

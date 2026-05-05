@@ -8,6 +8,7 @@ import {
   verifyRazorpaySignature,
 } from "@/lib/razorpay/razorpay";
 import { inngest } from "@/lib/inngest";
+import Razorpay from "razorpay";
 
 export const POST = async (req: NextRequest) => {
   try {
@@ -224,7 +225,7 @@ export const POST = async (req: NextRequest) => {
           plan: true,
         },
       });
-
+      
       if (!order) {
         console.error("Order not found for subscription", subscription.id);
         return NextResponse.json({ received: true });
@@ -234,6 +235,11 @@ export const POST = async (req: NextRequest) => {
         console.error("Subscription order missing plan relation");
         return NextResponse.json({ received: true });
       }
+      // 🛑 IDEMPOTENCY CHECK
+if (order.status === PaymentStatus.PAID) {
+  console.log("⚠️ Webhook already processed for this order. Skipping...");
+  return NextResponse.json({ received: true });
+}
       const planId = order.planId;
       const plan = order.plan;
       const startDate = new Date();
@@ -246,7 +252,47 @@ export const POST = async (req: NextRequest) => {
       } else if (order.plan.interval === "YEARLY") {
         endDate.setFullYear(endDate.getFullYear() + 1);
       }
+      /* =======================================================
+         🚀 NEW: UPGRADE / DOWNGRADE CANCELLATION LOGIC
+         ======================================================= */
+      const notes = subscription.notes || {};
+      const action = notes.action;
+      const cancelOldSubId = notes.cancelOldSubId;
+      if (cancelOldSubId && (action === "UPGRADE" || action === "DOWNGRADE")) {
+        console.log(`\n🔄 [UPGRADE/DOWNGRADE DETECTED] Action: ${action}, Cancelling Old Sub ID: ${cancelOldSubId}`);
+        
+        try {
+          const oldSubscription = await prisma.subscription.findUnique({
+            where: { id: cancelOldSubId }
+          });
 
+          if (oldSubscription?.razorpaySubscriptionId) {
+            const rzp = new Razorpay({
+              key_id: process.env.RAZORPAY_KEY_ID!,
+              key_secret: process.env.RAZORPAY_KEY_SECRET!,
+            });
+
+            if (action === "UPGRADE") {
+              console.log(`🛑 [UPGRADE] Cancelling old Razorpay Sub ${oldSubscription.razorpaySubscriptionId} IMMEDIATELY`);
+              await rzp.subscriptions.cancel(oldSubscription.razorpaySubscriptionId, false);
+            } else if (action === "DOWNGRADE") {
+              console.log(`⏳ [DOWNGRADE] Cancelling old Razorpay Sub ${oldSubscription.razorpaySubscriptionId} AT CYCLE END`);
+              await rzp.subscriptions.cancel(oldSubscription.razorpaySubscriptionId, true);
+            }
+
+            // Update local DB status safely
+            await prisma.subscription.update({
+              where: { id: cancelOldSubId },
+              data: { 
+                status: action === "UPGRADE" ? "CANCELLED" : "CANCELLATION_PENDING" 
+              }
+            });
+            console.log(`✅ Successfully processed old subscription cancellation.\n`);
+          }
+        } catch (error) {
+          console.error("❌ Failed to cancel old Razorpay subscription:", error);
+        }
+      }
       await prisma.$transaction(async (tx) => {
         /* =======================================================
            1️⃣ MARK PAYMENT ORDER AS PAID (CRITICAL)

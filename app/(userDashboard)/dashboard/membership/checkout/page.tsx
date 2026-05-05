@@ -78,6 +78,7 @@ export default function CheckoutPage() {
   const context = searchParams.get("context"); // e.g. CHALLENGE , STORE_PRODUCT, MMP_PROGRAM
   const challengeId = searchParams.get("challengeId"); // present if context is challenge
   const mmp_programId = searchParams.get("mmp_programId");
+  const action = searchParams.get("action");
   // const router = useRouter();
 
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -125,6 +126,17 @@ export default function CheckoutPage() {
     queryFn: fetchBillingInfo,
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
+  const { data: subData } = useQuery({
+  queryKey: ["currentSubscriptionForCheckout"],
+  queryFn: async () => {
+    const res = await axios.get("/api/user/get-subscription");
+    return res.data;
+  },
+  // Only fetch if they are checking out a subscription with an upgrade/downgrade action
+  enabled: !!session?.user?.id && context === "SUBSCRIPTION" && !!action, 
+});
+const currentSub = subData?.currentSubscription;
+const currentPlan = subData?.currentPlan;
 
   // get active gateway on load
   useEffect(() => {
@@ -209,6 +221,7 @@ export default function CheckoutPage() {
           context,
           couponCode: appliedCoupon?.code || null,
           billingDetails,
+          action: action || "NEW",
         })
       });
 
@@ -801,18 +814,44 @@ export default function CheckoutPage() {
         discount = subtotal;
       }
     }
+    // --- NEW: UPGRADE / DOWNGRADE LOGIC ---
+    let proratedDiscount = 0;
+    if (context === "SUBSCRIPTION" && action === "UPGRADE" && currentSub && currentPlan) {
+      const now = new Date().getTime();
+      const start = new Date(currentSub.startDate).getTime();
+      const end = new Date(currentSub.endDate).getTime();
+      const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+      const remainingDays = (end - now) / (1000 * 60 * 60 * 24);
+      const oldPrice = isIndia ? (currentPlan.amountINR ?? 0) : (currentPlan.amountUSD ?? 0);
+
+      if (remainingDays > 0 && totalDays > 0) {
+        proratedDiscount = (remainingDays / totalDays) * oldPrice;
+      }
+    }
+
+    if (context === "SUBSCRIPTION" && action === "DOWNGRADE") {
+      // Razorpay forces a ₹5 refundable auth fee for future-starting INR mandates
+      const authFee = currency === "INR" ? 5 : 1; 
+      return {
+        base: subtotal, discount: 0, proratedDiscount: 0, taxableAmount: 0, tax: 0, total: authFee, currency,
+        isDowngrade: true, downgradeDate: currentSub?.endDate,
+      };
+    }
+    
     discount = Math.min(discount, subtotal);
 
-    const taxableAmount = Math.max(0, subtotal - discount);
+const taxableAmount = Math.max(0, subtotal - discount - proratedDiscount);
 
     if (taxableAmount === 0) {
       return {
         base: subtotal,
         discount,
+        proratedDiscount,
         taxableAmount: 0,
         tax: 0,
         total: 1,
         currency,
+        isDowngrade: false
       };
     }
 
@@ -823,10 +862,12 @@ export default function CheckoutPage() {
     return {
       base: subtotal,
       discount,
+      proratedDiscount,
       taxableAmount,
       tax,
       total: parseFloat(total.toFixed(2)),
       currency,
+      isDowngrade: false,
     };
   }, [plan, challenge, challengePricing, context, appliedCoupon, billingDetails.country, mmpProgram]);
 
@@ -1338,7 +1379,21 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                   )}
+  {/* ADD THESE NEW DIVS */}
+{billing?.proratedDiscount && billing?.proratedDiscount > 0 && (
+  <div className="flex justify-between text-sm text-blue-600 font-medium">
+    <span>Unused Plan Credit</span>
+    <span>
+      - {billing.currency} {billing?.proratedDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+    </span>
+  </div>
+)}
 
+{billing.isDowngrade && (
+  <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200">
+    <strong>Downgrade Notice:</strong> You will be charged a refundable amount of {billing.currency} {billing.total} for mandate verification. Your new plan billing will automatically start after your current plan expires on <strong>{new Date(billing.downgradeDate).toLocaleDateString()}</strong>.
+  </div>
+)}
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>
                       {billingDetails.country === "IN" ? "GST (18%)" : "Tax"}
