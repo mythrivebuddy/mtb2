@@ -137,6 +137,8 @@ model User {
   invoiceRecords             Invoice[]                        @relation("UserToInvoice")
 
   createdPrograms  Program[]  @relation("ProgramCreator")
+  creatorEarnings CreatorEarningLedger[] @relation("CreatorEarnings")
+  creatorPayouts  CreatorPayout[]        @relation("CreatorPayouts")
   @@index([name])
 }
 
@@ -1404,6 +1406,7 @@ model PaymentOrder {
   coupon        Coupon?           @relation(fields: [couponId], references: [id])
   challengePayment ChallengePayment?
   miniMasteryProgramPayment MiniMasteryProgramPayment?
+  creatorEarnings CreatorEarningLedger[]
   invoice Invoice? @relation("PaymentOrderToInvoice")
 
   @@index([planId])
@@ -1421,6 +1424,69 @@ enum PaymentContextType {
   CMP
 }
 
+model CreatorEarningLedger {
+  id              String   @id @default(cuid())
+  
+  //  who earns
+  creatorId       String
+  creator         User     @relation("CreatorEarnings", fields: [creatorId], references: [id])
+  
+  //  trace back to payment
+  paymentOrderId  String
+  paymentOrder    PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+  
+  //  identity of earning
+  contextId       String   // challengeId / programId / itemId
+  contextType     PaymentContextType
+  
+  // 💰 financial snapshot (frozen)
+  baseAmount      Float
+  commissionRate  Float
+  platformFee     Float
+  earnedAmount    Float
+  currency        String
+  
+  // 📌 payout tracking
+  status          EarningStatus @default(PENDING)
+  payoutId        String?
+  payout CreatorPayout? @relation("PayoutToEarnings", fields: [payoutId], references: [id])
+  
+  createdAt       DateTime @default(now())
+
+  // 🔥 idempotency 
+  @@unique([paymentOrderId, contextId, contextType,currency])
+  // indexes for faster queries
+  @@index([creatorId, status])
+  @@index([paymentOrderId])
+  @@index([creatorId])
+}
+
+enum EarningStatus {
+  PENDING
+  PAID
+}
+
+model CreatorPayout {
+  id              String   @id @default(cuid())
+  
+  creatorId       String
+  creator         User     @relation("CreatorPayouts", fields: [creatorId], references: [id])
+  
+  amount          Float
+  currency        String
+  
+  status          PayoutStatus @default(PAID)
+  referenceId     String?  
+  notes           String?
+  
+  paidAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+ earnings        CreatorEarningLedger[] @relation("PayoutToEarnings")
+
+  @@index([creatorId])
+}
 
 model SubscriptionInvoice {
   id               String    @id @default(cuid())

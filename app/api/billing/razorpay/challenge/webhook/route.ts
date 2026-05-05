@@ -68,18 +68,13 @@ export async function POST(req: NextRequest) {
       });
 
       paymentMeta = await processPayment(tx, updatedOrder);
-      console.log("=== PAYMENT META DEBUG ===");
-      console.log("Order ID:", existingOrder.id);
-      console.log("Context Type:", existingOrder.contextType);
-      console.log("isProdcutFromAdmin:", paymentMeta.isAdmin);
-      console.log("allItemIds:", paymentMeta.allItemIds);
-      console.log("================================");
+
     });
     try {
       try {
         if (inngest && typeof inngest.send === "function") {
           await new Promise((res) => setTimeout(res, 500));
-          console.log("🧾 UNIVERSAL INVOICE TRIGGER after 500 ms ");
+       
           await inngest.send({
             name: "invoice/send",
             id: `invoice-${existingOrder.id}`,
@@ -100,7 +95,7 @@ export async function POST(req: NextRequest) {
             },
           });
 
-          console.log("📣 Notification event triggered");
+        
 
           // ✅ PROGRAM REMINDER TRIGGER
           try {
@@ -111,7 +106,6 @@ export async function POST(req: NextRequest) {
               });
 
               if (user?.timezone) {
-                console.log("⏰ Scheduling daily reminder for program");
 
                 await inngest.send({
                   name: "mmp-program/reminder.start",
