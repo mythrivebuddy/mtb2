@@ -44,18 +44,8 @@ export async function GET(request: Request) {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     whereClause.createdAt = { gte: oneWeekAgo };
-  }
-  // else if (filter === "online") {
-  //   whereClause.isOnline = true;
-  // }
-
-  // Filter: blocked / new
-  if (filter === "blocked") {
-    whereClause.isBlocked = true;
-  } else if (filter === "new") {
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    whereClause.createdAt = { gte: oneWeekAgo };
+  } else if (filter === "affiliate") {
+    whereClause.isAffiliate = true;
   }
 
   // User type
@@ -141,19 +131,23 @@ export async function GET(request: Request) {
   }
 
   try {
-    let referrerUser: { id: string; name: string | null; email: string } | null = null;
+    let referrerUser: {
+      id: string;
+      name: string | null;
+      email: string;
+    } | null = null;
 
-if (referrerId) {
-  referrerUser = await prisma.user.findUnique({
-    where: { id: referrerId },
-    select: {
-      id: true,
-      image:true,
-      name: true,
-      email: true,
-    },
-  });
-}
+    if (referrerId) {
+      referrerUser = await prisma.user.findUnique({
+        where: { id: referrerId },
+        select: {
+          id: true,
+          image: true,
+          name: true,
+          email: true,
+        },
+      });
+    }
     const users = await prisma.user.findMany({
       where: whereClause,
       skip,
@@ -170,6 +164,9 @@ if (referrerId) {
         image: true,
         userType: true,
         membership: true,
+        isAffiliate: true,
+        affiliateCommissionType: true,
+        affiliatePercent: true,
         plan: {
           select: {
             id: true,
@@ -192,7 +189,7 @@ if (referrerId) {
     return NextResponse.json({
       users,
       total: totalUsers,
-      referrer: referrerUser, 
+      referrer: referrerUser,
     });
   } catch (error) {
     console.error("Error fetching users:", error);

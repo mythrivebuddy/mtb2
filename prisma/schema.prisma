@@ -58,6 +58,12 @@ model User {
   userType                      PlanUserType?
   mfaSecret    String?
   mfaEnabled   Boolean @default(false)
+  // affiliation
+  isAffiliate        Boolean  @default(false)
+  affiliatePercent   Float?
+  affiliateCommissionType    AffiliateCommissionType?  // "MTB" | "SUBSCRIPTION"
+  affiliateEnabledAt DateTime?
+
   ActivityFeedItem              ActivityFeedItem[]
   alignedActions                AlignedAction[]
   billingInformation            BillingInformation[]
@@ -141,7 +147,10 @@ model User {
   creatorPayouts  CreatorPayout[]        @relation("CreatorPayouts")
   @@index([name])
 }
-
+enum AffiliateCommissionType {
+  MTB
+  SUBSCRIPTION
+}
 model Transaction {
   id         String   @id @default(uuid())
   userId     String

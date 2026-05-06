@@ -25,6 +25,7 @@ import Link from "next/link";
 import { FiCopy, FiCheck } from "react-icons/fi";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
 
 // --- API Functions ---
 
@@ -91,7 +92,20 @@ export type IUserWithMembership = IUser & {
     referrals: number;
   };
 };
-
+type AffiliateForm = {
+  commissionType: "MTB" | "SUBSCRIPTION";
+  affiliatePercent: number;
+};
+type UsersQueryData = {
+  users: IUserWithMembership[];
+  total: number;
+  referrer?: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  } | null;
+};
 // --- Component ---
 
 export default function UserInfoContent() {
@@ -125,6 +139,17 @@ export default function UserInfoContent() {
   const deboncedSearch = useDebounce(searchTerm, 500);
   const searchParams = useSearchParams();
   const referrerId = searchParams.get("referrerId") || "";
+
+  const [showAffiliateModal, setShowAffiliateModal] = useState(false);
+  const [affiliateUser, setAffiliateUser] =
+    useState<IUserWithMembership | null>(null);
+
+  const form = useForm<AffiliateForm>({
+    defaultValues: {
+      commissionType: "MTB",
+      affiliatePercent: undefined as unknown as number,
+    },
+  });
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [
       "users",
@@ -168,15 +193,73 @@ export default function UserInfoContent() {
     onError: (err) => toast.error(getAxiosErrorMessage(err)),
   });
 
+  const makeAffiliateMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      percent,
+      type,
+    }: {
+      userId: string;
+      percent: number;
+      type: "MTB" | "SUBSCRIPTION";
+    }) => {
+      const { data } = await axios.patch("/api/admin/affiliate/make", {
+        userId,
+        affiliatePercent: percent,
+        commissionType: type,
+      });
+      return data;
+    },
+    onSuccess: (res, variables) => {
+      toast.success("Affiliate updated successfully");
+      setShowAffiliateModal(false);
+
+      queryClient.setQueryData(
+        [
+          "users",
+          filter,
+          deboncedSearch,
+          page,
+          pageSize,
+          userType,
+          planType,
+          programType,
+          referrerId,
+        ],
+        (oldData: UsersQueryData | undefined) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            users: oldData.users.map((u: IUserWithMembership) =>
+              u.id === variables.userId
+                ? {
+                    ...u,
+                    isAffiliate: true,
+                    affiliatePercent: variables.percent,
+                    affiliateCommissionType: variables.type,
+                  }
+                : u,
+            ),
+          };
+        },
+      );
+    },
+    onError: (err) => toast.error(getAxiosErrorMessage(err)),
+  });
+
   // ADDED: Mutation for changing a user's plan
   const changePlanMutation = useMutation({
     mutationFn: changeUserPlan,
     onSuccess: () => {
       toast.success("User plan updated successfully!");
-      queryClient.invalidateQueries({
-        queryKey: ["users", filter, searchTerm, page],
+
+      setShowAffiliateModal(false);
+
+      form.reset({
+        commissionType: "MTB",
+        affiliatePercent: undefined as unknown as number,
       });
-      setShowPlanModal(false); // Close the modal on success
     },
     onError: (err) => toast.error(getAxiosErrorMessage(err)),
   });
@@ -214,12 +297,10 @@ export default function UserInfoContent() {
   const totalPages = Math.ceil(total / pageSize);
   const referrerUser = data?.referrer;
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
-  console.log({ onlineUsers });
 
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
   const filteredUsers =
     filter === "online" ? users.filter((u) => onlineUserIds.has(u.id)) : users;
-  console.log(filteredUsers);
 
   // handler for copy email functionality
   const handleCopy = async (email: string) => {
@@ -257,7 +338,6 @@ export default function UserInfoContent() {
             </p>
             <p className="text-blue-700 text-xs">{referrerUser.email}</p>
           </div>
-
         </Link>
       )}
       <div className="mb-4 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap">
@@ -283,6 +363,7 @@ export default function UserInfoContent() {
           }}
         >
           <option value="all">All Users</option>
+          <option value="affiliate">Affiliate Users</option>
           <option value="blocked">Blocked</option>
           <option value="new">New</option>
           <option value="online">Online</option>
@@ -392,8 +473,16 @@ export default function UserInfoContent() {
                     </Link>
                     <div>
                       <Link href={`/profile/${user.id}`} target="_blank">
-                        <div className="text-sm font-medium hover:underline">
-                          {user.name}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium hover:underline">
+                            {user.name}
+                          </span>
+
+                          {user.isAffiliate && (
+                            <span className="px-2 py-0.5 text-[10px] font-semibold bg-purple-100 text-purple-700 rounded-full">
+                              AFFILIATE
+                            </span>
+                          )}
                         </div>
                       </Link>
 
@@ -445,6 +534,22 @@ export default function UserInfoContent() {
                       className="text-blue-600 hover:text-blue-900 font-medium"
                     >
                       Edit Plan
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAffiliateUser(user);
+
+                        form.reset({
+                          commissionType:
+                            user?.affiliateCommissionType || "MTB",
+                          affiliatePercent: user?.affiliatePercent ?? undefined,
+                        });
+
+                        setShowAffiliateModal(true);
+                      }}
+                      className="text-green-600 hover:text-green-900 font-medium"
+                    >
+                      {user.isAffiliate ? "Edit Affiliate" : "Make Affiliate"}
                     </button>
                     <button
                       className={`${
@@ -562,6 +667,107 @@ export default function UserInfoContent() {
                 {changePlanMutation.isPending ? "Saving..." : "Save Changes"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADDED: Affiliate Modal */}
+      {showAffiliateModal && affiliateUser && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h3 className="text-xl font-semibold mb-4">
+              {affiliateUser.isAffiliate ? "Edit Affiliate" : "Make Affiliate"}
+            </h3>
+
+            <form
+              onSubmit={form.handleSubmit((values) => {
+                if (!affiliateUser) return;
+
+                makeAffiliateMutation.mutate({
+                  userId: affiliateUser.id,
+                  percent: values.affiliatePercent,
+                  type: values.commissionType,
+                });
+              })}
+              className="space-y-4"
+            >
+              {/* Commission Type */}
+              <div>
+                <p className="text-sm font-medium mb-2">Commission Type</p>
+
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      value="MTB"
+                      checked={form.watch("commissionType") === "MTB"}
+                      onChange={() => form.setValue("commissionType", "MTB")}
+                    />
+                    Entire revenue on MTB products
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      value="SUBSCRIPTION"
+                      checked={form.watch("commissionType") === "SUBSCRIPTION"}
+                      onChange={() =>
+                        form.setValue("commissionType", "SUBSCRIPTION")
+                      }
+                    />
+                    Membership subscription fee
+                  </label>
+                </div>
+              </div>
+
+              {/* Percentage */}
+              <div>
+                <p className="text-sm font-medium mb-1">
+                  Commission Percentage
+                </p>
+                <input
+                  type="number"
+                  placeholder="Enter % of commission"
+                  {...form.register("affiliatePercent", {
+                    valueAsNumber: true,
+                    required: true,
+                    min: 1,
+                    max: 100,
+                  })}
+                  onFocus={(e) => {
+                    if (e.target.value === "0") {
+                      e.target.value = "";
+                    }
+                  }}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+
+                {form.formState.errors.affiliatePercent && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Enter value between 1–100
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 border rounded-lg"
+                  onClick={() => setShowAffiliateModal(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className={`px-4 py-2 bg-green-600 text-white rounded-lg ${makeAffiliateMutation.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={makeAffiliateMutation.isPending}
+                >
+                  {makeAffiliateMutation.isPending ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
