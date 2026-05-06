@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const programType = searchParams.get("programType") || "all";
 
   const skip = (page - 1) * pageSize;
+  const referrerId = searchParams.get("referrerId");
   const take = pageSize;
 
   // Verify admin access
@@ -29,10 +30,12 @@ export async function GET(request: Request) {
 
   // BASE where clause (always applied)
   const whereClause: Prisma.UserWhereInput = {
-  role: "USER",
-};
+    role: "USER",
+  };
 
-
+  if (referrerId) {
+    whereClause.referredById = referrerId;
+  }
   // Apply filters based on the query parameter
   if (filter === "blocked") {
     whereClause.isBlocked = true;
@@ -41,94 +44,83 @@ export async function GET(request: Request) {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     whereClause.createdAt = { gte: oneWeekAgo };
+  } else if (filter === "affiliate") {
+    whereClause.isAffiliate = true;
   }
-  // else if (filter === "online") {
-  //   whereClause.isOnline = true;
+
+  // User type
+  if (userType !== "all") {
+    whereClause.userType = userType.toUpperCase() as PlanUserType;
+  }
+
+  // Plan type
+  if (planType === "free") {
+    // whereClause.plan = null; // Not using temperarily
+    whereClause.membership = "FREE";
+  } else if (planType === "paid") {
+    // whereClause.plan = { isNot: null }; // Not using temperarily
+    whereClause.membership = "PAID";
+  }
+
+  // Program type
+  let programId: string | null = null;
+
+  if (programType !== "all" && programType !== "none") {
+    const program = await prisma.program.findUnique({
+      where: { slug: programType },
+      select: { id: true },
+    });
+
+    programId = program?.id ?? null;
+  }
+  // Program filter (one-time paid programs)
+
+  // ALL → no program filter applied
+  if (programType === "all") {
+    // intentionally empty
+  }
+
+  // ANY → users with at least one paid program
+  else if (programType === "any") {
+    whereClause.oneTimePurchases = {
+      some: {
+        status: "PAID",
+      },
+    };
+  }
+
+  // NONE → users with no paid program
+  else if (programType === "none") {
+    whereClause.oneTimePurchases = {
+      none: {
+        status: "PAID",
+      },
+    };
+  }
+
+  // SPECIFIC PROGRAM (by slug)
+  else if (programId) {
+    whereClause.oneTimePurchases = {
+      some: {
+        status: "PAID",
+        productId: programId,
+      },
+    };
+  }
+
+  // if (programType === "cmp") {
+  //   whereClause.oneTimePurchases = { some: {} };
+  // } else if (programType === "none") {
+  //   whereClause.programStates = { none: {} };
   // }
 
- // Filter: blocked / new
-if (filter === "blocked") {
-  whereClause.isBlocked = true;
-} else if (filter === "new") {
-  const oneWeekAgo = new Date();
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  whereClause.createdAt = { gte: oneWeekAgo };
-}
-
-// User type
-if (userType !== "all") {
-  whereClause.userType = userType.toUpperCase() as PlanUserType;
-}
-
-// Plan type
-if (planType === "free") {
-  // whereClause.plan = null; // Not using temperarily
-  whereClause.membership = "FREE";
-} else if (planType === "paid") {
-  // whereClause.plan = { isNot: null }; // Not using temperarily
-  whereClause.membership = "PAID";
-}
-
-// Program type
-let programId: string | null = null;
-
-if (programType !== "all" && programType !== "none") {
-  const program = await prisma.program.findUnique({
-    where: { slug: programType },
-    select: { id: true },
-  });
-
-  programId = program?.id ?? null;
-}
-// Program filter (one-time paid programs)
-
-// ALL → no program filter applied
-if (programType === "all") {
-  // intentionally empty
-}
-
-// ANY → users with at least one paid program
-else if (programType === "any") {
-  whereClause.oneTimePurchases = {
-    some: {
-      status: "PAID",
-    },
-  };
-}
-
-// NONE → users with no paid program
-else if (programType === "none") {
-  whereClause.oneTimePurchases = {
-    none: {
-      status: "PAID",
-    },
-  };
-}
-
-// SPECIFIC PROGRAM (by slug)
-else if (programId) {
-  whereClause.oneTimePurchases = {
-    some: {
-      status: "PAID",
-      productId: programId,
-    },
-  };
-}
-
-
-// if (programType === "cmp") {
-//   whereClause.oneTimePurchases = { some: {} };
-// } else if (programType === "none") {
-//   whereClause.programStates = { none: {} };
-// }
-
-// Search
-if (search.trim()) {
-  whereClause.OR = [
-    { name: { contains: search, mode: "insensitive" } },
-    { email: { contains: search, mode: "insensitive" } },
-  ];
-}
+  // Search
+  if (search.trim()) {
+    whereClause.OR = [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ];
+  }
 
   // If a search term is provided, add a search filter (example: search in name or email)
   if (search.trim()) {
@@ -139,6 +131,23 @@ if (search.trim()) {
   }
 
   try {
+    let referrerUser: {
+      id: string;
+      name: string | null;
+      email: string;
+    } | null = null;
+
+    if (referrerId) {
+      referrerUser = await prisma.user.findUnique({
+        where: { id: referrerId },
+        select: {
+          id: true,
+          image: true,
+          name: true,
+          email: true,
+        },
+      });
+    }
     const users = await prisma.user.findMany({
       where: whereClause,
       skip,
@@ -155,10 +164,18 @@ if (search.trim()) {
         image: true,
         userType: true,
         membership: true,
+        isAffiliate: true,
+        affiliateCommissionType: true,
+        affiliatePercent: true,
         plan: {
           select: {
             id: true,
             name: true,
+          },
+        },
+        _count: {
+          select: {
+            referrals: true,
           },
         },
       },
@@ -172,12 +189,13 @@ if (search.trim()) {
     return NextResponse.json({
       users,
       total: totalUsers,
+      referrer: referrerUser,
     });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

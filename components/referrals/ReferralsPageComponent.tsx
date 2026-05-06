@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import {
@@ -30,6 +30,7 @@ import { getAvatarColor, getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import Link from "next/link";
 import { maskEmail } from "@/utils/mask-email";
+import { useDebounce } from "@/hooks/use-debounce";
 
 // ─── Types ─────────────────────────────────────
 
@@ -80,16 +81,7 @@ const formatDateTime = (iso: string): string => {
 
 // ─── Debounce Hook ────────────────────────────
 
-function useDebounce(value: string, delay: number): string {
-    const [debounced, setDebounced] = useState<string>(value);
 
-    useEffect(() => {
-        const timer = setTimeout(() => setDebounced(value), delay);
-        return () => clearTimeout(timer);
-    }, [value, delay]);
-
-    return debounced;
-}
 
 // ─── Toolbar ──────────────────────────────────
 
@@ -132,6 +124,7 @@ function TableToolbar({
                         <SelectValue placeholder="Filter by date" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
                         <SelectItem value="30">Last 30 Days</SelectItem>
                         <SelectItem value="60">Last 60 Days</SelectItem>
                         <SelectItem value="90">Last 90 Days</SelectItem>
@@ -181,7 +174,7 @@ export default function ReferralsPageComponent() {
     const [search, setSearch] = useState<string>("");
     const [page, setPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(10);
-    const [dateFilter, setDateFilter] = useState<string>("30");
+    const [dateFilter, setDateFilter] = useState<string>("all");
 
     const debouncedSearch = useDebounce(search, 500);
 
@@ -199,7 +192,7 @@ export default function ReferralsPageComponent() {
                 page,
                 limit: pageSize,
                 search: debouncedSearch,
-                days: dateFilter,
+                   days: dateFilter === "all" ? "" : dateFilter,
             }),
 
         // ✅ Keep previous page data while loading new page
