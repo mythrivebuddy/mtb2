@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 
     let dateFilter: Prisma.DateTimeFilter | undefined;
 
-    if (days) {
+  if (days && days !== "all") {
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - Number(days));
       dateFilter = { gte: fromDate };

@@ -23,6 +23,8 @@ import {
 import useAdminPresence from "@/hooks/useUserRealtime";
 import Link from "next/link";
 import { FiCopy, FiCheck } from "react-icons/fi";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useSearchParams } from "next/navigation";
 
 // --- API Functions ---
 
@@ -33,8 +35,18 @@ async function fetchUsers(
   pageSize: number,
   userType: string,
   planType: string,
-  programType: string
-): Promise<{ users: IUserWithMembership[]; total: number }> {
+  programType: string,
+  referrerId?: string,
+): Promise<{
+  users: IUserWithMembership[];
+  total: number;
+  referrer?: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+  } | null;
+}> {
   const { data } = await axios.get(`/api/admin/dashboard/getAllUsers`, {
     params: {
       filter,
@@ -44,13 +56,14 @@ async function fetchUsers(
       userType,
       planType,
       programType,
+      referrerId,
     },
   });
   return data;
 }
 
 async function blockUser(
-  params: IBlockUserParams
+  params: IBlockUserParams,
 ): Promise<IBlockUserResponse> {
   const { data } = await axios.patch(`/api/admin/dashboard/blockUser`, params);
   return data;
@@ -66,7 +79,7 @@ async function fetchPlans(): Promise<IPlan[]> {
 async function changeUserPlan(params: { userId: string; newPlanId: string }) {
   const { data } = await axios.patch(
     `/api/admin/dashboard/changeUserPlan`,
-    params
+    params,
   );
   return data;
 }
@@ -74,8 +87,10 @@ async function changeUserPlan(params: { userId: string; newPlanId: string }) {
 // --- Types & Interfaces ---
 export type IUserWithMembership = IUser & {
   membership: string;
+  _count?: {
+    referrals: number;
+  };
 };
-
 
 // --- Component ---
 
@@ -93,7 +108,9 @@ export default function UserInfoContent() {
 
   // State for Block User Modal
   const [showModal, setShowModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<IUserWithMembership | null>(null);
+  const [selectedUser, setSelectedUser] = useState<IUserWithMembership | null>(
+    null,
+  );
   const [reason, setReason] = useState("");
 
   // ADDED: State for Change Plan Modal
@@ -105,29 +122,32 @@ export default function UserInfoContent() {
 
   // --- React Query ---
   const queryClient = useQueryClient();
-
+  const deboncedSearch = useDebounce(searchTerm, 500);
+  const searchParams = useSearchParams();
+  const referrerId = searchParams.get("referrerId") || "";
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [
       "users",
       filter,
-      searchTerm,
+      deboncedSearch,
       page,
       pageSize,
       userType,
       planType,
       programType,
+      referrerId,
     ],
     queryFn: () =>
       fetchUsers(
         filter,
-        searchTerm,
+        deboncedSearch,
         page,
         pageSize,
         userType,
         planType,
-        programType
+        programType,
+        referrerId,
       ),
-    refetchOnWindowFocus: false,
   });
 
   // ADDED: Query to get all available plans for the modal dropdown
@@ -192,15 +212,13 @@ export default function UserInfoContent() {
   const total = data?.total || 0;
   // CORRECTED: Pagination calculation
   const totalPages = Math.ceil(total / pageSize);
-
+  const referrerUser = data?.referrer;
   const onlineUsers = useAdminPresence(["users", filter, searchTerm, page]);
   console.log({ onlineUsers });
 
   const onlineUserIds = new Set(onlineUsers.map((u) => u.userId));
   const filteredUsers =
-    filter === "online"
-      ? users.filter((u) => onlineUserIds.has(u.id))
-      : users;
+    filter === "online" ? users.filter((u) => onlineUserIds.has(u.id)) : users;
   console.log(filteredUsers);
 
   // handler for copy email functionality
@@ -211,12 +229,37 @@ export default function UserInfoContent() {
     setTimeout(() => setCopiedEmail(null), 1500);
   };
 
-
   // --- JSX ---
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-6">User Management</h2>
+      {referrerUser && (
+        <Link
+          href={`/profile/${referrerUser.id}`}
+          target="_blank"
+          className="mb-4 flex items-center gap-4 bg-blue-50 border border-blue-200 px-4 py-3 rounded-lg"
+        >
+          {referrerUser?.image ? (
+            <img
+              src={referrerUser.image || "/default-avatar.png"}
+              alt={referrerUser.name}
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
+              {referrerUser?.name?.slice(0, 2)?.toUpperCase()}
+            </div>
+          )}
 
+          <div className="text-sm">
+            <p className="font-medium text-blue-900">
+              Referrals of {referrerUser.name}
+            </p>
+            <p className="text-blue-700 text-xs">{referrerUser.email}</p>
+          </div>
+
+        </Link>
+      )}
       <div className="mb-4 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap">
         {/* Search – full width always */}
         <input
@@ -304,22 +347,24 @@ export default function UserInfoContent() {
           <option value={50}>50 / page</option>
           <option value={100}>100 / page</option>
         </select>
-
       </div>
 
       {isLoading && <p>Loading users...</p>}
       {isError && <p className="text-red-600">Error: {error?.message}</p>}
 
       {/* Users Table */}
-      <div className={`overflow-x-auto ${(isLoading || filteredUsers.length === 0) && 'min-h-64'}`}>
+      <div
+        className={`overflow-x-auto ${(isLoading || filteredUsers.length === 0) && "min-h-64"}`}
+      >
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead>GP Earned</TableHead>
-              <TableHead>GP Balance</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-center">GP Earned</TableHead>
+              <TableHead className="text-center">GP Balance</TableHead>
+              <TableHead className="text-center">Total Referrals</TableHead>
+              <TableHead className="text-center">Plan</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -328,20 +373,22 @@ export default function UserInfoContent() {
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Link href={`/profile/${user.id}`} target="_blank">
-                      {
-                        user.image ? (
-                          <div className="rounded-full h-10 w-10">
-                            <img src={user.image} alt={user.name} className="h-full  w-full rounded-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
-                            {user.name.slice(0, 2).toUpperCase()}
-                            {onlineUserIds.has(user?.id) && (
-                              <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
-                            )}
-                          </div>
-                        )
-                      }
+                      {user.image ? (
+                        <div className="rounded-full h-10 w-10">
+                          <img
+                            src={user.image}
+                            alt={user.name}
+                            className="h-full  w-full rounded-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-10 w-10 rounded-full relative bg-purple-100 flex items-center justify-center">
+                          {user.name.slice(0, 2).toUpperCase()}
+                          {onlineUserIds.has(user?.id) && (
+                            <span className="absolute h-2 w-2 bottom-0 right-0 rounded-full bg-green-500 ring-1 ring-white"></span>
+                          )}
+                        </div>
+                      )}
                     </Link>
                     <div>
                       <Link href={`/profile/${user.id}`} target="_blank">
@@ -367,20 +414,32 @@ export default function UserInfoContent() {
                         </button>
                       </div>
                     </div>
-
-
                   </div>
                 </TableCell>
-                <TableCell>{user.jpEarned}</TableCell>
-                <TableCell>{user.jpBalance}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 text-xs rounded-full ${user.membership === 'FREE' ? 'bg-red-100' : 'bg-green-100'} text-green-800`}>
+                <TableCell className="text-center">{user.jpEarned}</TableCell>
+                <TableCell className="text-center">{user.jpBalance}</TableCell>
+                <TableCell className="text-center">
+                  {/* <span className="font-semibold"> */}
+                  {/* {user._count?.referrals || 0} */}
+                  <Link
+                    href={`/admin/user-info?referrerId=${user.id}`}
+                    target="_blank"
+                    className="hover:text-blue-600 hover:underline font-semibold"
+                  >
+                    {user._count?.referrals ?? 0}
+                  </Link>
+                  {/* </span> */}
+                </TableCell>
+                <TableCell className="text-center">
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${user.membership === "FREE" ? "bg-red-100" : "bg-green-100"} text-green-800`}
+                  >
                     {user.membership}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-center">
                   {/* ADDED: Actions container */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex justify-center items-center gap-4">
                     <button
                       onClick={() => handleEditPlanClick(user)}
                       className="text-blue-600 hover:text-blue-900 font-medium"
@@ -388,10 +447,11 @@ export default function UserInfoContent() {
                       Edit Plan
                     </button>
                     <button
-                      className={`${user.isBlocked
-                        ? "text-gray-400 cursor-not-allowed"
-                        : "text-red-600 hover:text-red-900"
-                        } font-medium`}
+                      className={`${
+                        user.isBlocked
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-red-600 hover:text-red-900"
+                      } font-medium`}
                       onClick={() => handleBlockClick(user)}
                       disabled={user.isBlocked}
                     >
@@ -404,7 +464,7 @@ export default function UserInfoContent() {
             {filteredUsers.length === 0 && !isLoading && (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center py-24 text-sm text-gray-500"
                 >
                   No users found.
@@ -422,9 +482,7 @@ export default function UserInfoContent() {
           <span className="font-semibold text-gray-700">
             {Math.min((page - 1) * pageSize + filteredUsers.length, total)}
           </span>{" "}
-          of{" "}
-          <span className="font-semibold text-gray-700">{total}</span>{" "}
-          users
+          of <span className="font-semibold text-gray-700">{total}</span> users
         </p>
         <Pagination
           currentPage={page}

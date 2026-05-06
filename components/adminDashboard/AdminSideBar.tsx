@@ -157,7 +157,7 @@ const Sidebar = () => {
                   </span>
                 </Link>
               </li>
-
+               <NavItem href="/admin/payouts" label="Payouts" />
               <NavItem href="/admin/prosperity" label="Prosperity Drops" />
               <NavItem href="/admin/email-templates" label="Email Templates" />
               <NavItem href="/admin/faq" label="FAQs" />
