@@ -4,8 +4,9 @@ import { PaymentOrder, Prisma, Role } from "@prisma/client";
 export async function handleStorePayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-): Promise<{ allItemIds: string[] }> {
-  if (order.storeOrderId) return { allItemIds: [] };
+): Promise<{ isAdmin: boolean; allItemIds: string[]; adminItemIds: string[] }> {
+  if (order.storeOrderId)
+    return { isAdmin: false, allItemIds: [], adminItemIds: [] };
 
   const storeOrder = await tx.order.create({
     data: {
@@ -73,6 +74,8 @@ export async function handleStorePayment(
     },
     select: {
       id: true,
+      createdByRole: true,
+      createdByUserId: true,
       creator: {
         select: {
           id: true,
@@ -83,7 +86,14 @@ export async function handleStorePayment(
       },
     },
   });
-
+  console.log("📦 ITEMS FROM DB:");
+items.forEach((item) => {
+  console.log({
+    itemId: item.id,
+    creatorId: item.creator?.id,
+    role: item.creator?.role,
+  });
+});
   // 6. Feature config (store)
   // ─────────────────────────────────────────────
   const feature = await tx.feature.findFirst({
@@ -161,6 +171,13 @@ export async function handleStorePayment(
     )
     .map((item) => item.id);
 
-  console.log("✅ Admin Item IDs:", allItemIds);
-  return { allItemIds };
+  const adminItemIds = items
+    .filter((item) => (item.createdByRole as Role) === Role.ADMIN)
+    .map((item) => item.id);
+
+  const isAdmin = adminItemIds.length > 0;
+    console.log({isAdmin});
+    
+  console.log("✅ Item IDs:", adminItemIds,allItemIds);
+  return { isAdmin, allItemIds, adminItemIds };
 }

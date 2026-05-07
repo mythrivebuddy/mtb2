@@ -4,8 +4,9 @@ import { PaymentOrder, PaymentStatus, Prisma, Role } from "@prisma/client";
 export async function handleProgramPayment(
   tx: Prisma.TransactionClient,
   order: PaymentOrder,
-): Promise<{ isAdmin: boolean; allItemIds: string[] }> {
-  if (!order.programId) return { isAdmin: false, allItemIds: [] };
+): Promise<{ isAdmin: boolean; allItemIds: string[]; adminItemIds: string[] }> {
+  if (!order.programId)
+    return { isAdmin: false, allItemIds: [], adminItemIds: [] };
 
   const program = await tx.program.findUnique({
     where: { id: order.programId },
@@ -14,7 +15,7 @@ export async function handleProgramPayment(
         select: {
           id: true,
           role: true,
-          membership: true, 
+          membership: true,
           userType: true,
         },
       },
@@ -88,19 +89,21 @@ export async function handleProgramPayment(
   // 2. Skip platform products (ADMIN)
   // ─────────────────────────────────────────────
   if (!program.creator) {
-    return { isAdmin: false, allItemIds: [] };
+    return { isAdmin: false, allItemIds: [], adminItemIds: [] };
   }
   const role = program.creator.role as Role;
   if (role === Role.ADMIN) {
     return {
       isAdmin: true,
       allItemIds: [program.id],
+      adminItemIds: [program.id],
     };
   }
   if (!program.createdBy) {
     return {
       isAdmin: true,
       allItemIds: [program.id],
+      adminItemIds: [program.id],
     };
   }
   // ─────────────────────────────────────────────
@@ -112,7 +115,7 @@ export async function handleProgramPayment(
 
   const creatorUserType = normalizeUserType(program.creator.userType);
   if (!creatorUserType) {
-    return { isAdmin: false, allItemIds: [] };
+    return { isAdmin: false, allItemIds: [], adminItemIds: [] };
   }
 
   const featureConfig = await tx.featurePlanConfig.findFirst({
@@ -171,5 +174,6 @@ export async function handleProgramPayment(
   return {
     isAdmin: false,
     allItemIds: [program.id],
+    adminItemIds: [],
   };
 }

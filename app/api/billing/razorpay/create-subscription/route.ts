@@ -246,7 +246,7 @@ export const POST = async (req: NextRequest) => {
           couponId: coupon?.id,
           status: PaymentStatus.CREATED,
           baseAmount,
-          discountApplied: discountValue,
+          discountApplied: totalDiscountToApply,
           gstAmount:
             isIndia && plan.gstEnabled
               ? Number(((baseAmount - discountValue) * gstRate).toFixed(2))

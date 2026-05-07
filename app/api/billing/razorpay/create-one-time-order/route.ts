@@ -110,21 +110,6 @@ export const POST = async (req: NextRequest) => {
       });
 
       if (currentSub) {
-        const lastPayment = await prisma.paymentOrder.findFirst({
-          where: {
-            userId,
-            planId: currentSub.planId,
-            status: PaymentStatus.PAID,
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
-        console.log("PAYMENT DEBUG", {
-          userId,
-          planId: currentSub.planId,
-          lastPayment,
-        });
 
         const now = new Date().getTime();
         const start = new Date(currentSub.startDate).getTime();
@@ -216,7 +201,7 @@ export const POST = async (req: NextRequest) => {
           couponId: coupon?.id,
           status: PaymentStatus.CREATED,
           baseAmount,
-          discountApplied: discountValue,
+          discountApplied: discountValue + proratedDiscount,
           gstAmount:
             isIndia && plan.gstEnabled
               ? Number((taxableAmount * gstRate).toFixed(2))
@@ -234,7 +219,7 @@ export const POST = async (req: NextRequest) => {
           couponId: coupon?.id,
           status: PaymentStatus.CREATED,
           baseAmount,
-          discountApplied: discountValue,
+          discountApplied: discountValue + proratedDiscount,
           gstAmount:
             isIndia && plan.gstEnabled
               ? Number((taxableAmount * gstRate).toFixed(2))
@@ -307,14 +292,7 @@ export const POST = async (req: NextRequest) => {
       key_id: razorpayKeyId,
       key_secret: razorpayKeySecret,
     });
-    console.log("FINAL CALC", {
-      baseAmount,
-      discountValue,
-      discountedBase,
-      proratedDiscount,
-      taxableAmount,
-      finalAmount,
-    });
+
     const razorpayOrder = await razorpay.orders.create({
       amount: Math.round(payableAmount * 100), // paise
       currency,

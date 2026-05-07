@@ -5,6 +5,7 @@ import { getRazorpayConfig } from "@/lib/razorpay/razorpay";
 import { PaymentStatus } from "@prisma/client";
 import { processPayment } from "@/lib/payment/processPayment";
 import { inngest } from "@/lib/inngest";
+import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,10 +56,11 @@ export async function POST(req: NextRequest) {
     let paymentMeta: {
       isAdmin?: boolean;
       allItemIds?: string[];
+      adminItemIds?: string[];
     } = {};
 
-    await prisma.$transaction(async (tx) => {
-      const updatedOrder = await tx.paymentOrder.update({
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const updated = await tx.paymentOrder.update({
         where: { id: existingOrder.id },
         data: {
           status: PaymentStatus.PAID,
@@ -67,14 +69,33 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      paymentMeta = await processPayment(tx, updatedOrder);
-
-    });
+      paymentMeta = await processPayment(tx, updated);
+      return updated;
+    },{timeout: 60000}); // 60 seconds timeout for the entire transaction
+    try {
+      await createAffiliateEarningForSubscription({
+        tx: prisma,
+        order: {
+          id: updatedOrder.id,
+          userId: updatedOrder.userId,
+          totalAmount: updatedOrder.totalAmount,
+          baseAmount: updatedOrder.baseAmount,
+          gstAmount: updatedOrder.gstAmount,
+          discountApplied: updatedOrder.discountApplied,
+          currency: updatedOrder.currency,
+          contextType: updatedOrder.contextType,
+        },
+        isAdmin: paymentMeta.isAdmin,
+        adminItemIds: paymentMeta.adminItemIds || [], 
+      });
+    } catch (err) {
+      console.error("Affiliate creation failed (ignored):", err);
+    }
     try {
       try {
         if (inngest && typeof inngest.send === "function") {
           await new Promise((res) => setTimeout(res, 500));
-       
+
           await inngest.send({
             name: "invoice/send",
             id: `invoice-${existingOrder.id}`,
@@ -95,8 +116,6 @@ export async function POST(req: NextRequest) {
             },
           });
 
-        
-
           // ✅ PROGRAM REMINDER TRIGGER
           try {
             if (existingOrder.programId) {
@@ -106,7 +125,6 @@ export async function POST(req: NextRequest) {
               });
 
               if (user?.timezone) {
-
                 await inngest.send({
                   name: "mmp-program/reminder.start",
 

@@ -33,6 +33,9 @@ export interface Transaction {
     buyerName?: string;
     productName?: string;
     invoiceUrl?: string;
+    referredUserId?: string;
+    referredUserName?: string;
+    contextType?: string;
   };
   activity: {
     activity: string;
@@ -94,7 +97,52 @@ export const columns: ColumnDef<Transaction>[] = [
           </div>
         );
       }
+      // ✅ AFFILIATE EARNING (NEW)
+      // ✅ AFFILIATE EARNING (FIXED)
+      if (
+        data.activity.activity === "AFFILIATE_EARNING" &&
+        meta?.referredUserId
+      ) {
+        const userName =
+          meta.referredUserName || data.activity.displayName.split(" ")[0];
 
+        let actionText = "did an action via your referral";
+
+        if (meta.contextType === "SUBSCRIPTION") {
+          actionText = "purchased a membership using your referral";
+        }
+
+        if (meta.contextType === "MMP_PROGRAM") {
+          actionText = meta.programName
+            ? `joined ${meta.programName.trim()} using your referral`
+            : "joined a program using your referral";
+        }
+
+        if (meta.contextType === "CHALLENGE") {
+          actionText = meta.challengeTitle
+            ? `joined ${meta.challengeTitle} using your referral`
+            : "joined a challenge using your referral";
+        }
+
+        if (meta.contextType === "STORE_PRODUCT") {
+          actionText = meta.productName
+            ? `purchased ${meta.productName} using your referral`
+            : "purchased a product using your referral";
+        }
+
+        return (
+          <div>
+            <Link
+              href={`/profile/${meta.referredUserId}`}
+              className="hover:underline text-blue-700 hover:text-blue-800"
+              target="_blank"
+            >
+              {userName}
+            </Link>{" "}
+            {actionText}
+          </div>
+        );
+      }
       return (
         <div className="flex items-center gap-2">
           <span>{data.activity.displayName}</span>
