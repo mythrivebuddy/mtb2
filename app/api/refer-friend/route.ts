@@ -133,6 +133,7 @@ export async function GET() {
         joinedAt: referral.createdAt,
         rewardEarned: currentRewardAmount,
       })),
+      isAffiliate:user.isAffiliate,
     });
   } catch (error) {
     console.error('Error fetching referral stats:', error);

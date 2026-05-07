@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -136,6 +136,7 @@ export default function UserInfoContent() {
 
   // --- React Query ---
   const queryClient = useQueryClient();
+
   const deboncedSearch = useDebounce(searchTerm, 500);
   const searchParams = useSearchParams();
   const referrerId = searchParams.get("referrerId") || "";
@@ -309,7 +310,10 @@ export default function UserInfoContent() {
 
     setTimeout(() => setCopiedEmail(null), 1500);
   };
-
+  useEffect(() => {
+    const email = searchParams.get("email");
+    if (email) setSearchTerm(email);
+  }, [searchParams]);
   // --- JSX ---
   return (
     <div className="bg-white p-6 rounded-lg shadow">

@@ -467,7 +467,6 @@ export async function GET(request: Request) {
       }
 
       let displayName = `You earned a referral commission`;
-      console.log({planName});
       
       if (ae.contextType === "SUBSCRIPTION") {
         displayName = planName
