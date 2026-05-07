@@ -12,6 +12,7 @@ import {
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 import { verifySignature } from "@/lib/payment/payment.utils";
 import { inngest } from "@/lib/inngest";
+import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
 
 /* ------------------------------------------------------------------ */
 /* Types */
@@ -196,7 +197,20 @@ async function grantProgramAccess(
             where: { id: paymentOrderId },
             data: { status: PaymentStatus.PAID },
           });
-
+          await createAffiliateEarningForSubscription({
+            tx: prisma,
+            order: {
+              id: paymentOrderId,
+              userId: paymentOrder.userId,
+              totalAmount: paymentOrder.totalAmount ?? 0, // or correct field
+              baseAmount: paymentOrder.baseAmount ?? 0,
+              gstAmount: paymentOrder.gstAmount,
+              discountApplied: paymentOrder.discountApplied ?? 0,
+              currency: paymentOrder.currency ?? "INR",
+              contextType: "SUBSCRIPTION", 
+            },
+            isAdmin: true,
+          });
           await inngest.send({
             id: `invoice-${paymentOrderId}`,
             name: "invoice/send",
