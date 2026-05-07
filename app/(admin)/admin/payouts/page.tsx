@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -53,8 +53,9 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { getAxiosErrorMessage } from "@/utils/ax";
-import { Pagination } from "@/components/ui/pagination"; 
-import { useDebounce } from "@/hooks/use-debounce"; 
+import { Pagination } from "@/components/ui/pagination";
+import { useDebounce } from "@/hooks/use-debounce";
+import Link from "next/link";
 
 // ================= TYPES =================
 
@@ -69,6 +70,7 @@ type ApiCreator = {
   discountAmount: number;
   commissionAmount: number;
   payableAmount: number;
+  holdingAmount: number;
 };
 
 type PayoutItem = {
@@ -80,6 +82,7 @@ type PayoutItem = {
   commissionAmount: number;
   pendingBalance: number;
   currency: string;
+  holdingAmount: number;
 };
 
 type PaginationData = {
@@ -88,8 +91,18 @@ type PaginationData = {
   limit: number;
   totalPages: number;
 };
-
-type SortField = "creatorName" | "pendingBalance" | "baseAmount" | "commissionAmount";
+type Analytics = {
+  totalPayableINR: number;
+  totalPayableUSD: number;
+  totalHoldingINR: number;
+  totalHoldingUSD: number;
+  totalCommission: number;
+};
+type SortField =
+  | "creatorName"
+  | "pendingBalance"
+  | "baseAmount"
+  | "commissionAmount";
 type SortDir = "asc" | "desc";
 
 type DatePreset = "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM";
@@ -98,7 +111,9 @@ type DatePreset = "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM";
 
 function CurrencyIcon({ currency }: { currency: string }) {
   if (currency === "INR")
-    return <IndianRupee className="w-3.5 h-3.5 inline-block mr-0.5 opacity-70" />;
+    return (
+      <IndianRupee className="w-3.5 h-3.5 inline-block mr-0.5 opacity-70" />
+    );
   return <DollarSign className="w-3.5 h-3.5 inline-block mr-0.5 opacity-70" />;
 }
 
@@ -154,10 +169,12 @@ export default function AdminPayoutsPage() {
 
   // Filter state
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500); 
+  const debouncedSearch = useDebounce(search, 500);
 
-  const [currencyFilter, setCurrencyFilter] = useState<"ALL" | "INR" | "USD">("ALL");
-  
+  const [currencyFilter, setCurrencyFilter] = useState<"ALL" | "INR" | "USD">(
+    "ALL",
+  );
+
   // Date filter state
   const [datePreset, setDatePreset] = useState<DatePreset>("ALL");
   const [fromDate, setFromDate] = useState("");
@@ -167,7 +184,7 @@ export default function AdminPayoutsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
 
-  // Reset pagination when filters change 
+  // Reset pagination when filters change
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, currencyFilter, fromDate, toDate, limit]);
@@ -175,27 +192,30 @@ export default function AdminPayoutsPage() {
   // Sort state
   const [sortField, setSortField] = useState<SortField>("pendingBalance");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-
   // ✅ Fetch payouts
-  const {
-    data,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["admin-payouts", debouncedSearch, currencyFilter, fromDate, toDate, page, limit],
+  const { data, isLoading, isError } = useQuery({
+    queryKey: [
+      "admin-payouts",
+      debouncedSearch,
+      currencyFilter,
+      fromDate,
+      toDate,
+      page,
+      limit,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
       });
-      
+
       if (debouncedSearch) params.append("search", debouncedSearch);
       if (currencyFilter !== "ALL") params.append("currency", currencyFilter);
       if (fromDate) params.append("fromDate", fromDate);
       if (toDate) params.append("toDate", toDate);
 
       const res = await axios.get(`/api/admin/payouts?${params.toString()}`);
-      
+
       return {
         creators: res.data.creators.map((c: ApiCreator) => ({
           creatorId: c.creatorId,
@@ -205,15 +225,22 @@ export default function AdminPayoutsPage() {
           discountAmount: Number(c.discountAmount || 0),
           commissionAmount: Number(c.commissionAmount || 0),
           pendingBalance: Number(c.payableAmount || 0),
+          holdingAmount: Number(c.holdingAmount || 0),
           currency: c.currency,
         })) as PayoutItem[],
         pagination: res.data.pagination as PaginationData,
+        analytics: res.data.analytics,
       };
     },
   });
 
   const payouts = data?.creators || [];
-  const pagination = data?.pagination || { total: 0, page: 1, limit, totalPages: 1 };
+  const pagination = data?.pagination || {
+    total: 0,
+    page: 1,
+    limit,
+    totalPages: 1,
+  };
 
   // ✅ Process payout
   const processPayoutMutation = useMutation({
@@ -222,6 +249,7 @@ export default function AdminPayoutsPage() {
       currency: string;
       referenceId: string;
       notes: string;
+      amount: number;
     }) => axios.post("/api/admin/payouts/mark-paid", payload),
     onSuccess: () => {
       toast.success("Payout completed successfully");
@@ -237,7 +265,7 @@ export default function AdminPayoutsPage() {
 
   const filtered = useMemo(() => {
     const list = [...payouts];
-    
+
     // Server handles search and currency filters, handle client-side sorting here
     list.sort((a, b) => {
       const valA = a[sortField];
@@ -252,16 +280,21 @@ export default function AdminPayoutsPage() {
     return list;
   }, [payouts, sortField, sortDir]);
 
-  // Summary stats
-  const stats = useMemo(() => {
-    const inrPayouts = payouts.filter((p) => p.currency === "INR");
-    const usdPayouts = payouts.filter((p) => p.currency === "USD");
-    return {
-      totalINR: inrPayouts.reduce((s, p) => s + p.pendingBalance, 0),
-      totalUSD: usdPayouts.reduce((s, p) => s + p.pendingBalance, 0),
-      totalCommission: payouts.reduce((s, p) => s + p.commissionAmount, 0),
+  const analyticsRef = useRef<Analytics | null>(null);
+
+  // After the query
+  if (data?.analytics) {
+    analyticsRef.current = data.analytics;
+  }
+
+  const stats = analyticsRef.current ||
+    data?.analytics || {
+      totalPayableINR: 0,
+      totalPayableUSD: 0,
+      totalHoldingINR: 0,
+      totalHoldingUSD: 0,
+      totalCommission: 0,
     };
-  }, [payouts]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -290,7 +323,7 @@ export default function AdminPayoutsPage() {
     setDatePreset(preset);
 
     const today = new Date();
-    
+
     if (preset === "ALL") {
       setFromDate("");
       setToDate("");
@@ -299,7 +332,11 @@ export default function AdminPayoutsPage() {
       setFromDate(dateString);
       setToDate(dateString);
     } else if (preset === "THIS_MONTH") {
-      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const firstDayOfMonth = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1,
+      );
       setFromDate(firstDayOfMonth.toISOString().split("T")[0]);
       setToDate(today.toISOString().split("T")[0]);
     } else if (preset === "CUSTOM") {
@@ -326,15 +363,18 @@ export default function AdminPayoutsPage() {
       currency: selectedPayout.currency,
       referenceId,
       notes,
+      amount: selectedPayout.pendingBalance,
     });
   };
 
   // Check if any standard filters are active (ignoring pagination)
   const hasActiveFilters = Boolean(
-    search || currencyFilter !== "ALL" || datePreset !== "ALL" || fromDate || toDate
+    search ||
+      currencyFilter !== "ALL" ||
+      datePreset !== "ALL" ||
+      fromDate ||
+      toDate,
   );
-
-  const isShowingAll = limit >= 999999;
 
   // ================= RENDER =================
 
@@ -344,7 +384,9 @@ export default function AdminPayoutsPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Creator Payouts</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Creator Payouts
+            </h1>
             <p className="text-muted-foreground mt-1">
               Review earnings breakdown and process pending payouts
             </p>
@@ -360,20 +402,31 @@ export default function AdminPayoutsPage() {
           />
           <SummaryCard
             icon={<IndianRupee className="w-4 h-4" />}
-            label={isShowingAll ? "Total Pending (INR)" : "Current Page Pending (INR)"}
-            value={`₹${fmt(stats.totalINR)}`}
+            label={"Total Pending (INR)"}
+            value={`₹${fmt(stats.totalPayableINR)}`}
             highlight
           />
           <SummaryCard
             icon={<DollarSign className="w-4 h-4" />}
-            label={isShowingAll ? "Total Pending (USD)" : "Current Page Pending (USD)"}
-            value={`$${fmt(stats.totalUSD)}`}
+            label={"Total Pending (USD)"}
+            value={`$${fmt(stats.totalPayableUSD)}`}
             highlight
           />
           <SummaryCard
             icon={<TrendingUp className="w-4 h-4" />}
-            label={isShowingAll ? "Total Commission" : "Current Page Commission"}
+            label={"Total Commission"}
             value={`₹${fmt(stats.totalCommission)}`}
+          />
+          <SummaryCard
+            icon={<IndianRupee className="w-4 h-4" />}
+            label="Total Holding (INR)"
+            value={`₹${fmt(stats.totalHoldingINR)}`}
+          />
+
+          <SummaryCard
+            icon={<DollarSign className="w-4 h-4" />}
+            label="Total Holding (USD)"
+            value={`$${fmt(stats.totalHoldingUSD)}`}
           />
         </div>
 
@@ -394,7 +447,9 @@ export default function AdminPayoutsPage() {
             {/* Currency filter */}
             <Select
               value={currencyFilter}
-              onValueChange={(v) => setCurrencyFilter(v as "ALL" | "INR" | "USD")}
+              onValueChange={(v) =>
+                setCurrencyFilter(v as "ALL" | "INR" | "USD")
+              }
             >
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="Currency" />
@@ -419,15 +474,11 @@ export default function AdminPayoutsPage() {
                 <SelectItem value="20">20 per page</SelectItem>
                 <SelectItem value="50">50 per page</SelectItem>
                 <SelectItem value="100">100 per page</SelectItem>
-                <SelectItem value="999999">Show All</SelectItem>
               </SelectContent>
             </Select>
 
             {/* ✅ Date Range Filter */}
-            <Select
-              value={datePreset}
-              onValueChange={handleDatePresetChange}
-            >
+            <Select value={datePreset} onValueChange={handleDatePresetChange}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
@@ -438,26 +489,26 @@ export default function AdminPayoutsPage() {
                 <SelectItem value="CUSTOM">Custom Range</SelectItem>
               </SelectContent>
             </Select>
-            
+
             {/* Custom Date Inputs (Only visible if 'Custom Range' is selected) */}
             {datePreset === "CUSTOM" && (
               <>
                 <div className="flex items-center gap-2">
                   <Label className="text-muted-foreground text-sm">From</Label>
-                  <Input 
-                    type="date" 
-                    value={fromDate} 
-                    onChange={(e) => setFromDate(e.target.value)} 
-                    className="w-auto" 
+                  <Input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    className="w-auto"
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="text-muted-foreground text-sm">To</Label>
-                  <Input 
-                    type="date" 
-                    value={toDate} 
-                    onChange={(e) => setToDate(e.target.value)} 
-                    className="w-auto" 
+                  <Input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    className="w-auto"
                   />
                 </div>
               </>
@@ -465,8 +516,8 @@ export default function AdminPayoutsPage() {
 
             {/* ✅ Clear Filter Button */}
             {hasActiveFilters && (
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="text-muted-foreground hover:text-foreground px-2"
                 onClick={handleClearFilters}
               >
@@ -527,19 +578,27 @@ export default function AdminPayoutsPage() {
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-12">
                     <Loader2 className="animate-spin mx-auto w-6 h-6 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mt-2">Loading payouts…</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Loading payouts…
+                    </p>
                   </TableCell>
                 </TableRow>
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-red-500">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-12 text-red-500"
+                  >
                     Failed to load payouts. Please try again.
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                       No pending payouts.
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-12 text-muted-foreground"
+                  >
+                    No pending payouts.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -556,7 +615,10 @@ export default function AdminPayoutsPage() {
                         </div>
                         <div>
                           <p className="font-medium text-sm">{p.creatorName}</p>
-                          <Badge variant="outline" className="text-[10px] px-1 py-0 mt-0.5">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] px-1 py-0 mt-0.5"
+                          >
                             {p.currency}
                           </Badge>
                         </div>
@@ -577,7 +639,9 @@ export default function AdminPayoutsPage() {
                             {fmt(p.baseAmount)}
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>Gross earnings before any deductions</TooltipContent>
+                        <TooltipContent>
+                          Gross earnings before any deductions
+                        </TooltipContent>
                       </Tooltip>
                     </TableCell>
 
@@ -590,7 +654,9 @@ export default function AdminPayoutsPage() {
                             {fmt(p.commissionAmount)}
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>Platform commission deducted</TooltipContent>
+                        <TooltipContent>
+                          Platform commission deducted
+                        </TooltipContent>
                       </Tooltip>
                     </TableCell>
 
@@ -598,11 +664,28 @@ export default function AdminPayoutsPage() {
                     <TableCell className="text-right font-semibold text-green-600">
                       <CurrencyIcon currency={p.currency} />
                       {fmt(p.pendingBalance)}
+
+                      {p.holdingAmount > 0 && (
+                        <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1 w-fit ml-auto">
+                          🕐 <CurrencyIcon currency={p.currency} />
+                          {fmt(p.holdingAmount)} in holding
+                        </div>
+                      )}
                     </TableCell>
 
                     {/* Action */}
-                    <TableCell className="text-right">
-                      <Button size="sm" onClick={() => handleOpenModal(p)}>
+                    <TableCell className="text-right space-x-2">
+                      <Link
+                        href={`/admin/payouts/details/${p.creatorId}?currency=${p.currency}`}
+                        target="_blank"
+                      >
+                        <Button size="sm" variant="ghost">View</Button>
+                      </Link>
+                      <Button
+                        size="sm"
+                        onClick={() => handleOpenModal(p)}
+                        disabled={p.pendingBalance <= 0}
+                      >
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                         Pay
                       </Button>
@@ -617,14 +700,16 @@ export default function AdminPayoutsPage() {
           {filtered.length > 0 && !isLoading && (
             <div className="flex flex-col items-center justify-center py-4 border-t border-muted/50 bg-muted/10 gap-2">
               {pagination.totalPages > 1 && (
-                <Pagination 
-                  currentPage={page} 
-                  totalPages={pagination.totalPages} 
-                  onPageChange={setPage} 
+                <Pagination
+                  currentPage={page}
+                  totalPages={pagination.totalPages}
+                  onPageChange={setPage}
                 />
               )}
               <p className="text-xs text-muted-foreground">
-                Showing {filtered.length} payout{filtered.length !== 1 ? "s" : ""} on this page (Total: {pagination.total})
+                Showing {filtered.length} payout
+                {filtered.length !== 1 ? "s" : ""} on this page (Total:{" "}
+                {pagination.total})
               </p>
             </div>
           )}
@@ -639,7 +724,10 @@ export default function AdminPayoutsPage() {
                 Confirm Payout
               </DialogTitle>
               <DialogDescription>
-                Paying <span className="font-medium">{selectedPayout?.creatorName}</span>
+                Paying{" "}
+                <span className="font-medium">
+                  {selectedPayout?.creatorName}
+                </span>
               </DialogDescription>
             </DialogHeader>
 
@@ -699,7 +787,9 @@ export default function AdminPayoutsPage() {
               </Button>
               <Button
                 onClick={handleConfirmPayout}
-                disabled={processPayoutMutation.isPending || !referenceId.trim()}
+                disabled={
+                  processPayoutMutation.isPending || !referenceId.trim()
+                }
               >
                 {processPayoutMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

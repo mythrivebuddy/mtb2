@@ -145,6 +145,14 @@ model User {
   createdPrograms  Program[]  @relation("ProgramCreator")
   creatorEarnings CreatorEarningLedger[] @relation("CreatorEarnings")
   creatorPayouts  CreatorPayout[]        @relation("CreatorPayouts")
+  // Affiliate earnings (user as affiliate)
+  affiliateEarnings AffiliateEarningLedger[] @relation("AffiliateEarnings")
+
+ // Referred users (user as referred)
+ referredEarnings  AffiliateEarningLedger[] @relation("ReferredUser")
+
+ // Affiliate payouts
+ affiliatePayouts  AffiliatePayout[] @relation("AffiliatePayouts")
   @@index([name])
 }
 enum AffiliateCommissionType {
@@ -1417,7 +1425,7 @@ model PaymentOrder {
   miniMasteryProgramPayment MiniMasteryProgramPayment?
   creatorEarnings CreatorEarningLedger[]
   invoice Invoice? @relation("PaymentOrderToInvoice")
-
+  affiliateEarnings AffiliateEarningLedger[]
   @@index([planId])
   @@index([challengeId])
   @@index([storeOrderId])
@@ -1469,10 +1477,68 @@ model CreatorEarningLedger {
   @@index([paymentOrderId])
   @@index([creatorId])
 }
+model AffiliateEarningLedger {
+  id              String   @id @default(cuid())
 
+  affiliateId     String
+  affiliate       User     @relation("AffiliateEarnings", fields: [affiliateId], references: [id])
+
+  referredUserId  String
+  referredUser    User     @relation("ReferredUser", fields: [referredUserId], references: [id])
+
+  paymentOrderId  String
+  paymentOrder    PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+
+  contextId       String
+  contextType     PaymentContextType
+
+  // financial snapshot
+  baseAmount      Float          // AFTER discount, BEFORE GST
+  discountAmount  Float @default(0)   
+  commissionRate  Float
+  earnedAmount    Float
+  currency        String
+
+  commissionType  AffiliateCommissionType
+  // if refund created 
+  reversalOfId    String?
+  reversalOf      AffiliateEarningLedger? @relation("AffiliateReversal", fields: [reversalOfId], references: [id])
+  reversals       AffiliateEarningLedger[] @relation("AffiliateReversal")
+  createdAt       DateTime @default(now())
+  status          EarningStatus @default(PENDING)
+  payoutId   String?
+  payout AffiliatePayout? @relation("AffiliatePayoutToEarnings", fields: [payoutId], references: [id])
+  @@unique([paymentOrderId, affiliateId, contextId, contextType,reversalOfId])
+  @@index([affiliateId, status])
+  @@index([paymentOrderId])   
+
+  
+}
+model AffiliatePayout {
+  id              String   @id @default(cuid())
+  
+  affiliateId     String
+  affiliate       User     @relation("AffiliatePayouts", fields: [affiliateId], references: [id])
+  
+  amount          Decimal  @db.Decimal(18, 4)
+  currency        String
+  
+  status          PayoutStatus @default(PAID)
+  referenceId     String?
+  notes           String?
+  
+  paidAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  earnings AffiliateEarningLedger[] @relation("AffiliatePayoutToEarnings")
+
+  @@index([affiliateId])
+}
 enum EarningStatus {
   PENDING
   PAID
+  REFUNDED
 }
 
 model CreatorPayout {

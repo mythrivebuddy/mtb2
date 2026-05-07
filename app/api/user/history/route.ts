@@ -20,8 +20,9 @@ type TransactionMetadata = {
 // 🔹 helper type for cart items
 type CartItem = {
   itemId: string;
+  name: string;
   quantity?: number;
-  price: number; // ✅ ADD
+  price: number;
   discount?: number;
 };
 
@@ -237,12 +238,24 @@ export async function GET(request: Request) {
       },
     });
 
+    const affiliateEarningsPromise = prisma.affiliateEarningLedger.findMany({
+      where: {
+        affiliateId: userId,
+      },
+      include: {
+        referredUser: {
+          select: { name: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
     const [
       user,
       transactions,
       paymentOrders,
       storeOrders,
       coachChallengeEarnings,
+      affiliateEarnings,
     ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -287,7 +300,68 @@ export async function GET(request: Request) {
       paymentOrdersPromise,
       storeOrdersPromise,
       coachChallengeEarningsPromise,
+      affiliateEarningsPromise,
     ]);
+    const affiliateOrderIds = affiliateEarnings.map((ae) => ae.paymentOrderId);
+
+    const affiliateOrders = await prisma.paymentOrder.findMany({
+      where: {
+        id: { in: affiliateOrderIds },
+      },
+      select: {
+        id: true,
+        programId: true,
+        challengeId: true,
+        cartSnapshot: true,
+        plan: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    const affiliateOrderMap = new Map(affiliateOrders.map((o) => [o.id, o]));
+    const affiliateChallengeIds = affiliateOrders
+      .map((o) => o.challengeId)
+      .filter((id): id is string => !!id);
+
+    const affiliateChallenges = await prisma.challenge.findMany({
+      where: { id: { in: affiliateChallengeIds } },
+      select: { id: true, title: true },
+    });
+
+    const affiliateChallengeMap = new Map(
+      affiliateChallenges.map((c) => [c.id, c.title]),
+    );
+
+    const affiliateItemIds = affiliateOrders.flatMap((o) => {
+      if (!o.cartSnapshot) return [];
+      const items = parseCartSnapshot(o.cartSnapshot);
+      return items.map((i) => i.itemId);
+    });
+
+    const affiliateProducts = await prisma.item.findMany({
+      where: { id: { in: affiliateItemIds } },
+      select: { id: true, name: true },
+    });
+
+    const affiliateProductMap = new Map(
+      affiliateProducts.map((p) => [p.id, p.name]),
+    );
+    const affiliateProgramIds = affiliateOrders
+      .map((o) => o.programId)
+      .filter((id): id is string => !!id);
+
+    const affiliatePrograms = await prisma.program.findMany({
+      where: { id: { in: affiliateProgramIds } },
+      select: { id: true, name: true },
+    });
+
+    const affiliateProgramMap = new Map(
+      affiliatePrograms.map((p) => [p.id, p.name]),
+    );
+
     const storeItemIds = storeOrders
       .filter((po) => po.contextType === "STORE_PRODUCT")
       .flatMap((po) => {
@@ -363,7 +437,97 @@ export async function GET(request: Request) {
           };
         }),
     );
+    const formatAmount = (num: number) => Number(num.toFixed(2));
 
+    const affiliateHistory = affiliateEarnings.map((ae) => {
+      const userName = ae.referredUser?.name ?? "Someone";
+      const order = affiliateOrderMap.get(ae.paymentOrderId);
+      const planName = order?.plan?.name ?? null;
+
+      const programName = order?.programId
+        ? affiliateProgramMap.get(order.programId)
+        : null;
+
+      const challengeName = order?.challengeId
+        ? affiliateChallengeMap.get(order.challengeId)
+        : null;
+      let productName: string | null = null;
+
+      if (order?.cartSnapshot && ae.contextId) {
+        const items = parseCartSnapshot(order.cartSnapshot);
+
+        const matchedItem = items.find((item) => item.itemId === ae.contextId);
+
+        if (matchedItem) {
+          productName =
+            affiliateProductMap.get(matchedItem.itemId) ??
+            matchedItem.name ??
+            null;
+        }
+      }
+
+      let displayName = `You earned a referral commission`;
+      
+      if (ae.contextType === "SUBSCRIPTION") {
+        displayName = planName
+          ? ` purchased ${planName} using your referral`
+          : `purchased a membership using your referral`;
+      }
+
+      if (ae.contextType === "MMP_PROGRAM") {
+        displayName = programName
+          ? `${userName} joined ${programName} using your referral`
+          : `${userName} joined a program using your referral`;
+      }
+
+      if (ae.contextType === "CHALLENGE") {
+        displayName = challengeName
+          ? `${userName} joined ${challengeName} using your referral`
+          : `${userName} joined a challenge using your referral`;
+      }
+
+      if (ae.contextType === "STORE_PRODUCT") {
+        displayName = productName
+          ? `${userName} purchased ${productName} using your referral`
+          : `${userName} purchased a product using your referral`;
+      }
+
+      return {
+        id: `affiliate-${ae.id}`,
+        createdAt: ae.createdAt,
+        jpAmount: formatAmount(ae.earnedAmount),
+        currency: ae.currency,
+
+        activity: {
+          activity: "AFFILIATE_EARNING",
+          transactionType: "CREDIT",
+          displayName,
+        },
+
+        activityMeta: {
+          affiliateId: ae.affiliateId,
+          referredUserId: ae.referredUserId,
+          referredUserName: userName,
+
+          // ✅ NEW
+          programId: order?.programId,
+          programName,
+
+          challengeId: order?.challengeId,
+          challengeTitle: challengeName,
+
+          productName,
+
+          paymentOrderId: ae.paymentOrderId,
+          commissionRate: ae.commissionRate,
+          baseAmount: formatAmount(ae.baseAmount),
+          discountAmount: formatAmount(ae.discountAmount),
+          earnedAmount: formatAmount(ae.earnedAmount),
+          commissionType: ae.commissionType,
+          contextType: ae.contextType,
+        },
+      };
+    });
     const paymentOrderIds = paymentOrders.map((po) => po.id);
 
     const invoices = await prisma.invoice.findMany({
@@ -548,6 +712,7 @@ export async function GET(request: Request) {
       ...coachStoreEarnings.filter(
         (tx): tx is NonNullable<typeof tx> => tx !== null,
       ),
+      ...affiliateHistory,
     ];
     // ✅ Filter by CREDIT / DEBIT
     if (txType !== "ALL") {

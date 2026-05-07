@@ -49,11 +49,6 @@ export const sendInvoiceFunction = inngest.createFunction(
   async ({ event, step }) => {
     const { orderId } = event.data as { orderId: string };
 
-    await step.run("log-start", async () => {
-      console.log("📥 INNGEST FUNCTION START");
-      console.log("Event Data:", event.data);
-    });
-
     /**
      * 1️⃣ Fetch Order
      */
@@ -71,8 +66,6 @@ export const sendInvoiceFunction = inngest.createFunction(
           },
         },
       });
-      console.log("📦 ORDER FETCHED (ONCE)");
-      console.log(JSON.stringify(result, null, 2));
 
       return result;
     });
@@ -86,11 +79,11 @@ export const sendInvoiceFunction = inngest.createFunction(
     }
 
     const purchaseData = await step.run("resolve-purchase", async () => {
-      console.log("🧾 RESOLVING PURCHASE TYPE:", order.contextType);
+     
       switch (order.contextType) {
         case "CHALLENGE":
           if (!order.challengeId) return null;
-          console.log("🧾 CHALLENGE INVOICE BUILD");
+         
 
           const challenge = await prisma.challenge.findUnique({
             where: { id: order.challengeId },
@@ -112,10 +105,10 @@ export const sendInvoiceFunction = inngest.createFunction(
 
         case "MMP_PROGRAM":
           if (!order.programId) {
-            console.error("❌ MISSING programId", order);
+            
             return null;
           }
-          console.log("🧾 MMP INVOICE BUILD");
+  
           const program = await prisma.program.findUnique({
             where: { id: order.programId },
             select: { name: true },
@@ -194,11 +187,6 @@ export const sendInvoiceFunction = inngest.createFunction(
             price: oi.originalPrice ?? oi.priceAtPurchase,
           }));
 
-          console.log("🧾 STORE INVOICE BUILD");
-          console.log({
-            storeOrderId: order.storeOrderId,
-            currency: order.currency,
-          });
 
           return {
             type: "store",
@@ -320,15 +308,7 @@ export const sendInvoiceFunction = inngest.createFunction(
     });
 
     const pdfBufferRaw = await step.run("generate-pdf", async () => {
-      console.log("🧾 GENERATING PDF");
-      console.log({
-        baseAmount,
-        discount,
-        gstAmount,
-        totalAmount,
-        type: purchaseData?.type,
-      });
-
+ 
       const pdfUint8 = await generateInvoicePdf({
         order: {
           id: order.id,
@@ -370,7 +350,7 @@ export const sendInvoiceFunction = inngest.createFunction(
         ? pdfBufferRaw
         : Buffer.from(pdfBufferRaw.data);
     const pdfUrl = await step.run("upload-pdf", async () => {
-      console.log("☁️ PDF UPLOADED");
+     
 
       const folder = order.contextType?.toLowerCase() || "general";
       const filePath = `invoices/${folder}/invoice-${invoiceNumber}.pdf`;
@@ -401,12 +381,6 @@ export const sendInvoiceFunction = inngest.createFunction(
     });
 
     await step.run("store-invoice", async () => {
-      console.log("URL:", pdfUrl);
-      console.log("🗃️ INVOICE STORED IN DB");
-      console.log({
-        orderId: order.id,
-        invoiceNumber,
-      });
 
       return prisma.invoice.upsert({
         where: {

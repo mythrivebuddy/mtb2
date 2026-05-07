@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
+import { HOLDING_PERIOD_DAYS } from "@/lib/constant";
 
 export async function POST(req: Request) {
   await checkRole("ADMIN");
@@ -8,23 +9,29 @@ export async function POST(req: Request) {
   try {
     const { creatorId, currency, referenceId, notes } = await req.json();
 
-    // 1️⃣ get pending earnings
+    const holdingCutoff = new Date(
+      Date.now() - HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    // 1️⃣ get ONLY matured earnings
     const earnings = await prisma.creatorEarningLedger.findMany({
       where: {
         creatorId,
         currency,
         status: "PENDING",
+        createdAt: { lte: holdingCutoff },
       },
+      orderBy: { createdAt: "asc" }, // FIFO
     });
 
     if (!earnings.length) {
       return NextResponse.json(
-        { error: "No pending earnings" },
+        { error: "No matured earnings" },
         { status: 400 },
       );
     }
 
-    // 2️⃣ calculate total
+    // 2️⃣ calculate total matured amount
     const total = earnings.reduce((sum, e) => sum + Number(e.earnedAmount), 0);
 
     // 3️⃣ create payout
@@ -40,16 +47,17 @@ export async function POST(req: Request) {
       },
     });
 
-    // 4️⃣ mark earnings as paid
+    // 4️⃣ map earnings to payout (NO DUPLICATION)
     await prisma.creatorEarningLedger.updateMany({
       where: {
         id: { in: earnings.map((e) => e.id) },
       },
       data: {
         status: "PAID",
-        payoutId: payout.id,
+        payoutId: payout.id, // ✅ link to payout
       },
     });
+
 
     return NextResponse.json({
       success: true,

@@ -1013,6 +1013,7 @@ export const notifyStakeholders = inngest.createFunction(
     } else {
       if (creator?.email && creator.id !== user.id) {
         await step.run("email-creator", async () => {
+          console.log("email to craetor step runs ",creator.email)
           await sendEmailUsingTemplateWithConditionals({
             toEmail: creator.email,
             toName: creator.name,
@@ -1127,6 +1128,7 @@ export const notifyStakeholders = inngest.createFunction(
     // ADMIN
     if (admin?.email && admin.id !== user.id && admin.id !== creator?.id) {
       await step.run("email-admin", async () => {
+        console.log("email admin step ")
         await sendEmailUsingTemplateWithConditionals({
           toEmail: admin.email,
           toName: admin.name,
