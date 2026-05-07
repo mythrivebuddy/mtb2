@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { Prisma } from "@prisma/client";
+import { HOLDING_PERIOD_DAYS } from "@/lib/constant";
 
 type CreatorPayout = {
   creatorId: string;
@@ -15,7 +16,9 @@ type CreatorPayout = {
   discountAmount: number;
   commissionAmount: number;
   payableAmount: number;
+  holdingAmount: number;
 };
+
 
 export async function GET(req: NextRequest) {
   await checkRole("ADMIN");
@@ -41,20 +44,21 @@ export async function GET(req: NextRequest) {
     // 2. Build where clause
     // ─────────────────────────────────────────────
 
+    const holdingCutoff = new Date(
+      Date.now() - HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000,
+    );
+
     const where: Prisma.CreatorEarningLedgerWhereInput = {
       status: "PENDING",
-    };
 
-    if (currency !== "ALL") {
-      where.currency = currency;
-    }
+      ...(currency !== "ALL" && { currency }),
 
-    if (fromDate || toDate) {
-      where.createdAt = {
+      createdAt: {
+        lte: holdingCutoff,
         ...(fromDate && { gte: new Date(fromDate) }),
         ...(toDate && { lte: new Date(toDate) }),
-      };
-    }
+      },
+    };
 
     // ─────────────────────────────────────────────
     // 3. GroupBy (core aggregation)
@@ -65,6 +69,7 @@ export async function GET(req: NextRequest) {
       _sum: {
         earnedAmount: true,
         platformFee: true,
+        baseAmount:true,
       },
       orderBy: {
         _sum: {
@@ -72,11 +77,33 @@ export async function GET(req: NextRequest) {
         },
       },
     });
+    // In the grouped query, also fetch individual records to check holding
+    const pendingInHold = await prisma.creatorEarningLedger.groupBy({
+      by: ["creatorId", "currency"],
+      where: {
+        status: "PENDING",
+
+        ...(currency !== "ALL" && { currency }),
+        createdAt: {
+          gt: new Date(Date.now() - HOLDING_PERIOD_DAYS * 24 * 60 * 60 * 1000),
+        },
+      },
+      _sum: {
+        earnedAmount: true,
+        platformFee: true,
+        baseAmount: true, // ✅ ADD THIS (important)
+      },
+    });
 
     // ─────────────────────────────────────────────
     // 4. Attach user data
     // ─────────────────────────────────────────────
-    const creatorIds = [...new Set(grouped.map((g) => g.creatorId))];
+    const creatorIds = [
+      ...new Set([
+        ...grouped.map((g) => g.creatorId),
+        ...pendingInHold.map((h) => h.creatorId), // ✅ include holding users
+      ]),
+    ];
 
     const users = await prisma.user.findMany({
       where: {
@@ -98,26 +125,70 @@ export async function GET(req: NextRequest) {
     });
 
     const userMap = new Map(users.map((u) => [u.id, u]));
+    const payoutMap = new Map<
+      string,
+      {
+        creatorId: string;
+        currency: string;
+        earned: number;
+        commission: number;
+        holding: number;
+        baseAmount: number;
+      }
+    >();
+    grouped.forEach((g) => {
+      const key = `${g.creatorId}-${g.currency}`;
 
+      payoutMap.set(key, {
+        creatorId: g.creatorId,
+        currency: g.currency,
+        earned: Number(g._sum.earnedAmount ?? 0),
+        commission: Number(g._sum.platformFee ?? 0),
+        holding: 0,
+        baseAmount: Number(g._sum.baseAmount ?? 0),
+      });
+    });
+   pendingInHold.forEach((h) => {
+      const key = `${h.creatorId}-${h.currency}`;
+      const existing = payoutMap.get(key);
+      
+      const holdingEarned = Number(h._sum.earnedAmount ?? 0);
+      const holdingCommission = Number(h._sum.platformFee ?? 0);
+      const holdingBase = Number(h._sum.baseAmount ?? 0);
+      
+      if (existing) {
+        existing.holding += holdingEarned; // changed to += for safety
+        // existing.earned += 0; // keep payable clean
+        existing.commission += holdingCommission;
+        existing.baseAmount += holdingBase;
+      } else {
+        payoutMap.set(key, {
+          creatorId: h.creatorId,
+          currency: h.currency,
+          earned: 0, // ✅ FIXED: Must be 0 so holding money doesn't become payable
+          commission: holdingCommission,
+          holding: holdingEarned,
+          baseAmount: holdingBase,
+        });
+      }
+    });
     // ─────────────────────────────────────────────
     // 5. Merge + filter (search-safe)
     // ─────────────────────────────────────────────
-    let result = grouped
-      .map((g) => {
-        const user = userMap.get(g.creatorId);
+    let result = Array.from(payoutMap.values())
+      .map((item) => {
+        const user = userMap.get(item.creatorId);
         if (!user) return null;
 
-        const earnedAmount = Number(g._sum.earnedAmount ?? 0);
-        const platformFee = Number(g._sum.platformFee ?? 0);
-
         return {
-          creatorId: g.creatorId,
+          creatorId: item.creatorId,
           creator: user,
-          currency: g.currency,
-          baseAmount: earnedAmount + platformFee,
+          currency: item.currency,
+          baseAmount: item.baseAmount,
           discountAmount: 0,
-          commissionAmount: platformFee,
-          payableAmount: earnedAmount,
+          commissionAmount: item.commission,
+          payableAmount: item.earned,
+          holdingAmount: item.holding,
         };
       })
       .filter((r): r is CreatorPayout => r !== null);
@@ -131,7 +202,27 @@ export async function GET(req: NextRequest) {
           r.creator.email?.toLowerCase().includes(q),
       );
     }
+    const analytics = {
+      totalPayableINR: 0,
+      totalPayableUSD: 0,
+      totalHoldingINR: 0,
+      totalHoldingUSD: 0,
+      totalCommission: 0,
+    };
 
+    result.forEach((r) => {
+      if (r.currency === "INR") {
+        analytics.totalPayableINR += r.payableAmount;
+        analytics.totalHoldingINR += r.holdingAmount;
+      }
+
+      if (r.currency === "USD") {
+        analytics.totalPayableUSD += r.payableAmount;
+        analytics.totalHoldingUSD += r.holdingAmount;
+      }
+
+      analytics.totalCommission += r.commissionAmount;
+    });
     // ─────────────────────────────────────────────
     // 6. Pagination (AFTER aggregation)
     // ─────────────────────────────────────────────
@@ -149,6 +240,7 @@ export async function GET(req: NextRequest) {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+      analytics,
     });
   } catch (err) {
     console.error("[PAYOUTS_GET]", err);
