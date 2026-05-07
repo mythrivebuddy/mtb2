@@ -109,13 +109,13 @@ export const columns: ColumnDef<Transaction>[] = [
         let actionText = "did an action via your referral";
 
         if (meta.contextType === "SUBSCRIPTION") {
-          actionText = "purchased a membership using your referral";
+          actionText = data.activity.displayName;
         }
 
         if (meta.contextType === "MMP_PROGRAM") {
           actionText = meta.programName
             ? `joined ${meta.programName.trim()} using your referral`
-            : "joined a program using your referral";
+            : "joined a program using your referral"; 
         }
 
         if (meta.contextType === "CHALLENGE") {

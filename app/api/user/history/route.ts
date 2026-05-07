@@ -311,8 +311,13 @@ export async function GET(request: Request) {
       select: {
         id: true,
         programId: true,
-        challengeId: true, // ✅ ADD
-        cartSnapshot: true, // ✅ ADD
+        challengeId: true,
+        cartSnapshot: true,
+        plan: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -436,8 +441,8 @@ export async function GET(request: Request) {
 
     const affiliateHistory = affiliateEarnings.map((ae) => {
       const userName = ae.referredUser?.name ?? "Someone";
-
       const order = affiliateOrderMap.get(ae.paymentOrderId);
+      const planName = order?.plan?.name ?? null;
 
       const programName = order?.programId
         ? affiliateProgramMap.get(order.programId)
@@ -462,9 +467,12 @@ export async function GET(request: Request) {
       }
 
       let displayName = `You earned a referral commission`;
-
+      console.log({planName});
+      
       if (ae.contextType === "SUBSCRIPTION") {
-        displayName = `${userName} purchased a membership using your referral`;
+        displayName = planName
+          ? ` purchased ${planName} using your referral`
+          : `purchased a membership using your referral`;
       }
 
       if (ae.contextType === "MMP_PROGRAM") {
