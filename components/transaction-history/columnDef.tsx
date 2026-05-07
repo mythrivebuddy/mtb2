@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { addDays, format, isAfter } from "date-fns";
 import Link from "next/link";
 
 export interface Transaction {
@@ -115,7 +115,7 @@ export const columns: ColumnDef<Transaction>[] = [
         if (meta.contextType === "MMP_PROGRAM") {
           actionText = meta.programName
             ? `joined ${meta.programName.trim()} using your referral`
-            : "joined a program using your referral"; 
+            : "joined a program using your referral";
         }
 
         if (meta.contextType === "CHALLENGE") {
@@ -169,10 +169,12 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const data = row.original;
       const isCredit = data.activity.transactionType === "CREDIT";
+      const availableDate = addDays(new Date(data.createdAt), 10);
+      const isUnlocked = isAfter(new Date(), availableDate);
 
       if (data.breakdown) {
         return (
-          <div className="text-sm text-start">
+          <div className="text-sm text-start space-y-1">
             <div
               className={`font-medium ${
                 isCredit ? "text-green-600" : "text-red-600"
@@ -193,14 +195,30 @@ export const columns: ColumnDef<Transaction>[] = [
               {" - "}
               {data.currency} {data.breakdown.commission.toFixed(2)} commission
             </div>
+            {isCredit && !isUnlocked && (
+              <div className="text-xs text-yellow-600">
+                Available after {format(availableDate, "MMM d, yyyy")}
+              </div>
+            )}
           </div>
         );
       }
 
       return (
-        <span className={isCredit ? "text-green-600" : "text-red-600"}>
-          {isCredit ? "+" : "-"} {data.currency} {data.jpAmount}
-        </span>
+        <div className="space-y-1">
+          <span className={isCredit ? "text-green-600" : "text-red-600"}>
+            {isCredit ? "+" : "-"} {data.currency} {data.jpAmount}
+          </span>
+
+          {/* ✅ HOLDING BADGE */}
+          {isCredit &&
+            !isUnlocked &&
+            (data.currency === "INR" || data.currency === "USD") && (
+              <div className="text-xs text-yellow-600">
+                Available after {format(availableDate, "MMM d, yyyy")}
+              </div>
+            )}
+        </div>
       );
     },
   },
