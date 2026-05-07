@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type ContactForm, contactFormSchems } from "@/schema/zodSchema";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useRef } from "react";
-import { useSearchParams } from "next/navigation";
+
 
 declare global {
   interface Window {
@@ -27,13 +27,13 @@ declare global {
   }
 }
 
-function ContactFormContent() {
+export default function ContactForm({type}:{type:string}) {
   const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
   const captchaRef = useRef<ReCAPTCHA | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
+ 
 
   const handleCaptchaChange = (token: string | null) => {
     setCaptchaError(null);
@@ -72,11 +72,11 @@ function ContactFormContent() {
   }, [session, setValue]);
 
   useEffect(() => {
-    if (searchParams.get("type") === "want-to-become-an-affiliate") {
+    if (type === "want-to-become-an-affiliate") {
       setValue("subject", "affiliate");
       setValue("message", "I want to become an affiliate.");
     }
-  }, [searchParams, setValue]);
+  }, [type, setValue]);
 
   // useEffect(() => {
   //   const loadRecaptcha = async () => {
@@ -326,6 +326,3 @@ function ContactFormContent() {
   );
 }
 
-export default function ContactForm() {
-  return <ContactFormContent />;
-}
