@@ -133,14 +133,17 @@ export async function handleProgramPayment(
 
   const commissionPercent = Number(config?.commissionPercent ?? 0);
 
+ // ─────────────────────────────────────────────
+  // 4. Financial calculation (Updated to Gross-to-Net logic)
   // ─────────────────────────────────────────────
-  // 4. Financial calculation (IMPORTANT)
-  // ─────────────────────────────────────────────
-  const baseAmount =
-    (order.baseAmount ?? order.totalAmount) - (order.discountApplied ?? 0);
+  const baseAmount = order.baseAmount ?? order.totalAmount; // Pre-discount (Gross)
+  const discountAmount = order.discountApplied ?? 0;
+  
+  // The amount the platform fee is actually calculated on (Net Amount)
+  const netAmount = Math.max(0, baseAmount - discountAmount); 
 
-  const platformFee = (baseAmount * commissionPercent) / 100;
-  const earnedAmount = baseAmount - platformFee;
+  const platformFee = (netAmount * commissionPercent) / 100;
+  const earnedAmount = netAmount - platformFee;
 
   // ─────────────────────────────────────────────
   // 5. Ledger entry (idempotent)
@@ -162,6 +165,7 @@ export async function handleProgramPayment(
       contextType: "MMP_PROGRAM",
 
       baseAmount,
+      discountAmount,
       commissionRate: commissionPercent,
       platformFee,
       earnedAmount,

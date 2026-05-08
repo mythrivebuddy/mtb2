@@ -87,13 +87,13 @@ export async function handleStorePayment(
     },
   });
   console.log("📦 ITEMS FROM DB:");
-items.forEach((item) => {
-  console.log({
-    itemId: item.id,
-    creatorId: item.creator?.id,
-    role: item.creator?.role,
+  items.forEach((item) => {
+    console.log({
+      itemId: item.id,
+      creatorId: item.creator?.id,
+      role: item.creator?.role,
+    });
   });
-});
   // 6. Feature config (store)
   // ─────────────────────────────────────────────
   const feature = await tx.feature.findFirst({
@@ -129,13 +129,15 @@ items.forEach((item) => {
     const commissionPercent = Number(config?.commissionPercent ?? 0);
 
     // 💰 PER ITEM calculation
-    const baseAmount =
-      cartItem.price * (cartItem.quantity ?? 1) - (cartItem.discount ?? 0);
+    const baseAmount = cartItem.price * (cartItem.quantity ?? 1);
+    const discountAmount = cartItem.discount ?? 0;
 
-    if (!baseAmount || baseAmount <= 0) continue;
+    if (baseAmount <= 0) continue;
 
-    const platformFee = (baseAmount * commissionPercent) / 100;
-    const earnedAmount = baseAmount - platformFee;
+    const netAmount = Math.max(0, baseAmount - discountAmount);
+
+    const platformFee = (netAmount * commissionPercent) / 100;
+    const earnedAmount = netAmount - platformFee;
 
     // 🔥 ledger (idempotent)
     await tx.creatorEarningLedger.upsert({
@@ -155,6 +157,7 @@ items.forEach((item) => {
         contextType: "STORE_PRODUCT",
 
         baseAmount,
+        discountAmount,
         commissionRate: commissionPercent,
         platformFee,
         earnedAmount,
@@ -176,8 +179,8 @@ items.forEach((item) => {
     .map((item) => item.id);
 
   const isAdmin = adminItemIds.length > 0;
-    console.log({isAdmin});
-    
-  console.log("✅ Item IDs:", adminItemIds,allItemIds);
+  console.log({ isAdmin });
+
+  console.log("✅ Item IDs:", adminItemIds, allItemIds);
   return { isAdmin, allItemIds, adminItemIds };
 }

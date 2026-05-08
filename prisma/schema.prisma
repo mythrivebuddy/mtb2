@@ -1457,10 +1457,11 @@ model CreatorEarningLedger {
   contextType     PaymentContextType
   
   // 💰 financial snapshot (frozen)
-  baseAmount      Float
-  commissionRate  Float
+  baseAmount      Float // pre discont amount 
+  discountAmount  Float    @default(0)
+  commissionRate  Float 
   platformFee     Float
-  earnedAmount    Float
+  earnedAmount    Float // Final amount after discount and fees
   currency        String
   
   // 📌 payout tracking
@@ -1508,7 +1509,7 @@ model AffiliateEarningLedger {
   status          EarningStatus @default(PENDING)
   payoutId   String?
   payout AffiliatePayout? @relation("AffiliatePayoutToEarnings", fields: [payoutId], references: [id])
-  @@unique([paymentOrderId, affiliateId, contextId, contextType,reversalOfId])
+  @@unique([paymentOrderId, affiliateId, contextId, contextType,currency])
   @@index([affiliateId, status])
   @@index([paymentOrderId])   
 
@@ -2627,6 +2628,7 @@ enum NotificationType {
   CMP_INACTIVITY_7_DAYS
   CMP_ONBOARDING_PENDING
   MMP_DAILY_REMINDER
+  AFFILIATE_APPROVED
 }
 
 enum BreathWorkType {

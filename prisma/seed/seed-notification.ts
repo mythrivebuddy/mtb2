@@ -130,6 +130,14 @@ const CMP_NOTIFICATION_SEEDS: {
     url: "/dashboard/mini-mastery-programs/program/{{programId}}",
     isDynamic: true,
   },
+  // 10 AFFILIATE APPROVAL
+  {
+    type: "AFFILIATE_APPROVED",
+    title: "🎉 You are now an Affiliate!",
+    message: "Your affiliate account is active. Start earning commission on your referrals!",
+    url: "/dashboard/refer-friend",
+    isDynamic: false,
+  },
 ];
 
 async function main() {

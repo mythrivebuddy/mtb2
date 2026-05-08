@@ -68,6 +68,7 @@ type ApiCreator = {
   currency: string;
   baseAmount: number;
   discountAmount: number;
+  netAmount: number;
   commissionAmount: number;
   payableAmount: number;
   holdingAmount: number;
@@ -78,6 +79,7 @@ type PayoutItem = {
   creatorName: string;
   creatorEmail: string;
   baseAmount: number;
+  netAmount: number;
   discountAmount: number;
   commissionAmount: number;
   pendingBalance: number;
@@ -102,7 +104,9 @@ type SortField =
   | "creatorName"
   | "pendingBalance"
   | "baseAmount"
-  | "commissionAmount";
+  | "commissionAmount"
+  | "discountAmount"
+  | "netAmount";
 type SortDir = "asc" | "desc";
 
 type DatePreset = "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM";
@@ -223,6 +227,7 @@ export default function AdminPayoutsPage() {
           creatorEmail: c.creator?.email || "-",
           baseAmount: Number(c.baseAmount || 0),
           discountAmount: Number(c.discountAmount || 0),
+          netAmount: Number(c.netAmount || 0),
           commissionAmount: Number(c.commissionAmount || 0),
           pendingBalance: Number(c.payableAmount || 0),
           holdingAmount: Number(c.holdingAmount || 0),
@@ -543,7 +548,7 @@ export default function AdminPayoutsPage() {
                   />
                 </TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="text-right">
+                <TableHead className="whitespace-nowrap text-center">
                   Base Amount
                   <SortButton
                     field="baseAmount"
@@ -552,6 +557,25 @@ export default function AdminPayoutsPage() {
                     onClick={() => toggleSort("baseAmount")}
                   />
                 </TableHead>
+                <TableHead className="text-right text-red-500">
+                  Discount
+                  <SortButton
+                    field="discountAmount"
+                    current={sortField}
+                    dir={sortDir}
+                    onClick={() => toggleSort("discountAmount")}
+                  />
+                </TableHead>
+                <TableHead className="text-right font-medium">
+                  Net
+                  <SortButton
+                    field="netAmount"
+                    current={sortField}
+                    dir={sortDir}
+                    onClick={() => toggleSort("netAmount")}
+                  />
+                </TableHead>
+
                 <TableHead className="text-right text-orange-500">
                   Commission
                   <SortButton
@@ -586,7 +610,7 @@ export default function AdminPayoutsPage() {
               ) : isError ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-12 text-red-500"
                   >
                     Failed to load payouts. Please try again.
@@ -595,7 +619,7 @@ export default function AdminPayoutsPage() {
               ) : filtered.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center py-12 text-muted-foreground"
                   >
                     No pending payouts.
@@ -644,7 +668,22 @@ export default function AdminPayoutsPage() {
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
+                    {/* ✅ Discount Amount */}
+                    <TableCell className="text-right text-sm text-red-500 whitespace-nowrap">
+                      <span className="cursor-default">
+                        {p.discountAmount > 0 ? "-" : ""}{" "}
+                        <CurrencyIcon currency={p.currency} />
+                        {fmt(p.discountAmount)}
+                      </span>
+                    </TableCell>
 
+                    {/* ✅ Net Amount */}
+                    <TableCell className="text-right text-sm font-medium whitespace-nowrap">
+                      <span className="cursor-default">
+                        <CurrencyIcon currency={p.currency} />
+                        {fmt(p.netAmount)}
+                      </span>
+                    </TableCell>
                     {/* Commission */}
                     <TableCell className="text-right text-sm text-orange-500">
                       <Tooltip>
@@ -679,7 +718,9 @@ export default function AdminPayoutsPage() {
                         href={`/admin/payouts/details/${p.creatorId}?currency=${p.currency}`}
                         target="_blank"
                       >
-                        <Button size="sm" variant="ghost">View</Button>
+                        <Button size="sm" variant="ghost">
+                          View
+                        </Button>
                       </Link>
                       <Button
                         size="sm"
@@ -740,6 +781,22 @@ export default function AdminPayoutsPage() {
                     <span>
                       <CurrencyIcon currency={selectedPayout.currency} />
                       {fmt(selectedPayout.baseAmount)}
+                    </span>
+                  </div>
+                  {selectedPayout.discountAmount > 0 && (
+                    <div className="flex justify-between text-red-500">
+                      <span>− Discount</span>
+                      <span>
+                        <CurrencyIcon currency={selectedPayout.currency} />
+                        {fmt(selectedPayout.discountAmount)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-medium">
+                    <span>Net Amount</span>
+                    <span>
+                      <CurrencyIcon currency={selectedPayout.currency} />
+                      {fmt(selectedPayout.netAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between text-orange-500">
