@@ -56,16 +56,7 @@ export async function createAffiliateEarningForSubscription({
     }
     console.log({ isAdmin });
     console.log("Admin Item IDs for affiliate earning:", adminItemIds);
-    const existing = await tx.affiliateEarningLedger.findFirst({
-      where: {
-        paymentOrderId: order.id,
-        contextType: order.contextType ?? "SUBSCRIPTION",
-        reversalOfId: null, // only original entry
-      },
-      select: { id: true },
-    });
-    console.log("🔁 Existing Affiliate Entry:", existing);
-    if (existing) return;
+  
 
     // 1️⃣ Fetch referred user
     const referredUser = await tx.user.findUnique({
@@ -106,7 +97,8 @@ export async function createAffiliateEarningForSubscription({
 
     // 3️⃣ Calculate base amount (EXCLUDING GST)
     let baseAmount = 0;
-
+    let discountAmount = 0;
+    let netAmount = 0;
     if (isStore) {
       const paymentOrder = await tx.paymentOrder.findUnique({
         where: { id: order.id },
@@ -143,42 +135,41 @@ export async function createAffiliateEarningForSubscription({
         const discount = item.discount || 0;
         const quantity = item.quantity || 1;
 
-        const baseAmount = (price - discount) * quantity;
-        if (baseAmount <= 0) continue;
+        const baseAmount = price * quantity;
+        const discountAmount = discount * quantity;
 
-        const earnedAmount = (baseAmount * affiliate.affiliatePercent) / 100;
+        const netAmount = Math.max(0, baseAmount - discountAmount);
+        if (netAmount <= 0) continue;
 
-        // ✅ ITEM-LEVEL IDEMPOTENCY CHECK
-        const existing = await tx.affiliateEarningLedger.findFirst({
+        // const earnedAmount = (baseAmount * affiliate.affiliatePercent) / 100;
+        const earnedAmount = (netAmount * affiliate.affiliatePercent) / 100;
+
+      
+
+        await tx.affiliateEarningLedger.upsert({
           where: {
-            paymentOrderId: order.id,
-            contextId: item.itemId,
-            contextType: "STORE_PRODUCT",
-            reversalOfId: null,
+            paymentOrderId_affiliateId_contextId_contextType_currency: {
+              paymentOrderId: order.id,
+              affiliateId: affiliate.id,
+              contextId: item.itemId,
+              contextType: "STORE_PRODUCT",
+              currency: order.currency,
+            },
           },
-          select: { id: true },
-        });
-
-        if (existing) {
-          console.log("⏭️ Skipping existing item:", item.itemId);
-          continue;
-        }
-
-        await tx.affiliateEarningLedger.create({
-          data: {
+          update: {},
+          create: {
             affiliateId: affiliate.id,
             referredUserId: referredUser.id,
             paymentOrderId: order.id,
 
-            contextId: item.itemId, // ✅ KEY FIX
+            contextId: item.itemId, 
             contextType: "STORE_PRODUCT",
 
             baseAmount,
-            discountAmount: discount * quantity,
+            discountAmount,
             commissionRate: affiliate.affiliatePercent,
             earnedAmount,
             currency: order.currency,
-
             commissionType,
           },
         });
@@ -193,19 +184,32 @@ export async function createAffiliateEarningForSubscription({
       return;
     } else {
       // ✅ existing logic (subscription / mmp / challenge)
-      baseAmount = (order.baseAmount || 0) - (order.discountApplied || 0);
+      baseAmount = order.baseAmount || 0;
+      discountAmount = order.discountApplied || 0;
+
+      netAmount = Math.max(0, baseAmount - discountAmount);
     }
     console.log({
       baseAmount,
       order,
     });
 
-    if (baseAmount <= 0) return;
+    if (netAmount <= 0) return;
 
-    const earnedAmount = (baseAmount * affiliate.affiliatePercent) / 100;
+    const earnedAmount = (netAmount * affiliate.affiliatePercent) / 100;
     // 4️⃣ Create earning
-    await tx.affiliateEarningLedger.create({
-      data: {
+    await tx.affiliateEarningLedger.upsert({
+      where: {
+        paymentOrderId_affiliateId_contextId_contextType_currency: {
+          paymentOrderId: order.id,
+          affiliateId: affiliate.id,
+          contextId: order.id,
+          contextType: order.contextType ?? "SUBSCRIPTION",
+          currency: order.currency,
+        },
+      },
+      update: {},
+      create: {
         affiliateId: affiliate.id,
         referredUserId: referredUser.id,
         paymentOrderId: order.id,
@@ -214,11 +218,10 @@ export async function createAffiliateEarningForSubscription({
         contextType: order.contextType ?? "SUBSCRIPTION",
 
         baseAmount,
-        discountAmount: order.discountApplied || 0,
+        discountAmount,
         commissionRate: affiliate.affiliatePercent,
         earnedAmount,
         currency: order.currency,
-
         commissionType: commissionType,
       },
     });

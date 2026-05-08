@@ -93,11 +93,14 @@ export async function handleChallengePayment(
 
   const commissionPercent = Number(config?.commissionPercent ?? 0);
   // ✅ 4. Compute financials
-  const baseAmount =
-    (order.baseAmount ?? order.totalAmount) - (order.discountApplied ?? 0);
+  const baseAmount = order.baseAmount ?? order.totalAmount; // Pre-discount (Gross)
+  const discountAmount = order.discountApplied ?? 0;
+  
+  // The amount the platform fee is actually calculated on (Net Amount)
+  const netAmount = Math.max(0, baseAmount - discountAmount); 
 
-  const platformFee = (baseAmount * commissionPercent) / 100;
-  const earnedAmount = baseAmount - platformFee;
+  const platformFee = (netAmount * commissionPercent) / 100;
+  const earnedAmount = netAmount - platformFee;
 
   // ✅ 5. Create ledger (idempotent)
   await tx.creatorEarningLedger.upsert({
@@ -117,6 +120,7 @@ export async function handleChallengePayment(
       contextType: "CHALLENGE",
 
       baseAmount,
+      discountAmount,
       commissionRate: commissionPercent,
       platformFee,
       earnedAmount,

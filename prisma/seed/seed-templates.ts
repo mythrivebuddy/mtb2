@@ -1441,10 +1441,10 @@ async function main() {
   `.trim(),
     },
     {
-  templateId: "invoice-cmp",
-  subject: "You're In 🚀 {{programName}}",
-  description: "Program purchase invoice email with attachment.",
-  htmlContent: `
+      templateId: "invoice-cmp",
+      subject: "You're In 🚀 {{programName}}",
+      description: "Program purchase invoice email with attachment.",
+      htmlContent: `
 
 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
 
@@ -1521,8 +1521,78 @@ async function main() {
 
 </div>
 
-`
-}
+`,
+    },
+    {
+      templateId: "affiliate-welcome",
+      subject: "You're Now an Affiliate! 🎉 Start Earning Today",
+      description:
+        "Email sent when a user is granted affiliate status by the admin.",
+      htmlContent: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+
+  <!-- HEADER (same pattern as order + challenge templates) -->
+  <div style="padding:28px;text-align:center;background:linear-gradient(90deg,#3b82f6,#4f46e5);">
+    <h1 style="margin:0;color:white;font-size:24px;">You're Now an Affiliate 🎉</h1>
+    <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">
+      Start earning by sharing MyThriveBuddy
+    </p>
+  </div>
+
+  <!-- BODY -->
+  <div style="padding:28px;">
+
+    <p style="font-size:15px;color:#374151;">
+      Hi <strong>{{name}}</strong>,
+    </p>
+
+    <p style="color:#4b5563;">
+      You’ve been officially approved as a <strong>MyThriveBuddy Affiliate</strong>.
+      You can now earn commission by referring users to the platform.
+    </p>
+
+    <!-- EARNINGS CARD (matches your existing card style) -->
+  
+
+    <!-- VALUE PROP -->
+    <p style="color:#374151;font-size:14px;">
+      Every successful referral earns you commission. The earlier you start, the faster you grow your earnings.
+    </p>
+
+    <!-- CTA (same style as order-placed template) -->
+    <div style="text-align:center;margin:28px 0;">
+      <a href="{{referEarnUrl}}" target="_blank" style="
+        background:linear-gradient(90deg,#3b82f6,#4f46e5);
+        color:white;
+        padding:14px 32px;
+        border-radius:8px;
+        text-decoration:none;
+        font-weight:600;
+        font-size:15px;
+        display:inline-block;
+      ">
+        Start Referring & Earning →
+      </a>
+    </div>
+
+    <!-- CLOSING -->
+    <p style="margin-top:30px;color:#374151;">
+      Let’s grow together 🚀<br/>
+      <strong>Team MyThriveBuddy</strong>
+    </p>
+
+  </div>
+
+  <!-- FOOTER (consistent with your system) -->
+  <div style="background:#f9fafb;padding:16px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="margin:0;color:#9ca3af;font-size:12px;">
+      © My Thrive Buddy. All rights reserved.
+    </p>
+  </div>
+
+</div>
+`.trim(),
+    },
   ];
 
   let createdCount = 0;
