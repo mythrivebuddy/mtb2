@@ -4,13 +4,10 @@ import { Loader2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { checkRole } from "@/lib/utils/auth";
 import { checkFeature } from "@/lib/access-control/checkFeature";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { Session } from "next-auth";
 
-async function getMiracleLogs() {
-  const session = await checkRole("USER");
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
+async function getMiracleLogs(session: Session) {
   const logs = await prisma.miracleLog.findMany({
     where: {
       userId: session.user.id,
@@ -27,12 +24,7 @@ async function getMiracleLogs() {
   }));
 }
 
-async function getStreak() {
-  const session = await checkRole("USER");
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
-
+async function getStreak(session: Session) {
   const streak = await prisma.streak.findUnique({
     where: {
       userId_type: {
@@ -47,43 +39,57 @@ async function getStreak() {
 
   return { count: streak?.miracle_log_count || 0 };
 }
-async function getMiracleLogDailyLimit() {
-  const session = await checkRole("USER");
-  if (!session?.user?.id) {
-    throw new Error("Unauthorized");
-  }
+async function getMiracleLogDailyLimit(session: Session) {
+  const userType = normalizeUserType(session.user.userType);
 
-  const featureResult = checkFeature({
-    feature: "miracleLog",
-    user: session.user,
-  });
-
-   if (
-    !featureResult.allowed ||
-    typeof featureResult.config !== "object"
-  ) {
+  if (!userType) {
     return {
       dailyLimit: 0,
       isUpgradeFlagShow: false,
     };
   }
 
-  const config = featureResult.config as {
-    dailyLimit: number;
-    isUpgradeFlagShow?: boolean;
-  };
+  const featureResult = await checkFeature({
+    feature: "miracleLog",
+    user: {
+      userType,
+      membership: session.user.membership ?? undefined,
+    },
+  });
 
+  const config =
+    featureResult.config && typeof featureResult.config === "object"
+      ? (featureResult.config as {
+          dailyLimit: number;
+          isUpgradeFlagShow?: boolean;
+        })
+      : null;
+
+  //! if NOT allowed → show upgrade flag (from admin config)
+  if (!featureResult.allowed) {
+    return {
+      dailyLimit: 0,
+      isUpgradeFlagShow: config?.isUpgradeFlagShow ?? true,
+    };
+  }
+
+  //! if allowed → normal behavior
   return {
-    dailyLimit: config.dailyLimit,
-    isUpgradeFlagShow: config.isUpgradeFlagShow ?? false,
+    dailyLimit: config?.dailyLimit ?? 0,
+    isUpgradeFlagShow: config?.isUpgradeFlagShow ?? false,
   };
 }
 
 export default async function MiracleLogPage() {
+  const session = await checkRole("USER");
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
   const [logs, streak, miracleLogConfig] = await Promise.all([
-    getMiracleLogs(),
-    getStreak(),
-    getMiracleLogDailyLimit(),
+    getMiracleLogs(session),
+    getStreak(session),
+    getMiracleLogDailyLimit(session),
   ]);
 
   return (

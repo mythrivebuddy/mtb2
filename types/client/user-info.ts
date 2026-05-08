@@ -20,7 +20,11 @@ export interface IUser {
   plan?: IPlan | null;
   isOnline : boolean;
   image?:string;
+  isAffiliate?: boolean;
+  affiliatePercent?: number;
+  affiliateCommissionType?: "MTB" | "SUBSCRIPTION";
 }
+
 export interface IBlockUserResponse {
   message: string;
   user: IUser;

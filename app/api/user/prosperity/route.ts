@@ -5,13 +5,14 @@ import { prisma } from "@/lib/prisma";
 import { getJpToDeduct } from "@/lib/utils/jp";
 import { getProsperityAppliedNotificationData } from "@/lib/utils/notifications";
 import { checkFeature } from "@/lib/access-control/checkFeature";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 export async function POST(request: Request) {
   try {
     // Check user role and get session
     const session = await checkRole(
       "USER",
-      "You are not authorized for this action"
+      "You are not authorized for this action",
     );
     const userId = session.user.id;
 
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     if (!title || !description) {
       return NextResponse.json(
         { error: "Title and description are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     if (!prosperityActivity) {
       return NextResponse.json(
         { error: "Prosperity drop activity not configured" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -51,58 +52,55 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    
-    
-    const featureCheck = checkFeature({
+    const userType = normalizeUserType(user.userType);
+    const featureCheck = await checkFeature({
       feature: "prosperityDrops",
       user: {
-        userType: session.user.userType,
-        membership: session.user.membership, // FREE | PAID
+        userType:userType ?? undefined,
+        membership: user.membership,
       },
     });
-    
-    
+    if (!featureCheck.config) {
+      return NextResponse.json(
+        { error: "Feature config missing" },
+        { status: 500 },
+      );
+    }
     if (!featureCheck.allowed) {
       return NextResponse.json(
         {
-          message:
-            "Prosperity Drops are available only for coaches on a paid plan. Please upgrade to apply.",
+          error: featureCheck.reason || "Feature not available",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
-
-    const { eligible } = featureCheck.config as {
-      eligible: boolean;
+    const config = featureCheck.config as {
+      eligible?: boolean;
     };
 
-    if (!eligible) {
+    if (!config?.eligible) {
       return NextResponse.json(
         {
-          message:
-            "Prosperity Drops are available only for paid plans. Please upgrade your plan to apply.",
+          error: "You are not eligible to use this feature",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
-
-
     const jpRequired = getJpToDeduct(user, prosperityActivity);
 
     // Check if user has a pending application
-  const hasNonFinalApplication = user.prosperityDrops.some(
-  (drop) =>
-    drop.status !== ProsperityDropStatus.APPROVED &&
-    drop.status !== ProsperityDropStatus.DISAPPROVED
-);
+    const hasNonFinalApplication = user.prosperityDrops.some(
+      (drop) =>
+        drop.status !== ProsperityDropStatus.APPROVED &&
+        drop.status !== ProsperityDropStatus.DISAPPROVED,
+    );
 
-if (hasNonFinalApplication) {
-  return NextResponse.json(
-    { error: "You already have a pending prosperity drop application." },
-    { status: 400 }
-  );
-}
-
+    if (hasNonFinalApplication) {
+      return NextResponse.json(
+        { error: "You already have a pending prosperity drop application." },
+        { status: 400 },
+      );
+    }
 
     // Check if user has enough JP
     if (user.jpBalance < jpRequired) {
@@ -141,13 +139,13 @@ if (hasNonFinalApplication) {
 
     return NextResponse.json(
       { message: "Prosperity drop application created successfully" },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -156,7 +154,7 @@ export async function GET() {
   try {
     const session = await checkRole(
       "USER",
-      "You are not authorized for this action"
+      "You are not authorized for this action",
     );
     const userId = session.user.id;
 
@@ -175,7 +173,7 @@ export async function GET() {
     if (!prosperityApplications.length) {
       return NextResponse.json(
         { message: "No prosperity drop applications found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -184,7 +182,7 @@ export async function GET() {
     console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

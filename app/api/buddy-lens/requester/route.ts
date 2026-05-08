@@ -7,6 +7,7 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 import { checkRole } from "@/lib/utils/auth";
 import { LimitType, UNLIMITED } from "@/lib/access-control/featureConfig";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 // Helper to return error response
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       jpCost,
       // expiresAt,
     } = body;
-  
+
     if (
       !requesterId ||
       !socialMediaUrl ||
@@ -57,16 +58,22 @@ export async function POST(req: NextRequest) {
 
     // Validate requesterId exists and has USER role
     const session = await checkRole("USER");
-    const featureCheck = checkFeature({
+    const userType = normalizeUserType(session.user.userType);
+    if (!userType) {
+      return errorResponse("INVALID_USER_TYPE", 400);
+    }
+    const featureCheck = await checkFeature({
       feature: "buddyLens",
       user: {
-        userType: session.user.userType,   // COACH / ENTHUSIAST
-        membership: session.user.membership, // FREE / PAID
+        userType, // COACH / ENTHUSIAST
+        membership: session.user.membership ?? undefined, // FREE / PAID
       },
     });
-
     if (!featureCheck.allowed) {
-      return errorResponse("BuddyLens access not allowed", 403);
+      return errorResponse(featureCheck.reason || "FEATURE_NOT_AVAILABLE", 403);
+    }
+    if (!featureCheck.config) {
+      return errorResponse("FEATURE_CONFIG_MISSING", 500);
     }
     const {
       requestLimitType,
@@ -121,7 +128,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-
     const requester = await prisma.user.findUnique({
       where: { id: requesterId },
       select: {
@@ -138,12 +144,12 @@ export async function POST(req: NextRequest) {
     if (requester.role !== "USER") {
       return errorResponse("Requester must have USER role", 403);
     }
-    
+
     // Validate if the requester has enough Joy Pearls to set for the review
     if (requester.jpBalance < jpCost) {
       return errorResponse(
         "Insufficient Growth Points to create the request",
-        400
+        400,
       );
     }
 
@@ -186,13 +192,13 @@ export async function POST(req: NextRequest) {
       if (filteredReviewers.length !== reviewers.length) {
         console.error(
           "Requester included in reviewers despite filter:",
-          requesterId
+          requesterId,
         );
       }
       if (filteredReviewers.some((r) => r.id === requesterId)) {
         return errorResponse(
           "Internal error: Requester included in reviewers",
-          500
+          500,
         );
       }
 
@@ -208,19 +214,19 @@ export async function POST(req: NextRequest) {
         await prisma.userNotification.createMany({
           data: notifications,
         });
-      } 
+      }
 
       return request;
     });
 
     return NextResponse.json(
       { message: "Request created successfully", data: newRequest },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error(
       "POST Error:",
-      error instanceof Error ? error.message : "Unknown error"
+      error instanceof Error ? error.message : "Unknown error",
     );
     return errorResponse("Failed to create request", 500);
   }
@@ -419,7 +425,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(
       { message: "Request updated successfully", data: updatedRequest },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("PUT Error:", error);

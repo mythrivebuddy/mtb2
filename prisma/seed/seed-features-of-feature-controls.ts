@@ -198,6 +198,7 @@ const featureConfig = {
         ENTHUSIAST: {
           createLimit: 3,
           groupChatLimit: -1,
+          commissionPercent: 25,
           joinLimit: -1,
           limitType: "MONTHLY" as LimitType,
           isUpgradeFlagShow: true,
@@ -217,6 +218,7 @@ const featureConfig = {
           createLimit: 10,
           canCreatePaidChallenge: false,
           canIssueCertificate: false,
+          commissionPercent: 25,
           groupChatLimit: 1,
           joinLimit: -1,
           limitType: "MONTHLY" as LimitType,

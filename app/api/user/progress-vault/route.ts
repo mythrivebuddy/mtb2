@@ -6,6 +6,7 @@ import { checkRole } from "@/lib/utils/auth";
 import { startOfDay } from "date-fns";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 export async function GET() {
   try {
@@ -21,13 +22,16 @@ export async function GET() {
         userId: session.user.id,
         deletedAt: null, // Filter out soft-deleted logs
       },
-      orderBy: { createdAt: 'desc' }, // Optional: sort by creation date
+      orderBy: { createdAt: "desc" }, // Optional: sort by creation date
     });
 
     return NextResponse.json(logs);
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch logs" },
+      { status: 500 },
+    );
   }
 }
 
@@ -41,26 +45,36 @@ export async function POST(req: Request) {
 
     const { content } = await req.json();
 
-    if (!content || typeof content !== 'string') {
-      return NextResponse.json({ message: "Valid content is required" }, { status: 400 });
+    if (!content || typeof content !== "string") {
+      return NextResponse.json(
+        { message: "Valid content is required" },
+        { status: 400 },
+      );
     }
 
     const today = startOfDay(new Date());
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const featureCheck = checkFeature({
+    const userType = normalizeUserType(session.user.userType);
+
+    const featureCheck = await checkFeature({
       feature: "onePercentProgressVault",
       user: {
-        userType: session.user.userType,
-        membership: session.user.membership, // "FREE" | "PAID"
+        userType: userType ?? undefined,
+        membership: session.user.membership ?? undefined,
       },
     });
-
     if (!featureCheck.allowed) {
       return NextResponse.json(
         { message: "Feature not available for your plan" },
-        { status: 403 }
+        { status: 403 },
+      );
+    }
+    if (!featureCheck.config || typeof featureCheck.config !== "object") {
+      return NextResponse.json(
+        { error: "Feature config missing" },
+        { status: 500 },
       );
     }
 
@@ -72,16 +86,17 @@ export async function POST(req: Request) {
         userId: session.user.id,
         createdAt: {
           gte: today,
-          lte: endOfDay
+          lte: endOfDay,
         },
-        deletedAt: null // Only count non-deleted logs
-      }
+        deletedAt: null, // Only count non-deleted logs
+      },
     });
 
     const limitResponse = await enforceLimitResponse({
       limit: dailyLimit,
       currentCount: activeLogsToday,
-      message: "Daily Progress Vault limit reached. Upgrade to increase your limit.",
+      message:
+        "Daily Progress Vault limit reached. Upgrade to increase your limit.",
     });
 
     if (limitResponse) return limitResponse;
@@ -107,7 +122,7 @@ export async function POST(req: Request) {
             userId: session.user.id,
             createdAt: {
               gte: today,
-              lte: endOfDay
+              lte: endOfDay,
             },
             jpPointsAssigned: true,
           },
@@ -118,7 +133,8 @@ export async function POST(req: Request) {
         if (logsWithJpToday.length >= 3) {
           return NextResponse.json({
             log,
-            warning: "You have already received JP points for 3 logs today. No additional JP points will be awarded.",
+            warning:
+              "You have already received JP points for 3 logs today. No additional JP points will be awarded.",
           });
         }
 
@@ -135,8 +151,8 @@ export async function POST(req: Request) {
             where: {
               userId_type: {
                 userId: session.user.id,
-                type: StreakType.PROGRESS_VAULT
-              }
+                type: StreakType.PROGRESS_VAULT,
+              },
             },
           });
 
@@ -161,8 +177,12 @@ export async function POST(req: Request) {
               },
             });
           } else {
-            const lastLogDate = startOfDay(new Date(streak.progress_vault_last_at!));
-            const daysSinceLastLog = Math.floor((today.getTime() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24));
+            const lastLogDate = startOfDay(
+              new Date(streak.progress_vault_last_at!),
+            );
+            const daysSinceLastLog = Math.floor(
+              (today.getTime() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24),
+            );
 
             if (daysSinceLastLog > 1) {
               // Reset streak if more than 1 day has passed
@@ -170,8 +190,8 @@ export async function POST(req: Request) {
                 where: {
                   userId_type: {
                     userId: session.user.id,
-                    type: StreakType.PROGRESS_VAULT
-                  }
+                    type: StreakType.PROGRESS_VAULT,
+                  },
                 },
                 data: {
                   progress_vault_count: 1,
@@ -195,8 +215,8 @@ export async function POST(req: Request) {
                 where: {
                   userId_type: {
                     userId: session.user.id,
-                    type: StreakType.PROGRESS_VAULT
-                  }
+                    type: StreakType.PROGRESS_VAULT,
+                  },
                 },
                 data: {
                   progress_vault_count: newStreak,
@@ -217,13 +237,17 @@ export async function POST(req: Request) {
               // Check for streak rewards
               let rewardActivity: ActivityType | null = null;
               if (newStreak === 7) {
-                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_7_DAYS;
+                rewardActivity =
+                  ActivityType.PROGRESS_VAULT_STREAK_REWARD_7_DAYS;
               } else if (newStreak === 21) {
-                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_21_DAYS;
+                rewardActivity =
+                  ActivityType.PROGRESS_VAULT_STREAK_REWARD_21_DAYS;
               } else if (newStreak === 45) {
-                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_45_DAYS;
+                rewardActivity =
+                  ActivityType.PROGRESS_VAULT_STREAK_REWARD_45_DAYS;
               } else if (newStreak === 90) {
-                rewardActivity = ActivityType.PROGRESS_VAULT_STREAK_REWARD_90_DAYS;
+                rewardActivity =
+                  ActivityType.PROGRESS_VAULT_STREAK_REWARD_90_DAYS;
               }
 
               if (rewardActivity) {
@@ -234,11 +258,15 @@ export async function POST(req: Request) {
         }
       } catch (error) {
         // If the error is about daily JP limit, we still want to return the log
-        if (error instanceof Error && error.message.includes("Daily JP limit")) {
+        if (
+          error instanceof Error &&
+          error.message.includes("Daily JP limit")
+        ) {
           console.log("Daily JP limit reached, but log was created");
           return NextResponse.json({
             log,
-            warning: "Progress Vault created, but you've reached the daily JP limit of 150",
+            warning:
+              "Progress Vault created, but you've reached the daily JP limit of 150",
           });
         } else {
           // For other errors, rethrow
@@ -255,7 +283,7 @@ export async function POST(req: Request) {
     console.error(error);
     return NextResponse.json(
       { error: "Failed to create log" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

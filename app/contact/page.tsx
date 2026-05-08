@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   description: "Get in touch with the MyThriveBuddy team",
 };
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: { type: string };
+}) {
+  const resolvedSearchParams = await searchParams;
+  const type = resolvedSearchParams?.type as string | undefined;
   return (
     <>
       {/* 
@@ -26,7 +32,7 @@ export default function ContactPage() {
               us a message and we&apos;ll respond as soon as possible.
             </p>
           </div>
-          <ContactForm />
+          <ContactForm type={type || ""} />
         </div>
       </AppLayout>
       {/* </div>

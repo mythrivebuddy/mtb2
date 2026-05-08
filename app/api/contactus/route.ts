@@ -28,7 +28,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
         { message: "All fields are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!verificationResponse.data.success) {
       return NextResponse.json(
         { message: "Captcha verification failed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -57,9 +57,9 @@ export async function POST(request: Request): Promise<Response> {
         });
 
         if (user) {
-          let activityType: ActivityType;
+          let activityType: ActivityType | null;
           let jpAmount: number;
-          
+
           // Get the current JP amounts from the activity table
           const activityData = await prisma.activity.findUnique({
             where: { activity: ActivityType.GENERAL_FEEDBACK },
@@ -69,6 +69,10 @@ export async function POST(request: Request): Promise<Response> {
             case "general":
               activityType = ActivityType.GENERAL_FEEDBACK;
               jpAmount = activityData?.jpAmount || 50;
+              break;
+            case "affiliate":
+              activityType = null;
+              jpAmount = 0;
               break;
             case "feature":
               activityType = ActivityType.FEATURE_REQUEST;
@@ -88,9 +92,11 @@ export async function POST(request: Request): Promise<Response> {
               activityType = ActivityType.GENERAL_FEEDBACK;
               jpAmount = activityData?.jpAmount || 50;
           }
-
-          await assignJp(user, activityType);
-          jpMessage = ` You've earned ${jpAmount} Growth Points for your ${subject} feedback!`;
+          if (activityType !== null && jpAmount > 0) {
+            await assignJp(user, activityType);
+            jpMessage = ` You've earned ${jpAmount} Growth Points for your ${subject} feedback!`;
+          }
+          // await assignJp(user, activityType);
         }
       }
     } catch (jpError) {
@@ -102,7 +108,7 @@ export async function POST(request: Request): Promise<Response> {
     const senderEmail = process.env.CONTACT_SENDER_EMAIL;
     const adminEmail = process.env.ADMIN_EMAIL;
     const brevoApiKey = process.env.BREVO_API_KEY;
-    
+
     if (!senderEmail || !adminEmail || !brevoApiKey) {
       throw new Error("Missing necessary environment variables");
     }
@@ -126,13 +132,17 @@ export async function POST(request: Request): Promise<Response> {
         Thank you for reaching out to <strong>MyThriveBuddy</strong>. We've received your message and our team will get back to you as soon as possible.
       </p>
 
-      ${jpMessage ? `
+      ${
+        jpMessage
+          ? `
         <div style="background-color: #e6ffed; padding: 16px; border-radius: 8px; border-left: 5px solid #38a169; margin-top: 20px;">
           <p style="color: #276749; margin: 0; font-size: 15px;">
             ${jpMessage}
           </p>
         </div>
-      ` : ''}
+      `
+          : ""
+      }
 
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
         <p style="color: #a0aec0; font-size: 13px;">
@@ -145,7 +155,6 @@ export async function POST(request: Request): Promise<Response> {
     </div>
   </div>
 `,
-
     };
 
     const adminEmailPayload = {
@@ -171,14 +180,29 @@ export async function POST(request: Request): Promise<Response> {
         </div>
       </div>
 
-      ${jpMessage ? `
+      ${
+        jpMessage
+          ? `
         <div style="background-color: #e6ffed; padding: 16px; border-radius: 8px; border-left: 5px solid #38a169; margin-top: 20px;">
           <p style="color: #276749; margin: 0; font-size: 15px;">
             ✅ User earned Growth Points for this feedback: <strong>${jpMessage}</strong>
           </p>
         </div>
-      ` : ''}
-
+      `
+          : ""
+      }
+      ${
+      subject.toLowerCase() === "affiliate"
+          ? `
+    <div style="margin-top: 20px; text-align: center;">
+      <a href="${process.env.NEXTAUTH_URL}/admin/user-info?email=${encodeURIComponent(email)}" 
+       style="display: inline-block; background-color: #1E2875; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 15px; font-weight: 600;">
+      ⭐ Make Affiliate
+      </a>
+      </div>
+`
+    : ""
+}
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
         <p style="color: #718096; font-size: 13px;">
           📅 Received at: ${new Date().toLocaleString()}
@@ -189,8 +213,7 @@ export async function POST(request: Request): Promise<Response> {
       </div>
     </div>
   </div>
-`
-
+`,
     };
 
     // Send emails
@@ -201,19 +224,19 @@ export async function POST(request: Request): Promise<Response> {
       console.error("Email sending error:", emailError);
       return NextResponse.json(
         { message: "Failed to send emails. Please try again later." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json(
       { message: `Your message has been sent successfully!${jpMessage}` },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Contact API error:", error);
     return NextResponse.json(
       { message: "An unexpected error occurred. Please try again later." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

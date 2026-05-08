@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { addDays, format, isAfter } from "date-fns";
 import Link from "next/link";
 
 export interface Transaction {
@@ -29,7 +29,13 @@ export interface Transaction {
     joinerId?: string;
     joinerName?: string;
     programName?: string;
+    buyerId?: string;
+    buyerName?: string;
+    productName?: string;
     invoiceUrl?: string;
+    referredUserId?: string;
+    referredUserName?: string;
+    contextType?: string;
   };
   activity: {
     activity: string;
@@ -54,11 +60,13 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const data = row.original;
       const meta = data.activityMeta;
-      const userId = data.activityMeta?.userId || data.activityMeta?.joinerId;
+      const userId = meta?.userId || meta?.joinerId || meta?.buyerId;
 
-      const userName =
-        data.activityMeta?.userName || data.activityMeta?.joinerName;
+      const userName = meta?.userName || meta?.joinerName || meta?.buyerName;
+
       const title = meta?.challengeTitle || meta?.programName;
+
+      // ✅ Challenge / MMP
       if (userId && userName && title) {
         return (
           <div>
@@ -74,6 +82,67 @@ export const columns: ColumnDef<Transaction>[] = [
         );
       }
 
+      // ✅ STORE PURCHASE (NEW)
+      if (meta?.buyerId && meta?.buyerName && meta?.productName) {
+        return (
+          <div>
+            <Link
+              href={`/profile/${meta.buyerId}`}
+              className="hover:underline text-blue-700 hover:text-blue-800"
+              target="_blank"
+            >
+              {meta.buyerName}
+            </Link>{" "}
+            bought {meta.productName}
+          </div>
+        );
+      }
+      // ✅ AFFILIATE EARNING (NEW)
+      // ✅ AFFILIATE EARNING (FIXED)
+      if (
+        data.activity.activity === "AFFILIATE_EARNING" &&
+        meta?.referredUserId
+      ) {
+        const userName =
+          meta.referredUserName || data.activity.displayName.split(" ")[0];
+
+        let actionText = "did an action via your referral";
+
+        if (meta.contextType === "SUBSCRIPTION") {
+          actionText = data.activity.displayName;
+        }
+
+        if (meta.contextType === "MMP_PROGRAM") {
+          actionText = meta.programName
+            ? `joined ${meta.programName.trim()} using your referral`
+            : "joined a program using your referral";
+        }
+
+        if (meta.contextType === "CHALLENGE") {
+          actionText = meta.challengeTitle
+            ? `joined ${meta.challengeTitle} using your referral`
+            : "joined a challenge using your referral";
+        }
+
+        if (meta.contextType === "STORE_PRODUCT") {
+          actionText = meta.productName
+            ? `purchased ${meta.productName} using your referral`
+            : "purchased a product using your referral";
+        }
+
+        return (
+          <div>
+            <Link
+              href={`/profile/${meta.referredUserId}`}
+              className="hover:underline text-blue-700 hover:text-blue-800"
+              target="_blank"
+            >
+              {userName}
+            </Link>{" "}
+            {actionText}
+          </div>
+        );
+      }
       return (
         <div className="flex items-center gap-2">
           <span>{data.activity.displayName}</span>
@@ -100,10 +169,12 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const data = row.original;
       const isCredit = data.activity.transactionType === "CREDIT";
+      const availableDate = addDays(new Date(data.createdAt), 10);
+      const isUnlocked = isAfter(new Date(), availableDate);
 
       if (data.breakdown) {
         return (
-          <div className="text-sm text-start">
+          <div className="text-sm text-start space-y-1">
             <div
               className={`font-medium ${
                 isCredit ? "text-green-600" : "text-red-600"
@@ -124,14 +195,30 @@ export const columns: ColumnDef<Transaction>[] = [
               {" - "}
               {data.currency} {data.breakdown.commission.toFixed(2)} commission
             </div>
+            {isCredit && !isUnlocked && (
+              <div className="text-xs text-yellow-600">
+                Available after {format(availableDate, "MMM d, yyyy")}
+              </div>
+            )}
           </div>
         );
       }
 
       return (
-        <span className={isCredit ? "text-green-600" : "text-red-600"}>
-          {isCredit ? "+" : "-"} {data.currency} {data.jpAmount}
-        </span>
+        <div className="space-y-1">
+          <span className={isCredit ? "text-green-600" : "text-red-600"}>
+            {isCredit ? "+" : "-"} {data.currency} {data.jpAmount}
+          </span>
+
+          {/* ✅ HOLDING BADGE */}
+          {isCredit &&
+            !isUnlocked &&
+            (data.currency === "INR" || data.currency === "USD") && (
+              <div className="text-xs text-yellow-600">
+                Available after {format(availableDate, "MMM d, yyyy")}
+              </div>
+            )}
+        </div>
       );
     },
   },

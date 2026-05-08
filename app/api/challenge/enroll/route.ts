@@ -13,6 +13,7 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 import { LimitType } from "@/lib/access-control/featureConfig";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { inngest } from "@/lib/inngest";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 // Define this interface near the top of the file or in your featureConfig types
 interface ChallengesFeatureConfig {
@@ -80,11 +81,11 @@ export async function POST(request: Request) {
     // 🚦 Enforce join limit ONLY for MANUAL challenges
     // 🚦 Enforce join limit ONLY for MANUAL challenges
     if (challengeToJoin.joinMode === "MANUAL") {
-      const featureCheck = checkFeature({
+      const featureCheck = await checkFeature({
         feature: "challenges",
         user: {
-          userType: joiner.userType,
-          membership: joiner.membership,
+          userType: normalizeUserType(joiner.userType) ?? undefined,
+          membership: joiner.membership ?? undefined,
         },
       });
 
@@ -95,8 +96,16 @@ export async function POST(request: Request) {
         );
       }
 
-      const { joinLimit, limitType, isUpgradeFlagShow } =
-        featureCheck.config as ChallengesFeatureConfig;
+      if (!featureCheck.config || typeof featureCheck.config !== "object") {
+        return NextResponse.json(
+          { error: "Feature config missing" },
+          { status: 500 },
+        );
+      }
+
+      const config = featureCheck.config as ChallengesFeatureConfig;
+
+      const { joinLimit, limitType, isUpgradeFlagShow = false } = config;
 
       const periodStart = getLimitPeriodStart(limitType);
 

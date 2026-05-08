@@ -6,6 +6,7 @@ import { checkRole } from "@/lib/utils/auth";
 import { startOfDay } from "date-fns";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { UNLIMITED } from "@/lib/access-control/featureConfig";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 type MiracleLogPlanConfig = {
   dailyLimit: number;
@@ -25,16 +26,18 @@ export async function GET() {
         userId: session.user.id,
         deletedAt: null, // Filter out soft-deleted logs
       },
-      orderBy: { createdAt: 'desc' }, // Optional: sort by creation date
+      orderBy: { createdAt: "desc" }, // Optional: sort by creation date
     });
 
     return NextResponse.json(logs);
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Failed to fetch logs" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch logs" },
+      { status: 500 },
+    );
   }
 }
-
 
 export async function POST(req: Request) {
   try {
@@ -44,22 +47,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const featureResult = checkFeature({
+    const userType = normalizeUserType(session.user.userType);
+
+    if (!userType) {
+      return NextResponse.json(
+        { error: "USER_TYPE_NOT_SUPPORTED" },
+        { status: 403 },
+      );
+    }
+
+    const featureResult = await checkFeature({
       feature: "miracleLog",
-      user: session.user,
+      user: {
+        userType,
+        membership: session.user.membership ?? undefined,
+      },
     });
 
     if (!featureResult.allowed) {
       return NextResponse.json(
         { error: featureResult.reason },
-        { status: 403 }
+        { status: 403 },
       );
     }
-
+    if (!featureResult.config || typeof featureResult.config !== "object") {
+      return NextResponse.json(
+        { error: "Miracle log configuration not found" },
+        { status: 500 },
+      );
+    }
     const { content } = await req.json();
 
-    if (!content || typeof content !== 'string') {
-      return NextResponse.json({ message: "Valid content is required" }, { status: 400 });
+    if (!content || typeof content !== "string") {
+      return NextResponse.json(
+        { message: "Valid content is required" },
+        { status: 400 },
+      );
     }
 
     const today = startOfDay(new Date());
@@ -72,10 +95,10 @@ export async function POST(req: Request) {
         userId: session.user.id,
         createdAt: {
           gte: today,
-          lte: endOfDay
+          lte: endOfDay,
         },
-        deletedAt: null
-      }
+        deletedAt: null,
+      },
     });
 
     // if (activeLogsToday >= 3) {
@@ -84,32 +107,25 @@ export async function POST(req: Request) {
     //     { status: 400 }
     //   );
     // }
-    const planConfig =
-      featureResult.allowed && typeof featureResult.config === "object"
-        ? (featureResult.config as MiracleLogPlanConfig)
-        : null;
+    const planConfig = featureResult.config as MiracleLogPlanConfig;
 
     if (!planConfig) {
       return NextResponse.json(
         { error: "Miracle log configuration not found" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     const { dailyLimit } = planConfig;
 
-    if (
-      dailyLimit !== UNLIMITED &&
-      activeLogsToday >= dailyLimit
-    ) {
+    if (dailyLimit !== UNLIMITED && activeLogsToday >= dailyLimit) {
       return NextResponse.json(
         {
           message: `Daily limit of ${dailyLimit} miracle logs reached`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
-
 
     // Create a new log
     const log = await prisma.miracleLog.create({
@@ -132,7 +148,7 @@ export async function POST(req: Request) {
             userId: session.user.id,
             createdAt: {
               gte: today,
-              lte: endOfDay
+              lte: endOfDay,
             },
             jpPointsAssigned: true,
           },
@@ -141,7 +157,8 @@ export async function POST(req: Request) {
         if (logsWithJpToday.length >= 3) {
           return NextResponse.json({
             log,
-            warning: "You have already received JP points for 3 logs today. No additional JP points will be awarded.",
+            warning:
+              "You have already received JP points for 3 logs today. No additional JP points will be awarded.",
           });
         }
 
@@ -158,8 +175,8 @@ export async function POST(req: Request) {
             where: {
               userId_type: {
                 userId: session.user.id,
-                type: StreakType.MIRACLE_LOG
-              }
+                type: StreakType.MIRACLE_LOG,
+              },
             },
           });
 
@@ -184,8 +201,15 @@ export async function POST(req: Request) {
               },
             });
           } else {
-            const lastLogDate = streak.miracle_log_last_at ? startOfDay(new Date(streak.miracle_log_last_at)) : null;
-            const daysSinceLastLog = lastLogDate ? Math.floor((today.getTime() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+            const lastLogDate = streak.miracle_log_last_at
+              ? startOfDay(new Date(streak.miracle_log_last_at))
+              : null;
+            const daysSinceLastLog = lastLogDate
+              ? Math.floor(
+                  (today.getTime() - lastLogDate.getTime()) /
+                    (1000 * 60 * 60 * 24),
+                )
+              : null;
 
             if (daysSinceLastLog === null || daysSinceLastLog > 1) {
               // Reset streak to 0 if broken
@@ -193,8 +217,8 @@ export async function POST(req: Request) {
                 where: {
                   userId_type: {
                     userId: session.user.id,
-                    type: StreakType.MIRACLE_LOG
-                  }
+                    type: StreakType.MIRACLE_LOG,
+                  },
                 },
                 data: {
                   miracle_log_count: 0,
@@ -215,8 +239,8 @@ export async function POST(req: Request) {
                 where: {
                   userId_type: {
                     userId: session.user.id,
-                    type: StreakType.MIRACLE_LOG
-                  }
+                    type: StreakType.MIRACLE_LOG,
+                  },
                 },
                 data: {
                   miracle_log_count: 1,
@@ -250,8 +274,8 @@ export async function POST(req: Request) {
                 where: {
                   userId_type: {
                     userId: session.user.id,
-                    type: StreakType.MIRACLE_LOG
-                  }
+                    type: StreakType.MIRACLE_LOG,
+                  },
                 },
                 data: {
                   miracle_log_count: newStreak,
@@ -275,11 +299,15 @@ export async function POST(req: Request) {
           }
         }
       } catch (error) {
-        if (error instanceof Error && error.message.includes("Daily JP limit")) {
+        if (
+          error instanceof Error &&
+          error.message.includes("Daily JP limit")
+        ) {
           console.log("Daily JP limit reached, but log was created");
           return NextResponse.json({
             log,
-            warning: "Miracle log created, but you've reached the daily JP limit of 150",
+            warning:
+              "Miracle log created, but you've reached the daily JP limit of 150",
           });
         } else {
           throw error;
@@ -295,7 +323,7 @@ export async function POST(req: Request) {
     console.error(error);
     return NextResponse.json(
       { error: "Failed to create log" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
