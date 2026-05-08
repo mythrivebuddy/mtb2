@@ -61,12 +61,29 @@ export async function GET() {
         if (purchase?.product) {
           grantedByProgram = purchase.product;
         }
-      }
+      } 
+     const currency = mandate?.currency || "INR";
+
+const baseAmount = plan
+  ? (currency === "INR"
+      ? plan.amountINR
+      : plan.amountUSD)
+  : 0;
+
+const gstRate = plan?.gstPercentage
+  ? plan.gstPercentage / 100
+  : 0;
+
+const fullRecurringAmount =
+  plan?.gstEnabled && currency === "INR"
+    ? Number((baseAmount + baseAmount * gstRate).toFixed(2))
+    : baseAmount;
 
       currentSubscriptionResponse = {
         ...subDetails,
         plan,
         maxAmount: mandate?.maxAmount || null,
+        recurringAmount: fullRecurringAmount,
         frequency: mandate?.frequency || null,
         currency: mandate?.currency || null,
         paymentMethod: mandate?.paymentMethod || null,

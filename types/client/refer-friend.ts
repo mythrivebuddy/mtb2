@@ -9,4 +9,5 @@ export interface ReferralStats {
     joinedAt: string;
     rewardEarned: number;
   }>;
+  isAffiliate?: boolean;
 }

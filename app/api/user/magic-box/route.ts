@@ -9,15 +9,15 @@ import {
 import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 import { checkFeature } from "@/lib/access-control/checkFeature";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 type MagicBoxPlanConfig = {
   minJp: number;
   maxJp: number;
+  dailyOpens?: number;
   bonusEligible?: boolean;
   bonusMultiplier?: number;
 };
-
-
 
 // GET: Retrieve or create user's magic box for today
 export async function GET() {
@@ -32,65 +32,95 @@ export async function GET() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1); // Start of tomorrow
 
-    // Find magic box created today
-    const existingBox = await prisma.magicBox.findFirst({
-      where: { userId, createdAt: { gte: today, lt: tomorrow } },
-    });
+    const userType = normalizeUserType(session.user.userType);
 
-    // If box exists, return it with appropriate details
-    if (existingBox) {
-      // If box is opened but not redeemed, fetch random users to display
-      if (
-        existingBox.isOpened &&
-        !existingBox.isRedeemed &&
-        existingBox.randomUserIds.length > 0
-      ) {
-        const randomUsers = await prisma.user.findMany({
-          where: { id: { in: existingBox.randomUserIds as string[] } },
-          select: { id: true, name: true, image: true },
-        });
-
-        return NextResponse.json(
-          {
-            message: "Magic box retrieved successfully",
-            magicBox: existingBox,
-            randomUsers,
-            status: "OPENED",
-          },
-          { status: 200 }
-        );
-      }
-
-      // If box is redeemed, just return with next box time
-      if (existingBox.isRedeemed) {
-        return NextResponse.json(
-          {
-            message: "Magic box already redeemed today",
-            magicBox: existingBox,
-            status: "REDEEMED",
-          },
-          { status: 200 }
-        );
-      }
-
-      // Box exists but isn't opened yet
+    if (!userType) {
       return NextResponse.json(
-        {
-          message: "Magic box retrieved successfully",
-          magicBox: existingBox,
-          status: "UNOPENED",
-        },
-        { status: 200 }
+        { error: "USER_TYPE_NOT_SUPPORTED" },
+        { status: 403 },
       );
     }
 
-    // No box for today, create a new one
-    // Set next box availability to tomorrow at midnight
-    const nextBoxAt = tomorrow;
+    const membership = session.user.membership === "PAID" ? "PAID" : "FREE";
 
-    // Create a new magic box
+    const featureResult = await checkFeature({
+      feature: "magicBox",
+      user: {
+        userType,
+        membership,
+      },
+    });
+
+    if (!featureResult.allowed || typeof featureResult.config !== "object") {
+      return NextResponse.json({ error: "CONFIG_NOT_FOUND" }, { status: 403 });
+    }
+
+    const rawConfig = featureResult.config as Partial<MagicBoxPlanConfig>;
+    const dailyOpens = rawConfig.dailyOpens ?? 1;
+
+    const boxesToday = await prisma.magicBox.findMany({
+      where: {
+        userId,
+        createdAt: { gte: today, lt: tomorrow },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    // 2. PRIORITY → opened but not redeemed
+    const activeBox = boxesToday.find((box) => box.isOpened && !box.isRedeemed);
+
+    if (activeBox) {
+      const randomUsers =
+        activeBox.randomUserIds.length > 0
+          ? await prisma.user.findMany({
+              where: { id: { in: activeBox.randomUserIds as string[] } },
+              select: { id: true, name: true, image: true },
+            })
+          : [];
+
+      return NextResponse.json(
+        {
+          message: "Magic box retrieved successfully",
+          magicBox: activeBox,
+          randomUsers,
+          status: "OPENED",
+        },
+        { status: 200 },
+      );
+    }
+
+    // 3. Next → unopened box
+    const unopenedBox = boxesToday.find((box) => !box.isOpened);
+
+    if (unopenedBox) {
+      return NextResponse.json(
+        {
+          message: "Magic box retrieved successfully",
+          magicBox: unopenedBox,
+          status: "UNOPENED",
+        },
+        { status: 200 },
+      );
+    }
+
+    const lastRedeemedBox = [...boxesToday]
+      .reverse()
+      .find((box) => box.isRedeemed);
+
+    if (lastRedeemedBox && boxesToday.length >= dailyOpens) {
+      return NextResponse.json(
+        {
+          message: "All boxes redeemed for today",
+          magicBox: lastRedeemedBox,
+          status: "REDEEMED",
+        },
+        { status: 200 },
+      );
+    }
+
+    // 5. Create new box
     const newMagicBox = await prisma.magicBox.create({
-      data: { userId, nextBoxAt, randomUserIds: [] },
+      data: { userId, nextBoxAt: tomorrow, randomUserIds: [] },
     });
 
     return NextResponse.json(
@@ -99,16 +129,16 @@ export async function GET() {
         magicBox: newMagicBox,
         status: "UNOPENED",
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error(
       "Get/Create magic box API Error:",
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -119,15 +149,29 @@ export async function POST(request: NextRequest) {
     const session = await checkRole("USER");
 
     // ! Feature check (OPEN time only)
-    const featureResult = checkFeature({
+    const userType = normalizeUserType(session.user.userType);
+
+    if (!userType) {
+      return NextResponse.json(
+        { error: "USER_TYPE_NOT_SUPPORTED" },
+        { status: 403 },
+      );
+    }
+
+    const membership = session.user.membership === "PAID" ? "PAID" : "FREE";
+
+    const featureResult = await checkFeature({
       feature: "magicBox",
-      user: session.user,
+      user: {
+        userType,
+        membership,
+      },
     });
 
     if (!featureResult.allowed) {
       return NextResponse.json(
         { error: featureResult.reason },
-        { status: 403 }
+        { status: 403 },
       );
     }
     // const dailyOpens =
@@ -136,6 +180,31 @@ export async function POST(request: NextRequest) {
     //     : 1;
 
     const userId = session.user.id;
+    const today = new Date();
+    today.setHours(0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const boxesOpenedToday = await prisma.magicBox.count({
+      where: {
+        userId,
+        createdAt: { gte: today, lt: tomorrow },
+        isOpened: true,
+      },
+    });
+
+    const dailyOpens =
+      typeof featureResult.config === "object"
+        ? ((featureResult.config as MagicBoxPlanConfig).dailyOpens ?? 1)
+        : 1;
+
+    if (boxesOpenedToday >= dailyOpens) {
+      return NextResponse.json(
+        { error: "Daily open limit reached" },
+        { status: 403 },
+      );
+    }
     const data = await request.json();
     const { boxId } = data;
 
@@ -147,7 +216,7 @@ export async function POST(request: NextRequest) {
     if (!magicBox) {
       return NextResponse.json(
         { error: "Magic box not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -168,26 +237,31 @@ export async function POST(request: NextRequest) {
             randomUsers,
             status: "OPENED",
           },
-          { status: 200 }
+          { status: 200 },
         );
       }
 
       // If redeemed, just return with next box time
       return NextResponse.json(
         { message: "Magic box already redeemed", magicBox, status: "REDEEMED" },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
-    const planConfig =
-      featureResult.allowed && typeof featureResult.config === "object"
-        ? (featureResult.config as MagicBoxPlanConfig)
-        : null;
+    const rawConfig = featureResult.config as Partial<MagicBoxPlanConfig>;
+
+    const planConfig: MagicBoxPlanConfig = {
+      minJp: rawConfig.minJp ?? 0,
+      maxJp: rawConfig.maxJp ?? 0,
+      bonusEligible: rawConfig.bonusEligible ?? false,
+      bonusMultiplier: rawConfig.bonusMultiplier ?? 1,
+    };
+    
 
     if (!planConfig) {
       return NextResponse.json(
         { error: "Magic box configuration not found" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -207,7 +281,7 @@ export async function POST(request: NextRequest) {
   LIMIT 4;
 `;
 
-    //Todo we need to add bonus eligibility and multiplier logic here based on user's plan (free/paid) 
+    //Todo we need to add bonus eligibility and multiplier logic here based on user's plan (free/paid)
     // Generate random JP amount
     // let jpAmount = Math.floor(Math.random() * (maxJp - minJp + 1) + minJp);
     // if (jpAmount % 2 !== 0) jpAmount += 1;
@@ -218,12 +292,11 @@ export async function POST(request: NextRequest) {
     if (planConfig.bonusEligible === true) {
       const BONUS_MULTIPLIER = planConfig.bonusMultiplier || 1; // single source here, no config explosion
 
-      jpAmount = Math.floor(jpAmount * BONUS_MULTIPLIER);  
+      jpAmount = Math.floor(jpAmount * BONUS_MULTIPLIER);
     }
 
     // keep JP even
     if (jpAmount % 2 !== 0) jpAmount += 1;
-
 
     // Update the box as opened with JP amount and random users
     const updatedBox = await prisma.magicBox.update({
@@ -249,16 +322,16 @@ export async function POST(request: NextRequest) {
         randomUsers,
         status: "OPENED",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error(
       "Open magic box API Error:",
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -279,7 +352,7 @@ export async function PUT(request: NextRequest) {
     if (!magicBox) {
       return NextResponse.json(
         { error: "Magic box not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -287,7 +360,7 @@ export async function PUT(request: NextRequest) {
     if (!magicBox.isOpened) {
       return NextResponse.json(
         { error: "Magic box must be opened before redeeming" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -295,7 +368,7 @@ export async function PUT(request: NextRequest) {
     if (magicBox.isRedeemed) {
       return NextResponse.json(
         { message: "Magic box already redeemed", magicBox, status: "REDEEMED" },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -303,7 +376,7 @@ export async function PUT(request: NextRequest) {
     if (!selectedUserId) {
       return NextResponse.json(
         { error: "Selected user is required for redemption" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -311,7 +384,7 @@ export async function PUT(request: NextRequest) {
     if (!(magicBox.randomUserIds as string[]).includes(selectedUserId)) {
       return NextResponse.json(
         { error: "Selected user is not valid for this magic box" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -324,11 +397,11 @@ export async function PUT(request: NextRequest) {
     if (!selectedUser) {
       return NextResponse.json(
         { error: "Selected user not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
-    //! No JP  bonus here  
+    //! No JP  bonus here
     // Get JP amount
     const jpAmount = magicBox.jpAmount || 0;
     const userJpAmount = Math.floor(jpAmount / 2); // Half goes to user
@@ -347,12 +420,12 @@ export async function PUT(request: NextRequest) {
       userId,
       session?.user?.name || "",
       selectedUserId,
-      sharedJpAmount
+      sharedJpAmount,
     );
 
     const senderNotificationData = getMagicBoxRewardNotificationData(
       userId,
-      userJpAmount
+      userJpAmount,
     );
 
     const [updatedBox] = await prisma.$transaction([
@@ -398,7 +471,7 @@ export async function PUT(request: NextRequest) {
     await sendPushNotificationToUser(
       selectedUserId,
       "Magic Box Shared",
-      `You have received ${sharedJpAmount} GP from ${session?.user?.name || ""}`
+      `You have received ${sharedJpAmount} GP from ${session?.user?.name || ""}`,
     );
 
     // Send email to both users
@@ -435,16 +508,16 @@ export async function PUT(request: NextRequest) {
         shared: { userId: selectedUserId, jpAmount: sharedJpAmount },
         status: "REDEEMED",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error(
       "Redeem magic box API Error:",
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

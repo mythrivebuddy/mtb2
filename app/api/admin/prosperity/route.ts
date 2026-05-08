@@ -3,12 +3,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { ProsperityDropStatus } from "@prisma/client";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 const FINAL_STATUSES: ProsperityDropStatus[] = [
   ProsperityDropStatus.APPROVED,
   ProsperityDropStatus.DISAPPROVED,
 ];
-
 
 export async function GET() {
   try {
@@ -31,65 +31,76 @@ export async function GET() {
         appliedAt: "desc",
       },
     });
-    const applicationsWithPriority = applications.map((app) => {
-      const featureCheck = checkFeature({
-        feature: "prosperityDrops",
-        user: {
-          userType: app.user.userType,
-          membership: app.user.membership,
-        },
-      });
 
-      let priorityWeight = 0;
+    const applicationsWithPriority = await Promise.all(
+      applications.map(async (app) => {
+        const normalizedUserType = normalizeUserType(app.user.userType);
 
-      if (featureCheck.allowed) {
-        const config = featureCheck.config as { priorityWeight?: number };
-        priorityWeight = config.priorityWeight ?? 0;
-      }
+        //  Skip invalid users safely
+        if (!normalizedUserType) {
+          return {
+            ...app,
+            priorityWeight: 0,
+          };
+        }
 
-      return {
-        ...app,
-        priorityWeight,
-      };
-    });
+        const featureCheck = await checkFeature({
+          feature: "prosperityDrops",
+          user: {
+            userType: normalizedUserType,
+            membership: app.user.membership,
+          },
+        });
+
+        let priorityWeight = 0;
+
+        if (featureCheck.allowed) {
+          const config = featureCheck.config as {
+            priorityWeight?: number;
+          };
+
+          priorityWeight = config?.priorityWeight ?? 0;
+        }
+
+        return {
+          ...app,
+          priorityWeight,
+        };
+      }),
+    );
+
+    //  Sorting logic
     applicationsWithPriority.sort((a, b) => {
       const aIsFinal = FINAL_STATUSES.includes(a.status);
       const bIsFinal = FINAL_STATUSES.includes(b.status);
 
-      // 1️⃣ Active first, final last
+      // 1️ Active first, final last
       if (aIsFinal !== bIsFinal) {
         return aIsFinal ? 1 : -1;
       }
 
-      // 2️⃣ Both active → higher priority first
+      // 2️ Both active → higher priority first
       if (!aIsFinal && !bIsFinal && b.priorityWeight !== a.priorityWeight) {
         return b.priorityWeight - a.priorityWeight;
       }
 
-      // 3️⃣ Both active + same priority → FIRST COME, FIRST SERVE
-      if (!aIsFinal && !bIsFinal && a.priorityWeight === b.priorityWeight) {
+      // 3️ Same priority → FIFO
+      if (!aIsFinal && !bIsFinal) {
         return (
-          new Date(a.appliedAt).getTime() -
-          new Date(b.appliedAt).getTime()
+          new Date(a.appliedAt).getTime() - new Date(b.appliedAt).getTime()
         );
       }
 
-      // 4️⃣ Final applications → newer first (or keep stable)
-      return (
-        new Date(b.appliedAt).getTime() -
-        new Date(a.appliedAt).getTime()
-      );
+      // 4️ Final → latest first
+      return new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime();
     });
-
-
-
 
     return NextResponse.json(applicationsWithPriority);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { error: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

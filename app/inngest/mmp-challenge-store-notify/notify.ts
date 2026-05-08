@@ -6,7 +6,7 @@ import {
 } from "@/utils/sendEmail";
 import { maskEmail } from "@/utils/mask-email";
 import { inngest } from "@/lib/inngest";
-import { checkFeature } from "@/lib/access-control/checkFeature";
+import { getCommissionPercent } from "@/lib/commission/getCommissionPercent";
 
 /* =============================
    🔹 TYPES
@@ -353,7 +353,8 @@ export const notifyStakeholders = inngest.createFunction(
               quantity: cartItem.quantity || 1,
               priceAtPurchase: paidBase,
               originalPrice: basePrice,
-              gstAmount: cartItem.gst || 0,
+              gstAmount:
+              (cartItem.gst || 0) / (cartItem.quantity || 1),
               item: {
                 id: itemId,
                 name: product.name,
@@ -631,41 +632,17 @@ export const notifyStakeholders = inngest.createFunction(
       }
 
       if (finalEntityType === "CHALLENGE") {
-        const featureCheck = checkFeature({
+        commissionPercent = await getCommissionPercent({
           feature: "challenges",
-          user: {
-            userType: creator.userType,
-            membership: creator.membership,
-          },
+          userType: creator.userType,
+          membership: creator.membership,
         });
-
-        if (!featureCheck.allowed) {
-          throw new Error("Commission config not found for challenge");
-        }
-
-        commissionPercent = (
-          featureCheck.config as {
-            commissionPercent: number;
-          }
-        ).commissionPercent;
       } else if (finalEntityType === "MMP") {
-        const featureCheck = checkFeature({
+        commissionPercent = await getCommissionPercent({
           feature: "miniMasteryPrograms",
-          user: {
-            userType: creator.userType,
-            membership: creator.membership,
-          },
+          userType: creator.userType,
+          membership: creator.membership,
         });
-
-        if (!featureCheck.allowed) {
-          throw new Error("Commission config not found for MMP");
-        }
-
-        commissionPercent = (
-          featureCheck.config as {
-            commissionPercent: number;
-          }
-        ).commissionPercent;
       }
       const platformFee = (netBase * commissionPercent) / 100;
       const creatorEarning = netBase - platformFee;
@@ -706,23 +683,12 @@ export const notifyStakeholders = inngest.createFunction(
       const netBase = Math.max(baseAmount - discount, 0);
 
       // 🔥 SAME PATTERN AS OTHERS
-      const featureCheck = checkFeature({
+
+      const commissionPercent = await getCommissionPercent({
         feature: "store",
-        user: {
-          userType: creator.userType,
-          membership: creator.membership,
-        },
+        userType: creator.userType,
+        membership: creator.membership,
       });
-
-      if (!featureCheck.allowed) {
-        throw new Error("Commission config not found for store");
-      }
-
-      const commissionPercent = (
-        featureCheck.config as {
-          commissionPercent: number;
-        }
-      ).commissionPercent;
 
       const platformFee = (netBase * commissionPercent) / 100;
       const creatorEarning = netBase - platformFee;
@@ -986,22 +952,11 @@ export const notifyStakeholders = inngest.createFunction(
         const netBase = creatorBase;
         const totalPaid = netBase + creatorGST;
 
-        const featureCheck = checkFeature({
+        const commissionPercent = await getCommissionPercent({
           feature: "store",
-          user: {
-            userType: creator.userType,
-            membership: creator.membership,
-          },
+          userType: creator.userType,
+          membership: creator.membership,
         });
-
-        if (!featureCheck.allowed) {
-          console.log("❌ No commission config for creator:", creator.id);
-          return;
-        }
-
-        const commissionPercent = (
-          featureCheck.config as { commissionPercent: number }
-        ).commissionPercent;
 
         const platformFee = (netBase * commissionPercent) / 100;
         const creatorEarning = netBase - platformFee;
@@ -1058,6 +1013,7 @@ export const notifyStakeholders = inngest.createFunction(
     } else {
       if (creator?.email && creator.id !== user.id) {
         await step.run("email-creator", async () => {
+          console.log("email to craetor step runs ",creator.email)
           await sendEmailUsingTemplateWithConditionals({
             toEmail: creator.email,
             toName: creator.name,
@@ -1128,18 +1084,11 @@ export const notifyStakeholders = inngest.createFunction(
           // Get this creator's commission percent
           let itemCommissionPercent = 0;
           if (creatorUser) {
-            const fc = checkFeature({
+            itemCommissionPercent = await getCommissionPercent({
               feature: "store",
-              user: {
-                userType: creatorUser.userType,
-                membership: creatorUser.membership,
-              },
+              userType: creatorUser.userType,
+              membership: creatorUser.membership,
             });
-            if (fc.allowed) {
-              itemCommissionPercent = (
-                fc.config as { commissionPercent: number }
-              ).commissionPercent;
-            }
           }
 
           const itemPlatformFee = (itemPaid * itemCommissionPercent) / 100;
@@ -1179,6 +1128,7 @@ export const notifyStakeholders = inngest.createFunction(
     // ADMIN
     if (admin?.email && admin.id !== user.id && admin.id !== creator?.id) {
       await step.run("email-admin", async () => {
+        console.log("email admin step ")
         await sendEmailUsingTemplateWithConditionals({
           toEmail: admin.email,
           toName: admin.name,

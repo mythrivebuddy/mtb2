@@ -10,7 +10,7 @@ import { checkFeature } from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
 import { getLimitPeriodStart } from "@/lib/access-control/limitPeriod";
 import { LimitType } from "@/lib/access-control/featureConfig";
-
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 export async function POST(req: Request) {
   try {
@@ -25,13 +25,25 @@ export async function POST(req: Request) {
     if (!challengeId || !message?.trim()) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    const feature = checkFeature({
+    const userType = normalizeUserType(session.user.userType);
+
+    if (!userType) {
+      return NextResponse.json({ error: "INVALID_USER_TYPE" }, { status: 400 });
+    }
+
+    const feature = await checkFeature({
       feature: "challenges",
-      user: session.user,
+      user: {
+        userType,
+        membership: session.user.membership ?? undefined,
+      },
     });
 
     if (!feature.allowed) {
-      return NextResponse.json({ message: "Access denied" }, { status: 403 });
+      return NextResponse.json(
+        { error: feature.reason || "FEATURE_NOT_AVAILABLE" },
+        { status: 403 },
+      );
     }
 
     const config = feature.config;
@@ -47,17 +59,18 @@ export async function POST(req: Request) {
       periodStart = getLimitPeriodStart(limitType);
     }
 
-    const messageCount = groupChatLimit === -1
-      ? 0
-      : await prisma.challengeMessage.count({
-        where: {
-          challengeId,
-          userId: session.user.id,
-          ...(periodStart && {
-            createdAt: { gte: periodStart },
-          }),
-        },
-      });
+    const messageCount =
+      groupChatLimit === -1
+        ? 0
+        : await prisma.challengeMessage.count({
+            where: {
+              challengeId,
+              userId: session.user.id,
+              ...(periodStart && {
+                createdAt: { gte: periodStart },
+              }),
+            },
+          });
 
     const limitLabel =
       limitType === "MONTHLY"
@@ -69,15 +82,14 @@ export async function POST(req: Request) {
     const limitResponse = await enforceLimitResponse({
       limit: groupChatLimit,
       currentCount: messageCount,
-      message: `You have reached your group chat message limit (${groupChatLimit} ${limitLabel}).${isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
-        }`,
-
+      message: `You have reached your group chat message limit (${groupChatLimit} ${limitLabel}).${
+        isUpgradeFlagShow ? " Please upgrade to increase the limit." : ""
+      }`,
     });
 
     if (limitResponse) {
       return limitResponse;
     }
-
 
     // 2. Create the message just as before
     const newMessage = await prisma.challengeMessage.create({
@@ -115,8 +127,7 @@ export async function POST(req: Request) {
     }
 
     const senderName = newMessage.user?.name ?? "Someone";
-    const body =
-      message.length > 120 ? message.slice(0, 117) + "…" : message;
+    const body = message.length > 120 ? message.slice(0, 117) + "…" : message;
 
     void notifyUsersExcept({
       challengeId,
@@ -126,14 +137,13 @@ export async function POST(req: Request) {
       notTosendUserItself: user.id,
     });
 
-
     // 4. Return the new message to the sender
     return NextResponse.json(newMessage);
   } catch (err) {
     console.error("Error sending message:", err);
     return NextResponse.json(
       { error: "Failed to send message" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

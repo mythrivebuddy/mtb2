@@ -62,6 +62,7 @@ interface CurrentSubscription {
   endDate: string;
   plan: SubscriptionPlanFromApi;
   maxAmount: number | null;
+  recurringAmount: number | null;
   frequency: string | null;
   currency: string | null;
   paymentOrderId: string | null;
@@ -356,18 +357,77 @@ const SubscriptionPage: React.FC = () => {
                 currentPlan?.interval !== "LIFETIME" &&
                 currentSubscription.mandateId && ( // ONLY show if it's a recurring paid subscription
                   <div className="mt-2 text-sm space-y-1 text-gray-700">
-                    <div className="flex items-center">
-                      <DollarSign className="w-3 h-3 text-green-600 mr-2" />
-                      <span>
-                        Max Billing Amount:
-                        <strong className="ml-1">
-                          {formatAmount(
-                            currentSubscription.maxAmount,
-                            currentSubscription.currency
-                          )}
-                        </strong>
-                      </span>
-                    </div>
+                   
+                   <div className="flex flex-col gap-1">
+  {/* ✅ NEXT BILLING (MAIN INFO) */}
+  <div className="mt-5 bg-white border border-indigo-100 rounded-xl p-4 shadow-sm space-y-3">
+  {/* ✅ FIRST PAYMENT (PRORATED / DISCOUNTED) */}
+  {currentSubscription.maxAmount &&
+    currentSubscription.recurringAmount &&
+    currentSubscription.maxAmount !== currentSubscription.recurringAmount && (
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="flex items-center text-sm">
+          <div className="bg-blue-50 p-1.5 rounded-md mr-3 shadow-sm border border-blue-100">
+            <DollarSign className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="flex items-center flex-wrap gap-2">
+            <span className="text-slate-700 font-medium">Initial Payment</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700">
+              Prorated
+            </span>
+          </div>
+        </div>
+        <div className="text-right">
+          <strong className="text-slate-900 text-base font-bold">
+            {formatAmount(
+              currentSubscription.maxAmount,
+              currentSubscription.currency
+            )}
+          </strong>
+        </div>
+      </div>
+    )}
+
+  {/* ✅ NEXT BILLING (MAIN INFO) */}
+  <div className="flex items-center justify-between pt-1">
+    <div className="flex items-center text-sm">
+      <div className="bg-green-50 p-1.5 rounded-md mr-3 shadow-sm border border-green-100">
+        <Repeat className="w-4 h-4 text-green-600" />
+      </div>
+      <span className="text-slate-700 font-medium">Recurring Billing</span>
+    </div>
+    <div className="text-right flex items-baseline">
+      <strong className="text-slate-900 text-base font-bold">
+        {formatAmount(
+          currentSubscription.recurringAmount,
+          currentSubscription.currency
+        )}
+      </strong>
+      <span className="text-xs text-slate-500 font-medium ml-1">
+        / {currentSubscription.frequency?.toLowerCase() || "cycle"}
+      </span>
+    </div>
+  </div>
+</div>
+
+  {/* ✅ FIRST PAYMENT (PRORATED / DISCOUNTED) */}
+  {currentSubscription.maxAmount &&
+    currentSubscription.recurringAmount &&
+    currentSubscription.maxAmount !== currentSubscription.recurringAmount && (
+      <div className="flex items-center text-xs text-gray-500">
+        <span>
+          First Payment:
+          <strong className="ml-1">
+            {formatAmount(
+              currentSubscription.maxAmount,
+              currentSubscription.currency
+            )}
+          </strong>
+          <span className="ml-1">(prorated / discounted)</span>
+        </span>
+      </div>
+    )}
+</div>
                     <div className="flex items-center">
                       <Repeat className="w-3 h-3 text-indigo-600 mr-2" />
                       <span>
@@ -554,7 +614,8 @@ const SubscriptionPage: React.FC = () => {
                   <button
                     onClick={() => {
                       if (level !== 0 && !(level === -1 && getPlanLevel("LIFETIME" as PlanInterval) === 0)) {
-                        router.push(`/dashboard/membership/checkout?context=SUBSCRIPTION&plan=${p.id}`);
+                        const actionParam = level === -1 ? "DOWNGRADE" : "UPGRADE";
+                        router.push(`/dashboard/membership/checkout?context=SUBSCRIPTION&plan=${p.id}&action=${actionParam}`);
                       }
                     }}
                     disabled={level === 0 || (level === -1 && currentPlan?.interval === "LIFETIME")}

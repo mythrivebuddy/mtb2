@@ -5,9 +5,14 @@ import { authConfig } from "../../auth/[...nextauth]/auth.config";
 import axios from "axios";
 import { prisma } from "@/lib/prisma";
 import { ActivityType, BuddyLensRequestStatus } from "@prisma/client";
-import { createBuddyLensReviewedNotification, createBuddyLensReviewerCompletedNotification, createBuddyLensClaimedNotification } from "@/lib/utils/notifications";
+import {
+  createBuddyLensReviewedNotification,
+  createBuddyLensReviewerCompletedNotification,
+  createBuddyLensClaimedNotification,
+} from "@/lib/utils/notifications";
 import { authOptions } from "@/lib/auth";
 import { checkFeature } from "@/lib/access-control/checkFeature";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 // import sendEmail from '@/lib/email/sendEmail';
 
@@ -44,10 +49,9 @@ async function sendEmail(
   toName: string,
   subject: string,
   htmlContent: string,
-  fromName?: string
+  fromName?: string,
 ): Promise<EmailResponse> {
   // Updated return type to EmailResponse
-
 
   try {
     const senderEmail = process.env.CONTACT_SENDER_EMAIL;
@@ -55,7 +59,7 @@ async function sendEmail(
 
     if (!senderEmail || !brevoApiKey) {
       throw new Error(
-        "Missing email configuration: CONTACT_SENDER_EMAIL or BREVO_API_KEY not set"
+        "Missing email configuration: CONTACT_SENDER_EMAIL or BREVO_API_KEY not set",
       );
     }
 
@@ -116,7 +120,6 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return errorResponse("Please log in", 401);
 
-
     const {
       requestId,
       answers,
@@ -126,12 +129,11 @@ export async function POST(req: NextRequest) {
       status = "SUBMITTED",
     } = (await req.json()) as CreateReviewBody;
     const reviewerId = session.user.id;
-   
 
     if (!requestId || !answers || !reviewText || !rating)
       return errorResponse(
         "Missing request ID, answers, review text, or rating",
-        400
+        400,
       );
 
     if (!Array.isArray(answers))
@@ -140,23 +142,26 @@ export async function POST(req: NextRequest) {
       return errorResponse("Rating must be between 1 and 5", 400);
     if (!["SUBMITTED", "DRAFT"].includes(status))
       return errorResponse("Invalid status", 400);
+    const userType = normalizeUserType(session.user.userType);
 
-    const featureCheck = checkFeature({
+    if (!userType) {
+      return errorResponse("INVALID_USER_TYPE", 400);
+    }
+    const featureCheck = await checkFeature({
       feature: "buddyLens",
       user: {
-        userType: session.user.userType,     // COACH
-        membership: session.user.membership, // FREE / PAID
+        userType, // COACH
+        membership: session.user.membership ?? undefined, // FREE / PAID
       },
     });
 
     if (!featureCheck.allowed) {
-      return errorResponse("BuddyLens access not allowed", 403);
+      return errorResponse(featureCheck.reason || "FEATURE_NOT_AVAILABLE", 403);
     }
 
     const { earnJPPerReview } = featureCheck.config as {
       earnJPPerReview: number;
     };
-
 
     const request = await prisma.buddyLensRequest.findUnique({
       where: { id: requestId },
@@ -195,7 +200,6 @@ export async function POST(req: NextRequest) {
       return errorResponse("Invalid GP configuration for this request", 400);
     }
 
-
     const existingReview = await prisma.buddyLensReview.findFirst({
       where: { requestId, reviewerId },
     });
@@ -203,7 +207,7 @@ export async function POST(req: NextRequest) {
     if (existingReview && existingReview?.status === "SUBMITTED") {
       return errorResponse(
         "You have already submitted a review for this request",
-        409
+        409,
       );
     }
 
@@ -293,7 +297,7 @@ export async function POST(req: NextRequest) {
       request.requesterId,
       request.domain,
       requesterPays,
-      reviewerId
+      reviewerId,
     );
 
     // Email to requester
@@ -311,7 +315,7 @@ export async function POST(req: NextRequest) {
         request.requester.name || "User",
         subject,
         htmlContent,
-        request.reviewer?.name || "MyThriveBuddy"
+        request.reviewer?.name || "MyThriveBuddy",
       );
     }
 
@@ -328,12 +332,12 @@ export async function POST(req: NextRequest) {
         request.reviewer.name || "Reviewer",
         subject,
         htmlContent,
-        request.reviewer.name || "MyThriveBuddy"
+        request.reviewer.name || "MyThriveBuddy",
       );
     }
     return NextResponse.json(
       { message: "Review submitted", data: newReview, reviewerEarns },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Review submission error:", error);
@@ -491,8 +495,7 @@ export async function PUT(req: NextRequest) {
         });
 
         if (updatedRequest.requester.email) {
-          const baseUrl =
-            process.env.NEXT_URL;
+          const baseUrl = process.env.NEXT_URL;
           const reviewUrl = `${baseUrl}/dashboard/buddy-lens/requester?requestId=${review.requestId}`;
           const subject = "BuddyLens Request Reviewed";
           const htmlContent = `
@@ -516,12 +519,12 @@ export async function PUT(req: NextRequest) {
             updatedRequest.requester.name || "User",
             subject,
             htmlContent,
-            updatedRequest.reviewer?.name || "MyThriveBuddy"
+            updatedRequest.reviewer?.name || "MyThriveBuddy",
           );
 
           if (!emailResult.success) {
             console.error(
-              `Failed to send review completion email: ${emailResult.error}`
+              `Failed to send review completion email: ${emailResult.error}`,
             );
           }
         }
@@ -660,7 +663,7 @@ export async function PATCH(req: NextRequest) {
         request.requesterId,
         reviewer.name || "A reviewer",
         request.domain,
-        requestId
+        requestId,
       );
 
       // Send email within transaction if email exists
@@ -671,7 +674,7 @@ export async function PATCH(req: NextRequest) {
             request.requester.name || "User",
             subject,
             htmlContent,
-            reviewer.name || "MyThriveBuddy"
+            reviewer.name || "MyThriveBuddy",
           );
 
           // if (!emailResult.success) {
@@ -690,7 +693,7 @@ export async function PATCH(req: NextRequest) {
       } else {
         console.warn(
           "No email address found for requester ID:",
-          request.requesterId
+          request.requesterId,
         );
       }
 
@@ -700,13 +703,12 @@ export async function PATCH(req: NextRequest) {
     // If email failed within transaction and requester has email, try once more outside transaction
     if (!emailResult.success && request.requester.email) {
       try {
-     
         emailResult = await sendEmail(
           request.requester.email,
           request.requester.name || "User",
           subject,
           htmlContent,
-          reviewer.name || "MyThriveBuddy"
+          reviewer.name || "MyThriveBuddy",
         );
 
         // if (emailResult.success) {

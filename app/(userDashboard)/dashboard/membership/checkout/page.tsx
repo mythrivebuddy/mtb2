@@ -19,7 +19,12 @@ import {
 import { toast } from "sonner";
 import { GST_REGEX } from "@/lib/constant";
 import axios from "axios";
-import { RazorpayCheckoutOptions, RazorpayErrorResponse, RazorpaySuccessResponse, WindowWithRazorpay } from "@/types/client/razorpay-client.types";
+import {
+  RazorpayCheckoutOptions,
+  RazorpayErrorResponse,
+  RazorpaySuccessResponse,
+  WindowWithRazorpay,
+} from "@/types/client/razorpay-client.types";
 import { useQuery } from "@tanstack/react-query";
 
 // types
@@ -44,12 +49,12 @@ interface Plan {
   isProgramPlan: boolean;
 }
 interface MMPProgram {
-  id: string
-  name: string
+  id: string;
+  name: string;
   // title: string
-  description: string
-  priceINR: number
-  priceUSD: number
+  description: string;
+  priceINR: number;
+  priceUSD: number;
 }
 
 interface CouponResponse {
@@ -78,6 +83,7 @@ export default function CheckoutPage() {
   const context = searchParams.get("context"); // e.g. CHALLENGE , STORE_PRODUCT, MMP_PROGRAM
   const challengeId = searchParams.get("challengeId"); // present if context is challenge
   const mmp_programId = searchParams.get("mmp_programId");
+  const action = searchParams.get("action");
   // const router = useRouter();
 
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -88,7 +94,7 @@ export default function CheckoutPage() {
     baseCurrency: "INR" | "USD";
   } | null>(null);
 
-  const [mmpProgram, setmmpProgram] = useState<MMPProgram | null>(null)
+  const [mmpProgram, setmmpProgram] = useState<MMPProgram | null>(null);
   // to get active gateway
   const [activeGateway, setActiveGateway] =
     useState<PaymentGateway>("CASHFREE");
@@ -125,6 +131,17 @@ export default function CheckoutPage() {
     queryFn: fetchBillingInfo,
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
+  const { data: subData } = useQuery({
+    queryKey: ["currentSubscriptionForCheckout"],
+    queryFn: async () => {
+      const res = await axios.get("/api/user/get-subscription");
+      return res.data;
+    },
+    // Only fetch if they are checking out a subscription with an upgrade/downgrade action
+    enabled: !!session?.user?.id && context === "SUBSCRIPTION" && !!action,
+  });
+  const currentSub = subData?.currentSubscription;
+  const currentPlan = subData?.currentPlan;
 
   // get active gateway on load
   useEffect(() => {
@@ -154,7 +171,6 @@ export default function CheckoutPage() {
     });
   };
 
-
   const handleWithRazorpay = async (): Promise<void> => {
     const loaded = await loadRazorpayScript();
     if (!loaded) {
@@ -175,7 +191,11 @@ export default function CheckoutPage() {
       let endpoint = "";
 
       // ✅ CHALLENGE FLOW
-      if (context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT") {
+      if (
+        context === "CHALLENGE" ||
+        context === "MMP_PROGRAM" ||
+        context === "STORE_PRODUCT"
+      ) {
         endpoint = "/api/billing/razorpay/challenge/create-order";
 
         // payload = {
@@ -209,7 +229,8 @@ export default function CheckoutPage() {
           context,
           couponCode: appliedCoupon?.code || null,
           billingDetails,
-        })
+          action: action || "NEW",
+        }),
       });
 
       const data = await res.json();
@@ -223,21 +244,27 @@ export default function CheckoutPage() {
         name: "mythrivebuddy.com",
         description:
           context === "CHALLENGE"
-            ? challenge?.title ?? ""
+            ? (challenge?.title ?? "")
             : context === "MMP_PROGRAM"
-              ? mmpProgram?.name ?? ""
-              : plan?.name ?? "",
+              ? (mmpProgram?.name ?? "")
+              : (plan?.name ?? ""),
         theme: { color: "#0f172a" },
 
         // Inside handleWithRazorpay -> options object
         handler: function (response: RazorpaySuccessResponse) {
           const callbackUrl = new URL(
-            context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT"
+            context === "CHALLENGE" ||
+            context === "MMP_PROGRAM" ||
+            context === "STORE_PRODUCT"
               ? "/api/billing/razorpay/challenge/callback"
               : "/api/billing/razorpay/callback",
             window.location.origin,
           );
-          if (context === "CHALLENGE" || context === "STORE_PRODUCT" || context === "MMP_PROGRAM") {
+          if (
+            context === "CHALLENGE" ||
+            context === "STORE_PRODUCT" ||
+            context === "MMP_PROGRAM"
+          ) {
             callbackUrl.searchParams.set(
               "order_id",
               response.razorpay_order_id!,
@@ -318,7 +345,11 @@ export default function CheckoutPage() {
 
       // 4️⃣ Attach identifiers
       // ✅ Attach identifiers properly
-      if (context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT") {
+      if (
+        context === "CHALLENGE" ||
+        context === "MMP_PROGRAM" ||
+        context === "STORE_PRODUCT"
+      ) {
         options.order_id = data.orderId;
       } else if (isLifetime) {
         options.order_id = data.orderId;
@@ -458,9 +489,11 @@ export default function CheckoutPage() {
         // ✅ MMP PROGRAM CONTEXT
         if (context === "MMP_PROGRAM" && mmp_programId) {
           setMmpLoading(true);
-          const res = await axios.get(`/api/mini-mastery-programs/for-payment-checkout/${mmp_programId}`)
+          const res = await axios.get(
+            `/api/mini-mastery-programs/for-payment-checkout/${mmp_programId}`,
+          );
 
-          const p = res.data.program
+          const p = res.data.program;
 
           setmmpProgram({
             id: p.id,
@@ -468,13 +501,13 @@ export default function CheckoutPage() {
             description: p.description,
             priceINR: p.priceINR,
             priceUSD: p.priceUSD,
-          })
+          });
           setPlan(null);
           setChallenge(null);
 
           setMmpLoading(false);
 
-          return
+          return;
         }
       } catch (error) {
         console.error("Checkout init error:", error);
@@ -486,7 +519,6 @@ export default function CheckoutPage() {
     init();
   }, [context, challengeId, planId, mmp_programId]);
 
-
   useEffect(() => {
     async function init() {
       if (context === "SUBSCRIPTION" && !planId) return;
@@ -495,7 +527,6 @@ export default function CheckoutPage() {
       const currency = isIndia ? "INR" : "USD";
       setLoading(true);
       try {
-
         if (context === "SUBSCRIPTION" && planId) {
           const planRes = await fetch(
             `${process.env.NEXT_PUBLIC_BASE_URL}/api/subscription-plans/${planId}`,
@@ -593,9 +624,13 @@ export default function CheckoutPage() {
   // 2. MANUAL VERIFY
   // ---------------------------
   const handleVerifyCoupon = async () => {
-    if (!couponCode || (context === "SUBSCRIPTION" && !plan) || (context === "CHALLENGE" && !challenge) ||
+    if (
+      !couponCode ||
+      (context === "SUBSCRIPTION" && !plan) ||
+      (context === "CHALLENGE" && !challenge) ||
       (context === "MMP_PROGRAM" && !mmpProgram)
-    ) return;
+    )
+      return;
 
     setVerifyingCoupon(true);
     setCouponMessage(null);
@@ -675,41 +710,36 @@ export default function CheckoutPage() {
     // PROGRAM BILLING
     // -----------------------
     if (context === "MMP_PROGRAM" && mmpProgram) {
+      const isIndia = billingDetails.country === "IN";
 
-      const isIndia = billingDetails.country === "IN"
-
-      const currency: "INR" | "USD" = isIndia ? "INR" : "USD"
+      const currency: "INR" | "USD" = isIndia ? "INR" : "USD";
 
       const subtotal =
-        currency === "INR"
-          ? mmpProgram.priceINR
-          : mmpProgram.priceUSD
+        currency === "INR" ? mmpProgram.priceINR : mmpProgram.priceUSD;
 
-      let discount = 0
+      let discount = 0;
 
       if (appliedCoupon?.type === "PERCENTAGE") {
-        discount =
-          (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100
+        discount = (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100;
       } else if (appliedCoupon?.type === "FIXED") {
         discount =
           currency === "INR"
-            ? appliedCoupon.discountAmountINR ?? 0
-            : appliedCoupon.discountAmountUSD ?? 0
-      }
-      else if (
+            ? (appliedCoupon.discountAmountINR ?? 0)
+            : (appliedCoupon.discountAmountUSD ?? 0);
+      } else if (
         appliedCoupon?.type === "FREE_DURATION" ||
         appliedCoupon?.type === "FULL_DISCOUNT"
       ) {
-        discount = subtotal
+        discount = subtotal;
       }
-      discount = Math.min(discount, subtotal)
+      discount = Math.min(discount, subtotal);
 
-      const taxableAmount = subtotal - discount
-      // gst rate 
-      const taxRate = currency === "INR" ? 0.18 : 0
-      const tax = taxableAmount * taxRate
+      const taxableAmount = subtotal - discount;
+      // gst rate
+      const taxRate = currency === "INR" ? 0.18 : 0;
+      const tax = taxableAmount * taxRate;
 
-      const totalRaw = taxableAmount + tax
+      const totalRaw = taxableAmount + tax;
       const finalTotal = totalRaw <= 0 ? 1 : totalRaw;
 
       return {
@@ -719,7 +749,7 @@ export default function CheckoutPage() {
         tax,
         total: Number(finalTotal.toFixed(2)),
         currency,
-      }
+      };
     }
     if (context === "CHALLENGE" && challenge) {
       const isIndia = billingDetails.country === "IN";
@@ -734,13 +764,12 @@ export default function CheckoutPage() {
 
       if (appliedCoupon) {
         if (appliedCoupon.type === "PERCENTAGE") {
-          discount =
-            (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100;
+          discount = (subtotal * (appliedCoupon.discountPercentage ?? 0)) / 100;
         } else if (appliedCoupon.type === "FIXED") {
           discount =
             currency === "INR"
-              ? appliedCoupon.discountAmountINR ?? 0
-              : appliedCoupon.discountAmountUSD ?? 0;
+              ? (appliedCoupon.discountAmountINR ?? 0)
+              : (appliedCoupon.discountAmountUSD ?? 0);
         } else if (
           appliedCoupon.type === "FREE_DURATION" ||
           appliedCoupon.type === "FULL_DISCOUNT"
@@ -801,18 +830,58 @@ export default function CheckoutPage() {
         discount = subtotal;
       }
     }
+    // --- NEW: UPGRADE / DOWNGRADE LOGIC ---
+    let proratedDiscount = 0;
+    if (
+      context === "SUBSCRIPTION" &&
+      action === "UPGRADE" &&
+      currentSub &&
+      currentPlan
+    ) {
+      const now = new Date().getTime();
+      const start = new Date(currentSub.startDate).getTime();
+      const end = new Date(currentSub.endDate).getTime();
+      const totalDays = (end - start) / (1000 * 60 * 60 * 24);
+      const remainingDays = (end - now) / (1000 * 60 * 60 * 24);
+      const oldPrice = isIndia
+        ? (currentPlan.amountINR ?? 0)
+        : (currentPlan.amountUSD ?? 0);
+
+      if (remainingDays > 0 && totalDays > 0) {
+        proratedDiscount = (remainingDays / totalDays) * oldPrice;
+      }
+    }
+
+    if (context === "SUBSCRIPTION" && action === "DOWNGRADE") {
+      // Razorpay forces a ₹5 refundable auth fee for future-starting INR mandates
+      const authFee = currency === "INR" ? 5 : 1;
+      return {
+        base: subtotal,
+        discount: 0,
+        proratedDiscount: 0,
+        taxableAmount: 0,
+        tax: 0,
+        total: authFee,
+        currency,
+        isDowngrade: true,
+        downgradeDate: currentSub?.endDate,
+      };
+    }
+
     discount = Math.min(discount, subtotal);
 
-    const taxableAmount = Math.max(0, subtotal - discount);
+    const taxableAmount = Math.max(0, subtotal - discount - proratedDiscount);
 
     if (taxableAmount === 0) {
       return {
         base: subtotal,
         discount,
+        proratedDiscount,
         taxableAmount: 0,
         tax: 0,
         total: 1,
         currency,
+        isDowngrade: false,
       };
     }
 
@@ -823,12 +892,22 @@ export default function CheckoutPage() {
     return {
       base: subtotal,
       discount,
+      proratedDiscount,
       taxableAmount,
       tax,
       total: parseFloat(total.toFixed(2)),
       currency,
+      isDowngrade: false,
     };
-  }, [plan, challenge, challengePricing, context, appliedCoupon, billingDetails.country, mmpProgram]);
+  }, [
+    plan,
+    challenge,
+    challengePricing,
+    context,
+    appliedCoupon,
+    billingDetails.country,
+    mmpProgram,
+  ]);
 
   // Handle Input Changes
   const handleInputChange = (
@@ -882,7 +961,11 @@ export default function CheckoutPage() {
 
       // ✅ ADDITION: Non-program plans handled separately (Razorpay)
       // 🔥 CHALLENGE must always use Razorpay
-      if (context === "CHALLENGE" || context === "MMP_PROGRAM" || context === "STORE_PRODUCT") {
+      if (
+        context === "CHALLENGE" ||
+        context === "MMP_PROGRAM" ||
+        context === "STORE_PRODUCT"
+      ) {
         try {
           await handleWithRazorpay();
         } finally {
@@ -1001,7 +1084,12 @@ export default function CheckoutPage() {
   if (!plan && context === "SUBSCRIPTION") return <div>Plan not found</div>;
   if (context === "CHALLENGE" && !challenge && !challengeLoading)
     return <div>Challenge not found</div>;
-  if (!mmpProgram && context === "MMP_PROGRAM" && !mmpLoading) return <div className="text-center flex justify-center items-center h-lvh text-2xl">Mini mastery program not found</div>;
+  if (!mmpProgram && context === "MMP_PROGRAM" && !mmpLoading)
+    return (
+      <div className="text-center flex justify-center items-center h-lvh text-2xl">
+        Mini mastery program not found
+      </div>
+    );
 
   return (
     <div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8 font-sans">
@@ -1010,13 +1098,15 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-extrabold text-gray-900">
             {context === "CHALLENGE"
               ? "Complete Challenge Payment"
-              : context === "MMP_PROGRAM" ? "Purchase Program"
+              : context === "MMP_PROGRAM"
+                ? "Purchase Program"
                 : "Complete Your Subscription"}
           </h1>
           <p className="mt-2 text-gray-600">
             {context === "CHALLENGE"
               ? `Join the "${challenge?.title}" challenge.`
-              : plan?.name && `Unlock your potential with the ${plan?.name} plan.`}
+              : plan?.name &&
+                `Unlock your potential with the ${plan?.name} plan.`}
           </p>
         </div>
 
@@ -1078,7 +1168,6 @@ export default function CheckoutPage() {
                     />
                   </div>
                 ) : context === "MMP_PROGRAM" ? (
-
                   <div className="space-y-3">
                     <h3 className="text-sm font-semibold text-gray-900">
                       Program Details
@@ -1086,10 +1175,10 @@ export default function CheckoutPage() {
 
                     <div className="flex items-start gap-2">
                       <Check className="h-4 w-4 text-green-500 mt-1" />
-                      {mmpProgram?.description || "Access to exclusive mini mastery program content and resources."}
+                      {mmpProgram?.description ||
+                        "Access to exclusive mini mastery program content and resources."}
                     </div>
                   </div>
-
                 ) : (
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(plan?.features || ["Access to all modules"]).map(
@@ -1338,7 +1427,32 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                   )}
+                  {/* ADD THESE NEW DIVS */}
+                  {
+                    (billing?.proratedDiscount ?? 0) > 0 && (
+                      <div className="flex justify-between text-sm text-blue-600 font-medium">
+                        <span>Unused Plan Credit</span>
+                        <span>
+                          - {billing.currency}{" "}
+                          {(billing?.proratedDiscount ?? 0)?.toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    )}
 
+                  {billing.isDowngrade && (
+                    <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200">
+                      <strong>Downgrade Notice:</strong> You will be charged a
+                      refundable amount of {billing.currency} {billing.total}{" "}
+                      for mandate verification. Your new plan billing will
+                      automatically start after your current plan expires on{" "}
+                      <strong>
+                        {new Date(billing.downgradeDate).toLocaleDateString()}
+                      </strong>
+                      .
+                    </div>
+                  )}
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>
                       {billingDetails.country === "IN" ? "GST (18%)" : "Tax"}

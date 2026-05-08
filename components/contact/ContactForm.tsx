@@ -14,24 +14,26 @@ import { type ContactForm, contactFormSchems } from "@/schema/zodSchema";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useRef } from "react";
 
+
 declare global {
   interface Window {
     grecaptcha: {
       ready: (cb: () => void) => Promise<void>;
       execute: (
         siteKey: string,
-        options: { action: string }
+        options: { action: string },
       ) => Promise<string>;
     };
   }
 }
 
-function ContactFormContent() {
+export default function ContactForm({type}:{type:string}) {
   const [isLoading, setIsLoading] = useState(false);
   const { data: session } = useSession();
   const captchaRef = useRef<ReCAPTCHA | null>(null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string | null>(null);
+ 
 
   const handleCaptchaChange = (token: string | null) => {
     setCaptchaError(null);
@@ -68,6 +70,13 @@ function ContactFormContent() {
       setValue("email", session.user.email || "");
     }
   }, [session, setValue]);
+
+  useEffect(() => {
+    if (type === "want-to-become-an-affiliate") {
+      setValue("subject", "affiliate");
+      setValue("message", "I want to become an affiliate.");
+    }
+  }, [type, setValue]);
 
   // useEffect(() => {
   //   const loadRecaptcha = async () => {
@@ -113,7 +122,7 @@ function ContactFormContent() {
       if (axios.isAxiosError(error)) {
         toast.error(
           error.response?.data?.message ||
-            "Failed to send message. Please try again."
+            "Failed to send message. Please try again.",
         );
       } else {
         toast.error("An unexpected error occurred. Please try again.");
@@ -125,7 +134,7 @@ function ContactFormContent() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-3xl mx-auto p-6">
       {session?.user ? (
         <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
           <div className="text-green-700 flex items-center justify-center gap-4 text-xs font-medium">
@@ -211,7 +220,10 @@ function ContactFormContent() {
                 {...register("subject")}
                 className="h-4 w-4 text-blue-600 border-gray-300"
               />
-              <label htmlFor="general" className="text-sm text-gray-700">
+              <label
+                htmlFor="general"
+                className="text-sm text-gray-700 whitespace-nowrap"
+              >
                 General Feedback
               </label>
             </div>
@@ -224,7 +236,10 @@ function ContactFormContent() {
                 {...register("subject")}
                 className="h-4 w-4 text-blue-600 border-gray-300"
               />
-              <label htmlFor="feature" className="text-sm text-gray-700">
+              <label
+                htmlFor="feature"
+                className="text-sm text-gray-700 whitespace-nowrap"
+              >
                 Feature Request
               </label>
             </div>
@@ -237,8 +252,26 @@ function ContactFormContent() {
                 {...register("subject")}
                 className="h-4 w-4 text-blue-600 border-gray-300"
               />
-              <label htmlFor="bug" className="text-sm text-gray-700">
+              <label
+                htmlFor="bug"
+                className="text-sm text-gray-700 whitespace-nowrap"
+              >
                 Bug Report
+              </label>
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <input
+                type="radio"
+                id="affiliate"
+                value="affiliate"
+                {...register("subject")}
+                className="h-4 w-4 text-blue-600 border-gray-300"
+              />
+              <label
+                htmlFor="affiliate"
+                className="text-sm text-gray-700 whitespace-nowrap"
+              >
+                Become an Affiliate
               </label>
             </div>
           </div>
@@ -266,15 +299,14 @@ function ContactFormContent() {
             <p className="text-red-500 text-sm">{errors.message.message}</p>
           )}
         </div>
-        <div className="w-full overflow-hidden flex flex-col items-center">
-          <div className="scale-[0.95] origin-top inline-block">
+        <div className="w-full flex flex-col items-center overflow-hidden">
+          <div className="scale-[0.80] sm:scale-100 origin-center">
             <ReCAPTCHA
               ref={captchaRef}
               sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY as string}
               onChange={handleCaptchaChange}
             />
           </div>
-
           {captchaError && (
             <p className="text-red-500 text-sm mt-2 text-center px-2">
               {captchaError}
@@ -294,6 +326,3 @@ function ContactFormContent() {
   );
 }
 
-export default function ContactForm() {
-  return <ContactFormContent />;
-}

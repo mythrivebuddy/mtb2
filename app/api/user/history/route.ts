@@ -6,7 +6,8 @@ import {
   activityDisplayMapV3,
 } from "@/lib/constants/activityNames";
 import { PaymentStatus } from "@prisma/client";
-import { checkFeature } from "@/lib/access-control/checkFeature";
+import { getCommissionPercent } from "@/lib/commission/getCommissionPercent";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 type TransactionMetadata = {
   joinerName?: string;
@@ -19,7 +20,10 @@ type TransactionMetadata = {
 // 🔹 helper type for cart items
 type CartItem = {
   itemId: string;
+  name: string;
   quantity?: number;
+  price: number;
+  discount?: number;
 };
 
 // 🔹 safe JSON parser
@@ -69,16 +73,32 @@ export async function GET(request: Request) {
   }
 
   try {
-    // const challengePaymentsPromise =
-    //   filter === "ALL" || filter === "CHALLENGE"
-    //     ? prisma.challengePayment.findMany({
-    //         where: { userId },
-    //         include: {
-    //           challenge: true,
-    //           paymentOrder: true,
-    //         },
-    //       })
-    //     : Promise.resolve([]);
+    const userType = normalizeUserType(session.user.userType);
+    if (!userType || !session.user.membership) {
+      return NextResponse.json(
+        { error: "Invalid user type or membership" },
+        { status: 400 },
+      );
+    }
+
+    const [challengeCommission, mmpCommission, storeCommission] =
+      await Promise.all([
+        getCommissionPercent({
+          feature: "challenges",
+          userType,
+          membership: session.user.membership,
+        }),
+        getCommissionPercent({
+          feature: "miniMasteryPrograms",
+          userType,
+          membership: session.user.membership,
+        }),
+        getCommissionPercent({
+          feature: "store", // ✅ IMPORTANT
+          userType,
+          membership: session.user.membership,
+        }),
+      ]);
 
     const coachChallengeEarningsPromise =
       filter === "ALL" || filter === "COACH_EARNING" || filter === "CHALLENGE"
@@ -128,57 +148,48 @@ export async function GET(request: Request) {
 
     const mmpProgramMap = new Map(mmpPrograms.map((p) => [p.id, p]));
 
-    const coachMmpEarnings = mmpOrders
-      .filter((po) => {
-        const program = mmpProgramMap.get(po.programId!);
-        return program?.createdBy === userId;
-      })
-      .map((po) => {
-        const program = mmpProgramMap.get(po.programId!);
-        const feature = checkFeature({
-          feature: "miniMasteryPrograms", // or same "challenges" if shared config
-          user: {
-            userType: session.user.userType,
-            membership: session.user.membership,
-          },
-        });
+    const coachMmpEarnings = await Promise.all(
+      mmpOrders
+        .filter((po) => {
+          const program = mmpProgramMap.get(po.programId!);
+          return program?.createdBy === userId;
+        })
+        .map(async (po) => {
+          const program = mmpProgramMap.get(po.programId!);
+          const commissionPercent = mmpCommission;
+          const baseAmount = po.baseAmount ?? po.totalAmount;
+          const discount = po.discountApplied ?? 0;
 
-        const commissionPercent = feature.allowed
-          ? ((feature.config as { commissionPercent?: number })
-              .commissionPercent ?? 0)
-          : 0;
+          const netBase = baseAmount - discount;
 
-        const baseAmount = po.baseAmount ?? po.totalAmount;
-        const discount = po.discountApplied ?? 0;
+          const commission = (netBase * commissionPercent) / 100;
+          const finalAmount = netBase - commission;
+          return {
+            id: `mmp-${po.id}`,
+            createdAt: po.paidAt || po.createdAt,
+            jpAmount: finalAmount,
+            currency: po.currency,
+            breakdown: {
+              baseAmount,
+              commission,
+              finalAmount,
+              discount,
+            },
+            activity: {
+              activity: "MMP_EARNING",
+              transactionType: "CREDIT",
+              displayName: `${po.user?.name} joined ${program?.name}`,
+            },
+            activityMeta: {
+              joinerId: po.user?.id,
+              joinerName: po.user?.name,
+              programId: po.programId,
+              programName: program?.name,
+            },
+          };
+        }),
+    );
 
-        const netBase = baseAmount - discount;
-
-        const commission = (netBase * commissionPercent) / 100;
-        const finalAmount = netBase - commission;
-        return {
-          id: `mmp-${po.id}`,
-          createdAt: po.paidAt || po.createdAt,
-          jpAmount: finalAmount,
-          currency: po.currency,
-          breakdown: {
-            baseAmount,
-            commission,
-            finalAmount,
-            discount,
-          },
-          activity: {
-            activity: "MMP_EARNING",
-            transactionType: "CREDIT",
-            displayName: `${po.user?.name} joined ${program?.name}`,
-          },
-          activityMeta: {
-            joinerId: po.user?.id,
-            joinerName: po.user?.name,
-            programId: po.programId,
-            programName: program?.name,
-          },
-        };
-      });
     const paymentOrdersPromise =
       filter === "ALL" ||
       filter === "SUBSCRIPTION" ||
@@ -202,27 +213,49 @@ export async function GET(request: Request) {
             include: {
               plan: true,
               challenge: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
             },
           })
         : Promise.resolve([]);
 
-    const cmpPurchasesPromise =
-      filter === "ALL" || filter === "CMP"
-        ? prisma.oneTimeProgramPurchase.findMany({
-            where: { userId, status: PaymentStatus.PAID },
-            include: {
-              product: true,
-            },
-          })
-        : Promise.resolve([]);
+    const storeOrdersPromise = prisma.paymentOrder.findMany({
+      where: {
+        status: PaymentStatus.PAID,
+        contextType: "STORE_PRODUCT",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
 
+    const affiliateEarningsPromise = prisma.affiliateEarningLedger.findMany({
+      where: {
+        affiliateId: userId,
+      },
+      include: {
+        referredUser: {
+          select: { name: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
     const [
       user,
       transactions,
-
       paymentOrders,
-      cmpPurchases,
+      storeOrders,
       coachChallengeEarnings,
+      affiliateEarnings,
     ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -265,26 +298,252 @@ export async function GET(request: Request) {
         : Promise.resolve([]),
 
       paymentOrdersPromise,
-      cmpPurchasesPromise,
+      storeOrdersPromise,
       coachChallengeEarningsPromise,
+      affiliateEarningsPromise,
     ]);
+    const affiliateOrderIds = affiliateEarnings.map((ae) => ae.paymentOrderId);
 
+    const affiliateOrders = await prisma.paymentOrder.findMany({
+      where: {
+        id: { in: affiliateOrderIds },
+      },
+      select: {
+        id: true,
+        programId: true,
+        challengeId: true,
+        cartSnapshot: true,
+        plan: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    const affiliateOrderMap = new Map(affiliateOrders.map((o) => [o.id, o]));
+    const affiliateChallengeIds = affiliateOrders
+      .map((o) => o.challengeId)
+      .filter((id): id is string => !!id);
+
+    const affiliateChallenges = await prisma.challenge.findMany({
+      where: { id: { in: affiliateChallengeIds } },
+      select: { id: true, title: true },
+    });
+
+    const affiliateChallengeMap = new Map(
+      affiliateChallenges.map((c) => [c.id, c.title]),
+    );
+
+    const affiliateItemIds = affiliateOrders.flatMap((o) => {
+      if (!o.cartSnapshot) return [];
+      const items = parseCartSnapshot(o.cartSnapshot);
+      return items.map((i) => i.itemId);
+    });
+
+    const affiliateProducts = await prisma.item.findMany({
+      where: { id: { in: affiliateItemIds } },
+      select: { id: true, name: true },
+    });
+
+    const affiliateProductMap = new Map(
+      affiliateProducts.map((p) => [p.id, p.name]),
+    );
+    const affiliateProgramIds = affiliateOrders
+      .map((o) => o.programId)
+      .filter((id): id is string => !!id);
+
+    const affiliatePrograms = await prisma.program.findMany({
+      where: { id: { in: affiliateProgramIds } },
+      select: { id: true, name: true },
+    });
+
+    const affiliateProgramMap = new Map(
+      affiliatePrograms.map((p) => [p.id, p.name]),
+    );
+
+    const storeItemIds = storeOrders
+      .filter((po) => po.contextType === "STORE_PRODUCT")
+      .flatMap((po) => {
+        const items = parseCartSnapshot(po.cartSnapshot);
+        return items.map((item) => item.itemId);
+      })
+      .filter((id): id is string => Boolean(id));
+
+    const storeProducts = await prisma.item.findMany({
+      where: {
+        id: { in: storeItemIds },
+      },
+    });
+
+    const coachStoreEarnings = await Promise.all(
+      storeOrders
+        .flatMap((po) => {
+          const items = parseCartSnapshot(po.cartSnapshot);
+
+          return items.map((item) => ({
+            po,
+            itemId: item.itemId,
+          }));
+        })
+        .map(async ({ po, itemId }) => {
+          const product = storeProducts.find((p) => p.id === itemId);
+
+          if (!product || product.createdByUserId !== userId) return null;
+
+          const items = parseCartSnapshot(po.cartSnapshot);
+          const item = items.find((i) => i.itemId === itemId);
+
+          if (!item) return null;
+
+          // 👇 ONLY THIS ITEM's value (NOT full order)
+          const itemBase = item.price * (item.quantity ?? 1);
+
+          // if discount exists per item
+          const itemDiscount = item.discount ?? 0;
+
+          const netBase = itemBase - itemDiscount;
+
+          // commission only on THIS item
+          const commission = (netBase * storeCommission) / 100;
+
+          const finalAmount = netBase - commission;
+
+          return {
+            id: `store-${po.id}-${itemId}`,
+            createdAt: po.paidAt || po.createdAt,
+            jpAmount: finalAmount,
+            currency: po.currency,
+
+            breakdown: {
+              baseAmount: itemBase,
+              commission,
+              finalAmount,
+              discount: itemDiscount,
+            },
+
+            activity: {
+              activity: "STORE_EARNING",
+              transactionType: "CREDIT",
+              displayName: `${po.user?.name ?? "Someone"} bought ${product.name}`,
+            },
+
+            activityMeta: {
+              productId: product.id,
+              productName: product.name,
+              buyerId: po.user?.id,
+              buyerName: po.user?.name,
+            },
+          };
+        }),
+    );
+    const formatAmount = (num: number) => Number(num.toFixed(2));
+
+    const affiliateHistory = affiliateEarnings.map((ae) => {
+      const userName = ae.referredUser?.name ?? "Someone";
+      const order = affiliateOrderMap.get(ae.paymentOrderId);
+      const planName = order?.plan?.name ?? null;
+
+      const programName = order?.programId
+        ? affiliateProgramMap.get(order.programId)
+        : null;
+
+      const challengeName = order?.challengeId
+        ? affiliateChallengeMap.get(order.challengeId)
+        : null;
+      let productName: string | null = null;
+
+      if (order?.cartSnapshot && ae.contextId) {
+        const items = parseCartSnapshot(order.cartSnapshot);
+
+        const matchedItem = items.find((item) => item.itemId === ae.contextId);
+
+        if (matchedItem) {
+          productName =
+            affiliateProductMap.get(matchedItem.itemId) ??
+            matchedItem.name ??
+            null;
+        }
+      }
+
+      let displayName = `You earned a referral commission`;
+      
+      if (ae.contextType === "SUBSCRIPTION") {
+        displayName = planName
+          ? ` purchased ${planName} using your referral`
+          : `purchased a membership using your referral`;
+      }
+
+      if (ae.contextType === "MMP_PROGRAM") {
+        displayName = programName
+          ? `${userName} joined ${programName} using your referral`
+          : `${userName} joined a program using your referral`;
+      }
+
+      if (ae.contextType === "CHALLENGE") {
+        displayName = challengeName
+          ? `${userName} joined ${challengeName} using your referral`
+          : `${userName} joined a challenge using your referral`;
+      }
+
+      if (ae.contextType === "STORE_PRODUCT") {
+        displayName = productName
+          ? `${userName} purchased ${productName} using your referral`
+          : `${userName} purchased a product using your referral`;
+      }
+
+      return {
+        id: `affiliate-${ae.id}`,
+        createdAt: ae.createdAt,
+        jpAmount: formatAmount(ae.earnedAmount),
+        currency: ae.currency,
+
+        activity: {
+          activity: "AFFILIATE_EARNING",
+          transactionType: "CREDIT",
+          displayName,
+        },
+
+        activityMeta: {
+          affiliateId: ae.affiliateId,
+          referredUserId: ae.referredUserId,
+          referredUserName: userName,
+
+          // ✅ NEW
+          programId: order?.programId,
+          programName,
+
+          challengeId: order?.challengeId,
+          challengeTitle: challengeName,
+
+          productName,
+
+          paymentOrderId: ae.paymentOrderId,
+          commissionRate: ae.commissionRate,
+          baseAmount: formatAmount(ae.baseAmount),
+          discountAmount: formatAmount(ae.discountAmount),
+          earnedAmount: formatAmount(ae.earnedAmount),
+          commissionType: ae.commissionType,
+          contextType: ae.contextType,
+        },
+      };
+    });
     const paymentOrderIds = paymentOrders.map((po) => po.id);
 
-const invoices = await prisma.invoice.findMany({
-  where: {
-    paymentOrderId: { in: paymentOrderIds },
-    status: "PAID",
-  },
-  select: {
-    paymentOrderId: true,
-    pdfUrl: true,
-  },
-});
+    const invoices = await prisma.invoice.findMany({
+      where: {
+        paymentOrderId: { in: paymentOrderIds },
+        status: "PAID",
+      },
+      select: {
+        paymentOrderId: true,
+        pdfUrl: true,
+      },
+    });
 
-const invoiceMap = new Map(
-  invoices.map((inv) => [inv.paymentOrderId, inv.pdfUrl])
-);
+    const invoiceMap = new Map(
+      invoices.map((inv) => [inv.paymentOrderId, inv.pdfUrl]),
+    );
 
     // After the main Promise.all, fetch UNFILTERED data for balance cards
     const [allCoachEarnings] = await Promise.all([
@@ -306,19 +565,6 @@ const invoiceMap = new Map(
       select: {
         id: true,
         name: true,
-      },
-    });
-    const storeItemIds = paymentOrders
-      .filter((po) => po.contextType === "STORE_PRODUCT")
-      .flatMap((po) => {
-        const items = parseCartSnapshot(po.cartSnapshot);
-        return items.map((item) => item.itemId);
-      })
-      .filter((id): id is string => Boolean(id));
-
-    const storeProducts = await prisma.item.findMany({
-      where: {
-        id: { in: storeItemIds },
       },
     });
 
@@ -354,6 +600,12 @@ const invoiceMap = new Map(
 
         displayName = name ? `MMP Purchase : ${name}` : "Program Purchase";
       }
+      if (po.contextType === "CMP") {
+        // you MUST have programId or metadata
+        const name = po.programId ? programMap.get(po.programId) : null;
+
+        displayName = name ? `Purchase ${name}` : "Complete Makeover Program";
+      }
 
       return {
         id: po.id,
@@ -374,18 +626,6 @@ const invoiceMap = new Map(
         },
       };
     });
-
-    const cmpHistory = cmpPurchases.map((cp) => ({
-      id: cp.id,
-      createdAt: cp.purchasedAt,
-      jpAmount: cp.totalAmount,
-      currency: cp.currency,
-      activity: {
-        activity: "CMP_PURCHASE",
-        transactionType: "DEBIT",
-        displayName: `${cp.product.name}`,
-      },
-    }));
 
     const gpHistory = transactions.map((tx) => {
       let displayName =
@@ -424,61 +664,55 @@ const invoiceMap = new Map(
       };
     });
 
-    const coachEarningsHistory = coachChallengeEarnings.map((cp) => {
-      const feature = checkFeature({
-        feature: "challenges",
-        user: {
-          userType: session.user.userType,
-          membership: session.user.membership,
-        },
-      });
+    const coachEarningsHistory = await Promise.all(
+      coachChallengeEarnings.map(async (cp) => {
+        const commissionPercent = challengeCommission;
 
-      const commissionPercent = feature.allowed
-        ? ((feature.config as { commissionPercent?: number })
-            .commissionPercent ?? 0)
-        : 0;
+        const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
+        const discount = cp.paymentOrder?.discountApplied ?? 0;
 
-      const baseAmount = cp.paymentOrder?.baseAmount ?? cp.amountPaid;
-      const discount = cp.paymentOrder?.discountApplied ?? 0;
+        const netBase = baseAmount - discount;
 
-      const netBase = baseAmount - discount;
+        const commission = (netBase * commissionPercent) / 100;
+        const finalAmount = netBase - commission;
 
-      const commission = (netBase * commissionPercent) / 100;
-      const finalAmount = netBase - commission;
+        return {
+          id: `coach-${cp.id}`,
+          createdAt: cp.paidAt || cp.joinedAt,
+          jpAmount: finalAmount,
+          currency: cp.currency,
 
-      return {
-        id: `coach-${cp.id}`,
-        createdAt: cp.paidAt || cp.joinedAt,
-        jpAmount: finalAmount,
-        currency: cp.currency,
+          breakdown: {
+            baseAmount,
+            commission,
+            finalAmount,
+            discount,
+          },
 
-        breakdown: {
-          baseAmount,
-          commission,
-          finalAmount,
-          discount,
-        },
+          activity: {
+            activity: "CHALLENGE_EARNING",
+            transactionType: "CREDIT",
+            displayName: `${cp.user.name} joining ${cp.challenge.title}`,
+          },
 
-        activity: {
-          activity: "CHALLENGE_EARNING",
-          transactionType: "CREDIT",
-          displayName: `${cp.user.name} joining ${cp.challenge.title}`,
-        },
-
-        activityMeta: {
-          userId: cp.user.id,
-          userName: cp.user.name,
-          challengeTitle: cp.challenge.title,
-        },
-      };
-    });
+          activityMeta: {
+            userId: cp.user.id,
+            userName: cp.user.name,
+            challengeTitle: cp.challenge.title,
+          },
+        };
+      }),
+    );
 
     let combined = [
       ...gpHistory,
       ...paymentHistory,
-      ...cmpHistory,
       ...coachEarningsHistory,
       ...coachMmpEarnings,
+      ...coachStoreEarnings.filter(
+        (tx): tx is NonNullable<typeof tx> => tx !== null,
+      ),
+      ...affiliateHistory,
     ];
     // ✅ Filter by CREDIT / DEBIT
     if (txType !== "ALL") {
@@ -525,18 +759,7 @@ const invoiceMap = new Map(
     const paginated = combined.slice(skipSafe, skipSafe + limit);
 
     const gpBalance = user?.jpBalance ?? 0;
-    const feature = checkFeature({
-      feature: "challenges",
-      user: {
-        userType: session.user.userType,
-        membership: session.user.membership,
-      },
-    });
-
-    const commissionPercent = feature.allowed
-      ? ((feature.config as { commissionPercent?: number }).commissionPercent ??
-        0)
-      : 0;
+    const commissionPercent = challengeCommission;
     // INR balance (coach challenge earnings after commission)
     const inrCredits = allCoachEarnings
       .filter((cp) => cp.currency === "INR")
@@ -595,6 +818,10 @@ const invoiceMap = new Map(
       totalPages,
       version: versionFlag ? "v3" : "default",
       currentPage,
+      commission: {
+        challenges: challengeCommission,
+        miniMasteryPrograms: mmpCommission,
+      },
       balances: {
         GP: gpBalance,
         INR: inrBalance,

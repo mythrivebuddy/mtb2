@@ -9,8 +9,11 @@ import { assignJp } from "@/lib/utils/jp";
 import { ActivityType, Prisma } from "@prisma/client";
 import { dailyBloomSchema, DailyBloomFormType } from "@/schema/zodSchema";
 import { checkFeature } from "@/lib/access-control/checkFeature";
-import { UNLIMITED } from "@/lib/access-control/featureConfig";
+
 import { checkRole } from "@/lib/utils/auth";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
+import { UNLIMITED } from "@/lib/constant";
+
 //import { combineDateAndTime } from "@/lib/utils/dateUtils";
 
 // --- authOptions (unchanged) ---
@@ -251,10 +254,20 @@ export async function POST(req: NextRequest) {
       // Append the time string to the user's description
       finalDescription = `${baseDescription} ${timeString}`.trim();
     }
+    const userType = normalizeUserType(session?.user?.userType);
 
-    const featureResult = checkFeature({
+    if (!userType) {
+      return NextResponse.json(
+        { error: "USER_TYPE_NOT_SUPPORTED" },
+        { status: 403 },
+      );
+    }
+    const featureResult = await checkFeature({
       feature: "dailyBlooms",
-      user: session.user,
+      user: {
+        userType,
+        membership: session.user.membership ?? undefined,
+      },
     });
 
     if (!featureResult.allowed) {

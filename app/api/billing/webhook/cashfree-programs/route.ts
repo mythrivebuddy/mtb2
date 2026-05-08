@@ -7,10 +7,12 @@ import {
   PlanInterval,
   PlanUserType,
   Prisma,
-  SubscriptionStatus
+  SubscriptionStatus,
 } from "@prisma/client";
 import { getCashfreeConfig } from "@/lib/cashfree/cashfree";
 import { verifySignature } from "@/lib/payment/payment.utils";
+import { inngest } from "@/lib/inngest";
+import { createAffiliateEarningForSubscription } from "@/lib/affiliate/affiliateEarning";
 
 /* ------------------------------------------------------------------ */
 /* Types */
@@ -23,6 +25,10 @@ type CashfreeWebhookPayload = {
       order_id?: string;
       cf_order_id?: string;
       order_status?: string;
+      order_meta?: {
+        purchase_id?: string;
+        payment_order_id?: string;
+      };
     };
   };
 };
@@ -58,28 +64,24 @@ function isPaymentFailureEvent(type?: string): boolean {
 
   const normalized = type.toUpperCase();
 
-  return (
-    normalized.includes("FAILED") ||
-    normalized.includes("CANCELLED")
-  );
+  return normalized.includes("FAILED") || normalized.includes("CANCELLED");
 }
 
 /* ------------------------------------------------------------------ */
 /* Core Business Logic */
 /* ------------------------------------------------------------------ */
 
-
 async function grantProgramAccess(
   purchaseId: string,
-  orderId?: string
+  orderId?: string,
+  paymentOrderId?: string,
 ) {
-
   const purchase = await prisma.oneTimeProgramPurchase.findUnique({
     where: { id: purchaseId },
     include: {
       plan: true,
-      user: true
-    }
+      user: true,
+    },
   });
 
   if (!purchase) {
@@ -107,7 +109,7 @@ async function grantProgramAccess(
   if (!effectiveUserType) {
     console.error("❌ Unable to resolve effective userType", {
       planUserType,
-      userUserType
+      userUserType,
     });
     return;
   }
@@ -122,8 +124,8 @@ async function grantProgramAccess(
         where: { id: purchaseId },
         data: {
           status: PaymentStatus.PAID,
-          orderId: orderId
-        }
+          orderId: orderId,
+        },
       });
     }
 
@@ -134,15 +136,12 @@ async function grantProgramAccess(
       where: {
         interval: PlanInterval.YEARLY,
         userType: effectiveUserType,
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     if (!yearlyPlan) {
-      console.error(
-        "❌ No YEARLY plan found for userType:",
-        effectiveUserType
-      );
+      console.error("❌ No YEARLY plan found for userType:", effectiveUserType);
       return;
     }
 
@@ -166,7 +165,7 @@ async function grantProgramAccess(
           grantedByPurchaseId: purchase.id,
           orderId: orderId,
           couponId: purchase.couponId,
-        }
+        },
       });
 
       if (purchase.couponId) {
@@ -175,8 +174,8 @@ async function grantProgramAccess(
             couponId: purchase.couponId,
             userId: purchase.userId,
             appliedPlan: yearlyPlan.id,
-            discountApplied: purchase.discountApplied
-          }
+            discountApplied: purchase.discountApplied,
+          },
         });
       }
 
@@ -186,23 +185,52 @@ async function grantProgramAccess(
        */
       await tx.oneTimeProgramPurchase.update({
         where: { id: purchaseId },
-        data: { freeSubscriptionId: subscription.id }
+        data: { freeSubscriptionId: subscription.id },
       });
+      if (paymentOrderId) {
+        const paymentOrder = await prisma.paymentOrder.findUnique({
+          where: { id: paymentOrderId },
+        });
 
+        if (paymentOrder && paymentOrder.status !== PaymentStatus.PAID) {
+          await prisma.paymentOrder.update({
+            where: { id: paymentOrderId },
+            data: { status: PaymentStatus.PAID },
+          });
+          await createAffiliateEarningForSubscription({
+            tx: prisma,
+            order: {
+              id: paymentOrderId,
+              userId: paymentOrder.userId,
+              totalAmount: paymentOrder.totalAmount ?? 0, // or correct field
+              baseAmount: paymentOrder.baseAmount ?? 0,
+              gstAmount: paymentOrder.gstAmount,
+              discountApplied: paymentOrder.discountApplied ?? 0,
+              currency: paymentOrder.currency ?? "INR",
+              contextType: "SUBSCRIPTION", 
+            },
+            isAdmin: true,
+          });
+          await inngest.send({
+            id: `invoice-${paymentOrderId}`,
+            name: "invoice/send",
+            data: { orderId: paymentOrderId },
+          });
+        }
+      }
       /**
        * 5️⃣ Upgrade user membership
        */
       await tx.user.update({
         where: { id: purchase.userId },
         data: {
-           membership: "PAID",
-           currentPlanId: yearlyPlan.id,
-           currentPlanInterval: PlanInterval.YEARLY,
-           planStart: startDate,
-           planEnd:endDate,
-        }
+          membership: "PAID",
+          currentPlanId: yearlyPlan.id,
+          currentPlanInterval: PlanInterval.YEARLY,
+          planStart: startDate,
+          planEnd: endDate,
+        },
       });
-
     } catch (err: unknown) {
       /**
        * Duplicate webhook → unique constraint hit
@@ -235,6 +263,10 @@ export async function POST(req: Request) {
   const body = JSON.parse(rawBody) as CashfreeWebhookPayload;
   const orderId = body.data?.order?.order_id;
   const purchaseId = extractPurchaseId(orderId);
+  const paymentOrder = await prisma.paymentOrder.findFirst({
+    where: { orderId },
+  });
+  const paymentOrderId = paymentOrder?.id;
 
   // ACK IMMEDIATELY (Vercel-safe)
   const response = NextResponse.json({ ok: true });
@@ -242,19 +274,23 @@ export async function POST(req: Request) {
   if (purchaseId && isPaymentSuccessEvent(body.type)) {
     // fire-and-forget (DO NOT await)
     setImmediate(() => {
-      grantProgramAccess(purchaseId, orderId).catch(console.error);
+      grantProgramAccess(purchaseId, orderId, paymentOrderId).catch(
+        console.error,
+      );
     });
   }
 
   if (purchaseId && isPaymentFailureEvent(body.type)) {
     setImmediate(() => {
-      prisma.oneTimeProgramPurchase.updateMany({
-        where: {
-          id: purchaseId,
-          status: { not: PaymentStatus.PAID }
-        },
-        data: { status: PaymentStatus.FAILED }
-      }).catch(console.error);
+      prisma.oneTimeProgramPurchase
+        .updateMany({
+          where: {
+            id: purchaseId,
+            status: { not: PaymentStatus.PAID },
+          },
+          data: { status: PaymentStatus.FAILED },
+        })
+        .catch(console.error);
     });
   }
 

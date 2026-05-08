@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkFeature } from "@/lib/access-control/checkFeature";
 import { enforceLimitResponse } from "@/lib/access-control/enforceLimitResponse";
+import { normalizeUserType } from "@/lib/utils/normalizedUserTypes";
 
 // // --- AuthOptions Definition ---
 // const authOptions: AuthOptions = {
@@ -51,28 +52,29 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const featureCheck = checkFeature({
+  const userType = normalizeUserType(session.user.userType);
+
+  if (!userType) {
+    return NextResponse.json({ error: "INVALID_USER_TYPE" }, { status: 400 });
+  }
+  const featureCheck = await checkFeature({
     feature: "reminders",
     user: {
-      userType: session.user.userType,
-      membership: session.user.membership, // FREE | PAID
+      userType,
+      membership: session.user.membership ?? undefined, // FREE | PAID
     },
   });
 
   if (!featureCheck.allowed) {
     return NextResponse.json(
-      { message: "Reminders feature not available for your plan" },
+      { error: featureCheck.reason || "FEATURE_NOT_AVAILABLE" },
       { status: 403 },
     );
   }
-  const planConfig =
-    typeof featureCheck.config === "object"
-      ? (featureCheck.config as { dailyLimit: number })
-      : null;
 
-  if (!planConfig) {
+  if (!featureCheck.config) {
     return NextResponse.json(
-      { error: "Daily Reminders configuration not found" },
+      { error: "FEATURE_CONFIG_MISSING" },
       { status: 500 },
     );
   }
@@ -117,7 +119,9 @@ export async function POST(req: Request) {
     const limitResponse = await enforceLimitResponse({
       limit: dailyLimit,
       currentCount: remindersToday,
-      message: `You have reached your daily limit of ${planConfig.dailyLimit} ${planConfig.dailyLimit > 1 ? "reminders" : "reminder"}. Please upgrade your plan to increase your limit.`,
+      message: `You have reached your daily limit of ${dailyLimit} ${
+        dailyLimit > 1 ? "reminders" : "reminder"
+      }. Please upgrade your plan to increase your limit.`,
     });
 
     if (limitResponse) return limitResponse;
