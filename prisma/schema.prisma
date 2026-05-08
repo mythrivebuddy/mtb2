@@ -1457,10 +1457,11 @@ model CreatorEarningLedger {
   contextType     PaymentContextType
   
   // 💰 financial snapshot (frozen)
-  baseAmount      Float
-  commissionRate  Float
+  baseAmount      Float // pre discont amount 
+  discountAmount  Float    @default(0)
+  commissionRate  Float 
   platformFee     Float
-  earnedAmount    Float
+  earnedAmount    Float // Final amount after discount and fees
   currency        String
   
   // 📌 payout tracking

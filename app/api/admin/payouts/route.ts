@@ -14,6 +14,7 @@ type CreatorPayout = {
   currency: string;
   baseAmount: number;
   discountAmount: number;
+  netAmount: number;
   commissionAmount: number;
   payableAmount: number;
   holdingAmount: number;
@@ -91,7 +92,8 @@ export async function GET(req: NextRequest) {
       _sum: {
         earnedAmount: true,
         platformFee: true,
-        baseAmount: true, // ✅ ADD THIS (important)
+        baseAmount: true,
+        discountAmount: true,
       },
     });
 
@@ -134,6 +136,7 @@ export async function GET(req: NextRequest) {
         commission: number;
         holding: number;
         baseAmount: number;
+        discountAmount: number;
       }
     >();
     grouped.forEach((g) => {
@@ -146,6 +149,7 @@ export async function GET(req: NextRequest) {
         commission: Number(g._sum.platformFee ?? 0),
         holding: 0,
         baseAmount: Number(g._sum.baseAmount ?? 0),
+        discountAmount: Number(g._sum.discountAmount ?? 0)
       });
     });
    pendingInHold.forEach((h) => {
@@ -155,12 +159,14 @@ export async function GET(req: NextRequest) {
       const holdingEarned = Number(h._sum.earnedAmount ?? 0);
       const holdingCommission = Number(h._sum.platformFee ?? 0);
       const holdingBase = Number(h._sum.baseAmount ?? 0);
+      const holdingDiscount = Number(h._sum.discountAmount ?? 0);
       
       if (existing) {
         existing.holding += holdingEarned; // changed to += for safety
         // existing.earned += 0; // keep payable clean
         existing.commission += holdingCommission;
         existing.baseAmount += holdingBase;
+        existing.discountAmount += holdingDiscount;
       } else {
         payoutMap.set(key, {
           creatorId: h.creatorId,
@@ -169,6 +175,7 @@ export async function GET(req: NextRequest) {
           commission: holdingCommission,
           holding: holdingEarned,
           baseAmount: holdingBase,
+          discountAmount: holdingDiscount,
         });
       }
     });
@@ -185,7 +192,8 @@ export async function GET(req: NextRequest) {
           creator: user,
           currency: item.currency,
           baseAmount: item.baseAmount,
-          discountAmount: 0,
+         discountAmount: item.discountAmount, //  ASSIGN REAL DISCOUNT
+          netAmount: item.baseAmount - item.discountAmount,
           commissionAmount: item.commission,
           payableAmount: item.earned,
           holdingAmount: item.holding,
