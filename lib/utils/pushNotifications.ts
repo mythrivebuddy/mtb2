@@ -86,12 +86,7 @@ export async function sendPushNotificationToUser(
     try {
       return await sendPushNotification(pushSub, title, body, undefined, data);
     } catch (err) {
-      if (err instanceof Error && err.message === "Subscription expired") {
-        await prisma.pushSubscription.delete({ where: { endpoint: sub.endpoint } });
-        console.log("Removed expired subscription:", sub.endpoint);
-      } else {
         console.error("Failed to send push notification to:", sub.endpoint, err);
-      }
     }
   });
 
@@ -198,4 +193,12 @@ export async function sendPushNotificationMultipleUsers(
   );
 }
 
-
+export function replaceDynamicNotificationTemplate<T extends Record<string, string | number>>(
+  template: string,
+  data: T
+): string {
+  return template.replace(/{{(.*?)}}/g, (_, key: string) => {
+    const value = data[key.trim() as keyof T];
+    return value !== undefined ? String(value) : "";
+  });
+}
