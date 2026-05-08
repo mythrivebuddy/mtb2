@@ -83,9 +83,8 @@ export async function PATCH(req: NextRequest) {
     const notifUrl = notifSetting?.url || "/dashboard/refer-friend";
 
     if (isFirstTimeAffiliate && updatedUser.email) {
-      Promise.allSettled([
-        // . Send Email
-        sendEmailUsingTemplate({
+      try {
+        await sendEmailUsingTemplate({
           toEmail: updatedUser.email,
           toName: updatedUser.name || "Affiliate",
           templateId: "affiliate-welcome",
@@ -93,15 +92,27 @@ export async function PATCH(req: NextRequest) {
             name: updatedUser.name || "Affiliate",
             referEarnUrl: `${process.env.NEXT_URL || "https://www.mythrivebuddy.com"}/dashboard/refer-friend`,
           },
-        }),
+        });
+      } catch (err) {
+        console.error("Email failed", {
+          userId: updatedUser.id,
+          error: err,
+        });
+      }
 
-        // . Send Web Push Notification
-        sendPushNotificationToUser(updatedUser.id, notifTitle, notifMessage, {
-          url: notifUrl,
-        }),
-      ]).catch((err) =>
-        console.error("Failed to send affiliate notifications:", err),
-      );
+      try {
+        await sendPushNotificationToUser(
+          updatedUser.id,
+          notifTitle,
+          notifMessage,
+          { url: notifUrl },
+        );
+      } catch (err) {
+        console.error("Push notification failed", {
+          userId: updatedUser.id,
+          error: err,
+        });
+      }
     }
 
     return NextResponse.json({
