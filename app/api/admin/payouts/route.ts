@@ -71,6 +71,7 @@ export async function GET(req: NextRequest) {
         earnedAmount: true,
         platformFee: true,
         baseAmount:true,
+        discountAmount:true,
       },
       orderBy: {
         _sum: {
