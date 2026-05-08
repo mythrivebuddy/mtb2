@@ -134,9 +134,18 @@ const CMP_NOTIFICATION_SEEDS: {
   {
     type: "AFFILIATE_APPROVED",
     title: "🎉 You are now an Affiliate!",
-    message: "Your affiliate account is active. Start earning commission on your referrals!",
+    message:
+      "Your affiliate account is active. Start earning commission on your referrals!",
     url: "/dashboard/refer-friend",
     isDynamic: false,
+  },
+  {
+    type: "CREATOR_PAYOUT_SUCCESS",
+    title: "💸 Payout of {{amount}} {{currency}} processed",
+    message:
+      "Your earnings have been credited successfully. Ref: {{referenceId}}",
+    url: "/dashboard/transactions-history",
+    isDynamic: true,
   },
 ];
 
