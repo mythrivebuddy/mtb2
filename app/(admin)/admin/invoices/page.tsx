@@ -27,10 +27,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Download, ExternalLink, Loader2, Search, X } from "lucide-react";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { maskEmail } from "@/utils/mask-email";
+
 import { Pagination } from "@/components/ui/pagination";
 import { format } from "date-fns";
 import { useDebounce } from "@/hooks/use-debounce";
+import SortIndicator from "@/components/common/SortIndicator";
+import { useServerSort } from "@/hooks/use-server-sort";
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -74,14 +76,31 @@ const fetchInvoices = async ({
   limit,
   search,
   status,
+  contextType,
+  emailSent,
+  sortBy,
+  sortOrder,
 }: {
   page: number;
   limit: number;
   search: string;
-  status: string;
+  status?: string;
+  contextType?: string;
+  emailSent?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 }): Promise<ApiResponse> => {
   const res = await axios.get("/api/admin/invoices", {
-    params: { page, limit, search, status },
+    params: {
+      page,
+      limit,
+      search,
+      ...(status && { status }),
+      ...(contextType && { contextType }),
+      ...(emailSent && { emailSent }),
+      ...(sortBy && { sortBy }),
+      ...(sortOrder && { sortOrder }),
+    },
   });
 
   return res.data;
@@ -185,10 +204,16 @@ function InvoiceTable({
   data,
   isLoading,
   onViewPdf,
+  sortBy,
+  sortOrder,
+  onSort,
 }: {
   data: Invoice[];
   isLoading: boolean;
   onViewPdf: (url: string, invoiceNumber: string) => void;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  onSort: (field: string) => void;
 }) {
   return (
     <Card>
@@ -196,13 +221,61 @@ function InvoiceTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Invoice</TableHead>
-              <TableHead>User</TableHead>
+              <TableHead
+                onClick={() => onSort("invoiceNumber")}
+                className="cursor-pointer group select-none"
+              >
+                <div className="flex items-center gap-1">
+                  Invoice
+                  <SortIndicator
+                    field="invoiceNumber"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
+              <TableHead
+                onClick={() => onSort("userName")}
+                className="cursor-pointer group select-none"
+              >
+                <div className="flex items-center gap-1">
+                  User
+                  <SortIndicator
+                    field="userName"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
               <TableHead>Context</TableHead>
-              <TableHead>Amount</TableHead>
+              <TableHead
+                onClick={() => onSort("totalAmount")}
+                className="cursor-pointer group"
+              >
+                <div className="flex items-center gap-1">
+                  Amount
+                  <SortIndicator
+                    field="totalAmount"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Email Sent</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead
+                onClick={() => onSort("createdAt")}
+                className="cursor-pointer group"
+              >
+                <div className="flex items-center gap-1">
+                  Date
+                  <SortIndicator
+                    field="createdAt"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
+              </TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -211,7 +284,7 @@ function InvoiceTable({
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center h-24">
-                  <Loader2 className="animate-spin mx-auto" />
+                  Loading Invoices....
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
@@ -231,7 +304,7 @@ function InvoiceTable({
                     <div className="flex flex-col">
                       <span>{inv.user.name}</span>
                       <span className="text-xs text-muted-foreground">
-                        {maskEmail(inv.user.email)}
+                        {inv.user.email}
                       </span>
                     </div>
                   </TableCell>
@@ -312,15 +385,36 @@ export default function InvoicePage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState<string | null>(null);
 
+  const { sortBy, sortOrder, handleSort } = useServerSort("createdAt");
+  const [contextType, setContextType] = useState("all");
+  const [emailSent, setEmailSent] = useState("all");
+
   const { data, isLoading } = useQuery({
-    queryKey: ["invoices", page, limit, debouncedSearch, status],
+    queryKey: [
+      "invoices",
+      page,
+      limit,
+      debouncedSearch,
+      status,
+      contextType,
+      emailSent,
+      sortBy,
+      sortOrder,
+    ],
     queryFn: () =>
       fetchInvoices({
         page,
         limit,
-        search,
-        status: status === "all" ? "" : status,
+        search: debouncedSearch,
+        ...(status !== "all" && { status }),
+        ...(contextType !== "all" && { contextType }),
+        ...(emailSent !== "all" && { emailSent }),
+        sortBy,
+        sortOrder,
       }),
+    staleTime: 5 * 60 * 1000,
+
+    placeholderData: (prev) => prev,
   });
 
   const invoices = data?.data || [];
@@ -330,15 +424,16 @@ export default function InvoicePage() {
     setInvoiceNumber(invNumber);
     setPdfOpen(true);
   };
-
+  const handleSortWithReset = (field: string) => {
+    setPage(1);
+    handleSort(field);
+  };
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Invoices</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage all platform invoices
-        </p>
+        <p className="text-sm text-muted-foreground">Manage all invoices</p>
       </div>
 
       {/* Filters */}
@@ -348,12 +443,21 @@ export default function InvoicePage() {
           <Input
             placeholder="Search invoice or email..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setPage(1);
+              setSearch(e.target.value);
+            }}
             className="pl-9"
           />
         </div>
-
-        <Select value={status} onValueChange={setStatus}>
+        {/* Status */}
+        <Select
+          value={status}
+          onValueChange={(val) => {
+            setPage(1);
+            setStatus(val);
+          }}
+        >
           <SelectTrigger className="w-[150px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -364,10 +468,50 @@ export default function InvoicePage() {
             <SelectItem value="PENDING">Pending</SelectItem>
           </SelectContent>
         </Select>
+        {/* Context filter */}
+        <Select
+          value={contextType}
+          onValueChange={(val) => {
+            setPage(1);
+            setContextType(val);
+          }}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Context" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Context</SelectItem>
+            <SelectItem value="SUBSCRIPTION">Subscription</SelectItem>
+            <SelectItem value="MMP_PROGRAM">MMP</SelectItem>
+            <SelectItem value="CHALLENGE">Challenge</SelectItem>
+            <SelectItem value="STORE_PRODUCT">Store Product</SelectItem>
+          </SelectContent>
+        </Select>
 
+        {/* Email sent filter */}
+        <Select
+          value={emailSent}
+          onValueChange={(val) => {
+            setPage(1);
+            setEmailSent(val);
+          }}
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Email Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Emails</SelectItem>
+            <SelectItem value="sent">Sent</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* Limit */}
         <Select
           value={String(limit)}
-          onValueChange={(val) => setLimit(Number(val))}
+          onValueChange={(val) => {
+            setPage(1);
+            setLimit(Number(val));
+          }}
         >
           <SelectTrigger className="w-[120px]">
             <SelectValue />
@@ -385,6 +529,9 @@ export default function InvoicePage() {
         data={invoices}
         isLoading={isLoading}
         onViewPdf={handleViewPdf}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={handleSortWithReset}
       />
 
       {/* Pagination */}

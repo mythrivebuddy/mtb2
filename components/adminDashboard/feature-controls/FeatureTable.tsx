@@ -14,7 +14,7 @@ import {
 import { FeatureTableProps } from "@/types/client/admin/feature-controls.types";
 import FeatureTableRow from "./FeatureTableRow";
 import { useTableSort } from "@/hooks/use-table-sort";
-import SortArrow from "@/components/common/SortArrow";
+import SortIndicator from "@/components/common/SortIndicator";
 
 export default function FeatureTable({
   features,
@@ -34,9 +34,10 @@ export default function FeatureTable({
               >
                 <div className="flex items-center gap-1">
                   Feature Name
-                  <SortArrow
-                    active={sortKey === "name"}
-                    direction={direction}
+                  <SortIndicator
+                    field="name"
+                    sortBy={sortKey as string}
+                    sortOrder={direction}
                   />
                 </div>
               </TableHead>
@@ -47,7 +48,11 @@ export default function FeatureTable({
               >
                 <div className="flex items-center gap-1">
                   Key
-                  <SortArrow active={sortKey === "key"} direction={direction} />
+                  <SortIndicator
+                    field="key"
+                    sortBy={sortKey as string}
+                    sortOrder={direction}
+                  />
                 </div>
               </TableHead>
 
@@ -57,10 +62,6 @@ export default function FeatureTable({
               >
                 <div className="flex items-center gap-1 whitespace-nowrap">
                   Allowed Users
-                  <SortArrow
-                    active={sortKey === "allowedUserTypes"}
-                    direction={direction}
-                  />
                 </div>
               </TableHead>
 
@@ -68,13 +69,7 @@ export default function FeatureTable({
                 onClick={() => handleSort("isActive")}
                 className="cursor-pointer"
               >
-                <div className="flex items-center gap-1">
-                  Status
-                  <SortArrow
-                    active={sortKey === "isActive"}
-                    direction={direction}
-                  />
-                </div>
+                <div className="flex items-center gap-1">Status</div>
               </TableHead>
 
               <TableHead className="text-right">Actions</TableHead>
