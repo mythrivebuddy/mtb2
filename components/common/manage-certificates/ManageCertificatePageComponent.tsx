@@ -33,7 +33,6 @@ import {
   Award,
   PenLine,
   Upload,
-  Search,
   CheckCircle2,
   XCircle,
   Loader2,
@@ -48,8 +47,6 @@ import {
   UseQueryOptions,
 } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { Great_Vibes } from "next/font/google";
 import { Pagination } from "@/components/ui/pagination";
 import { getAvatarColor, getInitials } from "@/utils/getInitials";
@@ -57,6 +54,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { maskEmail } from "@/utils/mask-email";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useServerSort } from "@/hooks/use-server-sort";
+import SortIndicator from "../SortIndicator";
 
 const greatVibes = Great_Vibes({
   subsets: ["latin"],
@@ -138,6 +137,8 @@ type FetchParticipantsParams = {
   status: "all" | "eligible" | "not_eligible" | "issued";
   from?: string;
   to?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
 };
 
 const fetchParticipants = async ({
@@ -148,11 +149,23 @@ const fetchParticipants = async ({
   status,
   from,
   to,
+  sortBy,
+  sortOrder,
 }: FetchParticipantsParams): Promise<PaginatedResponse> => {
   const res = await axios.get(
     `/api/challenge/certificates/participant-progress`,
     {
-      params: { type, page, limit, search, status, from, to },
+      params: {
+        type,
+        page,
+        limit,
+        search,
+        status,
+        from,
+        to,
+        sortBy,
+        sortOrder,
+      },
     },
   );
 
@@ -489,6 +502,9 @@ type ParticipantsTableProps = {
   setCustomFrom: (v: string) => void;
   customTo: string;
   setCustomTo: (v: string) => void;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  onSort: (field: string) => void;
 };
 function ParticipantsTable({
   programs,
@@ -508,7 +524,6 @@ function ParticipantsTable({
   filter,
   onFilterChange,
 
-  // ADD THESE
   dateMode,
   setDateMode,
   dateFilter,
@@ -517,6 +532,9 @@ function ParticipantsTable({
   setCustomFrom,
   customTo,
   setCustomTo,
+  sortBy,
+  sortOrder,
+  onSort,
 }: ParticipantsTableProps) {
   const paginatedData = useMemo(() => {
     return programs.flatMap((p) => p.participants);
@@ -533,13 +551,12 @@ function ParticipantsTable({
       {/* Filter bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+        <div className="relative flex w-full">
           <Input
             placeholder="Search by name, challenge or program…"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 h-9 text-sm w-full"
+            className="pl-4 h-9 text-sm w-full"
           />
         </div>
 
@@ -548,7 +565,7 @@ function ParticipantsTable({
           value={filter}
           onValueChange={(v) => onFilterChange(v as FilterType)}
         >
-          <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
+          <SelectTrigger className="w-full text-start sm:w-44 h-9 text-sm">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -556,6 +573,22 @@ function ParticipantsTable({
             <SelectItem value="eligible">Eligible</SelectItem>
             <SelectItem value="not_eligible">Not Eligible</SelectItem>
             <SelectItem value="issued">Issued</SelectItem>
+          </SelectContent>
+        </Select>
+        {/* Context filter  */}
+        <Select
+          value={activeTab}
+          onValueChange={(val) => {
+            setActiveTab(val as "all" | "challenges" | "mmp");
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[220px] h-9 text-sm mb-4">
+            <SelectValue placeholder="Select Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="challenges">Challenges</SelectItem>
+            <SelectItem value="mmp">Mini Mastery Programs</SelectItem>
           </SelectContent>
         </Select>
 
@@ -644,25 +677,23 @@ function ParticipantsTable({
 
       {/* Table */}
       <Card className="overflow-x-auto w-full border rounded-lg">
-        {/* ── Tabs ── */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(val) =>
-            setActiveTab(val as "all" | "challenges" | "mmp")
-          }
-          className="mb-6 flex justify-center"
-        >
-          <TabsList className="flex flex-row w-full sm:w-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="challenges">Challenges</TabsTrigger>
-            <TabsTrigger value="mmp">Mini Mastery Programs</TabsTrigger>
-          </TabsList>
-        </Tabs>
         <CardContent>
           <Table className="min-w-[780px]">
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[250px]">Participant</TableHead>
+                <TableHead
+                  onClick={() => onSort("name")}
+                  className="cursor-pointer group select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    Participant
+                    <SortIndicator
+                      field="name"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
+                </TableHead>
                 <TableHead>
                   {activeTab === "all"
                     ? "Challenge / Program"
@@ -671,8 +702,32 @@ function ParticipantsTable({
                       : "Program"}
                 </TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Activity</TableHead>
+                <TableHead
+                  onClick={() => onSort("completionPercentage")}
+                  className="cursor-pointer group select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    Progress
+                    <SortIndicator
+                      field="completionPercentage"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
+                </TableHead>
+                <TableHead
+                  onClick={() => onSort("lastActiveDate")}
+                  className="cursor-pointer group select-none"
+                >
+                  <div className="flex items-center gap-1">
+                    Activity
+                    <SortIndicator
+                      field="lastActiveDate"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -882,12 +937,12 @@ export default function ManageCertificatePageComponent() {
   const [dateFilter, setDateFilter] = useState("30");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
-
+  const { sortBy, sortOrder, handleSort } = useServerSort("joinedAt");
   const sharedOptions: Omit<
     UseQueryOptions<PaginatedResponse>,
     "queryKey" | "queryFn"
   > = {
-    staleTime: 2 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
     placeholderData: (prev) => prev,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -913,7 +968,18 @@ export default function ManageCertificatePageComponent() {
   }, [dateMode, dateFilter, customFrom, customTo]);
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
-    queryKey: ["pp", activeTab, page, limit, debouncedSearch, filter, from, to],
+    queryKey: [
+      "pp",
+      activeTab,
+      page,
+      limit,
+      debouncedSearch,
+      filter,
+      from,
+      to,
+      sortBy,
+      sortOrder,
+    ],
     queryFn: () =>
       fetchParticipants({
         type: activeTab,
@@ -923,6 +989,8 @@ export default function ManageCertificatePageComponent() {
         status: filter,
         from,
         to,
+        sortBy,
+        sortOrder,
       }),
     ...sharedOptions,
   });
@@ -1376,6 +1444,12 @@ export default function ManageCertificatePageComponent() {
             setCustomFrom={setCustomFrom}
             customTo={customTo}
             setCustomTo={setCustomTo}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            onSort={(field) => {
+              setPage(1);
+              handleSort(field);
+            }}
           />
         </div>
       </div>

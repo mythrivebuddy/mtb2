@@ -24,16 +24,21 @@ import { getInitials } from "@/utils/getInitials";
 import Image from "next/image";
 import ConfirmAction from "@/components/ConfirmAction";
 import { type SpotlightApplication } from "@/types/client/spotligh";
-
+import { useServerSort } from "@/hooks/use-server-sort";
+import SortIndicator from "@/components/common/SortIndicator";
 
 const fetchSpotlightApplications = async (
   currentPage: number,
-  limit: number
+  limit: number,
+  sortBy: string,
+  sortOrder: "asc" | "desc",
 ) => {
   const { data } = await axios.get("/api/admin/spotlight/application", {
     params: {
       page: currentPage,
       limit,
+      sortBy,
+      sortOrder,
     },
   });
   return data;
@@ -51,7 +56,7 @@ const updateSpotlightStatus = async ({
 };
 
 const getStatusBadgeVariant = (
-  status: SpotlightStatus
+  status: SpotlightStatus,
 ): "default" | "destructive" | "secondary" | "outline" => {
   switch (status) {
     case "APPROVED":
@@ -74,11 +79,12 @@ export default function SpotlightApplication() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const limit = 6;
-  
+  const { sortBy, sortOrder, handleSort } = useServerSort("appliedAt");
 
   const { data: applications, isLoading } = useQuery({
-    queryKey: ["spotlightApplications"],
-    queryFn: () => fetchSpotlightApplications(currentPage, limit),
+    queryKey: ["spotlightApplications", currentPage, sortBy, sortOrder],
+    queryFn: () =>
+      fetchSpotlightApplications(currentPage, limit, sortBy, sortOrder),
   });
   const totalPages = Math.ceil((applications?.totalApplications || 0) / limit);
 
@@ -95,10 +101,15 @@ export default function SpotlightApplication() {
     },
   });
 
+  const handleSortWithReset = (field: string) => {
+    setCurrentPage(1);
+    handleSort(field);
+  };
+
   const handleViewProfile = async (
     userId: string,
     spotlightId: string,
-    status: SpotlightStatus
+    status: SpotlightStatus,
   ) => {
     if (status === SpotlightStatus.APPLIED) {
       await mutation.mutateAsync({ id: spotlightId, status: "IN_REVIEW" });
@@ -109,21 +120,18 @@ export default function SpotlightApplication() {
 
   if (isLoading) {
     return <PageSkeleton type="spotlight" />;
-
   }
 
   const currentSpotlight = applications?.spotlightApplications?.find(
-    (app: SpotlightApplication) => app.status === "ACTIVE"
+    (app: SpotlightApplication) => app.status === "ACTIVE",
   );
   queryClient.setQueryData(["spotlightUnseenCount"], 0);
 
-    // then trigger refetch from backend
-    queryClient.invalidateQueries({ queryKey: ["spotlightUnseenCount"] })
+  // then trigger refetch from backend
+  queryClient.invalidateQueries({ queryKey: ["spotlightUnseenCount"] });
   return (
     <div className="bg-white px-2 sm:px-6 py-6 rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-6">
-        Spotlight Management
-      </h2>
+      <h2 className="text-xl font-semibold mb-6">Spotlight Management</h2>
 
       <div className="mb-6">
         <h3 className="text-lg font-medium mb-2">Current Spotlight</h3>
@@ -172,12 +180,32 @@ export default function SpotlightApplication() {
         <Table className="min-w-full divide-y divide-gray-200">
           <TableHeader>
             <TableRow>
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
+              <TableHead
+                onClick={() => handleSortWithReset("userName")}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                <div className="flex items-center gap-1">
+                  User
+                  <SortIndicator
+                    field="userName"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
               </TableHead>
 
-              <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Application Date
+              <TableHead
+                onClick={() => handleSortWithReset("appliedAt")}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                <div className="flex items-center gap-1">
+                  Application Date
+                  <SortIndicator
+                    field="appliedAt"
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                  />
+                </div>
               </TableHead>
               <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -287,7 +315,7 @@ export default function SpotlightApplication() {
                     </div>
                   </TableCell>
                 </TableRow>
-              )
+              ),
             )}
           </TableBody>
         </Table>

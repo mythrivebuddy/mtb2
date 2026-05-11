@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -10,12 +10,9 @@ import {
   IndianRupee,
   DollarSign,
   Search,
-  ChevronDown,
-  ChevronUp,
   TrendingUp,
   Wallet,
   Users,
-  ArrowUpDown,
   XCircle,
 } from "lucide-react";
 import {
@@ -56,6 +53,10 @@ import { getAxiosErrorMessage } from "@/utils/ax";
 import { Pagination } from "@/components/ui/pagination";
 import { useDebounce } from "@/hooks/use-debounce";
 import Link from "next/link";
+import { useServerSort } from "@/hooks/use-server-sort";
+import SortIndicator from "@/components/common/SortIndicator";
+import Image from "next/image";
+import { getInitials } from "@/utils/getInitials";
 
 // ================= TYPES =================
 
@@ -64,6 +65,7 @@ type ApiCreator = {
   creator: {
     name: string;
     email: string;
+    image?: string;
   };
   currency: string;
   baseAmount: number;
@@ -78,6 +80,7 @@ type PayoutItem = {
   creatorId: string;
   creatorName: string;
   creatorEmail: string;
+  creatorImage?: string;
   baseAmount: number;
   netAmount: number;
   discountAmount: number;
@@ -100,14 +103,6 @@ type Analytics = {
   totalHoldingUSD: number;
   totalCommission: number;
 };
-type SortField =
-  | "creatorName"
-  | "pendingBalance"
-  | "baseAmount"
-  | "commissionAmount"
-  | "discountAmount"
-  | "netAmount";
-type SortDir = "asc" | "desc";
 
 type DatePreset = "ALL" | "TODAY" | "THIS_MONTH" | "CUSTOM";
 
@@ -126,38 +121,6 @@ function fmt(amount: number, decimals = 2) {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-}
-
-function SortButton({
-  field,
-  current,
-  dir,
-  onClick,
-}: {
-  field: SortField;
-  current: SortField;
-  dir: SortDir;
-  onClick: () => void;
-}) {
-  const active = current === field;
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1 ml-1 transition-opacity ${
-        active ? "opacity-100" : "opacity-30 hover:opacity-60"
-      }`}
-    >
-      {active ? (
-        dir === "asc" ? (
-          <ChevronUp className="w-3 h-3" />
-        ) : (
-          <ChevronDown className="w-3 h-3" />
-        )
-      ) : (
-        <ArrowUpDown className="w-3 h-3" />
-      )}
-    </button>
-  );
 }
 
 // ================= COMPONENT =================
@@ -194,8 +157,7 @@ export default function AdminPayoutsPage() {
   }, [debouncedSearch, currencyFilter, fromDate, toDate, limit]);
 
   // Sort state
-  const [sortField, setSortField] = useState<SortField>("pendingBalance");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const { sortBy, sortOrder, handleSort } = useServerSort("payableAmount");
   // ✅ Fetch payouts
   const { data, isLoading, isError } = useQuery({
     queryKey: [
@@ -206,11 +168,15 @@ export default function AdminPayoutsPage() {
       toDate,
       page,
       limit,
+      sortBy,
+      sortOrder,
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
+        sortBy,
+        sortOrder,
       });
 
       if (debouncedSearch) params.append("search", debouncedSearch);
@@ -225,6 +191,7 @@ export default function AdminPayoutsPage() {
           creatorId: c.creatorId,
           creatorName: c.creator?.name || "Unknown",
           creatorEmail: c.creator?.email || "-",
+          creatorImage: c.creator?.image || "",
           baseAmount: Number(c.baseAmount || 0),
           discountAmount: Number(c.discountAmount || 0),
           netAmount: Number(c.netAmount || 0),
@@ -237,6 +204,8 @@ export default function AdminPayoutsPage() {
         analytics: res.data.analytics,
       };
     },
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 
   const payouts = data?.creators || [];
@@ -267,23 +236,11 @@ export default function AdminPayoutsPage() {
   });
 
   // ================= DERIVED DATA =================
-
-  const filtered = useMemo(() => {
-    const list = [...payouts];
-
-    // Server handles search and currency filters, handle client-side sorting here
-    list.sort((a, b) => {
-      const valA = a[sortField];
-      const valB = b[sortField];
-      const cmp =
-        typeof valA === "string"
-          ? valA.localeCompare(valB as string)
-          : (valA as number) - (valB as number);
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-
-    return list;
-  }, [payouts, sortField, sortDir]);
+  const filtered = payouts;
+  const handleSortWithReset = (field: string) => {
+    setPage(1);
+    handleSort(field);
+  };
 
   const analyticsRef = useRef<Analytics | null>(null);
 
@@ -300,15 +257,6 @@ export default function AdminPayoutsPage() {
       totalHoldingUSD: 0,
       totalCommission: 0,
     };
-
-  const toggleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
-  };
 
   const handleOpenModal = (payout: PayoutItem) => {
     setSelectedPayout(payout);
@@ -538,61 +486,85 @@ export default function AdminPayoutsPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
-                <TableHead>
-                  Creator
-                  <SortButton
-                    field="creatorName"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("creatorName")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("creatorName")}
+                  className="cursor-pointer group"
+                >
+                  <div className="flex items-center gap-1">
+                    Creator
+                    <SortIndicator
+                      field="creatorName"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="whitespace-nowrap text-center">
-                  Base Amount
-                  <SortButton
-                    field="baseAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("baseAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("baseAmount")}
+                  className="cursor-pointer group text-center"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    Base Amount
+                    <SortIndicator
+                      field="baseAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right text-red-500">
-                  Discount
-                  <SortButton
-                    field="discountAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("discountAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("discountAmount")}
+                  className="cursor-pointer group text-right text-red-500"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Discount
+                    <SortIndicator
+                      field="discountAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right font-medium">
-                  Net
-                  <SortButton
-                    field="netAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("netAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("netAmount")}
+                  className="cursor-pointer group text-right"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Net
+                    <SortIndicator
+                      field="netAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
 
-                <TableHead className="text-right text-orange-500">
-                  Commission
-                  <SortButton
-                    field="commissionAmount"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("commissionAmount")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("commissionAmount")}
+                  className="cursor-pointer group text-right text-orange-500"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Commission
+                    <SortIndicator
+                      field="commissionAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
-                <TableHead className="text-right text-green-600">
-                  Payable
-                  <SortButton
-                    field="pendingBalance"
-                    current={sortField}
-                    dir={sortDir}
-                    onClick={() => toggleSort("pendingBalance")}
-                  />
+                <TableHead
+                  onClick={() => handleSortWithReset("payableAmount")}
+                  className="cursor-pointer group text-right"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Payable
+                    <SortIndicator
+                      field="payableAmount"
+                      sortBy={sortBy}
+                      sortOrder={sortOrder}
+                    />
+                  </div>
                 </TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -634,9 +606,20 @@ export default function AdminPayoutsPage() {
                     {/* Creator */}
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                          {p.creatorName.charAt(0).toUpperCase()}
-                        </div>
+                        {p.creatorImage ? (
+                          <Image
+                            height={300}
+                            width={300}
+                            className="h-8 w-8 object-cover rounded-full"
+                            src={p.creatorImage}
+                            alt={p.creatorName}
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+                            {getInitials(p.creatorName)}
+                          </div>
+                        )}
+
                         <div>
                           <p className="font-medium text-sm">{p.creatorName}</p>
                           <Badge

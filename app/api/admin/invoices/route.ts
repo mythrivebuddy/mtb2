@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {prisma} from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 import { Prisma, InvoiceStatus, PaymentContextType } from "@prisma/client";
 import { checkRole } from "@/lib/utils/auth";
@@ -20,6 +20,11 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search");
 
     const skip = (page - 1) * limit;
+    const sortByParam = searchParams.get("sortBy") || "createdAt";
+    const sortOrderParam =
+      searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+
+    const emailSentParam = searchParams.get("emailSent");
 
     // 3. Strongly typed where clause
     const where: Prisma.InvoiceWhereInput = {};
@@ -36,12 +41,17 @@ export async function GET(req: NextRequest) {
     if (
       contextTypeParam &&
       Object.values(PaymentContextType).includes(
-        contextTypeParam as PaymentContextType
+        contextTypeParam as PaymentContextType,
       )
     ) {
       where.contextType = contextTypeParam as PaymentContextType;
     }
-
+    // ✅ Email Sent filter
+    if (emailSentParam === "sent") {
+      where.emailSent = true;
+    } else if (emailSentParam === "pending") {
+      where.emailSent = false;
+    }
     // ✅ Search filter
     if (search) {
       where.OR = [
@@ -61,16 +71,29 @@ export async function GET(req: NextRequest) {
         },
       ];
     }
+    const sortMap: Record<string, Prisma.InvoiceOrderByWithRelationInput[]> = {
+      createdAt: [{ createdAt: sortOrderParam }],
 
+      totalAmount: [{ totalAmount: sortOrderParam }, { createdAt: "desc" }],
+
+      status: [{ status: sortOrderParam }, { createdAt: "desc" }],
+
+      userName: [{ user: { name: sortOrderParam } }, { createdAt: "desc" }],
+
+      invoiceNumber: [
+        { invoiceNumber: sortOrderParam },
+        { createdAt: "desc" }, // tie-breaker
+      ],
+    };
+
+    const orderBy = sortMap[sortByParam] || { createdAt: "desc" };
     // 4. Fetch data
     const [invoices, total] = await Promise.all([
       prisma.invoice.findMany({
         where,
         skip,
         take: limit,
-        orderBy: {
-          createdAt: "desc",
-        },
+        orderBy,
         include: {
           user: {
             select: {
@@ -101,7 +124,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       { success: false, message: "Something went wrong" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

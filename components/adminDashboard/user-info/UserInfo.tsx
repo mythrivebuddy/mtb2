@@ -27,6 +27,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import SortIndicator from "@/components/common/SortIndicator";
+import { useServerSort } from "@/hooks/use-server-sort";
 
 // --- API Functions ---
 
@@ -149,8 +150,7 @@ export default function UserInfoContent() {
   const [showAffiliateModal, setShowAffiliateModal] = useState(false);
   const [affiliateUser, setAffiliateUser] =
     useState<IUserWithMembership | null>(null);
-  const [sortBy, setSortBy] = useState<string>("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const { sortBy, sortOrder, handleSort } = useServerSort("createdAt");
 
   const form = useForm<AffiliateForm>({
     defaultValues: {
@@ -305,14 +305,9 @@ export default function UserInfoContent() {
       newPlanId: selectedPlanId,
     });
   };
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
-    } else {
-      setSortBy(field);
-      setSortOrder("desc");
-    }
-    setPage(1); // reset pagination
+  const handleSortWithReset = (field: string) => {
+    setPage(1);
+    handleSort(field);
   };
   // --- Data & Presence ---
   const users = data?.users || [];
@@ -469,7 +464,7 @@ export default function UserInfoContent() {
             <TableRow>
               <TableHead
                 className="cursor-pointer group"
-                onClick={() => handleSort("name")}
+                onClick={() => handleSortWithReset("name")}
               >
                 <div className="flex items-center gap-1">
                   User
@@ -482,7 +477,7 @@ export default function UserInfoContent() {
               </TableHead>
               <TableHead
                 className="text-center cursor-pointer group"
-                onClick={() => handleSort("jpEarned")}
+                onClick={() => handleSortWithReset("jpEarned")}
               >
                 <div className="flex items-center justify-center gap-1">
                   GP Earned
@@ -495,7 +490,7 @@ export default function UserInfoContent() {
               </TableHead>
               <TableHead
                 className="text-center cursor-pointer group"
-                onClick={() => handleSort("jpBalance")}
+                onClick={() => handleSortWithReset("jpBalance")}
               >
                 <div className="flex items-center justify-center gap-1">
                   GP Balance
@@ -508,7 +503,7 @@ export default function UserInfoContent() {
               </TableHead>
               <TableHead
                 className="text-center cursor-pointer group"
-                onClick={() => handleSort("referrals")}
+                onClick={() => handleSortWithReset("referrals")}
               >
                 <div className="flex items-center justify-center gap-1">
                   Total Referrals
