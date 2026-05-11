@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import handleSupabaseImageUpload from "@/lib/utils/supabase-image-upload-admin";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // PUT /api/user/store/items/[id] - Update an item
 export async function PUT(

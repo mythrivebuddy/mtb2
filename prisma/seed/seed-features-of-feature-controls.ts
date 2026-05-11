@@ -1,11 +1,10 @@
 import {
-  PrismaClient,
   Prisma,
   PlanUserType,
   FeatureUserType,
 } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 
 export type PlanAccess = "FREE" | "PAID";
 export type LimitType = "MONTHLY" | "YEARLY" | "LIFETIME";

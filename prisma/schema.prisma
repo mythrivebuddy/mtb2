@@ -154,6 +154,10 @@ model User {
  // Affiliate payouts
  affiliatePayouts  AffiliatePayout[] @relation("AffiliatePayouts")
   @@index([name])
+  @@index([jpEarned])
+  @@index([jpBalance])
+  @@index([email])
+
 }
 enum AffiliateCommissionType {
   MTB
