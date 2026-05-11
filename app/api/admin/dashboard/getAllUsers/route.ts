@@ -21,7 +21,8 @@ export async function GET(request: Request) {
   const skip = (page - 1) * pageSize;
   const referrerId = searchParams.get("referrerId");
   const take = pageSize;
-
+  const sortBy = searchParams.get("sortBy") || "createdAt";
+  const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
   // Verify admin access
   const session = await getServerSession(authConfig);
   if (!session || session.user.role !== "ADMIN") {
@@ -122,14 +123,20 @@ export async function GET(request: Request) {
     ];
   }
 
-  // If a search term is provided, add a search filter (example: search in name or email)
-  if (search.trim()) {
-    whereClause.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { email: { contains: search, mode: "insensitive" } },
-    ];
-  }
 
+  const sortMap: Record<string, Prisma.UserOrderByWithRelationInput> = {
+    createdAt: { createdAt: sortOrder },
+
+    jpEarned: { jpEarned: sortOrder },
+    jpBalance: { jpBalance: sortOrder },
+
+    name: { name: sortOrder },
+    email: { email: sortOrder },
+
+    // relation count sorting
+    referrals: { referrals: { _count: sortOrder } },
+  };
+  const orderBy = sortMap[sortBy] || { createdAt: "desc" };
   try {
     let referrerUser: {
       id: string;
@@ -179,7 +186,7 @@ export async function GET(request: Request) {
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
     });
 
     const totalUsers = await prisma.user.count({
