@@ -147,6 +147,9 @@ export async function GET(req: NextRequest) {
   );
   const skip = (page - 1) * limit;
 
+  const sortBy = searchParams.get("sortBy") || "createdAt";
+  const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+
   const validStatuses = ["DRAFT", "UNDER_REVIEW", "PUBLISHED"] as const;
   type ProgramStatus = (typeof validStatuses)[number];
 
@@ -161,12 +164,38 @@ export async function GET(req: NextRequest) {
     ...(statusFilter ? { status: statusFilter } : {}),
   };
 
+  const orderBy: Prisma.ProgramOrderByWithRelationInput = (() => {
+    switch (sortBy) {
+      case "name":
+        return { name: sortOrder };
+
+      case "price":
+        return { price: sortOrder };
+
+      case "updatedAt":
+        return { updatedAt: sortOrder };
+
+      case "createdAt":
+        return { createdAt: sortOrder };
+
+      case "students":
+        return {
+          userProgramStates: {
+            _count: sortOrder,
+          },
+        };
+
+      default:
+        return { createdAt: "desc" };
+    }
+  })();
+
   const [programs, total] = await Promise.all([
     prisma.program.findMany({
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       select: {
         id: true,
         name: true,
