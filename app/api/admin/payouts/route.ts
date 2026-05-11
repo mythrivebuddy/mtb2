@@ -10,6 +10,7 @@ type CreatorPayout = {
     id: string;
     name: string;
     email: string; // ✅ FIXED
+    image: string | null;
   };
   currency: string;
   baseAmount: number;
@@ -19,7 +20,6 @@ type CreatorPayout = {
   payableAmount: number;
   holdingAmount: number;
 };
-
 
 export async function GET(req: NextRequest) {
   await checkRole("ADMIN");
@@ -40,6 +40,8 @@ export async function GET(req: NextRequest) {
     const limit = Number(searchParams.get("limit") || 10);
 
     const skip = (page - 1) * limit;
+    const sortBy = searchParams.get("sortBy") || "payableAmount";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
 
     // ─────────────────────────────────────────────
     // 2. Build where clause
@@ -70,13 +72,8 @@ export async function GET(req: NextRequest) {
       _sum: {
         earnedAmount: true,
         platformFee: true,
-        baseAmount:true,
-        discountAmount:true,
-      },
-      orderBy: {
-        _sum: {
-          earnedAmount: "desc",
-        },
+        baseAmount: true,
+        discountAmount: true,
       },
     });
     // In the grouped query, also fetch individual records to check holding
@@ -124,6 +121,7 @@ export async function GET(req: NextRequest) {
         id: true,
         name: true,
         email: true,
+        image: true,
       },
     });
 
@@ -150,18 +148,18 @@ export async function GET(req: NextRequest) {
         commission: Number(g._sum.platformFee ?? 0),
         holding: 0,
         baseAmount: Number(g._sum.baseAmount ?? 0),
-        discountAmount: Number(g._sum.discountAmount ?? 0)
+        discountAmount: Number(g._sum.discountAmount ?? 0),
       });
     });
-   pendingInHold.forEach((h) => {
+    pendingInHold.forEach((h) => {
       const key = `${h.creatorId}-${h.currency}`;
       const existing = payoutMap.get(key);
-      
+
       const holdingEarned = Number(h._sum.earnedAmount ?? 0);
       const holdingCommission = Number(h._sum.platformFee ?? 0);
       const holdingBase = Number(h._sum.baseAmount ?? 0);
       const holdingDiscount = Number(h._sum.discountAmount ?? 0);
-      
+
       if (existing) {
         existing.holding += holdingEarned; // changed to += for safety
         // existing.earned += 0; // keep payable clean
@@ -193,7 +191,7 @@ export async function GET(req: NextRequest) {
           creator: user,
           currency: item.currency,
           baseAmount: item.baseAmount,
-         discountAmount: item.discountAmount, //  ASSIGN REAL DISCOUNT
+          discountAmount: item.discountAmount, //  ASSIGN REAL DISCOUNT
           netAmount: item.baseAmount - item.discountAmount,
           commissionAmount: item.commission,
           payableAmount: item.earned,
@@ -232,6 +230,52 @@ export async function GET(req: NextRequest) {
 
       analytics.totalCommission += r.commissionAmount;
     });
+
+    result.sort((a, b) => {
+      let valA: number | string;
+      let valB: number | string;
+
+      switch (sortBy) {
+        case "creatorName":
+          valA = a.creator.name.toLowerCase();
+          valB = b.creator.name.toLowerCase();
+          break;
+
+        case "baseAmount":
+          valA = a.baseAmount;
+          valB = b.baseAmount;
+          break;
+
+        case "discountAmount":
+          valA = a.discountAmount;
+          valB = b.discountAmount;
+          break;
+
+        case "netAmount":
+          valA = a.netAmount;
+          valB = b.netAmount;
+          break;
+
+        case "commissionAmount":
+          valA = a.commissionAmount;
+          valB = b.commissionAmount;
+          break;
+
+        case "pendingBalance":
+          valA = a.payableAmount;
+          valB = b.payableAmount;
+          break;
+
+        default:
+          valA = a.payableAmount;
+          valB = b.payableAmount;
+      }
+
+      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
     // ─────────────────────────────────────────────
     // 6. Pagination (AFTER aggregation)
     // ─────────────────────────────────────────────
