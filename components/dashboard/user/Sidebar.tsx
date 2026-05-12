@@ -323,7 +323,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                     <Link
                       href="/dashboard/mini-mastery-programs/create"
                       onClick={toggleSidebar}
-                      className={`flex items-center  py-2 text-[#6C7894] dark:text-slate-300  ${pathname === "/dashboard/mini-mastery-programs/create" ? "!text-jp-orange" : ""}`}
+                      className={`flex items-center  py-2 text-[#6C7894] dark:text-slate-300 hover:text-jp-orange ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
                     >
                       <GraduationCap size={20} className="w-7" />
 
