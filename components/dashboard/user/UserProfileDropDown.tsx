@@ -41,13 +41,13 @@ const UserProfileDropdown = ({
                   className="object-cover"
                 />
               ) : null}
-              <AvatarFallback className="rounded-md bg-white w-full h-full flex items-center justify-center uppercase">
+              <AvatarFallback className="rounded-md bg-white dark:bg-slate-950 w-full h-full flex items-center justify-center uppercase">
                 {userName ? (
-                  <span className="text-lg sm:text-2xl">
+                  <span className="text-lg sm:text-2xl text-gray-900 dark:text-gray-100">
                     {getInitials(userName)}
                   </span>
                 ) : (
-                  <UserRound size={20} />
+                  <UserRound size={20} className="text-gray-900 dark:text-gray-100" />
                 )}
               </AvatarFallback>
             </Avatar>

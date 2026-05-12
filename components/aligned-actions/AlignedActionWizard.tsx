@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -181,7 +181,8 @@ export default function AlignedActionWizard({
       timeTo: formData.timeTo ? new Date(formData.timeTo) : end,
     },
   });
-
+  const watchedTimeFrom = step3Form.watch("timeFrom");
+  const isEndTimeManuallyChanged = useRef(false);
   // Create aligned action mutation
   const createAlignedAction = useMutation({
     mutationFn: async (data: {
@@ -336,7 +337,20 @@ export default function AlignedActionWizard({
   };
 
   // Convert time input value to date object
+  useEffect(() => {
+  if (!watchedTimeFrom) return;
 
+  // 🚫 don't override if user already changed end time
+  if (isEndTimeManuallyChanged.current) return;
+
+  const newEnd = new Date(watchedTimeFrom);
+  newEnd.setHours(newEnd.getHours() + 1);
+
+  step3Form.setValue("timeTo", newEnd, {
+    shouldValidate: true,
+    shouldDirty: true,
+  });
+}, [watchedTimeFrom]);
   // Convert date object to time input value
 
   return (
@@ -870,10 +884,13 @@ export default function AlignedActionWizard({
                         <FormLabel>Start Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <TimeInput
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
+                           <TimeInput
+  value={field.value}
+  onChange={(date) => {
+    isEndTimeManuallyChanged.current = false; // reset
+    field.onChange(date);
+  }}
+/>
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"
@@ -902,10 +919,13 @@ export default function AlignedActionWizard({
                         <FormLabel>End Time</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <TimeInput
-                              value={field.value}
-                              onChange={field.onChange}
-                            />
+                          <TimeInput
+  value={field.value}
+  onChange={(date) => {
+    isEndTimeManuallyChanged.current = true; // user override
+    field.onChange(date);
+  }}
+/>
                             {/* <svg
                             className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500"
                             fill="none"

@@ -24,6 +24,7 @@ export const Step3Schema = z
   })
   .refine(
     (data) => {
+      if (data.day === "tomorrow") return true;
       const now = new Date();
       return data.timeFrom >= now;
     },
@@ -33,15 +34,18 @@ export const Step3Schema = z
     }
   )
   .refine(
-    (data) => {
-      const now = new Date();
-      return data.timeTo >= now;
-    },
-    {
-      message: "Please select a current or future time.",
-      path: ["timeTo"],
+  (data) => {
+    if (data.day === "tomorrow" && data.timeTo <= data.timeFrom) {
+      // crossing midnight is valid for tomorrow (end is next day)
+      return true;
     }
-  )
+    return data.timeTo > data.timeFrom;
+  },
+  {
+    message: "End time must be after start time.",
+    path: ["timeTo"],
+  }
+)
   .refine(
     (data) => {
       return data.timeTo > data.timeFrom;

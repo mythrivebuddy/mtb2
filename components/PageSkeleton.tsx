@@ -244,7 +244,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   if (type === "align-action") {
     return (
       <div className="animate-pulse grid gap-6 py-6">
-        {Array.from({ length: 3 }).map((_, i) => (
+        {Array.from({ length: 1 }).map((_, i) => (
           <div
             key={i}
             className="border border-gray-200 dark:border-slate-700 shadow-md rounded-2xl p-6 space-y-5 bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-900 hover:shadow-lg transition-shadow"
