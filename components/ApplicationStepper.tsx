@@ -43,7 +43,7 @@ export function ApplicationStepper({
   return (
     <div
       className={cn(
-        "w-full overflow-hidden rounded-[20px] border bg-white shadow-md",
+        "w-full overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-md transition-colors dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30",
         className
       )}
     >
@@ -51,7 +51,7 @@ export function ApplicationStepper({
         <div className="flex max-sm:flex-col w-full justify-between gap-6 relative">
           {/* Connecting line */}
           <div
-            className="bg-gray-200 max-sm:hidden h-[2px] absolute top-[18%] left-0 right-0"
+            className="bg-gray-200 max-sm:hidden h-[2px] absolute top-[18%] left-0 right-0 dark:bg-slate-700"
             style={{
               width: `calc(100% - ${margins.left}px - ${margins.right}px)`,
               marginLeft: `${margins.left}px`,
@@ -84,7 +84,7 @@ export function ApplicationStepper({
                       ? "bg-[#3BA33BE5]"
                       : currentStep >= index
                       ? "bg-jp-orange"
-                      : "bg-gray-200"
+                      : "bg-gray-200 dark:bg-slate-700"
                   )}
                   aria-hidden="true"
                 >
@@ -107,13 +107,13 @@ export function ApplicationStepper({
                     className={cn(
                       "text-base font-medium md:text-lg",
                       currentStep - 1 >= index
-                        ? "text-[#334CAD]"
-                        : "text-gray-500"
+                        ? "text-[#334CAD] dark:text-blue-300"
+                        : "text-gray-500 dark:text-slate-400"
                     )}
                   >
                     {step.title}
                   </span>
-                  <span className="text-xs text-gray-500 md:text-sm">
+                  <span className="text-xs text-gray-500 dark:text-slate-400 md:text-sm">
                     {step.description}
                   </span>
                 </div>

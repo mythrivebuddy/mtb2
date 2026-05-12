@@ -473,7 +473,7 @@ export default function PricingPage() {
       <AppLayout>
         <main className=" dark:bg-slate-950 bg-background-light text-slate-800 dark:text-slate-200">
           {/* HERO */}
-          <section className="py-12 bg-white dark:bg-slate-900  dark:border-slate-800">
+          <section className="mx-auto py-12 bg-white dark:bg-slate-900  dark:border-slate-800">
             <div className="mx-auto">
               <div className="mx-auto max-w-3xl text-center">
                 <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -711,7 +711,7 @@ export default function PricingPage() {
               </h2>
 
               <div className="space-y-8 text-sm">
-                <div className=" dark:bg-slate-900  rounded-2xl">
+                <div className="  rounded-2xl">
                   <h3 className="font-bold text-lg text-slate-900 dark:text-white">
                     What’s the difference between the two memberships?
                   </h3>
@@ -724,7 +724,7 @@ export default function PricingPage() {
                   </p>
                 </div>
 
-                <div className=" dark:bg-slate-900 rounded-2xl">
+                <div className="rounded-2xl">
                   <h3 className="font-bold text-lg text-slate-900 dark:text-white">
                     Can I switch later?
                   </h3>
@@ -734,7 +734,7 @@ export default function PricingPage() {
                     visibility.
                   </p>
                 </div>
-                <div className=" dark:bg-slate-900  rounded-2xl">
+                <div className="  rounded-2xl">
                   <h3 className="font-bold text-lg text-slate-900 dark:text-white">
                     Are there any hidden fees?
                   </h3>
@@ -743,7 +743,7 @@ export default function PricingPage() {
                     they’ll be clearly marked and optional.
                   </p>
                 </div>
-                <div className=" dark:bg-slate-900  rounded-2xl">
+                <div className=" rounded-2xl">
                   <h3 className="font-bold text-lg text-slate-900 dark:text-white">
                     Do you offer refunds?
                   </h3>

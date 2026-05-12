@@ -140,18 +140,18 @@ export default function ReferFriendPage() {
   return (
     <div className="px-4 max-w-8xl py-8">
       <div className="space-y-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1>
+        {/* <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1> */}
         {stats && !stats.isAffiliate && (
-          <div className="flex items-center justify-between gap-4 flex-wrap rounded-lg border border-blue-200 border-l-4 border-l-blue-500 bg-blue-50 p-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap rounded-lg border border-blue-200 border-l-4 border-l-blue-500 bg-blue-50 dark:bg-gray-800 dark:text-white p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100">
                 <Star className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium ">
                   Want to become an affiliate?
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs ">
                   Earn rewards by referring users and growing the platform.
                 </p>
               </div>
@@ -160,14 +160,14 @@ export default function ReferFriendPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="border-blue-300 text-blue-600 hover:bg-blue-100 whitespace-nowrap"
+                className="border-blue-300 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500 whitespace-nowrap"
               >
                 Contact us
               </Button>
             </Link>
           </div>
         )}
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle>Your Referral Stats</CardTitle>
 
@@ -177,7 +177,7 @@ export default function ReferFriendPage() {
               className="sm:w-auto w-full"
             >
               <Button
-                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto dark:text-white"
                 size="sm"
               >
                 View Your Referrals
@@ -189,7 +189,7 @@ export default function ReferFriendPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Total Referrals */}
               <div>
-                <p className="text-sm text-gray-500">Total Referrals</p>
+                <p className="text-sm">Total Referrals</p>
                 <p className="text-2xl font-bold">
                   {stats?.totalReferrals || 0}
                 </p>
@@ -206,7 +206,7 @@ export default function ReferFriendPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Your Referral Code</CardTitle>
           </CardHeader>
@@ -248,7 +248,7 @@ export default function ReferFriendPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Share Via</CardTitle>
           </CardHeader>
@@ -283,7 +283,7 @@ export default function ReferFriendPage() {
               <Button
                 onClick={() => handleShare("x")}
                 variant="default"
-                className="flex  sm:w-auto items-center space-x-2 w-full "
+                className="flex  sm:w-auto items-center space-x-2 w-full dark:bg-black"
               >
                 <svg
                   className="h-4 w-4"
@@ -298,7 +298,7 @@ export default function ReferFriendPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Invite via Email</CardTitle>
           </CardHeader>
@@ -314,7 +314,7 @@ export default function ReferFriendPage() {
               />
               <Button
                 type="submit"
-                className="mt-4"
+                className="mt-4 dark:bg-black"
                 disabled={sendEmailMutation.isPending}
               >
                 {sendEmailMutation.isPending ? (

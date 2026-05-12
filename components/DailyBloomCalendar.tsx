@@ -187,7 +187,6 @@ const validateDateTime = (
 
   const isSameDay = startDateStr === todayStr;
 
-
   if (isSameDay && startDate < now) {
     return { valid: false, message: "Start time cannot be in the past" };
   }
@@ -349,7 +348,7 @@ const EventForm = ({
           }
           disabled={isDisabled}
           placeholder="Optional details..."
-          className="text-sm"
+          className="text-sm dark:bg-black dark:border-none"
         />
       </div>
       <div className="grid gap-2">
@@ -591,9 +590,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
       );
 
       if (target) {
-       setCurrentEvent({
+        setCurrentEvent({
           ...target,
-          allDay: target.allDay || !target.end
+          allDay: target.allDay || !target.end,
         });
         setMode("view");
         setIsEditing(false);
@@ -609,7 +608,6 @@ const DailyBloomCalendar: React.FC<Props> = ({
   }, [initialEventId, events, onClearInitialEvent]);
 
   useEffect(() => {
- 
     setEvents(eventsProp);
     setIsLoading(false);
   }, [eventsProp]);
@@ -971,8 +969,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
             : currentEvent.end
               ? getTimeHHMM(currentEvent.end)
               : undefined,
-           endDate: currentEvent.allDay ? null : currentEvent.end,
-            
+          endDate: currentEvent.allDay ? null : currentEvent.end,
         },
       });
 
@@ -1129,7 +1126,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
-                  endDate: info.event.allDay ? null : info.event.endStr,
+                endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1182,7 +1179,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
                 endTime: info.event.endStr
                   ? getTimeHHMM(info.event.endStr)
                   : undefined,
-                  endDate: info.event.allDay ? null : info.event.endStr,
+                endDate: info.event.allDay ? null : info.event.endStr,
               },
             });
           } else {
@@ -1240,7 +1237,12 @@ const DailyBloomCalendar: React.FC<Props> = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className={`px-2 py-1 text-xs rounded-md flex items-center border shadow-sm cursor-pointer w-full hover:bg-white/60 transition`}
+             
+              className={`px-2 py-1 text-xs rounded-md flex items-center border shadow-sm cursor-pointer w-full transition ${
+  arg.event.allDay
+    ? "hover:bg-blue-50 dark:hover:bg-blue-900/30"
+    : "hover:bg-white/60 dark:hover:bg-slate-800"
+}`}
               style={{
                 borderColor: arg.event.backgroundColor,
                 backgroundColor: `${arg.event.backgroundColor}1A`,
@@ -1266,7 +1268,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
             >
               <span
                 className={`flex-grow font-medium text-xs sm:text-sm ${
-                  ext?.isCompleted ? "line-through text-muted-foreground" : ""
+                  ext?.isCompleted
+  ? "line-through text-slate-400 dark:text-slate-200"
+  : "text-slate-900 dark:text-slate-100"
                 } ${isListView ? "whitespace-normal break-words" : "truncate"}`}
               >
                 {arg.event.title}
@@ -1395,7 +1399,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
   );
 
   return (
-    <div className="border rounded-2xl shadow-lg bg-white p-4 sm:p-6 relative">
+    <div className="border rounded-2xl shadow-lg bg-white dark:bg-slate-950 p-4 sm:p-6 relative">
       {errorMessage && (
         <div className="mb-3 p-2 bg-red-50 border border-red-100 rounded text-sm text-red-700">
           {errorMessage}
@@ -1425,7 +1429,7 @@ const DailyBloomCalendar: React.FC<Props> = ({
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <CalendarIcon className="w-6 h-6 text-blue-600 flex-shrink-0" />
-          <h2 className="text-lg md:text-xl font-semibold text-gray-800">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-slate-200">
             Daily Blooms Calendar
           </h2>
         </div>
@@ -1482,6 +1486,85 @@ const DailyBloomCalendar: React.FC<Props> = ({
             .fc .fc-toolbar-chunk { display: flex; align-items: center; gap: 0.5rem; }
             .fc .fc-button-group { display: inline-flex; }
             .fc .fc-toolbar-title { font-size: 1.25rem; font-weight: 600; color: #1e293b; }
+            /* -------- DARK MODE FIX -------- */
+
+.dark .fc-theme .fc-button {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.dark .fc-theme .fc-button:hover {
+  background-color: #334155;
+  border-color: #475569;
+  color: #ffffff;
+}
+
+.dark .fc-theme .fc-toolbar-title {
+  color: #f1f5f9;
+}
+
+.dark .fc-theme .fc-today-button {
+  background-color: #1e3a8a;
+  border-color: #1d4ed8;
+  color: #bfdbfe;
+}
+
+.dark .fc-theme .fc-today-button:hover {
+  background-color: #1d4ed8;
+  color: #ffffff;
+}
+
+/* calendar grid */
+.dark .fc-theme .fc-scrollgrid,
+.dark .fc-theme .fc-daygrid,
+.dark .fc-theme .fc-timegrid {
+  background-color: #020817;
+  border-color: #1e293b;
+}
+
+/* day text */
+.dark .fc-theme .fc-col-header-cell-cushion {
+  color: #f1f5f9; /* brighter (was too dull) */
+  font-weight: 500;
+}
+  /* list view day header (e.g. "Mon, May 12") */
+.dark .fc-theme .fc-list-day-cushion {
+  background-color: #020817; /* dark bg */
+}
+
+.dark .fc-theme .fc-list-day-text,
+.dark .fc-theme .fc-list-day-side-text {
+  color: #f1f5f9; /* light text */
+}
+  .dark .fc-theme .fc-daygrid-day-number {
+  color: #e2e8f0;
+}
+
+/* borders */
+.dark .fc-theme td,
+.dark .fc-theme th {
+  border-color: #1e293b;
+}
+
+/* today highlight */
+.dark .fc-theme .fc-day-today {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* list view */
+.dark .fc-theme .fc-list {
+  background-color: #020817;
+  color: #e2e8f0;
+}
+  /* week header background */
+.dark .fc-theme .fc-col-header-cell {
+  background-color: #020817; /* dark bg */
+}
+
+.dark .fc-theme .fc-list-event:hover td {
+  background-color: #1e293b;
+}
           `}
         </style>
         {isLoading ? (
@@ -1603,7 +1686,9 @@ const DailyBloomCalendar: React.FC<Props> = ({
             </div>
             <DrawerFooter className="pt-4">
               <FormButtons />
-              <Button variant="outline" onClick={handleCloseModal}>Cancel</Button>
+              <Button variant="outline" onClick={handleCloseModal}>
+                Cancel
+              </Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

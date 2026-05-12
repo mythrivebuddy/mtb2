@@ -62,6 +62,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { getAxiosErrorMessage } from "@/utils/ax";
 import { DashboardContent } from "@/types/client/dashboard";
+import PageSkeleton from "@/components/PageSkeleton";
 
 // ─── API fetchers ─────────────────────────────────────────────────────────────
 
@@ -98,28 +99,6 @@ async function fetchProgramDetail(id: string): Promise<Program> {
 
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 
-function SkeletonCard() {
-  return (
-    <div className="bg-white rounded-[28px] border border-slate-100 overflow-hidden animate-pulse">
-      <div className="h-[140px] bg-slate-100" />
-      <div className="p-5 space-y-4">
-        <div className="space-y-2">
-          <div className="h-4 w-3/4 bg-slate-100 rounded-lg" />
-          <div className="h-3 w-full bg-slate-100 rounded-lg" />
-          <div className="h-3 w-2/3 bg-slate-100 rounded-lg" />
-        </div>
-        <div className="flex justify-between items-center py-3 border-y border-slate-50">
-          <div className="h-3 w-24 bg-slate-100 rounded" />
-          <div className="h-3 w-16 bg-slate-100 rounded" />
-        </div>
-        <div className="flex gap-2 pt-1">
-          <div className="flex-[2] h-10 bg-slate-100 rounded-xl" />
-          <div className="flex-1 h-10 bg-slate-100 rounded-xl" />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Dropdown ─────────────────────────────────────────────────────────────────
 
@@ -276,7 +255,7 @@ function ProgramCTA({
       <div className="flex gap-2 pt-1 mt-auto">
         <button
           onClick={() => signIn()}
-          className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5"
+          className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 light:shadow-lg light:shadow-blue-100 flex items-center justify-center gap-1.5"
         >
           <LogIn size={13} /> Enroll
         </button>
@@ -299,7 +278,7 @@ function ProgramCTA({
           href={`/dashboard/mini-mastery-programs/program/${prog.id}`}
           className="flex-[2] flex"
         >
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-green-100 flex items-center justify-center gap-1.5">
+          <button className="w-full bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 light:shadow-lg light:shadow-green-100 flex items-center justify-center gap-1.5">
             <Trophy size={13} /> Completed
           </button>
         </Link>
@@ -322,7 +301,7 @@ function ProgramCTA({
           href={`/dashboard/mini-mastery-programs/program/${prog.id}`}
           className="flex-[2] flex"
         >
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5">
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 light:shadow-lg light:shadow-blue-100 flex items-center justify-center gap-1.5">
             <PlayCircle size={13} /> Continue Learning
           </button>
         </Link>
@@ -345,7 +324,7 @@ function ProgramCTA({
           <button
             onClick={() => enrollMutation.mutate(prog.id)}
             disabled={enrollMutation.isPending}
-            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center ${enrollMutation.isPending ? "opacity-80" : ""}`}
+            className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 light:shadow-lg light:shadow-blue-100 flex items-center justify-center ${enrollMutation.isPending ? "opacity-80" : ""}`}
           >
             {enrollMutation.isPending ? (
               <span className="flex gap-2">
@@ -361,7 +340,7 @@ function ProgramCTA({
           href={`/dashboard/membership/checkout?mmp_programId=${prog.id}&context=MMP_PROGRAM`}
           className="flex-[2] flex"
         >
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 shadow-lg shadow-blue-100 flex items-center justify-center">
+          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[11px] tracking-wider transition-all active:scale-95 light:shadow-lg light:shadow-blue-100 flex items-center justify-center">
             Enroll
           </button>
         </Link>
@@ -709,8 +688,7 @@ export default function EnrollPage() {
 
   const hasActiveFilters =
     filters.pricing !== "all" || filters.duration !== "all";
-
-  const { data, isLoading, isError, error } = useQuery({
+  const { data,isLoading, isError, error } = useQuery({
     queryKey: ["mmp-enroll", page, filters],
     queryFn: () => fetchPublicPrograms(page, filters),
     placeholderData: keepPreviousData,
@@ -746,7 +724,7 @@ export default function EnrollPage() {
             <div className="flex items-center gap-2 text-blue-600 font-black text-[10px] uppercase tracking-[0.2em]">
               <Sparkles size={14} /> SGE Discovery
             </div>
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-none">
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-slate-200 tracking-tight leading-none">
               Mini-Mastery Programs
             </h1>
             <p className="text-slate-500 text-sm md:text-base font-medium max-w-xl leading-relaxed">
@@ -816,10 +794,10 @@ export default function EnrollPage() {
         <div className="relative">
           <button
             onClick={() => setSortOpen((o) => !o)}
-            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-2 text-xs font-bold text-slate-400 dark:text-slate-200 light:hover:text-slate-900 transition-colors"
           >
             Sort:{" "}
-            <span className="text-slate-900 font-black uppercase tracking-tighter">
+            <span className="text-slate-900 dark:text-slate-200 font-black uppercase tracking-tighter">
               {SORT_LABELS[filters.sort]}
             </span>
             <ArrowUpDown size={12} />
@@ -878,7 +856,9 @@ export default function EnrollPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
             Array.from({ length: LIMIT }).map((_, i) => (
-              <SkeletonCard key={i} />
+              <div  key={i}>
+                <PageSkeleton type="mmp-home" />
+              </div>
             ))
           ) : programs.length === 0 ? (
             <div className="col-span-full flex flex-col items-center gap-3 py-24">
@@ -908,7 +888,7 @@ export default function EnrollPage() {
               return (
                 <div
                   key={prog.id}
-                  className="group flex flex-col bg-white rounded-[28px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
+                  className="group flex flex-col bg-white dark:bg-slate-900 rounded-[28px] border light:border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-500 overflow-hidden"
                 >
                   {/* Cover */}
                   <div className="relative h-[160px] overflow-hidden">
@@ -960,16 +940,16 @@ export default function EnrollPage() {
                   {/* Content */}
                   <div className="p-5 flex flex-col flex-1 space-y-4">
                     <div className="space-y-1.5">
-                      <h3 className="text-lg font-black text-slate-900 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
+                      <h3 className="text-lg font-black text-slate-900 dark:text-slate-200 leading-snug group-hover:text-blue-600 transition-colors line-clamp-1">
                         {prog.name}
                       </h3>
-                      <p className="h-9 text-[12px] text-slate-500 line-clamp-2 leading-relaxed font-medium">
+                      <p className="h-9 text-[12px] text-slate-500 dark:text-slate-300 line-clamp-2 leading-relaxed font-medium">
                         {prog.description ??
                           "Experience a complete transformation with expert-guided sessions designed for your busy lifestyle."}
                       </p>
                     </div>
 
-                    <div className="flex items-center justify-between border-y border-slate-50 py-3">
+                    <div className="flex items-center justify-between light:border-y light:border-slate-50 py-3">
                       <div className="flex items-center gap-2">
                         {prog.creator?.image ? (
                           <img

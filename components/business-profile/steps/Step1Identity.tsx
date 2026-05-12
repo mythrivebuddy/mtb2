@@ -70,7 +70,7 @@ export default function Step1Identity({ next }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-8">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-8">
 
       <h2 className="text-2xl font-semibold mb-2">
         Who You Are & Who You Help
@@ -87,7 +87,7 @@ export default function Step1Identity({ next }: Props) {
 
         <input
           {...register("name")}
-          className="w-full border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-3"
+          className="w-full border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 dark:bg-slate-950 rounded-xl p-3"
         />
 
         {errors.name && (
@@ -111,7 +111,7 @@ export default function Step1Identity({ next }: Props) {
         <input
           {...register("tagline")}
           maxLength={120}
-          className="w-full border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-3"
+          className="w-full border border-gray-200 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 rounded-xl p-3 dark:bg-slate-950"
         />
 
         {errors.tagline && (

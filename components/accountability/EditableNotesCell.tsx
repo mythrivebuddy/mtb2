@@ -114,7 +114,7 @@ export default function EditableNotesCell({
     
       onClick={() => canEdit && setIsEditing(true)}
       className={`p-2 rounded-md min-h-[40px] cursor-${
-        canEdit ? "pointer hover:bg-slate-50" : "default"
+        canEdit ? "pointer hover:bg-slate-50 dark:hover:bg-slate-950" : "default"
       }`}
     >
       {notes ? (

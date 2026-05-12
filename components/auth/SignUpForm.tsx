@@ -171,10 +171,10 @@ export default function SignUpForm() {
         />
 
         <Input {...register("name")} placeholder="Your Name" />
-        {errors.name && <p className="text-red-500">{errors.name.message}</p>}
+        {errors.name && <p className="text-red-500 dark:text-red-400">{errors.name.message}</p>}
 
         <Input {...register("email")} placeholder="Email" type="email" />
-        {errors.email && <p className="text-red-500">{errors.email.message}</p>}
+        {errors.email && <p className="text-red-500 dark:text-red-400">{errors.email.message}</p>}
 
         <div className="relative">
           <Input
@@ -189,7 +189,7 @@ export default function SignUpForm() {
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </div>
           {errors.password && (
-            <p className="text-red-500">{errors.password.message}</p>
+            <p className="text-red-500 dark:text-red-400">{errors.password.message}</p>
           )}
         </div>
 
@@ -206,7 +206,7 @@ export default function SignUpForm() {
             {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </div>
           {errors.confirmPassword && (
-            <p className="text-red-500">{errors.confirmPassword.message}</p>
+            <p className="text-red-500 dark:text-red-400">{errors.confirmPassword.message}</p>
           )}
         </div>
 
@@ -216,23 +216,23 @@ export default function SignUpForm() {
           readOnly={!!referralCodeFromURL}
         />
         {errors.referralCode && (
-          <p className="text-red-500">{errors.referralCode.message}</p>
+          <p className="text-red-500 dark:text-red-400">{errors.referralCode.message}</p>
         )}
         {referralCodeFromURL && (
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
             Referral code auto-filled from link
           </p>
         )}
 
         {/* USER TYPE SELECTION */}
         <div className="space-y-3">
-          <label className="font-medium text-gray-700 text-sm">
+          <label className="font-medium text-gray-700 dark:text-gray-300 text-sm">
             Select Your Type
           </label>
 
           {/* Enthusiast */}
           <div
-            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
+            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
             onClick={() => {
               setUserHasChosen(true);
               setValue("userType", "enthusiast", { shouldValidate: true });
@@ -265,7 +265,7 @@ export default function SignUpForm() {
           </div>
 
           <div
-            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
+            className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
             onClick={() => {
               setUserHasChosen(true);
               setValue("userType", "coach", { shouldValidate: true });
@@ -297,8 +297,8 @@ export default function SignUpForm() {
             </label>
           </div>
           {/* ZOD ERROR */}
-          {errors.userType && (
-            <p className="text-red-500 text-sm">{errors.userType.message}</p>
+            {errors.userType && (
+            <p className="text-red-500 dark:text-red-400 text-sm">{errors.userType.message}</p>
           )}
         </div>
 
@@ -312,23 +312,23 @@ export default function SignUpForm() {
           </div>
 
           {captchaError && (
-            <p className="text-red-500 text-sm mt-2 break-words whitespace-normal text-center px-2">
+            <p className="text-red-500 dark:text-red-400 text-sm mt-2 break-words whitespace-normal text-center px-2">
               {captchaError}
             </p>
           )}
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
+        <Button type="submit"  disabled={isLoading} className="w-full dark:text-slate-950 dark:bg-white">
           {isLoading ? "Creating account..." : "Sign Up"}
         </Button>
       </form>
 
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200"></div>
+          <div className="w-full border-t border-gray-200 dark:border-gray-600"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">or</span>
+          <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">or</span>
         </div>
       </div>
 
@@ -341,11 +341,11 @@ export default function SignUpForm() {
         <span>Sign in with Google</span>
       </Button>
 
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
         Already have an account?{" "}
         <Link
           href="/signin"
-          className="text-[#1E2875] hover:underline font-medium"
+          className="text-[#1E2875] dark:text-blue-400 hover:underline font-medium"
         >
           Sign in
         </Link>

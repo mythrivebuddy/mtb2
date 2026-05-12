@@ -226,11 +226,11 @@ const ManageStorePage: React.FC = () => {
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md p-6 mb-6">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">🏪 Manage Store</h1>
-              <p className="text-gray-600 mt-1">Create and manage your products</p>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">Create and manage your products</p>
             </div>
             <div className="flex gap-3 flex-wrap">
               <button
@@ -252,7 +252,7 @@ const ManageStorePage: React.FC = () => {
         </div>
 
         {/* Filters & View Toggle */}
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-md p-6 mb-6">
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div className="flex gap-3 flex-wrap">
               {(["all", "approved", "not-approved"] as const).map((f) => (
@@ -265,7 +265,7 @@ const ManageStorePage: React.FC = () => {
                       : f === "approved"
                         ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
                         : "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
                     }`}
                 >
                   {f === "all" ? "All Products" : f === "approved" ? "Approved" : "Not Approved"}
@@ -300,14 +300,14 @@ const ManageStorePage: React.FC = () => {
         {/* ═══════════════════ Product Modal ═══════════════════ */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-              <div className="flex justify-between items-center p-6 border-b border-gray-100">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+              <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-slate-700">
                 <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {editingItem ? "Edit Product" : "Create New Product"}
                 </h3>
                 <button
                   onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none transition-colors"
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-2xl font-bold leading-none transition-colors"
                 >
                   ×
                 </button>
@@ -318,12 +318,12 @@ const ManageStorePage: React.FC = () => {
 
                   {/* Name */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Name *</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Name *</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200"
                       placeholder="Enter product name"
                       required
                     />
@@ -331,12 +331,12 @@ const ManageStorePage: React.FC = () => {
 
                   {/* Category */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Category *</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Category *</label>
                     <div className="flex gap-2">
                       <select
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200 bg-white"
+                        className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200"
                         required
                       >
                         <option value="">Select Category</option>
@@ -357,11 +357,11 @@ const ManageStorePage: React.FC = () => {
 
                   {/* Currency Dropdown */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Currency *</label>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Currency *</label>
                     <select
                       value={formData.currency}
                       onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200 bg-white"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200"
                       required
                     >
                       {CURRENCIES.map((curr) => (
@@ -376,12 +376,12 @@ const ManageStorePage: React.FC = () => {
                   <div className="grid grid-cols-1 gap-4">
                     {PRICE_FIELDS.map(({ key, label, required }) => (
                       <div key={key}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                           {label}{required && " *"}
                         </label>
 
-                        <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
-                          <span className="px-4 py-3 bg-gray-50 text-gray-600 font-semibold text-sm border-r-2 border-gray-200 select-none">
+                        <div className="flex items-center border-2 border-gray-200 dark:border-slate-600 rounded-xl overflow-hidden">
+                          <span className="px-4 py-3 bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 font-semibold text-sm border-r-2 border-gray-200 dark:border-slate-600 select-none">
                             {currencySymbol}
                           </span>
 
@@ -395,7 +395,7 @@ const ManageStorePage: React.FC = () => {
                                 : ""
                             }
                             onChange={(e) => handlePriceChange(key, e.target.value)}
-                            className="flex-1 px-4 py-3 w-full outline-none border-none bg-white"
+                            className="flex-1 px-4 py-3 w-full outline-none border-none bg-white dark:bg-slate-800"
                             required={required}
                           />
                         </div>
@@ -405,7 +405,7 @@ const ManageStorePage: React.FC = () => {
 
                   {/* Image */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Image {!editingItem && "*"}
                     </label>
                     <input
@@ -414,19 +414,19 @@ const ManageStorePage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, imageFile: e.target.files?.[0] || undefined })
                       }
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 dark:file:bg-blue-900/30 file:text-blue-600 dark:file:text-blue-400 hover:file:bg-blue-100 dark:hover:file:bg-blue-900/50"
                       required={!editingItem}
                     />
                     {editingItem && (
-                      <p className="text-xs text-gray-500 mt-2">Leave empty to keep current image</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Leave empty to keep current image</p>
                     )}
                   </div>
 
                   {/* Download File */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                       Download File{" "}
-                      <span className="text-gray-400 font-normal">(Optional — PDF only)</span>
+                      <span className="text-gray-400 dark:text-gray-500 font-normal">(Optional — PDF only)</span>
                     </label>
                     <input
                       type="file"
@@ -440,10 +440,10 @@ const ManageStorePage: React.FC = () => {
                         }
                         setFormData({ ...formData, downloadFile: file || undefined });
                       }}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-600 hover:file:bg-purple-100"
+                      className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 dark:file:bg-purple-900/30 file:text-purple-600 dark:file:text-purple-400 hover:file:bg-purple-100 dark:hover:file:bg-purple-900/50"
                     />
                     {editingItem && (
-                      <p className="text-xs text-gray-500 mt-2">Leave empty to keep current file</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Leave empty to keep current file</p>
                     )}
                   </div>
 
@@ -466,12 +466,12 @@ const ManageStorePage: React.FC = () => {
         {/* ═══════════════════ Category Modal ═══════════════════ */}
         {isCategoryModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
-            <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create New Category</h3>
                 <button
                   onClick={() => { setIsCategoryModalOpen(false); setNewCategoryName(""); }}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none transition-colors"
+                  className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-2xl font-bold leading-none transition-colors"
                 >
                   ×
                 </button>
@@ -485,12 +485,12 @@ const ManageStorePage: React.FC = () => {
                 className="space-y-4"
               >
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Category Name *</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Category Name *</label>
                   <input
                     type="text"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200"
+                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 focus:outline-none transition-all duration-200"
                     placeholder="Enter category name"
                     required
                   />
@@ -508,21 +508,21 @@ const ManageStorePage: React.FC = () => {
         )}
 
         {/* ═══════════════════ Products Display ═══════════════════ */}
-        <div className="bg-white shadow-md rounded-2xl p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Your Products</h2>
+        <div className="bg-white dark:bg-slate-950 shadow-md rounded-2xl p-6">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-6">Your Products</h2>
 
           {filteredItems.length === 0 ? (
             <div className="text-center py-12">
               <div className="max-w-md mx-auto">
-                <svg className="w-24 h-24 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-24 h-24 mx-auto text-gray-300 dark:text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   {filterStatus === "all"
                     ? "No products yet"
                     : `No ${filterStatus === "approved" ? "approved" : "pending approval"} products`}
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-gray-500 dark:text-gray-400">
                   {filterStatus === "all" && "Add your first product to get started!"}
                 </p>
               </div>
@@ -539,10 +539,10 @@ const ManageStorePage: React.FC = () => {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group flex flex-col"
+                    className="bg-white dark:bg-slate-900 rounded-2xl shadow-md hover:shadow-2xl dark:hover:shadow-black/40 transition-all duration-300 overflow-hidden group flex flex-col"
                   >
                     {/* Image Container */}
-                    <div className="relative w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                    <div className="relative w-full aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-900 overflow-hidden">
                       <Image
                         src={item.imageUrl?.trim() ? item.imageUrl : "/placeholder-image.jpg"}
                         alt={item.name}
@@ -566,29 +566,29 @@ const ManageStorePage: React.FC = () => {
 
                       {/* Category badge — top left */}
                       <div className="absolute top-3 left-3 z-10">
-                        <span className="px-3 py-1.5 bg-white/90 backdrop-blur-sm text-blue-600 text-xs font-semibold rounded-full shadow-md">
+                        <span className="px-3 py-1.5 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm text-blue-600 dark:text-blue-300 text-xs font-semibold rounded-full shadow-md">
                           {item.category.name}
                         </span>
                       </div>
 
                       {/* Currency badge — bottom left */}
                       <div className="absolute bottom-3 left-3 z-10">
-                        <span className="bg-white/90 backdrop-blur-sm text-gray-700 px-3 py-1.5 text-xs font-bold rounded-full shadow-md border border-gray-200">
+                        <span className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm text-gray-700 dark:text-gray-300 px-3 py-1.5 text-xs font-bold rounded-full shadow-md border border-gray-200 dark:border-slate-600">
                           {itemCurrency}
                         </span>
                       </div>
                     </div>
 
                     <div className="p-5 flex flex-col flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
+                      <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2 line-clamp-2 min-h-[3.5rem]">{item.name}</h3>
 
                       {/* ✅ FIXED: Added space after GP currency symbol */}
                       <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                         {[
                           { label: "Base", val: item.basePrice },
                         ].map(({ label, val }) => (
-                          <div key={label} className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-2 border border-gray-100">
-                            <span className="text-gray-500 text-xs block mb-0.5">{label}</span>
+                          <div key={label} className="bg-gradient-to-br from-gray-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-lg p-2 border border-gray-100 dark:border-slate-700">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs block mb-0.5">{label}</span>
                             <span className="text-green-600 font-bold text-sm block">
                               {isItemGP ? `${sym} ${Number(val).toFixed(0)}` : `${sym}${Number(val).toFixed(2)}`}
                             </span>
@@ -599,7 +599,7 @@ const ManageStorePage: React.FC = () => {
                       <div className="flex gap-2 mt-auto">
                         <button
                           onClick={() => handleOpenModal(item)}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-white hover:bg-blue-50 active:scale-95 text-blue-600 font-semibold text-xs rounded-xl px-3 py-2 border-2 border-blue-500 hover:border-blue-600 transition-all duration-200 shadow-sm hover:shadow-md"
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-blue-900/20 active:scale-95 text-blue-600 font-semibold text-xs rounded-xl px-3 py-2 border-2 border-blue-500 hover:border-blue-600 transition-all duration-200 shadow-sm hover:shadow-md"
                         >
                           <Pencil className="w-4 h-4 shrink-0" />
                           <span>Edit</span>
@@ -622,14 +622,14 @@ const ManageStorePage: React.FC = () => {
           ) : (
 
             /* ── Table View ── */
-            <div className="overflow-x-auto rounded-xl border border-gray-200">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                  <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 border-b-2 border-gray-200 dark:border-slate-700">
                     {["Status", "Image", "Name", "Category", "Currency", "Base", "Actions"].map((h) => (
                       <th
                         key={h}
-                        className={`py-4 px-4 text-sm font-bold text-gray-700 whitespace-nowrap ${h === "Actions" ? "text-right" : "text-left"}`}
+                        className={`py-4 px-4 text-sm font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap ${h === "Actions" ? "text-right" : "text-left"}`}
                       >
                         {h}
                       </th>
@@ -642,7 +642,7 @@ const ManageStorePage: React.FC = () => {
                     const sym = getCurrencySymbol(itemCurrency);
                     const isItemGP = itemCurrency === "GP";
                     return (
-                      <tr key={item.id} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors">
+                      <tr key={item.id} className="border-b border-gray-100 dark:border-slate-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-colors">
                         <td className="py-4 px-4">
                           {item.isApproved ? (
                             <span className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm">Approved</span>
@@ -661,19 +661,19 @@ const ManageStorePage: React.FC = () => {
                             />
                           </div>
                         </td>
-                        <td className="py-4 px-4 font-semibold text-gray-800">{item.name}</td>
+                        <td className="py-4 px-4 font-semibold text-gray-800 dark:text-gray-200">{item.name}</td>
                         <td className="py-4 px-4">
-                          <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold border border-blue-200">
+                          <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-semibold border border-blue-200 dark:border-blue-800">
                             {item.category.name}
                           </span>
                         </td>
                         <td className="py-4 px-4">
-                          <span className="bg-gray-100 text-gray-700 px-3 py-1 text-xs font-bold rounded-full">
+                          <span className="bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 px-3 py-1 text-xs font-bold rounded-full">
                             {itemCurrency}
                           </span>
                         </td>
                         {/* ✅ FIXED: Added space after GP in table view */}
-                        <td className="py-4 px-4 text-green-600 font-bold">
+                        <td className="py-4 px-4 text-green-600 dark:text-green-400 font-bold">
                           {isItemGP ? `${sym} ${Number(item.basePrice).toFixed(0)}` : `${sym}${Number(item.basePrice).toFixed(2)}`}
                         </td>
                         {/* <td className="py-4 px-4 text-gray-700">
@@ -714,24 +714,24 @@ const ManageStorePage: React.FC = () => {
 
         {/* ═══════════════════ Stats Cards ═══════════════════ */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
-          <div className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-blue-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Total Products</h3>
+          <div className="bg-white dark:bg-slate-900 shadow-md rounded-2xl p-6 border-l-4 border-blue-500">
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Total Products</h3>
             <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">{items.length}</p>
           </div>
-          <div className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-green-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Approved</h3>
+          <div className="bg-white dark:bg-slate-900 shadow-md rounded-2xl p-6 border-l-4 border-green-500">
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Approved</h3>
             <p className="text-4xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
               {items.filter((i) => i.isApproved).length}
             </p>
           </div>
-          <div className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-red-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Pending</h3>
+          <div className="bg-white dark:bg-slate-900 shadow-md rounded-2xl p-6 border-l-4 border-red-500">
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Pending</h3>
             <p className="text-4xl font-bold bg-gradient-to-r from-red-500 to-rose-600 bg-clip-text text-transparent">
               {items.filter((i) => !i.isApproved).length}
             </p>
           </div>
-          <div className="bg-white shadow-md rounded-2xl p-6 border-l-4 border-indigo-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-2 uppercase tracking-wide">Avg Base Price</h3>
+          <div className="bg-white dark:bg-slate-900 shadow-md rounded-2xl p-6 border-l-4 border-indigo-500">
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wide">Avg Base Price</h3>
             <p className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               {items.length > 0
                 ? `${getCurrencySymbol()}${(items.reduce((s, i) => s + i.basePrice, 0) / items.length).toFixed(2)}`

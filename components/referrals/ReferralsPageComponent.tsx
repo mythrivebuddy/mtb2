@@ -220,13 +220,13 @@ export default function ReferralsPageComponent() {
     return (
         <div className="max-w-8xl px-4 sm:px-8 space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Your Referrals</h1>
+                {/* <h1 className="text-3xl font-bold tracking-tight">Your Referrals</h1> */}
                 <p className="text-muted-foreground mt-1">
                     Track everyone you've referred and the rewards you've earned.
                 </p>
             </div>
 
-            <Card>
+            <Card className="dark:bg-slate-900">
                 <CardHeader>
                     <CardTitle>Referred Users</CardTitle>
                 </CardHeader>

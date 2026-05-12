@@ -7,9 +7,9 @@ import {
   CheckCircle2,
   Circle,
   AlertCircle,
-  X,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface StepOneProps {
   areas: {
@@ -51,7 +51,7 @@ const Step1ThriveAreas = ({
     }
 
     if (selectedIds.length >= 3) {
-      setShowToast(true);
+      toast.info("You can only select up to 3 areas.");
       return;
     }
 
@@ -59,31 +59,10 @@ const Step1ThriveAreas = ({
   };
 
   const isComplete = selectedIds.length === 3;
-  // useEffect(() => {
-  //   if (isEditMode && setStep) {
-  //     setStep(2);
-  //   }
-  // }, [isEditMode, setStep]);
+
   return (
     <main className="flex-1 flex justify-center py-6 px-4 sm:px-8 font-display relative">
-      {/* Toast Notification */}
-      <div
-        className={`fixed top-20 right-4 z-[100] transition-all duration-300 transform ${showToast ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0 pointer-events-none"}`}
-      >
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-3">
-          <AlertCircle size={20} className="text-amber-600" />
-          <p className="font-medium text-sm">
-            You can only select up to 3 areas.
-          </p>
-          <button
-            onClick={() => setShowToast(false)}
-            className="hover:bg-amber-100 p-1 rounded"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      </div>
-
+   
       <div className="w-full max-w-[1024px] flex flex-col gap-8">
         <Alert className="bg-muted/40 border-muted-foreground/40">
           <AlertCircle className="h-4 w-4 text-muted-foreground" />

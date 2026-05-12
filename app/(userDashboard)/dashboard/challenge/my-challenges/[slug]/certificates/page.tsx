@@ -516,7 +516,7 @@ export default function CertificatesManagementPage() {
                 <img
                   src={signaturePreview}
                   alt="Signature Preview"
-                  className="mt-3 h-20 object-contain border rounded-md p-2 bg-white"
+                  className="mt-3 h-20 object-contain border rounded-md p-2 bg-white dark:border-slate-700 dark:bg-slate-900"
                 />
               )}
             </div>
@@ -526,7 +526,7 @@ export default function CertificatesManagementPage() {
           {showTextInput && (
             <>
               <div className="mt-4 space-y-3">
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
                   Type Your Signature
                 </p>
 
@@ -536,7 +536,7 @@ export default function CertificatesManagementPage() {
                   value={signatureTextPreview || ""}
                   disabled={isSignatureUploading}
                   onChange={(e) => setSignatureTextPreview(e.target.value)}
-                  className="border rounded px-3 py-2 w-full text-sm"
+                  className="border rounded px-3 py-2 w-full text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 />
 
                 <button
@@ -558,7 +558,7 @@ export default function CertificatesManagementPage() {
 
                 {signatureTextPreview && !isSignatureUploading && (
                   <p
-                    className="mt-2 text-3xl border p-3 rounded bg-white"
+                    className="mt-2 text-3xl border p-3 rounded bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                     style={{ fontFamily: "MerriweatherSignature" }}
                   >
                     {signatureTextPreview}

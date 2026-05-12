@@ -82,10 +82,10 @@ const SignInPageInner = () => {
     <AppLayout>
       <div className="mt-8 max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1E2875] mb-2">
+          <h1 className="text-3xl font-bold text-[#1E2875] dark:text-blue-700 mb-2">
             Welcome Back!
           </h1>
-          <p className="text-gray-600">Sign in to your account</p>
+          <p className="text-gray-600 dark:text-gray-400">Sign in to your account</p>
         </div>
         <SignInForm />
       </div>

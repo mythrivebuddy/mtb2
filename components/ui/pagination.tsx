@@ -15,10 +15,7 @@ export function Pagination({
   // ADDED: Guard against invalid totalPages
   // if (totalPages <= 1) return null;
 
-  const safeCurrentPage = Math.min(
-    Math.max(currentPage, 1),
-    totalPages
-  );
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
   const getVisiblePages = () => {
     const delta = 2;
@@ -51,7 +48,7 @@ export function Pagination({
           rangeWithDots.push(lastPage + 1);
         } else if (page - lastPage > 2) {
           // If gap is larger than 2, add dots
-          rangeWithDots.push(-1);// -1 represents dots
+          rangeWithDots.push(-1); // -1 represents dots
         }
       }
       rangeWithDots.push(page);
@@ -83,11 +80,16 @@ export function Pagination({
             key={pageNum}
             variant={safeCurrentPage === pageNum ? "default" : "outline"}
             size="sm"
+            className={
+              safeCurrentPage === pageNum
+                ? "bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                : "border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            }
             onClick={() => onPageChange(pageNum)}
           >
             {pageNum}
           </Button>
-        )
+        ),
       )}
 
       <Button

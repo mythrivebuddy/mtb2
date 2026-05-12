@@ -28,10 +28,9 @@ export default function AlignedActionsPage() {
   const [currentAction, setCurrentAction] = useState<AlignedAction | null>(
     null,
   );
-
   const {
     data: actions,
-    isLoading,
+    isLoading ,
     refetch,
   } = useQuery({
     queryKey: ["aligned-actions", today],
@@ -175,10 +174,10 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
     <>
       <CustomAccordion />
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
+        <div className="mb-8 flex items-center justify-between ">
+          <div className="">
             {/* <h1 className="text-3xl font-bold">1% Start</h1> */}
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-300">
               Schedule and track your 1% Start actions
             </p>
           </div>
@@ -192,8 +191,8 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
         </div>
 
         {hasCreatedToday && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-800 text-sm flex items-center">
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-slate-800 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 dark:text-blue-300 text-sm flex items-center">
               <span className="mr-2">ℹ️</span>
               You can create only one 1% Start action per day to help you stay
               focused on what matters most.
@@ -202,8 +201,8 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
         )}
 
         {showWizard && (
-          <div className="mb-8 ">
-            <Card>
+          <div className="mb-8  ">
+            <Card className="dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>Create 1% Start actions</CardTitle>
                 <CardDescription>
@@ -233,7 +232,7 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
               const isExpired =
                 !action.completed && new Date(action.timeTo) < new Date();
               return (
-                <Card key={action.id}>
+                <Card key={action.id} className="dark:bg-slate-900">
                   <CardHeader>
                     <div className="flex justify-between items-center">
                       <CardTitle className="flex items-center gap-2">
@@ -252,7 +251,7 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
                   <CardContent>
                     <div className="mb-4">
                       <h3 className="font-semibold mb-2">Selected Task:</h3>
-                      <p className="p-3 bg-gray-50 rounded-md">
+                      <p className="p-3 bg-gray-50 dark:bg-gray-950 rounded-md">
                         {action.selectedTask}
                       </p>
                     </div>
@@ -262,7 +261,7 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
                         {action.tasks.map(
                           (task: string, i: number) =>
                             task !== action.selectedTask && (
-                              <li key={i} className="p-3 bg-gray-50 rounded-md">
+                              <li key={i} className="p-3 bg-gray-50 dark:bg-gray-950 rounded-md">
                                 {task}
                               </li>
                             ),
@@ -298,11 +297,11 @@ function formatTimeWithDateIfNeeded(from: string, to: string) {
           </div>
         ) : (
           !showWizard && (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <div className="text-center py-12 bg-gray-50 dark:bg-slate-900 rounded-lg">
               <h3 className="text-xl font-medium mb-2">
                 No 1% Start Action Created Today/Tomorrow
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-gray-500 dark:text-gray-300 mb-4">
                 Create a 1% Start actions to focus on what matters most to you
                 today.
               </p>

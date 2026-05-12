@@ -92,13 +92,13 @@ export default function Overdue({
   }
 
   return (
-    <Card className="mb-8 border-destructive/30 bg-destructive/5">
+    <Card className="mb-8 border-destructive/30 bg-destructive/5 dark:bg-gray-900">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-destructive" />
+          <AlertTriangle className="h-6 w-6 text-destructive dark:text-red-500" />
           <div>
-            <CardTitle className="text-destructive">Overdue Blooms</CardTitle>
-            <CardDescription className="text-destructive/80">
+            <CardTitle className="text-destructive dark:text-red-500">Overdue Blooms</CardTitle>
+            <CardDescription className="text-destructive/80 dark:text-red-500">
               These tasks have passed their due date. Let&apos;s get them done!
             </CardDescription>
           </div>
@@ -182,7 +182,7 @@ export default function Overdue({
           // --- DESKTOP: Table View ---
           <Table className="table-fixed w-full">
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="light:bg-muted/50">
                 <TableHead className="w-[80px] text-center"></TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead className="w-[130px]">Due Date</TableHead>
@@ -223,7 +223,7 @@ export default function Overdue({
                       </div>
                     )}
                   </TableCell>
-                  <TableCell className="font-semibold text-destructive">
+                  <TableCell className="font-semibold text-destructive dark:text-red-500">
                     {bloom.dueDate
                       ? new Date(bloom.dueDate).toLocaleDateString("en-IN")
                       : "—"}

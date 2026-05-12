@@ -266,7 +266,7 @@ const MakeoverOnboardingParent = ({
   const isSaving = submitMutation.isPending && actionType === "save";
   const isJoining = submitMutation.isPending && actionType === "join";
   return (
-    <div className="min-h-screen flex flex-col items-center">
+    <div className="min-h-screen flex flex-col items-center text-slate-950 dark:text-slate-100">
       <div ref={topRef} />
 
       {/* ───────────── Breadcrumbs ───────────── */}
@@ -275,7 +275,7 @@ const MakeoverOnboardingParent = ({
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink className="text-muted-foreground pointer-events-none">
+                <BreadcrumbLink className="light:text-muted-foreground  dark:text-slate-300 pointer-events-none">
                   Makeover Program
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -293,7 +293,7 @@ const MakeoverOnboardingParent = ({
                     <BreadcrumbItem>
                       {isCurrent ? (
                         <BreadcrumbPage>
-                          <span className="flex items-center gap-1">
+                          <span className="flex dark:text-slate-300 items-center gap-1">
                             {isEditMode && label === "Makeover Areas" && (
                               <span>🔒</span>
                             )}
@@ -305,11 +305,11 @@ const MakeoverOnboardingParent = ({
                           onClick={() => handleBreadcrumbClick(currentStep)}
                           className={`cursor-pointer ${
                             isEditMode && currentStep === 1
-                              ? "pointer-events-none opacity-60"
+                              ? "pointer-events-none hover:cursor-not-allowed dark:text-slate-300 opacity-95"
                               : ""
                           }`}
                         >
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 dark:text-slate-300 dark:hover:text-slate-200">
                             {isEditMode && label === "Makeover Areas" && (
                               <span>🔒</span>
                             )}

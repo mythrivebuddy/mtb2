@@ -72,7 +72,7 @@ export const columns: ColumnDef<Transaction>[] = [
           <div>
             <Link
               href={`/profile/${userId}`}
-              className="hover:underline text-blue-700 hover:text-blue-800"
+              className="hover:underline text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
               target="_blank"
             >
               {userName?.trim()}
@@ -88,7 +88,7 @@ export const columns: ColumnDef<Transaction>[] = [
           <div>
             <Link
               href={`/profile/${meta.buyerId}`}
-              className="hover:underline text-blue-700 hover:text-blue-800"
+              className="hover:underline text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
               target="_blank"
             >
               {meta.buyerName}
@@ -134,7 +134,7 @@ export const columns: ColumnDef<Transaction>[] = [
           <div>
             <Link
               href={`/profile/${meta.referredUserId}`}
-              className="hover:underline text-blue-700 hover:text-blue-800"
+              className="hover:underline text-blue-700 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
               target="_blank"
             >
               {userName}
@@ -150,7 +150,7 @@ export const columns: ColumnDef<Transaction>[] = [
           {meta?.invoiceUrl && (
             <button
               onClick={() => window.open(meta.invoiceUrl, "_blank")}
-              className="text-xs text-blue-600 hover:underline"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >
               View Invoice
             </button>
@@ -184,7 +184,7 @@ export const columns: ColumnDef<Transaction>[] = [
               {data.breakdown.finalAmount.toFixed(2)}
             </div>
 
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
               {data.currency} {data.breakdown.baseAmount.toFixed(2)}
               {data.breakdown.discount ? (
                 <>
@@ -196,7 +196,7 @@ export const columns: ColumnDef<Transaction>[] = [
               {data.currency} {data.breakdown.commission.toFixed(2)} commission
             </div>
             {isCredit && !isUnlocked && (
-              <div className="text-xs text-yellow-600">
+              <div className="text-xs text-yellow-600 dark:text-yellow-400">
                 Available after {format(availableDate, "MMM d, yyyy")}
               </div>
             )}
@@ -214,7 +214,7 @@ export const columns: ColumnDef<Transaction>[] = [
           {isCredit &&
             !isUnlocked &&
             (data.currency === "INR" || data.currency === "USD") && (
-              <div className="text-xs text-yellow-600">
+              <div className="text-xs text-yellow-600 dark:text-yellow-400">
                 Available after {format(availableDate, "MMM d, yyyy")}
               </div>
             )}

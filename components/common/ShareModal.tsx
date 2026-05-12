@@ -96,7 +96,7 @@ export default function Share({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8"
+            className="bg-white dark:bg-slate-950 rounded-2xl shadow-xl w-full max-w-sm p-6 sm:p-8"
           >
             {/* Header */}
             <div className="flex justify-between items-center mb-6">

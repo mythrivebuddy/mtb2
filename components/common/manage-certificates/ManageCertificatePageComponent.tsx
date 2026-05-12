@@ -321,7 +321,7 @@ export function SignatureDialog({
               className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-[13px] font-medium transition-all ${
                 mode === "upload"
                   ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  : "border-slate-200 text-slate-600 dark:text-slate-300 hover:border-slate-300  dark:hover:bg-slate-800"
               }`}
             >
               <Upload className="w-5 h-5" />
@@ -332,7 +332,7 @@ export function SignatureDialog({
               className={`flex flex-col items-center gap-2 p-3 rounded-xl border text-[13px] font-medium transition-all ${
                 mode === "text"
                   ? "border-blue-600 bg-blue-50 text-blue-700"
-                  : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  : "border-slate-200 text-slate-600 dark:text-slate-300 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
             >
               <PenLine className="w-5 h-5" />
@@ -343,7 +343,7 @@ export function SignatureDialog({
                 setMode(null);
                 onOpenPad();
               }}
-              className="flex flex-col items-center gap-2 p-3 rounded-xl border text-[13px] font-medium transition-all border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border text-[13px] font-medium transition-all border-slate-200 dark:text-slate-300 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               <Pencil className="w-5 h-5" />
               Draw Pad
@@ -547,7 +547,7 @@ function ParticipantsTable({
     onPageChange(1);
   }, [filter, activeTab, limit, dateMode, dateFilter, customFrom, customTo]);
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 ">
       {/* Filter bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
@@ -676,7 +676,7 @@ function ParticipantsTable({
       </div>
 
       {/* Table */}
-      <Card className="overflow-x-auto w-full border rounded-lg">
+      <Card className="overflow-x-auto w-full border rounded-lg dark:bg-slate-900">
         <CardContent>
           <Table className="min-w-[780px]">
             <TableHeader>
@@ -785,7 +785,7 @@ function ParticipantsTable({
                             <Link
                               href={`/profile/${p?.id}`}
                               target="_blank"
-                              className="text-sm font-medium text-slate-900"
+                              className="text-sm font-medium "
                             >
                               {p.name}
                             </Link>
@@ -822,7 +822,7 @@ function ParticipantsTable({
 
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-600">
+                          <span className="text-xs font-semibold dark:text-slate-300 text-slate-600">
                             {p.completionPercentage}%
                           </span>
                         </div>
@@ -1349,7 +1349,7 @@ export default function ManageCertificatePageComponent() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <div>
             <h1 className="text-3xl font-bold">Certificate Management</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-300 mt-1">
               Issue certificates to eligible participants and manage your
               signature for certificates.
             </p>
@@ -1366,10 +1366,10 @@ export default function ManageCertificatePageComponent() {
         {/* ── Summary Stats ── */}
         <div className="grid grid-cols-3 gap-3 mb-6">
           {/* Eligible */}
-          <div className="rounded-xl border bg-white p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
+          <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide">
                 Eligible
               </span>
             </div>
@@ -1379,10 +1379,10 @@ export default function ManageCertificatePageComponent() {
           </div>
 
           {/* Not Eligible */}
-          <div className="rounded-xl border bg-white p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
+          <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <XCircle className="w-4 h-4 text-rose-500" />
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-wide">
                 Not Eligible
               </span>
             </div>
@@ -1392,10 +1392,10 @@ export default function ManageCertificatePageComponent() {
           </div>
 
           {/* Issued */}
-          <div className="rounded-xl border bg-white p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
+          <div className="rounded-xl border bg-white dark:bg-slate-900 p-4 shadow-sm min-h-[110px] flex flex-col justify-between text-center sm:text-left">
             <div className="flex items-center justify-center sm:justify-start gap-2">
               <Award className="w-4 h-4 text-indigo-600" />
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-300  uppercase tracking-wide">
                 Issued
               </span>
             </div>

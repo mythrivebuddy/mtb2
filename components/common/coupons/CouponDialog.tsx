@@ -61,7 +61,7 @@ export default function CouponDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto dark:bg-slate-950">
         <DialogHeader>
           <DialogTitle>{editingId ? "Edit Coupon" : "Create New Coupon"}</DialogTitle>
           <DialogDescription>

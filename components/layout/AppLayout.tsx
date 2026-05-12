@@ -11,7 +11,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <main className="min-h-screen py-4 sm:py-6 md:py-8 px-4">
       <div className="max-w-[1280px] mx-auto">
-        <div className="bg-white rounded-[32px] p-4 sm:p-6 md:p-8">
+        <div className="bg-white rounded-[32px] p-4 sm:p-6 md:p-8 shadow-sm transition-colors dark:bg-slate-950 dark:text-slate-100 dark:shadow-slate-950/30">
           <Navbar />
           <AnnouncementBanner/>
           {children}

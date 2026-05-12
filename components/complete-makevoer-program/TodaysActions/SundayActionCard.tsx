@@ -353,22 +353,22 @@ export default function SundayActionCard({
       <button
         onClick={handlePrev}
         disabled={currentSlideIndex === 0}
-        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group disabled:opacity-80 disabled:cursor-not-allowed"
+        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all mr-6 group disabled:opacity-80 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
         aria-label="Previous Slide"
       >
         <ChevronLeft className="w-6 h-6 group-hover:-translate-x-0.5 transition-transform" />
       </button>
 
       {/* Card */}
-      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col md:flex-row">
+      <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col md:flex-row dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
         {/* Left */}
-        <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden">
+        <div className="md:w-1/3 bg-slate-50 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-100 relative overflow-hidden dark:border-slate-700 dark:bg-slate-800">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#1990e6] to-blue-300" />
           <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-[#1990e6]/5 rounded-full blur-3xl" />
 
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="bg-blue-100 text-[#1990e6] p-1.5 rounded-md">
+              <span className="bg-blue-100 text-[#1990e6] p-1.5 rounded-md dark:bg-blue-500/15">
                 <Heart className="w-5 h-5" />
               </span>
               <span className="text-xs font-bold text-[#1990e6] uppercase tracking-widest">
@@ -383,27 +383,27 @@ export default function SundayActionCard({
             </h3>
           </div>
 
-          <p className="text-lg leading-snug line-clamp-5">
+          <p className="text-lg leading-snug line-clamp-5 text-slate-700 dark:text-slate-300">
             {activeArea.description}
           </p>
 
           <div className="mt-auto">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Area Progress
               </span>
               {/* <span className="text-xs font-bold text-[#1990e6]">Sunday</span> */}
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden dark:bg-slate-700">
               <div className="bg-[#1990e6]  h-2 rounded-full w-[0%]" />
             </div>
           </div>
         </div>
 
         {/* Right */}
-        <div className="md:w-2/3 p-6 md:p-8 flex flex-col bg-white">
+        <div className="md:w-2/3 p-6 md:p-8 flex flex-col bg-white dark:bg-slate-900">
           {currentSlideIndex !== 2 && (
-            <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 mb-6">
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 mb-6 dark:border-slate-700 dark:bg-slate-800">
               <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">
                 {activeArea.contextTitle}
               </p>
@@ -415,12 +415,12 @@ export default function SundayActionCard({
                     {identityStatements.map((statement, idx) => (
                       <div
                         key={idx}
-                        className="bg-white rounded-xl border border-slate-100 p-4"
+                        className="bg-white rounded-xl border border-slate-100 p-4 dark:border-slate-700 dark:bg-slate-900"
                       >
-                        <p className="text-sm font-semibold text-slate-900 mb-1">
+                        <p className="text-sm font-semibold text-slate-900 mb-1 dark:text-slate-50">
                           {statement.title}
                         </p>
-                        <p className="text-sm text-slate-700 italic">
+                        <p className="text-sm text-slate-700 italic dark:text-slate-300">
                           "{statement.text}"
                         </p>
                       </div>
@@ -428,7 +428,7 @@ export default function SundayActionCard({
                   </div>
                 )}
 
-              <p className="text-slate-800 font-medium text-sm leading-relaxed">
+              <p className="text-slate-800 font-medium text-sm leading-relaxed dark:text-slate-200">
                 {contextText}
               </p>
             </div>
@@ -464,7 +464,7 @@ export default function SundayActionCard({
 
                     <label
                       className="group flex items-start gap-3 p-3 rounded-lg border border-transparent transition-all
-            cursor-pointer hover:bg-slate-50 hover:border-slate-100"
+            cursor-pointer hover:bg-slate-50 hover:border-slate-100 dark:hover:border-slate-700 dark:hover:bg-slate-800"
                     >
                       <div className="relative flex items-center mt-0.5">
                         <input
@@ -490,7 +490,7 @@ export default function SundayActionCard({
                       <div className="flex-1">
                         <p
                           className={`text-sm font-medium transition-colors
-                ${checked ? "" : "text-slate-700 group-hover:text-[#1990e6]"}`}
+                ${checked ? "dark:text-slate-300" : "text-slate-700 group-hover:text-[#1990e6] dark:text-slate-200"}`}
                         >
                           {task.label}
                         </p>
@@ -508,7 +508,7 @@ export default function SundayActionCard({
       <button
         onClick={handleNext}
         disabled={isLast}
-        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:cursor-not-allowed"
+        className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full bg-white text-slate-400 hover:text-[#1990e6] hover:bg-blue-50 shadow-md border border-slate-100 transition-all ml-6 group disabled:opacity-80 disabled:cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
         aria-label="Next Slide"
       >
         <ChevronRight className="w-6 h-6 group-hover:translate-x-0.5 transition-transform" />

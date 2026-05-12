@@ -33,10 +33,10 @@ export function StreakDisplay() {
   // );
   
   return (
-    <Card className="p-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all">
+    <Card className="p-3 rounded-2xl bg-gradient-to-br from-white to-gray-50 shadow-sm hover:shadow-md transition-all dark:border-slate-700 dark:from-slate-800 dark:to-slate-900">
       <div className="flex items-center gap-3">
         {/* Icon */}
-        <div className="bg-orange-100 p-2 rounded-lg">
+        <div className="bg-orange-100 p-2 rounded-lg dark:bg-orange-500/20">
           <span className="text-lg">🔥</span>
         </div>
 
@@ -45,7 +45,7 @@ export function StreakDisplay() {
           <p className="text-sm xlg:text-md font-semibold text-orange-500 leading-none">
             {streakCount}
           </p>
-          <p className="text-xs text-gray-500 leading-tight">
+          <p className="text-xs text-gray-500 leading-tight dark:text-slate-400">
             Day{streakCount !== 1 ? "s" : ""} Streak
           </p>
         </div>

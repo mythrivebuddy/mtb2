@@ -17,7 +17,7 @@ export default function CoachVsGrowth() {
       <div className="">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
           {/* SELF GROWTH */}
-          <div className="rounded-2xl bg-white border-2 border-green-700 p-8">
+          <div className="rounded-2xl bg-white border-2 border-green-700 p-8 transition-colors dark:bg-slate-900 dark:text-slate-100">
             <h3 className="text-2xl font-bold">For Self-Growth Enthusiasts</h3>
             <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
               A dedicated space to track your journey, build habits, and connect
@@ -45,7 +45,7 @@ export default function CoachVsGrowth() {
               ].map((item) => (
                 <li key={item.text} className="flex items-start gap-3">
                   <item.icon className="h-5 w-5 text-green-600 mt-0.5" />
-                  <span className="text-lg">{item.text}</span>
+                  <span className="text-lg text-slate-800 dark:text-slate-200">{item.text}</span>
                 </li>
               ))}
             </ul>
@@ -62,7 +62,7 @@ export default function CoachVsGrowth() {
           </div>
 
           {/* COACHES */}
-          <div className="rounded-2xl bg-white border-2 border-blue-600  p-8">
+          <div className="rounded-2xl bg-white border-2 border-blue-600 p-8 transition-colors dark:bg-slate-900 dark:text-slate-100">
             <h3 className="text-2xl font-bold">For Coaches & Solopreneurs</h3>
             <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
               An all-in-one system to manage your business and personal growth,
@@ -90,7 +90,7 @@ export default function CoachVsGrowth() {
               ].map((item) => (
                 <li key={item.text} className="flex items-start gap-3">
                   <item.icon className="h-6 w-6 text-brand mt-0.5" />
-                  <span className="text-lg">{item.text}</span>
+                  <span className="text-lg text-slate-800 dark:text-slate-200">{item.text}</span>
                 </li>
               ))}
             </ul>

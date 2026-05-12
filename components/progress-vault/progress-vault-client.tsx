@@ -274,8 +274,8 @@ export default function ProgressVaultClient({
   return (
     <>
       <CustomAccordion />
-      <div className="w-full px-4 py-6">
-        <Card className="mb-8">
+      <div className="w-full px-4 py-6 ">
+        <Card className="mb-8 dark:bg-slate-900">
           <CardHeader>
             <div className="flex justify-between items-center">
               <div className="space-y-3">
@@ -351,7 +351,7 @@ export default function ProgressVaultClient({
                     createMutation.isPending ||
                     todayEntriesCount >= dailyLimit
                   }
-                  className="bg-green-600 hover:bg-green-700 "
+                  className="bg-green-600 hover:bg-green-700 dark:text-white"
                 >
                   {createMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -366,13 +366,13 @@ export default function ProgressVaultClient({
         {isLoading ? (
           <PageSkeleton type="Progress-vault" />
         ) : logs.length === 0 ? (
-          <Card>
+          <Card className="dark:bg-slate-900">
             <CardContent className="py-10 text-center text-muted-foreground">
               No progress vault yet. Start by adding your first entry above!
             </CardContent>
           </Card>
         ) : (
-          <Card>
+          <Card className="dark:bg-slate-900">
             <CardHeader>
               <CardTitle>Your Progress Vault</CardTitle>
               <CardDescription>
@@ -510,16 +510,16 @@ export default function ProgressVaultClient({
 
         {/* View Modal */}
         <Dialog open={!!viewLog} onOpenChange={() => setViewLog(null)}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">
+              <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                 Progress Vault Entry
               </DialogTitle>
             </DialogHeader>
             <div className="mt-4 space-y-4">
               {viewLog && (
                 <>
-                  <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
+                  <div className="text-sm text-gray-500 dark:text-gray-200 bg-gray-50 dark:bg-black p-3 rounded-lg">
                     {new Date(viewLog.createdAt).toLocaleString("en-US", {
                       weekday: "long",
                       year: "numeric",
@@ -529,7 +529,7 @@ export default function ProgressVaultClient({
                       minute: "2-digit",
                     })}
                   </div>
-                  <p className="whitespace-pre-wrap text-gray-700 leading-relaxed">
+                  <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-200 leading-relaxed">
                     {viewLog.content}
                   </p>
                 </>
@@ -549,15 +549,15 @@ export default function ProgressVaultClient({
 
         {/* Delete Modal */}
         <Dialog open={!!deleteLog} onOpenChange={() => setDeleteLog(null)}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
-              <DialogTitle className="mt-4 text-xl font-semibold text-gray-800">
+              <DialogTitle className="mt-4 text-xl font-semibold text-gray-800 dark:text-gray-200">
                 Confirm Deletion
               </DialogTitle>
-              <DialogDescription className="mt-2 text-sm text-gray-500">
+              <DialogDescription className="mt-2 text-sm text-gray-500 dark:text-gray-300">
                 Are you sure you want to delete this entry? This action cannot
                 be undone.
               </DialogDescription>
@@ -598,9 +598,9 @@ export default function ProgressVaultClient({
             reset();
           }}
         >
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">
+              <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-200">
                 Update Your Progress Vault
               </DialogTitle>
               <DialogDescription>
@@ -636,7 +636,7 @@ export default function ProgressVaultClient({
                 <Button
                   type="submit"
                   disabled={updateMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 "
+                  className="bg-green-600 hover:bg-green-700 dark:text-white"
                 >
                   {updateMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

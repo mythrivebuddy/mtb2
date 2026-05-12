@@ -80,22 +80,22 @@ export default function LetOthersRollClient() {
   return (
     <div className="min-h-screen  flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-3xl">
-        <h1 className="text-4xl font-extrabold text-slate-800 text-center mb-8 drop-shadow-md">
+        <h1 className="text-4xl font-extrabold text-slate-800 text-center mb-8 drop-shadow-md dark:text-slate-50">
           Invite Others to Join!
         </h1>
-        <p className="text-center mb-8 text-lg text-slate-600">
+        <p className="text-center mb-8 text-lg text-slate-600 dark:text-slate-300">
           Your challenge is ready! Share this link with your friends.
         </p>
-        <div className="bg-white p-8 rounded-2xl shadow-xl space-y-6 text-center border border-slate-100">
+        <div className="bg-white p-8 rounded-2xl shadow-xl space-y-6 text-center border border-slate-100 dark:border-slate-700 dark:bg-slate-900">
           {isLoading && (
-            <p className="text-slate-600">Loading challenge details...</p>
+            <p className="text-slate-600 dark:text-slate-300">Loading challenge details...</p>
           )}
           {error && (
             <p className="text-red-500">{error}</p>
           )}
           {challengeDetails && (
             <div className="mb-6">
-              <h2 className="text-3xl font-bold text-purple-700 mb-2">
+              <h2 className="text-3xl font-bold text-purple-700 mb-2 dark:text-purple-300">
                 {challengeDetails.title}
               </h2>
               {challengeDetails.description && (
@@ -108,7 +108,7 @@ export default function LetOthersRollClient() {
           )}
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-4">
             <input
-              className="p-3 border-2 border-purple-200 rounded-xl w-full sm:w-3/4 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 bg-slate-50 text-slate-700"
+              className="p-3 border-2 border-purple-200 rounded-xl w-full sm:w-3/4 focus:border-purple-400 focus:ring-2 focus:ring-purple-100 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200"
               value={shareableLink}
               readOnly
             />
@@ -127,7 +127,7 @@ export default function LetOthersRollClient() {
             Back to Dashboard
           </button>
         </div>
-        <p className="text-center mt-10 text-2xl font-bold text-slate-800 drop-shadow-md">
+        <p className="text-center mt-10 text-2xl font-bold text-slate-800  dark:text-slate-200 drop-shadow-md">
           Let’s Expand the Fun!!
         </p>
       </div>

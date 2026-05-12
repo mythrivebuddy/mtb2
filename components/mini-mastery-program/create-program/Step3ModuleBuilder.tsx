@@ -91,7 +91,7 @@ function SidebarPreview({
 
   return (
     <aside className="w-full lg:w-[340px] space-y-4 shrink-0">
-      <div className="bg-[#0f172a] rounded-[32px] p-5 text-white shadow-2xl space-y-5">
+      <div className="bg-[#0f172a]  dark:bg-slate-900 rounded-[32px] p-5 text-white shadow-2xl space-y-5">
         {/* Header stats */}
         <div className="flex items-center justify-between">
           <h4 className="text-blue-400 font-bold text-sm">Program Preview</h4>
@@ -135,7 +135,7 @@ function SidebarPreview({
               </span>
               <h3 className="font-bold text-white text-sm mt-0.5 leading-snug">
                 {current.title || (
-                  <span className="text-gray-500 italic">Untitled Module</span>
+                  <span className="text-gray-500 dark:text-slate-400 italic">Untitled Module</span>
                 )}
               </h3>
             </div>
@@ -165,7 +165,7 @@ function SidebarPreview({
                     title={`Day ${previewIdx + 1} video`}
                   />
                 ) : (
-                  <div className="aspect-video flex flex-col items-center justify-center gap-2 text-gray-500">
+                  <div className="aspect-video flex flex-col items-center justify-center gap-2 text-gray-500 dark:text-slate-400">
                     <PlayCircle size={28} className="text-gray-600" />
                     <p className="text-[11px] font-medium text-center px-4">
                       {current.videoUrl
@@ -180,7 +180,7 @@ function SidebarPreview({
             {/* Instructions */}
             {current.instructions && (
               <div className="bg-gray-800/60 rounded-2xl p-3 space-y-1">
-                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                <span className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">
                   Instructions
                 </span>
                 <div
@@ -358,7 +358,7 @@ export default function Step3ModuleBuilder({
           <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
             MINI-MASTERY PROGRAM CREATION
           </span>
-          <h2 className="text-3xl font-bold text-gray-900 mt-1">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-200 mt-1">
             Daily Module Builder
           </h2>
         </header>
@@ -391,7 +391,7 @@ export default function Step3ModuleBuilder({
                         : "border-blue-400 p-6"
                       : hasError
                         ? "border-red-200 p-4 cursor-pointer"
-                        : "border-gray-100 p-4 hover:bg-gray-50 cursor-pointer"
+                        : "border-gray-100 dark:border-slate-800 p-4 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
                   }`}
                 >
                   <div
@@ -405,13 +405,13 @@ export default function Step3ModuleBuilder({
                             ? "bg-blue-500 text-white"
                             : hasError
                               ? "bg-red-100 text-red-500"
-                              : "bg-gray-100 text-gray-400"
+                              : "bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500"
                         }`}
                       >
                         {index + 1}
                       </span>
                       <div>
-                        <h3 className="font-bold text-gray-800 text-sm">
+                        <h3 className="font-bold text-gray-800 dark:text-gray-300 text-sm">
                           {watchedModules?.[index]?.title || "Untitled Module"}
                         </h3>
                         {hasError && !isExpanded && modErrors && (
@@ -433,7 +433,7 @@ export default function Step3ModuleBuilder({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Title */}
                         <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase">
+                          <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                             Module Title
                           </label>
                           <input
@@ -443,10 +443,10 @@ export default function Step3ModuleBuilder({
                                   modules: watchedModules as ModuleData[],
                                 }),
                             })}
-                            className={`w-full p-4 bg-gray-50 rounded-xl outline-none focus:ring-2 border text-sm ${
+                            className={`w-full p-4 bg-gray-50 dark:bg-slate-900 text-gray-800 dark:text-slate-200 rounded-xl outline-none focus:ring-2 border text-sm ${
                               modErrors?.title
                                 ? "border-red-400 bg-red-50/30 focus:ring-red-400"
-                                : "border-transparent focus:ring-blue-400"
+                                : "border-transparent dark:border-slate-700 focus:ring-blue-400"
                             }`}
                           />
                           {modErrors?.title?.message && (
@@ -458,7 +458,7 @@ export default function Step3ModuleBuilder({
 
                         {/* Content Type */}
                         <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase">
+                          <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">
                             Content Type
                           </label>
                           <div className="flex gap-2">
@@ -476,8 +476,8 @@ export default function Step3ModuleBuilder({
                                 }}
                                 className={`flex-1 py-3 rounded-xl border-2 flex items-center justify-center gap-2 font-bold transition-all text-sm ${
                                   moduleType === t
-                                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                                    : "border-gray-100 text-gray-400"
+                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                                    : "border-gray-100 dark:border-slate-800 text-gray-400"
                                 }`}
                               >
                                 {t === "video" ? (
@@ -495,7 +495,7 @@ export default function Step3ModuleBuilder({
                       {/* Video URL */}
                       {moduleType === "video" && (
                         <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase">
+                          <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">
                             Video URL
                           </label>
                           <input
@@ -542,7 +542,7 @@ export default function Step3ModuleBuilder({
                         )}
                       </div> */}
                       <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">
+                        <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">
                           Content Area / Instructions
                         </label>
                         <Controller
@@ -613,7 +613,7 @@ export default function Step3ModuleBuilder({
                       {/* Action Task */}
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <label className="text-xs font-bold text-gray-500 uppercase">
+                          <label className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase">
                             Action Task
                           </label>
                           <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-400 font-bold uppercase tracking-tighter">
@@ -700,7 +700,7 @@ export default function Step3ModuleBuilder({
               className={`w-full py-5 border-2 border-dashed rounded-3xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${
                 reachedLimit
                   ? "border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50/50"
-                  : "border-blue-200 text-blue-600 hover:bg-blue-50"
+                  : "border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
               }`}
             >
               <Plus size={18} />
@@ -714,13 +714,13 @@ export default function Step3ModuleBuilder({
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all text-sm"
+              className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 dark:border-slate-800 font-bold text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-gray-950 transition-all text-sm"
             >
               <ArrowLeft size={18} /> Back
             </button>
             <button
               type="submit"
-              className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
+              className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl light:shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
             >
               Save & Continue <ArrowRight size={18} />
             </button>

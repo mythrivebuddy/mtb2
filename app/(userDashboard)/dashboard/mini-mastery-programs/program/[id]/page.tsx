@@ -251,8 +251,8 @@ function Confetti({ active }: { active: boolean }) {
 
 function PlayerSkeleton() {
   return (
-    <div className="min-h-screen bg-slate-50 animate-pulse">
-      <div className="h-16 bg-white border-b border-slate-100" />
+    <div className="min-h-screen bg-slate-50  dark:bg-slate-950 animate-pulse">  
+      <div className="h-16 bg-white dark:bg-slate-900 border-b border-slate-100" />
       <div className="max-w-7xl mx-auto p-6 lg:p-10 flex flex-col lg:flex-row gap-10">
         <div className="flex-1 space-y-8">
           <div className="aspect-video bg-slate-200 rounded-[40px]" />
@@ -262,7 +262,7 @@ function PlayerSkeleton() {
             <div className="h-4 w-full bg-slate-200 rounded" />
             <div className="h-4 w-5/6 bg-slate-200 rounded" />
           </div>
-          <div className="bg-white rounded-[32px] p-8 space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 space-y-4">
             <div className="h-6 w-48 bg-slate-100 rounded" />
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-4 w-full bg-slate-100 rounded" />
@@ -271,10 +271,10 @@ function PlayerSkeleton() {
           </div>
         </div>
         <div className="w-full lg:w-80 space-y-6">
-          <div className="bg-white rounded-[32px] p-6 h-32" />
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-6 h-32" />
           <div className="space-y-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-14 bg-white rounded-2xl" />
+              <div key={i} className="h-14 bg-white dark:bg-slate-900 rounded-2xl" />
             ))}
           </div>
         </div>
@@ -300,10 +300,10 @@ function CourseCompletedModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden relative">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-full max-w-md overflow-hidden relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600  dark:text-slate-300 hover:bg-slate-100 rounded-full transition-colors z-10"
         >
           <X size={18} />
         </button>
@@ -326,7 +326,7 @@ function CourseCompletedModal({
 
         <div className="p-8 space-y-6">
           <div className="text-center space-y-2">
-            <p className="text-slate-600 font-medium text-sm leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-300 font-medium text-sm leading-relaxed">
               You have successfully completed all modules. Your certificate is
               ready to download.
             </p>
@@ -388,7 +388,7 @@ function CourseFinishedCelebrationModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-sm overflow-hidden relative text-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl w-full max-w-sm overflow-hidden relative text-center">
         {/* Close */}
         <button
           onClick={onClose}
@@ -410,7 +410,7 @@ function CourseFinishedCelebrationModal({
           {/* Trophy icon with glow */}
           <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full bg-white/30 blur-xl" />
-            <div className="relative w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl">
+            <div className="relative w-20 h-20 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-xl">
               <Trophy size={40} className="text-yellow-500" />
             </div>
           </div>
@@ -481,7 +481,7 @@ function CertificateDownloadedModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-      <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden relative">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden relative">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
@@ -501,7 +501,7 @@ function CertificateDownloadedModal({
           </div>
 
           <div className="space-y-1">
-            <h3 className="text-xl font-black text-slate-900">
+            <h3 className="text-xl font-black text-slate-900 dark:text-white">
               {isError ? "Download Failed" : "Certificate Downloaded!"}
             </h3>
             <p className="text-sm text-slate-500 font-medium">
@@ -558,7 +558,7 @@ function CertificateCard({
       className={`rounded-[32px] p-6 border space-y-4 relative overflow-hidden transition-all ${
         unlocked
           ? "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 shadow-lg shadow-amber-50"
-          : "bg-white border-slate-100"
+          : "bg-white dark:bg-slate-900 border-slate-100"
       }`}
     >
       {unlocked && (
@@ -886,7 +886,7 @@ const tz = data?.state?.user?.timezone || "UTC";
   const isLocked = dayStatus === "locked";
 
   return (
-    <div className="min-h-screen max-sm:mx-4 bg-slate-50">
+    <div className="min-h-screen max-sm:mx-4 bg-slate-50 dark:bg-slate-950">
       {/* ── Confetti ── */}
       <Confetti active={confettiActive} />
 
@@ -929,17 +929,17 @@ const tz = data?.state?.user?.timezone || "UTC";
       )}
 
       {/* ── Top Nav ── */}
-      <nav className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between top-0 z-40">
+      <nav className="bg-white dark:bg-slate-900 border-b border-slate-100 px-6 py-4 flex items-center justify-between top-0 z-40">
         <div className="flex items-center gap-4">
           <button
             onClick={handleBack}
-            className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+            className="p-2 rounded-full transition-colors"
           >
-            <ArrowLeft size={20} className="text-slate-600" />
+            <ArrowLeft size={20} className="text-slate-600 dark:text-slate-300" />
           </button>
 
           <div>
-            <h2 className="font-black text-slate-900 leading-none">
+            <h2 className="font-black text-slate-900 dark:text-white  leading-none">
               {program.name}
             </h2>
             <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">
@@ -970,7 +970,7 @@ const tz = data?.state?.user?.timezone || "UTC";
         <div className="flex-1 space-y-8">
           {isLocked ? (
             <div className="aspect-video bg-slate-100 rounded-[40px] flex flex-col items-center justify-center gap-4 border-2 border-dashed border-slate-200">
-              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
+              <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
                 <Lock size={28} className="text-slate-300" />
               </div>
               <div className="text-center">
@@ -1069,7 +1069,7 @@ const tz = data?.state?.user?.timezone || "UTC";
                     />
                     {isDayComplete ? "Completed" : "Active Module"}
                   </div>
-                  <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+                  <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                     Day {activeDay}: {currentModule.title}
                   </h1>
                   <div
@@ -1083,10 +1083,10 @@ const tz = data?.state?.user?.timezone || "UTC";
 
               {currentModule && (
                 <div
-                  className={`border rounded-[32px] p-8 shadow-sm space-y-6 relative overflow-hidden transition-all ${
+                  className={`border rounded-[32px] p-8 light:shadow-sm space-y-6 relative overflow-hidden transition-all ${
                     isDayComplete
                       ? "bg-green-50 border-green-100"
-                      : "bg-white border-blue-100"
+                      : "bg-white dark:bg-slate-900 border-blue-100"
                   }`}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl" />
@@ -1098,14 +1098,14 @@ const tz = data?.state?.user?.timezone || "UTC";
                     >
                       <CheckCircle2 size={20} />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">
                       {isDayComplete
                         ? "Task Completed ✓"
                         : "Today's Action Task"}
                     </h3>
                   </div>
                   <div
-                    className="text-slate-600 font-medium leading-relaxed 
+                    className="text-slate-600 dark:text-slate-300 font-medium leading-relaxed 
              [&_ul]:list-disc [&_ul]:pl-5 
              [&_ol]:list-decimal [&_ol]:pl-5 
              [&_li]:mb-1"
@@ -1126,19 +1126,19 @@ const tz = data?.state?.user?.timezone || "UTC";
                         rows={3}
                         maxLength={2000}
                         placeholder="Write your thoughts or answer here..."
-                        className="w-full p-4 bg-blue-50/50 border border-blue-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 text-sm font-medium resize-none"
+                        className="w-full p-4 bg-blue-50/50 dark:bg-slate-200 text-black  border border-blue-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-400 text-sm font-medium resize-none"
                       />
                       {/* )} */}
                     </div>
                   )}
 
                   {isDayComplete && currentLog?.actionResponse && (
-                    <div className="bg-white border border-green-100 rounded-2xl p-4 space-y-1">
+                    <div className="bg-white dark:bg-slate-900 border border-green-100 rounded-2xl p-4 space-y-1">
                       <p className="text-[10px] font-black text-green-600 uppercase tracking-widest">
                         Your Response
                       </p>
                       <div
-                        className="text-sm text-slate-600 font-medium leading-relaxed"
+                        className="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed"
                         dangerouslySetInnerHTML={{
                           __html: currentLog.actionResponse || "",
                         }}
@@ -1161,7 +1161,7 @@ const tz = data?.state?.user?.timezone || "UTC";
                         });
                       }}
                       disabled={completeMutation.isPending}
-                      className="text-xs sm:text-sm w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black max-sm:px-2 py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-100 active:scale-95"
+                      className="text-xs sm:text-sm w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black max-sm:px-2 py-5 rounded-2xl flex items-center justify-center gap-3 transition-all light:shadow-xl light:shadow-blue-100 active:scale-95"
                     >
                       {completeMutation.isPending ? (
                         <>
@@ -1201,7 +1201,7 @@ const tz = data?.state?.user?.timezone || "UTC";
 
         {/* ── RIGHT: Sidebar ── */}
         <div className="w-full lg:w-80 space-y-6">
-          <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 rounded-[32px] p-6 shadow-sm">
             <div className="flex justify-between items-center mb-4">
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
                 Program Progress
@@ -1292,10 +1292,10 @@ const tz = data?.state?.user?.timezone || "UTC";
                       isActive
                         ? "bg-blue-50 border-blue-200 shadow-sm"
                         : status === "completed"
-                          ? "bg-white border-slate-100 opacity-70 hover:opacity-100"
+                          ? "bg-white dark:bg-slate-900 border-slate-100 opacity-70 hover:opacity-100"
                           : status === "locked"
-                            ? "bg-white border-slate-50 opacity-40 cursor-not-allowed"
-                            : "bg-white border-slate-100 hover:border-blue-100 hover:bg-blue-50/30"
+                            ? "bg-white dark:bg-slate-900 border-slate-50 opacity-40 cursor-not-allowed"
+                            : "bg-white dark:bg-slate-900 border-slate-100 hover:border-blue-100 hover:bg-blue-50/30"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -1314,12 +1314,12 @@ const tz = data?.state?.user?.timezone || "UTC";
                       </div>
                       <div className="min-w-0">
                         <span
-                          className={`text-xs font-black block ${isActive ? "text-blue-900" : "text-slate-500"}`}
+                          className={`text-xs font-black block ${isActive ? "text-blue-900 " : "text-slate-500 dark:text-white"}`}
                         >
                           Day {dn}
                         </span>
                         <span
-                          className={`text-sm font-bold truncate block ${isActive ? "text-blue-800" : "text-slate-700"}`}
+                          className={`text-sm font-bold truncate block ${isActive ? "text-blue-800" : "text-slate-700 dark:text-white"}`}
                         >
                           {mod.title}
                         </span>
@@ -1351,7 +1351,7 @@ const tz = data?.state?.user?.timezone || "UTC";
             </div>
           </div>
 
-          <div className="bg-blue-600 rounded-[32px] p-6 text-white space-y-4 relative overflow-hidden group shadow-lg shadow-blue-100">
+          <div className="bg-blue-600 rounded-[32px] p-6 text-white space-y-4 relative overflow-hidden group light:shadow-lg light:shadow-blue-100">
             <div className="absolute -right-4 -top-4 opacity-10 group-hover:rotate-12 transition-transform duration-700">
               <Lightbulb size={80} />
             </div>

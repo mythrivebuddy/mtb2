@@ -305,7 +305,7 @@ export default function ChallengePage({
             </Dialog>
           </div>
           <div className="flex-1 text-center px-4">
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-indigo-900">
+            <h1 className="text-2xl sm:text-4xl font-extrabold light:text-indigo-900  dark:text-indigo-300">
               Challenges
             </h1>
           </div>
@@ -314,10 +314,10 @@ export default function ChallengePage({
               {/* Search icon button */}
               <button
                 onClick={() => setSearchVisible((p) => !p)}
-                className="p-1 rounded-full hover:bg-gray-100 transition"
+                className="p-1 rounded-full hover:bg-gray-100 transition dark:hover:bg-slate-800"
                 aria-label="Toggle search"
               >
-                <Search size={24} className="text-gray-600" />
+                <Search size={24} className="text-gray-600 dark:text-slate-300" />
               </button>
 
               {/* Animated dropdown search field */}
@@ -332,7 +332,7 @@ export default function ChallengePage({
                       stiffness: 300,
                       damping: 20,
                     }}
-                    className="absolute right-0 mt-2 z-20 w-72 bg-white border rounded-lg shadow-lg p-2 flex items-center gap-2 mb-12"
+                    className="absolute right-0 mt-2 z-20 w-72 bg-white border rounded-lg shadow-lg p-2 flex items-center gap-2 mb-12 dark:border-slate-700 dark:bg-slate-900"
                   >
                     <Search size={16} className="text-gray-400" />
                     <input
@@ -348,7 +348,7 @@ export default function ChallengePage({
                     {searchTerm && (
                       <button
                         onClick={() => setSearchTerm("")}
-                        className="text-gray-400 hover:text-gray-600 text-lg px-1"
+                        className="text-gray-400 hover:text-gray-600 text-lg px-1 dark:hover:text-slate-200"
                         aria-label="Clear search"
                       >
                         ×
@@ -360,7 +360,7 @@ export default function ChallengePage({
             </div>
           </div>
         </div>
-        <p className="text-center text-lg text-slate-600 max-w-2xl mx-auto mb-10">
+        <p className="text-center text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-10">
           Your personal challenges and new ones to discover, all in one place.
         </p>
         <div className="flex flex-wrap justify-center items-center gap-2 mb-8">
@@ -374,7 +374,7 @@ export default function ChallengePage({
                   ? category1.includes(filter)
                     ? "bg-blue-600 text-white shadow-md"
                     : "bg-green-600 text-white shadow-md"
-                  : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100",
+                  : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800",
               )}
             >
               {filter === "JOINED"
@@ -390,7 +390,7 @@ export default function ChallengePage({
             <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-center text-slate-500">
+          <p className="text-center text-slate-500 dark:text-slate-300">
             No challenges found for the selected filters.
           </p>
         ) : (
@@ -410,7 +410,7 @@ export default function ChallengePage({
                         : `/dashboard/challenge/upcoming-challenges/${c.id}`,
                     )
                   }
-                 className="break-inside-avoid mb-6 relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer transition hover:-translate-y-1 flex flex-col"
+                 className="break-inside-avoid mb-6 relative overflow-hidden bg-white rounded-xl shadow hover:shadow-lg p-6 border cursor-pointer transition hover:-translate-y-1 flex flex-col dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30"
                 >
                   {isJoined && (
                     <div className="absolute top-4 -right-9 transform rotate-45 bg-indigo-500 text-center text-white text-sm font-semibold py-1 w-32">
@@ -418,17 +418,17 @@ export default function ChallengePage({
                     </div>
                   )}
                   <div className="mb-2 pt-4">
-                    <h3 className="text-xl font-bold text-indigo-800 truncate">
+                    <h3 className="text-xl font-bold text-indigo-800 truncate dark:text-indigo-300">
                       {c.title}
                     </h3>
                   </div>
                   {/* <p className="text-sm text-slate-600 mb-4 line-clamp-2">{c.description || "No desc."}</p> */}
                   {c.description && (
-                    <div className="text-sm text-slate-600 mb-4">
+                    <div className="text-sm text-slate-600 mb-4 dark:text-slate-300">
                       <ChallengeDescription html={c.description} />
                     </div>
                   )}
-                  <span className="inline-block w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-purple-100 mb-4">
+                  <span className="inline-block w-fit bg-gradient-to-r from-indigo-50 to-purple-50 text-purple-700 text-xs font-semibold px-3 py-1 rounded-full shadow-sm border border-purple-100 mb-4 dark:border-purple-800 dark:from-indigo-950/60 dark:to-purple-950/60 dark:text-purple-200">
                     Created By: {c.creatorName}
                   </span>
                   {getStartDateInfo(c.startDate) && (
@@ -447,8 +447,8 @@ export default function ChallengePage({
                     <span className="text-sm">{formatDate(c.endDate)}</span>
                   </div>
                   {/* --- CARD FOOTER --- */}
-                  <div className="flex justify-between items-center mt-auto pt-4 border-t">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <div className="flex justify-between items-center mt-auto pt-4 border-t dark:border-slate-700">
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                       <Users className="w-4 h-4" />
                       <span>{c._count?.enrollments ?? 0} Joined</span>
                     </div>
@@ -467,10 +467,10 @@ export default function ChallengePage({
                               e.stopPropagation();
                               setChallengeToEdit(c);
                             }}
-                            className="p-2 rounded-full hover:bg-gray-100 transition"
+                            className="p-2 rounded-full hover:bg-gray-100 transition dark:hover:bg-slate-800"
                             aria-label="Edit challenge"
                           >
-                            <Pencil className="w-4 h-4 text-gray-700" />
+                            <Pencil className="w-4 h-4 text-gray-700 dark:text-slate-300" />
                           </button>
                           <button
                             onClick={(e) => {
@@ -496,7 +496,7 @@ export default function ChallengePage({
             })}
           </div>
         )}
-        <p className="mt-12 text-center text-lg font-bold text-indigo-900 drop-shadow-md md:text-2xl">
+        <p className="mt-12 text-center text-lg font-bold text-indigo-900 dark:text-indigo-400 drop-shadow-md md:text-2xl">
           Ready to Kick Off? Let’s Dive In!!
         </p>
       </div>

@@ -316,13 +316,13 @@ const SubscriptionPage: React.FC = () => {
           <h1 className="text-3xl sm:text-5xl font-extrabold">
             Manage Your Subscription
           </h1>
-          <p className="text-gray-600 text-lg mt-3">
+          <p className="text-gray-600 dark:text-gray-300 text-lg mt-3">
             View your current plan and user designation.
           </p>
         </div>
 
         {/* ---------------- USER STATUS (RESPONSIVE UPDATE) ---------------- */}
-        <div className="bg-indigo-50 border-l-4 border-indigo-500 p-5 sm:p-6 rounded-lg shadow-md mb-10">
+        <div className="bg-indigo-50 dark:bg-slate-900 border-l-4 border-indigo-500 p-5 sm:p-6 rounded-lg shadow-md mb-10">
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
             {/* LEFT SIDE */}
             <div className="flex-1 min-w-0">

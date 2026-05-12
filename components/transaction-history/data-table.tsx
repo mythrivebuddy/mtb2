@@ -39,7 +39,7 @@ export function TransactionDataTable<TData>({
   });
 
   return (
-    <div className="mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+    <div className="mx-auto bg-white dark:bg-slate-900 shadow-md rounded-lg overflow-hidden">
       <div className="w-full overflow-x-auto">
         <Table className="min-w-full">
           <TableHeader>

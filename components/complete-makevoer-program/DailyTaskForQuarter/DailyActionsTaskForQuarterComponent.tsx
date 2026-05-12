@@ -232,7 +232,7 @@ export default function DailyActionsTaskForQuarterComponent() {
 
 
   return (
-    <div className="min-h-screen font-['Inter'] text-[#0d101b]">
+    <div className="min-h-screen font-['Inter'] text-[#0d101b] dark:text-slate-100">
       <main className="mx-auto px-4 lg:px-10 py-6">
         <div className="grid grid-cols-1 sm:max-w-[1024px] gap-4 mx-auto">
           {/* Heading */}
@@ -240,7 +240,7 @@ export default function DailyActionsTaskForQuarterComponent() {
             <h1 className="text-3xl md:text-4xl font-bold">
               Choose Your Daily Actions
             </h1>
-            <p className="text-slate-500 mt-2 max-w-2xl mx-auto">
+            <p className="text-slate-500 mt-2 max-w-2xl mx-auto dark:text-slate-400">
               Select one daily action per area. This becomes your non-negotiable
               habit for the quarter.
             </p>
@@ -252,7 +252,7 @@ export default function DailyActionsTaskForQuarterComponent() {
             <button
               disabled={activeIndex === 0}
               onClick={() => scrollTo(activeIndex - 1)}
-              className="hidden lg:flex absolute justify-center items-center left-0 top-1/2 -translate-y-1/2 -translate-x-12 size-12 rounded-full bg-white border shadow text-[#059669]"
+              className="hidden lg:flex absolute justify-center items-center left-0 top-1/2 -translate-y-1/2 -translate-x-12 size-12 rounded-full bg-white border shadow text-[#059669] dark:border-slate-700 dark:bg-slate-900"
             >
               <ChevronLeft size={28} />
             </button>
@@ -260,7 +260,7 @@ export default function DailyActionsTaskForQuarterComponent() {
             <button
               disabled={!hasCurrentAreaAction || isLast}
               onClick={() => scrollTo(activeIndex + 1)}
-              className={`hidden lg:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 size-12 rounded-full bg-white border shadow text-[#059669] ${
+              className={`hidden lg:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 size-12 rounded-full bg-white border shadow text-[#059669] dark:border-slate-700 dark:bg-slate-900 ${
                 !hasCurrentAreaAction || isLast
                   ? "opacity-40 pointer-events-none"
                   : ""
@@ -285,21 +285,21 @@ export default function DailyActionsTaskForQuarterComponent() {
                     className="min-w-full snap-center flex justify-center"
                   >
                     <div
-                      className={`w-full rounded-2xl border p-6 sm:p-8 shadow-xl transition-all ${
+                      className={`w-full rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl transition-all dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30 ${
                         idx === activeIndex
                           ? "opacity-100 scale-[1.01]"
                           : "opacity-40 scale-95 pointer-events-none"
                       }`}
                     >
                       {/* Header */}
-                      <div className="flex justify-between items-center mb-6 pb-6 border-b">
+                      <div className="flex justify-between items-center mb-6 pb-6 border-b border-slate-200 dark:border-slate-700">
                         <div className="flex items-center gap-4">
-                          <div className="size-14 rounded-2xl bg-emerald-100 text-[#059669] flex items-center justify-center">
+                          <div className="size-14 rounded-2xl bg-emerald-100 text-[#059669] flex items-center justify-center dark:bg-emerald-500/15">
                             <Icon size={32} />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold">{area.name}</h3>
-                            <p className="text-sm text-slate-500">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                               {area.description}
                             </p>
                           </div>
@@ -340,7 +340,7 @@ export default function DailyActionsTaskForQuarterComponent() {
                             setActions((p) => ({ ...p, [area.id]: v }))
                           }
                         >
-                          <SelectTrigger className="h-12 border-emerald-600 rounded-xl text-center border w-full">
+                          <SelectTrigger className="h-12 border-emerald-600 rounded-xl text-center border w-full dark:bg-slate-900">
                             <SelectValue placeholder="Choose a suggestion" />
                           </SelectTrigger>
                           <SelectContent>
@@ -367,7 +367,7 @@ export default function DailyActionsTaskForQuarterComponent() {
                                       [area.id]: s.title,
                                     }))
                                   }
-                                  className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg bg-white border hover:bg-emerald-50"
+                                  className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg bg-white border hover:bg-emerald-50 dark:border-slate-700 dark:bg-slate-800 dark:text-emerald-200 dark:hover:bg-emerald-900/30"
                                 >
                                   <Plus size={14} />
                                   {s.title}

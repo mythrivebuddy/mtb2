@@ -102,7 +102,7 @@ export default function DashboardPage() {
       <AnnouncementBar />
       <div className="sm:py-6 px-4">
         <div className="flex flex-col gap-3 mb-4 mt-4 sm:mt-0">
-          <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center">
+          <h1 className="text-xl sm:text-3xl font-semibold flex gap-2 items-center text-slate-950 dark:text-slate-50">
             {text}, {userData?.name}
             <Icon className={color} />
           </h1>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
             {/* ✅ MOBILE STEPPERS */}
             {session?.user.userType === "COACH" && (
               <div className="mt-6 lg:hidden">
-                <h2 className="text-lg mb-3 text-slate-800 font-semibold">
+                <h2 className="text-lg mb-3 text-slate-800 font-semibold dark:text-slate-100">
                   Spotlight
                 </h2>
                 <div className="w-full overflow-x-auto">
@@ -150,7 +150,7 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                <h2 className="text-lg mt-6 mb-3 text-slate-800 font-semibold">
+                <h2 className="text-lg mt-6 mb-3 text-slate-800 font-semibold dark:text-slate-100">
                   Prosperity Drop
                 </h2>
                 <div className="w-full overflow-x-auto">
@@ -182,7 +182,7 @@ export default function DashboardPage() {
         <div className="hidden lg:block">
           {session?.user.userType === "COACH" && (
             <>
-              <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold">
+              <h2 className="text-xl sm:text-2xl mt-6 mb-4 text-slate-800 font-semibold dark:text-slate-100">
                 Spotlight
               </h2>
               <ApplicationStepper
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                 }
               />
 
-              <h2 className="text-xl sm:text-2xl mt-8 mb-4 text-slate-800 font-semibold">
+              <h2 className="text-xl sm:text-2xl mt-8 mb-4 text-slate-800 font-semibold dark:text-slate-100">
                 Prosperity Drop
               </h2>
               <ApplicationStepper

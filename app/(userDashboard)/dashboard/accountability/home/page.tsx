@@ -5,20 +5,13 @@
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import {
-  TriangleAlert,
-  Users,
-  Plus,
-  LinkIcon,
-  Check,
-} from "lucide-react";
+import { TriangleAlert, Users, Plus, LinkIcon, Check } from "lucide-react";
 import { GroupCard } from "@/components/accountability/GroupCard";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchReferralStats } from "@/components/refer-friend/ReferFriend";
 import { useState } from "react";
 import { toast } from "sonner";
-
 
 interface User {
   id: string;
@@ -156,7 +149,7 @@ export default function AccountabilityHomePage() {
       <div className="max-w-8xl mx-auto grid  my-4 grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-12">
         {/* === Column 2: Groups You're A Member Of === */}
         <section>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-5">
             Groups You're A Member Of
           </h2>
           <motion.div
@@ -181,7 +174,7 @@ export default function AccountabilityHomePage() {
         </section>
         {/* === Column 1: Groups You've Created === */}
         <section>
-          <h2 className="text-2xl font-semibold text-gray-800 mb-5">
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-5">
             Groups You've Created
           </h2>
           <motion.div
@@ -197,7 +190,7 @@ export default function AccountabilityHomePage() {
                 </motion.div>
               ))
             ) : (
-              <div className="text-center text-gray-500 bg-white p-8 rounded-xl border border-gray-200 flex flex-col items-center gap-4">
+              <div className="text-center text-gray-500 bg-white dark:bg-slate-900 p-8 rounded-xl border border-gray-200 dark:border-slate-700 flex flex-col items-center gap-4">
                 <Users className="w-12 h-12 text-gray-400" strokeWidth={1.5} />
                 <span>You haven't created any groups yet.</span>
               </div>
@@ -209,7 +202,7 @@ export default function AccountabilityHomePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="py-8 px-4 bg-white rounded-md"
+        className="py-8 px-4 bg-white dark:bg-slate-900 rounded-md"
       >
         <h2 className="text-2xl font-bold">✨ Invite & Grow Together!</h2>
         <p className="text-muted-foreground">
@@ -223,7 +216,7 @@ export default function AccountabilityHomePage() {
           >
             🌟 Invite via Referral Page
           </button>
-          <button className=" px-2 py-2  rounded-md  bg-green-600 hover:bg-green-700 transition-colors ease-linear text-white" >
+          <button className=" px-2 py-2  rounded-md  bg-green-600 hover:bg-green-700 transition-colors ease-linear text-white">
             <Link href="/dashboard/referrals" target="_blank">
               View Your Referrals
             </Link>
@@ -231,10 +224,11 @@ export default function AccountabilityHomePage() {
           <button
             onClick={handleCopyReferral}
             disabled={isCopyLoading}
-            className={`p-2 text-center shadow-md rounded-md flex justify-center gap-2 items-center font-medium transition-colors ease-linear ${isCopied
-              ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
-              : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
-              }`}
+            className={`p-2 text-center shadow-md rounded-md flex justify-center gap-2 items-center font-medium transition-colors ease-linear ${
+              isCopied
+                ? "bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100"
+                : "bg-slate-50 text-gray-700 hover:bg-slate-100 border border-gray-200"
+            }`}
           >
             {isCopied ? (
               <>
@@ -260,10 +254,10 @@ export default function AccountabilityHomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }} // Delay to animate after cards
-            className="w-full max-w-md flex items-center justify-center gap-2.5 p-4 bg-white border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:bg-blue-50/80 hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-medium group"
+            className="w-full max-w-md flex items-center justify-center gap-2.5 p-4 bg-white dark:bg-slate-900 border-2 border-dashed border-gray-300 text-gray-500 rounded-xl hover:bg-blue-50/80 hover:border-blue-500 hover:text-blue-600 transition-all duration-200 font-medium group"
           >
             <Plus
-              className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors"
+              className="w-5 h-5 text-gray-400 dark:text-gray-200 group-hover:text-blue-500 transition-colors"
               strokeWidth={2.5}
             />
             Create New Group
@@ -274,21 +268,23 @@ export default function AccountabilityHomePage() {
   );
 }
 const SkeletonCard = () => (
-  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+  <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800">
     <div className="flex items-center justify-between gap-3">
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex -space-x-3 items-center flex-shrink-0">
-          <div className="h-10 w-10 rounded-full bg-gray-200 border-2 border-white"></div>
-          <div className="h-10 w-10 rounded-full bg-gray-200 border-2 border-white -ml-3"></div>
+          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 border-2 border-white dark:border-slate-900"></div>
+          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 border-2 border-white dark:border-slate-900 -ml-3"></div>
         </div>
+
         <div className="min-w-0 space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-32"></div>
-          <div className="h-3 bg-gray-200 rounded w-24"></div>
+          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-32"></div>
+          <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-24"></div>
         </div>
       </div>
+
       <div className="flex-shrink-0 text-right space-y-1">
-        <div className="h-5 bg-gray-200 rounded w-8 ml-auto"></div>
-        <div className="h-3 bg-gray-200 rounded w-12 ml-auto"></div>
+        <div className="h-5 bg-gray-200 dark:bg-slate-700 rounded w-8 ml-auto"></div>
+        <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-12 ml-auto"></div>
       </div>
     </div>
   </div>
@@ -296,11 +292,11 @@ const SkeletonCard = () => (
 
 export const LoadingSkeleton = () => {
   return (
-    <main className="p-8 md:p-12 bg-gray-50/50 min-h-full animate-pulse">
+    <main className="p-8 md:p-12 bg-gray-50/50 dark:bg-slate-950 min-h-full animate-pulse">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-12">
         {/* Column 1 Skeleton */}
         <section>
-          <div className="h-7 bg-gray-300 rounded w-3/5 mb-5"></div>
+          <div className="h-7 bg-gray-300 dark:bg-slate-700 rounded w-3/5 mb-5"></div>
           <div className="space-y-4">
             <SkeletonCard />
             <SkeletonCard />
@@ -310,18 +306,18 @@ export const LoadingSkeleton = () => {
 
         {/* Column 2 Skeleton */}
         <section>
-          <div className="h-7 bg-gray-300 rounded w-3/5 mb-5"></div>
+          <div className="h-7 bg-gray-300 dark:bg-slate-700 rounded w-3/5 mb-5"></div>
           <div className="space-y-4">
             <SkeletonCard />
             <SkeletonCard />
-            {/* Skeleton for a third card, if "created" is longer */}
             <SkeletonCard />
           </div>
         </section>
       </div>
-      {/* === Skeleton for Centered "Create New Group" Button === */}
+
+      {/* Skeleton for Centered Button */}
       <div className="mt-12 flex justify-center">
-        <div className="h-16 bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl w-full max-w-md"></div>
+        <div className="h-16 bg-gray-100 dark:bg-slate-800 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl w-full max-w-md"></div>
       </div>
     </main>
   );

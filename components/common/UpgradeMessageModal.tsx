@@ -31,10 +31,10 @@ export default function UpgradeMessageModal({
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
             <AlertTriangle className="h-8 w-8 text-red-600" />
           </div>
-          <DialogTitle className="text-2xl font-bold text-slate-800">
+          <DialogTitle className="text-2xl font-bold text-slate-800 dark:text-gray-200">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-600 mt-2">
+          <DialogDescription className="text-sm text-slate-600 dark:text-gray-300 mt-2">
             {message}
           </DialogDescription>
         </AlertDialogHeader>

@@ -62,7 +62,7 @@ export default function Step4Authority({
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow">
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow">
       <h2 className="text-xl font-semibold mb-6">
         Establish Your Authority
       </h2>
@@ -71,7 +71,7 @@ export default function Step4Authority({
       <div className="mb-4">
         <select
           {...register("yearsOfExperience", { valueAsNumber: true })}
-          className={`w-full border p-3 rounded-lg ${
+          className={`w-full border p-3 dark:bg-slate-950 rounded-lg ${
             errors.yearsOfExperience ? "border-red-500" : "border-gray-300"
           }`}
         >
@@ -98,7 +98,7 @@ export default function Step4Authority({
             <div className="flex gap-2">
               <input
                 {...register(`certifications.${index}.value`)}
-                className={`flex-1 border p-2 rounded ${
+                className={`flex-1 border dark:bg-slate-950 p-2 rounded ${
                   errors.certifications?.[index]?.value
                     ? "border-red-500"
                     : "border-gray-300"
@@ -139,7 +139,7 @@ export default function Step4Authority({
           {...register("shortBio")}
           maxLength={250}
           placeholder="Short Bio"
-          className={`w-full border p-3 rounded-lg ${
+          className={`w-full border dark:bg-slate-950 p-3 rounded-lg ${
             errors.shortBio ? "border-red-500" : "border-gray-300"
           }`}
         />
@@ -169,7 +169,7 @@ export default function Step4Authority({
             <input
               {...register(`testimonials.${index}.name`)}
               placeholder="Client Name"
-              className={`w-full border p-2 rounded mb-1 ${
+              className={`w-full border dark:bg-slate-950 p-2 rounded mb-1 ${
                 errors.testimonials?.[index]?.name
                   ? "border-red-500"
                   : "border-gray-300"
@@ -185,7 +185,7 @@ export default function Step4Authority({
             <input
               {...register(`testimonials.${index}.role`)}
               placeholder="Client Role"
-              className={`w-full border p-2 rounded mb-1 ${
+              className={`w-full border dark:bg-slate-950 p-2 rounded mb-1 ${
                 errors.testimonials?.[index]?.role
                   ? "border-red-500"
                   : "border-gray-300"
@@ -201,7 +201,7 @@ export default function Step4Authority({
             <textarea
               {...register(`testimonials.${index}.content`)}
               placeholder="Testimonial"
-              className={`w-full border p-2 rounded mb-1 ${
+              className={`w-full border  dark:bg-slate-950 p-2 rounded mb-1 ${
                 errors.testimonials?.[index]?.content
                   ? "border-red-500"
                   : "border-gray-300"
@@ -239,7 +239,7 @@ export default function Step4Authority({
         <button
           type="button"
           onClick={back}
-          className="px-5 py-2 rounded-lg border hover:bg-gray-100"
+          className="px-5 py-2 rounded-lg border light:hover:bg-gray-100"
         >
           Back
         </button>

@@ -175,13 +175,13 @@ function StoreProfilePageComponent() {
         <div className="container mx-auto px-3 py-4 sm:px-4 md:p-6 lg:p-8">
 
             {/* Header */}
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+            <div className="bg-white rounded-2xl shadow-md p-6 mb-6 dark:border dark:border-slate-700 dark:bg-slate-900">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                             🛒 My Cart & Orders
                         </h1>
-                        <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your wishlist, cart, and orders</p>
+                        <p className="text-sm sm:text-base text-gray-600 mt-1 dark:text-slate-400">Manage your wishlist, cart, and orders</p>
                     </div>
                     <Link
                         href="/dashboard/store"
@@ -218,7 +218,7 @@ function StoreProfilePageComponent() {
 
     )
     return authStatus === "authenticated" ? (
-        <div className="min-h-screen ">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
             {pageContent}
         </div>
     ) : (
