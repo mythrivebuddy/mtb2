@@ -57,8 +57,8 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
       noValidate
     >
       <header className="text-left">
-        <h2 className="text-3xl font-bold text-[#1e293b]">Set your MMP Pricing</h2>
-        <p className="text-gray-500 mt-2 text-base">
+        <h2 className="text-3xl font-bold text-[#1e293b] dark:text-gray-200">Set your MMP Pricing</h2>
+        <p className="text-gray-500 dark:text-gray-300 mt-2 text-base">
           Choose how you want to offer your Mini-Mastery Program to your audience.
         </p>
       </header>
@@ -66,7 +66,7 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
       <div className="max-w-md space-y-8">
         {/* Program Type Toggle */}
         <div className="space-y-3">
-          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+          <label className="text-[10px] font-black text-gray-400 dark:text-gray-300 uppercase tracking-widest ml-1">
             Program Type
           </label>
           <div className="bg-gray-100/80 p-1.5 rounded-[24px] flex items-center border border-gray-200/50">
@@ -76,7 +76,7 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
                 type="button"
                 onClick={() => setAndPersist("isPaid", paid)}
                 className={`flex-1 py-3 rounded-[20px] font-bold text-sm transition-all duration-300 ${isPaid === paid
-                    ? `bg-white shadow-md ${paid ? "text-blue-600" : "text-gray-900"}`
+                    ? `bg-white dark:bg-slate-900 shadow-md ${paid ? "text-blue-600" : "text-gray-900 dark:text-gray-200"}`
                     : "text-gray-500 hover:text-gray-700"
                   }`}
               >
@@ -130,7 +130,7 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
                   type="number"
                   placeholder="0"
                   defaultValue={defaultValues?.price ?? "0"}
-                  className={`w-full pl-12 pr-4 py-5 border-2 rounded-[24px] text-xl font-black text-gray-800 focus:ring-4 outline-none transition-all ${errors.price
+                  className={`w-full pl-12 pr-4 py-5 dark:bg-slate-950 border-2 rounded-[24px] text-xl font-black text-gray-800 dark:text-gray-300 focus:ring-4 outline-none transition-all ${errors.price
                       ? "bg-red-50/30 border-red-400 focus:ring-red-400/10"
                       : "bg-gray-50/50 border-gray-100 focus:ring-blue-400/10 focus:border-blue-400"
                     }`}
@@ -145,14 +145,14 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
         )}
 
         {/* Earning Info */}
-        <div className="bg-white border border-gray-100 p-5 rounded-[24px] flex gap-4 shadow-sm relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-gray-100 p-5 rounded-[24px] flex gap-4 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-blue-400" />
-          <div className="bg-blue-100 p-2 rounded-xl h-fit shrink-0">
+          <div className="bg-blue-100  p-2 rounded-xl h-fit shrink-0">
             <Info size={16} className="text-blue-600" />
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-gray-900 text-sm italic">Earning Calculator</h4>
-            <p className="text-[11px] text-gray-500 leading-relaxed">
+            <h4 className="font-bold text-gray-900 dark:text-gray-200 text-sm italic">Earning Calculator</h4>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
               Based on your <span className="text-blue-600 font-bold">Silver Tier</span>, you keep
               90% of every sale.{" "}
               {currency === "INR" ? "GST will be applicable." : "International wire fees may apply."}
@@ -165,13 +165,13 @@ export default function Step4PricingStrategy({ onNext, onBack, defaultValues }: 
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 transition-all text-sm"
+          className="flex items-center gap-2 px-6 py-3 rounded-full border border-gray-100 font-bold text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-950 transition-all text-sm"
         >
           <ArrowLeft size={18} /> Back
         </button>
         <button
           type="submit"
-          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl light:shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
         >
           Save & Continue <ArrowRight size={18} />
         </button>

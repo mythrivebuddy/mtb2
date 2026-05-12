@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json();
         const { itemId, wasInWishlist } = body;
-        console.log("Adding to cart:", { itemId, wasInWishlist });
+       
 
         if (!itemId || typeof itemId !== "string") {
             return NextResponse.json({ error: "Item ID is required and must be a string" }, { status: 400 });
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
             },
         });
 
-        console.log("Created cart item:", newCartItem);
+        
         return NextResponse.json({ cartItem: newCartItem }, { status: 201 });
     } catch (error) {
         console.error("Error adding to cart:", error);

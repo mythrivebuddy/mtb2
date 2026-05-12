@@ -49,7 +49,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
       noValidate
     >
       <header>
-        <h2 className="text-3xl font-bold text-[#1e293b]">
+        <h2 className="text-3xl font-bold text-[#1e293b] dark:text-gray-200">
           What Will Participants Achieve?
         </h2>
         <p className="text-gray-400 mt-2 text-base">
@@ -73,7 +73,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
                 placeholder="e.g. Develop a consistent morning routine"
                 className={`w-full p-4 border rounded-[24px] focus:ring-2 outline-none transition-all text-gray-700 text-sm ${errors.achievements?.[index]?.value
                     ? "border-red-400 bg-red-50/30 focus:ring-red-400"
-                    : "bg-gray-50/50 border-gray-100 focus:ring-blue-400"
+                    : "bg-gray-50/50 dark:bg-gray-800 dark:text-white border-gray-100 focus:ring-blue-400"
                   }`}
               />
               {fields.length > 1 && (
@@ -104,7 +104,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
             persistToStorage(allValues as Partial<Step2Data>);
           }}
           disabled={fields.length >= 10}
-          className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors px-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 text-sm font-bold text-gray-400 dark:text-gray-300 hover:text-gray-600 transition-colors px-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Plus size={16} /> Add another achievement
         </button>
@@ -120,7 +120,7 @@ export default function Step2ProgramAchievements({ onNext, onBack, defaultValues
         </button>
         <button
           type="submit"
-          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
+          className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-full flex items-center gap-2 transition-all shadow-xl light:shadow-blue-100 hover:-translate-y-1 active:scale-95 text-sm"
         >
           Save & Continue <ArrowRight size={18} />
         </button>

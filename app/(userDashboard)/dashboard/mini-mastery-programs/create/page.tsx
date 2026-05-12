@@ -190,12 +190,12 @@ export default function Dashboard() {
     <div className="min-h-screen  p-4 md:p-6">
       <div className="max-w-8xl mx-auto space-y-6 md:space-y-8">
         {/* Header */}
-        <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-200 leading-tight">
               Mini-Mastery Programs
             </h1>
-            <p className="text-gray-500 mt-1 md:mt-2 text-sm md:text-lg">
+            <p className="text-gray-500 dark:text-gray-300 mt-1 md:mt-2 text-sm md:text-lg">
               Design structured, self-paced programs for autonomous learning.
             </p>
           </div>
@@ -212,15 +212,15 @@ export default function Dashboard() {
           {stats.map((stat, idx) => (
             <div
               key={idx}
-              className="bg-white p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm"
+              className="bg-white dark:bg-slate-900 p-5 md:p-6 rounded-2xl border border-gray-100 shadow-sm"
             >
               <div className="flex justify-between items-start mb-3 md:mb-4">
-                <span className="text-[10px] md:text-xs font-bold text-gray-400 tracking-wider uppercase">
+                <span className="text-[10px] md:text-xs font-bold text-gray-400 dark:text-gray-300 tracking-wider uppercase">
                   {stat.label}
                 </span>
                 <div className={`${stat.bg} p-2 rounded-lg`}>{stat.icon}</div>
               </div>
-              <div className="text-xl md:text-2xl font-bold text-gray-900">
+              <div className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-200">
                 {stat.value}
               </div>
               <div className="text-[10px] md:text-xs mt-2 font-medium text-green-500">
@@ -231,11 +231,11 @@ export default function Dashboard() {
         </div>
 
         {/* Programs Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Table Header */}
           <div className="p-5 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-50">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg md:text-xl font-bold text-gray-800">
+              <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-200">
                 Your Programs
               </h2>
               {!loading && (
@@ -260,10 +260,10 @@ export default function Dashboard() {
               <div className="relative ml-auto sm:ml-0">
                 <button
                   onClick={() => setShowFilterMenu(!showFilterMenu)}
-                  className={`p-2 border rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium ${
+                  className={`p-2 border text-white rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium ${
                     showFilterMenu
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "hover:bg-gray-50 text-gray-500"
+                      ? "bg-gray-900  border-gray-900"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-950 text-gray-500"
                   }`}
                 >
                   <Filter size={16} />
@@ -271,14 +271,14 @@ export default function Dashboard() {
                 </button>
 
                 {showFilterMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-950 border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden">
                     <div className="p-2 space-y-0.5">
                       <button
                         onClick={() => handleStatusFilter("ALL")}
                         className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                           statusFilter === "ALL"
                             ? "bg-gray-900 text-white"
-                            : "hover:bg-gray-50 text-gray-600"
+                            : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600"
                         }`}
                       >
                         All Programs
@@ -287,10 +287,10 @@ export default function Dashboard() {
                         <button
                           key={s}
                           onClick={() => handleStatusFilter(s)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`w-full text-left text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                             statusFilter === s
-                              ? "bg-gray-900 text-white"
-                              : "hover:bg-gray-50 text-gray-600"
+                              ? "bg-gray-900 "
+                              : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-600"
                           }`}
                         >
                           {STATUS_CONFIG[s].label}
@@ -304,7 +304,7 @@ export default function Dashboard() {
               <button
                 onClick={() => void fetchPrograms()}
                 disabled={loading}
-                className="p-2 border rounded-lg hover:bg-gray-50 text-gray-500 transition-colors disabled:opacity-40"
+                className="p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-950 text-gray-500  dark:text-gray-300 transition-colors disabled:opacity-40"
                 title="Refresh"
               >
                 <RefreshCw
@@ -438,7 +438,7 @@ export default function Dashboard() {
                     return (
                       <tr
                         key={program.id}
-                        className="hover:bg-gray-50/50 transition-colors group"
+                        className="light:hover:bg-gray-50/50 transition-colors group"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -454,10 +454,10 @@ export default function Dashboard() {
                               </div>
                             )}
                             <div>
-                              <div className="font-bold text-gray-800 text-sm md:text-base leading-tight">
+                              <div className="font-bold text-gray-800 dark:text-gray-200 text-sm md:text-base leading-tight">
                                 {program.name}
                               </div>
-                              <div className="text-[11px] md:text-xs text-gray-400 mt-0.5">
+                              <div className="text-[11px] md:text-xs text-gray-400 dark:text-gray-300 mt-0.5">
                                 {program.unlockType === "daily"
                                   ? "Daily unlock"
                                   : "All unlocked"}{" "}
@@ -475,11 +475,11 @@ export default function Dashboard() {
                           </span>
                         </td>
 
-                        <td className="px-6 py-4 font-medium text-gray-600 text-sm">
+                        <td className="px-6 py-4 font-medium text-gray-600 dark:text-gray-300 text-sm">
                           {moduleCount(program.modules)} modules
                         </td>
 
-                        <td className="px-6 py-4 font-bold text-gray-800 text-sm">
+                        <td className="px-6 py-4 font-bold text-gray-800 dark:text-gray-200 text-sm">
                           {formatCurrency(program.price, program.currency)}
                         </td>
                         {/* Total students enrolled */}
@@ -496,7 +496,7 @@ export default function Dashboard() {
                           </div>
                         </td>
 
-                        <td className="px-6 py-4 text-xs md:text-sm text-gray-500">
+                        <td className="px-6 py-4 text-xs md:text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(program.updatedAt)}
                         </td>
 
@@ -564,8 +564,8 @@ export default function Dashboard() {
           </div>
 
           {/* Pagination */}
-          <div className="p-4 flex flex-col sm:flex-row justify-between items-center border-t border-gray-50 gap-4">
-            <span className="text-xs md:text-sm text-gray-500">
+          <div className="p-4 flex flex-col sm:flex-row justify-between items-center border-t border-gray-50 gap-4 dark:border-gray-800">
+            <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
               {loading ? (
                 <span className="flex items-center gap-1.5">
                   <Loader2 size={14} className="animate-spin" /> Loading...
@@ -573,15 +573,15 @@ export default function Dashboard() {
               ) : (
                 <>
                   Showing{" "}
-                  <span className="font-bold text-gray-700">
+                  <span className="font-bold text-gray-700 dark:text-gray-300">
                     {pagination.total === 0 ? 0 : (page - 1) * LIMIT + 1}–
                     {Math.min(page * LIMIT, pagination.total)}
                   </span>{" "}
                   of{" "}
-                  <span className="font-bold text-gray-700">
+                  <span className="font-bold text-gray-700 dark:text-gray-300">
                     {pagination.total}
                   </span>{" "}
-                  programs
+                  programs  
                 </>
               )}
             </span>
@@ -609,7 +609,7 @@ export default function Dashboard() {
                     p === "..." ? (
                       <span
                         key={`e-${idx}`}
-                        className="px-1 text-gray-400 text-sm"
+                        className="px-1 text-gray-400 text-sm dark:text-gray-500"
                       >
                         …
                       </span>
@@ -620,7 +620,7 @@ export default function Dashboard() {
                         className={`w-8 h-8 rounded-lg text-sm font-bold transition-all ${
                           page === p
                             ? "bg-gray-900 text-white"
-                            : "hover:bg-gray-100 text-gray-500"
+                            : "hover:bg-gray-100 text-gray-500 dark:hover:bg-gray-950 dark:text-gray-400"
                         }`}
                       >
                         {p}
@@ -640,7 +640,7 @@ export default function Dashboard() {
                   setPage((p) => Math.min(pagination.totalPages, p + 1))
                 }
                 disabled={page >= pagination.totalPages || loading}
-                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600"
+                className="flex items-center gap-1 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-gray-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 dark:hover:bg-gray-950"
               >
                 Next <ChevronRight size={16} />
               </button>
@@ -650,32 +650,32 @@ export default function Dashboard() {
 
         {/* Bottom Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          <div className="bg-green-50/50 border border-green-100 p-6 md:p-8 rounded-2xl relative overflow-hidden">
+          <div className="bg-green-50/50 dark:bg-slate-900 border border-green-100 p-6 md:p-8 rounded-2xl relative overflow-hidden">
             <div className="flex items-center gap-2 text-green-600 mb-3 md:mb-4 font-bold text-sm md:text-base">
               <Lightbulb size={20} /> Quick Tip: Increase Engagement
             </div>
-            <p className="text-gray-600 text-sm md:text-base mb-6 leading-relaxed">
+            <p className="text-gray-600 dark:text-gray-300 text-sm md:text-base mb-6 leading-relaxed">
               Add a 5-minute video introduction to each module. Programs with
               video openers see a 40% higher completion rate.
             </p>
             <a
               href="#"
-              className="inline-block text-black font-bold text-sm underline underline-offset-4 hover:text-green-700 transition-colors"
+              className="inline-block text-black font-bold text-sm underline underline-offset-4 hover:text-green-700 transition-colors dark:text-green-800"
             >
               Read Guide
             </a>
           </div>
 
-          <div className="bg-white border border-gray-100 p-6 md:p-8 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-2 text-gray-800 mb-3 md:mb-4 font-bold text-sm md:text-base">
+          <div className="bg-white dark:bg-slate-900  border border-gray-100 p-6 md:p-8 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200 mb-3 md:mb-4 font-bold text-sm md:text-base">
               <HelpCircle size={20} className="text-blue-500" /> Need
               Assistance?
             </div>
-            <p className="text-gray-500 text-sm md:text-base mb-6 leading-relaxed">
+            <p className="text-gray-500 dark:text-gray-300  text-sm md:text-base mb-6 leading-relaxed">
               Our program designers are here to help you structure your course
               for maximum impact. Schedule a review.
             </p>
-            <button className="w-full sm:w-auto px-6 py-2.5 border-2 border-gray-900 rounded-xl font-bold hover:bg-gray-900 hover:text-white transition-all active:scale-95 text-sm md:text-base">
+            <button className="w-full sm:w-auto px-6 py-2.5 border-2 border-gray-900 rounded-xl font-bold hover:bg-gray-900 hover:text-white transition-all active:scale-95 text-sm md:text-base dark:border-gray-600 dark:hover:bg-gray-800">
               Book a Session
             </button>
           </div>

@@ -297,11 +297,11 @@ useEffect(()=>{
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
               Editing Program — Step {currentStep} of {TOTAL_STEPS}
             </span>
-            <h3 className="text-gray-900 font-bold text-sm mt-1">
+            <h3 className="text-gray-900 dark:text-gray-200 font-bold text-sm mt-1">
               {STEP_INFO[currentStep - 1]?.label}
             </h3>
           </div>
-          <span className="text-blue-600 font-bold text-sm">{progress}%</span>
+          <span className="text-blue-600 dark:text-gray-300 font-bold text-sm">{progress}%</span>
         </div>
 
         <div className="w-full h-[6px] bg-gray-200 rounded-full">
@@ -310,7 +310,7 @@ useEffect(()=>{
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="text-gray-400 text-[11px] italic mt-3">
+        <p className="text-gray-400 dark:text-gray-300 text-[11px] italic mt-3">
           Next: {STEP_INFO[currentStep - 1]?.next}
         </p>
 
@@ -328,7 +328,7 @@ useEffect(()=>{
       )}
 
       {/* Form Card */}
-      <div className=" bg-white rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
+      <div className=" bg-white dark:bg-slate-900 rounded-[40px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50 p-10 md:p-16 min-h-[500px]">
         {currentStep === 1 && (
           <Step1ProgramBasics
             onNext={handleStep1Next}

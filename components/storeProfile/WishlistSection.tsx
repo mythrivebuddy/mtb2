@@ -187,10 +187,10 @@ const GPIcon = ({ className }: { className?: string }) => (
 const CurrencyBadge = ({ currency }: { currency: string }) => {
   const badgeClass =
     currency === "GP"
-      ? "bg-purple-100 text-purple-700"
+      ? "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
       : currency === "INR"
-      ? "bg-orange-100 text-orange-700"
-      : "bg-green-100 text-green-700";
+      ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
+      : "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300";
 
   return (
     <span className={`absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded ${badgeClass}`}>
@@ -227,16 +227,16 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
       : `${resolveCurrencySymbol(currency)}${Number(price).toFixed(2)}`;
 
   return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 col-span-2">
-      <h3 className="text-xl font-bold mb-6 flex items-center">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 col-span-2 dark:border-slate-700 dark:bg-slate-900">
+      <h3 className="text-xl font-bold mb-6 flex items-center dark:text-slate-100">
         <Heart className="w-5 h-5 mr-2 text-pink-500" />
         My Wishlist
       </h3>
 
       {!wishlist.length ? (
         <div className="text-center py-6">
-          <Heart className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+          <Heart className="w-10 h-10 mx-auto text-gray-300 dark:text-slate-600 mb-3" />
+          <p className="text-gray-500 dark:text-slate-400 mb-4">Your wishlist is empty</p>
 
           <Link
             href="/dashboard/store"
@@ -256,7 +256,7 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
             return (
               <li
                 key={item.id}
-                className="flex justify-between items-center border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                className="flex justify-between items-center border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
               >
                 <div className="flex items-center gap-4">
                   <div className="relative">
@@ -271,14 +271,14 @@ const WishlistSection: React.FC<WishlistSectionProps> = ({
                   </div>
 
                   <div>
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-slate-100">{item.name}</h4>
 
                     <p className={`font-semibold ${itemCurrency === "GP" ? "text-purple-600" : "text-green-600"}`}>
                       {formatPrice(price, itemCurrency)}
                     </p>
 
                     {item.category && (
-                      <p className="text-sm text-gray-500">{item.category.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-slate-400">{item.category.name}</p>
                     )}
                   </div>
                 </div>

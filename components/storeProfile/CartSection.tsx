@@ -41,10 +41,10 @@ const GPIcon = ({ className }: { className?: string }) => (
 const CurrencyBadge = ({ currency }: { currency: string }) => {
   const badgeClass =
     currency === "GP"
-      ? "bg-purple-100 text-purple-700"
+      ? "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
       : currency === "INR"
-        ? "bg-orange-100 text-orange-700"
-        : "bg-green-100 text-green-700";
+        ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
+        : "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300";
 
   return (
     <span className={`absolute -top-2 -left-2 inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded ${badgeClass}`}>
@@ -129,18 +129,18 @@ const CartSection: React.FC<CartSectionProps> = ({
   };
 
   if (!cart || cart.some((c) => !isFullItem(c.item))) {
-    return <p className="text-gray-500">Cart data is unavailable.</p>;
+    return <p className="text-gray-500 dark:text-slate-400">Cart data is unavailable.</p>;
   }
 
   return (
-    <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 col-span-2">
-      <h3 className="text-xl font-bold mb-6 flex items-center">
+    <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-6 col-span-2 dark:border-slate-700 dark:bg-slate-900">
+      <h3 className="text-xl font-bold mb-6 flex items-center dark:text-slate-100">
         <ShoppingCart className="w-5 h-5 mr-2 text-green-500" />
         My Cart
       </h3>
 
       {cart.length === 0 ? (
-        <p className="text-gray-500">Your cart is empty.</p>
+        <p className="text-gray-500 dark:text-slate-400">Your cart is empty.</p>
       ) : (
         <>
           <ul className="space-y-4">
@@ -156,7 +156,7 @@ const CartSection: React.FC<CartSectionProps> = ({
               return (
                 <li
                   key={cartItem.id}
-                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition dark:border-slate-700 dark:hover:bg-slate-800"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="relative">
@@ -171,11 +171,11 @@ const CartSection: React.FC<CartSectionProps> = ({
                     </div>
 
                     <div>
-                      <h4 className="text-md font-semibold text-gray-900">
+                      <h4 className="text-md font-semibold text-gray-900 dark:text-slate-100">
                         {cartItem.item.name}
                       </h4>
 
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-slate-400">
                         {cartItem.item.category?.name || "Unknown Category"}
                       </p>
 
@@ -187,10 +187,10 @@ const CartSection: React.FC<CartSectionProps> = ({
 
                   <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     {/* Quantity */}
-                    <div className="flex items-center border border-gray-300 rounded-md overflow-hidden">
+                    <div className="flex items-center border border-gray-300 rounded-md overflow-hidden dark:border-slate-700 dark:text-slate-100">
                       <button
                         onClick={() => handleQuantityChange(cartItem.id!, quantity - 1)}
-                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700"
                       >
                         -
                       </button>
@@ -199,7 +199,7 @@ const CartSection: React.FC<CartSectionProps> = ({
 
                       <button
                         onClick={() => handleQuantityChange(cartItem.id!, quantity + 1)}
-                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
+                        className="px-3 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700"
                       >
                         +
                       </button>

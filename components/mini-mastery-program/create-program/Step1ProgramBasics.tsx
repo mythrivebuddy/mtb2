@@ -71,7 +71,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
       unlockType: "daily",
       thumbnailUrl: "",
       ...defaultValues,
-    },
+    },    
   });
 
   // useWatch triggers re-render + gives stable reference — no JSON.stringify hack needed
@@ -167,19 +167,19 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
   return (
     <form onSubmit={handleSubmit(onNext)} className="space-y-8" noValidate>
       <header>
-        <h2 className="text-3xl font-bold text-gray-900">Program Basics</h2>
-        <p className="text-gray-400 mt-2">Define the core foundations of your Mini-Mastery program.</p>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-200">Program Basics</h2>
+        <p className="text-gray-400 dark:text-gray-300 mt-2">Define the core foundations of your Mini-Mastery program.</p>
       </header>
 
       <div className="space-y-6">
         {/* Program Title */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-700">Program Title</label>
+          <label className="text-sm font-bold text-gray-700 dark:text-gray-200">Program Title</label>
           <input
             {...registerWithPersist("title")}
             type="text"
             placeholder="e.g. 7-Day Mindful Morning Rituals"
-            className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 outline-none transition-all placeholder:text-gray-300 ${
+            className={`w-full p-4 bg-gray-50 dark:bg-slate-950 border rounded-xl focus:ring-2 outline-none transition-all placeholder:text-gray-300 ${
               errors.title
                 ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                 : "border-gray-100 focus:ring-blue-500"
@@ -194,12 +194,12 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
 
         {/* Subtitle */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-700">Subtitle / Transformation Promise</label>
+          <label className="text-sm font-bold text-gray-700 dark:text-gray-200">Subtitle / Transformation Promise</label>
           <textarea
             {...registerWithPersist("subtitle")}
             rows={3}
             placeholder="e.g. Master your focus and energy in just 10 minutes a day to achieve peak productivity."
-            className={`w-full p-4 bg-gray-50 border rounded-xl focus:ring-2 outline-none transition-all placeholder:text-gray-300 resize-none ${
+            className={`w-full p-4 bg-gray-50 dark:bg-slate-950 border rounded-xl focus:ring-2 outline-none transition-all placeholder:text-gray-300 resize-none ${
               errors.subtitle
                 ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                 : "border-gray-100 focus:ring-blue-500"
@@ -214,7 +214,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
 
         {/* Thumbnail Image Upload */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-700">
+          <label className="text-sm font-bold text-gray-700 dark:text-gray-200">
             Program Thumbnail
             <span className="ml-2 text-[11px] font-normal text-gray-400">Optional</span>
           </label>
@@ -230,7 +230,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
 
           {previewUrl ? (
             /* ── Preview state ── */
-            <div className="relative w-full aspect-[16/7] rounded-2xl overflow-hidden border border-gray-100 group">
+            <div className="relative w-full aspect-[16/7] rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 group">
               <img src={previewUrl} alt="Thumbnail preview" className="w-full h-full object-cover" />
 
               {/* Hover overlay with Change / Remove */}
@@ -297,11 +297,11 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
 
         {/* Duration */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-700">Duration</label>
+          <label className="text-sm font-bold text-gray-700 dark:text-gray-400">Duration</label>
           <div className="relative">
             <select
               {...registerWithPersist("duration")}
-              className={`w-full p-4 bg-gray-50 border rounded-xl appearance-none outline-none focus:ring-2 text-gray-600 ${
+              className={`w-full p-4 bg-gray-50 dark:bg-slate-950 border rounded-xl appearance-none outline-none focus:ring-2 text-gray-600 dark:text-gray-300 ${
                 errors.duration
                   ? "border-red-400 bg-red-50/30 focus:ring-red-400"
                   : "border-gray-100 focus:ring-blue-500"
@@ -325,7 +325,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
 
         {/* Unlock Type */}
         <div className="space-y-3">
-          <label className="text-sm font-bold text-gray-700">Unlock Type</label>
+          <label className="text-sm font-bold text-gray-700 dark:text-gray-200">Unlock Type</label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(["daily", "all"] as const).map((type) => (
               <div
@@ -336,15 +336,15 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
                 }}
                 className={`p-5 rounded-2xl border-2 cursor-pointer transition-all flex justify-between items-start ${
                   unlockType === type
-                    ? "border-blue-500 bg-white shadow-sm"
-                    : "border-gray-100 bg-gray-50/50"
+                    ? "border-blue-500 bg-white shadow-sm dark:bg-slate-900"
+                    : "border-gray-100 bg-gray-50/50 dark:bg-slate-900"
                 }`}
               >
                 <div>
-                  <h4 className="font-bold text-gray-900 text-sm">
+                  <h4 className="font-bold text-gray-900 dark:text-gray-200 text-sm">
                     {type === "daily" ? "Daily unlock" : "All unlocked at once"}
                   </h4>
-                  <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                  <p className="text-[11px] text-gray-400 dark:text-gray-300 mt-1 leading-relaxed">
                     {type === "daily"
                       ? "New content appears every 24 hours to keep pace."
                       : "Users can binge the whole program immediately."}
@@ -366,7 +366,7 @@ export default function Step1ProgramBasics({ onNext, defaultValues }: Props) {
         <button
           type="submit"
           disabled={uploadState === "uploading"}
-          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-10 py-3 rounded-full flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95"
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-10 py-3 rounded-full flex items-center gap-2 transition-all light:shadow-lg light:shadow-blue-200 active:scale-95"
         >
           Save & Continue <ArrowRight size={20} />
         </button>
