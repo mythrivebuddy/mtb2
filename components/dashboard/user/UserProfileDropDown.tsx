@@ -6,11 +6,18 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { UserRound, CreditCard, Users, History, LogOut } from "lucide-react";
+import {
+  UserRound,
+  CreditCard,
+  Users,
+  History,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { getInitials } from "@/utils/getInitials"; 
+import { getInitials } from "@/utils/getInitials";
 import { useState } from "react";
 import { ComingSoonModal } from "@/components/modals/CommingSoonModal";
 import { UserDropdownProps } from "@/types/client/nav";
@@ -20,7 +27,6 @@ const UserProfileDropdown = ({
   userName,
 }: UserDropdownProps) => {
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false);
-  
 
   return (
     <>
@@ -83,6 +89,12 @@ const UserProfileDropdown = ({
             <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
               <History size={18} />
               <span>Transactions</span>
+            </DropdownMenuItem>
+          </Link>
+          <Link href="/dashboard/settings">
+            <DropdownMenuItem className="cursor-pointer flex items-center space-x-2">
+              <Settings size={18} />
+              <span>Settings</span>
             </DropdownMenuItem>
           </Link>
           {/* <DropdownMenuItem

@@ -42,7 +42,8 @@ type PageSkeletonProps = {
     | "transaction-history"
     | "buddylens"
     | "spotlight"
-    | "coach-profile";
+    | "coach-profile"
+    | "mmp-home";
 };
 
 export default function PageSkeleton({ type }: PageSkeletonProps) {
@@ -179,7 +180,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for leaderboard
   if (type === "leaderboard") {
     return (
-      <div className="animate-pulse flex flex-col min-h-screen bg-[#eaf6ff] px-8 py-6 space-y-6">
+      <div className="animate-pulse flex flex-col min-h-screen bg-[#eaf6ff] dark:bg-slate-900  px-8 py-6 space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <Skeleton className="h-6 w-32 rounded-md" />
@@ -198,9 +199,9 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-xl shadow-md">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md">
           {/* Table Header */}
-          <div className="grid grid-cols-6 gap-4 p-4 border-b">
+          <div className="grid grid-cols-6 gap-4 p-4 border-b dark:border-slate-700">
             <Skeleton className="h-6 w-16 rounded-md" />
             <Skeleton className="h-6 w-24 rounded-md" />
             <Skeleton className="h-6 w-24 rounded-md" />
@@ -214,8 +215,10 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             <div
               key={i}
               className={`grid grid-cols-6 gap-4 p-4 ${
-                i === 0 ? "bg-[#FFF5CC]" : "bg-white"
-              } border-b last:border-b-0`}
+                i === 0
+                  ? "bg-[#FFF5CC] dark:bg-yellow-900/30"
+                  : "bg-white dark:bg-slate-800"
+              } border-b dark:border-slate-700 last:border-b-0`}
             >
               <Skeleton className="h-6 w-6 rounded-full" />
               <Skeleton className="h-6 w-16 rounded-md" />
@@ -246,7 +249,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         {Array.from({ length: 3 }).map((_, i) => (
           <div
             key={i}
-            className="border border-gray-200 shadow-md rounded-2xl p-6 space-y-5 bg-gradient-to-br from-white to-blue-50 hover:shadow-lg transition-shadow"
+            className="border border-gray-200 dark:border-slate-700 shadow-md rounded-2xl p-6 space-y-5 bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-900 hover:shadow-lg transition-shadow"
           >
             {/* Header */}
             <div className="flex justify-between items-center">
@@ -274,7 +277,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
 
             {/* Footer */}
             <div className="flex justify-end mt-4">
-              <Skeleton className="h-10 w-37 rounded-lg bg-gradient-to-r from-green-400 to-green-700" />
+              <Skeleton className="h-10 w-37 rounded-lg bg-gradient-to-r from-green-400 to-green-700 dark:from-green-700 dark:to-green-900" />
             </div>
           </div>
         ))}
@@ -503,7 +506,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for miracle-log
   if (type === "miracle-log") {
     return (
-      <div className="animate-pulse bg-white rounded-xl shadow-md p-6 space-y-6">
+      <div className="animate-pulse bg-white dark:bg-slate-900 rounded-xl shadow-md p-6 space-y-6">
         {/* Header */}
         <div className="space-y-2">
           <Skeleton className="h-6 w-48 rounded-md" />
@@ -511,7 +514,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         </div>
 
         {/* Table Header */}
-        <div className="grid grid-cols-3 gap-4 text-sm font-semibold text-gray-500">
+        <div className="grid grid-cols-3 gap-4 text-sm font-semibold text-gray-500 dark:text-slate-400">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
@@ -522,7 +525,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="grid grid-cols-3 gap-4 items-start border-t pt-4"
+              className="grid grid-cols-3 gap-4 items-start border-t dark:border-slate-700 pt-4"
             >
               {/* Log Content */}
               <div className="space-y-2">
@@ -641,37 +644,38 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   // for Progress-vault
   if (type === "Progress-vault") {
     return (
-      <Card className="animate-pulse">
+      <Card className="animate-pulse dark:bg-slate-900">
         <CardHeader>
-          <CardTitle className="h-6 w-1/3 bg-gray-200 rounded mb-2" />
-          <CardDescription className="h-4 w-1/2 bg-gray-100 rounded" />
+          <CardTitle className="h-6 w-1/3 bg-gray-200 dark:bg-slate-700 rounded mb-2" />
+
+          <CardDescription className="h-4 w-1/2 bg-gray-100 dark:bg-slate-800 rounded" />
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="text-left">
-                  <th className="h-4 w-1/2 bg-gray-100 rounded mb-2"></th>
-                  <th className="h-4 w-1/4 bg-gray-100 rounded mb-2"></th>
-                  <th className="h-4 w-[200px] bg-gray-100 rounded mb-2"></th>
+                  <th className="h-4 w-1/2 bg-gray-100 dark:bg-slate-800 rounded mb-2"></th>
+                  <th className="h-4 w-1/4 bg-gray-100 dark:bg-slate-800 rounded mb-2"></th>
+                  <th className="h-4 w-[200px] bg-gray-100 dark:bg-slate-800 rounded mb-2"></th>
                 </tr>
               </thead>
               <tbody>
                 {[...Array(4)].map((_, index) => (
-                  <tr key={index} className="border-t">
+                  <tr key={index} className="border-t dark:border-slate-700">
                     <td className="py-4 pr-4">
-                      <div className="h-4 w-[90%] bg-gray-200 rounded mb-2" />
-                      <div className="h-4 w-2/3 bg-gray-100 rounded" />
+                      <div className="h-4 w-[90%] bg-gray-200 dark:bg-slate-700 rounded mb-2" />
+                      <div className="h-4 w-2/3 bg-gray-100 dark:bg-slate-800 rounded" />
                     </td>
                     <td className="py-4 pr-4">
-                      <div className="h-4 w-24 bg-gray-200 rounded mb-1" />
-                      <div className="h-3 w-32 bg-gray-100 rounded" />
+                      <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-1" />
+                      <div className="h-3 w-32 bg-gray-100 dark:bg-slate-800 rounded" />
                     </td>
                     <td className="py-4">
                       <div className="flex gap-2">
-                        <div className="h-8 w-8 bg-gray-300 rounded-md" />
-                        <div className="h-8 w-8 bg-gray-300 rounded-md" />
-                        <div className="h-8 w-8 bg-gray-300 rounded-md" />
+                        <div className="h-8 w-8 bg-gray-300 dark:bg-slate-600 rounded-md" />
+                        <div className="h-8 w-8 bg-gray-300 dark:bg-slate-600 rounded-md" />
+                        <div className="h-8 w-8 bg-gray-300 dark:bg-slate-600 rounded-md" />
                       </div>
                     </td>
                   </tr>
@@ -1474,7 +1478,31 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
       </div>
     );
   }
+  if (type === "mmp-home") {
+    return (
+      <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden animate-pulse">
+        <div className="h-[140px] bg-slate-100 dark:bg-slate-800" />
 
+        <div className="p-5 space-y-4">
+          <div className="space-y-2">
+            <div className="h-4 w-3/4 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-lg" />
+            <div className="h-3 w-2/3 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+          </div>
+
+          <div className="flex justify-between items-center py-3 border-y border-slate-50 dark:border-slate-800">
+            <div className="h-3 w-24 bg-slate-100 dark:bg-slate-800 rounded" />
+            <div className="h-3 w-16 bg-slate-100 dark:bg-slate-800 rounded" />
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <div className="flex-[2] h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+            <div className="flex-1 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
   // fallback default
   return (
     <div className="p-4">

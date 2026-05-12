@@ -68,7 +68,7 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
           href={href}
           className={cn(
             "flex items-center py-2 ",
-            isActive ? "text-jp-orange" : "text-[#6C7894]",
+            isActive ? "text-jp-orange" : "text-[#6C7894] dark:text-slate-300",
           )}
           onClick={onLinkClick} // Call onLinkClick when link is clicked
         >
@@ -77,7 +77,7 @@ const NavItem = ({ href, icon, label, onLinkClick }: NavItemProps) => {
       ) : (
         <div
           className={cn(
-            "flex items-center py-2 cursor-pointer hover:text-jp-orange text-[#6C7894]",
+            "flex items-center py-2 cursor-pointer hover:text-jp-orange text-[#6C7894] dark:text-slate-300",
           )}
         >
           {content}
@@ -101,7 +101,9 @@ type SidebarProps = {
 
 const NavSection = ({ title, children, className }: NavSectionProps) => (
   <div className={cn("space-y-2", className)}>
-    <h4 className="text-[#405D9F] font-normal text-sm">{title}</h4>
+    <h4 className="text-[#405D9F] font-normal text-sm dark:text-slate-400">
+      {title}
+    </h4>
     <nav>
       <ul className="">{children}</ul>
     </nav>
@@ -110,8 +112,6 @@ const NavSection = ({ title, children, className }: NavSectionProps) => (
 
 // Main sidebar component
 const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
-
-
   const { data: cmpPlan } = useQuery({
     queryKey: ["cmp-program"],
     queryFn: async () => {
@@ -191,6 +191,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
         <aside
           className={cn(
             "fixed lg:static top-0 left-0 h-[100vh]  bg-white shadow-lg rounded-3xl custom-scroll overflow-y-scroll transition-transform duration-300 z-50",
+            "dark:border dark:border-slate-700/80 dark:bg-slate-900 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]",
             "w-64 lg:w-64",
             isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
@@ -200,10 +201,10 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
             <div className="flex items-center gap-3">
               <div>
                 <div className="flex items-center gap-1">
-                  <p className="text-sm">Hello</p>
+                  <p className="text-sm dark:text-slate-400">Hello</p>
                   <span className="text-amber-400">👋</span>
                 </div>
-                <h3 className="font-bold text-lg">
+                <h3 className="font-bold text-lg dark:text-slate-50">
                   {user?.name ? user.name : "Your Name"}
                 </h3>
               </div>
@@ -276,7 +277,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                 />
                 <div className="flex items-center ">
                   <Link href="/MTB-2026-the-complete-makeover-program">
-                    <span className="flex items-center gap-3 py-2 cursor-pointer  text-[#6C7894]">
+                    <span className="flex items-center gap-3 py-2 cursor-pointer  light:text-[#6C7894]">
                       <Crown size={20} className="w-7" />
                       2026 Complete Makeover Program
                     </span>
@@ -322,7 +323,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                     <Link
                       href="/dashboard/mini-mastery-programs/create"
                       onClick={toggleSidebar}
-                      className={`flex items-center  py-2 text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
+                      className={`flex items-center  py-2 light:text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
                     >
                       <GraduationCap size={20} className="w-7" />
 

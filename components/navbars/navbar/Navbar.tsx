@@ -24,7 +24,7 @@ export default function Navbar() {
   const { data: session } = useSession();
 
   return (
-    <div className="sticky top-0 z-50 bg-white  ">
+    <div className="sticky top-0 z-50 bg-white transition-colors dark:bg-slate-950">
       <div className="flex items-center justify-between relative py-1.5">
         {/* Logo Section */}
         <Link href="/?from=user-consent" className="flex items-center space-x-2 relative">
@@ -35,7 +35,7 @@ export default function Navbar() {
             height={50}
             className="object-contain"
           />
-          <span className="font-semibold md:text-[22px]  text-black">
+          <span className="font-semibold md:text-[22px] text-black dark:text-slate-50">
             MyThriveBuddy.com
           </span>
           <span className="md:text-[10px] absolute right-0 -top-3 text-[7px] font-medium px-1.5 sm:px-2 py-0.5 bg-black text-white rounded">
@@ -311,7 +311,7 @@ export default function Navbar() {
         {/* Mobile Menu Button */}
         <button
           aria-label="menu"
-          className="x1260:hidden p-2"
+          className="x1260:hidden p-2 text-slate-900 dark:text-slate-100"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           <svg
@@ -341,7 +341,7 @@ export default function Navbar() {
 
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white mt-0 p-4 rounded-lg shadow-lg x1260:hidden z-50">
+        <div className="absolute top-full left-0 right-0 bg-white mt-0 p-4 rounded-lg shadow-lg x1260:hidden z-50 dark:border dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col space-y-4">
             <NavLink href="/pricing">Pricing</NavLink>
               <NavLink

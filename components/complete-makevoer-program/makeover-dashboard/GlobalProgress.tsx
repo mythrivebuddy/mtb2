@@ -183,7 +183,7 @@ const GlobalProgress = async ({
       </div>
       <Link
         href={`/dashboard/complete-makeover-program/achievements`}
-        className="flex flex-col sm:flex-row sm:justify-between gap-6 pt-2 border-t border-slate-100 "
+        className="flex flex-col sm:flex-row sm:justify-between gap-6 pt-2 border-t border-slate-100 dark:border-slate-700"
       >
         <div className="flex items-start gap-4">
           <div

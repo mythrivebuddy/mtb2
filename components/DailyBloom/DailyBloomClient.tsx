@@ -1081,8 +1081,8 @@ export default function DailyBloomClient() {
         message={upgradeModal.message}
         redirectToPricingUrl={`/pricing?ref=daily-blooms`}
       />
-      <div className="p-3">
-        <Card className="mb-8">
+      <div className="p-3 ">
+        <Card className="mb-8 dark:bg-gray-800">
           <CardHeader>
             <div className="space-y-3">
               <CardTitle>Daily Blooms</CardTitle>
@@ -1121,7 +1121,7 @@ export default function DailyBloomClient() {
         {isLoading ? (
           <PageSkeleton type="leaderboard" />
         ) : (
-          <Card>
+          <Card className="dark:bg-slate-900">
             <CardHeader>
               <CardTitle>Your Daily Blooms</CardTitle>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mt-2">
@@ -1331,7 +1331,7 @@ export default function DailyBloomClient() {
                     // --- DESKTOP: Table View ---
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted">
+                        <TableRow className="bg-muted dark:bg-slate-950">
                           <TableHead className="w-[80px] text-center"></TableHead>
                           <TableHead>Title</TableHead>
                           <TableHead className="w-[130px]">Due Date</TableHead>
@@ -1451,9 +1451,9 @@ export default function DailyBloomClient() {
           </Card>
         )}
         <Dialog open={addData} onOpenChange={setAddData}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">
+              <DialogTitle className="text-xl font-semibold light:text-gray-800">
                 Add Your Bloom
               </DialogTitle>
             </DialogHeader>
@@ -1470,7 +1470,7 @@ export default function DailyBloomClient() {
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="desc-add">Description</Label>
-                  <Textarea id="desc-add" {...register("description")} />
+                  <Textarea className="dark:bg-black dark:border-none" id="desc-add" {...register("description")} />
                   {errors.description && (
                     <p className="text-red-500 text-sm">
                       {errors.description.message}
@@ -1771,9 +1771,9 @@ export default function DailyBloomClient() {
         </Dialog>
 
         <Dialog open={!!viewData} onOpenChange={() => setViewData(null)}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">
+              <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-300">
                 Bloom Details
               </DialogTitle>
             </DialogHeader>
@@ -1796,7 +1796,7 @@ export default function DailyBloomClient() {
                     <p className="text-sm font-medium text-muted-foreground">
                       Description
                     </p>
-                    <p className="text-base text-gray-700 break-all">
+                    <p className="text-base light:text-gray-700 break-all">
                       {viewData.description || (
                         <span className="text-gray-400">Not provided</span>
                       )}
@@ -1852,9 +1852,9 @@ export default function DailyBloomClient() {
           open={!!editData}
           onOpenChange={(isOpen) => !isOpen && handleCloseEditModal()}
         >
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-gray-800">
+              <DialogTitle className="text-xl font-semibold text-gray-800 dark:text-gray-300">
                 Edit Daily Bloom
               </DialogTitle>
               <DialogDescription>
@@ -1874,7 +1874,7 @@ export default function DailyBloomClient() {
                 </div>
                 <div className="grid w-full items-center gap-1.5">
                   <Label htmlFor="desc-edit">Description</Label>
-                  <Textarea id="desc-edit" {...register("description")} />
+                  <Textarea className="dark:bg-black dark:border-none" id="desc-edit" {...register("description")} />
                   {errors.description && (
                     <p className="text-red-500 text-sm">
                       {errors.description.message}
@@ -1969,15 +1969,15 @@ export default function DailyBloomClient() {
         </Dialog>
 
         <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white p-6 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-md rounded-2xl bg-white dark:bg-slate-950 p-6 shadow-xl border">
             <DialogHeader className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
-              <DialogTitle className="mt-4 text-xl font-semibold text-gray-800">
+              <DialogTitle className="mt-4 text-xl font-semibold light:text-gray-800 ">
                 Confirm Deletion
               </DialogTitle>
-              <DialogDescription className="mt-2 text-sm text-gray-500">
+              <DialogDescription className="mt-2 text-sm light:text-gray-500">
                 Are you sure you want to delete this bloom? This action cannot
                 be undone.
               </DialogDescription>
@@ -2012,7 +2012,7 @@ export default function DailyBloomClient() {
             if (!open) setInitialEventId(null); // <--- Reset when closing
           }}
         >
-          <DialogContent className="w-[90vw] max-w-4xl rounded-2xl bg-white p-2 shadow-xl border">
+          <DialogContent className="w-[90vw] max-w-4xl rounded-2xl light:bg-white  p-2 shadow-xl border">
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-800">
                 My Calendar

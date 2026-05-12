@@ -25,8 +25,8 @@ const AccountabilityPod = () => {
 
       {/* Content */}
       {/* {!isProgramStarted ? ( */}
-      <div className="flex flex-col items-center justify-center gap-2 py-6 text-slate-500">
-        <div className="size-12 rounded-full bg-slate-100  flex items-center justify-center">
+      <div className="flex flex-col items-center justify-center gap-2 py-6 text-slate-500 dark:text-slate-400">
+        <div className="size-12 rounded-full bg-slate-100 flex items-center justify-center dark:bg-slate-800">
           <Users className="w-6 h-6 opacity-60" />
         </div>
         <p className="text-md font-medium italic text-center max-w-xs">

@@ -61,7 +61,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
 
     return parts.map((part, idx) =>
       part.startsWith("**") && part.endsWith("**") ? (
-        <strong key={idx} className="font-bold text-slate-900">
+        <strong key={idx} className="font-bold text-slate-900 dark:text-slate-50">
           {part.replace(/\*\*/g, "")}
         </strong>
       ) : (
@@ -71,14 +71,14 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
   };
 
   return (
-    <div className="min-h-screen w-full font-sans text-slate-900">
+    <div className="min-h-screen w-full font-sans text-slate-900 dark:text-slate-100">
       <main className="mx-auto flex w-full max-w-[1024px] flex-col gap-8 py-8 px-4 md:px-10">
         {/* Heading */}
         <div className="flex items-center flex-col gap-4 text-center md:text-left">
           <h1 className="text-3xl text-center md:text-4xl font-black tracking-tight">
             This Is Where Your 2026 Complete Makeover Begins
           </h1>
-          <p className="text-slate-500 text-center text-lg leading-relaxed max-w-2xl">
+          <p className="text-slate-500 text-center text-lg leading-relaxed max-w-2xl dark:text-slate-400">
             You are stepping into a year-long, self-guided makeover designed for
             clarity, consistency, and meaningful change.
             <br />
@@ -89,8 +89,8 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
         </div>
 
         {/* Rules Container */}
-        <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800">
             <h3 className="text-lg font-bold">Your Makeover Commitments</h3>
             <ShieldCheck className="text-[#10b981]" size={24} />
           </div>
@@ -99,7 +99,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
             {RULES.map((rule, idx) => (
               <div
                 key={idx}
-                className="flex gap-4 p-4 hover:bg-slate-50 rounded-lg transition-colors group"
+                className="flex gap-4 p-4 hover:bg-slate-50 rounded-lg transition-colors group dark:hover:bg-slate-800"
               >
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[#0f2cbd]/10 text-[#10b981]">
                   <rule.icon size={24} />
@@ -108,7 +108,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
                   <p className="text-base font-bold leading-normal">
                     {rule.title}
                   </p>
-                  <ul className="mt-1 space-y-1 text-slate-700 text-sm leading-relaxed list-disc pl-5">
+                  <ul className="mt-1 space-y-1 text-slate-700 text-sm leading-relaxed list-disc pl-5 dark:text-slate-300">
                     {rule.points.map((point, i) => (
                       <li key={i}>{renderBoldText(point)}</li>
                     ))}
@@ -123,7 +123,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
 
         {/* Commitment Section */}
         <div className="flex flex-col gap-6 pb-10">
-          <label className="group flex flex-col items-start gap-2 cursor-pointer rounded-lg border border-transparent p-3 hover:bg-slate-100 transition-colors">
+          <label className="group flex flex-col items-start gap-2 cursor-pointer rounded-lg border border-transparent p-3 hover:bg-slate-100 transition-colors dark:hover:bg-slate-800">
             <h3 className="text-lg font-bold">Final Affirmation</h3>
             <div className="flex gap-4 items-start ">
               <div className="relative flex items-center pt-1">
@@ -131,7 +131,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
                   type="checkbox"
                   checked={agreed}
                   onChange={(e) => setAgreed(e.target.checked)}
-                  className="peer size-6 cursor-pointer appearance-none rounded border border-slate-300 bg-white checked:bg-[#10b981] checked:border-[#10b981] focus:ring-0 transition-all"
+                  className="peer size-6 cursor-pointer appearance-none rounded border border-slate-300 bg-white checked:bg-[#10b981] checked:border-[#10b981] focus:ring-0 transition-all dark:border-slate-600 dark:bg-slate-900"
                 />
                 <CheckCircle2
                   className="pointer-events-none absolute left-0 text-white opacity-0 peer-checked:opacity-100 transition-opacity"
@@ -144,7 +144,7 @@ const Step6ProgramRules = ({ onBack, onConfirm, isSubmitting }: Step6Props) => {
                   I commit to my 2026 Complete Makeover & agree to its terms and
                   conditions
                 </span>
-                <span className="text-xs text-slate-600 mt-1">
+                <span className="text-xs text-slate-600 mt-1 dark:text-slate-400">
                   I understand that lasting change comes from consistent,
                   intentional action.
                   <br />

@@ -129,7 +129,7 @@ export default async function MyAchievementsPage({ params }: Props) {
       {/* Header */}
       <div className="flex flex-col items-center mb-8">
         <h1 className="text-4xl font-bold text-yellow-600 text-center">🏆 Congratulations!</h1>
-        <p className="text-gray-700 text-lg mt-2 text-center">
+        <p className="text-gray-700 text-lg mt-2 text-center dark:text-slate-300">
           You’ve successfully completed <strong>{challengeTitle}</strong>.
           <br /> Here is your certificate!
         </p>
@@ -139,7 +139,7 @@ export default async function MyAchievementsPage({ params }: Props) {
       </div>
 
       {/* Certificate Image */}
-      <div className="rounded-xl overflow-hidden shadow-2xl border border-gray-100 bg-white">
+      <div className="rounded-xl overflow-hidden shadow-2xl border border-gray-100 bg-white dark:border-slate-700 dark:bg-slate-900">
         {imageUrl ? (
           <img src={imageUrl} alt="Certificate" className="w-full h-auto object-contain" />
         ) : (

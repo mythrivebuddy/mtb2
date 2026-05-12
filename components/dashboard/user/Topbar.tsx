@@ -31,7 +31,7 @@ const TopBarBadge = ({
     <Badge
       variant="outline"
       className={cn(
-        "bg-white rounded-md h-8 sm:h-10 flex items-center  justify-center px-1 sm:px-3 border border-[#4B65A2]",
+        "bg-white rounded-md h-8 sm:h-10 flex items-center  justify-center px-1 sm:px-3 border border-[#4B65A2] dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100",
         className,
       )}
       {...props}
@@ -109,12 +109,12 @@ export default function TopBar({ user, toggleSidebar }: TopBarProps) {
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-0 flex items-center justify-between lg:static">
       <button
-        className="lg:hidden p-2 bg-white rounded-md shadow-md"
+        className="lg:hidden p-2 bg-white rounded-md shadow-md dark:bg-slate-950 dark:text-slate-100"
         onClick={toggleSidebar}
       >
         <Menu size={20} />
       </button>
-      <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden">
+      <h1 className="text-xl sm:text-2xl font-normal text-slate-800 lg:block hidden dark:text-slate-50">
         {pageTitle}
       </h1>
       <div className="flex justify-between items-center gap-3 ml-auto">

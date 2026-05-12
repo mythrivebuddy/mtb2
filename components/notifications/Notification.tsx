@@ -3,7 +3,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect } from "react";
-import { Bell, Gift, Sparkles, Coins, CheckCircle2, HandCoins } from "lucide-react";
+import {
+  Bell,
+  Gift,
+  Sparkles,
+  Coins,
+  CheckCircle2,
+  HandCoins,
+} from "lucide-react";
 import { cn } from "@/lib/utils/tw";
 import axios from "axios";
 import PushNotificationToggle from "@/components/notifications/PushNotificationToggle";
@@ -12,19 +19,15 @@ import Link from "next/link";
 import { Notification } from "@/types/client/notifcation";
 import { useSession } from "next-auth/react";
 
-
 const normalizeText = (text?: string) => {
   if (!text) return "";
 
-  return text
-    .replace(/JoyPearls/g, "Growth Points")
-    .replace(/\bJP\b/g, "GP");
+  return text.replace(/JoyPearls/g, "Growth Points").replace(/\bJP\b/g, "GP");
 };
 
-
-export default function NotificationsPage()  {
+export default function NotificationsPage() {
   const session = useSession();
- 
+
   // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["notifications"],
@@ -34,21 +37,18 @@ export default function NotificationsPage()  {
     },
   });
   const queryClient = useQueryClient();
-   useEffect(() => {
- 
-       if (!isLoading) {
+  useEffect(() => {
+    if (!isLoading) {
       queryClient.invalidateQueries({ queryKey: ["unreadNotificationsCount"] });
     }
-   }, [session,queryClient,isLoading]); 
-
- 
-
+  }, [session, queryClient, isLoading]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "JP_EARNED":
         return <Coins className="w-5 h-5 text-yellow-500" />;
-      case "JP_SPEND" : return <HandCoins className="w-5 h-5 text-red-500" />
+      case "JP_SPEND":
+        return <HandCoins className="w-5 h-5 text-red-500" />;
       case "PROSPERITY_APPLIED":
       case "SPOTLIGHT_APPROVED":
       case "SPOTLIGHT_ACTIVE":
@@ -67,16 +67,15 @@ export default function NotificationsPage()  {
   return (
     <div className="px-4 py-6">
       {/* Push Notification Settings */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
-        <h2 className="text-lg font-medium mb-3">Notification Settings</h2>
+      <div className="bg-white p-4 rounded-lg shadow-sm border mb-6 dark:bg-slate-900">
+        <h2 className="text-lg font-medium mb-3 ">Notification Settings</h2>
         <div className="space-y-3">
           <PushNotificationToggle
             variant="switch"
             label="Browser Push Notifications"
           />
-          <p className="text-sm text-gray-500 mt-1">
-            Receive notifications even when you are not actively using the
-            site
+          <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
+            Receive notifications even when you are not actively using the site
           </p>
         </div>
       </div>
@@ -96,8 +95,8 @@ export default function NotificationsPage()  {
             <div
               key={notification.id}
               className={cn(
-                "bg-white p-4 rounded-lg shadow-sm border mb-3 ",
-                !notification.isRead && "border-blue-500"
+                "bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border mb-3 ",
+                !notification.isRead && "border-blue-500",
               )}
             >
               <div className="flex items-start gap-4">
@@ -106,9 +105,13 @@ export default function NotificationsPage()  {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
-                    <h3 className="font-medium">{normalizeText(notification.title)}</h3>
+                    <h3 className="font-medium">
+                      {normalizeText(notification.title)}
+                    </h3>
                   </div>
-                  <p className="text-gray-600 mt-1">{normalizeText(notification.message)}</p>
+                  <p className="text-gray-600 mt-1 dark:text-gray-400">
+                    {normalizeText(notification.message)}
+                  </p>
                   <div className="flex justify-between mt-2 text-xs text-gray-500">
                     <span>
                       {formatDistanceToNow(new Date(notification.createdAt), {

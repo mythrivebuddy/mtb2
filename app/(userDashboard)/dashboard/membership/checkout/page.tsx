@@ -1086,7 +1086,7 @@ export default function CheckoutPage() {
     return <div>Challenge not found</div>;
   if (!mmpProgram && context === "MMP_PROGRAM" && !mmpLoading)
     return (
-      <div className="text-center flex justify-center items-center h-lvh text-2xl">
+      <div className="text-center flex justify-center items-center h-lvh text-2xl dark:text-slate-100">
         Mini mastery program not found
       </div>
     );
@@ -1095,14 +1095,14 @@ export default function CheckoutPage() {
     <div className="min-h-screen  py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-extrabold text-gray-900">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-slate-50">
             {context === "CHALLENGE"
               ? "Complete Challenge Payment"
               : context === "MMP_PROGRAM"
                 ? "Purchase Program"
                 : "Complete Your Subscription"}
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-gray-600 dark:text-slate-300">
             {context === "CHALLENGE"
               ? `Join the "${challenge?.title}" challenge.`
               : plan?.name &&
@@ -1114,7 +1114,7 @@ export default function CheckoutPage() {
           {/* LEFT SIDE: BILLING FORM */}
           <div className="md:col-span-2 space-y-6">
             {/* PLAN SUMMARY CARD */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 dark:border-slate-700 dark:bg-slate-900">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                   {context === "CHALLENGE" ? (
@@ -1122,7 +1122,7 @@ export default function CheckoutPage() {
                       <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold uppercase tracking-wide">
                         Paid Challenge
                       </span>
-                      <h2 className="mt-3 text-2xl font-bold text-gray-900">
+                      <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-50">
                         {challenge?.title}
                       </h2>
                     </>
@@ -1132,7 +1132,7 @@ export default function CheckoutPage() {
                         Mini Mastery Program
                       </span>
 
-                      <h2 className="mt-3 text-2xl font-bold text-gray-900">
+                      <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-50">
                         {mmpProgram?.name}
                       </h2>
                     </>
@@ -1141,27 +1141,27 @@ export default function CheckoutPage() {
                       <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold uppercase tracking-wide">
                         {plan?.interval} Plan
                       </span>
-                      <h2 className="mt-3 text-2xl font-bold text-gray-900">
+                      <h2 className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-50">
                         {plan?.name}
                       </h2>
                     </>
                   )}
                 </div>
                 <div className="text-left sm:text-right">
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900 dark:text-slate-50">
                     {billing.currency} {billing.total.toLocaleString()}
                   </p>
                 </div>
               </div>
-              <div className="mt-4 border-t pt-4">
+              <div className="mt-4 border-t pt-4 dark:border-slate-700">
                 {context === "CHALLENGE" ? (
                   <div className="space-y-2">
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       Challenge Details
                     </h3>
 
                     <div
-                      className="prose prose-sm max-w-none text-gray-700"
+                      className="prose prose-sm max-w-none text-gray-700 dark:prose-invert dark:text-slate-300"
                       dangerouslySetInnerHTML={{
                         __html: challenge?.description || "",
                       }}
@@ -1169,11 +1169,11 @@ export default function CheckoutPage() {
                   </div>
                 ) : context === "MMP_PROGRAM" ? (
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       Program Details
                     </h3>
 
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2 dark:text-slate-300">
                       <Check className="h-4 w-4 text-green-500 mt-1" />
                       {mmpProgram?.description ||
                         "Access to exclusive mini mastery program content and resources."}
@@ -1185,7 +1185,7 @@ export default function CheckoutPage() {
                       (feat, i) => (
                         <li key={i} className="flex items-start">
                           <Check className="h-4 w-4 text-green-500 mr-2 mt-1" />
-                          <span className="text-gray-600 text-sm">{feat}</span>
+                          <span className="text-gray-600 text-sm dark:text-slate-300">{feat}</span>
                         </li>
                       ),
                     )}
@@ -1195,17 +1195,17 @@ export default function CheckoutPage() {
             </div>
 
             {/* BILLING DETAILS FORM */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-              <div className="flex items-center gap-2 mb-4 border-b pb-2 flex-wrap">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center gap-2 mb-4 border-b pb-2 flex-wrap dark:border-slate-700">
                 <MapPin className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
                   Billing Information
                 </h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
                 {/* NAME - Full width on all screens for a standard layout */}
                 <div className="col-span-full sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                     Full Name
                   </label>
                   <div className="relative">
@@ -1215,7 +1215,7 @@ export default function CheckoutPage() {
                       name="name"
                       value={billingDetails.name}
                       onChange={handleInputChange}
-                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
+                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       placeholder="John Doe"
                       readOnly // Read only if you want to enforce session name
                     />
@@ -1224,7 +1224,7 @@ export default function CheckoutPage() {
 
                 {/* EMAIL - Full width on all screens for a standard layout */}
                 <div className="col-span-full sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                     Email Address
                   </label>
                   <div className="relative">
@@ -1233,7 +1233,7 @@ export default function CheckoutPage() {
                       type="email"
                       name="email"
                       value={billingDetails.email}
-                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-500 sm:text-sm py-2 border"
+                      className="pl-9 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 text-gray-500 sm:text-sm py-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                       readOnly
                     />
                   </div>
@@ -1241,7 +1241,7 @@ export default function CheckoutPage() {
 
                 {/* PHONE - ALWAYS FULL WIDTH */}
                 <div className="col-span-full">
-                  <label className="block text-xs  font-medium text-gray-700 mb-1">
+                  <label className="block text-xs  font-medium text-gray-700 mb-1 dark:text-slate-300">
                     Phone Number (Optional)
                   </label>
                   <div className="relative">
@@ -1251,7 +1251,7 @@ export default function CheckoutPage() {
                       name="phone"
                       value={billingDetails.phone}
                       onChange={handleInputChange}
-                      className="pl-9 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border"
+                      className="pl-9 block w-full rounded-md bg-gray-50 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       placeholder="9876543210"
                     />
                   </div>
@@ -1259,7 +1259,7 @@ export default function CheckoutPage() {
                 {/* GST NUMBER (OPTIONAL - INDIA ONLY) */}
                 {billingDetails.country === "IN" && (
                   <div className="col-span-full">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                       GST Number (Optional)
                     </label>
                     <input
@@ -1268,7 +1268,7 @@ export default function CheckoutPage() {
                       value={billingDetails.gstNumber}
                       onChange={handleInputChange}
                       placeholder="22AAAAA0000A1Z5"
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border uppercase"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border uppercase dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                     <p className="text-xs text-gray-400 mt-1">
                       Enter GST number if you want GST invoice for business.
@@ -1278,7 +1278,7 @@ export default function CheckoutPage() {
 
                 {/* ADDRESS LINE 1 - ALWAYS FULL WIDTH */}
                 <div className="col-span-full">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                     Address
                   </label>
                   <input
@@ -1286,7 +1286,7 @@ export default function CheckoutPage() {
                     name="addressLine1"
                     value={billingDetails.addressLine1}
                     onChange={handleInputChange}
-                    className="block w-full rounded-md bg-white border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                    className="block w-full rounded-md bg-white border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     placeholder="Street Address"
                     required
                   />
@@ -1296,7 +1296,7 @@ export default function CheckoutPage() {
                 <div className="col-span-full grid grid-cols-1 gap-2 md:grid-cols-2">
                   {/* CITY */}
                   <div className="col-span-1">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                       City
                     </label>
                     <input
@@ -1304,14 +1304,14 @@ export default function CheckoutPage() {
                       name="city"
                       value={billingDetails.city}
                       onChange={handleInputChange}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       required
                     />
                   </div>
 
                   {/* STATE */}
                   <div className="col-span-1">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                       State
                     </label>
                     <input
@@ -1319,14 +1319,14 @@ export default function CheckoutPage() {
                       name="state"
                       value={billingDetails.state}
                       onChange={handleInputChange}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       required
                     />
                   </div>
 
                   {/* POSTAL CODE */}
                   <div className="col-span-1">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                       Postal Code
                     </label>
                     <input
@@ -1334,14 +1334,14 @@ export default function CheckoutPage() {
                       name="postalCode"
                       value={billingDetails.postalCode}
                       onChange={handleInputChange}
-                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border"
+                      className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 px-3 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       required
                     />
                   </div>
 
                   {/* COUNTRY */}
                   <div className="col-span-1">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                    <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                       Country
                     </label>
                     <div className="relative">
@@ -1350,7 +1350,7 @@ export default function CheckoutPage() {
                         name="country"
                         value={billingDetails.country}
                         onChange={handleInputChange}
-                        className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white"
+                        className="pl-9 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2 border bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                       >
                         <option value="IN">India</option>
                         <option value="US">United States</option>
@@ -1365,15 +1365,15 @@ export default function CheckoutPage() {
 
           {/* RIGHT SIDE: CHECKOUT SUMMARY */}
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden sticky top-6">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden sticky top-6 dark:border-slate-700 dark:bg-slate-900">
               <div className="p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                <h3 className="text-lg font-medium text-gray-900 mb-4 dark:text-slate-100">
                   Order Summary
                 </h3>
 
                 {/* COUPON INPUT */}
                 <div className="mb-6">
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                  <label className="block text-xs font-medium text-gray-700 mb-1 dark:text-slate-300">
                     Promo Code
                   </label>
                   <div className="flex gap-2">
@@ -1384,12 +1384,12 @@ export default function CheckoutPage() {
                         setCouponCode(e.target.value.toUpperCase())
                       }
                       placeholder="ENTER CODE"
-                      className="flex-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border"
+                      className="flex-1 block w-full rounded-md border-gray-300 shadow-sm px-3 py-2 border dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     />
                     <button
                       onClick={handleVerifyCoupon}
                       disabled={verifyingCoupon || !couponCode}
-                      className="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700"
+                      className="bg-gray-800 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 dark:text-white"
                     >
                       {verifyingCoupon ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1411,8 +1411,8 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* PRICE BREAKDOWN */}
-                <div className="space-y-3 border-t pt-4">
-                  <div className="flex justify-between text-sm text-gray-600">
+                <div className="space-y-3 border-t pt-4 dark:border-slate-700">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-slate-300">
                     <span>Base Price</span>
                     <span>
                       {billing.currency} {billing.base.toLocaleString()}
@@ -1453,7 +1453,7 @@ export default function CheckoutPage() {
                       .
                     </div>
                   )}
-                  <div className="flex justify-between text-sm text-gray-600">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-slate-300">
                     <span>
                       {billingDetails.country === "IN" ? "GST (18%)" : "Tax"}
                     </span>
@@ -1465,13 +1465,13 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  <div className="h-px bg-gray-100 my-2"></div>
+                  <div className="h-px bg-gray-100 my-2 dark:bg-slate-700"></div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-base font-bold text-gray-900">
+                    <span className="text-base font-bold text-gray-900 dark:text-slate-50">
                       Total Payable
                     </span>
-                    <span className="text-xl font-bold text-gray-900">
+                    <span className="text-xl font-bold text-gray-900 dark:text-slate-50">
                       {billing.currency}{" "}
                       {billing.total.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
@@ -1489,7 +1489,7 @@ export default function CheckoutPage() {
                 <button
                   onClick={handleSubscribe}
                   disabled={processingPayment}
-                  className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-blue-200"
+                  className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white dark:text-white py-3 px-4 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-blue-200 dark:shadow-none"
                 >
                   {processingPayment ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

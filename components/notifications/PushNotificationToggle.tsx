@@ -56,6 +56,7 @@ export default function PushNotificationToggle({
           onCheckedChange={handleToggle}
           disabled={isLoading || processing}
           aria-label="Toggle push notifications"
+          className="dark:bg-white"
         />
       </div>
     );

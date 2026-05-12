@@ -23,5 +23,6 @@ export const ROUTE_TITLES: Record<string, string> = {
   "my-profile": "My Profile",
   "buddy-lens": "Buddy Lens",
   "reminders":"Reminders",
-  "students":"Enrolled Students"
+  "students":"Enrolled Students",
+  settings: "Settings",
 };

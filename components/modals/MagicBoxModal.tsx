@@ -98,7 +98,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       queryClient.invalidateQueries({ queryKey: ["magicBoxStatus"] });
       queryClient.invalidateQueries({ queryKey: ["userInfo"] });
       toast.success(
-        `You received ${data.jpEarned} GP and shared ${data.shared.jpAmount} GP!`
+        `You received ${data.jpEarned} GP and shared ${data.shared.jpAmount} GP!`,
       );
       refetchBox();
     },
@@ -194,7 +194,9 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
       return (
         <div className="flex flex-col items-center justify-center p-8">
           <Clock className="h-16 w-16 text-blue-500 mb-4" />
-          <p className="text-lg sm:text-xl text-center font-semibold mb-2">Magic Box Redeemed</p>
+          <p className="text-lg sm:text-xl text-center font-semibold mb-2">
+            Magic Box Redeemed
+          </p>
           <p className="text-gray-600 text-center mb-2">
             You&apos;ve already opened today&apos;s Magic Box
           </p>
@@ -264,10 +266,10 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
             {randomUsers.map((user: RandomUser) => (
               <div
                 key={user.id}
-                className={`flex  p-3 rounded-lg border justify-between items-center ${
+                className={`flex p-3 rounded-lg border justify-between items-center transition-colors ${
                   selectedUser === user.id
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:bg-gray-50"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/40 dark:border-blue-400"
+                    : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
                 }`}
               >
                 <div
@@ -299,7 +301,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
           <Button
             onClick={handleRedeemBox}
             disabled={!selectedUser}
-            className="w-full"
+            className="w-full dark:text-black"
           >
             Share & Redeem
           </Button>
@@ -320,7 +322,7 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
 
   return (
     <>
-      <Dialog  open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="max-w-xs sm:max-w-md md:max-w-xl rounded-md ">
           <DialogHeader>
             <DialogTitle className="text-center">Magic Box</DialogTitle>
@@ -346,8 +348,8 @@ const MagicBoxModal: React.FC<MagicBoxProps> = ({
               // opacity={confettiOpacity}
               // className=""
               style={{
-                position:'fixed',
-                zIndex: '999999'
+                position: "fixed",
+                zIndex: "999999",
               }}
             />
           </motion.div>
