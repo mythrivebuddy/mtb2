@@ -67,10 +67,10 @@ const BalanceCardsSkeleton = ({ count, userType }: { count: number, userType?: "
         }`}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i}>
+        <Card key={i} className="dark:bg-slate-900">
           <CardContent className="p-4 sm:p-6">
-            <div className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse" />
-            <div className="h-6 w-20 bg-gray-300 rounded animate-pulse" />
+            <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-2 animate-pulse" />
+            <div className="h-6 w-20 bg-gray-300 dark:bg-slate-600 rounded animate-pulse" />
           </CardContent>
         </Card>
       ))}
@@ -117,9 +117,9 @@ const BalanceCards = ({
       : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
       }`}>
       {items.map((item) => (
-        <Card key={item.label}>
+        <Card key={item.label} className="dark:bg-slate-900">
           <CardContent className="p-4 sm:p-6">
-            <p className="text-sm text-gray-500">{item.label}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{item.label}</p>
             <p className={`text-md sm:text-2xl font-bold ${item.color}`}>
               {item.value.toLocaleString()}
             </p>
@@ -232,7 +232,7 @@ const DateRangeFilter = ({
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-auto p-4">
+        <PopoverContent className="w-auto p-4 dark:bg-slate-900 dark:border-slate-700">
 
           <DayPicker
             mode="range"
@@ -241,6 +241,7 @@ const DateRangeFilter = ({
             onSelect={(range: DateRange | undefined) =>
               setDate(range?.from, range?.to)
             }
+            className="dark:bg-slate-900 dark:text-gray-100"
           />
 
         </PopoverContent>
@@ -419,7 +420,7 @@ const TransactionHistoryContent = () => {
       <>
         <BalanceCardsSkeleton count={skeletonCount} userType={userType} />
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardContent className="p-6">
             <SkeletonList count={5} />
           </CardContent>
@@ -467,7 +468,7 @@ const TransactionHistoryContent = () => {
 
       </div>
 
-      <Card>
+      <Card className="dark:bg-slate-900">
         <CardContent className="p-0">
 
           <TransactionDataTable
@@ -506,7 +507,7 @@ const TransactionsHistoryPage = () => {
 
       <Suspense
         fallback={
-          <Card className="p-6">
+          <Card className="p-6 ">
             <SkeletonList count={5} />
           </Card>
         }

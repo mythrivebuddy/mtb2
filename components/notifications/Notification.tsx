@@ -56,7 +56,7 @@ export default function NotificationsPage() {
       case "MAGIC_BOX_SHARED":
         return <Gift className="w-5 h-5 text-purple-500" />;
       default:
-        return <Bell className="w-5 h-5 text-gray-500" />;
+        return <Bell className="w-5 h-5 text-gray-500 dark:text-gray-400" />;
     }
   };
 
@@ -68,7 +68,7 @@ export default function NotificationsPage() {
     <div className="px-4 py-6">
       {/* Push Notification Settings */}
       <div className="bg-white p-4 rounded-lg shadow-sm border mb-6 dark:bg-slate-900">
-        <h2 className="text-lg font-medium mb-3 ">Notification Settings</h2>
+        <h2 className="text-lg font-medium mb-3 dark:text-gray-200">Notification Settings</h2>
         <div className="space-y-3">
           <PushNotificationToggle
             variant="switch"
@@ -81,11 +81,11 @@ export default function NotificationsPage() {
       </div>
 
       {/* Recent Notifications Header */}
-      <h2 className="text-lg font-medium mb-3">Recent Notifications</h2>
+      <h2 className="text-lg font-medium mb-3 dark:text-gray-200">Recent Notifications</h2>
 
       {/* Notification List */}
       {notifications?.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No notifications yet
         </div>
       ) : (
@@ -105,14 +105,14 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
-                    <h3 className="font-medium">
+                    <h3 className="font-medium dark:text-gray-200">
                       {normalizeText(notification.title)}
                     </h3>
                   </div>
                   <p className="text-gray-600 mt-1 dark:text-gray-400">
                     {normalizeText(notification.message)}
                   </p>
-                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                  <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
                     <span>
                       {formatDistanceToNow(new Date(notification.createdAt), {
                         addSuffix: true,

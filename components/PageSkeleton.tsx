@@ -63,11 +63,11 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             </div>
 
             {/* MyLifeBlueprint Skeleton */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm border mb-4 space-y-3">
-              <Skeleton className="h-5 w-40" />
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border dark:border-slate-700 mb-4 space-y-3">
+              <Skeleton className="h-5 w-40 dark:bg-slate-700" />
               <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-5/6" />
-              <Skeleton className="h-3 w-4/6" />
+              <Skeleton className="h-3 w-5/6 dark:bg-slate-700" />
+              <Skeleton className="h-3 w-4/6 dark:bg-slate-700" />
             </div>
 
             {/* Dashboard Cards (MATCHES your dynamic cards) */}
@@ -75,23 +75,23 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col"
+                  className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-6 flex flex-col"
                 >
                   {/* Icon */}
-                  <Skeleton className="h-14 w-14 rounded-2xl mb-5" />
+                  <Skeleton className="h-14 w-14 rounded-2xl mb-5 dark:bg-slate-700" />
 
                   {/* Title */}
-                  <Skeleton className="h-5 w-40 mb-2" />
+                  <Skeleton className="h-5 w-40 mb-2 dark:bg-slate-700" />
 
                   {/* Content (simulate dynamic card content like blooms/tasks/etc) */}
                   <div className="space-y-2 flex-1">
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-4/5" />
-                    <Skeleton className="h-3 w-3/5" />
+                    <Skeleton className="h-3 w-full dark:bg-slate-700" />
+                    <Skeleton className="h-3 w-4/5 dark:bg-slate-700" />
+                    <Skeleton className="h-3 w-3/5 dark:bg-slate-700" />
                   </div>
 
                   {/* CTA Button */}
-                  <Skeleton className="h-9 w-full rounded-full mt-4" />
+                  <Skeleton className="h-9 w-full rounded-full mt-4 dark:bg-slate-700" />
                 </div>
               ))}
             </div>
@@ -99,12 +99,12 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             {/* Mobile Steppers Skeleton */}
             <div className="mt-6 lg:hidden space-y-6">
               <div>
-                <Skeleton className="h-5 w-32 mb-3" />
+                <Skeleton className="h-5 w-32 mb-3 dark:bg-slate-700" />
                 <Skeleton className="h-10 w-full rounded-xl" />
               </div>
 
               <div>
-                <Skeleton className="h-5 w-40 mb-3" />
+                <Skeleton className="h-5 w-40 mb-3 dark:bg-slate-700" />
                 <Skeleton className="h-10 w-full rounded-xl" />
               </div>
             </div>
@@ -114,39 +114,37 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           <div className="lg:flex-[0.4] mt-8 lg:mt-0 space-y-6 self-start pt-2 lg:pt-[68px]">
             {/* Stats / JP Section */}
             {/* MyLifeBlueprint Mirror */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 space-y-5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5 space-y-5">
               <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-3 w-full" />
-              <Skeleton className="h-3 w-4/5" />
 
               <div className="pt-2 space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="flex justify-between items-center">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-24 dark:bg-slate-700" />
+                    <Skeleton className="h-4 w-16 dark:bg-slate-700" />
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Buddies */}
-            <div className="bg-white rounded-3xl shadow-md p-5 space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-md p-5 space-y-4">
               <Skeleton className="h-5 w-20" />
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex items-center space-x-3">
-                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full dark:bg-slate-700" />
                   <div className="space-y-1">
-                    <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-2 w-20" />
+                    <Skeleton className="h-3 w-24 dark:bg-slate-700" />
+                    <Skeleton className="h-2 w-20 dark:bg-slate-700" />
                   </div>
                 </div>
               ))}
-              <Skeleton className="h-10 w-full rounded-full" />
+              <Skeleton className="h-10 w-full rounded-full dark:bg-slate-700" />
             </div>
 
             {/* History */}
-            <div className="bg-white rounded-xl shadow-md p-4 space-y-4">
-              <Skeleton className="h-5 w-16" />
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-md p-4 space-y-4">
+              <Skeleton className="h-5 w-16 dark:bg-slate-700" />
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="flex items-start w-full">
                   <Skeleton className="h-5 w-5 mr-2 rounded-full" />
@@ -294,7 +292,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           {Array.from({ length: 3 }).map((_, idx) => (
             <div
               key={idx}
-              className="border border-gray-200 bg-gray-50 rounded-lg p-6 space-y-4"
+              className="border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 rounded-lg p-6 space-y-4"
             >
               {/* Title and Status */}
               <div className="flex justify-between items-center">
@@ -327,7 +325,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           {Array.from({ length: 3 }).map((_, idx) => (
             <div
               key={idx}
-              className="border border-gray-200 bg-gray-50 rounded-lg p-6 space-y-4"
+              className="border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 rounded-lg p-6 space-y-4"
             >
               {/* Title and Status */}
               <div className="flex justify-between items-center">
@@ -362,7 +360,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         {Array.from({ length: 3 }).map((_, idx) => (
           <div
             key={idx}
-            className="rounded-2xl shadow-lg p-6 space-y-4 border border-gray-200 bg-gray-50 m-7"
+            className="rounded-2xl shadow-lg p-6 space-y-4 border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 m-7"
           >
             {/* Reviewer Name */}
             <Skeleton className="h-5 w-48 rounded-md" />
@@ -405,7 +403,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           {Array.from({ length: 3 }).map((_, idx) => (
             <div
               key={idx}
-              className="border border-gray-200 bg-gray-50 rounded-lg p-6 space-y-4"
+              className="border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 rounded-lg p-6 space-y-4"
             >
               {/* Title and Status */}
               <div className="flex justify-between items-center">
@@ -436,38 +434,38 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         <div className="p-11">
           {/* Title */}
           <div className="flex justify-between items-start mb-4">
-            <div className="h-6 w-60 bg-gray-200 rounded animate-pulse" />
+            <div className="h-6 w-60 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
           </div>
 
           {/* Top section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Left column */}
             <div className="space-y-2.5">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse" />
-                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="w-4 h-4 bg-gray-300 dark:bg-slate-600 rounded-full animate-pulse" />
+                <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="w-4 h-4 bg-gray-300 dark:bg-slate-600 rounded-full animate-pulse" />
                 <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="w-4 h-4 bg-gray-300 dark:bg-slate-600 rounded-full animate-pulse" />
                 <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse" />
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="w-4 h-4 bg-gray-300 dark:bg-slate-600 rounded-full animate-pulse" />
                 <div className="h-4 w-36 bg-gray-200 rounded animate-pulse" />
               </div>
             </div>
 
             {/* Right column */}
-            <div className="bg-gray-100 p-3 rounded-lg space-y-2">
+            <div className="bg-gray-100 dark:bg-slate-800 p-3 rounded-lg space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-300 rounded-full animate-pulse" />
+                <div className="w-4 h-4 bg-gray-300 dark:bg-slate-600 rounded-full animate-pulse" />
                 <div className="h-4 w-28 bg-gray-200 rounded animate-pulse" />
               </div>
               <div className="h-4 w-40 bg-gray-200 rounded animate-pulse" />
@@ -600,15 +598,15 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
     return (
       <div className="p-6 animate-pulse">
         {/* Notification Settings Skeleton */}
-        <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
-          <div className="h-5 w-1/3 bg-gray-200 rounded mb-4" /> {/* Title */}
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border mb-6">
+          <div className="h-5 w-1/3 bg-gray-200 dark:bg-slate-700 rounded mb-4" /> {/* Title */}
           <div className="flex items-center gap-3 mb-2">
-            <div className="h-5 w-1/2 bg-gray-200 rounded" />{" "}
+            <div className="h-5 w-1/2 bg-gray-200 dark:bg-slate-700 rounded" />{" "}
             {/* Toggle Label */}
-            <div className="h-5 w-10 bg-gray-300 rounded-full ml-auto" />{" "}
+            <div className="h-5 w-10 bg-gray-300 dark:bg-slate-600 rounded-full ml-auto" />{" "}
             {/* Switch */}
           </div>
-          <div className="h-4 w-2/3 bg-gray-200 rounded" /> {/* Description */}
+          <div className="h-4 w-2/3 bg-gray-200 dark:bg-slate-700 rounded" /> {/* Description */}
         </div>
 
         {/* Recent Notifications Header */}
@@ -618,19 +616,19 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="bg-white p-4 rounded-lg shadow-sm border mb-3"
+            className="bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border mb-3"
           >
             <div className="flex items-start gap-4">
               {/* Icon Placeholder */}
-              <div className="h-6 w-6 bg-gray-300 rounded-full mt-1" />
+              <div className="h-6 w-6 bg-gray-300 dark:bg-slate-600 rounded-full mt-1" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 w-1/2 bg-gray-200 rounded" /> {/* Title */}
-                <div className="h-3 w-full bg-gray-100 rounded" />{" "}
+                <div className="h-4 w-1/2 bg-gray-200 dark:bg-slate-700 rounded" /> {/* Title */}
+                <div className="h-3 w-full bg-gray-100 dark:bg-slate-800 rounded" />{" "}
                 {/* Message */}
                 <div className="flex justify-between text-xs mt-2">
-                  <div className="h-3 w-20 bg-gray-100 rounded" />{" "}
+                  <div className="h-3 w-20 bg-gray-100 dark:bg-slate-800 rounded" />{" "}
                   {/* Timestamp */}
-                  <div className="h-3 w-12 bg-gray-100 rounded" />{" "}
+                  <div className="h-3 w-12 bg-gray-100 dark:bg-slate-800 rounded" />{" "}
                   {/* Read status */}
                 </div>
               </div>
@@ -689,79 +687,81 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
   }
 
   // for  Referral-skeleton
-  if (type === "refer-friend") {
-    return (
-      <div className=" px-4 py-8">
-        <div className="max-w-8xl mx-auto space-y-8">
-          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+ if (type === "refer-friend") {
+  return (
+    <div className="px-4 py-8 bg-slate-50 dark:bg-slate-950">
+      <div className="max-w-8xl mx-auto space-y-8">
 
-          {/* Referral Stats Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1" />
-                  <div className="h-6 w-16 bg-gray-300 rounded animate-pulse" />
-                </div>
-                <div>
-                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1" />
-                  <div className="h-6 w-20 bg-gray-300 rounded animate-pulse" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="h-8 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
 
-          {/* Referral Code Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
-                <div className="h-10 w-28 bg-gray-200 rounded animate-pulse" />
+        {/* Referral Stats Card */}
+        <Card className="bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded animate-pulse mb-1" />
+                <div className="h-6 w-16 bg-gray-300 dark:bg-slate-600 rounded animate-pulse" />
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse" />
-                <div className="h-10 w-28 bg-gray-200 rounded animate-pulse" />
+              <div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded animate-pulse mb-1" />
+                <div className="h-6 w-20 bg-gray-300 dark:bg-slate-600 rounded animate-pulse" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Share Via Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-4">
-                <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
-                <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
-                <div className="h-10 w-48 bg-gray-200 rounded animate-pulse" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Referral Code Card */}
+        <Card className="bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <div className="h-10 w-40 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-10 w-28 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="h-10 flex-1 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-10 w-28 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Invite via Email */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                <div className="h-10 w-full bg-gray-200 rounded animate-pulse" />
-                <div className="h-10 w-40 bg-gray-200 rounded animate-pulse mt-4" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Share Via Card */}
+        <Card className="bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              <div className="h-10 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-10 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-10 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Invite via Email */}
+        <Card className="bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800">
+          <CardHeader>
+            <CardTitle className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-10 w-full bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+              <div className="h-10 w-40 bg-gray-200 dark:bg-slate-700 rounded animate-pulse mt-4" />
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
-    );
-  }
+    </div>
+  );
+}
   //  for subscription
   if (type === "subscription") {
     return (
@@ -835,18 +835,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
           <Card className="bg-white/50 shadow-sm">
             <CardHeader>
               <div className="flex items-center space-x-4">
-                <Skeleton className="h-24 w-24 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-6 w-1/2" />
-                  <Skeleton className="h-4 w-1/3" />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <Skeleton className="h-6 w-24 rounded-md" />
-                    <Skeleton className="h-6 w-24 rounded-md" />
-                    <Skeleton className="h-6 w-24 rounded-md" />
-                    <Skeleton className="h-6 w-28 rounded-md" />
-                  </div>
-                </div>
-                <Skeleton className="h-10 w-40 rounded-md" />
+                <Skeleton className="h-5 w-20 dark:bg-slate-700" />
               </div>
             </CardHeader>
 
@@ -902,7 +891,7 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
             {[...Array(3)].map((_, index) => (
               <div
                 key={index}
-                className="border rounded-xl p-4 shadow-sm bg-gray-100 space-y-4"
+                className="border rounded-xl p-4 shadow-sm bg-gray-100 dark:bg-slate-800 space-y-4"
               >
                 {/* Title */}
                 <div className="h-6 bg-gray-300 rounded w-1/2" />
@@ -996,17 +985,6 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-7 w-48" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-7 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-7 w-20" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-7 w-16 rounded-full" />
-                  </TableCell>
-                  <TableCell>
                     <Skeleton className="h-8 w-28 rounded-md" />
                   </TableCell>
                 </TableRow>
@@ -1448,12 +1426,12 @@ export default function PageSkeleton({ type }: PageSkeletonProps) {
                   {[100, 95, 88, 70].map((w, j) => (
                     <div
                       key={j}
-                      className="h-4 bg-gray-100 rounded"
+                      className="h-4 bg-gray-100 dark:bg-slate-800 rounded"
                       style={{ width: `${w}%` }}
                     />
                   ))}
                   <div className="h-4 w-32 bg-blue-100 rounded mt-4" />
-                  <div className="h-3 w-24 bg-gray-100 rounded" />
+                  <div className="h-3 w-16 bg-gray-100 dark:bg-slate-800 rounded" />
                 </div>
               ))}
             </div>

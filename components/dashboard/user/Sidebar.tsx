@@ -277,7 +277,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                 />
                 <div className="flex items-center ">
                   <Link href="/MTB-2026-the-complete-makeover-program">
-                    <span className="flex items-center gap-3 py-2 cursor-pointer  light:text-[#6C7894]">
+                    <span className="flex items-center gap-3 py-2 cursor-pointer text-[#6C7894] dark:text-slate-300 ">
                       <Crown size={20} className="w-7" />
                       2026 Complete Makeover Program
                     </span>
@@ -323,7 +323,7 @@ const Sidebar = ({ user, isOpen, setIsOpen }: SidebarProps) => {
                     <Link
                       href="/dashboard/mini-mastery-programs/create"
                       onClick={toggleSidebar}
-                      className={`flex items-center  py-2 light:text-[#6C7894] ${pathname === "/dashboard/mini-mastery-programs/create" ? "text-jp-orange" : ""}`}
+                      className={`flex items-center  py-2 text-[#6C7894] dark:text-slate-300  ${pathname === "/dashboard/mini-mastery-programs/create" ? "!text-jp-orange" : ""}`}
                     >
                       <GraduationCap size={20} className="w-7" />
 

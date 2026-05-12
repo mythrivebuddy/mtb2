@@ -25,4 +25,5 @@ export const ROUTE_TITLES: Record<string, string> = {
   "reminders":"Reminders",
   "students":"Enrolled Students",
   settings: "Settings",
+  "referrals":"Your Referrals"
 };

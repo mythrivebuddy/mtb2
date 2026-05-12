@@ -40,8 +40,8 @@ export default function BlogPage() {
     <AppLayout>
       <div className="mt-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#1E2875] mb-4">Our Blog</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <h1 className="text-4xl font-bold text-[#1E2875] dark:text-blue-400 mb-4">Our Blog</h1>
+          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Discover insights, stories, and tips from successful solopreneurs in
             our community
           </p>

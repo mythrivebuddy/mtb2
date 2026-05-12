@@ -140,7 +140,7 @@ export default function ReferFriendPage() {
   return (
     <div className="px-4 max-w-8xl py-8">
       <div className="space-y-8">
-        <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1>
+        {/* <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1> */}
         {stats && !stats.isAffiliate && (
           <div className="flex items-center justify-between gap-4 flex-wrap rounded-lg border border-blue-200 border-l-4 border-l-blue-500 bg-blue-50 dark:bg-gray-800 dark:text-white p-4">
             <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export default function ReferFriendPage() {
             </Link>
           </div>
         )}
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle>Your Referral Stats</CardTitle>
 
@@ -206,7 +206,7 @@ export default function ReferFriendPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Your Referral Code</CardTitle>
           </CardHeader>
@@ -248,7 +248,7 @@ export default function ReferFriendPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Share Via</CardTitle>
           </CardHeader>
@@ -283,7 +283,7 @@ export default function ReferFriendPage() {
               <Button
                 onClick={() => handleShare("x")}
                 variant="default"
-                className="flex  sm:w-auto items-center space-x-2 w-full "
+                className="flex  sm:w-auto items-center space-x-2 w-full dark:bg-black"
               >
                 <svg
                   className="h-4 w-4"
@@ -298,7 +298,7 @@ export default function ReferFriendPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dark:bg-slate-900">
           <CardHeader>
             <CardTitle>Invite via Email</CardTitle>
           </CardHeader>
@@ -314,7 +314,7 @@ export default function ReferFriendPage() {
               />
               <Button
                 type="submit"
-                className="mt-4"
+                className="mt-4 dark:bg-black"
                 disabled={sendEmailMutation.isPending}
               >
                 {sendEmailMutation.isPending ? (
