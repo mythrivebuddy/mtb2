@@ -83,6 +83,7 @@ export async function POST(req: Request) {
     const data = parsed.data;
 
     /* -------- REMOVE CONFIRM FIELD -------- */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { confirmAccountNumber, ...cleanData } = data;
 
     /* -------- UPSERT -------- */
