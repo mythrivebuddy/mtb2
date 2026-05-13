@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
-
+    
     const { searchParams } = new URL(req.url);
 
     const page = Number(searchParams.get("page") || 1);
@@ -49,13 +49,6 @@ export async function GET(req: Request) {
           ]
         : undefined,
     };
-    const affiliate = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        isAffiliate: true,
-      },
-    });
 
     const orderBy: Prisma.UserOrderByWithRelationInput = {};
     if (sortField === "name") orderBy.name = sortDir as Prisma.SortOrder;
@@ -82,7 +75,7 @@ export async function GET(req: Request) {
           skip,
           take: limit,
         }),
-        affiliate?.isAffiliate
+        session.user?.isAffiliate
           ? prisma.affiliateEarningLedger.findMany({
               where: {
                 affiliateId: session.user.id,

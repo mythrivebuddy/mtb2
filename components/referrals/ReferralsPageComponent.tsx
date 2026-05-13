@@ -31,6 +31,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { maskEmail } from "@/utils/mask-email";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useSession } from "next-auth/react";
+import WantToBecomeAnAffiliateBanner from "../refer-friend/WantToBecomeAnAffiliateBanner";
 
 // ─── Types ─────────────────────────────────────
 
@@ -178,7 +180,7 @@ export default function ReferralsPageComponent() {
   const [dateFilter, setDateFilter] = useState<string>("all");
 
   const debouncedSearch = useDebounce(search, 500);
-
+  const { data: session } = useSession();
   const { data, isLoading, isFetching, refetch } = useQuery<ReferralResponse>({
     queryKey: ["referrals", page, pageSize, debouncedSearch, dateFilter],
     queryFn: () =>
@@ -212,12 +214,15 @@ export default function ReferralsPageComponent() {
   const totalPages: number = data?.pagination.totalPages ?? 1;
 
   return (
-    <div className="max-w-8xl px-4 sm:px-8 space-y-6">
+    <div className="max-w-8xl px-4 sm:px-4 space-y-6">
       <div>
         {/* <h1 className="text-3xl font-bold tracking-tight">Your Referrals</h1> */}
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-1 mb-2">
           Track everyone you've referred and the rewards you've earned.
         </p>
+        {session?.user && !session.user.isAffiliate && (
+          <WantToBecomeAnAffiliateBanner />
+        )}
       </div>
 
       <Card className="dark:bg-slate-900">
@@ -313,14 +318,13 @@ export default function ReferralsPageComponent() {
                           <div className="flex justify-center gap-1">
                             {/* INR */}
                             {r.commissionEarned.INR > 0 && (
-                              <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                              <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900 dark:hover:text-green-300 cursor-default">
                                 ₹{r.commissionEarned.INR.toLocaleString()}
                               </Badge>
                             )}
 
-                            {/* USD */}
                             {r.commissionEarned.USD > 0 && (
-                              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900 dark:hover:text-blue-200 cursor-default">
                                 ${r.commissionEarned.USD.toLocaleString()}
                               </Badge>
                             )}

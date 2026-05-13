@@ -24,6 +24,10 @@ interface DataTableProps<TData> {
   onPageChange: (page: number) => void;
   isLoading?: boolean;
   rowCount?: number;
+
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  onSort: (field: string) => void;
 }
 
 export function TransactionDataTable<TData>({
@@ -31,11 +35,20 @@ export function TransactionDataTable<TData>({
   data,
   isLoading = false,
   rowCount = 5,
+    sortBy,
+  sortOrder,
+  onSort,
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data: isLoading ? [] : data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+
+    meta: {
+      sortBy,
+      sortOrder,
+      onSort,
+    },
   });
 
   return (
@@ -51,7 +64,7 @@ export function TransactionDataTable<TData>({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -68,7 +81,7 @@ export function TransactionDataTable<TData>({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

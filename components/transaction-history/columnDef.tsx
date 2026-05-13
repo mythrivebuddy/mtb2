@@ -1,6 +1,13 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { addDays, format, isAfter } from "date-fns";
 import Link from "next/link";
+import SortIndicator from "../common/SortIndicator";
+
+type TableMetaType = {
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  onSort: (field: string) => void;
+};
 
 export interface Transaction {
   id: string;
@@ -47,7 +54,24 @@ export interface Transaction {
 export const columns: ColumnDef<Transaction>[] = [
   {
     accessorKey: "createdAt",
-    header: "Date & Time",
+    header: ({ table }) => {
+      const { sortBy, sortOrder, onSort } =
+        (table.options.meta as TableMetaType) || {};
+
+      return (
+        <div
+          onClick={() => onSort?.("createdAt")}
+          className="flex items-center cursor-pointer group"
+        >
+          Date & Time
+          <SortIndicator
+            field="createdAt"
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+          />
+        </div>
+      );
+    },
     cell: ({ row }) => (
       <div>
         {format(new Date(row.original.createdAt), "MMM d, yyyy hh:mm a")}
@@ -165,7 +189,24 @@ export const columns: ColumnDef<Transaction>[] = [
   },
   {
     accessorKey: "jpAmount",
-    header: "Amount",
+    header: ({ table }) => {
+      const { sortBy, sortOrder, onSort } =
+        (table.options.meta as TableMetaType) || {};
+
+      return (
+        <div
+          onClick={() => onSort?.("jpAmount")}
+          className="flex items-center cursor-pointer group"
+        >
+          Amount
+          <SortIndicator
+            field="jpAmount"
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+          />
+        </div>
+      );
+    },
     cell: ({ row }) => {
       const data = row.original;
       const isCredit = data.activity.transactionType === "CREDIT";

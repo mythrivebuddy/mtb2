@@ -41,6 +41,7 @@ import {
 import { CalendarIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useServerSort } from "@/hooks/use-server-sort";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -90,15 +91,17 @@ const BalanceCards = ({
   balances,
   totals,
   userType,
+  isAffiliate
 }: {
   balances?: Balances;
   totals?: Totals;
   userType?: "COACH" | "ENTHUSIAST";
+  isAffiliate?: boolean
 }) => {
   let items = [];
-
-  if (userType === "COACH") {
-    // 6 cards for coach
+  const isCoachOrAffiliate = userType === "COACH" || isAffiliate;
+  if (isCoachOrAffiliate) {
+    // 6 cards for coach and affiliate user 
     items = [
       {
         label: "GP Balance",
@@ -396,7 +399,7 @@ const TransactionHistoryContent = () => {
   const view = searchParams.get("view");
   const referredUserName = searchParams.get("referredUserName");
   const { data: session } = useSession();
-
+  const { sortBy, sortOrder, handleSort } = useServerSort("createdAt");
   const updateParams = (
     updates: Record<string, string | number | undefined>,
   ) => {
@@ -427,11 +430,13 @@ const TransactionHistoryContent = () => {
       txType,
       referredUserId,
       view,
+      sortBy,
+      sortOrder,
     ],
 
     queryFn: async () => {
       const { data } = await axios.get(
-        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3${
+        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3&sortField=${sortBy}&sortDir=${sortOrder}${
           referredUserId ? `&referredUserId=${referredUserId}` : ""
         }${view ? `&view=${view}` : ""}`,
       );
@@ -459,7 +464,7 @@ const TransactionHistoryContent = () => {
     session?.user?.userType === "ENTHUSIAST"
       ? session.user.userType
       : undefined;
-
+  const isAffiliate = session?.user.isAffiliate
   if (isLoading) {
     const skeletonCount = session?.user?.userType === "COACH" ? 6 : 4;
     return (
@@ -493,7 +498,7 @@ const TransactionHistoryContent = () => {
         </div>
       )}
 
-      <BalanceCards balances={balances} totals={totals} userType={userType} />
+      <BalanceCards balances={balances} totals={totals} userType={userType} isAffiliate={isAffiliate}/>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <FilterSelect
@@ -545,6 +550,9 @@ const TransactionHistoryContent = () => {
             totalPages={totalPages}
             isLoading={false}
             onPageChange={(p) => updateParams({ page: p })}
+            sortBy={sortBy} 
+            sortOrder={sortOrder}
+            onSort={handleSort}
           />
 
           <div className="p-4">
