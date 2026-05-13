@@ -313,14 +313,13 @@ export default function ReferralsPageComponent() {
                           <div className="flex justify-center gap-1">
                             {/* INR */}
                             {r.commissionEarned.INR > 0 && (
-                              <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                              <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 hover:bg-green-100 hover:text-green-700 dark:hover:bg-green-900 dark:hover:text-green-300 cursor-default">
                                 ₹{r.commissionEarned.INR.toLocaleString()}
                               </Badge>
                             )}
 
-                            {/* USD */}
                             {r.commissionEarned.USD > 0 && (
-                              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-900 dark:hover:text-blue-200 cursor-default">
                                 ${r.commissionEarned.USD.toLocaleString()}
                               </Badge>
                             )}
