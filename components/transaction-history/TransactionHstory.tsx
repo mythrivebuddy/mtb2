@@ -41,6 +41,7 @@ import {
 import { CalendarIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useServerSort } from "@/hooks/use-server-sort";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -396,7 +397,7 @@ const TransactionHistoryContent = () => {
   const view = searchParams.get("view");
   const referredUserName = searchParams.get("referredUserName");
   const { data: session } = useSession();
-
+  const { sortBy, sortOrder, handleSort } = useServerSort("createdAt");
   const updateParams = (
     updates: Record<string, string | number | undefined>,
   ) => {
@@ -427,11 +428,13 @@ const TransactionHistoryContent = () => {
       txType,
       referredUserId,
       view,
+      sortBy,
+      sortOrder,
     ],
 
     queryFn: async () => {
       const { data } = await axios.get(
-        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3${
+        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3&sortField=${sortBy}&sortDir=${sortOrder}${
           referredUserId ? `&referredUserId=${referredUserId}` : ""
         }${view ? `&view=${view}` : ""}`,
       );
@@ -545,6 +548,9 @@ const TransactionHistoryContent = () => {
             totalPages={totalPages}
             isLoading={false}
             onPageChange={(p) => updateParams({ page: p })}
+            sortBy={sortBy} 
+            sortOrder={sortOrder}
+            onSort={handleSort}
           />
 
           <div className="p-4">

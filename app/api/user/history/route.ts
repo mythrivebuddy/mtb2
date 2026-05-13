@@ -66,6 +66,9 @@ export async function GET(request: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
+  const sortField = searchParams.get("sortField") || "createdAt";
+  const sortDir = searchParams.get("sortDir") === "asc" ? "asc" : "desc";
+
   const referredUserId = searchParams.get("referredUserId");
   const view = searchParams.get("view");
   // const fromDate = from ? new Date(from) : null;
@@ -758,10 +761,36 @@ export async function GET(request: Request) {
       combined = combined.filter((tx) => tx.currency === currency);
     }
 
-    combined.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    combined.sort((a, b) => {
+      let valA;
+      let valB;
+
+      switch (sortField) {
+        case "jpAmount":
+          valA = a.jpAmount;
+          valB = b.jpAmount;
+          break;
+
+        case "currency":
+          valA = a.currency;
+          valB = b.currency;
+          break;
+
+        case "type":
+          valA = a.activity.transactionType;
+          valB = b.activity.transactionType;
+          break;
+
+        case "createdAt":
+        default:
+          valA = new Date(a.createdAt).getTime();
+          valB = new Date(b.createdAt).getTime();
+      }
+
+      if (valA < valB) return sortDir === "asc" ? -1 : 1;
+      if (valA > valB) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
 
     const totalItems = combined.length;
     const totalPages = Math.ceil(totalItems / limit);
