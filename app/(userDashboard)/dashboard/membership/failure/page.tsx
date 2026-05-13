@@ -5,11 +5,10 @@ import Link from "next/link";
 import { AlertCircle, RefreshCcw, ArrowLeft, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {  useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { useEffect } from "react";
 import { toast } from "sonner";
-
 
 export default function FailurePage() {
   const searchParams = useSearchParams();
@@ -66,7 +65,7 @@ export default function FailurePage() {
     typeParam === "subscription" ? "Subscription ID" : "Order ID";
   useEffect(() => {
     toast.error("Payment failed. Please try again.");
-  }, [])
+  }, []);
 
   // -----------------------------------------------------------------------
   // 3. Render UI
@@ -74,7 +73,7 @@ export default function FailurePage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="max-w-md w-full border-none shadow-xl overflow-hidden">
+      <Card className="max-w-md w-full border-none shadow-xl overflow-hidden dark:bg-slate-900">
         <div className="bg-red-500 h-2 w-full" />
 
         <CardContent className="pt-10 pb-8 px-8 text-center">
@@ -86,11 +85,13 @@ export default function FailurePage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-200 mb-2 tracking-tight">
             {heading}
           </h1>
 
-          <p className="text-slate-600 mb-6 text-sm">{description}</p>
+          <p className="text-slate-600 dark:text-slate-300 mb-6 text-sm">
+            {description}
+          </p>
 
           {/* Details Box */}
           <div className="bg-slate-50 rounded-lg border border-slate-200 p-4 mb-8 text-left">
@@ -121,7 +122,7 @@ export default function FailurePage() {
           <div className="flex flex-col gap-3">
             <Button
               asChild
-              className="w-full bg-slate-900 hover:bg-slate-800 h-12"
+              className="w-full bg-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 light:hover:bg-slate-800 h-12"
             >
               <Link href={retryUrl}>
                 <RefreshCcw className="mr-2 w-4 h-4" /> Try Again
@@ -129,7 +130,11 @@ export default function FailurePage() {
             </Button>
 
             <div className="grid grid-cols-1 gap-3">
-              {!(typeParam == "challenge" || typeParam == "store_product" || typeParam === "mmp_program") && (
+              {!(
+                typeParam == "challenge" ||
+                typeParam == "store_product" ||
+                typeParam === "mmp_program"
+              ) && (
                 <Button asChild variant="outline" className="text-sm">
                   <Link href="/pricing">
                     <ArrowLeft className="mr-2 w-4 h-4" /> Back to Plans
