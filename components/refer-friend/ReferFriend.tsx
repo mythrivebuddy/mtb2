@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 // Add this with your other imports
 
-import { Send, Copy, Check, Loader2, Star } from "lucide-react";
+import { Send, Copy, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import PageSkeleton from "../PageSkeleton";
 import { ReferralStats } from "@/types/client/refer-friend";
 import Link from "next/link";
+import WantToBecomeAnAffiliateBanner from "./WantToBecomeAnAffiliateBanner";
 
 export async function fetchReferralStats(): Promise<ReferralStats> {
   try {
@@ -141,32 +142,7 @@ export default function ReferFriendPage() {
     <div className="px-4 max-w-8xl py-8">
       <div className="space-y-8">
         {/* <h1 className="text-2xl sm:text-3xl font-bold">Refer a Friend</h1> */}
-        {stats && !stats.isAffiliate && (
-          <div className="flex items-center justify-between gap-4 flex-wrap rounded-lg border border-blue-200 border-l-4 border-l-blue-500 bg-blue-50 dark:bg-gray-800 dark:text-white p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100">
-                <Star className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium ">
-                  Want to become an affiliate?
-                </p>
-                <p className="text-xs ">
-                  Earn rewards by referring users and growing the platform.
-                </p>
-              </div>
-            </div>
-            <Link href="/contact?type=want-to-become-an-affiliate" target="_blank">
-              <Button
-                variant="outline"
-                size="sm"
-                className="border-blue-300 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500 whitespace-nowrap"
-              >
-                Contact us
-              </Button>
-            </Link>
-          </div>
-        )}
+        {stats && !stats.isAffiliate && <WantToBecomeAnAffiliateBanner />}
         <Card className="dark:bg-slate-900">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle>Your Referral Stats</CardTitle>

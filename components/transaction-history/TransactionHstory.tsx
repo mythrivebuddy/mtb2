@@ -91,15 +91,17 @@ const BalanceCards = ({
   balances,
   totals,
   userType,
+  isAffiliate
 }: {
   balances?: Balances;
   totals?: Totals;
   userType?: "COACH" | "ENTHUSIAST";
+  isAffiliate?: boolean
 }) => {
   let items = [];
-
-  if (userType === "COACH") {
-    // 6 cards for coach
+  const isCoachOrAffiliate = userType === "COACH" || isAffiliate;
+  if (isCoachOrAffiliate) {
+    // 6 cards for coach and affiliate user 
     items = [
       {
         label: "GP Balance",
@@ -462,7 +464,7 @@ const TransactionHistoryContent = () => {
     session?.user?.userType === "ENTHUSIAST"
       ? session.user.userType
       : undefined;
-
+  const isAffiliate = session?.user.isAffiliate
   if (isLoading) {
     const skeletonCount = session?.user?.userType === "COACH" ? 6 : 4;
     return (
@@ -496,7 +498,7 @@ const TransactionHistoryContent = () => {
         </div>
       )}
 
-      <BalanceCards balances={balances} totals={totals} userType={userType} />
+      <BalanceCards balances={balances} totals={totals} userType={userType} isAffiliate={isAffiliate}/>
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <FilterSelect
