@@ -65,6 +65,9 @@ export async function GET(request: Request) {
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+
+  const referredUserId = searchParams.get("referredUserId");
+  const view = searchParams.get("view");
   // const fromDate = from ? new Date(from) : null;
   const toDate = to ? new Date(to) : null;
 
@@ -241,6 +244,10 @@ export async function GET(request: Request) {
     const affiliateEarningsPromise = prisma.affiliateEarningLedger.findMany({
       where: {
         affiliateId: userId,
+        ...(view === "affiliate" &&
+          referredUserId && {
+            referredUserId,
+          }),
       },
       include: {
         referredUser: {
@@ -467,7 +474,7 @@ export async function GET(request: Request) {
       }
 
       let displayName = `You earned a referral commission`;
-      
+
       if (ae.contextType === "SUBSCRIPTION") {
         displayName = planName
           ? ` purchased ${planName} using your referral`
@@ -704,16 +711,24 @@ export async function GET(request: Request) {
       }),
     );
 
-    let combined = [
-      ...gpHistory,
-      ...paymentHistory,
-      ...coachEarningsHistory,
-      ...coachMmpEarnings,
-      ...coachStoreEarnings.filter(
-        (tx): tx is NonNullable<typeof tx> => tx !== null,
-      ),
-      ...affiliateHistory,
-    ];
+    let combined = [];
+
+    if (view === "affiliate") {
+      // ✅ ONLY affiliate earnings
+      combined = affiliateHistory;
+    } else {
+      // ✅ default behavior
+      combined = [
+        ...gpHistory,
+        ...paymentHistory,
+        ...coachEarningsHistory,
+        ...coachMmpEarnings,
+        ...coachStoreEarnings.filter(
+          (tx): tx is NonNullable<typeof tx> => tx !== null,
+        ),
+        ...affiliateHistory,
+      ];
+    }
     // ✅ Filter by CREDIT / DEBIT
     if (txType !== "ALL") {
       combined = combined.filter(

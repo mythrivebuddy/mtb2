@@ -40,6 +40,7 @@ import {
 
 import { CalendarIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Link from "next/link";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 10;
@@ -58,13 +59,20 @@ type Totals = {
 /* ------------------------------------------------ */
 /* BALANCE CARDS */
 /* ------------------------------------------------ */
-const BalanceCardsSkeleton = ({ count, userType }: { count: number, userType?: "COACH" | "ENTHUSIAST" | "SOLOPRENEUR" }) => {
+const BalanceCardsSkeleton = ({
+  count,
+  userType,
+}: {
+  count: number;
+  userType?: "COACH" | "ENTHUSIAST" | "SOLOPRENEUR";
+}) => {
   return (
     <div
-      className={`grid gap-4 mb-6 ${userType === "COACH"
-        ? "grid-cols-2 sm:grid-cols-3"
-        : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
-        }`}
+      className={`grid gap-4 mb-6 ${
+        userType === "COACH"
+          ? "grid-cols-2 sm:grid-cols-3"
+          : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
+      }`}
     >
       {Array.from({ length: count }).map((_, i) => (
         <Card key={i} className="dark:bg-slate-900">
@@ -92,34 +100,79 @@ const BalanceCards = ({
   if (userType === "COACH") {
     // 6 cards for coach
     items = [
-      { label: "GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
-      { label: "INR Earned", value: totals?.earned?.INR ?? 0, color: "text-emerald-600" },
-      { label: "USD Earned", value: totals?.earned?.USD ?? 0, color: "text-green-600" },
+      {
+        label: "GP Balance",
+        value: balances?.GP ?? 0,
+        color: "text-purple-600",
+      },
+      {
+        label: "INR Earned",
+        value: totals?.earned?.INR ?? 0,
+        color: "text-emerald-600",
+      },
+      {
+        label: "USD Earned",
+        value: totals?.earned?.USD ?? 0,
+        color: "text-green-600",
+      },
 
-      { label: "GP Spent", value: totals?.spent?.GP ?? 0, color: "text-red-600" },
-      { label: "INR Spent", value: totals?.spent?.INR ?? 0, color: "text-red-600" },
-      { label: "USD Spent", value: totals?.spent?.USD ?? 0, color: "text-red-600" },
+      {
+        label: "GP Spent",
+        value: totals?.spent?.GP ?? 0,
+        color: "text-red-600",
+      },
+      {
+        label: "INR Spent",
+        value: totals?.spent?.INR ?? 0,
+        color: "text-red-600",
+      },
+      {
+        label: "USD Spent",
+        value: totals?.spent?.USD ?? 0,
+        color: "text-red-600",
+      },
     ];
   } else {
     // 4 cards for enthusiast
     items = [
-      { label: "GP Balance", value: balances?.GP ?? 0, color: "text-purple-600" },
+      {
+        label: "GP Balance",
+        value: balances?.GP ?? 0,
+        color: "text-purple-600",
+      },
 
-      { label: "GP Spent", value: totals?.spent?.GP ?? 0, color: "text-red-600" },
-      { label: "INR Spent", value: totals?.spent?.INR ?? 0, color: "text-red-600" },
-      { label: "USD Spent", value: totals?.spent?.USD ?? 0, color: "text-red-600" },
+      {
+        label: "GP Spent",
+        value: totals?.spent?.GP ?? 0,
+        color: "text-red-600",
+      },
+      {
+        label: "INR Spent",
+        value: totals?.spent?.INR ?? 0,
+        color: "text-red-600",
+      },
+      {
+        label: "USD Spent",
+        value: totals?.spent?.USD ?? 0,
+        color: "text-red-600",
+      },
     ];
   }
 
   return (
-    <div className={`grid gap-4 mb-6 ${userType === "COACH"
-      ? "grid-cols-2 sm:grid-cols-3"
-      : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
-      }`}>
+    <div
+      className={`grid gap-4 mb-6 ${
+        userType === "COACH"
+          ? "grid-cols-2 sm:grid-cols-3"
+          : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
+      }`}
+    >
       {items.map((item) => (
         <Card key={item.label} className="dark:bg-slate-900">
           <CardContent className="p-4 sm:p-6">
-            <p className="text-sm text-gray-500 dark:text-gray-400">{item.label}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {item.label}
+            </p>
             <p className={`text-md sm:text-2xl font-bold ${item.color}`}>
               {item.value.toLocaleString()}
             </p>
@@ -129,8 +182,6 @@ const BalanceCards = ({
     </div>
   );
 };
-
-
 
 /* ------------------------------------------------ */
 /* DATE RANGE FILTER */
@@ -145,7 +196,6 @@ const DateRangeFilter = ({
   to?: Date;
   setDate: (from?: Date, to?: Date) => void;
 }) => {
-
   const today = new Date();
 
   const presets = {
@@ -175,27 +225,24 @@ const DateRangeFilter = ({
     from && to && isSameDay(from, pFrom) && isSameDay(to, pTo);
 
   const isCustom =
-    from &&
-    to &&
-    !Object.values(presets).some((p) =>
-      isActive(p.from, p.to)
-    );
+    from && to && !Object.values(presets).some((p) => isActive(p.from, p.to));
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-
       {Object.entries(presets).map(([key, preset]) => {
-
         const active = isActive(preset.from, preset.to);
 
         return (
           <Button
             key={key}
             size="sm"
-            variant={active ? "default" : "outline"}
+            className={
+              active
+                ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 dark:bg-blue-600 dark:text-white dark:border-blue-600 dark:hover:bg-blue-500"
+                : "bg-white text-black border border-slate-200 hover:bg-slate-100 hover:text-black dark:bg-slate-900 dark:text-white dark:border-slate-700 dark:hover:bg-slate-800"
+            }
             onClick={() => {
               if (active) {
-                // clicking again removes filter
                 setDate(undefined, undefined);
               } else {
                 setDate(preset.from, preset.to);
@@ -208,7 +255,6 @@ const DateRangeFilter = ({
       })}
 
       <Popover>
-
         <PopoverTrigger asChild>
           <Button
             size="sm"
@@ -221,19 +267,15 @@ const DateRangeFilter = ({
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
 
-            {from ? (
-              to
+            {from
+              ? to
                 ? `${format(from, "MMM dd")} - ${format(to, "MMM dd")}`
                 : format(from, "MMM dd")
-            ) : (
-              "Custom"
-            )}
-
+              : "Custom"}
           </Button>
         </PopoverTrigger>
 
         <PopoverContent className="w-auto p-4 dark:bg-slate-900 dark:border-slate-700">
-
           <DayPicker
             mode="range"
             selected={{ from, to }}
@@ -241,18 +283,13 @@ const DateRangeFilter = ({
             onSelect={(range: DateRange | undefined) =>
               setDate(range?.from, range?.to)
             }
-            className="dark:bg-slate-900 dark:text-gray-100"
+            className="dark:bg-slate-900 dark:text-gray-400"
           />
-
         </PopoverContent>
-
       </Popover>
-
     </div>
   );
 };
-
-
 
 /* ------------------------------------------------ */
 /* FILTER SELECTS */
@@ -283,7 +320,6 @@ const LimitSelect = ({
   value: number;
   onValueChange: (value: string) => void;
 }) => (
-
   <Select value={value.toString()} onValueChange={onValueChange}>
     <SelectTrigger className="w-full sm:w-[160px]">
       <SelectValue />
@@ -297,7 +333,6 @@ const LimitSelect = ({
   </Select>
 );
 
-
 const CurrencySelect = ({
   value,
   onValueChange,
@@ -305,7 +340,6 @@ const CurrencySelect = ({
   value: string;
   onValueChange: (value: string) => void;
 }) => (
-
   <Select value={value} onValueChange={onValueChange}>
     <SelectTrigger className="w-full sm:w-[140px]">
       <SelectValue placeholder="Currency" />
@@ -319,8 +353,6 @@ const CurrencySelect = ({
   </Select>
 );
 
-
-
 const FilterSelect = ({
   value,
   onValueChange,
@@ -328,7 +360,6 @@ const FilterSelect = ({
   value: string;
   onValueChange: (value: string) => void;
 }) => (
-
   <Select value={value} onValueChange={onValueChange}>
     <SelectTrigger className="w-full sm:w-[180px]">
       <SelectValue placeholder="Filter" />
@@ -345,14 +376,11 @@ const FilterSelect = ({
   </Select>
 );
 
-
-
 /* ------------------------------------------------ */
 /* MAIN CONTENT */
 /* ------------------------------------------------ */
 
 const TransactionHistoryContent = () => {
-
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -364,9 +392,14 @@ const TransactionHistoryContent = () => {
 
   const from = searchParams.get("from");
   const to = searchParams.get("to");
+  const referredUserId = searchParams.get("referredUserId");
+  const view = searchParams.get("view");
+  const referredUserName = searchParams.get("referredUserName");
   const { data: session } = useSession();
 
-  const updateParams = (updates: Record<string, string | number | undefined>) => {
+  const updateParams = (
+    updates: Record<string, string | number | undefined>,
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([k, v]) => {
@@ -383,13 +416,24 @@ const TransactionHistoryContent = () => {
   };
 
   const { data, isLoading } = useQuery({
-
-    queryKey: ["transactions-history", page, limit, filter, currency, from, to, txType],
+    queryKey: [
+      "transactions-history",
+      page,
+      limit,
+      filter,
+      currency,
+      from,
+      to,
+      txType,
+      referredUserId,
+      view,
+    ],
 
     queryFn: async () => {
-
       const { data } = await axios.get(
-        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3`
+        `/api/user/history?page=${page}&limit=${limit}&filter=${filter}&currency=${currency}&from=${from ?? ""}&to=${to ?? ""}&txType=${txType}&version=v3${
+          referredUserId ? `&referredUserId=${referredUserId}` : ""
+        }${view ? `&view=${view}` : ""}`,
       );
 
       return data;
@@ -398,8 +442,11 @@ const TransactionHistoryContent = () => {
     placeholderData: (prev) => prev,
   });
 
-  const setDate = (from?: Date, to?: Date) => {
+  const clearAllFilters = () => {
+    router.push("/dashboard/transactions-history");
+  };
 
+  const setDate = (from?: Date, to?: Date) => {
     updateParams({
       from: from ? format(from, "yyyy-MM-dd") : undefined,
       to: to ? format(to, "yyyy-MM-dd") : undefined,
@@ -409,13 +456,12 @@ const TransactionHistoryContent = () => {
   const { transactions = [], totalPages, balances, totals } = data || {};
   const userType =
     session?.user?.userType === "COACH" ||
-      session?.user?.userType === "ENTHUSIAST"
+    session?.user?.userType === "ENTHUSIAST"
       ? session.user.userType
       : undefined;
 
   if (isLoading) {
-    const skeletonCount =
-      session?.user?.userType === "COACH" ? 6 : 4;
+    const skeletonCount = session?.user?.userType === "COACH" ? 6 : 4;
     return (
       <>
         <BalanceCardsSkeleton count={skeletonCount} userType={userType} />
@@ -431,16 +477,25 @@ const TransactionHistoryContent = () => {
 
   return (
     <>
+      {view === "affiliate" && (
+        <div className="mb-4 p-3 rounded-lg border bg-muted/40 dark:bg-slate-800">
+          <p className="text-sm text-muted-foreground">
+            Your affiliate earnings from{" "}
+            <Link
+              href={`/profile/${referredUserId}`}
+              target="_blank"
+              className="font-semibold text-foreground"
+            >
+              {referredUserName || "this user"}
+            </Link>
+            &apos;s purchases using your referral.
+          </p>
+        </div>
+      )}
 
-
-      <BalanceCards
-        balances={balances}
-        totals={totals}
-        userType={userType}
-      />
+      <BalanceCards balances={balances} totals={totals} userType={userType} />
 
       <div className="flex flex-wrap items-center gap-3 mb-6">
-
         <FilterSelect
           value={filter}
           onValueChange={(v) => updateParams({ filter: v })}
@@ -465,12 +520,24 @@ const TransactionHistoryContent = () => {
           value={limit}
           onValueChange={(v) => updateParams({ limit: v })}
         />
-
+        {(filter !== "ALL" ||
+          currency !== "ALL" ||
+          txType !== "ALL" ||
+          from ||
+          to ||
+          view === "affiliate") && (
+          <Button
+            variant="outline"
+            onClick={clearAllFilters}
+            className="text-sm"
+          >
+            Clear Filters
+          </Button>
+        )}
       </div>
 
       <Card className="dark:bg-slate-900">
         <CardContent className="p-0">
-
           <TransactionDataTable
             columns={columns}
             data={transactions}
@@ -487,24 +554,19 @@ const TransactionHistoryContent = () => {
               onPageChange={(p) => updateParams({ page: p })}
             />
           </div>
-
         </CardContent>
       </Card>
     </>
   );
 };
 
-
-
 /* ------------------------------------------------ */
 /* PAGE WRAPPER */
 /* ------------------------------------------------ */
 
 const TransactionsHistoryPage = () => {
-
   return (
     <div className="p-6">
-
       <Suspense
         fallback={
           <Card className="p-6 ">
@@ -514,7 +576,6 @@ const TransactionsHistoryPage = () => {
       >
         <TransactionHistoryContent />
       </Suspense>
-
     </div>
   );
 };
