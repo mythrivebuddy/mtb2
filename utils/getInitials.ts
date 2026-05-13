@@ -13,26 +13,18 @@ export const getInitials = (name: string) => {
 };
 
 export const getAvatarColor = (name: string) => {
-    const colors = [
-        "bg-red-100 text-red-900",
-        "bg-blue-100 text-blue-900",
-        "bg-green-100 text-green-900",
-        "bg-purple-100 text-purple-900",
-        "bg-indigo-100 text-indigo-900",
-        "bg-teal-100 text-teal-900",
-        "bg-rose-100 text-rose-900",
-        "bg-amber-100 text-amber-900",
-        "bg-emerald-100 text-emerald-900",
-        "bg-cyan-100 text-cyan-900",
-        "bg-fuchsia-100 text-fuchsia-900",
-        "bg-pink-100 text-pink-900",
-        "bg-orange-100 text-orange-900",
-    ];
+  // Curated list of 5 distinct colors optimized for light/dark mode readability
+  const colors = [
+    "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+    "bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200",
+  ];
 
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
 
-    return colors[Math.abs(hash) % colors.length];
+  return colors[Math.abs(hash) % colors.length];
 };
