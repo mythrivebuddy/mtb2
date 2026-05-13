@@ -153,6 +153,8 @@ model User {
 
  // Affiliate payouts
  affiliatePayouts  AffiliatePayout[] @relation("AffiliatePayouts")
+//  User financial details 
+ userFinancialDetails UserFinancialDetails?
   @@index([name])
   @@index([jpEarned])
   @@index([jpBalance])
@@ -293,6 +295,59 @@ model UserBusinessProfile {
   @@index([name, businessInfo, missionStatement, goals, achievements, keyOfferings])
 }
 
+model UserFinancialDetails {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+
+  // -------- COUNTRY --------
+  country        String?
+
+  // -------- INDIA --------
+  panNumber       String?
+  isGstRegistered Boolean  @default(false)
+  gstNumber       String?
+
+  // -------- INTERNATIONAL TAX --------
+  taxId           String?
+  vatNumber       String?
+
+  // taxformtype for US
+  taxFormType     TaxFormType?
+
+  // -------- BANKING --------
+  accountHolderName String?
+  accountNumber     String?
+  ifscCode          String?
+  bankAccountType       BankAccountType?
+  upiId             String?
+
+  // -------- INTERNATIONAL PAYOUT --------
+  bankName          String?
+  swiftCode         String?
+  paypalId    String?
+
+  // -------- CONTACT --------
+  whatsappNumber String?
+
+  // -------- STATUS --------
+  isVerified Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([country])
+}
+enum TaxFormType {
+  W8BEN
+  W9
+}
+
+enum BankAccountType {
+  SAVINGS
+  CURRENT
+}
 model BlockedUsers {
   id        String   @id @default(cuid())
   userId    String   @unique
