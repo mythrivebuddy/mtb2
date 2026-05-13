@@ -1,87 +1,10 @@
-"use client";
+import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
+import SettingsPageClient from "@/components/dashboard/settings/SettingsPageClient";
+import { getServerSession } from "next-auth";
 
-import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-
-export default function DashboardSettingsPage() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isDarkMode = mounted && resolvedTheme === "dark";
-
-  return (
-    <div className="mx-auto w-full space-y-4 px-4 pb-8">
-
-      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <CardHeader>
-          <CardTitle className="text-lg text-slate-950 dark:text-slate-50">
-            Appearance
-          </CardTitle>
-              
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          Manage your dashboard appearance preferences.
-        </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex  gap-5 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              {/* <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-slate-700 shadow-sm dark:bg-slate-950 dark:text-slate-200">
-                {isDarkMode ? <Moon size={20} /> : <Sun size={20} />}
-              </div> */}
-              <div className="space-y-1">
-                <Label
-                  htmlFor="dark-mode-toggle"
-                  className="text-base font-medium text-slate-950 dark:text-slate-50"
-                >
-                 Switch to {isDarkMode ? "Light mode":"Dark mode "}
-                </Label>
-               
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 self-start sm:self-center">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-slate-600 dark:text-slate-300"
-                onClick={() => setTheme("light")}
-                aria-label="Use light mode"
-              >
-                <Sun size={18} />
-              </Button>
-              <Switch
-                id="dark-mode-toggle"
-                checked={isDarkMode}
-                onCheckedChange={(checked) =>
-                  setTheme(checked ? "dark" : "light")
-                }
-                aria-label="Toggle dark mode"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-slate-600 dark:text-slate-300"
-                onClick={() => setTheme("dark")}
-                aria-label="Use dark mode"
-              >
-                <Moon size={18} />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+export default async function SettingsPage() {
+  const session = await getServerSession(authConfig);
+  
+  const isAffiliateOrCoach =  session?.user.isAffiliate || session?.user.userType === "COACH";
+  return <SettingsPageClient isAffiliateOrCoach={isAffiliateOrCoach}/>;
 }
