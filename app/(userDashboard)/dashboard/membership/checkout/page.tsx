@@ -431,7 +431,7 @@ export default function CheckoutPage() {
         email: session.user?.email || "",
       }));
     }
-
+    if (billingInfo?.country) return;
     // 2. Detect Country via IP
     const detectCountry = async () => {
       try {
@@ -441,6 +441,8 @@ export default function CheckoutPage() {
           setBillingDetails((prev) => ({ ...prev, country: "IN" }));
         } else if (data.country_code === "US") {
           setBillingDetails((prev) => ({ ...prev, country: "US" }));
+        } else if (data.country_code === "UK") {
+          setBillingDetails((prev) => ({ ...prev, country: "UK" }));
         } else {
           setBillingDetails((prev) => ({ ...prev, country: "OT" }));
         }
@@ -611,7 +613,9 @@ export default function CheckoutPage() {
       ...prev,
       phone: billingInfo.phone || "",
       // gstNumber: billingInfo.gstNumber || "",
-      addressLine1: billingInfo.addressLine1 || "",
+      addressLine1: [billingInfo.addressLine1, billingInfo.addressLine2]
+        .filter(Boolean)
+        .join(", "),
       city: billingInfo.city || "",
       state: billingInfo.state || "",
       postalCode: billingInfo.postalCode || "",
@@ -1185,7 +1189,9 @@ export default function CheckoutPage() {
                       (feat, i) => (
                         <li key={i} className="flex items-start">
                           <Check className="h-4 w-4 text-green-500 mr-2 mt-1" />
-                          <span className="text-gray-600 text-sm dark:text-slate-300">{feat}</span>
+                          <span className="text-gray-600 text-sm dark:text-slate-300">
+                            {feat}
+                          </span>
                         </li>
                       ),
                     )}
@@ -1354,6 +1360,7 @@ export default function CheckoutPage() {
                       >
                         <option value="IN">India</option>
                         <option value="US">United States</option>
+                        <option value="UK">United Kingdom</option>
                         <option value="OT">Other</option>
                       </select>
                     </div>
@@ -1428,18 +1435,20 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   {/* ADD THESE NEW DIVS */}
-                  {
-                    (billing?.proratedDiscount ?? 0) > 0 && (
-                      <div className="flex justify-between text-sm text-blue-600 font-medium">
-                        <span>Unused Plan Credit</span>
-                        <span>
-                          - {billing.currency}{" "}
-                          {(billing?.proratedDiscount ?? 0)?.toLocaleString(undefined, {
+                  {(billing?.proratedDiscount ?? 0) > 0 && (
+                    <div className="flex justify-between text-sm text-blue-600 font-medium">
+                      <span>Unused Plan Credit</span>
+                      <span>
+                        - {billing.currency}{" "}
+                        {(billing?.proratedDiscount ?? 0)?.toLocaleString(
+                          undefined,
+                          {
                             maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                    )}
+                          },
+                        )}
+                      </span>
+                    </div>
+                  )}
 
                   {billing.isDowngrade && (
                     <div className="mt-4 p-3 bg-yellow-50 text-yellow-800 text-xs rounded-md border border-yellow-200">

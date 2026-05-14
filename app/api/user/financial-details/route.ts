@@ -16,8 +16,8 @@ export async function GET() {
       where: { userId },
     });
 
-    // 2. Fetch Address: Check BillingInformation FIRST
-    let userAddress = await prisma.billingInformation.findUnique({
+    // 2. Fetch Address: Check userBillingInformation FIRST
+    let userAddress = await prisma.userBillingInformation.findUnique({
       where: { userId },
       select: {
         addressLine1: true,
@@ -26,12 +26,14 @@ export async function GET() {
         state: true,
         postalCode: true,
         country: true,
+        gstNumber: true,
+        phone:true,
       },
     });
 
-    // 3. Fetch Address: If not found, check UserBillingInformation SECOND
+    // 3. Fetch Address: If not found, check billingInformation SECOND
     if (!userAddress) {
-      userAddress = await prisma.userBillingInformation.findUnique({
+      userAddress = await prisma.billingInformation.findUnique({
         where: { userId },
         select: {
           addressLine1: true,
@@ -40,6 +42,8 @@ export async function GET() {
           state: true,
           postalCode: true,
           country: true,
+          gstNumber: true,
+          phone:true,
         },
       });
     }
@@ -56,7 +60,7 @@ export async function GET() {
     console.error("GET financial details error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -84,7 +88,7 @@ export async function POST(req: Request) {
 
     /* -------- REMOVE CONFIRM FIELD -------- */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { confirmAccountNumber, ...cleanData } = data;
+    const {  confirmAccountNumber,isGstRegistered,gstNumber,country,...cleanData} = data;
 
     /* -------- UPSERT -------- */
     const result = await prisma.userFinancialDetails.upsert({
@@ -97,6 +101,29 @@ export async function POST(req: Request) {
         userId: session.user.id,
       },
     });
+    let userBillingInformation = await prisma.userBillingInformation.findUnique(
+      { where: { userId: session.user.id } },
+    );
+    if (!userBillingInformation) {
+      userBillingInformation = await prisma.billingInformation.findUnique({
+        where: { userId: session.user.id },
+      });
+    }
+    if (!userBillingInformation) {
+      await prisma.userBillingInformation.create({
+        data: {
+          userId: session.user.id,
+          country,
+          addressLine1: "",
+          // addressLine2: "",
+          phone: data.whatsappNumber,
+          city: "",
+          state: "",
+          postalCode: "",
+          gstNumber: gstNumber,
+        },
+      });
+    }
 
     return NextResponse.json({
       message: "Financial details saved successfully",

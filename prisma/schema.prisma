@@ -299,13 +299,9 @@ model UserFinancialDetails {
   id        String   @id @default(cuid())
   userId    String   @unique
 
-  // -------- COUNTRY --------
-  country        String?
 
   // -------- INDIA --------
   panNumber       String?
-  isGstRegistered Boolean  @default(false)
-  gstNumber       String?
 
   // -------- INTERNATIONAL TAX --------
   taxId           String?
@@ -337,7 +333,6 @@ model UserFinancialDetails {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([country])
 }
 enum TaxFormType {
   W8BEN
@@ -1774,12 +1769,12 @@ model BillingInformation {
 // userbilling for products
 
 model UserBillingInformation {
-  id           String   @id
+  id           String   @id @default(cuid())
   userId       String   @unique
   phone        String?
   gstNumber     String? 
   addressLine1 String
-  addressLine2 String?
+  addressLine2 String? 
   city         String
   state        String
   postalCode   String

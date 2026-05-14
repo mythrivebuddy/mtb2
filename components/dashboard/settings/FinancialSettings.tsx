@@ -32,7 +32,7 @@ import {
 import { toast } from "sonner";
 
 /* ---------------- TYPES ---------------- */
-type Country = "IN" | "US" | "UK" | "EU" | "OTHER";
+type Country = "IN" | "US" | "UK"  | "OT";
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -91,12 +91,12 @@ export default function FinancialSettings() {
     if (apiResponse) {
       const fetchedCountry = apiResponse.address?.country?.toUpperCase();
       const db = apiResponse.data || {};
-
+      const address = apiResponse.address || {};
       reset({
         country: fetchedCountry || db.country || undefined,
-        isGstRegistered: db.isGstRegistered ?? false,
+        isGstRegistered: !!(address.gstNumber || db.gstNumber),
         panNumber: db.panNumber || "",
-        gstNumber: db.gstNumber || "",
+        gstNumber: address.gstNumber || db.gstNumber || "",
         taxFormType: db.taxFormType || undefined,
         taxId: db.taxId || "",
         vatNumber: db.vatNumber || "",
@@ -109,7 +109,7 @@ export default function FinancialSettings() {
         bankName: db.bankName || "",
         swiftCode: db.swiftCode || "",
         paypalId: db.paypalId || "",
-        whatsappNumber: db.whatsappNumber || "",
+        whatsappNumber: address.phone || "",
       });
     }
   }, [apiResponse, reset]);
@@ -143,7 +143,8 @@ export default function FinancialSettings() {
     );
   }
 
-  const isCountryLocked = !!apiResponse?.address?.country;
+  const isCountryLocked =
+    !!apiResponse?.address?.country || !!apiResponse?.data?.country;
 
   return (
     <Card className="w-full mx-auto dark:bg-slate-900 shadow-sm">
@@ -187,8 +188,7 @@ export default function FinancialSettings() {
                           <SelectItem value="IN">India</SelectItem>
                           <SelectItem value="US">United States</SelectItem>
                           <SelectItem value="UK">United Kingdom</SelectItem>
-                          <SelectItem value="EU">Europe</SelectItem>
-                          <SelectItem value="OTHER">Other</SelectItem>
+                          <SelectItem value="OT">Other</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -295,7 +295,7 @@ export default function FinancialSettings() {
                 )}
 
                 {/* EU/UK */}
-                {(country === "EU" || country === "UK") && (
+                {country === "UK" && (
                   <div className="animate-in fade-in">
                     <Input
                       placeholder="VAT Number"
@@ -310,7 +310,7 @@ export default function FinancialSettings() {
                 )}
 
                 {/* OTHER */}
-                {country === "OTHER" && (
+                {country === "OT" && (
                   <div className="animate-in fade-in">
                     <Input placeholder="Tax ID" {...register("taxId")} />
                     {errors.taxId && (
@@ -395,7 +395,14 @@ export default function FinancialSettings() {
                     </p>
                   )}
                 </div>
-
+                  <div>
+                    <Input placeholder="Bank Name" {...register("bankName")} />
+                    {errors.bankName && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.bankName.message}
+                      </p>
+                    )}
+                  </div>
                 {/* INDIA BANKING */}
                 {country === "IN" && (
                   <div className="space-y-4 animate-in fade-in">
@@ -422,44 +429,36 @@ export default function FinancialSettings() {
                   </div>
                 )}
 
-                {/* INTERNATIONAL BANKING */}
-                {country && country !== "IN" && (
-                  <div className="space-y-4 animate-in fade-in">
-                    <div>
-                      <Input
-                        placeholder="Bank Name"
-                        {...register("bankName")}
-                      />
-                      {errors.bankName && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.bankName.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="SWIFT / BIC Code"
-                        {...register("swiftCode")}
-                      />
-                      {errors.swiftCode && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.swiftCode.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <Input
-                        placeholder="PayPal ID (optional)"
-                        {...register("paypalId")}
-                      />
-                      {errors.paypalId && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.paypalId.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <div className="space-y-4 animate-in fade-in">
+                  
+                  {/* INTERNATIONAL BANKING */}
+                  {country && country !== "IN" && (
+                    <>
+                      <div>
+                        <Input
+                          placeholder="SWIFT / BIC Code"
+                          {...register("swiftCode")}
+                        />
+                        {errors.swiftCode && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {errors.swiftCode.message}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Input
+                          placeholder="PayPal ID (optional)"
+                          {...register("paypalId")}
+                        />
+                        {errors.paypalId && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {errors.paypalId.message}
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
