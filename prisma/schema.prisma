@@ -1028,11 +1028,16 @@ model NotificationSettings {
   title             String
   message           String
   url               String?
+  audiences          NotificationAudience[]
   isDynamic         Boolean          @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
-
+enum NotificationAudience {
+  COACH      // coaches / creators
+  ADMIN        // admins only
+  USER           // NORMAL USER + COACH everyone EXCEPT ADMIN
+}
 model CompletionRecord {
   id          String   @id @default(cuid())
   date        DateTime @db.Date
@@ -2684,6 +2689,27 @@ enum NotificationType {
   MMP_DAILY_REMINDER
   AFFILIATE_APPROVED
   CREATOR_PAYOUT_SUCCESS
+  STORE_PURCHASE
+  STORE_SALE
+  MMP_JOINED
+  MMP_ENROLLMENT_CREATOR
+  MMP_ENROLLMENT_ADMIN
+  CHALLENGE_JOINED
+  CHALLENGE_ENROLLMENT_CREATOR
+  CHALLENGE_ENROLLMENT_ADMIN
+  STORE_ORDER_ADMIN
+  ALIGNED_ACTION_REMINDER
+  ALIGNED_ACTION_START
+  ALIGNED_ACTION_END
+  ACCOUNTABILITY_NUDGE
+  ACCOUNTABILITY_MEMBER_ADDED
+  CHALLENGE_CHAT_MESSAGE
+  CHALLENGE_PENALTY
+  CHALLENGE_NEW_PARTICIPANT
+  ACCOUNTABILITY_NOTES_UPDATED
+  ACCOUNTABILITY_COMMENT_ON_GOAL
+  ACCOUNTABILITY_COMMENT_MENTION
+  ACCOUNTABILITY_COMMENT_REPLY
 }
 
 enum BreathWorkType {

@@ -8,6 +8,7 @@ const NOTIFICATION_SEEDS: {
   message: string;
   url: string;
   isDynamic: boolean;
+  audiences?: ("USER" | "COACH" | "ADMIN")[];
 }[] = [
   // 1️ DAILY (Mon–Sat)
   {
@@ -141,12 +142,211 @@ const NOTIFICATION_SEEDS: {
   },
   // 11 Spotlight Active
   {
-    type:"SPOTLIGHT_ACTIVE",
-    title:"Spotlight Active",
-    message:"Your spotlight is now active and visible to other users!",
-    url:"/dashboard/notifications",
-    isDynamic:false
+    type: "SPOTLIGHT_ACTIVE",
+    title: "Spotlight Active",
+    message: "Your spotlight is now active and visible to other users!",
+    url: "/dashboard/notifications",
+    isDynamic: false,
   },
+
+  // 12. Store purchase
+  {
+    type: "STORE_PURCHASE",
+    title: "🛍️ Purchase Successful",
+    message: "You purchased {{entityName}}",
+    url: "/dashboard/store",
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+  {
+    type: "STORE_SALE",
+    title: "🛒 New Product Purchase",
+    message: "You made a sale! {{userName}} purchased {{entityName}}",
+    url: "/dashboard/store",
+    isDynamic: true,
+    audiences: ["COACH", "ADMIN"],
+  },
+
+  // 13. MMP (Mini Mastery Program) Enrollments
+  {
+    type: "MMP_JOINED",
+    title: "You're In! 🎉",
+    message: 'You’ve successfully joined "{{entityName}}". Tap to start.',
+    url: "/dashboard/mini-mastery-programs/program/{{entityId}}",
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+  {
+    type: "MMP_ENROLLMENT_CREATOR",
+    title: "📘 New Program Enrollment",
+    message: "{{userName}} joined {{entityName}}",
+    url: "/dashboard/mini-mastery-programs/program/{{entityId}}",
+    isDynamic: true,
+    audiences: ["COACH", "ADMIN"],
+  },
+  {
+    type: "MMP_ENROLLMENT_ADMIN",
+    title: "New Enrollment",
+    message: "{{userName}} joined {{entityName}}",
+    url: "/admin/manage-mini-mastery-program/students?programId={{entityId}}",
+    isDynamic: true,
+    audiences: ["ADMIN"],
+  },
+
+  // 14. CHALLENGE Enrollments
+  {
+    type: "CHALLENGE_JOINED",
+    title: "You're In! 🎉",
+    message: 'You’ve successfully joined "{{entityName}}". Tap to start.',
+    url: "/dashboard/challenge/my-challenges/{{entityId}}",
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+  {
+    type: "CHALLENGE_ENROLLMENT_CREATOR",
+    title: "🎯 New Challenge Participant",
+    message: "{{userName}} joined {{entityName}}",
+    url: "/dashboard/challenge/my-challenges/{{entityId}}",
+    isDynamic: true,
+    audiences: ["COACH"],
+  },
+  {
+    type: "CHALLENGE_ENROLLMENT_ADMIN",
+    title: "New Enrollment",
+    message: "{{userName}} joined {{entityName}}",
+    url: "/admin/manage-challenges/users?challengeId={{entityId}}",
+    isDynamic: true,
+    audiences: ["ADMIN"],
+  },
+
+  // 15. STORE (Admin Specific)
+  {
+    type: "STORE_ORDER_ADMIN",
+    title: "🛒 New Store Order",
+    message: "{{userName}} purchased {{entityName}}",
+    url: "/admin/store/orders",
+    isDynamic: true,
+    audiences: ["ADMIN"],
+  },
+  // 16. Aligned Actions
+  {
+    type: "ALIGNED_ACTION_REMINDER",
+    title: "Aligned Action Reminder",
+    message: "Here’s your reminder again 👋",
+    url: "/dashboard/aligned-actions",
+    isDynamic: false,
+    audiences: ["USER"],
+  },
+  // 17. Aligned Actions (Start & End)
+  {
+    type: "ALIGNED_ACTION_START",
+    title: "1% Start Reminder",
+    message: "Your task starts in 5 minutes",
+    url: "/dashboard/aligned-actions",
+    isDynamic: false,
+    audiences: ["USER"],
+  },
+  {
+    type: "ALIGNED_ACTION_END",
+    title: "1% End Reminder",
+    message: "Your task ends in 5 minutes",
+    url: "/dashboard/aligned-actions",
+    isDynamic: false,
+    audiences: ["USER"],
+  },
+  // 18 Accountability Hub nudge
+  {
+  type: "ACCOUNTABILITY_NUDGE",
+  title: "{{senderName}} nudged you 👋",
+  message: "{{description}}",
+  url: "{{url}}",
+  isDynamic: true,
+  audiences: ["USER"],
+},
+// 19 Accountability Member Added
+{
+  type: "ACCOUNTABILITY_MEMBER_ADDED",
+  title: "You've been added to a group 🎉",
+  message: "Hi {{userName}}, you’ve been added to {{groupName}}.",
+  url: "{{groupUrl}}",
+  isDynamic: true,
+  audiences: ["USER"],
+},
+// 19. Magic Box & GP
+  {
+    type: "MAGIC_BOX_SHARED",
+    title: "Magic Box Shared! 🎁",
+    message: "You have received {{sharedJpAmount}} GP from {{senderName}}",
+    url: "/dashboard/notifications", 
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+  {
+    type: "JP_EARNED",
+    title: "GP Earned! ✨",
+    message: "You earned {{jpAmount}} GP from {{source}}!",
+    url: "/dashboard/transactions-history",
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+  // 20. Challenge Chat
+  {
+    type: "CHALLENGE_CHAT_MESSAGE",
+    title: "{{senderName}} in {{challengeTitle}}",
+    message: "{{messageBody}}",
+    url: "{{url}}",
+    isDynamic: true, 
+    audiences: ["USER"],
+  },
+  // 21. Challenge Penalty
+  {
+    type: "CHALLENGE_PENALTY",
+    title: "Challenge Penalty ⚠️",
+    message: "You missed your daily tasks in one or more challenges.\n\n{{total}} GP has been deducted.\n\nDetails: {{breakdown}}\n\nStay consistent tomorrow to avoid penalties 💪",
+    url: "/dashboard/challenge",
+    isDynamic: true, // Needs to be true to inject {{total}} and {{breakdown}}
+    audiences: ["USER"],
+  },
+  // 22. New Challenge Participant Broadcast
+  {
+    type: "CHALLENGE_NEW_PARTICIPANT",
+    title: "New challenger alert 🚀",
+    message: "{{userName}} joined \"{{challengeTitle}}\"!",
+    url: "/dashboard/challenge/my-challenges/{{challengeId}}",
+    isDynamic: true, // Needs to be true to inject variables
+    audiences: ["USER", "COACH"], // Anyone who is a participant or creator
+  },
+  // 23. Accountability Hub - Group Notes
+  {
+    type: "ACCOUNTABILITY_NOTES_UPDATED",
+    title: "New note in {{groupName}}",
+    message: "{{updatedBy}} updated group notes",
+    url: "/dashboard/accountability?groupId={{groupId}}",
+    isDynamic: true,
+    audiences: ["USER"],
+  },
+  // 24
+  {
+  type: "ACCOUNTABILITY_COMMENT_REPLY",
+  title: "New Reply",
+  message: "{{userName}} replied to your comment.",
+  url: "/dashboard/accountability-hub?goalId={{goalId}}",
+  isDynamic: true,
+},
+{
+  type: "ACCOUNTABILITY_COMMENT_MENTION",
+  title: "You were mentioned",
+  message: "{{userName}} mentioned you in a comment.",
+  url: "/dashboard/accountability-hub?goalId={{goalId}}",
+  isDynamic: true,
+},
+{
+  type: "ACCOUNTABILITY_COMMENT_ON_GOAL",
+  title: "New Comment",
+  message: "{{userName}} commented on your goal.",
+  url: "/dashboard/accountability-hub?goalId={{goalId}}",
+  isDynamic: true,
+},
   {
     type: "CREATOR_PAYOUT_SUCCESS",
     title: "💸 Payout of {{amount}} {{currency}} processed",
@@ -164,8 +364,18 @@ async function main() {
       select: { id: true },
     });
 
-    //  If already exists → do nothing (admin edits needs to preserved preserved)
-    if (exists) continue;
+    if (exists) {
+      // 🔥 ONLY update audiences if missing (preserve admin edits)
+      await prisma.notificationSettings.update({
+        where: { notification_type: seed.type },
+        data: {
+          audiences: {
+            set: seed.audiences ?? ["USER"],
+          },
+        },
+      });
+      continue;
+    }
 
     await prisma.notificationSettings.create({
       data: {
@@ -174,6 +384,7 @@ async function main() {
         message: seed.message,
         url: seed.url,
         isDynamic: seed.isDynamic,
+        audiences: seed.audiences ?? ["USER"],
       },
     });
   }

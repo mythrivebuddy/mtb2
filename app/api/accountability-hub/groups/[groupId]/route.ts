@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; 
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendPushNotificationMultipleUsers } from "@/lib/utils/pushNotifications";
+import {
+  sendDbPushNotificationMultipleUsers,
+} from "@/lib/utils/pushNotifications";
 import { sendEmailUsingTemplate } from "@/utils/sendEmail";
 
 // PATCH /api/groups/:groupId/notes
@@ -86,14 +88,15 @@ export async function PATCH(
       userIdsToNotify = allMemberIds;
     }
     userIdsToNotify = [...new Set(userIdsToNotify)];
-    void sendPushNotificationMultipleUsers(
-      userIdsToNotify,
-      `New note in ${group.name}`,
-      `${session.user.name} updated group notes`,
-      {
-        url: `/dashboard/accountability?groupId=${groupId}`,
+    void sendDbPushNotificationMultipleUsers({
+      type: "ACCOUNTABILITY_NOTES_UPDATED",
+      userIds: userIdsToNotify,
+      context: {
+        userName: session.user.name,
+        groupName: group.name,
+        groupId,
       },
-    );
+    });
     void (async () => {
       try {
         // Get users email + name

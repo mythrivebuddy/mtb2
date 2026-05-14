@@ -3,7 +3,7 @@ import { authConfig } from "@/app/api/auth/[...nextauth]/auth.config";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { notifyUsersExcept } from "@/lib/utils/pushNotifications";
+import {  sendPushNotificationFromDBToUser } from "@/lib/utils/pushNotifications";
 import { ChallengeJoinMode } from "@prisma/client";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { checkFeature } from "@/lib/access-control/checkFeature";
@@ -129,13 +129,30 @@ export async function POST(req: Request) {
     const senderName = newMessage.user?.name ?? "Someone";
     const body = message.length > 120 ? message.slice(0, 117) + "…" : message;
 
-    void notifyUsersExcept({
-      challengeId,
-      title: `${senderName} in ${newMessage.challenge.title}`,
-      message: body,
-      url: `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challengeId}${from}`,
-      notTosendUserItself: user.id,
-    });
+    // ✅ DB-DRIVEN NOTIFICATION BROADCAST (Non-blocking)
+    void (async () => {
+      try {
+        const participants = await prisma.challengeEnrollment.findMany({
+          where: { challengeId, userId: { not: user.id } },
+          select: { userId: true },
+        });
+
+        for (const p of participants) {
+          await sendPushNotificationFromDBToUser({
+            type: "CHALLENGE_CHAT_MESSAGE",
+            userId: p.userId,
+            context: {
+              senderName,
+              challengeTitle: newMessage.challenge.title,
+              messageBody: body,
+              url: `${process.env.NEXT_URL}/dashboard/challenge/my-challenges/${challengeId}${from}`
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Push notification error (ignored):", err);
+      }
+    })();
 
     // 4. Return the new message to the sender
     return NextResponse.json(newMessage);

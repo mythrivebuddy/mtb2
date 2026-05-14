@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { sendPushNotificationToUser } from "@/lib/utils/pushNotifications";
+import {
+  replaceDynamicNotificationTemplate,
+  sendPushNotificationFromDBToUser,
+  sendPushNotificationMultipleUsers,
+} from "@/lib/utils/pushNotifications";
 import {
   sendEmailUsingTemplate,
   sendEmailUsingTemplateWithConditionals,
@@ -7,6 +11,7 @@ import {
 import { maskEmail } from "@/utils/mask-email";
 import { inngest } from "@/lib/inngest";
 import { getCommissionPercent } from "@/lib/commission/getCommissionPercent";
+import { NotificationType } from "@prisma/client";
 
 /* =============================
    🔹 TYPES
@@ -353,8 +358,7 @@ export const notifyStakeholders = inngest.createFunction(
               quantity: cartItem.quantity || 1,
               priceAtPurchase: paidBase,
               originalPrice: basePrice,
-              gstAmount:
-              (cartItem.gst || 0) / (cartItem.quantity || 1),
+              gstAmount: (cartItem.gst || 0) / (cartItem.quantity || 1),
               item: {
                 id: itemId,
                 name: product.name,
@@ -789,20 +793,19 @@ export const notifyStakeholders = inngest.createFunction(
 
     await step.run("push-joiner", async () => {
       try {
-        const buyerTitle =
+        const type =
           finalEntityType === "STORE"
-            ? "🛍️ Purchase Successful"
-            : "You're In! 🎉";
-
-        const buyerMessage =
-          finalEntityType === "STORE"
-            ? event.data.isWallet
-              ? `You purchased "${entityName}" using GP wallet.`
-              : `You purchased "${entityName}". Tap to view your order.`
-            : `You’ve successfully joined "${entityName}". Tap to start.`;
-
-        await sendPushNotificationToUser(user.id, buyerTitle, buyerMessage, {
-          url: redirectUrl,
+            ? "STORE_PURCHASE"
+            : finalEntityType === "CHALLENGE"
+              ? "CHALLENGE_JOINED"
+              : "MMP_JOINED";
+        await sendPushNotificationFromDBToUser({
+          type,
+          userId: user.id,
+          context: {
+            entityName,
+            entityId: finalEntityId,
+          },
         });
       } catch (err) {
         console.error("Buyer push failed:", err);
@@ -830,17 +833,7 @@ export const notifyStakeholders = inngest.createFunction(
         });
       });
     }
-    const creatorMessage =
-      finalEntityType === "STORE"
-        ? `You made a sale! ${user.name} purchased "${entityName}".`
-        : `${user.name} joined ${entityName}`;
 
-    const creatorTitle =
-      finalEntityType === "STORE"
-        ? "🛒 New Product Purchase"
-        : finalEntityType === "CHALLENGE"
-          ? "🎯 New Challenge Participant"
-          : "📘 New Program Enrollment";
     const creatorFinancialsMap = new Map<
       string,
       {
@@ -857,49 +850,130 @@ export const notifyStakeholders = inngest.createFunction(
       for (const creator of creators) {
         if (creator.id === user.id) continue;
         const creatorItems = creatorMap.get(creator.id)?.items || [];
-
         const creatorItemNames = creatorItems
           .map((i) => i.item?.name || "Product")
           .join(", ");
         if (!creator.email) continue;
 
         await step.run(`push-creator-${creator.id}`, async () => {
-          await sendPushNotificationToUser(
-            creator.id,
-            creatorTitle,
-            `${user.name} purchased ${creatorItemNames}`,
-            { url: redirectUrl },
-          );
+          await sendPushNotificationFromDBToUser({
+            type: "STORE_SALE",
+            userId: creator.id,
+            context: {
+              userName: user?.name || "Someone",
+              entityName: creatorItemNames,
+            },
+          });
         });
       }
     } else {
       if (creator?.id && creator.id !== user.id) {
         await step.run("push-creator", async () => {
-          await sendPushNotificationToUser(
-            creator.id,
-            creatorTitle,
-            creatorMessage,
-            { url: redirectUrl },
-          );
+          const type =
+            finalEntityType === "CHALLENGE"
+              ? "CHALLENGE_ENROLLMENT_CREATOR"
+              : "MMP_ENROLLMENT_CREATOR";
+          await sendPushNotificationFromDBToUser({
+            type,
+            userId: creator.id,
+            context: {
+              userName: user?.name || "Someone",
+              entityName,
+              entityId: finalEntityId,
+            },
+          });
         });
       }
     }
 
     if (admin?.id && admin.id !== creator?.id && admin.id !== user.id) {
       await step.run("push-admin", async () => {
-        const adminTitle =
-          finalEntityType === "STORE" ? "🛒 New Store Order" : "New Enrollment";
-
-        const adminMessage =
+        const type =
           finalEntityType === "STORE"
-            ? `${user.name} purchased ${entityName}`
-            : `${user.name} joined ${entityName}`;
-        await sendPushNotificationToUser(admin.id, adminTitle, adminMessage, {
-          url: adminUrl,
+            ? "STORE_ORDER_ADMIN"
+            : finalEntityType === "CHALLENGE"
+              ? "CHALLENGE_ENROLLMENT_ADMIN"
+              : "MMP_ENROLLMENT_ADMIN";
+        await sendPushNotificationFromDBToUser({
+          type,
+          userId: admin.id,
+          context: {
+            userName: user?.name || "Someone",
+            entityName,
+            entityId: finalEntityId,
+          },
         });
       });
     }
 
+    if (finalEntityType === "CHALLENGE") {
+      await step.run("push-participants", async () => {
+        try {
+          const excludedIds = [user.id];
+
+          // . We add the Creator's ID to the "Do Not Send" list (since they get their own email/push elsewhere)
+          if (creatorId) {
+            excludedIds.push(creatorId);
+          }
+          // . Get all participant IDs (except the joiner and creator)
+          const participants = await prisma.challengeEnrollment.findMany({
+            where: {
+              challengeId: finalEntityId,
+              userId: { not: user.id },
+            },
+            select: { userId: true },
+          });
+
+          const participantIds = participants.map((p) => p.userId);
+
+          if (!participantIds.length) return;
+
+          // 2. Fetch the DB template ONCE
+          const setting = await prisma.notificationSettings.findUnique({
+            where: { notification_type: "CHALLENGE_NEW_PARTICIPANT" },
+          });
+
+          if (setting) {
+            // Replace dynamic variables
+            const title = setting.title || "";
+            const message = replaceDynamicNotificationTemplate(
+              setting.message || "",
+              {
+                userName: user.name || "Someone",
+                challengeTitle: entityName,
+              },
+            );
+            const url = replaceDynamicNotificationTemplate(setting.url || "", {
+              challengeId: finalEntityId,
+            });
+
+            // 3. Create IN-APP notifications for everyone in bulk
+            const notificationsToCreate = participantIds.map((userId) => ({
+              userId,
+              type: NotificationType.CHALLENGE_NEW_PARTICIPANT,
+              title,
+              message,
+              url,
+            }));
+
+            await prisma.notification.createMany({
+              data: notificationsToCreate,
+            });
+
+            // 4. Send pushes using your EXISTING efficient function
+            // (This function already filters out users without subscriptions and fires parallel pushes!)
+            await sendPushNotificationMultipleUsers(
+              participantIds,
+              title,
+              message,
+              { url },
+            );
+          }
+        } catch (err) {
+          console.error("Failed to broadcast to participants:", err);
+        }
+      });
+    }
     /* =============================
        📧 EMAILS
     ============================= */
@@ -1013,7 +1087,7 @@ export const notifyStakeholders = inngest.createFunction(
     } else {
       if (creator?.email && creator.id !== user.id) {
         await step.run("email-creator", async () => {
-          console.log("email to craetor step runs ",creator.email)
+          console.log("email to craetor step runs ", creator.email);
           await sendEmailUsingTemplateWithConditionals({
             toEmail: creator.email,
             toName: creator.name,
@@ -1128,7 +1202,7 @@ export const notifyStakeholders = inngest.createFunction(
     // ADMIN
     if (admin?.email && admin.id !== user.id && admin.id !== creator?.id) {
       await step.run("email-admin", async () => {
-        console.log("email admin step ")
+        console.log("email admin step ");
         await sendEmailUsingTemplateWithConditionals({
           toEmail: admin.email,
           toName: admin.name,

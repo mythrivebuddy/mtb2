@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import {
-  sendPushNotificationMultipleUsers,
+  sendDbPushNotificationMultipleUsers,
 } from "@/lib/utils/pushNotifications";
 
 // GET handler to fetch all comments for a goal
@@ -30,13 +30,13 @@ export async function GET(
           select: { name: true, image: true, id: true },
         },
         replies: {
-  include: {
-    author: {
-      select: { name: true, image: true, id: true },
-    },
-  },
-  orderBy: { createdAt: "asc" },
-},
+          include: {
+            author: {
+              select: { name: true, image: true, id: true },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
       },
       orderBy: { createdAt: "asc" },
     });
@@ -215,27 +215,82 @@ export async function POST(
     // Send push to all
     usersToNotify.delete(session.user.id);
     if (usersToNotify.size > 0) {
-      let title = "New Comment";
-      let body = `${session.user.name} commented on a goal.`;
+      const goalUrl = `/dashboard/accountability-hub?goalId=${goalId}`;
 
-      // Decide notification type per user
-      if (parentId) {
-        title = "New Reply";
-        body = `${session.user.name} replied to your comment.`;
+      // --- Prepare sets ---
+      const replyUsers = new Set<string>();
+      const mentionUsers = new Set<string>();
+      const goalUsers = new Set<string>();
+
+      // 1️⃣ Reply
+      if (parentCommentAuthorId && parentCommentAuthorId !== session.user.id) {
+        replyUsers.add(parentCommentAuthorId);
       }
 
-      if (mentionedUserIds.length > 0) {
-        title = "You were mentioned";
-        body = `${session.user.name} mentioned you in a comment.`;
+      // 2️⃣ Mentions
+      mentionedUserIds.forEach((id) => {
+        if (id !== session.user.id) {
+          mentionUsers.add(id);
+        }
+      });
+
+      // 3️⃣ Goal owner
+      if (!parentId && goal?.member?.user.id) {
+        if (goal.member.user.id !== session.user.id) {
+          goalUsers.add(goal.member.user.id);
+        }
       }
-      void sendPushNotificationMultipleUsers(
-        Array.from(usersToNotify),
-        title,
-        body,
-        {
-          url: `/dashboard/accountability-hub?goalId=${goalId}`,
-        },
-      );
+
+      // ❗ Remove duplicates across priority
+      // Mention > Reply > Goal
+
+      mentionUsers.forEach((id) => {
+        replyUsers.delete(id);
+        goalUsers.delete(id);
+      });
+
+      replyUsers.forEach((id) => {
+        goalUsers.delete(id);
+      });
+
+      // --- Send notifications ---
+      
+
+      if (replyUsers.size > 0) {
+        await sendDbPushNotificationMultipleUsers({
+          type: "ACCOUNTABILITY_COMMENT_REPLY",
+          userIds: Array.from(replyUsers),
+          context: {
+            userName: session.user.name,
+            goalId,
+            url: goalUrl,
+          },
+        });
+      }
+
+      if (mentionUsers.size > 0) {
+        await await sendDbPushNotificationMultipleUsers({
+          type: "ACCOUNTABILITY_COMMENT_MENTION",
+          userIds: Array.from(mentionUsers),
+          context: {
+            userName: session.user.name,
+            goalId,
+            url: goalUrl,
+          },
+        });
+      }
+
+      if (goalUsers.size > 0) {
+        await sendDbPushNotificationMultipleUsers({
+          type: "ACCOUNTABILITY_COMMENT_ON_GOAL",
+          userIds: Array.from(goalUsers),
+          context: {
+            userName: session.user.name,
+            goalId,
+            url: goalUrl,
+          },
+        });
+      }
     }
 
     return NextResponse.json(newComment, { status: 201 });
